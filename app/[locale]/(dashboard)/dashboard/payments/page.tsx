@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
+import { getSessionWithRole } from '../../_lib/auth-helper'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -21,8 +22,12 @@ export default async function PaymentsPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.payments')
 
+  const { roles, familyId } = await getSessionWithRole()
+
+  const whereClause = roles.includes('admin') ? { isActive: true } : { isActive: true, familyId }
+
   const payments = await db.payment.findMany({
-    where: { isActive: true },
+    where: whereClause,
     include: {
       family: true,
       enrollment: {

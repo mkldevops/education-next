@@ -41,4 +41,14 @@ export const classPeriodGateway = {
     })
     return count
   },
+
+  findByLevelAndPeriod: (levelId: string, periodId: string) =>
+    db.classPeriod.findFirst({
+      where: {
+        levelId,
+        periodId,
+        isActive: true,
+      },
+      include: { level: true, period: true },
+    }),
 }

@@ -5,6 +5,7 @@ import { setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
+import { getSessionWithRole } from '../../../_lib/auth-helper'
 import { EnrollmentActions } from './_components/enrollment-actions'
 
 type Props = {
@@ -28,6 +29,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function EnrollmentDetailPage({ params }: Props) {
   const { locale, id } = await params
   setRequestLocale(locale)
+
+  const { roles, familyId } = await getSessionWithRole()
 
   const enrollment = await db.enrollment.findUnique({
     where: { id },
@@ -63,6 +66,13 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   })
 
   if (!enrollment) notFound()
+
+  if (!roles.includes('admin')) {
+    const enrollmentFamily = enrollment.student.person.families.some(
+      (fp) => fp.familyId === familyId
+    )
+    if (!enrollmentFamily) notFound()
+  }
 
   const familyName =
     enrollment.student.person.families.length > 0

@@ -5,6 +5,7 @@ import { setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
+import { getSessionWithRole } from '../../../_lib/auth-helper'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -25,6 +26,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function StudentDetailPage({ params }: Props) {
   const { locale, id } = await params
   setRequestLocale(locale)
+
+  const { roles, familyId } = await getSessionWithRole()
 
   const student = await db.student.findUnique({
     where: { id },
@@ -61,6 +64,11 @@ export default async function StudentDetailPage({ params }: Props) {
   })
 
   if (!student) notFound()
+
+  if (!roles.includes('admin')) {
+    const studentFamily = student.person.families.some((fp) => fp.familyId === familyId)
+    if (!studentFamily) notFound()
+  }
 
   const languagesAtHome = Array.isArray(student.languagesAtHome)
     ? student.languagesAtHome.join(', ')

@@ -160,7 +160,17 @@
         "authorizedPickup": "Personnes autorisées",
         "phone": "Téléphone",
         "channels": "Canaux",
-        "noFamilies": "Aucune famille enregistrée"
+        "noFamilies": "Aucune famille enregistrée",
+        "create": {
+          "title": "Créer une famille",
+          "name": "Nom de la famille",
+          "emergencyContact": "Contact d'urgence",
+          "authorizedPickup": "Personnes autorisées à récupérer",
+          "submit": "Créer",
+          "cancel": "Annuler",
+          "success": "Famille créée avec succès",
+          "error": "Erreur lors de la création de la famille"
+        }
       },
       "students": {
         "title": "Élèves",
@@ -214,6 +224,19 @@
         "to": "Au",
         "current": "Actuelle",
         "noEnrollments": "Aucune inscription enregistrée"
+      },
+      "promotion": {
+        "title": "Promotion des élèves",
+        "sourcePeriod": "Période source",
+        "targetPeriod": "Période cible",
+        "promote": "Promouvoir les élèves",
+        "promoted": "Élèves promus",
+        "skipped": "Élèves non promus",
+        "errors": "Erreurs",
+        "success": "Promotion complétée avec succès",
+        "noSourcePeriod": "Période source non trouvée",
+        "noTargetPeriod": "Période cible non trouvée",
+        "validationError": "Données invalides"
       },
       "payments": {
         "title": "Paiements",

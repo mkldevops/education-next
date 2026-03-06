@@ -2,6 +2,7 @@ import { Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
+import { getSessionWithRole } from '../_lib/auth-helper'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -21,11 +22,51 @@ export default async function DashboardPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard')
 
+  const { roles, familyId } = await getSessionWithRole()
+
   const [familyCount, studentCount, enrollmentCount, pendingPaymentCount] = await Promise.all([
-    db.family.count({ where: { isActive: true } }),
-    db.student.count({ where: { isActive: true } }),
-    db.enrollment.count({ where: { status: { in: ['PENDING', 'ACTIVE'] }, isActive: true } }),
-    db.enrollment.count({ where: { status: 'PENDING', isActive: true } }),
+    db.family.count({
+      where: {
+        isActive: true,
+        ...(roles.includes('admin') ? {} : { id: familyId }),
+      },
+    }),
+    db.student.count({
+      where: {
+        isActive: true,
+        person: {
+          families: {
+            some: roles.includes('admin') ? {} : { familyId },
+          },
+        },
+      },
+    }),
+    db.enrollment.count({
+      where: {
+        status: { in: ['PENDING', 'ACTIVE'] },
+        isActive: true,
+        student: {
+          person: {
+            families: {
+              some: roles.includes('admin') ? {} : { familyId },
+            },
+          },
+        },
+      },
+    }),
+    db.enrollment.count({
+      where: {
+        status: 'PENDING',
+        isActive: true,
+        student: {
+          person: {
+            families: {
+              some: roles.includes('admin') ? {} : { familyId },
+            },
+          },
+        },
+      },
+    }),
   ])
 
   const stats = [

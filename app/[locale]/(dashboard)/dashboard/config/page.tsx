@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
+import { getSessionWithRole } from '../../_lib/auth-helper'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -18,6 +20,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ConfigPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
+
+  const { roles } = await getSessionWithRole()
+
+  if (!roles.includes('admin')) notFound()
+
   const t = await getTranslations('dashboard.pages.config')
 
   const configs = await db.config.findMany({

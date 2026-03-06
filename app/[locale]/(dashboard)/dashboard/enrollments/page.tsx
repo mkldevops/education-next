@@ -4,6 +4,7 @@ import { StatusBadge } from '@/features/dashboard'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
+import { getSessionWithRole } from '../../_lib/auth-helper'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -23,8 +24,20 @@ export default async function EnrollmentsPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.enrollments')
 
+  const { roles, familyId } = await getSessionWithRole()
+
+  const whereStudent = roles.includes('admin')
+    ? {}
+    : {
+        person: {
+          families: {
+            some: { familyId },
+          },
+        },
+      }
+
   const enrollments = await db.enrollment.findMany({
-    where: { isActive: true },
+    where: { isActive: true, student: whereStudent },
     include: {
       student: {
         include: {

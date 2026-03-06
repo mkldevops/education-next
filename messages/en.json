@@ -160,7 +160,17 @@
         "authorizedPickup": "Authorized Pickup",
         "phone": "Phone",
         "channels": "Channels",
-        "noFamilies": "No families registered"
+        "noFamilies": "No families registered",
+        "create": {
+          "title": "Create Family",
+          "name": "Family Name",
+          "emergencyContact": "Emergency Contact",
+          "authorizedPickup": "Authorized Pickup Persons",
+          "submit": "Create",
+          "cancel": "Cancel",
+          "success": "Family created successfully",
+          "error": "Error creating family"
+        }
       },
       "students": {
         "title": "Students",
@@ -214,6 +224,19 @@
         "to": "To",
         "current": "Current",
         "noEnrollments": "No enrollments registered"
+      },
+      "promotion": {
+        "title": "Student Promotion",
+        "sourcePeriod": "Source Period",
+        "targetPeriod": "Target Period",
+        "promote": "Promote Students",
+        "promoted": "Students Promoted",
+        "skipped": "Students Skipped",
+        "errors": "Errors",
+        "success": "Promotion completed successfully",
+        "noSourcePeriod": "Source period not found",
+        "noTargetPeriod": "Target period not found",
+        "validationError": "Invalid data"
       },
       "payments": {
         "title": "Payments",

@@ -21,3 +21,8 @@ export const applyDiscountSchema = z.object({
   enrollmentId: z.string().uuid(),
   discount: z.number().min(0),
 })
+
+export const promoteStudentsSchema = z.object({
+  sourcePeriodId: z.string().uuid(),
+  targetPeriodId: z.string().uuid(),
+})

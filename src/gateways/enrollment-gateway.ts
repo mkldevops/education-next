@@ -76,4 +76,35 @@ export const enrollmentGateway = {
       },
       include: { payments: true },
     }),
+
+  findCompletedByPeriod: async (periodId: string) => {
+    const enrollments = await db.enrollment.findMany({
+      where: {
+        status: { in: ['ACTIVE', 'COMPLETED'] },
+        classAssignments: {
+          some: {
+            classPeriod: { periodId },
+          },
+        },
+      },
+      include: {
+        student: true,
+        classAssignments: {
+          where: {
+            classPeriod: { periodId },
+          },
+          include: {
+            classPeriod: {
+              include: {
+                level: {
+                  include: { nextLevel: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+    return enrollments
+  },
 }

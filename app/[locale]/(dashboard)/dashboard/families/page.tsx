@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { getSessionWithRole } from '../../_lib/auth-helper'
+import { CreateFamilyDialog } from './_components/create-family-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -21,8 +23,14 @@ export default async function FamiliesPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.families')
 
+  const { roles, familyId } = await getSessionWithRole()
+
+  const whereClause = roles.includes('admin')
+    ? { isActive: true }
+    : { isActive: true, id: familyId }
+
   const families = await db.family.findMany({
-    where: { isActive: true },
+    where: whereClause,
     include: {
       persons: {
         include: {
@@ -59,7 +67,10 @@ export default async function FamiliesPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <CreateFamilyDialog />
+      </div>
 
       {familiesWithCounts.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-gray-500">{t('noFamilies')}</div>

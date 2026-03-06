@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { getSessionWithRole } from '../../_lib/auth-helper'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -21,8 +22,15 @@ export default async function StudentsPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.students')
 
+  const { roles, familyId } = await getSessionWithRole()
+
+  const whereFamilies = roles.includes('admin') ? undefined : { some: { familyId } }
+
   const students = await db.student.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...(whereFamilies && { person: { families: whereFamilies } }),
+    },
     include: {
       person: {
         include: {

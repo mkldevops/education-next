@@ -5,6 +5,7 @@ import { setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
+import { getSessionWithRole } from '../../../_lib/auth-helper'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -22,6 +23,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FamilyDetailPage({ params }: Props) {
   const { locale, id } = await params
   setRequestLocale(locale)
+
+  const { roles, familyId } = await getSessionWithRole()
+
+  if (!roles.includes('admin') && familyId !== id) notFound()
 
   const family = await db.family.findUnique({
     where: { id },
