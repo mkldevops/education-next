@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 
 export const personGateway = {
@@ -11,7 +12,7 @@ export const personGateway = {
     city?: string
   }) => db.person.create({ data }),
 
-  update: (id: string, data: Record<string, unknown>) =>
+  update: (id: string, data: Prisma.PersonUpdateInput) =>
     db.person.update({
       where: { id },
       data,

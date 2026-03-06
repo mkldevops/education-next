@@ -149,9 +149,21 @@ async function seed() {
   // --- Phone numbers ---
   await prisma.phoneNumber.createMany({
     data: [
-      { personId: mariePerson.id, phoneNumber: '06 12 34 56 78', channels: JSON.stringify(['sms', 'whatsapp', 'call']) },
-      { personId: pierrePerson.id, phoneNumber: '06 11 22 33 44', channels: JSON.stringify(['call']) },
-      { personId: sophieMartin.id, phoneNumber: '06 98 76 54 32', channels: JSON.stringify(['sms', 'call']) },
+      {
+        personId: mariePerson.id,
+        phoneNumber: '06 12 34 56 78',
+        channels: JSON.stringify(['sms', 'whatsapp', 'call']),
+      },
+      {
+        personId: pierrePerson.id,
+        phoneNumber: '06 11 22 33 44',
+        channels: JSON.stringify(['call']),
+      },
+      {
+        personId: sophieMartin.id,
+        phoneNumber: '06 98 76 54 32',
+        channels: JSON.stringify(['sms', 'call']),
+      },
     ],
   })
 

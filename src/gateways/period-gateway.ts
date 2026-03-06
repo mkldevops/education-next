@@ -23,6 +23,7 @@ export const periodGateway = {
 
   list: () =>
     db.period.findMany({
+      where: { isActive: true },
       orderBy: { startAt: 'desc' },
     }),
 

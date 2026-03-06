@@ -34,6 +34,7 @@ export const familyGateway = {
 
   list: () =>
     db.family.findMany({
+      where: { isActive: true },
       orderBy: { name: 'asc' },
     }),
 

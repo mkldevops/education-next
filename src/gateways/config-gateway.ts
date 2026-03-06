@@ -24,6 +24,7 @@ export const configGateway = {
 
   list: () =>
     db.config.findMany({
+      where: { isActive: true },
       orderBy: { name: 'asc' },
     }),
 }

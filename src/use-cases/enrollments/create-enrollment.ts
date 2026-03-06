@@ -25,7 +25,7 @@ export async function createEnrollment(input: Input) {
 
   const isDuplicate = await enrollmentGateway.findDuplicate(
     parsed.data.studentId,
-    parsed.data.planId
+    parsed.data.classPeriodId
   )
   if (isDuplicate) return 'duplicateEnrollment' as const
 

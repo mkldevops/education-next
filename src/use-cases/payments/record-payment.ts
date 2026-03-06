@@ -30,8 +30,8 @@ export async function recordPayment(input: Input) {
   const distribution = distributePayment(parsed.data.amount, balances)
   if (distribution.result !== 'OK') return distribution.result
 
-  for (const item of distribution.distribution) {
-    await paymentGateway.create({
+  await paymentGateway.createInTransaction(
+    distribution.distribution.map((item) => ({
       familyId: parsed.data.familyId,
       enrollmentId: item.enrollmentId,
       amount: item.amount,
@@ -39,8 +39,8 @@ export async function recordPayment(input: Input) {
       reference: parsed.data.reference,
       paidAt: parsed.data.paidAt,
       cashedAt: parsed.data.cashedAt,
-    })
-  }
+    }))
+  )
 
   return 'OK' as const
 }

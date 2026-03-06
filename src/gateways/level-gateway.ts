@@ -22,6 +22,7 @@ export const levelGateway = {
 
   list: () =>
     db.level.findMany({
+      where: { isActive: true },
       include: { nextLevel: true },
       orderBy: { name: 'asc' },
     }),

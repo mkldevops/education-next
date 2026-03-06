@@ -8,11 +8,7 @@ import { Link, usePathname } from '@/i18n/routing'
 import { signOut, useSession } from '@/lib/auth-client'
 import { LanguageSwitcher } from './language-switcher'
 
-const navItems = [
-  { href: '/', key: 'home' },
-  { href: '/a-propos', key: 'about' },
-  { href: '/contact', key: 'contact' },
-] as const
+const navItems = [{ href: '/', key: 'home' }] as const
 
 export function Navbar() {
   const t = useTranslations('navbar')

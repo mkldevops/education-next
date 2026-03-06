@@ -24,6 +24,7 @@ export const classPeriodGateway = {
 
   list: () =>
     db.classPeriod.findMany({
+      where: { isActive: true },
       include: { level: true, period: true },
       orderBy: { name: 'asc' },
     }),

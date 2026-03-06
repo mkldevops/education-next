@@ -22,6 +22,7 @@ export const planGateway = {
 
   list: () =>
     db.plan.findMany({
+      where: { isActive: true },
       orderBy: { name: 'asc' },
     }),
 }

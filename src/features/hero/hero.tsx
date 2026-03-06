@@ -18,13 +18,8 @@ export async function Hero() {
           <h1 className="display-xl text-balance text-gray-900">{t('title')}</h1>
           <p className="mt-6 text-lg leading-8 text-gray-600">{t('subtitle')}</p>
           <div className="mt-10 flex items-center justify-center gap-4">
-            <Link href="/login">
+            <Link href="/dashboard">
               <Button size="lg">{t('cta')}</Button>
-            </Link>
-            <Link href="/a-propos">
-              <Button variant="outline" size="lg">
-                {t('secondary')}
-              </Button>
             </Link>
           </div>
         </div>

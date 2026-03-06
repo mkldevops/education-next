@@ -1,7 +1,7 @@
 {
   "company": {
-    "name": "PeakLab",
-    "legalName": "PeakLab SAS",
+    "name": "École Al-Nour",
+    "legalName": "Association École Al-Nour",
     "address": "123 Avenue de l'Innovation",
     "city": "75001 Paris, France",
     "siret": "XXX XXX XXX XXXXX",
@@ -26,82 +26,29 @@
     "noResults": "Aucun résultat"
   },
   "metadata": {
-    "title": "PeakLab",
-    "description": "Votre application PeakLab"
+    "title": "École Al-Nour — Gestion scolaire",
+    "description": "Plateforme de gestion des inscriptions et du suivi scolaire"
   },
   "navbar": {
     "home": "Accueil",
-    "about": "À propos",
-    "blog": "Blog",
-    "glossary": "Glossaire",
-    "contact": "Contact",
     "dashboard": "Tableau de bord",
     "login": "Connexion",
-    "logout": "Déconnexion",
-    "cta": "Nous contacter"
+    "logout": "Déconnexion"
   },
   "footer": {
-    "tagline": "Nous créons des expériences digitales exceptionnelles pour faire grandir votre entreprise.",
-    "company": "Entreprise",
-    "about": "À propos",
-    "blog": "Blog",
-    "contact": "Contact",
-    "resources": "Ressources",
-    "glossary": "Glossaire",
-    "social": "Réseaux sociaux",
+    "tagline": "Plateforme de gestion des inscriptions et du suivi scolaire pour les établissements d'enseignement.",
     "legal": "Mentions légales",
     "privacy": "Politique de confidentialité",
     "copyright": "Tous droits réservés."
   },
   "hero": {
-    "tagline": "Votre partenaire digital de confiance",
-    "title": "Transformez votre vision en réalité digitale",
-    "subtitle": "Nous concevons et développons des applications web modernes qui propulsent votre entreprise vers le succès.",
-    "cta": "Démarrer un projet",
-    "secondary": "En savoir plus",
-    "trustText": "Reconnu par plus de 50 entreprises"
-  },
-  "contact": {
-    "title": "Contact",
-    "subtitle": "Nous sommes là pour vous aider",
-    "form": {
-      "name": "Nom",
-      "email": "Email",
-      "subject": "Sujet",
-      "message": "Message",
-      "submit": "Envoyer",
-      "success": "Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais."
-    }
+    "tagline": "Plateforme de gestion scolaire",
+    "title": "Gérez les inscriptions de votre école en toute simplicité",
+    "subtitle": "Inscriptions, suivi des familles, paiements et gestion des classes — tout en un seul endroit.",
+    "cta": "Accéder au portail",
+    "secondary": "En savoir plus"
   },
   "pages": {
-    "about": {
-      "title": "À propos",
-      "description": "En savoir plus sur PeakLab",
-      "intro": "PeakLab est une entreprise innovante spécialisée dans le développement de solutions numériques sur mesure.",
-      "mission": {
-        "title": "Notre mission",
-        "description": "Accompagner les entreprises dans leur transformation digitale en leur fournissant des outils performants et intuitifs."
-      },
-      "values": {
-        "title": "Nos valeurs",
-        "innovation": {
-          "title": "Innovation",
-          "description": "Nous repoussons constamment les limites de la technologie"
-        },
-        "quality": {
-          "title": "Qualité",
-          "description": "Nous nous engageons à fournir des produits d'excellence"
-        },
-        "collaboration": {
-          "title": "Collaboration",
-          "description": "Nous croyons en la force du travail d'équipe"
-        }
-      },
-      "team": {
-        "title": "Notre équipe",
-        "description": "Une équipe passionnée et expérimentée, dédiée à votre succès."
-      }
-    },
     "privacy": {
       "title": "Politique de confidentialité",
       "description": "Comment nous protégeons vos données"
@@ -177,18 +124,122 @@
     "title": "Tableau de bord",
     "welcome": {
       "title": "Bienvenue !",
-      "description": "Voici un aperçu de vos statistiques et activités récentes."
+      "description": "Voici un aperçu de votre école."
     },
     "stats": {
-      "users": "Utilisateurs",
-      "revenue": "Revenus",
-      "orders": "Commandes"
+      "families": "Familles",
+      "students": "Élèves",
+      "enrollments": "Inscriptions",
+      "pendingPayments": "Paiements en attente"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
+      "families": "Familles",
+      "students": "Élèves",
+      "periods": "Périodes",
+      "levels": "Niveaux",
+      "classes": "Classes",
+      "enrollments": "Inscriptions",
+      "payments": "Paiements",
+      "plans": "Plans tarifaires",
+      "config": "Configuration",
       "profile": "Profil",
       "settings": "Paramètres",
       "logout": "Déconnexion"
+    },
+    "pages": {
+      "families": {
+        "title": "Familles",
+        "name": "Nom",
+        "emergencyContact": "Contact d'urgence",
+        "students": "Élèves",
+        "enrollments": "Inscriptions",
+        "members": "Membres",
+        "relation": "Relation",
+        "authorizedPickup": "Personnes autorisées",
+        "phone": "Téléphone",
+        "channels": "Canaux",
+        "noFamilies": "Aucune famille enregistrée"
+      },
+      "students": {
+        "title": "Élèves",
+        "name": "Nom",
+        "birthday": "Date de naissance",
+        "family": "Famille",
+        "class": "Classe",
+        "birthplace": "Lieu de naissance",
+        "allergies": "Allergies",
+        "healthNotes": "Notes de santé",
+        "languages": "Langues à la maison",
+        "snackAuthorization": "Autorisation goûter",
+        "noStudents": "Aucun élève enregistré"
+      },
+      "periods": {
+        "title": "Périodes",
+        "name": "Nom",
+        "startDate": "Date de début",
+        "endDate": "Date de fin",
+        "classes": "Classes",
+        "noPeriods": "Aucune période enregistrée"
+      },
+      "levels": {
+        "title": "Niveaux",
+        "name": "Nom",
+        "nextLevel": "Niveau suivant",
+        "classes": "Classes",
+        "none": "Aucun",
+        "noLevels": "Aucun niveau enregistré"
+      },
+      "classes": {
+        "title": "Classes",
+        "name": "Nom",
+        "level": "Niveau",
+        "period": "Période",
+        "capacity": "Capacité",
+        "enrolled": "Inscrits",
+        "noClasses": "Aucune classe enregistrée"
+      },
+      "enrollments": {
+        "title": "Inscriptions",
+        "student": "Élève",
+        "plan": "Plan",
+        "status": "Statut",
+        "totalAmount": "Montant total",
+        "discount": "Réduction",
+        "class": "Classe",
+        "registeredAt": "Date d'inscription",
+        "classAssignments": "Affectations de classe",
+        "from": "Du",
+        "to": "Au",
+        "current": "Actuelle",
+        "noEnrollments": "Aucune inscription enregistrée"
+      },
+      "payments": {
+        "title": "Paiements",
+        "family": "Famille",
+        "student": "Élève",
+        "amount": "Montant",
+        "method": "Méthode",
+        "reference": "Référence",
+        "paidAt": "Date de paiement",
+        "cashedAt": "Date d'encaissement",
+        "pending": "En attente",
+        "noPayments": "Aucun paiement enregistré"
+      },
+      "plans": {
+        "title": "Plans tarifaires",
+        "name": "Nom",
+        "amount": "Montant",
+        "enrollments": "Inscriptions",
+        "noPlans": "Aucun plan enregistré"
+      },
+      "config": {
+        "title": "Configuration",
+        "name": "Nom",
+        "value": "Valeur",
+        "type": "Type",
+        "noConfig": "Aucune configuration enregistrée"
+      }
     }
   },
   "settings": {
@@ -233,7 +284,14 @@
       "empty": "Aucune activité récente"
     }
   },
+  "status": {
+    "PENDING": "En attente",
+    "ACTIVE": "Active",
+    "COMPLETED": "Terminée",
+    "CANCELLED": "Annulée"
+  },
   "errors": {
+    "unauthorized": "Vous devez être connecté pour effectuer cette action",
     "validationError": "Les données saisies sont invalides",
     "notFound": "Ressource introuvable",
     "circularReference": "Référence circulaire détectée entre les niveaux",

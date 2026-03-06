@@ -24,6 +24,7 @@ export const enrollmentGateway = {
 
   list: () =>
     db.enrollment.findMany({
+      where: { isActive: true },
       include: { student: { include: { person: true } }, plan: true },
       orderBy: { registeredAt: 'desc' },
     }),
@@ -34,12 +35,22 @@ export const enrollmentGateway = {
       include: { plan: true },
     }),
 
-  findDuplicate: async (studentId: string, planId: string) => {
+  findDuplicate: async (studentId: string, classPeriodId: string) => {
+    const classPeriod = await db.classPeriod.findUnique({
+      where: { id: classPeriodId },
+      select: { periodId: true },
+    })
+    if (!classPeriod) return false
+
     const existing = await db.enrollment.findFirst({
       where: {
         studentId,
-        planId,
         status: { in: ['PENDING', 'ACTIVE'] },
+        classAssignments: {
+          some: {
+            classPeriod: { periodId: classPeriod.periodId },
+          },
+        },
       },
     })
     return existing !== null
@@ -54,7 +65,7 @@ export const enrollmentGateway = {
   findActiveByFamily: (familyId: string) =>
     db.enrollment.findMany({
       where: {
-        status: { in: ['PENDING', 'ACTIVE'] },
+        status: 'ACTIVE',
         student: {
           person: {
             families: {

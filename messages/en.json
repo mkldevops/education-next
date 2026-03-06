@@ -1,7 +1,7 @@
 {
   "company": {
-    "name": "PeakLab",
-    "legalName": "PeakLab SAS",
+    "name": "École Al-Nour",
+    "legalName": "Association École Al-Nour",
     "address": "123 Avenue de l'Innovation",
     "city": "75001 Paris, France",
     "siret": "XXX XXX XXX XXXXX",
@@ -26,82 +26,29 @@
     "noResults": "No results"
   },
   "metadata": {
-    "title": "PeakLab",
-    "description": "Your PeakLab application"
+    "title": "École Al-Nour — School Management",
+    "description": "Enrollment management and school tracking platform"
   },
   "navbar": {
     "home": "Home",
-    "about": "About",
-    "blog": "Blog",
-    "glossary": "Glossary",
-    "contact": "Contact",
     "dashboard": "Dashboard",
     "login": "Login",
-    "logout": "Logout",
-    "cta": "Contact us"
+    "logout": "Logout"
   },
   "footer": {
-    "tagline": "We create exceptional digital experiences to grow your business.",
-    "company": "Company",
-    "about": "About",
-    "blog": "Blog",
-    "contact": "Contact",
-    "resources": "Resources",
-    "glossary": "Glossary",
-    "social": "Social",
+    "tagline": "Enrollment management and school tracking platform for educational institutions.",
     "legal": "Legal notices",
     "privacy": "Privacy policy",
     "copyright": "All rights reserved."
   },
   "hero": {
-    "tagline": "Your trusted digital partner",
-    "title": "Transform your vision into digital reality",
-    "subtitle": "We design and develop modern web applications that propel your business to success.",
-    "cta": "Start a project",
-    "secondary": "Learn more",
-    "trustText": "Trusted by 50+ companies"
-  },
-  "contact": {
-    "title": "Contact",
-    "subtitle": "We are here to help you",
-    "form": {
-      "name": "Name",
-      "email": "Email",
-      "subject": "Subject",
-      "message": "Message",
-      "submit": "Send",
-      "success": "Your message has been sent successfully. We will get back to you as soon as possible."
-    }
+    "tagline": "School management platform",
+    "title": "Manage your school enrollments with ease",
+    "subtitle": "Enrollments, family tracking, payments and class management — all in one place.",
+    "cta": "Access portal",
+    "secondary": "Learn more"
   },
   "pages": {
-    "about": {
-      "title": "About",
-      "description": "Learn more about PeakLab",
-      "intro": "PeakLab is an innovative company specializing in custom digital solutions development.",
-      "mission": {
-        "title": "Our mission",
-        "description": "Supporting businesses in their digital transformation by providing them with powerful and intuitive tools."
-      },
-      "values": {
-        "title": "Our values",
-        "innovation": {
-          "title": "Innovation",
-          "description": "We constantly push the boundaries of technology"
-        },
-        "quality": {
-          "title": "Quality",
-          "description": "We are committed to delivering excellent products"
-        },
-        "collaboration": {
-          "title": "Collaboration",
-          "description": "We believe in the power of teamwork"
-        }
-      },
-      "team": {
-        "title": "Our team",
-        "description": "A passionate and experienced team, dedicated to your success."
-      }
-    },
     "privacy": {
       "title": "Privacy policy",
       "description": "How we protect your data"
@@ -177,18 +124,122 @@
     "title": "Dashboard",
     "welcome": {
       "title": "Welcome!",
-      "description": "Here is an overview of your statistics and recent activities."
+      "description": "Here is an overview of your school."
     },
     "stats": {
-      "users": "Users",
-      "revenue": "Revenue",
-      "orders": "Orders"
+      "families": "Families",
+      "students": "Students",
+      "enrollments": "Enrollments",
+      "pendingPayments": "Pending payments"
     },
     "sidebar": {
       "dashboard": "Dashboard",
+      "families": "Families",
+      "students": "Students",
+      "periods": "Periods",
+      "levels": "Levels",
+      "classes": "Classes",
+      "enrollments": "Enrollments",
+      "payments": "Payments",
+      "plans": "Pricing plans",
+      "config": "Configuration",
       "profile": "Profile",
       "settings": "Settings",
       "logout": "Logout"
+    },
+    "pages": {
+      "families": {
+        "title": "Families",
+        "name": "Name",
+        "emergencyContact": "Emergency Contact",
+        "students": "Students",
+        "enrollments": "Enrollments",
+        "members": "Members",
+        "relation": "Relation",
+        "authorizedPickup": "Authorized Pickup",
+        "phone": "Phone",
+        "channels": "Channels",
+        "noFamilies": "No families registered"
+      },
+      "students": {
+        "title": "Students",
+        "name": "Name",
+        "birthday": "Birthday",
+        "family": "Family",
+        "class": "Class",
+        "birthplace": "Birthplace",
+        "allergies": "Allergies",
+        "healthNotes": "Health Notes",
+        "languages": "Languages at Home",
+        "snackAuthorization": "Snack Authorization",
+        "noStudents": "No students registered"
+      },
+      "periods": {
+        "title": "Periods",
+        "name": "Name",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "classes": "Classes",
+        "noPeriods": "No periods registered"
+      },
+      "levels": {
+        "title": "Levels",
+        "name": "Name",
+        "nextLevel": "Next Level",
+        "classes": "Classes",
+        "none": "None",
+        "noLevels": "No levels registered"
+      },
+      "classes": {
+        "title": "Classes",
+        "name": "Name",
+        "level": "Level",
+        "period": "Period",
+        "capacity": "Capacity",
+        "enrolled": "Enrolled",
+        "noClasses": "No classes registered"
+      },
+      "enrollments": {
+        "title": "Enrollments",
+        "student": "Student",
+        "plan": "Plan",
+        "status": "Status",
+        "totalAmount": "Total Amount",
+        "discount": "Discount",
+        "class": "Class",
+        "registeredAt": "Registration Date",
+        "classAssignments": "Class Assignments",
+        "from": "From",
+        "to": "To",
+        "current": "Current",
+        "noEnrollments": "No enrollments registered"
+      },
+      "payments": {
+        "title": "Payments",
+        "family": "Family",
+        "student": "Student",
+        "amount": "Amount",
+        "method": "Method",
+        "reference": "Reference",
+        "paidAt": "Payment Date",
+        "cashedAt": "Cash Date",
+        "pending": "Pending",
+        "noPayments": "No payments registered"
+      },
+      "plans": {
+        "title": "Plans",
+        "name": "Name",
+        "amount": "Amount",
+        "enrollments": "Enrollments",
+        "noPlans": "No plans registered"
+      },
+      "config": {
+        "title": "Configuration",
+        "name": "Name",
+        "value": "Value",
+        "type": "Type",
+        "noConfig": "No configuration registered"
+      }
     }
   },
   "settings": {
@@ -233,7 +284,14 @@
       "empty": "No recent activity"
     }
   },
+  "status": {
+    "PENDING": "Pending",
+    "ACTIVE": "Active",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
   "errors": {
+    "unauthorized": "You must be logged in to perform this action",
     "validationError": "The submitted data is invalid",
     "notFound": "Resource not found",
     "circularReference": "Circular reference detected between levels",

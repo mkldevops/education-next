@@ -13,7 +13,7 @@ export const studentGateway = {
     allergies?: string
   }) => db.student.create({ data }),
 
-  update: (id: string, data: Record<string, unknown>) =>
+  update: (id: string, data: Prisma.StudentUpdateInput) =>
     db.student.update({
       where: { id },
       data,
@@ -33,6 +33,7 @@ export const studentGateway = {
 
   list: () =>
     db.student.findMany({
+      where: { isActive: true },
       include: { person: true },
       orderBy: { createdAt: 'desc' },
     }),
