@@ -23,7 +23,7 @@ export async function recordPayment(input: Input) {
       enrollmentId: e.id,
       totalAmount: Number(e.totalAmount),
       discount: Number(e.discount),
-      remainingBalance: Number(e.totalAmount) - totalPaid,
+      remainingBalance: Number(e.totalAmount) - Number(e.discount) - totalPaid,
     }
   })
 

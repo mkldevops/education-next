@@ -146,7 +146,9 @@
       "config": "Configuration",
       "profile": "Profile",
       "settings": "Settings",
-      "logout": "Logout"
+      "logout": "Logout",
+      "sectionGestion": "Management",
+      "sectionConfig": "Configuration"
     },
     "pages": {
       "families": {
@@ -263,6 +265,81 @@
         "value": "Value",
         "type": "Type",
         "noConfig": "No configuration registered"
+      },
+      "familyDetails": {
+        "title": "Family Details",
+        "subtitle": "Family Details",
+        "emergencyContact": "Emergency Contact",
+        "authorizedPickup": "Authorized Pickup",
+        "familyMembers": "Family Members",
+        "table": {
+          "name": "Name",
+          "relationType": "Relation Type",
+          "email": "Email",
+          "phone": "Phone"
+        },
+        "students": "Students",
+        "studentTable": {
+          "name": "Name",
+          "birthday": "Birthday",
+          "birthplace": "Birthplace",
+          "allergies": "Allergies"
+        },
+        "enrollments": "Enrollments",
+        "enrollmentTable": {
+          "student": "Student",
+          "plan": "Plan",
+          "status": "Status",
+          "total": "Total"
+        }
+      },
+      "studentDetails": {
+        "title": "Student Details",
+        "subtitle": "Student Details",
+        "birthday": "Birthday",
+        "birthplace": "Birthplace",
+        "email": "Email",
+        "address": "Address",
+        "allergies": "Allergies",
+        "languagesAtHome": "Languages at Home",
+        "healthNotes": "Health Notes",
+        "family": "Family",
+        "enrollments": "Enrollments",
+        "enrollmentTable": {
+          "plan": "Plan",
+          "status": "Status",
+          "class": "Class",
+          "total": "Total",
+          "registered": "Registered"
+        }
+      },
+      "enrollmentDetails": {
+        "title": "Enrollment Details",
+        "subtitle": "Enrollment Details",
+        "plan": "Plan",
+        "status": "Status",
+        "family": "Family",
+        "registered": "Registered",
+        "pricing": "Pricing",
+        "totalAmount": "Total Amount",
+        "discount": "Discount",
+        "totalPaid": "Total Paid",
+        "remaining": "Remaining",
+        "classAssignments": "Class Assignments",
+        "classAssignmentTable": {
+          "class": "Class",
+          "level": "Level",
+          "period": "Period",
+          "startDate": "Start Date"
+        },
+        "payments": "Payments",
+        "paymentTable": {
+          "amount": "Amount",
+          "method": "Method",
+          "reference": "Reference",
+          "paidAt": "Paid At",
+          "cashedAt": "Cashed At"
+        }
       }
     }
   },

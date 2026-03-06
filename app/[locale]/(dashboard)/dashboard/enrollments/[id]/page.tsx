@@ -1,7 +1,7 @@
 import { Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { setRequestLocale } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
@@ -29,6 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function EnrollmentDetailPage({ params }: Props) {
   const { locale, id } = await params
   setRequestLocale(locale)
+  const t = await getTranslations('dashboard.pages.enrollmentDetails')
 
   const { roles, familyId } = await getSessionWithRole()
 
@@ -88,17 +89,17 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         <h1 className="text-2xl font-bold text-gray-900">
           {enrollment.student.person.name} {enrollment.student.person.lastname}
         </h1>
-        <p className="mt-1 text-sm text-gray-600">Enrollment Details</p>
+        <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
       </div>
 
       <Card className="p-6 space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Plan</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('plan')}</h3>
             <p className="mt-1 text-sm text-gray-900">{enrollment.plan.name}</p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Status</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('status')}</h3>
             <div className="mt-1">
               <StatusBadge status={enrollment.status} />
             </div>
@@ -107,11 +108,11 @@ export default async function EnrollmentDetailPage({ params }: Props) {
             </div>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Family</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('family')}</h3>
             <p className="mt-1 text-sm text-gray-900">{familyName}</p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Registered</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('registered')}</h3>
             <p className="mt-1 text-sm text-gray-900">
               {new Date(enrollment.registeredAt).toLocaleDateString(locale)}
             </p>
@@ -120,26 +121,26 @@ export default async function EnrollmentDetailPage({ params }: Props) {
       </Card>
 
       <Card className="p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Pricing</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('pricing')}</h2>
         <div className="space-y-3 border-t pt-4">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Total Amount</span>
+            <span className="text-sm text-gray-600">{t('totalAmount')}</span>
             <span className="text-sm font-medium text-gray-900">
               €{formatAmount(enrollment.totalAmount)}
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Discount</span>
+            <span className="text-sm text-gray-600">{t('discount')}</span>
             <span className="text-sm font-medium text-gray-900">
               -€{formatAmount(enrollment.discount)}
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Total Paid</span>
+            <span className="text-sm text-gray-600">{t('totalPaid')}</span>
             <span className="text-sm font-medium text-gray-900">€{formatAmount(totalPaid)}</span>
           </div>
           <div className="border-t pt-3 flex justify-between items-center">
-            <span className="font-medium text-gray-900">Remaining</span>
+            <span className="font-medium text-gray-900">{t('remaining')}</span>
             <span className="font-medium text-gray-900">
               €{formatAmount(Math.max(0, remainingAmount))}
             </span>
@@ -149,16 +150,22 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
       {enrollment.classAssignments.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Class Assignments</h2>
-          <div className="rounded-lg border">
-            <table className="w-full">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('classAssignments')}</h2>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Class</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Level</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Period</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Start Date
+                    {t('classAssignmentTable.class')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('classAssignmentTable.level')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('classAssignmentTable.period')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('classAssignmentTable.startDate')}
                   </th>
                 </tr>
               </thead>
@@ -185,19 +192,25 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
       {enrollment.payments.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Payments</h2>
-          <div className="rounded-lg border">
-            <table className="w-full">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('payments')}</h2>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Amount</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Method</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Reference
+                    {t('paymentTable.amount')}
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Paid At</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Cashed At
+                    {t('paymentTable.method')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('paymentTable.reference')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('paymentTable.paidAt')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('paymentTable.cashedAt')}
                   </th>
                 </tr>
               </thead>

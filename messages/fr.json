@@ -146,7 +146,9 @@
       "config": "Configuration",
       "profile": "Profil",
       "settings": "Paramètres",
-      "logout": "Déconnexion"
+      "logout": "Déconnexion",
+      "sectionGestion": "Gestion",
+      "sectionConfig": "Configuration"
     },
     "pages": {
       "families": {
@@ -263,6 +265,81 @@
         "value": "Valeur",
         "type": "Type",
         "noConfig": "Aucune configuration enregistrée"
+      },
+      "familyDetails": {
+        "title": "Détails de la famille",
+        "subtitle": "Détails de la famille",
+        "emergencyContact": "Contact d'urgence",
+        "authorizedPickup": "Personnes autorisées à la récupération",
+        "familyMembers": "Membres de la famille",
+        "table": {
+          "name": "Nom",
+          "relationType": "Type de relation",
+          "email": "Email",
+          "phone": "Téléphone"
+        },
+        "students": "Élèves",
+        "studentTable": {
+          "name": "Nom",
+          "birthday": "Date de naissance",
+          "birthplace": "Lieu de naissance",
+          "allergies": "Allergies"
+        },
+        "enrollments": "Inscriptions",
+        "enrollmentTable": {
+          "student": "Élève",
+          "plan": "Plan",
+          "status": "Statut",
+          "total": "Total"
+        }
+      },
+      "studentDetails": {
+        "title": "Détails de l'élève",
+        "subtitle": "Détails de l'élève",
+        "birthday": "Date de naissance",
+        "birthplace": "Lieu de naissance",
+        "email": "Email",
+        "address": "Adresse",
+        "allergies": "Allergies",
+        "languagesAtHome": "Langues parlées à la maison",
+        "healthNotes": "Notes de santé",
+        "family": "Famille",
+        "enrollments": "Inscriptions",
+        "enrollmentTable": {
+          "plan": "Plan",
+          "status": "Statut",
+          "class": "Classe",
+          "total": "Total",
+          "registered": "Date d'inscription"
+        }
+      },
+      "enrollmentDetails": {
+        "title": "Détails de l'inscription",
+        "subtitle": "Détails de l'inscription",
+        "plan": "Plan",
+        "status": "Statut",
+        "family": "Famille",
+        "registered": "Date d'inscription",
+        "pricing": "Tarification",
+        "totalAmount": "Montant total",
+        "discount": "Réduction",
+        "totalPaid": "Total payé",
+        "remaining": "Restant dû",
+        "classAssignments": "Affectations de classe",
+        "classAssignmentTable": {
+          "class": "Classe",
+          "level": "Niveau",
+          "period": "Période",
+          "startDate": "Date de début"
+        },
+        "payments": "Paiements",
+        "paymentTable": {
+          "amount": "Montant",
+          "method": "Méthode",
+          "reference": "Référence",
+          "paidAt": "Date de paiement",
+          "cashedAt": "Date d'encaissement"
+        }
       }
     }
   },

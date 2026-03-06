@@ -1,7 +1,7 @@
 import { Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { setRequestLocale } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
@@ -26,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function StudentDetailPage({ params }: Props) {
   const { locale, id } = await params
   setRequestLocale(locale)
+  const t = await getTranslations('dashboard.pages.studentDetails')
 
   const { roles, familyId } = await getSessionWithRole()
 
@@ -80,44 +81,44 @@ export default async function StudentDetailPage({ params }: Props) {
         <h1 className="text-2xl font-bold text-gray-900">
           {student.person.name} {student.person.lastname}
         </h1>
-        <p className="mt-1 text-sm text-gray-600">Student Details</p>
+        <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
       </div>
 
       <Card className="p-6 space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Birthday</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('birthday')}</h3>
             <p className="mt-1 text-sm text-gray-900">
               {new Date(student.birthday).toLocaleDateString(locale)}
             </p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Birthplace</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('birthplace')}</h3>
             <p className="mt-1 text-sm text-gray-900">{student.birthplace || '-'}</p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Email</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('email')}</h3>
             <p className="mt-1 text-sm text-gray-900">{student.person.email || '-'}</p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Address</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('address')}</h3>
             <p className="mt-1 text-sm text-gray-900">{student.person.address || '-'}</p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Allergies</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('allergies')}</h3>
             <p className="mt-1 text-sm text-gray-900">{student.allergies || '-'}</p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Languages at Home</h3>
+            <h3 className="text-sm font-medium text-gray-500">{t('languagesAtHome')}</h3>
             <p className="mt-1 text-sm text-gray-900">{languagesAtHome}</p>
           </div>
         </div>
         <div>
-          <h3 className="text-sm font-medium text-gray-500">Health Notes</h3>
+          <h3 className="text-sm font-medium text-gray-500">{t('healthNotes')}</h3>
           <p className="mt-1 text-sm text-gray-900">{student.healthNotes || '-'}</p>
         </div>
         <div>
-          <h3 className="text-sm font-medium text-gray-500">Family</h3>
+          <h3 className="text-sm font-medium text-gray-500">{t('family')}</h3>
           <p className="mt-1 text-sm text-gray-900">
             {student.person.families.length > 0 ? student.person.families[0].family.name : '-'}
           </p>
@@ -126,17 +127,25 @@ export default async function StudentDetailPage({ params }: Props) {
 
       {student.enrollments.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Enrollments</h2>
-          <div className="rounded-lg border">
-            <table className="w-full">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('enrollments')}</h2>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Plan</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Class</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Total</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Registered
+                    {t('enrollmentTable.plan')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('enrollmentTable.status')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('enrollmentTable.class')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('enrollmentTable.total')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('enrollmentTable.registered')}
                   </th>
                 </tr>
               </thead>

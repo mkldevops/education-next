@@ -1,7 +1,7 @@
 import { Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { setRequestLocale } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
@@ -12,17 +12,19 @@ type Props = {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params
+  const { id, locale } = await params
   const family = await db.family.findUnique({ where: { id } })
+  const t = await getTranslations({ locale, namespace: 'dashboard.pages.familyDetails' })
 
   return {
-    title: family?.name || 'Family',
+    title: family?.name || t('title'),
   }
 }
 
 export default async function FamilyDetailPage({ params }: Props) {
   const { locale, id } = await params
   setRequestLocale(locale)
+  const t = await getTranslations('dashboard.pages.familyDetails')
 
   const { roles, familyId } = await getSessionWithRole()
 
@@ -72,32 +74,38 @@ export default async function FamilyDetailPage({ params }: Props) {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{family.name}</h1>
-        <p className="mt-1 text-sm text-gray-600">Family Details</p>
+        <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
       </div>
 
       <Card className="p-6 space-y-4">
         <div>
-          <h3 className="text-sm font-medium text-gray-500">Emergency Contact</h3>
+          <h3 className="text-sm font-medium text-gray-500">{t('emergencyContact')}</h3>
           <p className="mt-1 text-sm text-gray-900">{family.emergencyContact || '-'}</p>
         </div>
         <div>
-          <h3 className="text-sm font-medium text-gray-500">Authorized Pickup</h3>
+          <h3 className="text-sm font-medium text-gray-500">{t('authorizedPickup')}</h3>
           <p className="mt-1 text-sm text-gray-900">{family.authorizedPickup || '-'}</p>
         </div>
       </Card>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Family Members</h2>
-        <div className="rounded-lg border">
-          <table className="w-full">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('familyMembers')}</h2>
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Name</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  Relation Type
+                  {t('table.name')}
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Email</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Phone</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                  {t('table.relationType')}
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                  {t('table.email')}
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                  {t('table.phone')}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -120,20 +128,22 @@ export default async function FamilyDetailPage({ params }: Props) {
 
       {students.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Students</h2>
-          <div className="rounded-lg border">
-            <table className="w-full">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('students')}</h2>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Name</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Birthday
+                    {t('studentTable.name')}
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Birthplace
+                    {t('studentTable.birthday')}
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Allergies
+                    {t('studentTable.birthplace')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('studentTable.allergies')}
                   </th>
                 </tr>
               </thead>
@@ -162,15 +172,23 @@ export default async function FamilyDetailPage({ params }: Props) {
 
       {students.some((s) => (s.person.student?.enrollments.length ?? 0) > 0) && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Enrollments</h2>
-          <div className="rounded-lg border">
-            <table className="w-full">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('enrollments')}</h2>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Student</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Plan</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Total</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('enrollmentTable.student')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('enrollmentTable.plan')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('enrollmentTable.status')}
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    {t('enrollmentTable.total')}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y">
