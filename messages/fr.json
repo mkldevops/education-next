@@ -94,6 +94,7 @@
       "forgotPassword": "Mot de passe oublié ?",
       "noAccount": "Pas encore de compte ?",
       "register": "Créer un compte",
+      "contactAdmin": "Veuillez contacter un administrateur pour créer un compte.",
       "error": "Email ou mot de passe incorrect"
     },
     "register": {

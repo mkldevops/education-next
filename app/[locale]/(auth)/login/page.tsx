@@ -33,10 +33,7 @@ export default async function LoginPage({ params }: Props) {
         <LoginForm />
 
         <p className="text-center text-sm text-gray-600">
-          {t('noAccount')}{' '}
-          <Link href="/register" className="font-medium text-primary hover:text-primary-hover">
-            {t('register')}
-          </Link>
+          {t('contactAdmin')}
         </p>
       </div>
     </div>

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { RegisterForm } from '@/features/auth'
-import { Link } from '@/i18n/routing'
+import { Link, redirect } from '@/i18n/routing'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/lib/db'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -20,6 +23,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RegisterPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
+
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) redirect({ href: '/login', locale })
+
+  const dbUser = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { roles: true },
+  })
+  const rolesRaw = dbUser?.roles
+  const roles: string[] = Array.isArray(rolesRaw)
+    ? rolesRaw
+    : typeof rolesRaw === 'string'
+      ? JSON.parse(rolesRaw)
+      : []
+  if (!roles.includes('admin')) redirect({ href: '/dashboard', locale })
+
   const t = await getTranslations('auth.register')
 
   return (
