@@ -63,7 +63,7 @@ export default async function StudentsPage({ params }: Props) {
       {students.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-gray-500">{t('noStudents')}</div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b bg-gray-50">
@@ -96,7 +96,7 @@ export default async function StudentsPage({ params }: Props) {
                     <td className="px-4 py-3 text-sm">
                       <Link
                         href={`/dashboard/students/${student.id}`}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-primary hover:text-primary-hover font-medium"
                       >
                         {student.person.name} {student.person.lastname}
                       </Link>

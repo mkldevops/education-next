@@ -21,8 +21,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: enrollment
-      ? `${enrollment.student.person.name} ${enrollment.student.person.lastname} - Enrollment`
-      : 'Enrollment',
+      ? `${enrollment.student.person.name} ${enrollment.student.person.lastname}`
+      : 'Inscription',
   }
 }
 
@@ -151,7 +151,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
       {enrollment.classAssignments.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('classAssignments')}</h2>
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b bg-gray-50">
@@ -193,7 +193,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
       {enrollment.payments.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('payments')}</h2>
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b bg-gray-50">

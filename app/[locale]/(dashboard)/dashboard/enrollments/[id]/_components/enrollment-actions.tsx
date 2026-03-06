@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@peaklab/ui'
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { useRouter } from '@/i18n/routing'
 import {
@@ -16,6 +17,7 @@ type Props = {
 
 export function EnrollmentActions({ enrollmentId, status }: Props) {
   const router = useRouter()
+  const t = useTranslations('dashboard.pages.enrollmentDetails.actions')
   const [loading, setLoading] = useState(false)
 
   const handleAction = async (action: (id: string) => Promise<string>) => {
@@ -36,7 +38,7 @@ export function EnrollmentActions({ enrollmentId, status }: Props) {
             disabled={loading}
             onClick={() => handleAction(activateEnrollmentAction)}
           >
-            Activer
+            {t('activate')}
           </Button>
           <Button
             size="sm"
@@ -44,7 +46,7 @@ export function EnrollmentActions({ enrollmentId, status }: Props) {
             disabled={loading}
             onClick={() => handleAction(cancelEnrollmentAction)}
           >
-            Annuler
+            {t('cancel')}
           </Button>
         </>
       )}
@@ -55,7 +57,7 @@ export function EnrollmentActions({ enrollmentId, status }: Props) {
             disabled={loading}
             onClick={() => handleAction(completeEnrollmentAction)}
           >
-            Terminer
+            {t('complete')}
           </Button>
           <Button
             size="sm"
@@ -63,7 +65,7 @@ export function EnrollmentActions({ enrollmentId, status }: Props) {
             disabled={loading}
             onClick={() => handleAction(cancelEnrollmentAction)}
           >
-            Annuler
+            {t('cancel')}
           </Button>
         </>
       )}
