@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/**/*.{ts,tsx}",
+    "src/features/**/index.ts",
+    "src/i18n/*.ts",
+    "proxy.ts",
+    "src/lib/auth.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["src/components/ui/**"],
+  "ignoreDependencies": ["@tailwindcss/postcss", "tailwindcss"]
+}

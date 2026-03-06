@@ -1,0 +1,332 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
+enum RelationType {
+  PARENT
+  TUTOR
+  GRANDPARENT
+  SIBLING
+  OTHER
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  CHECK
+  STRIPE
+}
+
+enum ConfigValueType {
+  TEXT
+  NUMBER
+  BOOLEAN
+}
+
+// ─── Better Auth Models ─────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  roles         Json      @default("[\"admin\"]")
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions        Session[]
+  accounts        Account[]
+  families        UserFamily[]
+  createdFamilies Family[]   @relation("createdBy")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+}
+
+// ─── Domain Models ──────────────────────────────────────────────────────────
+
+model Family {
+  id               String   @id @default(uuid())
+  name             String   @db.VarChar(50)
+  emergencyContact String?  @db.VarChar(250)
+  authorizedPickup String?  @db.Text
+  createdById      String
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  createdBy User           @relation("createdBy", fields: [createdById], references: [id])
+  users     UserFamily[]
+  persons   FamilyPerson[]
+  payments  Payment[]
+
+  @@index([createdById])
+}
+
+model UserFamily {
+  userId   String
+  familyId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@id([userId, familyId])
+  @@index([familyId])
+}
+
+model Person {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(250)
+  lastname  String   @db.VarChar(250)
+  sex       Sex
+  email     String?  @db.VarChar(250)
+  address   String?  @db.VarChar(250)
+  postCode  String?  @db.VarChar(10)
+  city      String?  @db.VarChar(250)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  phoneNumbers PhoneNumber[]
+  configs      Config[]
+  families     FamilyPerson[]
+  student      Student?
+}
+
+model FamilyPerson {
+  familyId     String
+  personId     String
+  relationType RelationType
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([familyId, personId])
+  @@index([personId])
+}
+
+model Student {
+  id                 String   @id @default(uuid())
+  personId           String   @unique
+  birthday           DateTime
+  birthplace         String?  @db.VarChar(250)
+  previousSchool     String?  @db.VarChar(250)
+  healthNotes        String?  @db.Text
+  languagesAtHome    Json     @default("[]")
+  snackAuthorization Boolean  @default(false)
+  allergies          String?  @db.VarChar(250)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  person      Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+}
+
+model PhoneNumber {
+  id          String   @id @default(uuid())
+  personId    String
+  phoneNumber String   @db.VarChar(20)
+  channels    Json     @default("[]")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+}
+
+model Config {
+  id        String          @id @default(uuid())
+  name      String          @db.VarChar(250)
+  value     String          @db.Text
+  valueType ConfigValueType
+  personId  String?
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  person Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+
+  @@index([personId])
+  @@index([name])
+}
+
+model Level {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(250)
+  nextLevelId String?  @unique
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  nextLevel     Level?        @relation("levelProgression", fields: [nextLevelId], references: [id], onDelete: SetNull)
+  previousLevel Level?        @relation("levelProgression")
+  classPeriods  ClassPeriod[]
+}
+
+model Period {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(50)
+  startAt   DateTime
+  endAt     DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classPeriods ClassPeriod[]
+}
+
+model ClassPeriod {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(250)
+  capacity  Int
+  levelId   String
+  periodId  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  level            Level             @relation(fields: [levelId], references: [id])
+  period           Period            @relation(fields: [periodId], references: [id])
+  classAssignments ClassAssignment[]
+
+  @@index([levelId])
+  @@index([periodId])
+}
+
+model Enrollment {
+  id            String           @id @default(uuid())
+  studentId     String
+  planId        String
+  status        EnrollmentStatus @default(PENDING)
+  totalAmount   Decimal          @db.Decimal(10, 2)
+  discount      Decimal          @default(0) @db.Decimal(10, 2)
+  registeredAt  DateTime         @default(now())
+  canLeaveAlone Boolean          @default(false)
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  student          Student           @relation(fields: [studentId], references: [id])
+  plan             Plan              @relation(fields: [planId], references: [id])
+  classAssignments ClassAssignment[]
+  payments         Payment[]
+
+  @@index([studentId])
+  @@index([planId])
+  @@index([status])
+}
+
+model ClassAssignment {
+  id            String    @id @default(uuid())
+  enrollmentId  String
+  classPeriodId String
+  startAt       DateTime  @default(now())
+  endAt         DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  enrollment  Enrollment  @relation(fields: [enrollmentId], references: [id])
+  classPeriod ClassPeriod @relation(fields: [classPeriodId], references: [id])
+
+  @@index([enrollmentId])
+  @@index([classPeriodId])
+}
+
+model Payment {
+  id           String        @id @default(uuid())
+  familyId     String
+  enrollmentId String
+  amount       Decimal       @db.Decimal(10, 2)
+  method       PaymentMethod
+  reference    String?       @db.VarChar(250)
+  paidAt       DateTime
+  cashedAt     DateTime?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  family     Family     @relation(fields: [familyId], references: [id])
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@index([familyId])
+  @@index([enrollmentId])
+}
+
+model Plan {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(50)
+  amount    Decimal  @db.Decimal(10, 2)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollments Enrollment[]
+}

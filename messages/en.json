@@ -1,0 +1,252 @@
+{
+  "company": {
+    "name": "PeakLab",
+    "legalName": "PeakLab SAS",
+    "address": "123 Avenue de l'Innovation",
+    "city": "75001 Paris, France",
+    "siret": "XXX XXX XXX XXXXX",
+    "director": "[Nom du directeur]",
+    "host": "Vercel Inc.",
+    "hostAddress": "340 S Lemon Ave #4133, Walnut, CA 91789, USA"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "noResults": "No results"
+  },
+  "metadata": {
+    "title": "PeakLab",
+    "description": "Your PeakLab application"
+  },
+  "navbar": {
+    "home": "Home",
+    "about": "About",
+    "blog": "Blog",
+    "glossary": "Glossary",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "logout": "Logout",
+    "cta": "Contact us"
+  },
+  "footer": {
+    "tagline": "We create exceptional digital experiences to grow your business.",
+    "company": "Company",
+    "about": "About",
+    "blog": "Blog",
+    "contact": "Contact",
+    "resources": "Resources",
+    "glossary": "Glossary",
+    "social": "Social",
+    "legal": "Legal notices",
+    "privacy": "Privacy policy",
+    "copyright": "All rights reserved."
+  },
+  "hero": {
+    "tagline": "Your trusted digital partner",
+    "title": "Transform your vision into digital reality",
+    "subtitle": "We design and develop modern web applications that propel your business to success.",
+    "cta": "Start a project",
+    "secondary": "Learn more",
+    "trustText": "Trusted by 50+ companies"
+  },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "We are here to help you",
+    "form": {
+      "name": "Name",
+      "email": "Email",
+      "subject": "Subject",
+      "message": "Message",
+      "submit": "Send",
+      "success": "Your message has been sent successfully. We will get back to you as soon as possible."
+    }
+  },
+  "pages": {
+    "about": {
+      "title": "About",
+      "description": "Learn more about PeakLab",
+      "intro": "PeakLab is an innovative company specializing in custom digital solutions development.",
+      "mission": {
+        "title": "Our mission",
+        "description": "Supporting businesses in their digital transformation by providing them with powerful and intuitive tools."
+      },
+      "values": {
+        "title": "Our values",
+        "innovation": {
+          "title": "Innovation",
+          "description": "We constantly push the boundaries of technology"
+        },
+        "quality": {
+          "title": "Quality",
+          "description": "We are committed to delivering excellent products"
+        },
+        "collaboration": {
+          "title": "Collaboration",
+          "description": "We believe in the power of teamwork"
+        }
+      },
+      "team": {
+        "title": "Our team",
+        "description": "A passionate and experienced team, dedicated to your success."
+      }
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "description": "How we protect your data"
+    },
+    "legal": {
+      "title": "Legal notices",
+      "description": "Legal information about our company",
+      "sections": {
+        "publisher": {
+          "title": "1. Website publisher",
+          "siret": "SIRET"
+        },
+        "director": {
+          "title": "2. Publication director",
+          "content": "The publication director is {name}."
+        },
+        "host": {
+          "title": "3. Host",
+          "intro": "This site is hosted by:"
+        },
+        "intellectual": {
+          "title": "4. Intellectual property",
+          "content": "All content on this site (texts, images, videos) is protected by copyright. Any reproduction, even partial, is prohibited without prior authorization."
+        },
+        "data": {
+          "title": "5. Personal data",
+          "content": "For more information on how we manage your personal data, please consult our privacy policy."
+        },
+        "contact": {
+          "title": "6. Contact",
+          "content": "For any questions regarding these legal notices, you can contact us via our contact form."
+        }
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Sign in to your account",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "register": "Create account",
+      "error": "Invalid email or password"
+    },
+    "register": {
+      "title": "Create account",
+      "subtitle": "Join us now",
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "submit": "Sign up",
+      "hasAccount": "Already have an account?",
+      "login": "Sign in",
+      "error": "Registration error",
+      "passwordMismatch": "Passwords do not match"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email to reset your password",
+      "email": "Email",
+      "submit": "Send link",
+      "successTitle": "Email sent",
+      "successMessage": "If an account exists with this email, you will receive a reset email.",
+      "backToLogin": "Back to login",
+      "error": "Error sending email"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": {
+      "title": "Welcome!",
+      "description": "Here is an overview of your statistics and recent activities."
+    },
+    "stats": {
+      "users": "Users",
+      "revenue": "Revenue",
+      "orders": "Orders"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "profile": "Profile",
+      "settings": "Settings",
+      "logout": "Logout"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": {
+      "title": "Profile",
+      "description": "Manage your personal information",
+      "name": "Name",
+      "email": "Email",
+      "emailHint": "Email cannot be changed",
+      "save": "Save",
+      "success": "Profile updated successfully"
+    },
+    "security": {
+      "title": "Security",
+      "description": "Manage your password and account security",
+      "changePassword": "Change password"
+    },
+    "danger": {
+      "title": "Danger zone",
+      "description": "Irreversible actions on your account",
+      "deleteAccount": "Delete my account",
+      "confirmMessage": "Are you sure you want to delete your account? This action is irreversible.",
+      "confirmDelete": "Yes, delete",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "unauthorized": "You must be logged in to perform this action",
+      "profileNotFound": "Profile not found",
+      "nameRequired": "Name is required"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "anonymous": "User",
+    "stats": {
+      "memberSince": "Member since",
+      "lastUpdated": "Last updated"
+    },
+    "activity": {
+      "title": "Recent activity",
+      "empty": "No recent activity"
+    }
+  },
+  "errors": {
+    "validationError": "The submitted data is invalid",
+    "notFound": "Resource not found",
+    "circularReference": "Circular reference detected between levels",
+    "duplicateEnrollment": "This student is already enrolled in this plan",
+    "hasActiveEnrollments": "Cannot deactivate: active enrollments exist",
+    "invalidConfigValue": "Value does not match the expected configuration type",
+    "invalidDates": "End date must be after start date",
+    "invalidStatusTransition": "This status transition is not allowed",
+    "overlappingPeriod": "This period overlaps with an existing period",
+    "classFull": "The class has reached its maximum capacity",
+    "capacityBelowEnrolled": "Capacity cannot be lower than the number of enrolled students",
+    "overpayment": "Amount exceeds the remaining balance due",
+    "noActiveEnrollments": "No active enrollments for this family",
+    "refundExceedsPaid": "Refund exceeds the amount already paid"
+  }
+}

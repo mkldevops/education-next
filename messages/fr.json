@@ -1,0 +1,252 @@
+{
+  "company": {
+    "name": "PeakLab",
+    "legalName": "PeakLab SAS",
+    "address": "123 Avenue de l'Innovation",
+    "city": "75001 Paris, France",
+    "siret": "XXX XXX XXX XXXXX",
+    "director": "[Nom du directeur]",
+    "host": "Vercel Inc.",
+    "hostAddress": "340 S Lemon Ave #4133, Walnut, CA 91789, USA"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "submit": "Envoyer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat"
+  },
+  "metadata": {
+    "title": "PeakLab",
+    "description": "Votre application PeakLab"
+  },
+  "navbar": {
+    "home": "Accueil",
+    "about": "À propos",
+    "blog": "Blog",
+    "glossary": "Glossaire",
+    "contact": "Contact",
+    "dashboard": "Tableau de bord",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "cta": "Nous contacter"
+  },
+  "footer": {
+    "tagline": "Nous créons des expériences digitales exceptionnelles pour faire grandir votre entreprise.",
+    "company": "Entreprise",
+    "about": "À propos",
+    "blog": "Blog",
+    "contact": "Contact",
+    "resources": "Ressources",
+    "glossary": "Glossaire",
+    "social": "Réseaux sociaux",
+    "legal": "Mentions légales",
+    "privacy": "Politique de confidentialité",
+    "copyright": "Tous droits réservés."
+  },
+  "hero": {
+    "tagline": "Votre partenaire digital de confiance",
+    "title": "Transformez votre vision en réalité digitale",
+    "subtitle": "Nous concevons et développons des applications web modernes qui propulsent votre entreprise vers le succès.",
+    "cta": "Démarrer un projet",
+    "secondary": "En savoir plus",
+    "trustText": "Reconnu par plus de 50 entreprises"
+  },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "Nous sommes là pour vous aider",
+    "form": {
+      "name": "Nom",
+      "email": "Email",
+      "subject": "Sujet",
+      "message": "Message",
+      "submit": "Envoyer",
+      "success": "Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais."
+    }
+  },
+  "pages": {
+    "about": {
+      "title": "À propos",
+      "description": "En savoir plus sur PeakLab",
+      "intro": "PeakLab est une entreprise innovante spécialisée dans le développement de solutions numériques sur mesure.",
+      "mission": {
+        "title": "Notre mission",
+        "description": "Accompagner les entreprises dans leur transformation digitale en leur fournissant des outils performants et intuitifs."
+      },
+      "values": {
+        "title": "Nos valeurs",
+        "innovation": {
+          "title": "Innovation",
+          "description": "Nous repoussons constamment les limites de la technologie"
+        },
+        "quality": {
+          "title": "Qualité",
+          "description": "Nous nous engageons à fournir des produits d'excellence"
+        },
+        "collaboration": {
+          "title": "Collaboration",
+          "description": "Nous croyons en la force du travail d'équipe"
+        }
+      },
+      "team": {
+        "title": "Notre équipe",
+        "description": "Une équipe passionnée et expérimentée, dédiée à votre succès."
+      }
+    },
+    "privacy": {
+      "title": "Politique de confidentialité",
+      "description": "Comment nous protégeons vos données"
+    },
+    "legal": {
+      "title": "Mentions légales",
+      "description": "Informations légales sur notre entreprise",
+      "sections": {
+        "publisher": {
+          "title": "1. Éditeur du site",
+          "siret": "SIRET"
+        },
+        "director": {
+          "title": "2. Directeur de la publication",
+          "content": "Le directeur de la publication est {name}."
+        },
+        "host": {
+          "title": "3. Hébergeur",
+          "intro": "Ce site est hébergé par :"
+        },
+        "intellectual": {
+          "title": "4. Propriété intellectuelle",
+          "content": "L'ensemble du contenu de ce site (textes, images, vidéos) est protégé par le droit d'auteur. Toute reproduction, même partielle, est interdite sans autorisation préalable."
+        },
+        "data": {
+          "title": "5. Données personnelles",
+          "content": "Pour plus d'informations sur la gestion de vos données personnelles, veuillez consulter notre politique de confidentialité."
+        },
+        "contact": {
+          "title": "6. Contact",
+          "content": "Pour toute question concernant ces mentions légales, vous pouvez nous contacter via notre formulaire de contact."
+        }
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Connectez-vous à votre compte",
+      "email": "Email",
+      "password": "Mot de passe",
+      "submit": "Se connecter",
+      "forgotPassword": "Mot de passe oublié ?",
+      "noAccount": "Pas encore de compte ?",
+      "register": "Créer un compte",
+      "error": "Email ou mot de passe incorrect"
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Rejoignez-nous dès maintenant",
+      "name": "Nom",
+      "email": "Email",
+      "password": "Mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "submit": "S'inscrire",
+      "hasAccount": "Déjà un compte ?",
+      "login": "Se connecter",
+      "error": "Erreur lors de l'inscription",
+      "passwordMismatch": "Les mots de passe ne correspondent pas"
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Entrez votre email pour réinitialiser votre mot de passe",
+      "email": "Email",
+      "submit": "Envoyer le lien",
+      "successTitle": "Email envoyé",
+      "successMessage": "Si un compte existe avec cette adresse, vous recevrez un email de réinitialisation.",
+      "backToLogin": "Retour à la connexion",
+      "error": "Erreur lors de l'envoi"
+    }
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "welcome": {
+      "title": "Bienvenue !",
+      "description": "Voici un aperçu de vos statistiques et activités récentes."
+    },
+    "stats": {
+      "users": "Utilisateurs",
+      "revenue": "Revenus",
+      "orders": "Commandes"
+    },
+    "sidebar": {
+      "dashboard": "Tableau de bord",
+      "profile": "Profil",
+      "settings": "Paramètres",
+      "logout": "Déconnexion"
+    }
+  },
+  "settings": {
+    "title": "Paramètres",
+    "profile": {
+      "title": "Profil",
+      "description": "Gérez vos informations personnelles",
+      "name": "Nom",
+      "email": "Email",
+      "emailHint": "L'email ne peut pas être modifié",
+      "save": "Enregistrer",
+      "success": "Profil mis à jour avec succès"
+    },
+    "security": {
+      "title": "Sécurité",
+      "description": "Gérez votre mot de passe et la sécurité de votre compte",
+      "changePassword": "Changer le mot de passe"
+    },
+    "danger": {
+      "title": "Zone de danger",
+      "description": "Actions irréversibles sur votre compte",
+      "deleteAccount": "Supprimer mon compte",
+      "confirmMessage": "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.",
+      "confirmDelete": "Oui, supprimer",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "unauthorized": "Vous devez être connecté pour effectuer cette action",
+      "profileNotFound": "Profil introuvable",
+      "nameRequired": "Le nom est requis"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "anonymous": "Utilisateur",
+    "stats": {
+      "memberSince": "Membre depuis",
+      "lastUpdated": "Dernière mise à jour"
+    },
+    "activity": {
+      "title": "Activité récente",
+      "empty": "Aucune activité récente"
+    }
+  },
+  "errors": {
+    "validationError": "Les données saisies sont invalides",
+    "notFound": "Ressource introuvable",
+    "circularReference": "Référence circulaire détectée entre les niveaux",
+    "duplicateEnrollment": "Cet élève est déjà inscrit à ce plan",
+    "hasActiveEnrollments": "Impossible de désactiver : des inscriptions actives existent",
+    "invalidConfigValue": "La valeur ne correspond pas au type de configuration attendu",
+    "invalidDates": "La date de fin doit être postérieure à la date de début",
+    "invalidStatusTransition": "Cette transition de statut n'est pas autorisée",
+    "overlappingPeriod": "Cette période chevauche une période existante",
+    "classFull": "La classe a atteint sa capacité maximale",
+    "capacityBelowEnrolled": "La capacité ne peut pas être inférieure au nombre d'inscrits",
+    "overpayment": "Le montant dépasse le solde restant dû",
+    "noActiveEnrollments": "Aucune inscription active pour cette famille",
+    "refundExceedsPaid": "Le remboursement dépasse le montant déjà payé"
+  }
+}

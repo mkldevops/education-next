@@ -1,0 +1,69 @@
+{
+  "name": "education-next",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.28.1",
+  "scripts": {
+    "predev": "docker compose up -d",
+    "dev": "dotenv -- next dev",
+    "build": "next build",
+    "start": "dotenv -- next start",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "knip": "knip",
+    "prepare": "husky",
+    "db:start": "docker compose up -d",
+    "db:stop": "docker compose down",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "dotenv -- tsx prisma/seed.ts"
+  },
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx,json,css,md}": [
+      "biome check --write --no-errors-on-unmatched",
+      "knip"
+    ]
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.2",
+    "better-auth": "^1.5.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
+    "motion": "^12.34.4",
+    "next": "^16.1.6",
+    "next-intl": "^4.8.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "resend": "^4.8.0",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.5",
+    "@tailwindcss/postcss": "^4.2.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.19.13",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "babel-plugin-react-compiler": "19.0.0-beta-af1b7da-20250417",
+    "dotenv-cli": "^8.0.0",
+    "husky": "^9.1.7",
+    "jsdom": "^25.0.1",
+    "knip": "^5.85.0",
+    "lint-staged": "^16.3.1",
+    "prisma": "^6.19.2",
+    "tailwindcss": "^4.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

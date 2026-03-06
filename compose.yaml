@@ -1,0 +1,42 @@
+# =============================================================================
+# education-next - Docker Compose
+# =============================================================================
+#
+# Port base: 8550
+#
+# Services:
+#   - PostgreSQL:      localhost:8551
+#   - Mailpit SMTP:    localhost:8552
+#   - Mailpit Web:     localhost:8553
+#
+# Usage: docker compose up -d
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: education-next-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+    ports:
+      - "${PORT_POSTGRES}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app}"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: education-next-mailpit
+    ports:
+      - "${PORT_MAILPIT_SMTP}:1025"
+      - "${PORT_MAILPIT_WEB}:8025"
+
+volumes:
+  postgres_data:
