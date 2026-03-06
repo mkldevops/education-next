@@ -1,16 +1,17 @@
 import { Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { db } from '@/lib/db'
+import { formatAmount } from '@/lib/decimal'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale, id } = await params
+  const { id } = await params
   const family = await db.family.findUnique({ where: { id } })
 
   return {
@@ -26,12 +27,15 @@ export default async function FamilyDetailPage({ params }: Props) {
     where: { id },
     include: {
       persons: {
+        where: { person: { isActive: true } },
         include: {
           person: {
             include: {
               student: {
+                where: { isActive: true },
                 include: {
                   enrollments: {
+                    where: { isActive: true },
                     include: {
                       plan: true,
                       classAssignments: {
@@ -44,7 +48,9 @@ export default async function FamilyDetailPage({ params }: Props) {
                   },
                 },
               },
-              phoneNumbers: true,
+              phoneNumbers: {
+                where: { isActive: true },
+              },
             },
           },
         },
@@ -127,22 +133,22 @@ export default async function FamilyDetailPage({ params }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {students.map((student) => (
-                  <tr key={student.person.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
-                      {student.person.name} {student.person.lastname}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {new Date(student.person.student!.birthday).toLocaleDateString(locale)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {student.person.student!.birthplace || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {student.person.student!.allergies || '-'}
-                    </td>
-                  </tr>
-                ))}
+                {students.map((student) => {
+                  const s = student.person.student
+                  if (!s) return null
+                  return (
+                    <tr key={student.person.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm">
+                        {student.person.name} {student.person.lastname}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {new Date(s.birthday).toLocaleDateString(locale)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{s.birthplace || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{s.allergies || '-'}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -164,7 +170,7 @@ export default async function FamilyDetailPage({ params }: Props) {
               </thead>
               <tbody className="divide-y">
                 {students.flatMap((student) =>
-                  student.person.student!.enrollments.map((enrollment) => (
+                  (student.person.student?.enrollments ?? []).map((enrollment) => (
                     <tr key={enrollment.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm">
                         {student.person.name} {student.person.lastname}
@@ -174,7 +180,7 @@ export default async function FamilyDetailPage({ params }: Props) {
                         <StatusBadge status={enrollment.status} />
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        €{enrollment.totalAmount.toFixed(2)}
+                        €{formatAmount(enrollment.totalAmount)}
                       </td>
                     </tr>
                   ))

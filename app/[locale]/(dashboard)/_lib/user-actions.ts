@@ -1,9 +1,9 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireAdmin } from './auth-helper'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { requireAdmin } from './auth-helper'
 
 export async function createUserAction(data: {
   name: string

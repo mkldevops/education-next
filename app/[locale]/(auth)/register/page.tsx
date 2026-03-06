@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { RegisterForm } from '@/features/auth'
 import { Link, redirect } from '@/i18n/routing'
-import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 
@@ -25,7 +25,7 @@ export default async function RegisterPage({ params }: Props) {
   setRequestLocale(locale)
 
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) redirect({ href: '/login', locale })
+  if (!session) return redirect({ href: '/login', locale })
 
   const dbUser = await db.user.findUnique({
     where: { id: session.user.id },

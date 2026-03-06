@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
+import { formatAmount } from '@/lib/decimal'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -57,7 +58,7 @@ export default async function PlansPage({ params }: Props) {
                 <tr key={plan.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm">{plan.name}</td>
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                    €{plan.amount.toFixed(2)}
+                    €{formatAmount(plan.amount)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">{plan._count.enrollments}</td>
                 </tr>

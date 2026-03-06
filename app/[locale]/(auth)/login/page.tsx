@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { LoginForm } from '@/features/auth'
-import { Link } from '@/i18n/routing'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -32,9 +31,7 @@ export default async function LoginPage({ params }: Props) {
 
         <LoginForm />
 
-        <p className="text-center text-sm text-gray-600">
-          {t('contactAdmin')}
-        </p>
+        <p className="text-center text-sm text-gray-600">{t('contactAdmin')}</p>
       </div>
     </div>
   )

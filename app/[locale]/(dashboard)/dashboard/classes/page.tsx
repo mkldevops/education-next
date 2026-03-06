@@ -26,7 +26,10 @@ export default async function ClassesPage({ params }: Props) {
       level: true,
       period: true,
       classAssignments: {
-        where: { endAt: null },
+        where: {
+          endAt: null,
+          enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
+        },
       },
     },
     orderBy: { name: 'asc' },

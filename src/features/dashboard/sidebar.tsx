@@ -31,7 +31,7 @@ const navItems = [
   { href: '/dashboard/config', icon: Wrench, key: 'config' },
 ] as const
 
-const bottomItems = [{ href: '/settings', icon: Settings, key: 'settings' }] as const
+const bottomItems = [{ href: '/dashboard/settings', icon: Settings, key: 'settings' }] as const
 
 export function Sidebar() {
   const t = useTranslations('dashboard.sidebar')

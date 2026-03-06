@@ -27,7 +27,7 @@ export const personGateway = {
     personId: string,
     data: {
       phoneNumber: string
-      channels: string
+      channels: Prisma.InputJsonValue
     }
   ) =>
     db.phoneNumber.create({

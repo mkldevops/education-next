@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { formatAmount } from '@/lib/decimal'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -92,7 +93,7 @@ export default async function EnrollmentsPage({ params }: Props) {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{className}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">
-                      €{enrollment.totalAmount.toFixed(2)}
+                      €{formatAmount(enrollment.totalAmount)}
                     </td>
                   </tr>
                 )

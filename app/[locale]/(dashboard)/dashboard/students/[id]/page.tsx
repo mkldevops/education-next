@@ -1,16 +1,17 @@
 import { Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { db } from '@/lib/db'
+import { formatAmount } from '@/lib/decimal'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale, id } = await params
+  const { id } = await params
   const student = await db.student.findUnique({
     where: { id },
     include: { person: true },
@@ -39,6 +40,7 @@ export default async function StudentDetailPage({ params }: Props) {
         },
       },
       enrollments: {
+        where: { isActive: true },
         include: {
           plan: true,
           classAssignments: {
@@ -145,7 +147,7 @@ export default async function StudentDetailPage({ params }: Props) {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{className}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        €{enrollment.totalAmount.toFixed(2)}
+                        €{formatAmount(enrollment.totalAmount)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         {new Date(enrollment.registeredAt).toLocaleDateString(locale)}

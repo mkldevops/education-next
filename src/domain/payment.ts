@@ -1,3 +1,5 @@
+import { roundHalfUp } from '@/lib/decimal'
+
 export type EnrollmentBalance = {
   enrollmentId: string
   remainingBalance: number
@@ -56,7 +58,7 @@ function distributePositivePayment(
       part = amount - totalDistributed
     } else {
       const proportion = (enrollment.remainingBalance / totalRemaining) * amount
-      part = Math.round(proportion * 100) / 100
+      part = roundHalfUp(proportion)
       part = Math.min(part, enrollment.remainingBalance)
     }
 
@@ -100,7 +102,7 @@ function distributeRefund(
       part = refundAmount - totalDistributed
     } else {
       const proportion = (enrollment.paid / totalPaid) * refundAmount
-      part = Math.round(proportion * 100) / 100
+      part = roundHalfUp(proportion)
       part = Math.min(part, enrollment.paid)
     }
 

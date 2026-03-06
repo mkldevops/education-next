@@ -1,9 +1,10 @@
 import { Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/features/dashboard'
 import { db } from '@/lib/db'
+import { formatAmount } from '@/lib/decimal'
 import { EnrollmentActions } from './_components/enrollment-actions'
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale, id } = await params
+  const { id } = await params
   const enrollment = await db.enrollment.findUnique({
     where: { id },
     include: { student: { include: { person: true } } },
@@ -114,23 +115,23 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Total Amount</span>
             <span className="text-sm font-medium text-gray-900">
-              €{enrollment.totalAmount.toFixed(2)}
+              €{formatAmount(enrollment.totalAmount)}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Discount</span>
             <span className="text-sm font-medium text-gray-900">
-              -€{enrollment.discount.toFixed(2)}
+              -€{formatAmount(enrollment.discount)}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Total Paid</span>
-            <span className="text-sm font-medium text-gray-900">€{totalPaid.toFixed(2)}</span>
+            <span className="text-sm font-medium text-gray-900">€{formatAmount(totalPaid)}</span>
           </div>
           <div className="border-t pt-3 flex justify-between items-center">
             <span className="font-medium text-gray-900">Remaining</span>
             <span className="font-medium text-gray-900">
-              €{Math.max(0, remainingAmount).toFixed(2)}
+              €{formatAmount(Math.max(0, remainingAmount))}
             </span>
           </div>
         </div>
@@ -194,7 +195,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 {enrollment.payments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      €{payment.amount.toFixed(2)}
+                      €{formatAmount(payment.amount)}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{payment.method}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{payment.reference || '-'}</td>
