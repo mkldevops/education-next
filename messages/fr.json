@@ -696,6 +696,14 @@
       "title": "Compte",
       "description": "Informations de votre compte"
     },
+    "logout": {
+      "title": "Déconnexion",
+      "description": "Quitter votre session",
+      "button": "Se déconnecter",
+      "confirmMessage": "Êtes-vous sûr de vouloir vous déconnecter ?",
+      "confirm": "Oui, se déconnecter",
+      "cancel": "Annuler"
+    },
     "danger": {
       "title": "Zone de danger",
       "description": "Actions irréversibles sur votre compte",

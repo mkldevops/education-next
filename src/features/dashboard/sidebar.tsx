@@ -11,7 +11,6 @@ import {
   GraduationCap,
   Layers,
   LayoutGrid,
-  LogOut,
   Settings,
   Users,
   Wallet,
@@ -21,7 +20,6 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, usePathname } from '@/i18n/routing'
-import { signOut } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 import { useSidebarStore } from './sidebar-store'
 
@@ -111,10 +109,6 @@ export function Sidebar() {
   const pathname = usePathname()
   const { expanded, toggle } = useSidebarStore()
 
-  const handleSignOut = async () => {
-    await signOut()
-  }
-
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
     return pathname.startsWith(href)
@@ -198,27 +192,6 @@ export function Sidebar() {
             expanded={expanded}
           />
         ))}
-
-        {expanded ? (
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-graphite-800 transition-all duration-150 hover:bg-alabaster-900 hover:text-graphite-600"
-          >
-            <LogOut size={20} className="flex-shrink-0" />
-            <span className="text-sm font-medium">{t('logout')}</span>
-          </button>
-        ) : (
-          <Tooltip label={t('logout')}>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex size-11 items-center justify-center rounded-xl text-graphite-800 transition-all duration-150 hover:bg-alabaster-900 hover:text-graphite-600"
-            >
-              <LogOut size={20} />
-            </button>
-          </Tooltip>
-        )}
 
         <button
           type="button"
