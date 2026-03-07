@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { getSessionWithRole } from '../../_lib/auth-helper'
+import { CreateConfigDialog } from './_components/create-config-dialog'
+import { EditConfigDialog } from './_components/edit-config-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -34,7 +36,10 @@ export default async function ConfigPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <CreateConfigDialog />
+      </div>
 
       {configs.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-gray-500">{t('noConfig')}</div>
@@ -52,6 +57,9 @@ export default async function ConfigPage({ params }: Props) {
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
                   {t('type')}
                 </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                  {t('actions')}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -63,6 +71,15 @@ export default async function ConfigPage({ params }: Props) {
                     <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
                       {config.valueType}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    <EditConfigDialog
+                      config={{
+                        name: config.name,
+                        value: config.value,
+                        valueType: config.valueType,
+                      }}
+                    />
                   </td>
                 </tr>
               ))}

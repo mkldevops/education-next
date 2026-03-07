@@ -468,7 +468,34 @@
         "name": "Name",
         "value": "Value",
         "type": "Type",
-        "noConfig": "No configuration registered"
+        "actions": "Actions",
+        "noConfig": "No configuration registered",
+        "create": {
+          "title": "New Parameter",
+          "name": "Parameter Name",
+          "valueType": "Value Type",
+          "value": "Value",
+          "types": {
+            "TEXT": "Text",
+            "NUMBER": "Number",
+            "BOOLEAN": "Boolean"
+          },
+          "enabled": "Enabled",
+          "cancel": "Cancel",
+          "submit": "Create",
+          "success": "Parameter created",
+          "error": "Error creating parameter"
+        },
+        "edit": {
+          "title": "Edit",
+          "value": "Value",
+          "true": "True",
+          "false": "False",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Parameter updated",
+          "error": "Error updating parameter"
+        }
       },
       "familyDetails": {
         "title": "Family Details",

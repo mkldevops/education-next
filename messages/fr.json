@@ -468,7 +468,34 @@
         "name": "Nom",
         "value": "Valeur",
         "type": "Type",
-        "noConfig": "Aucune configuration enregistrée"
+        "actions": "Actions",
+        "noConfig": "Aucune configuration enregistrée",
+        "create": {
+          "title": "Nouveau paramètre",
+          "name": "Nom du paramètre",
+          "valueType": "Type de valeur",
+          "value": "Valeur",
+          "types": {
+            "TEXT": "Texte",
+            "NUMBER": "Nombre",
+            "BOOLEAN": "Booléen"
+          },
+          "enabled": "Activé",
+          "cancel": "Annuler",
+          "submit": "Créer",
+          "success": "Paramètre créé",
+          "error": "Erreur lors de la création"
+        },
+        "edit": {
+          "title": "Modifier",
+          "value": "Valeur",
+          "true": "Vrai",
+          "false": "Faux",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Paramètre mis à jour",
+          "error": "Erreur lors de la mise à jour"
+        }
       },
       "familyDetails": {
         "title": "Détails de la famille",
