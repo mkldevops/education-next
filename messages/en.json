@@ -380,7 +380,19 @@
         "from": "From",
         "to": "To",
         "current": "Current",
-        "noEnrollments": "No enrollments registered"
+        "noEnrollments": "No enrollments registered",
+        "create": {
+          "title": "New Enrollment",
+          "selectStudent": "Student",
+          "selectPlan": "Pricing Plan",
+          "selectClass": "Class",
+          "discount": "Discount (€)",
+          "canLeaveAlone": "Can leave alone",
+          "cancel": "Cancel",
+          "submit": "Enroll",
+          "success": "Enrollment created",
+          "error": "Error creating enrollment"
+        }
       },
       "promotion": {
         "title": "Student Promotion",
@@ -412,7 +424,24 @@
         "name": "Name",
         "amount": "Amount",
         "enrollments": "Enrollments",
-        "noPlans": "No plans registered"
+        "actions": "Actions",
+        "noPlans": "No plans registered",
+        "create": {
+          "title": "New Plan",
+          "name": "Name",
+          "amount": "Amount (€)",
+          "cancel": "Cancel",
+          "submit": "Create",
+          "success": "Plan created",
+          "error": "Error creating plan"
+        },
+        "edit": {
+          "title": "Edit Plan",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Plan updated",
+          "error": "Error updating plan"
+        }
       },
       "config": {
         "title": "Configuration",
@@ -498,7 +527,27 @@
         "actions": {
           "activate": "Activate",
           "complete": "Complete",
-          "cancel": "Cancel"
+          "cancel": "Cancel",
+          "activated": "Enrollment activated",
+          "completed": "Enrollment completed",
+          "cancelled": "Enrollment cancelled",
+          "error": "Error updating enrollment"
+        },
+        "reassign": {
+          "title": "Reassign Class",
+          "selectClass": "New Class",
+          "cancel": "Cancel",
+          "submit": "Reassign",
+          "success": "Class reassigned",
+          "error": "Error reassigning class"
+        },
+        "discount": {
+          "title": "Apply Discount",
+          "amount": "Discount amount (€)",
+          "cancel": "Cancel",
+          "submit": "Apply",
+          "success": "Discount applied",
+          "error": "Error applying discount"
         }
       }
     }

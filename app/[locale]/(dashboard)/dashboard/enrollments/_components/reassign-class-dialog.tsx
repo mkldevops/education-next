@@ -1,0 +1,119 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
+import { useTransition } from 'react'
+import { Button } from '@/components/ui/button/button'
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  useDialog,
+} from '@/components/ui/dialog/dialog'
+import { Label } from '@/components/ui/input/input'
+import { useRouter } from '@/i18n/routing'
+import { toast } from '@/lib/toast'
+import { reassignClassAction } from '../../../_lib/enrollment-actions'
+
+interface Option {
+  id: string
+  name: string
+}
+
+interface ReassignClassDialogProps {
+  enrollmentId: string
+  currentClassId: string | null
+  classes: Option[]
+}
+
+export function ReassignClassDialog({
+  enrollmentId,
+  currentClassId,
+  classes,
+}: ReassignClassDialogProps) {
+  const t = useTranslations('dashboard.pages.enrollmentDetails.reassign')
+
+  return (
+    <Dialog>
+      <DialogTrigger>
+        <Button variant="outline" size="sm">
+          {t('title')}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('title')}</DialogTitle>
+        </DialogHeader>
+        <ReassignForm
+          enrollmentId={enrollmentId}
+          currentClassId={currentClassId}
+          classes={classes}
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDialogProps) {
+  const t = useTranslations('dashboard.pages.enrollmentDetails.reassign')
+  const { setOpen } = useDialog()
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+
+  const availableClasses = classes.filter((c) => c.id !== currentClassId)
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+
+    startTransition(async () => {
+      const result = await reassignClassAction({
+        enrollmentId,
+        newClassPeriodId: formData.get('newClassPeriodId') as string,
+      })
+      if (result !== 'OK') {
+        toast.error(t('error'))
+      } else {
+        toast.success(t('success'))
+        setOpen(false)
+        router.refresh()
+      }
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <DialogBody>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="reassign-class">{t('selectClass')}</Label>
+            <select
+              id="reassign-class"
+              name="newClassPeriodId"
+              required
+              disabled={isPending}
+              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+            >
+              {availableClasses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </DialogBody>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+          {t('cancel')}
+        </Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? '...' : t('submit')}
+        </Button>
+      </DialogFooter>
+    </form>
+  )
+}

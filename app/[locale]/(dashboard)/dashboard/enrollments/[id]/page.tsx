@@ -5,6 +5,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { ApplyDiscountDialog } from '../_components/apply-discount-dialog'
+import { ReassignClassDialog } from '../_components/reassign-class-dialog'
 import { EnrollmentActions } from './_components/enrollment-actions'
 
 type Props = {
@@ -67,6 +69,18 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
   if (!enrollment) notFound()
 
+  const isAdmin = roles.includes('admin')
+
+  const availableClasses = isAdmin
+    ? await db.classPeriod.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+    : []
+
+  const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriodId ?? null
+
   if (!roles.includes('admin')) {
     const enrollmentFamily = enrollment.student.person.families.some(
       (fp) => fp.familyId === familyId
@@ -102,8 +116,21 @@ export default async function EnrollmentDetailPage({ params }: Props) {
             <div className="mt-1">
               <StatusBadge status={enrollment.status} />
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap gap-2">
               <EnrollmentActions enrollmentId={enrollment.id} status={enrollment.status} />
+              {isAdmin && (enrollment.status === 'PENDING' || enrollment.status === 'ACTIVE') && (
+                <>
+                  <ReassignClassDialog
+                    enrollmentId={enrollment.id}
+                    currentClassId={currentClassId}
+                    classes={availableClasses}
+                  />
+                  <ApplyDiscountDialog
+                    enrollmentId={enrollment.id}
+                    currentDiscount={Number(enrollment.discount)}
+                  />
+                </>
+              )}
             </div>
           </div>
           <div>

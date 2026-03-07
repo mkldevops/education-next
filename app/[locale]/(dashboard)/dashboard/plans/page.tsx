@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
+import { CreatePlanDialog } from './_components/create-plan-dialog'
+import { EditPlanDialog } from './_components/edit-plan-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -33,7 +35,10 @@ export default async function PlansPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <CreatePlanDialog />
+      </div>
 
       {plans.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-gray-500">{t('noPlans')}</div>
@@ -51,6 +56,9 @@ export default async function PlansPage({ params }: Props) {
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
                   {t('enrollments')}
                 </th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
+                  {t('actions')}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -61,6 +69,11 @@ export default async function PlansPage({ params }: Props) {
                     €{formatAmount(plan.amount)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">{plan._count.enrollments}</td>
+                  <td className="px-4 py-3 text-right">
+                    <EditPlanDialog
+                      plan={{ id: plan.id, name: plan.name, amount: Number(plan.amount) }}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
