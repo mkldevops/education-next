@@ -189,7 +189,8 @@
       "levels": "Levels",
       "classes": "Classes",
       "plans": "Pricing Plans",
-      "config": "Configuration"
+      "config": "Configuration",
+      "users": "Users"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -202,6 +203,7 @@
       "payments": "Payments",
       "plans": "Pricing plans",
       "config": "Configuration",
+      "users": "Users",
       "profile": "Profile",
       "settings": "Settings",
       "logout": "Logout",
@@ -711,6 +713,27 @@
           "success": "Discount applied",
           "error": "Error applying discount"
         }
+      },
+      "users": {
+        "title": "Users",
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "family": "Family",
+        "lastLogin": "Last Login",
+        "status": "Status",
+        "actions": "Actions",
+        "active": "Active",
+        "inactive": "Inactive",
+        "changeRole": "Change Role",
+        "newRole": "New Role",
+        "deactivate": "Deactivate",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "noUsers": "No users found",
+        "roleChanged": "Role changed successfully",
+        "userDeactivated": "User deactivated",
+        "error": "An error occurred"
       }
     }
   },

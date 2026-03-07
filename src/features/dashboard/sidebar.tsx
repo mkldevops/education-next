@@ -12,6 +12,7 @@ import {
   Layers,
   LayoutGrid,
   Settings,
+  Shield,
   Users,
   Wallet,
   Wrench,
@@ -64,6 +65,12 @@ const configItems: NavItemConfig[] = [
     icon: Wrench,
     key: 'config',
     requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    href: '/dashboard/users',
+    icon: Shield,
+    key: 'users',
+    requiredRoles: ['SUPER_ADMIN'],
   },
 ]
 
