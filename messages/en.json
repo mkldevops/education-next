@@ -696,6 +696,14 @@
       "title": "Account",
       "description": "Your account information"
     },
+    "logout": {
+      "title": "Logout",
+      "description": "Leave your session",
+      "button": "Sign out",
+      "confirmMessage": "Are you sure you want to sign out?",
+      "confirm": "Yes, sign out",
+      "cancel": "Cancel"
+    },
     "danger": {
       "title": "Danger zone",
       "description": "Irreversible actions on your account",
