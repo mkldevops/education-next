@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import { Toaster } from 'sonner'
+import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
 import '@/styles/globals.css'
 
@@ -29,6 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: '/en',
       },
     },
+    manifest: '/manifest.webmanifest',
   }
 }
 
@@ -50,6 +52,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale}>
       <body className="flex min-h-screen flex-col">
         <NextIntlClientProvider messages={messages}>
+          <ServiceWorkerRegister />
           {children}
           <Toaster richColors position="top-right" />
         </NextIntlClientProvider>
