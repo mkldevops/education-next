@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../_lib/auth-helper'
+import { RecordPaymentDialog } from './_components/record-payment-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -23,6 +24,14 @@ export default async function PaymentsPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.payments')
 
   const { roles, familyId } = await getSessionWithRole()
+
+  const families = roles.includes('admin')
+    ? await db.family.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+    : []
 
   const whereClause = roles.includes('admin') ? { isActive: true } : { isActive: true, familyId }
 
@@ -45,7 +54,10 @@ export default async function PaymentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        {families.length > 0 && <RecordPaymentDialog families={families} />}
+      </div>
 
       {payments.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-gray-500">{t('noPayments')}</div>
