@@ -14,6 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
+import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { recordPaymentAction } from '../../../_lib/payment-actions'
 
@@ -44,6 +45,7 @@ function RecordPaymentForm({ families }: { families: Option[] }) {
   const t = useTranslations('dashboard.pages.payments.record')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -65,6 +67,7 @@ function RecordPaymentForm({ families }: { families: Option[] }) {
       } else {
         toast.success(t('success'))
         setOpen(false)
+        router.refresh()
       }
     })
   }
