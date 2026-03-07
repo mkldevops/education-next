@@ -417,7 +417,27 @@
         "paidAt": "Date de paiement",
         "cashedAt": "Date d'encaissement",
         "pending": "En attente",
-        "noPayments": "Aucun paiement enregistré"
+        "noPayments": "Aucun paiement enregistré",
+        "record": {
+          "title": "Saisir un paiement",
+          "selectFamily": "Famille",
+          "amount": "Montant",
+          "method": "Méthode de paiement",
+          "methods": {
+            "CASH": "Espèces",
+            "CARD": "Carte bancaire",
+            "TRANSFER": "Virement",
+            "CHECK": "Chèque",
+            "STRIPE": "Stripe"
+          },
+          "reference": "Référence",
+          "paidAt": "Date de paiement",
+          "cashedAt": "Date d'encaissement",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Paiement enregistré",
+          "error": "Erreur lors de l'enregistrement"
+        }
       },
       "plans": {
         "title": "Plans tarifaires",
@@ -475,6 +495,23 @@
           "plan": "Plan",
           "status": "Statut",
           "total": "Total"
+        },
+        "paymentSummary": {
+          "title": "Résumé des paiements",
+          "totalDue": "Total dû",
+          "discount": "Réductions",
+          "totalPaid": "Total payé",
+          "remaining": "Restant dû"
+        },
+        "paymentHistory": {
+          "title": "Historique des paiements",
+          "student": "Élève",
+          "amount": "Montant",
+          "method": "Méthode",
+          "reference": "Référence",
+          "paidAt": "Date de paiement",
+          "cashedAt": "Date d'encaissement",
+          "noPayments": "Aucun paiement enregistré"
         }
       },
       "studentDetails": {
@@ -541,7 +578,7 @@
           "success": "Classe réaffectée",
           "error": "Erreur lors de la réaffectation"
         },
-        "discount": {
+        "applyDiscount": {
           "title": "Appliquer une réduction",
           "amount": "Montant de la réduction (€)",
           "cancel": "Annuler",

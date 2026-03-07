@@ -417,7 +417,27 @@
         "paidAt": "Payment Date",
         "cashedAt": "Cash Date",
         "pending": "Pending",
-        "noPayments": "No payments registered"
+        "noPayments": "No payments registered",
+        "record": {
+          "title": "Record Payment",
+          "selectFamily": "Family",
+          "amount": "Amount",
+          "method": "Payment Method",
+          "methods": {
+            "CASH": "Cash",
+            "CARD": "Card",
+            "TRANSFER": "Transfer",
+            "CHECK": "Check",
+            "STRIPE": "Stripe"
+          },
+          "reference": "Reference",
+          "paidAt": "Payment Date",
+          "cashedAt": "Cash Date",
+          "cancel": "Cancel",
+          "submit": "Record",
+          "success": "Payment recorded",
+          "error": "Error recording payment"
+        }
       },
       "plans": {
         "title": "Plans",
@@ -475,6 +495,23 @@
           "plan": "Plan",
           "status": "Status",
           "total": "Total"
+        },
+        "paymentSummary": {
+          "title": "Payment Summary",
+          "totalDue": "Total Due",
+          "discount": "Discounts",
+          "totalPaid": "Total Paid",
+          "remaining": "Remaining"
+        },
+        "paymentHistory": {
+          "title": "Payment History",
+          "student": "Student",
+          "amount": "Amount",
+          "method": "Method",
+          "reference": "Reference",
+          "paidAt": "Payment Date",
+          "cashedAt": "Cash Date",
+          "noPayments": "No payments registered"
         }
       },
       "studentDetails": {
@@ -541,7 +578,7 @@
           "success": "Class reassigned",
           "error": "Error reassigning class"
         },
-        "discount": {
+        "applyDiscount": {
           "title": "Apply Discount",
           "amount": "Discount amount (€)",
           "cancel": "Cancel",

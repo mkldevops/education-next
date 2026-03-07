@@ -24,7 +24,7 @@ interface ApplyDiscountDialogProps {
 }
 
 export function ApplyDiscountDialog({ enrollmentId, currentDiscount }: ApplyDiscountDialogProps) {
-  const t = useTranslations('dashboard.pages.enrollmentDetails.discount')
+  const t = useTranslations('dashboard.pages.enrollmentDetails.applyDiscount')
 
   return (
     <Dialog>
@@ -44,7 +44,7 @@ export function ApplyDiscountDialog({ enrollmentId, currentDiscount }: ApplyDisc
 }
 
 function DiscountForm({ enrollmentId, currentDiscount }: ApplyDiscountDialogProps) {
-  const t = useTranslations('dashboard.pages.enrollmentDetails.discount')
+  const t = useTranslations('dashboard.pages.enrollmentDetails.applyDiscount')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
