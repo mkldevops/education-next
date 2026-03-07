@@ -5,6 +5,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { DeactivateStudentButton } from '../_components/deactivate-student-button'
+import { EditStudentDialog } from '../_components/edit-student-dialog'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -76,11 +78,19 @@ export default async function StudentDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {student.person.name} {student.person.lastname}
-        </h1>
-        <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {student.person.name} {student.person.lastname}
+          </h1>
+          <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
+        </div>
+        {roles.includes('admin') && (
+          <div className="flex gap-2">
+            <EditStudentDialog student={student} />
+            <DeactivateStudentButton studentId={student.id} />
+          </div>
+        )}
       </div>
 
       <Card className="p-6 space-y-4">

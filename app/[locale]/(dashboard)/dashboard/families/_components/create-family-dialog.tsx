@@ -14,6 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label, Textarea } from '@/components/ui/input/input'
+import { toast } from '@/lib/toast'
 import { createFamilySchema } from '@/use-cases/families/schemas'
 import { createFamilyAction } from '../../../_lib/family-actions'
 
@@ -52,16 +53,16 @@ function CreateFamilyForm() {
 
     const parsed = createFamilySchema.safeParse(rawData)
     if (!parsed.success) {
-      alert(t('error'))
+      toast.error(t('error'))
       return
     }
 
     startTransition(async () => {
       const result = await createFamilyAction(parsed.data)
       if (typeof result === 'string') {
-        alert(t('error'))
+        toast.error(t('error'))
       } else {
-        alert(t('success'))
+        toast.success(t('success'))
         setOpen(false)
       }
     })
@@ -113,7 +114,7 @@ function CreateFamilyForm() {
           {t('cancel')}
         </Button>
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Creating...' : t('submit')}
+          {isPending ? '...' : t('submit')}
         </Button>
       </DialogFooter>
     </form>
