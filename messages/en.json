@@ -292,15 +292,52 @@
         "startDate": "Start Date",
         "endDate": "End Date",
         "classes": "Classes",
-        "noPeriods": "No periods registered"
+        "actions": "Actions",
+        "noPeriods": "No periods registered",
+        "create": {
+          "title": "New Period",
+          "name": "Name",
+          "startDate": "Start Date",
+          "endDate": "End Date",
+          "cancel": "Cancel",
+          "submit": "Create",
+          "success": "Period created",
+          "error": "Error creating period"
+        },
+        "edit": {
+          "title": "Edit Period",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Period updated",
+          "error": "Error updating period"
+        }
       },
       "levels": {
         "title": "Levels",
         "name": "Name",
         "nextLevel": "Next Level",
         "classes": "Classes",
+        "actions": "Actions",
         "none": "None",
-        "noLevels": "No levels registered"
+        "noLevels": "No levels registered",
+        "promotionChain": "Promotion Chain",
+        "create": {
+          "title": "New Level",
+          "name": "Name",
+          "cancel": "Cancel",
+          "submit": "Create",
+          "success": "Level created",
+          "error": "Error creating level"
+        },
+        "edit": {
+          "title": "Next Level",
+          "selectNextLevel": "Select next level",
+          "noNext": "None (end of track)",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Progression updated",
+          "error": "Error updating progression"
+        }
       },
       "classes": {
         "title": "Classes",
@@ -309,7 +346,26 @@
         "period": "Period",
         "capacity": "Capacity",
         "enrolled": "Enrolled",
-        "noClasses": "No classes registered"
+        "actions": "Actions",
+        "noClasses": "No classes registered",
+        "create": {
+          "title": "New Class",
+          "name": "Name",
+          "capacity": "Capacity",
+          "selectLevel": "Level",
+          "selectPeriod": "Period",
+          "cancel": "Cancel",
+          "submit": "Create",
+          "success": "Class created",
+          "error": "Error creating class"
+        },
+        "edit": {
+          "title": "Edit Class",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Class updated",
+          "error": "Error updating class"
+        }
       },
       "enrollments": {
         "title": "Enrollments",

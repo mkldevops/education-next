@@ -18,7 +18,7 @@ export async function createClassPeriodAction(data: CreateClassPeriodInput) {
   if (!user) return 'unauthorized' as const
   const result = await createClassPeriod(data)
   if (typeof result === 'string') return result
-  revalidatePath('/dashboard/class-periods')
+  revalidatePath('/dashboard/classes')
   return result
 }
 
@@ -30,6 +30,6 @@ export async function updateClassPeriodAction(
   if (!user) return 'unauthorized' as const
   const result = await updateClassPeriod({ id, ...data })
   if (typeof result === 'string') return result
-  revalidatePath('/dashboard/class-periods')
+  revalidatePath('/dashboard/classes')
   return result
 }
