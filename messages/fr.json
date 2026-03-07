@@ -292,15 +292,52 @@
         "startDate": "Date de début",
         "endDate": "Date de fin",
         "classes": "Classes",
-        "noPeriods": "Aucune période enregistrée"
+        "actions": "Actions",
+        "noPeriods": "Aucune période enregistrée",
+        "create": {
+          "title": "Nouvelle période",
+          "name": "Nom",
+          "startDate": "Date de début",
+          "endDate": "Date de fin",
+          "cancel": "Annuler",
+          "submit": "Créer",
+          "success": "Période créée",
+          "error": "Erreur lors de la création"
+        },
+        "edit": {
+          "title": "Modifier la période",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Période mise à jour",
+          "error": "Erreur lors de la mise à jour"
+        }
       },
       "levels": {
         "title": "Niveaux",
         "name": "Nom",
         "nextLevel": "Niveau suivant",
         "classes": "Classes",
+        "actions": "Actions",
         "none": "Aucun",
-        "noLevels": "Aucun niveau enregistré"
+        "noLevels": "Aucun niveau enregistré",
+        "promotionChain": "Chaîne de progression",
+        "create": {
+          "title": "Nouveau niveau",
+          "name": "Nom",
+          "cancel": "Annuler",
+          "submit": "Créer",
+          "success": "Niveau créé",
+          "error": "Erreur lors de la création"
+        },
+        "edit": {
+          "title": "Niveau suivant",
+          "selectNextLevel": "Sélectionner le niveau suivant",
+          "noNext": "Aucun (fin de parcours)",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Progression mise à jour",
+          "error": "Erreur lors de la mise à jour"
+        }
       },
       "classes": {
         "title": "Classes",
@@ -309,7 +346,26 @@
         "period": "Période",
         "capacity": "Capacité",
         "enrolled": "Inscrits",
-        "noClasses": "Aucune classe enregistrée"
+        "actions": "Actions",
+        "noClasses": "Aucune classe enregistrée",
+        "create": {
+          "title": "Nouvelle classe",
+          "name": "Nom",
+          "capacity": "Capacité",
+          "selectLevel": "Niveau",
+          "selectPeriod": "Période",
+          "cancel": "Annuler",
+          "submit": "Créer",
+          "success": "Classe créée",
+          "error": "Erreur lors de la création"
+        },
+        "edit": {
+          "title": "Modifier la classe",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Classe mise à jour",
+          "error": "Erreur lors de la mise à jour"
+        }
       },
       "enrollments": {
         "title": "Inscriptions",
