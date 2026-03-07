@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label, Textarea } from '@/components/ui/input/input'
+import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { createStudentAction } from '../../../_lib/student-actions'
 
@@ -22,7 +23,13 @@ interface Family {
   name: string
 }
 
-export function CreateStudentDialog({ families }: { families: Family[] }) {
+export function CreateStudentDialog({
+  families,
+  defaultOpen = false,
+}: {
+  families: Family[]
+  defaultOpen?: boolean
+}) {
   const t = useTranslations('dashboard.pages.students.create')
 
   return (
@@ -34,16 +41,30 @@ export function CreateStudentDialog({ families }: { families: Family[] }) {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreateStudentForm families={families} />
+        <CreateStudentForm families={families} defaultOpen={defaultOpen} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function CreateStudentForm({ families }: { families: Family[] }) {
+function CreateStudentForm({
+  families,
+  defaultOpen = false,
+}: {
+  families: Family[]
+  defaultOpen?: boolean
+}) {
   const t = useTranslations('dashboard.pages.students.create')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (defaultOpen) {
+      setOpen(true)
+      router.replace('/dashboard/students')
+    }
+  }, [defaultOpen, setOpen, router])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

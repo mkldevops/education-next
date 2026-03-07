@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
+import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { createEnrollmentAction } from '../../../_lib/enrollment-actions'
 
@@ -26,9 +27,15 @@ interface CreateEnrollmentDialogProps {
   students: Option[]
   plans: Option[]
   classes: Option[]
+  defaultOpen?: boolean
 }
 
-export function CreateEnrollmentDialog({ students, plans, classes }: CreateEnrollmentDialogProps) {
+export function CreateEnrollmentDialog({
+  students,
+  plans,
+  classes,
+  defaultOpen = false,
+}: CreateEnrollmentDialogProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
 
   return (
@@ -40,16 +47,34 @@ export function CreateEnrollmentDialog({ students, plans, classes }: CreateEnrol
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreateEnrollmentForm students={students} plans={plans} classes={classes} />
+        <CreateEnrollmentForm
+          students={students}
+          plans={plans}
+          classes={classes}
+          defaultOpen={defaultOpen}
+        />
       </DialogContent>
     </Dialog>
   )
 }
 
-function CreateEnrollmentForm({ students, plans, classes }: CreateEnrollmentDialogProps) {
+function CreateEnrollmentForm({
+  students,
+  plans,
+  classes,
+  defaultOpen = false,
+}: CreateEnrollmentDialogProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (defaultOpen) {
+      setOpen(true)
+      router.replace('/dashboard/enrollments')
+    }
+  }, [defaultOpen, setOpen, router])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

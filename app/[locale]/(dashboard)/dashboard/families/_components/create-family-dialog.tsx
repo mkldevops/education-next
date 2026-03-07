@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -14,11 +14,12 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label, Textarea } from '@/components/ui/input/input'
+import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { createFamilySchema } from '@/use-cases/families/schemas'
 import { createFamilyAction } from '../../../_lib/family-actions'
 
-export function CreateFamilyDialog() {
+export function CreateFamilyDialog({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const t = useTranslations('dashboard.pages.families.create')
 
   return (
@@ -30,16 +31,24 @@ export function CreateFamilyDialog() {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreateFamilyForm />
+        <CreateFamilyForm defaultOpen={defaultOpen} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function CreateFamilyForm() {
+function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const t = useTranslations('dashboard.pages.families.create')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (defaultOpen) {
+      setOpen(true)
+      router.replace('/dashboard/families')
+    }
+  }, [defaultOpen, setOpen, router])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

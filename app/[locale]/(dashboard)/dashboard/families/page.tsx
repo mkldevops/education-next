@@ -8,6 +8,7 @@ import { CreateFamilyDialog } from './_components/create-family-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ action?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -19,8 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function FamiliesPage({ params }: Props) {
+export default async function FamiliesPage({ params, searchParams }: Props) {
   const { locale } = await params
+  const { action } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.families')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -109,7 +111,7 @@ export default async function FamiliesPage({ params }: Props) {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        <CreateFamilyDialog />
+        <CreateFamilyDialog defaultOpen={action === 'create'} />
       </div>
       <Card className="rounded-xl border border-gray-200">
         <DataTable

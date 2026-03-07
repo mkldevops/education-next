@@ -9,6 +9,7 @@ import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ action?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -20,8 +21,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function EnrollmentsPage({ params }: Props) {
+export default async function EnrollmentsPage({ params, searchParams }: Props) {
   const { locale } = await params
+  const { action } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -144,6 +146,7 @@ export default async function EnrollmentsPage({ params }: Props) {
             students={studentOptions}
             plans={planOptions}
             classes={classOptions}
+            defaultOpen={action === 'create'}
           />
         )}
       </div>
