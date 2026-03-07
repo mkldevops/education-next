@@ -5,6 +5,10 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { AddPersonDialog } from '../_components/add-person-dialog'
+import { AddPhoneDialog } from '../_components/add-phone-dialog'
+import { DeactivateFamilyButton } from '../_components/deactivate-family-button'
+import { EditFamilyDialog } from '../_components/edit-family-dialog'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -71,9 +75,17 @@ export default async function FamilyDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{family.name}</h1>
-        <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{family.name}</h1>
+          <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
+        </div>
+        {roles.includes('admin') && (
+          <div className="flex gap-2">
+            <EditFamilyDialog family={family} />
+            <DeactivateFamilyButton familyId={family.id} />
+          </div>
+        )}
       </div>
 
       <Card className="p-6 space-y-4">
@@ -88,7 +100,10 @@ export default async function FamilyDetailPage({ params }: Props) {
       </Card>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('familyMembers')}</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">{t('familyMembers')}</h2>
+          {roles.includes('admin') && <AddPersonDialog familyId={family.id} />}
+        </div>
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <table className="w-full min-w-[600px]">
             <thead>
@@ -116,7 +131,10 @@ export default async function FamilyDetailPage({ params }: Props) {
                   <td className="px-4 py-3 text-sm text-gray-700">{fp.relationType}</td>
                   <td className="px-4 py-3 text-sm text-gray-700">{fp.person.email || '-'}</td>
                   <td className="px-4 py-3 text-sm text-gray-700">
-                    {fp.person.phoneNumbers[0]?.phoneNumber || '-'}
+                    <div className="flex items-center gap-2">
+                      <span>{fp.person.phoneNumbers[0]?.phoneNumber || '-'}</span>
+                      {roles.includes('admin') && <AddPhoneDialog personId={fp.personId} />}
+                    </div>
                   </td>
                 </tr>
               ))}

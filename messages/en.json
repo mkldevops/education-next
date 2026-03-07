@@ -190,6 +190,52 @@
           "cancel": "Cancel",
           "success": "Family created successfully",
           "error": "Error creating family"
+        },
+        "edit": {
+          "title": "Edit Family",
+          "submit": "Save",
+          "cancel": "Cancel",
+          "success": "Family updated successfully",
+          "error": "Error updating family"
+        },
+        "deactivate": {
+          "title": "Deactivate Family",
+          "description": "Are you sure you want to deactivate this family? This will hide the family and its members.",
+          "confirm": "Deactivate",
+          "cancel": "Cancel",
+          "success": "Family deactivated",
+          "error": "Error deactivating family"
+        },
+        "addPerson": {
+          "title": "Add Member",
+          "firstname": "First Name",
+          "lastname": "Last Name",
+          "sex": "Sex",
+          "male": "Male",
+          "female": "Female",
+          "email": "Email",
+          "relationType": "Relation Type",
+          "parent": "Parent",
+          "tutor": "Tutor",
+          "grandparent": "Grandparent",
+          "sibling": "Sibling",
+          "other": "Other",
+          "submit": "Add",
+          "cancel": "Cancel",
+          "success": "Member added successfully",
+          "error": "Error adding member"
+        },
+        "addPhone": {
+          "title": "Add Phone Number",
+          "phoneNumber": "Phone Number",
+          "channels": "Communication Channels",
+          "sms": "SMS",
+          "whatsapp": "WhatsApp",
+          "call": "Call",
+          "submit": "Add",
+          "cancel": "Cancel",
+          "success": "Phone number added successfully",
+          "error": "Error adding phone number"
         }
       },
       "students": {
@@ -203,7 +249,42 @@
         "healthNotes": "Health Notes",
         "languages": "Languages at Home",
         "snackAuthorization": "Snack Authorization",
-        "noStudents": "No students registered"
+        "noStudents": "No students registered",
+        "create": {
+          "title": "Add Student",
+          "selectFamily": "Family",
+          "firstname": "First Name",
+          "lastname": "Last Name",
+          "sex": "Sex",
+          "male": "Male",
+          "female": "Female",
+          "birthday": "Birthday",
+          "birthplace": "Birthplace",
+          "allergies": "Allergies",
+          "healthNotes": "Health Notes",
+          "languages": "Languages at Home",
+          "snackAuthorization": "Snack Authorization",
+          "submit": "Create",
+          "cancel": "Cancel",
+          "success": "Student added successfully",
+          "error": "Error creating student"
+        },
+        "edit": {
+          "title": "Edit Student",
+          "submit": "Save",
+          "cancel": "Cancel",
+          "success": "Student updated successfully",
+          "error": "Error updating student"
+        },
+        "deactivate": {
+          "title": "Deactivate Student",
+          "description": "Are you sure you want to deactivate this student?",
+          "hasEnrollments": "Cannot deactivate: active enrollments exist.",
+          "confirm": "Deactivate",
+          "cancel": "Cancel",
+          "success": "Student deactivated",
+          "error": "Error deactivating student"
+        }
       },
       "periods": {
         "title": "Periods",

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
+import { personGateway } from '@/gateways/person-gateway'
 import { addPersonToFamily } from '@/use-cases/families/add-person-to-family'
 import { createFamily } from '@/use-cases/families/create-family'
 import { deactivateFamily } from '@/use-cases/families/deactivate-family'
@@ -12,6 +13,7 @@ import type {
   linkUserToFamilySchema,
   updateFamilySchema,
 } from '@/use-cases/families/schemas'
+import { phoneNumberSchema } from '@/use-cases/families/schemas'
 import { updateFamily } from '@/use-cases/families/update-family'
 import { requireAdmin } from './auth-helper'
 
@@ -65,4 +67,20 @@ export async function linkUserToFamilyAction(data: LinkUserToFamilyInput) {
   if (result !== 'OK') return result
   revalidatePath('/dashboard/families')
   return 'OK' as const
+}
+
+export async function addPhoneAction(
+  personId: string,
+  data: { phoneNumber: string; channels: string[] }
+) {
+  const user = await requireAdmin()
+  if (!user) return 'unauthorized' as const
+  const parsed = phoneNumberSchema.safeParse(data)
+  if (!parsed.success) return 'validationError' as const
+  const phone = await personGateway.addPhone(personId, {
+    phoneNumber: parsed.data.phoneNumber,
+    channels: parsed.data.channels,
+  })
+  revalidatePath('/dashboard/families')
+  return phone
 }
