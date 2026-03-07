@@ -1,5 +1,7 @@
 // Utils
 
+// Breadcrumbs
+export { type BreadcrumbItem, Breadcrumbs } from './breadcrumbs'
 // Button
 export { Button, type ButtonProps, buttonVariants } from './button'
 // Card

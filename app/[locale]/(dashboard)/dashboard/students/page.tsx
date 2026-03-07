@@ -1,4 +1,4 @@
-import { Card, type Column, DataTable } from '@peaklab/ui'
+import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
@@ -23,6 +23,7 @@ export default async function StudentsPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.students')
+  const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const { roles, familyId } = await getSessionWithRole()
 
@@ -110,6 +111,12 @@ export default async function StudentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
+          { label: tBreadcrumbs('students') },
+        ]}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {families.length > 0 && <CreateStudentDialog families={families} />}

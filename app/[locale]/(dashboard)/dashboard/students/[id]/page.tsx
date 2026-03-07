@@ -1,4 +1,4 @@
-import { Card, StatusBadge } from '@peaklab/ui'
+import { Breadcrumbs, Card, StatusBadge } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -28,6 +28,7 @@ export default async function StudentDetailPage({ params }: Props) {
   const { locale, id } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.studentDetails')
+  const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const { roles, familyId } = await getSessionWithRole()
 
@@ -78,6 +79,13 @@ export default async function StudentDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
+          { label: tBreadcrumbs('students'), href: '/dashboard/students' },
+          { label: `${student.person.name} ${student.person.lastname}` },
+        ]}
+      />
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">

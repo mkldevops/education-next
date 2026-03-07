@@ -1,4 +1,4 @@
-import { Card, type Column, DataTable } from '@peaklab/ui'
+import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -30,6 +30,7 @@ export default async function ConfigPage({ params }: Props) {
   if (!roles.includes('admin')) notFound()
 
   const t = await getTranslations('dashboard.pages.config')
+  const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const configs = await db.config.findMany({
     where: { isActive: true },
@@ -74,6 +75,12 @@ export default async function ConfigPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
+          { label: tBreadcrumbs('config') },
+        ]}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <CreateConfigDialog />
