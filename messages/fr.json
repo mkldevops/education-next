@@ -179,6 +179,18 @@
       "enrollments": "Inscriptions",
       "pendingPayments": "Paiements en attente"
     },
+    "breadcrumbs": {
+      "dashboard": "Tableau de bord",
+      "families": "Familles",
+      "students": "Élèves",
+      "enrollments": "Inscriptions",
+      "payments": "Paiements",
+      "periods": "Périodes",
+      "levels": "Niveaux",
+      "classes": "Classes",
+      "plans": "Plans tarifaires",
+      "config": "Configuration"
+    },
     "sidebar": {
       "dashboard": "Tableau de bord",
       "families": "Familles",
@@ -647,6 +659,12 @@
   },
   "settings": {
     "title": "Paramètres",
+    "tabs": {
+      "profile": "Profil",
+      "security": "Sécurité",
+      "sessions": "Sessions",
+      "account": "Compte"
+    },
     "profile": {
       "title": "Profil",
       "description": "Gérez vos informations personnelles",
@@ -659,7 +677,24 @@
     "security": {
       "title": "Sécurité",
       "description": "Gérez votre mot de passe et la sécurité de votre compte",
-      "changePassword": "Changer le mot de passe"
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "passwordHint": "Minimum 8 caractères",
+      "changePassword": "Changer le mot de passe",
+      "success": "Mot de passe modifié avec succès"
+    },
+    "sessions": {
+      "title": "Sessions actives",
+      "description": "Gérez les appareils où vous êtes connecté",
+      "current": "Actuelle",
+      "revoke": "Révoquer",
+      "unknownIp": "IP inconnue",
+      "noSessions": "Aucune session active"
+    },
+    "account": {
+      "title": "Compte",
+      "description": "Informations de votre compte"
     },
     "danger": {
       "title": "Zone de danger",
@@ -672,7 +707,12 @@
     "errors": {
       "unauthorized": "Vous devez être connecté pour effectuer cette action",
       "profileNotFound": "Profil introuvable",
-      "nameRequired": "Le nom est requis"
+      "nameRequired": "Le nom est requis",
+      "validationError": "Veuillez remplir tous les champs correctement",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "invalidCurrentPassword": "Le mot de passe actuel est incorrect",
+      "sessionRevokeFailed": "Impossible de révoquer la session"
     }
   },
   "profile": {

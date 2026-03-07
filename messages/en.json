@@ -179,6 +179,18 @@
       "enrollments": "Enrollments",
       "pendingPayments": "Pending payments"
     },
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "families": "Families",
+      "students": "Students",
+      "enrollments": "Enrollments",
+      "payments": "Payments",
+      "periods": "Periods",
+      "levels": "Levels",
+      "classes": "Classes",
+      "plans": "Pricing Plans",
+      "config": "Configuration"
+    },
     "sidebar": {
       "dashboard": "Dashboard",
       "families": "Families",
@@ -647,6 +659,12 @@
   },
   "settings": {
     "title": "Settings",
+    "tabs": {
+      "profile": "Profile",
+      "security": "Security",
+      "sessions": "Sessions",
+      "account": "Account"
+    },
     "profile": {
       "title": "Profile",
       "description": "Manage your personal information",
@@ -659,7 +677,24 @@
     "security": {
       "title": "Security",
       "description": "Manage your password and account security",
-      "changePassword": "Change password"
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "passwordHint": "Minimum 8 characters",
+      "changePassword": "Change password",
+      "success": "Password changed successfully"
+    },
+    "sessions": {
+      "title": "Active sessions",
+      "description": "Manage devices where you are logged in",
+      "current": "Current",
+      "revoke": "Revoke",
+      "unknownIp": "Unknown IP",
+      "noSessions": "No active sessions"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Your account information"
     },
     "danger": {
       "title": "Danger zone",
@@ -672,7 +707,12 @@
     "errors": {
       "unauthorized": "You must be logged in to perform this action",
       "profileNotFound": "Profile not found",
-      "nameRequired": "Name is required"
+      "nameRequired": "Name is required",
+      "validationError": "Please fill in all fields correctly",
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "invalidCurrentPassword": "Current password is incorrect",
+      "sessionRevokeFailed": "Failed to revoke session"
     }
   },
   "profile": {
