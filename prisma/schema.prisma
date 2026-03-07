@@ -43,6 +43,12 @@ enum ConfigValueType {
   BOOLEAN
 }
 
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  PARENT
+}
+
 // ─── Better Auth Models ─────────────────────────────────────────────────────
 
 model User {
@@ -51,7 +57,7 @@ model User {
   email         String    @unique
   emailVerified Boolean   @default(false)
   image         String?
-  roles         Json      @default("[\"admin\"]")
+  role          Role      @default(PARENT)
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

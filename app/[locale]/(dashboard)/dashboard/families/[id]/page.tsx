@@ -1,15 +1,19 @@
-import { Breadcrumbs, Card, StatusBadge } from '@peaklab/ui'
+import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
+import { cn } from '@/lib/utils'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
-import { AddPersonDialog } from '../_components/add-person-dialog'
-import { AddPhoneDialog } from '../_components/add-phone-dialog'
 import { DeactivateFamilyButton } from '../_components/deactivate-family-button'
 import { EditFamilyDialog } from '../_components/edit-family-dialog'
-import { PaymentSummary } from '../_components/payment-summary'
+import { ActivityFeed } from './_components/activity-feed'
+import { ChildCard } from './_components/child-card'
+import { FinancialSummary } from './_components/financial-summary'
+import { HeroBanner } from './_components/hero-banner'
+import { ParentsSection } from './_components/parents-section'
+import { PaymentHistoryTable } from './_components/payment-history-table'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -31,9 +35,9 @@ export default async function FamilyDetailPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { roles, familyId } = await getSessionWithRole()
+  const { role, familyId } = await getSessionWithRole()
 
-  if (!roles.includes('admin') && familyId !== id) notFound()
+  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && familyId !== id) notFound()
 
   const family = await db.family.findUnique({
     where: { id },
@@ -53,8 +57,16 @@ export default async function FamilyDetailPage({ params }: Props) {
                       classAssignments: {
                         where: { endAt: null },
                         include: {
-                          classPeriod: true,
+                          classPeriod: {
+                            include: {
+                              period: true,
+                              level: true,
+                            },
+                          },
                         },
+                      },
+                      payments: {
+                        where: { isActive: true },
                       },
                     },
                   },
@@ -75,6 +87,7 @@ export default async function FamilyDetailPage({ params }: Props) {
               student: {
                 include: { person: true },
               },
+              plan: true,
             },
           },
         },
@@ -85,12 +98,19 @@ export default async function FamilyDetailPage({ params }: Props) {
 
   if (!family) notFound()
 
-  const students = family.persons.filter((fp) => fp.person.student)
+  const students = family.persons
+    .filter((fp) => fp.person.student)
+    .map((fp) => ({ ...fp, person: { ...fp.person, student: fp.person.student! } }))
 
-  const allEnrollments = students.flatMap((s) => s.person.student?.enrollments ?? [])
+  const allEnrollments = students.flatMap((s) => s.person.student.enrollments)
   const totalDue = allEnrollments.reduce((sum, e) => sum + Number(e.totalAmount), 0)
   const totalDiscount = allEnrollments.reduce((sum, e) => sum + Number(e.discount), 0)
   const totalPaid = family.payments.reduce((sum, p) => sum + Number(p.amount), 0)
+  const remainingBalance = totalDue - totalPaid
+
+  const enrolledChildren = students.filter((s) => s.person.student.enrollments.length > 0).length
+  const activeEnrollments = allEnrollments.filter((e) => e.status === 'ACTIVE').length
+  const _pendingEnrollments = allEnrollments.filter((e) => e.status === 'PENDING').length
 
   return (
     <div className="space-y-6">
@@ -101,12 +121,14 @@ export default async function FamilyDetailPage({ params }: Props) {
           { label: family.name },
         ]}
       />
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{family.name}</h1>
-          <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
-        </div>
-        {roles.includes('admin') && (
+
+      <HeroBanner
+        family={family}
+        studentsCount={students.length}
+        enrollmentsCount={allEnrollments.length}
+        showActions={role === 'ADMIN' || role === 'SUPER_ADMIN'}
+      >
+        {(role === 'ADMIN' || role === 'SUPER_ADMIN') && (
           <div className="flex gap-2">
             <EditFamilyDialog
               family={{
@@ -119,209 +141,174 @@ export default async function FamilyDetailPage({ params }: Props) {
             <DeactivateFamilyButton familyId={family.id} />
           </div>
         )}
+      </HeroBanner>
+
+      {allEnrollments.some((e) => e.status === 'PENDING') && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-amber-900">{t('alert.needsAttention')}</h3>
+            <p className="text-sm text-amber-800 mt-1">
+              {allEnrollments.filter((e) => e.status === 'PENDING').length} inscription(s) en
+              attente
+            </p>
+          </div>
+          <button
+            type="button"
+            className="text-sm font-medium text-amber-700 hover:text-amber-900 whitespace-nowrap"
+          >
+            {t('alert.assignNow')}
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard label={t('kpis.enrolledChildren')} value={enrolledChildren} icon="👶" />
+        <KPICard
+          label={t('kpis.totalEnrollments')}
+          value={allEnrollments.length}
+          subValue={`${activeEnrollments} ${t('kpis.active')}`}
+          icon="📚"
+        />
+        <KPICard
+          label={t('kpis.totalPaid')}
+          value={`€${formatAmount(totalPaid)}`}
+          icon="✓"
+          color="green"
+        />
+        <KPICard
+          label={t('kpis.remainingBalance')}
+          value={`€${formatAmount(remainingBalance)}`}
+          icon="⚠"
+          color={remainingBalance > 0 ? 'amber' : 'green'}
+        />
       </div>
 
-      <Card className="p-6 space-y-4">
-        <div>
-          <h3 className="text-sm font-medium text-gray-500">{t('emergencyContact')}</h3>
-          <p className="mt-1 text-sm text-gray-900">{family.emergencyContact || '-'}</p>
-        </div>
-        <div>
-          <h3 className="text-sm font-medium text-gray-500">{t('authorizedPickup')}</h3>
-          <p className="mt-1 text-sm text-gray-900">{family.authorizedPickup || '-'}</p>
-        </div>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('sections.parentsTitle')}</h2>
+          <ParentsSection persons={family.persons} />
+        </Card>
 
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">{t('familyMembers')}</h2>
-          {roles.includes('admin') && <AddPersonDialog familyId={family.id} />}
-        </div>
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('table.name')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('table.relationType')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('table.email')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('table.phone')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {family.persons.map((fp) => (
-                <tr key={fp.personId} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm">
-                    {fp.person.name} {fp.person.lastname}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{fp.relationType}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{fp.person.email || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    <div className="flex items-center gap-2">
-                      <span>{fp.person.phoneNumbers[0]?.phoneNumber || '-'}</span>
-                      {roles.includes('admin') && <AddPhoneDialog personId={fp.personId} />}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {t('sections.financialTitle')}
+          </h2>
+          <FinancialSummary
+            totalDue={totalDue}
+            totalPaid={totalPaid}
+            totalDiscount={totalDiscount}
+            remainingBalance={remainingBalance}
+          />
+        </Card>
       </div>
 
       {students.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('students')}</h2>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('studentTable.name')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('studentTable.birthday')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('studentTable.birthplace')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('studentTable.allergies')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {students.map((student) => {
-                  const s = student.person.student
-                  if (!s) return null
-                  return (
-                    <tr key={student.person.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm">
-                        {student.person.name} {student.person.lastname}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {new Date(s.birthday).toLocaleDateString(locale)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{s.birthplace || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{s.allergies || '-'}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {t('sections.childrenTitle')}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {students.map((student) => (
+              <ChildCard key={student.person.id} student={student} locale={locale} />
+            ))}
           </div>
         </div>
-      )}
-
-      {students.some((s) => (s.person.student?.enrollments.length ?? 0) > 0) && (
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('enrollments')}</h2>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('enrollmentTable.student')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('enrollmentTable.plan')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('enrollmentTable.status')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('enrollmentTable.total')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {students.flatMap((student) =>
-                  (student.person.student?.enrollments ?? []).map((enrollment) => (
-                    <tr key={enrollment.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm">
-                        {student.person.name} {student.person.lastname}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{enrollment.plan.name}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <StatusBadge status={enrollment.status} />
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        €{formatAmount(enrollment.totalAmount)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {allEnrollments.length > 0 && (
-        <PaymentSummary totalDue={totalDue} totalDiscount={totalDiscount} totalPaid={totalPaid} />
       )}
 
       {family.payments.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('paymentHistory.title')}</h2>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('paymentHistory.student')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('paymentHistory.amount')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('paymentHistory.method')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('paymentHistory.reference')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('paymentHistory.paidAt')}
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    {t('paymentHistory.cashedAt')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {family.payments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
-                      {payment.enrollment.student.person.name}{' '}
-                      {payment.enrollment.student.person.lastname}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      €{formatAmount(payment.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{payment.method}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{payment.reference || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {new Date(payment.paidAt).toLocaleDateString(locale)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {payment.cashedAt
-                        ? new Date(payment.cashedAt).toLocaleDateString(locale)
-                        : '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {t('sections.paymentsTitle')}
+          </h2>
+          <PaymentHistoryTable payments={family.payments} locale={locale} />
+        </div>
+      )}
+
+      {allEnrollments.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              {t('sections.activityTitle')}
+            </h2>
+            <ActivityFeed enrollments={allEnrollments} payments={family.payments} />
           </div>
+
+          {allEnrollments.some((e) => e.classAssignments.length > 0) && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                {t('sections.assignmentsTitle')}
+              </h2>
+              <Card className="p-4 space-y-3">
+                {allEnrollments.map((enrollment) =>
+                  enrollment.classAssignments.map((assignment) => (
+                    <div
+                      key={assignment.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {assignment.classPeriod.name}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {assignment.classPeriod.level.name} • {assignment.classPeriod.period.name}
+                        </p>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(assignment.startAt).toLocaleDateString(locale)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </Card>
+            </div>
+          )}
         </div>
       )}
     </div>
+  )
+}
+
+function KPICard({
+  label,
+  value,
+  subValue,
+  icon,
+  color = 'gray',
+}: {
+  label: string
+  value: string | number
+  subValue?: string
+  icon?: string
+  color?: 'gray' | 'green' | 'amber'
+}) {
+  const bgColor = {
+    gray: 'bg-gray-50',
+    green: 'bg-green-50',
+    amber: 'bg-amber-50',
+  }[color]
+
+  const textColor = {
+    gray: 'text-gray-900',
+    green: 'text-green-900',
+    amber: 'text-amber-900',
+  }[color]
+
+  const subTextColor = {
+    gray: 'text-gray-600',
+    green: 'text-green-700',
+    amber: 'text-amber-700',
+  }[color]
+
+  return (
+    <Card className={cn('p-4 rounded-xl border', bgColor)}>
+      <div className="flex items-center gap-3">
+        <div className="text-2xl">{icon}</div>
+        <div className="flex-1">
+          <p className="text-xs font-medium text-gray-600">{label}</p>
+          <p className={cn('text-2xl font-bold', textColor)}>{value}</p>
+          {subValue && <p className={cn('text-xs', subTextColor)}>{subValue}</p>}
+        </div>
+      </div>
+    </Card>
   )
 }

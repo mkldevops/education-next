@@ -33,7 +33,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.enrollmentDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { roles, familyId } = await getSessionWithRole()
+  const { role, familyId } = await getSessionWithRole()
 
   const enrollment = await db.enrollment.findUnique({
     where: { id },
@@ -70,7 +70,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
   if (!enrollment) notFound()
 
-  const isAdmin = roles.includes('admin')
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
   const availableClasses = isAdmin
     ? await db.classPeriod.findMany({
@@ -82,7 +82,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriodId ?? null
 
-  if (!roles.includes('admin')) {
+  if (!isAdmin) {
     const enrollmentFamily = enrollment.student.person.families.some(
       (fp) => fp.familyId === familyId
     )

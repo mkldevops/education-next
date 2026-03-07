@@ -21,25 +21,55 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, usePathname } from '@/i18n/routing'
 import { cn } from '@/lib/utils'
+import type { Role } from '@/types/enums'
 import { useSidebarStore } from './sidebar-store'
 
-const gestionItems = [
+type NavItemConfig = {
+  href: string
+  icon: LucideIcon
+  key: string
+  requiredRoles?: Role[]
+}
+
+const gestionItems: NavItemConfig[] = [
   { href: '/dashboard', icon: LayoutGrid, key: 'dashboard' },
   { href: '/dashboard/families', icon: Users, key: 'families' },
   { href: '/dashboard/students', icon: GraduationCap, key: 'students' },
   { href: '/dashboard/enrollments', icon: ClipboardList, key: 'enrollments' },
   { href: '/dashboard/payments', icon: CreditCard, key: 'payments' },
-] as const
+]
 
-const configItems = [
-  { href: '/dashboard/periods', icon: CalendarDays, key: 'periods' },
-  { href: '/dashboard/levels', icon: Layers, key: 'levels' },
-  { href: '/dashboard/classes', icon: BookOpen, key: 'classes' },
-  { href: '/dashboard/plans', icon: Wallet, key: 'plans' },
-  { href: '/dashboard/config', icon: Wrench, key: 'config' },
-] as const
+const configItems: NavItemConfig[] = [
+  {
+    href: '/dashboard/periods',
+    icon: CalendarDays,
+    key: 'periods',
+    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    href: '/dashboard/levels',
+    icon: Layers,
+    key: 'levels',
+    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    href: '/dashboard/classes',
+    icon: BookOpen,
+    key: 'classes',
+    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  { href: '/dashboard/plans', icon: Wallet, key: 'plans', requiredRoles: ['ADMIN', 'SUPER_ADMIN'] },
+  {
+    href: '/dashboard/config',
+    icon: Wrench,
+    key: 'config',
+    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+]
 
-const bottomItems = [{ href: '/dashboard/settings', icon: Settings, key: 'settings' }] as const
+const bottomItems: NavItemConfig[] = [
+  { href: '/dashboard/settings', icon: Settings, key: 'settings' },
+]
 
 function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
@@ -103,7 +133,11 @@ function NavItem({
   return link
 }
 
-export function Sidebar() {
+type SidebarProps = {
+  role: Role
+}
+
+export function Sidebar({ role }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const company = useTranslations('company')
   const pathname = usePathname()
@@ -113,6 +147,13 @@ export function Sidebar() {
     if (href === '/dashboard') return pathname === '/dashboard'
     return pathname.startsWith(href)
   }
+
+  const canViewItem = (item: NavItemConfig) => {
+    if (!item.requiredRoles) return true
+    return item.requiredRoles.includes(role)
+  }
+
+  const visibleConfigItems = configItems.filter(canViewItem)
 
   return (
     <aside
@@ -160,25 +201,29 @@ export function Sidebar() {
           ))}
         </div>
 
-        {expanded ? (
-          <p className="mb-2 mt-6 border-t border-alabaster-700 pt-4 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            {t('sectionConfig')}
-          </p>
-        ) : (
-          <div className="my-4 border-t border-alabaster-700" />
+        {visibleConfigItems.length > 0 && (
+          <>
+            {expanded ? (
+              <p className="mb-2 mt-6 border-t border-alabaster-700 pt-4 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                {t('sectionConfig')}
+              </p>
+            ) : (
+              <div className="my-4 border-t border-alabaster-700" />
+            )}
+            <div className="space-y-1">
+              {visibleConfigItems.map((item) => (
+                <NavItem
+                  key={item.key}
+                  href={item.href}
+                  icon={item.icon}
+                  label={t(item.key)}
+                  active={isActive(item.href)}
+                  expanded={expanded}
+                />
+              ))}
+            </div>
+          </>
         )}
-        <div className="space-y-1">
-          {configItems.map((item) => (
-            <NavItem
-              key={item.key}
-              href={item.href}
-              icon={item.icon}
-              label={t(item.key)}
-              active={isActive(item.href)}
-              expanded={expanded}
-            />
-          ))}
-        </div>
       </nav>
 
       <div className="border-t border-alabaster-700 p-3 flex-shrink-0">

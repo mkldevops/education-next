@@ -34,19 +34,14 @@ export async function searchStudentsAndFamilies(
 
   const dbUser = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { roles: true },
+    select: { role: true },
   })
   if (!dbUser) return 'unauthorized' as const
 
-  const rolesRaw = dbUser.roles
-  const roles: string[] = Array.isArray(rolesRaw)
-    ? rolesRaw
-    : typeof rolesRaw === 'string'
-      ? JSON.parse(rolesRaw)
-      : []
+  const isAdmin = dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN'
 
   let familyId: string | undefined
-  if (roles.includes('family')) {
+  if (dbUser.role === 'PARENT') {
     const userFamily = await db.userFamily.findFirst({
       where: { userId: session.user.id },
       select: { familyId: true },
@@ -85,7 +80,7 @@ export async function searchStudentsAndFamilies(
               isActive: true,
             },
           },
-          roles.includes('admin')
+          isAdmin
             ? {}
             : {
                 person: {
@@ -109,7 +104,7 @@ export async function searchStudentsAndFamilies(
       },
       take: 5,
     }),
-    roles.includes('admin')
+    isAdmin
       ? db.family.findMany({
           where: {
             AND: [

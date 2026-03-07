@@ -29,15 +29,10 @@ export default async function RegisterPage({ params }: Props) {
 
   const dbUser = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { roles: true },
+    select: { role: true },
   })
-  const rolesRaw = dbUser?.roles
-  const roles: string[] = Array.isArray(rolesRaw)
-    ? rolesRaw
-    : typeof rolesRaw === 'string'
-      ? JSON.parse(rolesRaw)
-      : []
-  if (!roles.includes('admin')) redirect({ href: '/dashboard', locale })
+  const isAdmin = dbUser && (dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN')
+  if (!isAdmin) redirect({ href: '/dashboard', locale })
 
   const t = await getTranslations('auth.register')
 

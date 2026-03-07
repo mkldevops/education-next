@@ -26,9 +26,11 @@ export default async function EnrollmentsPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { roles, familyId } = await getSessionWithRole()
+  const { role, familyId } = await getSessionWithRole()
 
-  const whereStudent = roles.includes('admin')
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+
+  const whereStudent = isAdmin
     ? {}
     : {
         person: {
@@ -38,7 +40,7 @@ export default async function EnrollmentsPage({ params }: Props) {
         },
       }
 
-  const [students, plans, classes] = roles.includes('admin')
+  const [students, plans, classes] = isAdmin
     ? await Promise.all([
         db.student.findMany({
           where: { isActive: true },

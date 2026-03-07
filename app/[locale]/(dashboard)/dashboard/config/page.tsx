@@ -25,9 +25,10 @@ export default async function ConfigPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
 
-  const { roles } = await getSessionWithRole()
+  const { role } = await getSessionWithRole()
 
-  if (!roles.includes('admin')) notFound()
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  if (!isAdmin) notFound()
 
   const t = await getTranslations('dashboard.pages.config')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')

@@ -3,13 +3,14 @@
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import type { Role } from '@/types/enums'
 import { requireAdmin } from './auth-helper'
 
 export async function createUserAction(data: {
   name: string
   email: string
   password: string
-  role: 'admin' | 'family'
+  role: Role
 }) {
   const admin = await requireAdmin()
   if (!admin) return 'unauthorized' as const
@@ -26,7 +27,7 @@ export async function createUserAction(data: {
     await db.user.update({
       where: { id: res.user.id },
       data: {
-        roles: JSON.stringify([data.role]),
+        role: data.role,
         emailVerified: true,
       },
     })

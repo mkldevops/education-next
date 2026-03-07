@@ -37,7 +37,7 @@ async function seed() {
   })
   const adminUser = await prisma.user.update({
     where: { id: adminRes.user.id },
-    data: { roles: JSON.stringify(['admin']), emailVerified: true },
+    data: { role: 'ADMIN', emailVerified: true },
   })
   console.log(`Created admin: ${adminUser.email}`)
 
@@ -50,7 +50,7 @@ async function seed() {
   })
   const parentUser = await prisma.user.update({
     where: { id: parentRes.user.id },
-    data: { roles: JSON.stringify(['family']), emailVerified: true },
+    data: { role: 'PARENT', emailVerified: true },
   })
   console.log(`Created parent: ${parentUser.email}`)
 

@@ -543,6 +543,63 @@
         "subtitle": "Family Details",
         "emergencyContact": "Emergency Contact",
         "authorizedPickup": "Authorized Pickup",
+        "hero": {
+          "members": "Members",
+          "children": "Children",
+          "enrollments": "Enrollments",
+          "edit": "Edit",
+          "addChild": "Add Child"
+        },
+        "alert": {
+          "needsAttention": "Children Needing Attention",
+          "assignNow": "Assign Now"
+        },
+        "kpis": {
+          "enrolledChildren": "Enrolled Children",
+          "active": "Active",
+          "totalEnrollments": "Total Enrollments",
+          "pending": "Pending",
+          "totalPaid": "Total Paid",
+          "remainingBalance": "Remaining Balance"
+        },
+        "sections": {
+          "parentsTitle": "Parents & Tutors",
+          "financialTitle": "Financial Summary",
+          "childrenTitle": "Children",
+          "paymentsTitle": "Payment History",
+          "activityTitle": "Recent Activity",
+          "assignmentsTitle": "Class Assignments"
+        },
+        "childCard": {
+          "birthday": "Birthday",
+          "allergies": "Allergies",
+          "languages": "Languages",
+          "class": "Class",
+          "enroll": "Enroll",
+          "viewProfile": "View Profile",
+          "noAllergies": "No allergies declared",
+          "noLanguages": "Not specified"
+        },
+        "payments": {
+          "amount": "Amount",
+          "method": "Method",
+          "reference": "Reference",
+          "paidAt": "Payment Date",
+          "cashedAt": "Cash Date",
+          "filter": "Filter",
+          "export": "Export",
+          "record": "Record Payment"
+        },
+        "activity": {
+          "payment": "Payment received",
+          "enrollment": "Enrollment created",
+          "assignment": "Class assignment"
+        },
+        "financial": {
+          "paid": "Paid",
+          "remaining": "Remaining",
+          "total": "Total"
+        },
         "familyMembers": "Family Members",
         "table": {
           "name": "Name",
@@ -765,5 +822,10 @@
     "families": "Families",
     "students": "Students",
     "shortcut": "⌘K"
+  },
+  "roles": {
+    "SUPER_ADMIN": "Super Admin",
+    "ADMIN": "Admin",
+    "PARENT": "Parent"
   }
 }

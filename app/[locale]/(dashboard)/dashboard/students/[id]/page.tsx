@@ -30,7 +30,9 @@ export default async function StudentDetailPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.studentDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { roles, familyId } = await getSessionWithRole()
+  const { role, familyId } = await getSessionWithRole()
+
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
   const student = await db.student.findUnique({
     where: { id },
@@ -68,7 +70,7 @@ export default async function StudentDetailPage({ params }: Props) {
 
   if (!student) notFound()
 
-  if (!roles.includes('admin')) {
+  if (!isAdmin) {
     const studentFamily = student.person.families.some((fp) => fp.familyId === familyId)
     if (!studentFamily) notFound()
   }
@@ -93,7 +95,7 @@ export default async function StudentDetailPage({ params }: Props) {
           </h1>
           <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
         </div>
-        {roles.includes('admin') && (
+        {isAdmin && (
           <div className="flex gap-2">
             <EditStudentDialog student={student} />
             <DeactivateStudentButton studentId={student.id} />

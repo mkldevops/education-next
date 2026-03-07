@@ -28,14 +28,16 @@ export default async function DashboardPage({ params }: Props) {
   const tStatus = await getTranslations('status')
 
   const session = await auth.api.getSession({ headers: await headers() })
-  const { roles, familyId } = await getSessionWithRole()
+  const { role, familyId } = await getSessionWithRole()
+
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
   const [familyCount, studentCount, enrollmentCount, pendingPaymentCount, recentEnrollments] =
     await Promise.all([
       db.family.count({
         where: {
           isActive: true,
-          ...(roles.includes('admin') ? {} : { id: familyId }),
+          ...(isAdmin ? {} : { id: familyId }),
         },
       }),
       db.student.count({
@@ -43,7 +45,7 @@ export default async function DashboardPage({ params }: Props) {
           isActive: true,
           person: {
             families: {
-              some: roles.includes('admin') ? {} : { familyId },
+              some: isAdmin ? {} : { familyId },
             },
           },
         },
@@ -55,7 +57,7 @@ export default async function DashboardPage({ params }: Props) {
           student: {
             person: {
               families: {
-                some: roles.includes('admin') ? {} : { familyId },
+                some: isAdmin ? {} : { familyId },
               },
             },
           },
@@ -68,7 +70,7 @@ export default async function DashboardPage({ params }: Props) {
           student: {
             person: {
               families: {
-                some: roles.includes('admin') ? {} : { familyId },
+                some: isAdmin ? {} : { familyId },
               },
             },
           },
@@ -77,7 +79,7 @@ export default async function DashboardPage({ params }: Props) {
       db.enrollment.findMany({
         where: {
           isActive: true,
-          ...(roles.includes('admin')
+          ...(isAdmin
             ? {}
             : {
                 student: {

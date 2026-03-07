@@ -543,6 +543,63 @@
         "subtitle": "Détails de la famille",
         "emergencyContact": "Contact d'urgence",
         "authorizedPickup": "Personnes autorisées à la récupération",
+        "hero": {
+          "members": "Membres",
+          "children": "Enfants",
+          "enrollments": "Inscriptions",
+          "edit": "Modifier",
+          "addChild": "Ajouter un enfant"
+        },
+        "alert": {
+          "needsAttention": "Enfants nécessitant une attention",
+          "assignNow": "Affecter maintenant"
+        },
+        "kpis": {
+          "enrolledChildren": "Enfants inscrits",
+          "active": "Actifs",
+          "totalEnrollments": "Total inscriptions",
+          "pending": "En attente",
+          "totalPaid": "Total payé",
+          "remainingBalance": "Solde restant"
+        },
+        "sections": {
+          "parentsTitle": "Parents & Tuteurs",
+          "financialTitle": "Résumé financier",
+          "childrenTitle": "Enfants",
+          "paymentsTitle": "Historique des paiements",
+          "activityTitle": "Activité récente",
+          "assignmentsTitle": "Affectations de classe"
+        },
+        "childCard": {
+          "birthday": "Date de naissance",
+          "allergies": "Allergies",
+          "languages": "Langues",
+          "class": "Classe",
+          "enroll": "Inscrire",
+          "viewProfile": "Voir le profil",
+          "noAllergies": "Aucune allergie déclarée",
+          "noLanguages": "Non spécifié"
+        },
+        "payments": {
+          "amount": "Montant",
+          "method": "Méthode",
+          "reference": "Référence",
+          "paidAt": "Date de paiement",
+          "cashedAt": "Date d'encaissement",
+          "filter": "Filtrer",
+          "export": "Exporter",
+          "record": "Enregistrer un paiement"
+        },
+        "activity": {
+          "payment": "Paiement reçu",
+          "enrollment": "Inscription créée",
+          "assignment": "Affectation de classe"
+        },
+        "financial": {
+          "paid": "Payé",
+          "remaining": "Restant",
+          "total": "Total"
+        },
         "familyMembers": "Membres de la famille",
         "table": {
           "name": "Nom",
@@ -765,5 +822,10 @@
     "families": "Familles",
     "students": "Élèves",
     "shortcut": "⌘K"
+  },
+  "roles": {
+    "SUPER_ADMIN": "Super Administrateur",
+    "ADMIN": "Administrateur",
+    "PARENT": "Parent"
   }
 }

@@ -25,11 +25,10 @@ export default async function FamiliesPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.families')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { roles, familyId } = await getSessionWithRole()
+  const { role, familyId } = await getSessionWithRole()
 
-  const whereClause = roles.includes('admin')
-    ? { isActive: true }
-    : { isActive: true, id: familyId }
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const whereClause = isAdmin ? { isActive: true } : { isActive: true, id: familyId }
 
   const families = await db.family.findMany({
     where: whereClause,
