@@ -25,6 +25,35 @@
     "search": "Search",
     "noResults": "No results"
   },
+  "errorPages": {
+    "global": {
+      "title": "Critical Error",
+      "description": "An unexpected error occurred. Please reload the page."
+    },
+    "500": {
+      "title": "Server Error",
+      "description": "An unexpected error occurred. Please try again later."
+    },
+    "404": {
+      "title": "Page Not Found",
+      "description": "The page you are looking for does not exist or has been moved."
+    },
+    "403": {
+      "title": "Forbidden",
+      "description": "You do not have permission to access this page."
+    },
+    "401": {
+      "title": "Unauthorized",
+      "description": "You must be logged in to access this page."
+    },
+    "actions": {
+      "retry": "Try Again",
+      "goHome": "Go Home",
+      "goBack": "Go Back",
+      "login": "Sign In",
+      "dashboard": "Dashboard"
+    }
+  },
   "metadata": {
     "title": "École Al-Nour — School Management",
     "description": "Enrollment management and school tracking platform"

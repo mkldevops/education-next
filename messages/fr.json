@@ -25,6 +25,35 @@
     "search": "Rechercher",
     "noResults": "Aucun résultat"
   },
+  "errorPages": {
+    "global": {
+      "title": "Erreur critique",
+      "description": "Une erreur inattendue s'est produite. Veuillez recharger la page."
+    },
+    "500": {
+      "title": "Erreur serveur",
+      "description": "Une erreur inattendue s'est produite. Veuillez réessayer plus tard."
+    },
+    "404": {
+      "title": "Page introuvable",
+      "description": "La page que vous recherchez n'existe pas ou a été déplacée."
+    },
+    "403": {
+      "title": "Accès interdit",
+      "description": "Vous n'avez pas les permissions nécessaires pour accéder à cette page."
+    },
+    "401": {
+      "title": "Non authentifié",
+      "description": "Vous devez être connecté pour accéder à cette page."
+    },
+    "actions": {
+      "retry": "Réessayer",
+      "goHome": "Retour à l'accueil",
+      "goBack": "Retour",
+      "login": "Se connecter",
+      "dashboard": "Tableau de bord"
+    }
+  },
   "metadata": {
     "title": "École Al-Nour — Gestion scolaire",
     "description": "Plateforme de gestion des inscriptions et du suivi scolaire"
