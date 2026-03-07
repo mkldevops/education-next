@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { setRequestLocale } from 'next-intl/server'
 import { DashboardHeader, Sidebar } from '@/features/dashboard'
 
@@ -17,7 +18,9 @@ export default async function DashboardLayout({ children, params }: Props) {
         <div className="absolute inset-x-0 top-0 z-10">
           <DashboardHeader />
         </div>
-        <main className="flex-1 p-6 pt-16">{children}</main>
+        <main className="flex-1 p-6 pt-16">
+          <Suspense>{children}</Suspense>
+        </main>
       </div>
     </div>
   )
