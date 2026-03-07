@@ -127,9 +127,9 @@ export default async function EnrollmentsPage({ params }: Props) {
   ]
 
   return (
-    <Card className="rounded-xl border border-gray-200">
-      <div className="flex items-center justify-between px-6 pt-6">
-        <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {studentOptions.length > 0 && planOptions.length > 0 && classOptions.length > 0 && (
           <CreateEnrollmentDialog
             students={studentOptions}
@@ -138,14 +138,14 @@ export default async function EnrollmentsPage({ params }: Props) {
           />
         )}
       </div>
-      <div className="mt-4">
+      <Card className="rounded-xl border border-gray-200">
         <DataTable
           data={enrollments}
           columns={columns}
           getRowKey={(enrollment) => enrollment.id}
           emptyMessage={t('noEnrollments')}
         />
-      </div>
-    </Card>
+      </Card>
+    </div>
   )
 }

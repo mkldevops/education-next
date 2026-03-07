@@ -66,19 +66,19 @@ export default async function PeriodsPage({ params }: Props) {
   ]
 
   return (
-    <Card className="rounded-xl border border-gray-200">
-      <div className="flex items-center justify-between px-6 pt-6">
-        <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <CreatePeriodDialog />
       </div>
-      <div className="mt-4">
+      <Card className="rounded-xl border border-gray-200">
         <DataTable
           data={periods}
           columns={columns}
           getRowKey={(period) => period.id}
           emptyMessage={t('noPeriods')}
         />
-      </div>
-    </Card>
+      </Card>
+    </div>
   )
 }

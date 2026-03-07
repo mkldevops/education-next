@@ -92,21 +92,21 @@ export default async function ClassesPage({ params }: Props) {
   ]
 
   return (
-    <Card className="rounded-xl border border-gray-200">
-      <div className="flex items-center justify-between px-6 pt-6">
-        <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {levels.length > 0 && periods.length > 0 && (
           <CreateClassDialog levels={levels} periods={periods} />
         )}
       </div>
-      <div className="mt-4">
+      <Card className="rounded-xl border border-gray-200">
         <DataTable
           data={classes}
           columns={columns}
           getRowKey={(item) => item.id}
           emptyMessage={t('noClasses')}
         />
-      </div>
-    </Card>
+      </Card>
+    </div>
   )
 }

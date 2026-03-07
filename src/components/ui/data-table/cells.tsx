@@ -14,7 +14,9 @@ const textColors: Record<string, string> = {
   gray: 'text-gray-700',
 }
 
-export function StatusDot({ color, label }: { color: string; label: string }) {
+type StatusColor = 'green' | 'amber' | 'red' | 'blue' | 'gray'
+
+export function StatusDot({ color, label }: { color: StatusColor; label: string }) {
   return (
     <div className="flex items-center gap-2">
       <div className={`h-2 w-2 rounded-full ${dotColors[color] ?? 'bg-gray-500'}`} />

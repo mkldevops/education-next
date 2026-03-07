@@ -72,6 +72,11 @@ export default async function LevelsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <CreateLevelDialog />
+      </div>
+
       {chains.length > 0 && (
         <Card className="rounded-xl border border-gray-200 p-4">
           <p className="mb-2 text-sm font-medium text-gray-500">{t('promotionChain')}</p>
@@ -91,18 +96,12 @@ export default async function LevelsPage({ params }: Props) {
       )}
 
       <Card className="rounded-xl border border-gray-200">
-        <div className="flex items-center justify-between px-6 pt-6">
-          <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
-          <CreateLevelDialog />
-        </div>
-        <div className="mt-4">
-          <DataTable
-            data={levels}
-            columns={columns}
-            getRowKey={(item) => item.id}
-            emptyMessage={t('noLevels')}
-          />
-        </div>
+        <DataTable
+          data={levels}
+          columns={columns}
+          getRowKey={(item) => item.id}
+          emptyMessage={t('noLevels')}
+        />
       </Card>
     </div>
   )

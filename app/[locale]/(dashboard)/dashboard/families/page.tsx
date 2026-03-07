@@ -100,19 +100,19 @@ export default async function FamiliesPage({ params }: Props) {
   ]
 
   return (
-    <Card className="rounded-xl border border-gray-200">
-      <div className="flex items-center justify-between px-6 pt-6">
-        <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <CreateFamilyDialog />
       </div>
-      <div className="mt-4">
+      <Card className="rounded-xl border border-gray-200">
         <DataTable
           data={familiesWithCounts}
           columns={columns}
           getRowKey={(family) => family.id}
           emptyMessage={t('noFamilies')}
         />
-      </div>
-    </Card>
+      </Card>
+    </div>
   )
 }

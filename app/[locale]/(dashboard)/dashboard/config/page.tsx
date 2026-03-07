@@ -48,7 +48,7 @@ export default async function ConfigPage({ params }: Props) {
       className: 'text-gray-700 break-words',
     },
     {
-      key: 'type',
+      key: 'valueType',
       header: t('type'),
       className: 'text-gray-700',
       render: (config): ReactNode => (
@@ -73,19 +73,19 @@ export default async function ConfigPage({ params }: Props) {
   ]
 
   return (
-    <Card className="rounded-xl border border-gray-200">
-      <div className="flex items-center justify-between px-6 pt-6">
-        <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <CreateConfigDialog />
       </div>
-      <div className="mt-4">
+      <Card className="rounded-xl border border-gray-200">
         <DataTable
           data={configs}
           columns={columns}
           getRowKey={(config) => config.id}
           emptyMessage={t('noConfig')}
         />
-      </div>
-    </Card>
+      </Card>
+    </div>
   )
 }
