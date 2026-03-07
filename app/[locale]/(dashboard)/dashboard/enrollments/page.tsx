@@ -1,6 +1,6 @@
+import { StatusBadge } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { StatusBadge } from '@/features/dashboard'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
