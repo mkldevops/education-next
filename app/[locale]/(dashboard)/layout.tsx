@@ -1,16 +1,11 @@
 import { Suspense } from 'react'
-import { setRequestLocale } from 'next-intl/server'
 import { DashboardHeader, Sidebar } from '@/features/dashboard'
 
 type Props = {
   children: React.ReactNode
-  params: Promise<{ locale: string }>
 }
 
-export default async function DashboardLayout({ children, params }: Props) {
-  const { locale } = await params
-  setRequestLocale(locale)
-
+export default function DashboardLayout({ children }: Props) {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
