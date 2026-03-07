@@ -7,6 +7,7 @@
     "predev": "docker compose up -d",
     "dev": "dotenv -- next dev",
     "build": "next build",
+    "build:prod": "prisma generate && prisma migrate deploy && next build",
     "start": "dotenv -- next start",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
