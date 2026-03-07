@@ -189,7 +189,8 @@
       "levels": "Niveaux",
       "classes": "Classes",
       "plans": "Plans tarifaires",
-      "config": "Configuration"
+      "config": "Configuration",
+      "users": "Utilisateurs"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -202,6 +203,7 @@
       "payments": "Paiements",
       "plans": "Plans tarifaires",
       "config": "Configuration",
+      "users": "Utilisateurs",
       "profile": "Profil",
       "settings": "Paramètres",
       "logout": "Déconnexion",
@@ -711,6 +713,27 @@
           "success": "Réduction appliquée",
           "error": "Erreur lors de l'application"
         }
+      },
+      "users": {
+        "title": "Utilisateurs",
+        "name": "Nom",
+        "email": "Email",
+        "role": "Rôle",
+        "family": "Famille",
+        "lastLogin": "Dernière connexion",
+        "status": "Statut",
+        "actions": "Actions",
+        "active": "Actif",
+        "inactive": "Inactif",
+        "changeRole": "Changer le rôle",
+        "newRole": "Nouveau rôle",
+        "deactivate": "Désactiver",
+        "confirm": "Confirmer",
+        "cancel": "Annuler",
+        "noUsers": "Aucun utilisateur enregistré",
+        "roleChanged": "Rôle modifié avec succès",
+        "userDeactivated": "Utilisateur désactivé",
+        "error": "Une erreur est survenue"
       }
     }
   },
