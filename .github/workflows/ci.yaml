@@ -37,13 +37,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm lint
-
-      - run: pnpm type-check
-
       - run: pnpm db:generate
         env:
           DATABASE_URL: postgresql://app:password@localhost:5432/app
+
+      - run: pnpm lint
+
+      - run: pnpm type-check
 
       - run: pnpm test
         env:
@@ -52,3 +52,5 @@ jobs:
       - run: pnpm knip
 
       - run: pnpm build
+        env:
+          DATABASE_URL: postgresql://app:password@localhost:5432/app
