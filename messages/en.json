@@ -757,5 +757,13 @@
     "overpayment": "Amount exceeds the remaining balance due",
     "noActiveEnrollments": "No active enrollments for this family",
     "refundExceedsPaid": "Refund exceeds the amount already paid"
+  },
+  "search": {
+    "placeholder": "Search students and families...",
+    "loading": "Loading...",
+    "noResults": "No results",
+    "families": "Families",
+    "students": "Students",
+    "shortcut": "⌘K"
   }
 }

@@ -757,5 +757,13 @@
     "overpayment": "Le montant dépasse le solde restant dû",
     "noActiveEnrollments": "Aucune inscription active pour cette famille",
     "refundExceedsPaid": "Le remboursement dépasse le montant déjà payé"
+  },
+  "search": {
+    "placeholder": "Rechercher élèves et familles...",
+    "loading": "Chargement...",
+    "noResults": "Aucun résultat",
+    "families": "Familles",
+    "students": "Élèves",
+    "shortcut": "⌘K"
   }
 }
