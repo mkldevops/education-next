@@ -165,7 +165,8 @@
       "settings": "Paramètres",
       "logout": "Déconnexion",
       "sectionGestion": "Gestion",
-      "sectionConfig": "Configuration"
+      "sectionConfig": "Configuration",
+      "collapse": "Réduire"
     },
     "pages": {
       "families": {

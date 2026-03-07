@@ -231,7 +231,7 @@ export function Sidebar() {
           {expanded ? (
             <>
               <ChevronsLeft size={18} className="flex-shrink-0" />
-              <span className="text-xs font-medium">Réduire</span>
+              <span className="text-xs font-medium">{t('collapse')}</span>
             </>
           ) : (
             <ChevronsRight size={18} />

@@ -165,7 +165,8 @@
       "settings": "Settings",
       "logout": "Logout",
       "sectionGestion": "Management",
-      "sectionConfig": "Configuration"
+      "sectionConfig": "Configuration",
+      "collapse": "Collapse"
     },
     "pages": {
       "families": {

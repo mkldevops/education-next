@@ -277,7 +277,7 @@ export default async function DashboardPage({ params }: Props) {
                             </div>
                           </div>
                           <span className="text-xs text-gray-600">
-                            {Math.round(paymentRatio * 100)}%
+                            {Math.round(Math.min(paymentRatio * 100, 100))}%
                           </span>
                         </div>
                       </td>
