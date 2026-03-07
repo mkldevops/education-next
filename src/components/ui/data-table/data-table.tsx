@@ -70,17 +70,38 @@ export function DataTable<T>({
             {columns.map((col) => (
               <th
                 key={col.key}
+                scope="col"
                 className={cn(
                   'px-4 py-3 text-left text-sm font-medium text-gray-500',
                   col.sortable && 'cursor-pointer select-none hover:text-gray-700',
                   col.className
                 )}
+                tabIndex={col.sortable ? 0 : undefined}
+                aria-sort={
+                  col.sortable && sortKey === col.key
+                    ? sortDir === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : undefined
+                }
                 onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                onKeyDown={
+                  col.sortable
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleSort(col.key)
+                        }
+                      }
+                    : undefined
+                }
               >
                 <span className="inline-flex items-center gap-1">
                   {col.header}
                   {col.sortable && sortKey === col.key && (
-                    <span className="text-xs">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                    <span className="text-xs" aria-hidden="true">
+                      {sortDir === 'asc' ? '↑' : '↓'}
+                    </span>
                   )}
                 </span>
               </th>
