@@ -23,9 +23,7 @@ export function AddPhoneDialog({ personId }: { personId: string }) {
   return (
     <Dialog>
       <DialogTrigger>
-        <Button variant="ghost" size="sm">
-          + {t('title')}
-        </Button>
+        <Button size="sm">+ {t('title')}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
