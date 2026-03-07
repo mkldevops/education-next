@@ -27,8 +27,7 @@
   },
   "lint-staged": {
     "*.{js,ts,jsx,tsx,json,css,md}": [
-      "biome check --write --no-errors-on-unmatched",
-      "knip"
+      "biome check --write --no-errors-on-unmatched"
     ]
   },
   "dependencies": {

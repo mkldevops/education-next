@@ -1,4 +1,4 @@
-import { Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
+import { Breadcrumbs, Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
@@ -24,6 +24,7 @@ export default async function EnrollmentsPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.enrollments')
+  const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const { roles, familyId } = await getSessionWithRole()
 
@@ -128,6 +129,12 @@ export default async function EnrollmentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
+          { label: tBreadcrumbs('enrollments') },
+        ]}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {studentOptions.length > 0 && planOptions.length > 0 && classOptions.length > 0 && (

@@ -1,4 +1,4 @@
-import { Card, type Column, DataTable } from '@peaklab/ui'
+import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
@@ -22,6 +22,7 @@ export default async function ClassesPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.classes')
+  const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const [levels, periods] = await Promise.all([
     db.level.findMany({
@@ -93,6 +94,12 @@ export default async function ClassesPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
+          { label: tBreadcrumbs('classes') },
+        ]}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {levels.length > 0 && periods.length > 0 && (
