@@ -1,3 +1,4 @@
+import { Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
@@ -37,15 +38,42 @@ export default async function LevelsPage({ params }: Props) {
 
   const chains = buildPromotionChains(levels)
 
+  const columns: Column<(typeof levels)[number]>[] = [
+    {
+      key: 'name',
+      header: t('name'),
+    },
+    {
+      key: 'nextLevel',
+      header: t('nextLevel'),
+      className: 'text-gray-700',
+      render: (level) => level.nextLevel?.name || t('none'),
+    },
+    {
+      key: 'classes',
+      header: t('classes'),
+      className: 'text-gray-700',
+      render: (level) => level._count.classPeriods,
+    },
+    {
+      key: 'actions',
+      header: t('actions'),
+      headerClassName: 'text-right',
+      className: 'text-right',
+      render: (level) => (
+        <EditLevelDialog
+          level={{ id: level.id, name: level.name }}
+          currentNextLevelId={level.nextLevelId}
+          allLevels={allLevelsForSelect}
+        />
+      ),
+    },
+  ]
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        <CreateLevelDialog />
-      </div>
-
       {chains.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <Card className="rounded-xl border border-gray-200 p-4">
           <p className="mb-2 text-sm font-medium text-gray-500">{t('promotionChain')}</p>
           <div className="flex flex-wrap gap-2">
             {chains.map((chain) => (
@@ -59,51 +87,23 @@ export default async function LevelsPage({ params }: Props) {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
-      {levels.length === 0 ? (
-        <div className="rounded-lg border p-8 text-center text-gray-500">{t('noLevels')}</div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('name')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('nextLevel')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('classes')}
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
-                  {t('actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {levels.map((level) => (
-                <tr key={level.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm">{level.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {level.nextLevel?.name || t('none')}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{level._count.classPeriods}</td>
-                  <td className="px-4 py-3 text-right">
-                    <EditLevelDialog
-                      level={{ id: level.id, name: level.name }}
-                      currentNextLevelId={level.nextLevelId}
-                      allLevels={allLevelsForSelect}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <Card className="rounded-xl border border-gray-200">
+        <div className="flex items-center justify-between px-6 pt-6">
+          <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
+          <CreateLevelDialog />
         </div>
-      )}
+        <div className="mt-4">
+          <DataTable
+            data={levels}
+            columns={columns}
+            getRowKey={(item) => item.id}
+            emptyMessage={t('noLevels')}
+          />
+        </div>
+      </Card>
     </div>
   )
 }

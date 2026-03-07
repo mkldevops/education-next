@@ -1,3 +1,4 @@
+import { Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
@@ -70,66 +71,57 @@ export default async function StudentsPage({ params }: Props) {
     orderBy: { person: { lastname: 'asc' } },
   })
 
+  const columns: Column<(typeof students)[0]>[] = [
+    {
+      key: 'name',
+      header: t('name'),
+      render: (student) => (
+        <Link
+          href={`/dashboard/students/${student.id}`}
+          className="text-primary hover:text-primary-hover font-medium"
+        >
+          {student.person.name} {student.person.lastname}
+        </Link>
+      ),
+    },
+    {
+      key: 'birthday',
+      header: t('birthday'),
+      className: 'text-gray-700',
+      render: (student) => new Date(student.birthday).toLocaleDateString(locale),
+    },
+    {
+      key: 'family',
+      header: t('family'),
+      className: 'text-gray-700',
+      render: (student) =>
+        student.person.families.length > 0 ? student.person.families[0].family.name : '-',
+    },
+    {
+      key: 'class',
+      header: t('class'),
+      className: 'text-gray-700',
+      render: (student) =>
+        student.enrollments.length > 0 && student.enrollments[0].classAssignments.length > 0
+          ? student.enrollments[0].classAssignments[0].classPeriod.name
+          : '-',
+    },
+  ]
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+    <Card className="rounded-xl border border-gray-200">
+      <div className="flex items-center justify-between px-6 pt-6">
+        <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
         {families.length > 0 && <CreateStudentDialog families={families} />}
       </div>
-
-      {students.length === 0 ? (
-        <div className="rounded-lg border p-8 text-center text-gray-500">{t('noStudents')}</div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('name')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('birthday')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('family')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('class')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {students.map((student) => {
-                const familyName =
-                  student.person.families.length > 0 ? student.person.families[0].family.name : '-'
-                const currentClass =
-                  student.enrollments.length > 0 &&
-                  student.enrollments[0].classAssignments.length > 0
-                    ? student.enrollments[0].classAssignments[0].classPeriod.name
-                    : '-'
-
-                return (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
-                      <Link
-                        href={`/dashboard/students/${student.id}`}
-                        className="text-primary hover:text-primary-hover font-medium"
-                      >
-                        {student.person.name} {student.person.lastname}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {new Date(student.birthday).toLocaleDateString(locale)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{familyName}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{currentClass}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+      <div className="mt-4">
+        <DataTable
+          data={students}
+          columns={columns}
+          getRowKey={(student) => student.id}
+          emptyMessage={t('noStudents')}
+        />
+      </div>
+    </Card>
   )
 }

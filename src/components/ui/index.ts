@@ -20,7 +20,7 @@ export {
 // Confirm Dialog
 export { ConfirmDialog, type ConfirmDialogProps } from './confirm-dialog'
 // Data Table
-export { type Column, DataTable, type DataTableProps } from './data-table'
+export { type Column, DataTable, type DataTableProps, ProgressBar, StatusDot } from './data-table'
 // Dialog
 export {
   Dialog,

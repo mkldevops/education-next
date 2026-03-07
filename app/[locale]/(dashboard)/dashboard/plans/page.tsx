@@ -1,3 +1,4 @@
+import { Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
@@ -33,53 +34,48 @@ export default async function PlansPage({ params }: Props) {
     orderBy: { name: 'asc' },
   })
 
+  const columns: Column<(typeof plans)[0]>[] = [
+    {
+      key: 'name',
+      header: t('name'),
+    },
+    {
+      key: 'amount',
+      header: t('amount'),
+      className: 'font-medium text-gray-900',
+      render: (plan) => `€${formatAmount(plan.amount)}`,
+    },
+    {
+      key: 'enrollments',
+      header: t('enrollments'),
+      className: 'text-gray-700',
+      render: (plan) => plan._count.enrollments,
+    },
+    {
+      key: 'actions',
+      header: t('actions'),
+      headerClassName: 'text-right',
+      className: 'text-right',
+      render: (plan) => (
+        <EditPlanDialog plan={{ id: plan.id, name: plan.name, amount: Number(plan.amount) }} />
+      ),
+    },
+  ]
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+    <Card className="rounded-xl border border-gray-200">
+      <div className="flex items-center justify-between px-6 pt-6">
+        <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
         <CreatePlanDialog />
       </div>
-
-      {plans.length === 0 ? (
-        <div className="rounded-lg border p-8 text-center text-gray-500">{t('noPlans')}</div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('name')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('amount')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('enrollments')}
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
-                  {t('actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {plans.map((plan) => (
-                <tr key={plan.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm">{plan.name}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                    €{formatAmount(plan.amount)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{plan._count.enrollments}</td>
-                  <td className="px-4 py-3 text-right">
-                    <EditPlanDialog
-                      plan={{ id: plan.id, name: plan.name, amount: Number(plan.amount) }}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+      <div className="mt-4">
+        <DataTable
+          data={plans}
+          columns={columns}
+          getRowKey={(plan) => plan.id}
+          emptyMessage={t('noPlans')}
+        />
+      </div>
+    </Card>
   )
 }

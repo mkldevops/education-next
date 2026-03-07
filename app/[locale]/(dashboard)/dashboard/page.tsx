@@ -1,4 +1,4 @@
-import { Card } from '@peaklab/ui'
+import { Card, type Column, DataTable, ProgressBar, StatusDot } from '@peaklab/ui'
 import { AlertCircle, CreditCard, GraduationCap, Layers, TrendingUp, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
@@ -105,6 +105,52 @@ export default async function DashboardPage({ params }: Props) {
 
   const userName = session?.user.name || 'User'
 
+  const enrollmentColumns: Column<(typeof recentEnrollments)[number]>[] = [
+    {
+      key: 'student',
+      header: t('table.student'),
+      render: (item) => (
+        <span className="font-medium">
+          {item.student.person.name} {item.student.person.lastname}
+        </span>
+      ),
+    },
+    {
+      key: 'plan',
+      header: t('table.plan'),
+      className: 'text-gray-600',
+      render: (item) => item.plan.name,
+    },
+    {
+      key: 'status',
+      header: t('table.status'),
+      render: (item) => (
+        <StatusDot
+          color={item.status === 'ACTIVE' ? 'green' : 'amber'}
+          label={tStatus(item.status)}
+        />
+      ),
+    },
+    {
+      key: 'progress',
+      header: t('table.progress'),
+      render: (item) => {
+        const totalAmount = Number(item.totalAmount)
+        const discount = Number(item.discount)
+        const finalAmount = totalAmount - discount
+        const totalPaid = item.payments.reduce((sum, p) => sum + Number(p.amount), 0)
+        const ratio = finalAmount > 0 ? (totalPaid / finalAmount) * 100 : 0
+        return <ProgressBar value={ratio} />
+      },
+    },
+    {
+      key: 'date',
+      header: t('table.date'),
+      className: 'text-gray-600',
+      render: (item) => new Date(item.registeredAt).toLocaleDateString(locale),
+    },
+  ]
+
   return (
     <div className="space-y-8">
       <div className="-mx-6 -mt-16 bg-gradient-to-br from-stormy-teal-900 via-yale-blue-900 to-alabaster-800 px-6 pb-20 pt-16">
@@ -198,8 +244,8 @@ export default async function DashboardPage({ params }: Props) {
         </Card>
       </div>
 
-      <Card className="rounded-lg border border-gray-200 bg-white p-6">
-        <div className="mb-6 flex items-center justify-between">
+      <Card className="rounded-xl border border-gray-200">
+        <div className="flex items-center justify-between px-6 pt-6">
           <h2 className="text-lg font-semibold text-gray-900">{t('recentEnrollments')}</h2>
           <Link
             href="/dashboard/enrollments"
@@ -210,85 +256,14 @@ export default async function DashboardPage({ params }: Props) {
         </div>
 
         {recentEnrollments.length === 0 ? (
-          <p className="text-gray-500">{t('pages.enrollments.noEnrollments')}</p>
+          <p className="px-6 pb-6 pt-4 text-gray-500">{t('pages.enrollments.noEnrollments')}</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">
-                    {t('table.student')}
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">
-                    {t('table.plan')}
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">
-                    {t('table.status')}
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">
-                    {t('table.progress')}
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">
-                    {t('table.date')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentEnrollments.map((enrollment) => {
-                  const totalAmount = Number(enrollment.totalAmount)
-                  const discount = Number(enrollment.discount)
-                  const finalAmount = totalAmount - discount
-                  const totalPaid = enrollment.payments.reduce(
-                    (sum, p) => sum + Number(p.amount),
-                    0
-                  )
-                  const paymentRatio = finalAmount > 0 ? totalPaid / finalAmount : 0
-                  const isActive = enrollment.status === 'ACTIVE'
-
-                  return (
-                    <tr key={enrollment.id} className="border-b border-gray-100">
-                      <td className="px-4 py-3 font-medium text-gray-900">
-                        {enrollment.student.person.name} {enrollment.student.person.lastname}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{enrollment.plan.name}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {isActive ? (
-                            <>
-                              <div className="h-2 w-2 rounded-full bg-green-500" />
-                              <span className="text-green-700">{tStatus('ACTIVE')}</span>
-                            </>
-                          ) : (
-                            <>
-                              <div className="h-2 w-2 rounded-full bg-amber-500" />
-                              <span className="text-amber-700">{tStatus('PENDING')}</span>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            <div className="h-2 rounded-full bg-gray-200">
-                              <div
-                                className="h-2 rounded-full bg-primary"
-                                style={{ width: `${Math.min(paymentRatio * 100, 100)}%` }}
-                              />
-                            </div>
-                          </div>
-                          <span className="text-xs text-gray-600">
-                            {Math.round(Math.min(paymentRatio * 100, 100))}%
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {new Date(enrollment.registeredAt).toLocaleDateString(locale)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <div className="mt-4">
+            <DataTable
+              data={recentEnrollments}
+              columns={enrollmentColumns}
+              getRowKey={(item) => item.id}
+            />
           </div>
         )}
       </Card>

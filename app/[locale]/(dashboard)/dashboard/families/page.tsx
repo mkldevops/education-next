@@ -1,3 +1,4 @@
+import { Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
@@ -65,56 +66,53 @@ export default async function FamiliesPage({ params }: Props) {
     }
   })
 
+  const columns: Column<(typeof familiesWithCounts)[number]>[] = [
+    {
+      key: 'name',
+      header: t('name'),
+      render: (family) => (
+        <Link
+          href={`/dashboard/families/${family.id}`}
+          className="font-medium text-primary hover:text-primary-hover"
+        >
+          {family.name}
+        </Link>
+      ),
+    },
+    {
+      key: 'emergencyContact',
+      header: t('emergencyContact'),
+      className: 'text-gray-700',
+      render: (family) => family.emergencyContact || '-',
+    },
+    {
+      key: 'studentCount',
+      header: t('students'),
+      className: 'text-gray-700',
+      render: (family) => family.studentCount,
+    },
+    {
+      key: 'enrollmentCount',
+      header: t('enrollments'),
+      className: 'text-gray-700',
+      render: (family) => family.enrollmentCount,
+    },
+  ]
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+    <Card className="rounded-xl border border-gray-200">
+      <div className="flex items-center justify-between px-6 pt-6">
+        <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
         <CreateFamilyDialog />
       </div>
-
-      {familiesWithCounts.length === 0 ? (
-        <div className="rounded-lg border p-8 text-center text-gray-500">{t('noFamilies')}</div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('name')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('emergencyContact')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('students')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('enrollments')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {familiesWithCounts.map((family) => (
-                <tr key={family.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm">
-                    <Link
-                      href={`/dashboard/families/${family.id}`}
-                      className="text-primary hover:text-primary-hover font-medium"
-                    >
-                      {family.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {family.emergencyContact || '-'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{family.studentCount}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{family.enrollmentCount}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+      <div className="mt-4">
+        <DataTable
+          data={familiesWithCounts}
+          columns={columns}
+          getRowKey={(family) => family.id}
+          emptyMessage={t('noFamilies')}
+        />
+      </div>
+    </Card>
   )
 }

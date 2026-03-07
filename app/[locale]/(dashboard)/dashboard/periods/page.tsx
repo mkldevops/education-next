@@ -1,3 +1,4 @@
+import { Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
@@ -32,57 +33,52 @@ export default async function PeriodsPage({ params }: Props) {
     orderBy: { startAt: 'desc' },
   })
 
+  const columns: Column<(typeof periods)[number]>[] = [
+    {
+      key: 'name',
+      header: t('name'),
+    },
+    {
+      key: 'startAt',
+      header: t('startDate'),
+      className: 'text-gray-700',
+      render: (period) => new Date(period.startAt).toLocaleDateString(locale),
+    },
+    {
+      key: 'endAt',
+      header: t('endDate'),
+      className: 'text-gray-700',
+      render: (period) => new Date(period.endAt).toLocaleDateString(locale),
+    },
+    {
+      key: 'classes',
+      header: t('classes'),
+      className: 'text-gray-700',
+      render: (period) => period._count.classPeriods,
+    },
+    {
+      key: 'actions',
+      header: t('actions'),
+      headerClassName: 'text-right',
+      className: 'text-right',
+      render: (period) => <EditPeriodDialog period={period} />,
+    },
+  ]
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+    <Card className="rounded-xl border border-gray-200">
+      <div className="flex items-center justify-between px-6 pt-6">
+        <h1 className="text-lg font-semibold text-gray-900">{t('title')}</h1>
         <CreatePeriodDialog />
       </div>
-
-      {periods.length === 0 ? (
-        <div className="rounded-lg border p-8 text-center text-gray-500">{t('noPeriods')}</div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('name')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('startDate')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('endDate')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('classes')}
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
-                  {t('actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {periods.map((period) => (
-                <tr key={period.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm">{period.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {new Date(period.startAt).toLocaleDateString(locale)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {new Date(period.endAt).toLocaleDateString(locale)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{period._count.classPeriods}</td>
-                  <td className="px-4 py-3 text-right">
-                    <EditPeriodDialog period={period} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+      <div className="mt-4">
+        <DataTable
+          data={periods}
+          columns={columns}
+          getRowKey={(period) => period.id}
+          emptyMessage={t('noPeriods')}
+        />
+      </div>
+    </Card>
   )
 }
