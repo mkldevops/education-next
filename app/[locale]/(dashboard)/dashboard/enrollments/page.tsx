@@ -5,6 +5,7 @@ import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../_lib/auth-helper'
+import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -36,6 +37,35 @@ export default async function EnrollmentsPage({ params }: Props) {
         },
       }
 
+  const [students, plans, classes] = roles.includes('admin')
+    ? await Promise.all([
+        db.student.findMany({
+          where: { isActive: true },
+          include: { person: true },
+          orderBy: { person: { lastname: 'asc' } },
+        }),
+        db.plan.findMany({
+          where: { isActive: true },
+          orderBy: { name: 'asc' },
+        }),
+        db.classPeriod.findMany({
+          where: { isActive: true },
+          include: { level: true, period: true },
+          orderBy: { name: 'asc' },
+        }),
+      ])
+    : [[], [], []]
+
+  const studentOptions = students.map((s) => ({
+    id: s.id,
+    name: `${s.person.lastname} ${s.person.name}`,
+  }))
+  const planOptions = plans.map((p) => ({ id: p.id, name: p.name }))
+  const classOptions = classes.map((c) => ({
+    id: c.id,
+    name: `${c.name} (${c.level.name} — ${c.period.name})`,
+  }))
+
   const enrollments = await db.enrollment.findMany({
     where: { isActive: true, student: whereStudent },
     include: {
@@ -57,7 +87,16 @@ export default async function EnrollmentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        {studentOptions.length > 0 && planOptions.length > 0 && classOptions.length > 0 && (
+          <CreateEnrollmentDialog
+            students={studentOptions}
+            plans={planOptions}
+            classes={classOptions}
+          />
+        )}
+      </div>
 
       {enrollments.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-gray-500">{t('noEnrollments')}</div>

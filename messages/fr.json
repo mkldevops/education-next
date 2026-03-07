@@ -380,7 +380,19 @@
         "from": "Du",
         "to": "Au",
         "current": "Actuelle",
-        "noEnrollments": "Aucune inscription enregistrée"
+        "noEnrollments": "Aucune inscription enregistrée",
+        "create": {
+          "title": "Nouvelle inscription",
+          "selectStudent": "Élève",
+          "selectPlan": "Plan tarifaire",
+          "selectClass": "Classe",
+          "discount": "Réduction (€)",
+          "canLeaveAlone": "Autorisé à partir seul",
+          "cancel": "Annuler",
+          "submit": "Inscrire",
+          "success": "Inscription créée",
+          "error": "Erreur lors de l'inscription"
+        }
       },
       "promotion": {
         "title": "Promotion des élèves",
@@ -412,7 +424,24 @@
         "name": "Nom",
         "amount": "Montant",
         "enrollments": "Inscriptions",
-        "noPlans": "Aucun plan enregistré"
+        "actions": "Actions",
+        "noPlans": "Aucun plan enregistré",
+        "create": {
+          "title": "Nouveau plan",
+          "name": "Nom",
+          "amount": "Montant (€)",
+          "cancel": "Annuler",
+          "submit": "Créer",
+          "success": "Plan créé",
+          "error": "Erreur lors de la création"
+        },
+        "edit": {
+          "title": "Modifier le plan",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Plan mis à jour",
+          "error": "Erreur lors de la mise à jour"
+        }
       },
       "config": {
         "title": "Configuration",
@@ -498,7 +527,27 @@
         "actions": {
           "activate": "Activer",
           "complete": "Terminer",
-          "cancel": "Annuler"
+          "cancel": "Annuler",
+          "activated": "Inscription activée",
+          "completed": "Inscription terminée",
+          "cancelled": "Inscription annulée",
+          "error": "Erreur lors de la mise à jour"
+        },
+        "reassign": {
+          "title": "Réaffecter la classe",
+          "selectClass": "Nouvelle classe",
+          "cancel": "Annuler",
+          "submit": "Réaffecter",
+          "success": "Classe réaffectée",
+          "error": "Erreur lors de la réaffectation"
+        },
+        "discount": {
+          "title": "Appliquer une réduction",
+          "amount": "Montant de la réduction (€)",
+          "cancel": "Annuler",
+          "submit": "Appliquer",
+          "success": "Réduction appliquée",
+          "error": "Erreur lors de l'application"
         }
       }
     }
