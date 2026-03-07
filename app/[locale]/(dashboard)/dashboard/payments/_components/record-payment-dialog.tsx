@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -23,7 +23,13 @@ interface Option {
   name: string
 }
 
-export function RecordPaymentDialog({ families }: { families: Option[] }) {
+export function RecordPaymentDialog({
+  families,
+  defaultOpen = false,
+}: {
+  families: Option[]
+  defaultOpen?: boolean
+}) {
   const t = useTranslations('dashboard.pages.payments.record')
 
   return (
@@ -35,17 +41,30 @@ export function RecordPaymentDialog({ families }: { families: Option[] }) {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <RecordPaymentForm families={families} />
+        <RecordPaymentForm families={families} defaultOpen={defaultOpen} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function RecordPaymentForm({ families }: { families: Option[] }) {
+function RecordPaymentForm({
+  families,
+  defaultOpen = false,
+}: {
+  families: Option[]
+  defaultOpen?: boolean
+}) {
   const t = useTranslations('dashboard.pages.payments.record')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+
+  useEffect(() => {
+    if (defaultOpen) {
+      setOpen(true)
+      router.replace('/dashboard/payments')
+    }
+  }, [defaultOpen, setOpen, router])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

@@ -161,7 +161,7 @@ export default async function DashboardPage({ params }: Props) {
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Link
-            href="/dashboard/families"
+            href="/dashboard/families?action=create"
             className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
           >
             <div className="flex items-center gap-3">
@@ -170,7 +170,7 @@ export default async function DashboardPage({ params }: Props) {
             </div>
           </Link>
           <Link
-            href="/dashboard/enrollments"
+            href="/dashboard/enrollments?action=create"
             className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
           >
             <div className="flex items-center gap-3">
@@ -179,7 +179,7 @@ export default async function DashboardPage({ params }: Props) {
             </div>
           </Link>
           <Link
-            href="/dashboard/payments"
+            href="/dashboard/payments?action=create"
             className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
           >
             <div className="flex items-center gap-3">
@@ -188,7 +188,7 @@ export default async function DashboardPage({ params }: Props) {
             </div>
           </Link>
           <Link
-            href="/dashboard/students"
+            href="/dashboard/students?action=create"
             className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
           >
             <div className="flex items-center gap-3">
