@@ -89,7 +89,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
       ref={dialogRef}
       className={cn(
         'fixed inset-0 z-50 m-auto w-full max-w-lg rounded-lg bg-white shadow-lg',
-        'backdrop:bg-black/50',
+        'backdrop:bg-black/40 backdrop:backdrop-blur-sm',
         className
       )}
       open={open}
@@ -99,7 +99,8 @@ export function DialogContent({ children, className }: DialogContentProps) {
       {children}
       <style>{`
         dialog::backdrop {
-          background-color: rgba(0, 0, 0, 0.5);
+          background-color: rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(4px);
         }
       `}</style>
     </dialog>
