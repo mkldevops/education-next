@@ -1,6 +1,8 @@
+import { Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import type { ReactNode } from 'react'
 import { db } from '@/lib/db'
 import { getSessionWithRole } from '../../_lib/auth-helper'
 import { CreateConfigDialog } from './_components/create-config-dialog'
@@ -34,59 +36,56 @@ export default async function ConfigPage({ params }: Props) {
     orderBy: { name: 'asc' },
   })
 
+  const columns: Array<Column<(typeof configs)[0]>> = [
+    {
+      key: 'name',
+      header: t('name'),
+      className: 'font-medium text-gray-900',
+    },
+    {
+      key: 'value',
+      header: t('value'),
+      className: 'text-gray-700 break-words',
+    },
+    {
+      key: 'valueType',
+      header: t('type'),
+      className: 'text-gray-700',
+      render: (config): ReactNode => (
+        <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+          {config.valueType}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: t('actions'),
+      render: (config): ReactNode => (
+        <EditConfigDialog
+          config={{
+            name: config.name,
+            value: config.value,
+            valueType: config.valueType,
+          }}
+        />
+      ),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <CreateConfigDialog />
       </div>
-
-      {configs.length === 0 ? (
-        <div className="rounded-lg border p-8 text-center text-gray-500">{t('noConfig')}</div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('name')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('value')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('type')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {configs.map((config) => (
-                <tr key={config.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{config.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700 break-words">{config.value}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
-                      {config.valueType}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <EditConfigDialog
-                      config={{
-                        name: config.name,
-                        value: config.value,
-                        valueType: config.valueType,
-                      }}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <Card className="rounded-xl border border-gray-200">
+        <DataTable
+          data={configs}
+          columns={columns}
+          getRowKey={(config) => config.id}
+          emptyMessage={t('noConfig')}
+        />
+      </Card>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { StatusBadge } from '@peaklab/ui'
+import { Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
@@ -85,6 +85,47 @@ export default async function EnrollmentsPage({ params }: Props) {
     orderBy: { registeredAt: 'desc' },
   })
 
+  const columns: Column<(typeof enrollments)[0]>[] = [
+    {
+      key: 'student',
+      header: t('student'),
+      render: (enrollment) => (
+        <Link
+          href={`/dashboard/enrollments/${enrollment.id}`}
+          className="text-primary hover:text-primary-hover font-medium"
+        >
+          {enrollment.student.person.name} {enrollment.student.person.lastname}
+        </Link>
+      ),
+    },
+    {
+      key: 'plan',
+      header: t('plan'),
+      className: 'text-gray-700',
+      render: (enrollment) => enrollment.plan.name,
+    },
+    {
+      key: 'status',
+      header: t('status'),
+      render: (enrollment) => <StatusBadge status={enrollment.status} />,
+    },
+    {
+      key: 'class',
+      header: t('class'),
+      className: 'text-gray-700',
+      render: (enrollment) =>
+        enrollment.classAssignments.length > 0
+          ? enrollment.classAssignments[0].classPeriod.name
+          : '-',
+    },
+    {
+      key: 'totalAmount',
+      header: t('totalAmount'),
+      className: 'text-gray-700',
+      render: (enrollment) => `€${formatAmount(enrollment.totalAmount)}`,
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -97,63 +138,14 @@ export default async function EnrollmentsPage({ params }: Props) {
           />
         )}
       </div>
-
-      {enrollments.length === 0 ? (
-        <div className="rounded-lg border p-8 text-center text-gray-500">{t('noEnrollments')}</div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('student')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('plan')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('status')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('class')}
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                  {t('totalAmount')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {enrollments.map((enrollment) => {
-                const className =
-                  enrollment.classAssignments.length > 0
-                    ? enrollment.classAssignments[0].classPeriod.name
-                    : '-'
-
-                return (
-                  <tr key={enrollment.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
-                      <Link
-                        href={`/dashboard/enrollments/${enrollment.id}`}
-                        className="text-primary hover:text-primary-hover font-medium"
-                      >
-                        {enrollment.student.person.name} {enrollment.student.person.lastname}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{enrollment.plan.name}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <StatusBadge status={enrollment.status} />
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{className}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      €{formatAmount(enrollment.totalAmount)}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <Card className="rounded-xl border border-gray-200">
+        <DataTable
+          data={enrollments}
+          columns={columns}
+          getRowKey={(enrollment) => enrollment.id}
+          emptyMessage={t('noEnrollments')}
+        />
+      </Card>
     </div>
   )
 }
