@@ -75,7 +75,7 @@ export default async function FamiliesPage({ params }: Props) {
       {familiesWithCounts.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-gray-500">{t('noFamilies')}</div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b bg-gray-50">
@@ -99,7 +99,7 @@ export default async function FamiliesPage({ params }: Props) {
                   <td className="px-4 py-3 text-sm">
                     <Link
                       href={`/dashboard/families/${family.id}`}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-primary hover:text-primary-hover font-medium"
                     >
                       {family.name}
                     </Link>

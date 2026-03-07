@@ -42,7 +42,7 @@ export default async function ClassesPage({ params }: Props) {
       {classes.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-gray-500">{t('noClasses')}</div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b bg-gray-50">

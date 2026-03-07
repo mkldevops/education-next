@@ -123,6 +123,23 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "greeting": "Hello, {name}",
+    "greetingSubtitle": "Here is your school summary for today.",
+    "quickActions": {
+      "newFamily": "New family",
+      "newEnrollment": "Enroll a student",
+      "newPayment": "Record a payment",
+      "promote": "Promote students"
+    },
+    "recentEnrollments": "Recent enrollments",
+    "viewAll": "View all",
+    "table": {
+      "student": "Student",
+      "plan": "Plan",
+      "status": "Status",
+      "progress": "Progress",
+      "date": "Date"
+    },
     "welcome": {
       "title": "Welcome!",
       "description": "Here is an overview of your school."
@@ -148,7 +165,8 @@
       "settings": "Settings",
       "logout": "Logout",
       "sectionGestion": "Management",
-      "sectionConfig": "Configuration"
+      "sectionConfig": "Configuration",
+      "collapse": "Collapse"
     },
     "pages": {
       "families": {
@@ -339,6 +357,11 @@
           "reference": "Reference",
           "paidAt": "Paid At",
           "cashedAt": "Cashed At"
+        },
+        "actions": {
+          "activate": "Activate",
+          "complete": "Complete",
+          "cancel": "Cancel"
         }
       }
     }

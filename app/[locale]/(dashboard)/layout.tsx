@@ -11,11 +11,13 @@ export default async function DashboardLayout({ children, params }: Props) {
   setRequestLocale(locale)
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex flex-1 flex-col">
-        <DashboardHeader />
-        <main className="flex-1 p-6">{children}</main>
+      <div className="relative flex flex-1 flex-col">
+        <div className="absolute inset-x-0 top-0 z-10">
+          <DashboardHeader />
+        </div>
+        <main className="flex-1 p-6 pt-16">{children}</main>
       </div>
     </div>
   )

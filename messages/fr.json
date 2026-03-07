@@ -123,6 +123,23 @@
   },
   "dashboard": {
     "title": "Tableau de bord",
+    "greeting": "Bonjour, {name}",
+    "greetingSubtitle": "Voici le résumé de votre école aujourd'hui.",
+    "quickActions": {
+      "newFamily": "Nouvelle famille",
+      "newEnrollment": "Inscrire un élève",
+      "newPayment": "Saisir un paiement",
+      "promote": "Promouvoir élèves"
+    },
+    "recentEnrollments": "Inscriptions récentes",
+    "viewAll": "Voir tout",
+    "table": {
+      "student": "Élève",
+      "plan": "Plan",
+      "status": "Statut",
+      "progress": "Progression",
+      "date": "Date"
+    },
     "welcome": {
       "title": "Bienvenue !",
       "description": "Voici un aperçu de votre école."
@@ -148,7 +165,8 @@
       "settings": "Paramètres",
       "logout": "Déconnexion",
       "sectionGestion": "Gestion",
-      "sectionConfig": "Configuration"
+      "sectionConfig": "Configuration",
+      "collapse": "Réduire"
     },
     "pages": {
       "families": {
@@ -339,6 +357,11 @@
           "reference": "Référence",
           "paidAt": "Date de paiement",
           "cashedAt": "Date d'encaissement"
+        },
+        "actions": {
+          "activate": "Activer",
+          "complete": "Terminer",
+          "cancel": "Annuler"
         }
       }
     }

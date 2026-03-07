@@ -62,7 +62,7 @@ export default async function EnrollmentsPage({ params }: Props) {
       {enrollments.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-gray-500">{t('noEnrollments')}</div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b bg-gray-50">
@@ -95,7 +95,7 @@ export default async function EnrollmentsPage({ params }: Props) {
                     <td className="px-4 py-3 text-sm">
                       <Link
                         href={`/dashboard/enrollments/${enrollment.id}`}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-primary hover:text-primary-hover font-medium"
                       >
                         {enrollment.student.person.name} {enrollment.student.person.lastname}
                       </Link>
