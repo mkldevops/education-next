@@ -100,7 +100,14 @@ export default async function FamilyDetailPage({ params }: Props) {
         </div>
         {roles.includes('admin') && (
           <div className="flex gap-2">
-            <EditFamilyDialog family={family} />
+            <EditFamilyDialog
+              family={{
+                id: family.id,
+                name: family.name,
+                emergencyContact: family.emergencyContact,
+                authorizedPickup: family.authorizedPickup,
+              }}
+            />
             <DeactivateFamilyButton familyId={family.id} />
           </div>
         )}
