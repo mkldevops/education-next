@@ -4,11 +4,11 @@ import { getConfigSchema } from './schemas'
 
 type Input = z.infer<typeof getConfigSchema>
 
-export async function getConfig(input: Input) {
+export async function getConfig(input: Input, configGw = configGateway) {
   const parsed = getConfigSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const config = await configGateway.get(parsed.data.name)
+  const config = await configGw.get(parsed.data.name)
   if (!config) return 'notFound' as const
 
   return config

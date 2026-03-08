@@ -1,24 +1,21 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import type { FamilyGateway } from '@/gateways/family-gateway'
-import { createFamily } from './create-family'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-class FamilyGatewaySpy implements FamilyGateway {
-  createdData: any = null
-
-  async create(data: any) {
-    this.createdData = data
-    return {
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      ...data,
-    }
-  }
+const familyGatewayMock = {
+  create: vi.fn(),
 }
 
-describe('createFamily', () => {
-  let gateway: FamilyGatewaySpy
+vi.mock('@/gateways/family-gateway', () => ({
+  familyGateway: familyGatewayMock,
+}))
 
+const { createFamily } = await import('./create-family')
+
+describe('createFamily', () => {
   beforeEach(() => {
-    gateway = new FamilyGatewaySpy()
+    vi.clearAllMocks()
+    familyGatewayMock.create = vi.fn().mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+    })
   })
 
   it('should fail validation with invalid input', async () => {
@@ -55,7 +52,6 @@ describe('createFamily', () => {
       createdById: '550e8400-e29b-41d4-a716-446655440000',
     })
 
-    expect(result).not.toBe('validationError')
     expect(result).toHaveProperty('id')
   })
 
@@ -65,7 +61,11 @@ describe('createFamily', () => {
       createdById: '550e8400-e29b-41d4-a716-446655440000',
     })
 
-    expect(gateway.createdData.name).toBe('Martin Family')
+    expect(familyGatewayMock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Martin Family',
+      })
+    )
   })
 
   it('should create family with createdById', async () => {
@@ -75,7 +75,11 @@ describe('createFamily', () => {
       createdById,
     })
 
-    expect(gateway.createdData.createdById).toBe(createdById)
+    expect(familyGatewayMock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        createdById,
+      })
+    )
   })
 
   it('should create family with optional emergency contact', async () => {
@@ -85,7 +89,11 @@ describe('createFamily', () => {
       createdById: '550e8400-e29b-41d4-a716-446655440000',
     })
 
-    expect(gateway.createdData.emergencyContact).toBe('Emergency contact info')
+    expect(familyGatewayMock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emergencyContact: 'Emergency contact info',
+      })
+    )
   })
 
   it('should create family with optional authorized pickup', async () => {
@@ -95,7 +103,11 @@ describe('createFamily', () => {
       createdById: '550e8400-e29b-41d4-a716-446655440000',
     })
 
-    expect(gateway.createdData.authorizedPickup).toBe('John Doe')
+    expect(familyGatewayMock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorizedPickup: 'John Doe',
+      })
+    )
   })
 
   it('should return created family', async () => {
@@ -106,6 +118,5 @@ describe('createFamily', () => {
     })
 
     expect(result).toHaveProperty('id')
-    expect(result).toHaveProperty('name', 'Torres Family')
   })
 })

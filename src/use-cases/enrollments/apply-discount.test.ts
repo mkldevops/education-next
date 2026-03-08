@@ -1,29 +1,21 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import type { EnrollmentGateway } from '@/gateways/enrollment-gateway'
-import { applyDiscount } from './apply-discount'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-class EnrollmentGatewaySpy implements EnrollmentGateway {
-  enrollmentToReturn: any = null
-  updatedId: string | null = null
-  updatedDiscount: number | null = null
-  updatedTotalAmount: number | null = null
-
-  async findById(id: string) {
-    return this.enrollmentToReturn
-  }
-
-  async updateDiscount(id: string, discount: number, totalAmount: number) {
-    this.updatedId = id
-    this.updatedDiscount = discount
-    this.updatedTotalAmount = totalAmount
-  }
+const enrollmentGatewayMock = {
+  findById: vi.fn(),
+  updateDiscount: vi.fn(),
 }
 
-describe('applyDiscount', () => {
-  let gateway: EnrollmentGatewaySpy
+vi.mock('@/gateways/enrollment-gateway', () => ({
+  enrollmentGateway: enrollmentGatewayMock,
+}))
 
+const { applyDiscount } = await import('./apply-discount')
+
+describe('applyDiscount', () => {
   beforeEach(() => {
-    gateway = new EnrollmentGatewaySpy()
+    vi.clearAllMocks()
+    enrollmentGatewayMock.findById = vi.fn()
+    enrollmentGatewayMock.updateDiscount = vi.fn()
   })
 
   it('should fail validation with invalid input', async () => {
@@ -45,7 +37,7 @@ describe('applyDiscount', () => {
   })
 
   it('should fail with enrollment not found', async () => {
-    gateway.enrollmentToReturn = null
+    enrollmentGatewayMock.findById.mockResolvedValue(null)
 
     const result = await applyDiscount({
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
@@ -56,10 +48,10 @@ describe('applyDiscount', () => {
   })
 
   it('should succeed when applying discount to existing enrollment', async () => {
-    gateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       plan: { amount: 100 },
-    }
+    })
 
     const result = await applyDiscount({
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
@@ -70,39 +62,46 @@ describe('applyDiscount', () => {
   })
 
   it('should update enrollment with correct discount', async () => {
-    gateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       plan: { amount: 100 },
-    }
+    })
 
     await applyDiscount({
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 10,
     })
 
-    expect(gateway.updatedId).toBe('550e8400-e29b-41d4-a716-446655440000')
-    expect(gateway.updatedDiscount).toBe(10)
+    expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000',
+      10,
+      90
+    )
   })
 
   it('should calculate correct total amount after discount', async () => {
-    gateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       plan: { amount: 100 },
-    }
+    })
 
     await applyDiscount({
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 25,
     })
 
-    expect(gateway.updatedTotalAmount).toBe(75)
+    expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000',
+      25,
+      75
+    )
   })
 
   it('should handle zero discount', async () => {
-    gateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       plan: { amount: 100 },
-    }
+    })
 
     const result = await applyDiscount({
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
@@ -110,14 +109,18 @@ describe('applyDiscount', () => {
     })
 
     expect(result).toBe('OK')
-    expect(gateway.updatedTotalAmount).toBe(100)
+    expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000',
+      0,
+      100
+    )
   })
 
   it('should handle discount equal to plan amount', async () => {
-    gateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       plan: { amount: 100 },
-    }
+    })
 
     const result = await applyDiscount({
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
@@ -125,6 +128,10 @@ describe('applyDiscount', () => {
     })
 
     expect(result).toBe('OK')
-    expect(gateway.updatedTotalAmount).toBe(0)
+    expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000',
+      100,
+      0
+    )
   })
 })

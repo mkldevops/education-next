@@ -1,38 +1,29 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import type { ClassAssignmentGateway } from '@/gateways/class-assignment-gateway'
-import type { EnrollmentGateway } from '@/gateways/enrollment-gateway'
-import { cancelEnrollment } from './cancel-enrollment'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-class EnrollmentGatewaySpy implements EnrollmentGateway {
-  enrollmentToReturn: any = null
-  updatedId: string | null = null
-  updatedStatus: any = null
-
-  async findById(id: string) {
-    return this.enrollmentToReturn
-  }
-
-  async updateStatus(id: string, status: any) {
-    this.updatedId = id
-    this.updatedStatus = status
-  }
+const enrollmentGatewayMock = {
+  findById: vi.fn(),
+  updateStatus: vi.fn(),
+}
+const classAssignmentGatewayMock = {
+  closeCurrent: vi.fn(),
 }
 
-class ClassAssignmentGatewaySpy implements ClassAssignmentGateway {
-  closedEnrollmentId: string | null = null
+vi.mock('@/gateways/enrollment-gateway', () => ({
+  enrollmentGateway: enrollmentGatewayMock,
+}))
 
-  async closeCurrent(enrollmentId: string) {
-    this.closedEnrollmentId = enrollmentId
-  }
-}
+vi.mock('@/gateways/class-assignment-gateway', () => ({
+  classAssignmentGateway: classAssignmentGatewayMock,
+}))
+
+const { cancelEnrollment } = await import('./cancel-enrollment')
 
 describe('cancelEnrollment', () => {
-  let enrollmentGateway: EnrollmentGatewaySpy
-  let classAssignmentGateway: ClassAssignmentGatewaySpy
-
   beforeEach(() => {
-    enrollmentGateway = new EnrollmentGatewaySpy()
-    classAssignmentGateway = new ClassAssignmentGatewaySpy()
+    vi.clearAllMocks()
+    enrollmentGatewayMock.findById = vi.fn()
+    enrollmentGatewayMock.updateStatus = vi.fn()
+    classAssignmentGatewayMock.closeCurrent = vi.fn()
   })
 
   it('should fail validation with invalid input', async () => {
@@ -44,7 +35,7 @@ describe('cancelEnrollment', () => {
   })
 
   it('should fail with enrollment not found', async () => {
-    enrollmentGateway.enrollmentToReturn = null
+    enrollmentGatewayMock.findById.mockResolvedValue(null)
 
     const result = await cancelEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -54,10 +45,10 @@ describe('cancelEnrollment', () => {
   })
 
   it('should fail when transitioning from COMPLETED status', async () => {
-    enrollmentGateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'COMPLETED',
-    }
+    })
 
     const result = await cancelEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -67,10 +58,10 @@ describe('cancelEnrollment', () => {
   })
 
   it('should fail when transitioning from CANCELLED status', async () => {
-    enrollmentGateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'CANCELLED',
-    }
+    })
 
     const result = await cancelEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -80,10 +71,10 @@ describe('cancelEnrollment', () => {
   })
 
   it('should succeed when transitioning from PENDING status', async () => {
-    enrollmentGateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'PENDING',
-    }
+    })
 
     const result = await cancelEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -93,10 +84,10 @@ describe('cancelEnrollment', () => {
   })
 
   it('should succeed when transitioning from ACTIVE status', async () => {
-    enrollmentGateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'ACTIVE',
-    }
+    })
 
     const result = await cancelEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -106,29 +97,33 @@ describe('cancelEnrollment', () => {
   })
 
   it('should close current class assignment', async () => {
-    enrollmentGateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'ACTIVE',
-    }
+    })
 
     await cancelEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
-    expect(classAssignmentGateway.closedEnrollmentId).toBe('550e8400-e29b-41d4-a716-446655440000')
+    expect(classAssignmentGatewayMock.closeCurrent).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000'
+    )
   })
 
   it('should update enrollment status to CANCELLED', async () => {
-    enrollmentGateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'ACTIVE',
-    }
+    })
 
     await cancelEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
-    expect(enrollmentGateway.updatedId).toBe('550e8400-e29b-41d4-a716-446655440000')
-    expect(enrollmentGateway.updatedStatus).toBe('CANCELLED')
+    expect(enrollmentGatewayMock.updateStatus).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000',
+      'CANCELLED'
+    )
   })
 })

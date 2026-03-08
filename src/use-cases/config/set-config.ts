@@ -15,7 +15,7 @@ function validateValueType(value: string, valueType: string): boolean {
   }
 }
 
-export async function setConfig(input: Input) {
+export async function setConfig(input: Input, configGw = configGateway) {
   const parsed = setConfigSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
@@ -23,6 +23,6 @@ export async function setConfig(input: Input) {
     return 'invalidConfigValue' as const
   }
 
-  const config = await configGateway.set(parsed.data)
+  const config = await configGw.set(parsed.data)
   return config
 }

@@ -5,11 +5,11 @@ import { updatePeriodSchema } from './schemas'
 
 type Input = z.infer<typeof updatePeriodSchema>
 
-export async function updatePeriod(input: Input) {
+export async function updatePeriod(input: Input, periodGw = periodGateway) {
   const parsed = updatePeriodSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const period = await periodGateway.findById(parsed.data.id)
+  const period = await periodGw.findById(parsed.data.id)
   if (!period) return 'notFound' as const
 
   const startAt = parsed.data.startAt ?? period.startAt
@@ -19,11 +19,11 @@ export async function updatePeriod(input: Input) {
     const datesCheck = validatePeriodDates(startAt, endAt)
     if (datesCheck !== 'OK') return datesCheck
 
-    const hasOverlap = await periodGateway.checkOverlap(startAt, endAt, parsed.data.id)
+    const hasOverlap = await periodGw.checkOverlap(startAt, endAt, parsed.data.id)
     if (hasOverlap) return 'overlappingPeriod' as const
   }
 
   const { id, ...updateData } = parsed.data
-  const updated = await periodGateway.update(id, updateData)
+  const updated = await periodGw.update(id, updateData)
   return updated
 }

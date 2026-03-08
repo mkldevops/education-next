@@ -1,31 +1,93 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createStudent } from './create-student'
 
-const mockFamilyGateway = {
-  findById: vi.fn(),
-  create: vi.fn(),
-  update: vi.fn(),
-  deactivate: vi.fn(),
-  list: vi.fn(),
-  addPerson: vi.fn(),
-  linkUser: vi.fn(),
+class FamilyGatewaySpy {
+  familyToReturn: { id: string } | null = null
+  addPersonCalls: Array<{ familyId: string; personId: string }> = []
+
+  async findById() {
+    return this.familyToReturn
+  }
+
+  async addPerson(familyId: string, personId: string) {
+    this.addPersonCalls.push({ familyId, personId })
+  }
+
+  async create() {
+    return {} as never
+  }
+
+  async update() {
+    return {} as never
+  }
+
+  async deactivate() {
+    return {} as never
+  }
+
+  async list() {
+    return []
+  }
+
+  async linkUser() {
+    return {} as never
+  }
 }
 
-const mockPersonGateway = {
-  create: vi.fn(),
-  update: vi.fn(),
-  findById: vi.fn(),
-  addPhone: vi.fn(),
+class PersonGatewaySpy {
+  personToReturn: { id: string } | null = null
+  createdData: unknown = null
+
+  async create(data: unknown) {
+    this.createdData = data
+    return this.personToReturn || { id: 'person-123' }
+  }
+
+  async update() {
+    return {} as never
+  }
+
+  async findById() {
+    return {} as never
+  }
+
+  async addPhone() {
+    return {} as never
+  }
 }
 
-const mockStudentGateway = {
-  create: vi.fn(),
-  update: vi.fn(),
-  deactivate: vi.fn(),
-  findById: vi.fn(),
-  list: vi.fn(),
-  findByFamily: vi.fn(),
-  hasActiveEnrollments: vi.fn(),
+class StudentGatewaySpy {
+  createdData: unknown = null
+  studentToReturn: any = null
+
+  async create(data: unknown) {
+    this.createdData = data
+    return this.studentToReturn || { id: 'student-123' }
+  }
+
+  async update() {
+    return {} as never
+  }
+
+  async deactivate() {
+    return {} as never
+  }
+
+  async findById() {
+    return {} as never
+  }
+
+  async list() {
+    return []
+  }
+
+  async findByFamily() {
+    return []
+  }
+
+  async hasActiveEnrollments() {
+    return false
+  }
 }
 
 describe('createStudent', () => {
@@ -39,19 +101,19 @@ describe('createStudent', () => {
     studentGateway = new StudentGatewaySpy()
     familyGateway.familyToReturn = { id: 'family-123' }
     personGateway.personToReturn = { id: 'person-123' }
-    studentGateway.studentToReturn = { id: 'student-123', personId: 'person-123' }
+    studentGateway.studentToReturn = { id: 'student-123' }
   })
 
   it('fails validation when input is invalid', async () => {
     // GIVEN
     const input = {
       familyId: 'invalid-uuid',
-      person: { name: '', lastname: '', sex: 'MALE' },
+      person: { name: '', lastname: '', sex: 'MALE' as const },
       student: { birthday: new Date() },
     }
 
     // WHEN
-    const result = await createStudent(input)
+    const result = await createStudent(input, familyGateway, personGateway, studentGateway)
 
     // THEN
     expect(result).toBe('validationError')
@@ -61,13 +123,13 @@ describe('createStudent', () => {
     // GIVEN
     familyGateway.familyToReturn = null
     const input = {
-      familyId: '123e4567-e89b-12d3-a456-426614174000',
+      familyId: '123e4567-e89b-12d3-a456-426614174001',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
       student: { birthday: new Date('2010-01-01') },
     }
 
     // WHEN
-    const result = await createStudent(input)
+    const result = await createStudent(input, familyGateway, personGateway, studentGateway)
 
     // THEN
     expect(result).toBe('notFound')
@@ -82,7 +144,7 @@ describe('createStudent', () => {
     }
 
     // WHEN
-    const result = await createStudent(input)
+    const result = await createStudent(input, familyGateway, personGateway, studentGateway)
 
     // THEN
     expect(result).toBe('validationError')
@@ -97,29 +159,13 @@ describe('createStudent', () => {
     }
 
     // WHEN
-    const result = await createStudent(input)
+    const result = await createStudent(input, familyGateway, personGateway, studentGateway)
 
     // THEN
-    expect(result).toEqual({ id: 'student-123', personId: 'person-123' })
+    expect(result).toEqual({ id: 'student-123' })
   })
 
-  it('adds person to family', async () => {
-    // GIVEN
-    const input = {
-      familyId: '123e4567-e89b-12d3-a456-426614174000',
-      person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2010-01-01') },
-    }
-
-    // WHEN
-    await createStudent(input)
-
-    // THEN
-    expect(familyGateway.addedFamilyId).toBe(input.familyId)
-    expect(familyGateway.addedPersonId).toBe('person-123')
-  })
-
-  it('includes optional student fields', async () => {
+  it('creates person with provided data', async () => {
     // GIVEN
     const input = {
       familyId: '123e4567-e89b-12d3-a456-426614174000',
@@ -129,23 +175,56 @@ describe('createStudent', () => {
         sex: 'FEMALE' as const,
         email: 'jane@example.com',
       },
-      student: {
-        birthday: new Date('2010-01-01'),
-        birthplace: 'Paris',
-        allergies: 'peanuts',
-        snackAuthorization: true,
-      },
+      student: { birthday: new Date('2010-01-01') },
     }
 
     // WHEN
-    await createStudent(input)
+    await createStudent(input, familyGateway, personGateway, studentGateway)
 
     // THEN
-    expect(studentGateway.createdStudentData).toMatchObject({
+    expect(personGateway.createdData).toMatchObject({
+      name: 'Jane',
+      lastname: 'Smith',
+      sex: 'FEMALE',
+      email: 'jane@example.com',
+    })
+  })
+
+  it('creates student with personId and birthday', async () => {
+    // GIVEN
+    const input = {
+      familyId: '123e4567-e89b-12d3-a456-426614174000',
+      person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
+      student: { birthday: new Date('2010-01-01'), birthplace: 'Paris', allergies: 'peanuts' },
+    }
+
+    // WHEN
+    await createStudent(input, familyGateway, personGateway, studentGateway)
+
+    // THEN
+    expect(studentGateway.createdData).toMatchObject({
+      personId: 'person-123',
       birthday: new Date('2010-01-01'),
       birthplace: 'Paris',
       allergies: 'peanuts',
-      snackAuthorization: true,
+    })
+  })
+
+  it('adds person to family after student creation', async () => {
+    // GIVEN
+    const input = {
+      familyId: '123e4567-e89b-12d3-a456-426614174000',
+      person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
+      student: { birthday: new Date('2010-01-01') },
+    }
+
+    // WHEN
+    await createStudent(input, familyGateway, personGateway, studentGateway)
+
+    // THEN
+    expect(familyGateway.addPersonCalls).toContainEqual({
+      familyId: input.familyId,
+      personId: 'person-123',
     })
   })
 })

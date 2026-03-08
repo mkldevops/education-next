@@ -4,10 +4,10 @@ import { createPlanSchema } from './schemas'
 
 type Input = z.infer<typeof createPlanSchema>
 
-export async function createPlan(input: Input) {
+export async function createPlan(input: Input, planGw = planGateway) {
   const parsed = createPlanSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const plan = await planGateway.create(parsed.data)
+  const plan = await planGw.create(parsed.data)
   return plan
 }

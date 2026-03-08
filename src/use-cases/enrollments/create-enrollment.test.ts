@@ -1,58 +1,61 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import type { ClassPeriodGateway } from '@/gateways/class-period-gateway'
-import type { EnrollmentGateway } from '@/gateways/enrollment-gateway'
-import type { PlanGateway } from '@/gateways/plan-gateway'
-import type { StudentGateway } from '@/gateways/student-gateway'
-import { createEnrollment } from './create-enrollment'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-class StudentGatewaySpy implements StudentGateway {
-  studentToReturn: any = null
-
-  async findById(id: string) {
-    return this.studentToReturn
-  }
+const studentGatewayMock = {
+  findById: vi.fn(),
+}
+const planGatewayMock = {
+  findById: vi.fn(),
+}
+const classPeriodGatewayMock = {
+  findById: vi.fn(),
+  countEnrolled: vi.fn(),
+}
+const enrollmentGatewayMock = {
+  findDuplicate: vi.fn(),
+}
+const dbMock = {
+  $transaction: vi.fn(),
 }
 
-class PlanGatewaySpy implements PlanGateway {
-  planToReturn: any = null
+vi.mock('@/gateways/student-gateway', () => ({
+  studentGateway: studentGatewayMock,
+}))
 
-  async findById(id: string) {
-    return this.planToReturn
-  }
-}
+vi.mock('@/gateways/plan-gateway', () => ({
+  planGateway: planGatewayMock,
+}))
 
-class ClassPeriodGatewaySpy implements ClassPeriodGateway {
-  classPeriodToReturn: any = null
-  countEnrolledToReturn = 0
+vi.mock('@/gateways/class-period-gateway', () => ({
+  classPeriodGateway: classPeriodGatewayMock,
+}))
 
-  async findById(id: string) {
-    return this.classPeriodToReturn
-  }
+vi.mock('@/gateways/enrollment-gateway', () => ({
+  enrollmentGateway: enrollmentGatewayMock,
+}))
 
-  async countEnrolled(id: string) {
-    return this.countEnrolledToReturn
-  }
-}
+vi.mock('@/lib/db', () => ({
+  db: dbMock,
+}))
 
-class EnrollmentGatewaySpy implements EnrollmentGateway {
-  duplicateToReturn = false
-
-  async findDuplicate(studentId: string, classPeriodId: string) {
-    return this.duplicateToReturn
-  }
-}
+const { createEnrollment } = await import('./create-enrollment')
 
 describe('createEnrollment', () => {
-  let studentGateway: StudentGatewaySpy
-  let planGateway: PlanGatewaySpy
-  let classPeriodGateway: ClassPeriodGatewaySpy
-  let enrollmentGateway: EnrollmentGatewaySpy
-
   beforeEach(() => {
-    studentGateway = new StudentGatewaySpy()
-    planGateway = new PlanGatewaySpy()
-    classPeriodGateway = new ClassPeriodGatewaySpy()
-    enrollmentGateway = new EnrollmentGatewaySpy()
+    vi.clearAllMocks()
+    studentGatewayMock.findById = vi.fn()
+    planGatewayMock.findById = vi.fn()
+    classPeriodGatewayMock.findById = vi.fn()
+    classPeriodGatewayMock.countEnrolled = vi.fn()
+    enrollmentGatewayMock.findDuplicate = vi.fn()
+    dbMock.$transaction = vi.fn(async (cb) => {
+      const tx = {
+        classAssignment: { count: vi.fn().mockResolvedValue(0), create: vi.fn() },
+        enrollment: {
+          create: vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440003' }),
+        },
+      }
+      return cb(tx)
+    })
   })
 
   it('should fail validation with invalid input', async () => {
@@ -66,7 +69,7 @@ describe('createEnrollment', () => {
   })
 
   it('should fail with student not found', async () => {
-    studentGateway.studentToReturn = null
+    studentGatewayMock.findById.mockResolvedValue(null)
 
     const result = await createEnrollment({
       studentId: '550e8400-e29b-41d4-a716-446655440000',
@@ -78,8 +81,8 @@ describe('createEnrollment', () => {
   })
 
   it('should fail with plan not found', async () => {
-    studentGateway.studentToReturn = { id: '550e8400-e29b-41d4-a716-446655440000' }
-    planGateway.planToReturn = null
+    studentGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
+    planGatewayMock.findById.mockResolvedValue(null)
 
     const result = await createEnrollment({
       studentId: '550e8400-e29b-41d4-a716-446655440000',
@@ -91,9 +94,12 @@ describe('createEnrollment', () => {
   })
 
   it('should fail with class period not found', async () => {
-    studentGateway.studentToReturn = { id: '550e8400-e29b-41d4-a716-446655440000' }
-    planGateway.planToReturn = { id: '550e8400-e29b-41d4-a716-446655440001', amount: 100 }
-    classPeriodGateway.classPeriodToReturn = null
+    studentGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
+    planGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440001',
+      amount: 100,
+    })
+    classPeriodGatewayMock.findById.mockResolvedValue(null)
 
     const result = await createEnrollment({
       studentId: '550e8400-e29b-41d4-a716-446655440000',
@@ -105,13 +111,16 @@ describe('createEnrollment', () => {
   })
 
   it('should fail with duplicate enrollment', async () => {
-    studentGateway.studentToReturn = { id: '550e8400-e29b-41d4-a716-446655440000' }
-    planGateway.planToReturn = { id: '550e8400-e29b-41d4-a716-446655440001', amount: 100 }
-    classPeriodGateway.classPeriodToReturn = {
+    studentGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
+    planGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440001',
+      amount: 100,
+    })
+    classPeriodGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440002',
       capacity: 10,
-    }
-    enrollmentGateway.duplicateToReturn = true
+    })
+    enrollmentGatewayMock.findDuplicate.mockResolvedValue(true)
 
     const result = await createEnrollment({
       studentId: '550e8400-e29b-41d4-a716-446655440000',

@@ -6,16 +6,21 @@ import { createClassPeriodSchema } from './schemas'
 
 type Input = z.infer<typeof createClassPeriodSchema>
 
-export async function createClassPeriod(input: Input) {
+export async function createClassPeriod(
+  input: Input,
+  classPeriodGw = classPeriodGateway,
+  levelGw = levelGateway,
+  periodGw = periodGateway
+) {
   const parsed = createClassPeriodSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const level = await levelGateway.findById(parsed.data.levelId)
+  const level = await levelGw.findById(parsed.data.levelId)
   if (!level) return 'notFound' as const
 
-  const period = await periodGateway.findById(parsed.data.periodId)
+  const period = await periodGw.findById(parsed.data.periodId)
   if (!period) return 'notFound' as const
 
-  const classPeriod = await classPeriodGateway.create(parsed.data)
+  const classPeriod = await classPeriodGw.create(parsed.data)
   return classPeriod
 }

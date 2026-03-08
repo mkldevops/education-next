@@ -7,17 +7,17 @@ const deactivateStudentSchema = z.object({
 
 type Input = z.infer<typeof deactivateStudentSchema>
 
-export async function deactivateStudent(input: Input) {
+export async function deactivateStudent(input: Input, studentGw = studentGateway) {
   const parsed = deactivateStudentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const student = await studentGateway.findById(parsed.data.id)
+  const student = await studentGw.findById(parsed.data.id)
   if (!student) return 'notFound' as const
 
-  const hasActive = await studentGateway.hasActiveEnrollments(parsed.data.id)
+  const hasActive = await studentGw.hasActiveEnrollments(parsed.data.id)
   if (hasActive) return 'hasActiveEnrollments' as const
 
-  await studentGateway.deactivate(parsed.data.id)
+  await studentGw.deactivate(parsed.data.id)
 
   return 'OK' as const
 }

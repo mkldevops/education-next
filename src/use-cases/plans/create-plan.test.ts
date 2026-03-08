@@ -1,0 +1,112 @@
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createPlan } from './create-plan'
+
+class PlanGatewaySpy {
+  createdData: unknown = null
+  planToReturn: any = null
+
+  async create(data: unknown) {
+    this.createdData = data
+    return this.planToReturn || { id: 'plan-123', ...data }
+  }
+
+  async update() {
+    return {} as never
+  }
+
+  async findById() {
+    return {} as never
+  }
+
+  async list() {
+    return []
+  }
+}
+
+describe('createPlan', () => {
+  let gateway: PlanGatewaySpy
+
+  beforeEach(() => {
+    gateway = new PlanGatewaySpy()
+  })
+
+  it('fails validation when name is empty', async () => {
+    // GIVEN
+    const input = { name: '', amount: 100 }
+
+    // WHEN
+    const result = await createPlan(input, gateway)
+
+    // THEN
+    expect(result).toBe('validationError')
+  })
+
+  it('fails validation when name exceeds max length', async () => {
+    // GIVEN
+    const input = { name: 'a'.repeat(51), amount: 100 }
+
+    // WHEN
+    const result = await createPlan(input, gateway)
+
+    // THEN
+    expect(result).toBe('validationError')
+  })
+
+  it('fails validation when amount is not positive', async () => {
+    // GIVEN
+    const input = { name: 'Basic Plan', amount: 0 }
+
+    // WHEN
+    const result = await createPlan(input, gateway)
+
+    // THEN
+    expect(result).toBe('validationError')
+  })
+
+  it('fails validation when amount is negative', async () => {
+    // GIVEN
+    const input = { name: 'Basic Plan', amount: -50 }
+
+    // WHEN
+    const result = await createPlan(input, gateway)
+
+    // THEN
+    expect(result).toBe('validationError')
+  })
+
+  it('creates plan with valid data', async () => {
+    // GIVEN
+    const input = { name: 'Basic Plan', amount: 99.99 }
+
+    // WHEN
+    const result = await createPlan(input, gateway)
+
+    // THEN
+    expect(result).toHaveProperty('id', 'plan-123')
+  })
+
+  it('calls gateway with correct data', async () => {
+    // GIVEN
+    const input = { name: 'Premium Plan', amount: 199.99 }
+
+    // WHEN
+    await createPlan(input, gateway)
+
+    // THEN
+    expect(gateway.createdData).toMatchObject({
+      name: 'Premium Plan',
+      amount: 199.99,
+    })
+  })
+
+  it('accepts minimum valid amount', async () => {
+    // GIVEN
+    const input = { name: 'Minimal Plan', amount: 0.01 }
+
+    // WHEN
+    const result = await createPlan(input, gateway)
+
+    // THEN
+    expect(result).toHaveProperty('id', 'plan-123')
+  })
+})

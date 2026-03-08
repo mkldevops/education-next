@@ -1,27 +1,21 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import type { EnrollmentGateway } from '@/gateways/enrollment-gateway'
-import { activateEnrollment } from './activate-enrollment'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-class EnrollmentGatewaySpy implements EnrollmentGateway {
-  enrollmentToReturn: any = null
-  updatedId: string | null = null
-  updatedStatus: any = null
-
-  async findById(id: string) {
-    return this.enrollmentToReturn
-  }
-
-  async updateStatus(id: string, status: any) {
-    this.updatedId = id
-    this.updatedStatus = status
-  }
+const enrollmentGatewayMock = {
+  findById: vi.fn(),
+  updateStatus: vi.fn(),
 }
 
-describe('activateEnrollment', () => {
-  let gateway: EnrollmentGatewaySpy
+vi.mock('@/gateways/enrollment-gateway', () => ({
+  enrollmentGateway: enrollmentGatewayMock,
+}))
 
+const { activateEnrollment } = await import('./activate-enrollment')
+
+describe('activateEnrollment', () => {
   beforeEach(() => {
-    gateway = new EnrollmentGatewaySpy()
+    vi.clearAllMocks()
+    enrollmentGatewayMock.findById = vi.fn()
+    enrollmentGatewayMock.updateStatus = vi.fn()
   })
 
   it('should fail validation with invalid input', async () => {
@@ -33,7 +27,7 @@ describe('activateEnrollment', () => {
   })
 
   it('should fail with enrollment not found', async () => {
-    gateway.enrollmentToReturn = null
+    enrollmentGatewayMock.findById.mockResolvedValue(null)
 
     const result = await activateEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -43,10 +37,10 @@ describe('activateEnrollment', () => {
   })
 
   it('should fail when transitioning from COMPLETED status', async () => {
-    gateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'COMPLETED',
-    }
+    })
 
     const result = await activateEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -56,10 +50,10 @@ describe('activateEnrollment', () => {
   })
 
   it('should fail when transitioning from CANCELLED status', async () => {
-    gateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'CANCELLED',
-    }
+    })
 
     const result = await activateEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -69,10 +63,10 @@ describe('activateEnrollment', () => {
   })
 
   it('should succeed when transitioning from PENDING status', async () => {
-    gateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'PENDING',
-    }
+    })
 
     const result = await activateEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -82,29 +76,31 @@ describe('activateEnrollment', () => {
   })
 
   it('should update enrollment status to ACTIVE', async () => {
-    gateway.enrollmentToReturn = {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'PENDING',
-    }
+    })
 
     await activateEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
-    expect(gateway.updatedId).toBe('550e8400-e29b-41d4-a716-446655440000')
-    expect(gateway.updatedStatus).toBe('ACTIVE')
+    expect(enrollmentGatewayMock.updateStatus).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000',
+      'ACTIVE'
+    )
   })
 
-  it('should succeed when transitioning from ACTIVE status', async () => {
-    gateway.enrollmentToReturn = {
+  it('should fail when transitioning from ACTIVE status', async () => {
+    enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'ACTIVE',
-    }
+    })
 
     const result = await activateEnrollment({
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
-    expect(result).toBe('OK')
+    expect(result).toBe('invalidStatusTransition')
   })
 })
