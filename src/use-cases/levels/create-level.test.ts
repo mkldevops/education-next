@@ -67,17 +67,6 @@ describe('createLevel', () => {
     expect(result).toHaveProperty('id', 'level-123')
   })
 
-  it('creates level with optional nextLevelId', async () => {
-    // GIVEN
-    const input = { name: 'Grade 1', nextLevelId: '456e4567-e89b-12d3-a456-426614174000' }
-
-    // WHEN
-    const result = await createLevel(input, gateway)
-
-    // THEN
-    expect(result).toHaveProperty('nextLevelId', '456e4567-e89b-12d3-a456-426614174000')
-  })
-
   it('calls gateway with correct data', async () => {
     // GIVEN
     const input = { name: 'Grade 2' }
@@ -87,17 +76,5 @@ describe('createLevel', () => {
 
     // THEN
     expect(gateway.createdData).toMatchObject({ name: 'Grade 2' })
-  })
-
-  it('passes through nextLevelId if provided', async () => {
-    // GIVEN
-    const nextLevelId = '456e4567-e89b-12d3-a456-426614174000'
-    const input = { name: 'Grade 3', nextLevelId }
-
-    // WHEN
-    await createLevel(input, gateway)
-
-    // THEN
-    expect(gateway.createdData).toMatchObject({ name: 'Grade 3', nextLevelId })
   })
 })

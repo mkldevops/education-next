@@ -36,12 +36,13 @@ class ClassPeriodGatewaySpy {
 
 describe('updateClassPeriod', () => {
   let gateway: ClassPeriodGatewaySpy
+  const classPeriodId1 = '123e4567-e89b-12d3-a456-426614174001'
 
   beforeEach(() => {
     gateway = new ClassPeriodGatewaySpy()
     gateway.classPeriodsByIdMap = {
-      'class-period-1': {
-        id: 'class-period-1',
+      [classPeriodId1]: {
+        id: classPeriodId1,
         name: 'Class A',
         capacity: 30,
       },
@@ -74,7 +75,7 @@ describe('updateClassPeriod', () => {
     // GIVEN
     gateway.enrolledCountToReturn = 25
     const input = {
-      id: 'class-period-1',
+      id: classPeriodId1,
       capacity: 20,
     }
 
@@ -88,7 +89,7 @@ describe('updateClassPeriod', () => {
   it('updates class period name only', async () => {
     // GIVEN
     const input = {
-      id: 'class-period-1',
+      id: classPeriodId1,
       name: 'Updated Class A',
     }
 
@@ -96,14 +97,14 @@ describe('updateClassPeriod', () => {
     const result = await updateClassPeriod(input, gateway)
 
     // THEN
-    expect(result).toHaveProperty('id', 'class-period-1')
+    expect(result).toHaveProperty('id', classPeriodId1)
   })
 
   it('updates class period capacity when valid', async () => {
     // GIVEN
     gateway.enrolledCountToReturn = 20
     const input = {
-      id: 'class-period-1',
+      id: classPeriodId1,
       capacity: 25,
     }
 
@@ -111,14 +112,14 @@ describe('updateClassPeriod', () => {
     const result = await updateClassPeriod(input, gateway)
 
     // THEN
-    expect(result).toHaveProperty('id', 'class-period-1')
+    expect(result).toHaveProperty('id', classPeriodId1)
   })
 
   it('updates capacity when equal to enrolled count', async () => {
     // GIVEN
     gateway.enrolledCountToReturn = 25
     const input = {
-      id: 'class-period-1',
+      id: classPeriodId1,
       capacity: 25,
     }
 
@@ -126,14 +127,14 @@ describe('updateClassPeriod', () => {
     const result = await updateClassPeriod(input, gateway)
 
     // THEN
-    expect(result).toHaveProperty('id', 'class-period-1')
+    expect(result).toHaveProperty('id', classPeriodId1)
   })
 
   it('updates both name and capacity', async () => {
     // GIVEN
     gateway.enrolledCountToReturn = 15
     const input = {
-      id: 'class-period-1',
+      id: classPeriodId1,
       name: 'Class B',
       capacity: 28,
     }
@@ -142,13 +143,13 @@ describe('updateClassPeriod', () => {
     const result = await updateClassPeriod(input, gateway)
 
     // THEN
-    expect(result).toHaveProperty('id', 'class-period-1')
+    expect(result).toHaveProperty('id', classPeriodId1)
   })
 
   it('excludes id from update data sent to gateway', async () => {
     // GIVEN
     const input = {
-      id: 'class-period-1',
+      id: classPeriodId1,
       name: 'Updated Name',
     }
 
@@ -163,7 +164,7 @@ describe('updateClassPeriod', () => {
     // GIVEN
     gateway.enrolledCountToReturn = 100
     const input = {
-      id: 'class-period-1',
+      id: classPeriodId1,
       name: 'New Name',
     }
 
@@ -171,6 +172,6 @@ describe('updateClassPeriod', () => {
     const result = await updateClassPeriod(input, gateway)
 
     // THEN
-    expect(result).toHaveProperty('id', 'class-period-1')
+    expect(result).toHaveProperty('id', classPeriodId1)
   })
 })

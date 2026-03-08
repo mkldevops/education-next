@@ -32,12 +32,13 @@ class PeriodGatewaySpy {
 
 describe('updatePeriod', () => {
   let gateway: PeriodGatewaySpy
+  const periodId1 = '123e4567-e89b-12d3-a456-426614174001'
 
   beforeEach(() => {
     gateway = new PeriodGatewaySpy()
     gateway.periodsByIdMap = {
-      'period-1': {
-        id: 'period-1',
+      [periodId1]: {
+        id: periodId1,
         name: 'Q1',
         startAt: new Date('2026-03-01'),
         endAt: new Date('2026-06-30'),
@@ -70,7 +71,7 @@ describe('updatePeriod', () => {
   it('fails when new endAt is before startAt', async () => {
     // GIVEN
     const input = {
-      id: 'period-1',
+      id: periodId1,
       endAt: new Date('2026-02-01'),
     }
 
@@ -84,7 +85,7 @@ describe('updatePeriod', () => {
   it('fails when new startAt is after endAt', async () => {
     // GIVEN
     const input = {
-      id: 'period-1',
+      id: periodId1,
       startAt: new Date('2026-07-01'),
     }
 
@@ -99,7 +100,7 @@ describe('updatePeriod', () => {
     // GIVEN
     gateway.overlapToReturn = true
     const input = {
-      id: 'period-1',
+      id: periodId1,
       startAt: new Date('2026-04-01'),
     }
 
@@ -113,7 +114,7 @@ describe('updatePeriod', () => {
   it('updates period name only', async () => {
     // GIVEN
     const input = {
-      id: 'period-1',
+      id: periodId1,
       name: 'Q1 2026',
     }
 
@@ -121,13 +122,13 @@ describe('updatePeriod', () => {
     const result = await updatePeriod(input, gateway)
 
     // THEN
-    expect(result).toHaveProperty('id', 'period-1')
+    expect(result).toHaveProperty('id', periodId1)
   })
 
   it('updates period dates only', async () => {
     // GIVEN
     const input = {
-      id: 'period-1',
+      id: periodId1,
       startAt: new Date('2026-03-15'),
       endAt: new Date('2026-06-15'),
     }
@@ -136,13 +137,13 @@ describe('updatePeriod', () => {
     const result = await updatePeriod(input, gateway)
 
     // THEN
-    expect(result).toHaveProperty('id', 'period-1')
+    expect(result).toHaveProperty('id', periodId1)
   })
 
   it('updates period with multiple fields', async () => {
     // GIVEN
     const input = {
-      id: 'period-1',
+      id: periodId1,
       name: 'Updated Q1',
       startAt: new Date('2026-03-15'),
     }
@@ -151,13 +152,13 @@ describe('updatePeriod', () => {
     const result = await updatePeriod(input, gateway)
 
     // THEN
-    expect(result).toHaveProperty('id', 'period-1')
+    expect(result).toHaveProperty('id', periodId1)
   })
 
   it('calls gateway with correct data excluding id', async () => {
     // GIVEN
     const input = {
-      id: 'period-1',
+      id: periodId1,
       name: 'Q1 Updated',
       startAt: new Date('2026-03-10'),
     }
@@ -176,7 +177,7 @@ describe('updatePeriod', () => {
   it('does not validate dates when only name is updated', async () => {
     // GIVEN
     const input = {
-      id: 'period-1',
+      id: periodId1,
       name: 'New Name',
     }
 
@@ -184,6 +185,6 @@ describe('updatePeriod', () => {
     const result = await updatePeriod(input, gateway)
 
     // THEN
-    expect(result).toHaveProperty('id', 'period-1')
+    expect(result).toHaveProperty('id', periodId1)
   })
 })

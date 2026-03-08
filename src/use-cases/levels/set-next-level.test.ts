@@ -29,18 +29,21 @@ class LevelGatewaySpy {
 
 describe('setNextLevel', () => {
   let gateway: LevelGatewaySpy
+  const levelId1 = '123e4567-e89b-12d3-a456-426614174001'
+  const levelId2 = '123e4567-e89b-12d3-a456-426614174002'
+  const levelId3 = '123e4567-e89b-12d3-a456-426614174003'
 
   beforeEach(() => {
     gateway = new LevelGatewaySpy()
     gateway.levelsByIdMap = {
-      'level-1': { id: 'level-1', nextLevelId: null },
-      'level-2': { id: 'level-2', nextLevelId: null },
-      'level-3': { id: 'level-3', nextLevelId: null },
+      [levelId1]: { id: levelId1, nextLevelId: null },
+      [levelId2]: { id: levelId2, nextLevelId: null },
+      [levelId3]: { id: levelId3, nextLevelId: null },
     }
     gateway.levelsList = [
-      { id: 'level-1', nextLevelId: null },
-      { id: 'level-2', nextLevelId: null },
-      { id: 'level-3', nextLevelId: null },
+      { id: levelId1, nextLevelId: null },
+      { id: levelId2, nextLevelId: null },
+      { id: levelId3, nextLevelId: null },
     ]
   })
 
@@ -68,7 +71,7 @@ describe('setNextLevel', () => {
 
   it('fails when next level not found', async () => {
     // GIVEN
-    const input = { id: 'level-1', nextLevelId: '123e4567-e89b-12d3-a456-426614174999' }
+    const input = { id: levelId1, nextLevelId: '123e4567-e89b-12d3-a456-426614174999' }
 
     // WHEN
     const result = await setNextLevel(input, gateway)
@@ -79,7 +82,7 @@ describe('setNextLevel', () => {
 
   it('fails when creating circular reference to self', async () => {
     // GIVEN
-    const input = { id: 'level-1', nextLevelId: 'level-1' }
+    const input = { id: levelId1, nextLevelId: levelId1 }
 
     // WHEN
     const result = await setNextLevel(input, gateway)
@@ -91,11 +94,11 @@ describe('setNextLevel', () => {
   it('fails when creating circular reference through chain', async () => {
     // GIVEN
     gateway.levelsList = [
-      { id: 'level-1', nextLevelId: 'level-2' },
-      { id: 'level-2', nextLevelId: 'level-3' },
-      { id: 'level-3', nextLevelId: null },
+      { id: levelId1, nextLevelId: levelId2 },
+      { id: levelId2, nextLevelId: levelId3 },
+      { id: levelId3, nextLevelId: null },
     ]
-    const input = { id: 'level-3', nextLevelId: 'level-1' }
+    const input = { id: levelId3, nextLevelId: levelId1 }
 
     // WHEN
     const result = await setNextLevel(input, gateway)
@@ -106,7 +109,7 @@ describe('setNextLevel', () => {
 
   it('sets next level successfully', async () => {
     // GIVEN
-    const input = { id: 'level-1', nextLevelId: 'level-2' }
+    const input = { id: levelId1, nextLevelId: levelId2 }
 
     // WHEN
     const result = await setNextLevel(input, gateway)
@@ -117,8 +120,8 @@ describe('setNextLevel', () => {
 
   it('allows clearing next level by setting to null', async () => {
     // GIVEN
-    gateway.levelsByIdMap['level-1'].nextLevelId = 'level-2'
-    const input = { id: 'level-1', nextLevelId: null }
+    gateway.levelsByIdMap[levelId1].nextLevelId = levelId2
+    const input = { id: levelId1, nextLevelId: null }
 
     // WHEN
     const result = await setNextLevel(input, gateway)
@@ -129,28 +132,28 @@ describe('setNextLevel', () => {
 
   it('calls gateway with correct id and nextLevelId', async () => {
     // GIVEN
-    const input = { id: 'level-1', nextLevelId: 'level-2' }
+    const input = { id: levelId1, nextLevelId: levelId2 }
 
     // WHEN
     await setNextLevel(input, gateway)
 
     // THEN
     expect(gateway.setNextLevelCalls).toContainEqual({
-      id: 'level-1',
-      nextLevelId: 'level-2',
+      id: levelId1,
+      nextLevelId: levelId2,
     })
   })
 
   it('calls gateway with null when clearing next level', async () => {
     // GIVEN
-    const input = { id: 'level-2', nextLevelId: null }
+    const input = { id: levelId2, nextLevelId: null }
 
     // WHEN
     await setNextLevel(input, gateway)
 
     // THEN
     expect(gateway.setNextLevelCalls).toContainEqual({
-      id: 'level-2',
+      id: levelId2,
       nextLevelId: null,
     })
   })
