@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const enrollmentGatewayMock = {
+let enrollmentGatewayMock = {
   findById: vi.fn(),
   updateStatus: vi.fn(),
 }
-const classAssignmentGatewayMock = {
+let classAssignmentGatewayMock = {
   closeCurrent: vi.fn(),
 }
 
