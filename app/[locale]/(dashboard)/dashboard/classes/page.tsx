@@ -1,5 +1,6 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
+import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { CreateClassDialog } from './_components/create-class-dialog'
@@ -19,6 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ClassesPage({ params }: Props) {
+  await connection()
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.classes')

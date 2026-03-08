@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
+import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { RegisterForm } from '@/features/auth'
 import { Link, redirect } from '@/i18n/routing'
@@ -21,6 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function RegisterPage({ params }: Props) {
+  await connection()
   const { locale } = await params
   setRequestLocale(locale)
 

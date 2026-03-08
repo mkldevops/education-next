@@ -14,7 +14,6 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  cacheComponents: true,
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },

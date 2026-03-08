@@ -2,6 +2,7 @@ import { Card, type Column, DataTable, ProgressBar, StatusDot } from '@peaklab/u
 import { AlertCircle, CreditCard, GraduationCap, Layers, TrendingUp, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
+import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
@@ -22,6 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function DashboardPage({ params }: Props) {
+  await connection()
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard')

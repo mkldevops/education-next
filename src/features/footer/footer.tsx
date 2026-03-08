@@ -1,7 +1,9 @@
+import { connection } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 
 export async function Footer() {
+  await connection()
   const t = await getTranslations('footer')
   const company = await getTranslations('company')
   const currentYear = new Date().getFullYear()

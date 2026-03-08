@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { LoginForm } from '@/features/auth'
 
@@ -17,6 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function LoginPage({ params }: Props) {
+  await connection()
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations('auth.login')

@@ -1,6 +1,7 @@
 import { Breadcrumbs, Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { forbidden } from 'next/navigation'
+import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { requireRole } from '../../_lib/auth-helper'
@@ -20,6 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function UsersPage({ params }: Props) {
+  await connection()
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.users')

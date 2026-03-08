@@ -1,3 +1,4 @@
+import { connection } from 'next/server'
 import { setRequestLocale } from 'next-intl/server'
 import { Footer } from '@/features/footer'
 import { Navbar } from '@/features/navbar'
@@ -8,6 +9,7 @@ type Props = {
 }
 
 export default async function PagesLayout({ children, params }: Props) {
+  await connection()
   const { locale } = await params
   setRequestLocale(locale)
 

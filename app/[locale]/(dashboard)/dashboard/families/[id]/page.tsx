@@ -1,6 +1,7 @@
 import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
@@ -30,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function FamilyDetailPage({ params }: Props) {
+  await connection()
   const { locale, id } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.familyDetails')
