@@ -98,9 +98,13 @@ export default async function FamilyDetailPage({ params }: Props) {
 
   if (!family) notFound()
 
-  const students = family.persons
-    .filter((fp) => fp.person.student)
-    .map((fp) => ({ ...fp, person: { ...fp.person, student: fp.person.student! } }))
+  const students = family.persons.filter(
+    (
+      fp
+    ): fp is typeof fp & {
+      person: typeof fp.person & { student: NonNullable<typeof fp.person.student> }
+    } => fp.person.student !== null
+  )
 
   const allEnrollments = students.flatMap((s) => s.person.student.enrollments)
   const totalDue = allEnrollments.reduce((sum, e) => sum + Number(e.totalAmount), 0)
