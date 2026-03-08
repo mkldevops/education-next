@@ -61,22 +61,22 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
           <thead>
             <tr className="border-b bg-gray-50">
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                {t('payments.student')}
+                {t('paymentHistory.student')}
               </th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                {t('payments.amount')}
+                {t('paymentHistory.amount')}
               </th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                {t('payments.method')}
+                {t('paymentHistory.method')}
               </th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                {t('payments.reference')}
+                {t('paymentHistory.reference')}
               </th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                {t('payments.paidAt')}
+                {t('paymentHistory.paidAt')}
               </th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                {t('payments.cashedAt')}
+                {t('paymentHistory.cashedAt')}
               </th>
             </tr>
           </thead>

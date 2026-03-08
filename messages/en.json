@@ -782,6 +782,10 @@
       "save": "Save",
       "success": "Profile updated successfully"
     },
+    "language": {
+      "title": "Language",
+      "description": "Choose the interface language"
+    },
     "security": {
       "title": "Security",
       "description": "Manage your password and account security",
@@ -812,6 +816,14 @@
       "confirm": "Yes, sign out",
       "cancel": "Cancel"
     },
+    "connectedAccounts": {
+      "title": "Connected accounts",
+      "description": "Manage services linked to your account",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "connect": "Connect",
+      "disconnect": "Disconnect"
+    },
     "danger": {
       "title": "Danger zone",
       "description": "Irreversible actions on your account",
@@ -828,7 +840,9 @@
       "passwordMismatch": "Passwords do not match",
       "passwordTooShort": "Password must be at least 8 characters",
       "invalidCurrentPassword": "Current password is incorrect",
-      "sessionRevokeFailed": "Failed to revoke session"
+      "sessionRevokeFailed": "Failed to revoke session",
+      "linkFailed": "Failed to connect Google account",
+      "unlinkFailed": "Failed to disconnect Google account"
     }
   },
   "profile": {
