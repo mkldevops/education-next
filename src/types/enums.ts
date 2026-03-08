@@ -1,8 +1,1 @@
-export {
-  ConfigValueType,
-  EnrollmentStatus,
-  PaymentMethod,
-  RelationType,
-  Role,
-  Sex,
-} from '@prisma/client'
+export { Role } from '@prisma/client'

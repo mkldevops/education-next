@@ -101,9 +101,18 @@ export default async function EnrollmentDetailPage({ params }: Props) {
     <div className="space-y-6">
       <Breadcrumbs
         items={[
-          { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
-          { label: tBreadcrumbs('enrollments'), href: '/dashboard/enrollments' },
-          { label: `${enrollment.student.person.name} ${enrollment.student.person.lastname}` },
+          {
+            label: tBreadcrumbs('dashboard'),
+            href: '/dashboard',
+            icon: 'home',
+          },
+          {
+            label: tBreadcrumbs('enrollments'),
+            href: '/dashboard/enrollments',
+          },
+          {
+            label: `${enrollment.student.person.name} ${enrollment.student.person.lastname}`,
+          },
         ]}
       />
       <div>
@@ -186,7 +195,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('classAssignments')}</h2>
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="w-full min-w-[600px]">
+            <table className="w-full min-w-150">
               <thead>
                 <tr className="border-b bg-gray-50">
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
@@ -228,7 +237,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('payments')}</h2>
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="w-full min-w-[600px]">
+            <table className="w-full min-w-150">
               <thead>
                 <tr className="border-b bg-gray-50">
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">

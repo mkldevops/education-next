@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { personInputSchema } from '../families/schemas'
 
-export const studentInputSchema = z.object({
+const studentInputSchema = z.object({
   birthday: z.coerce.date(),
   birthplace: z.string().max(250).optional(),
   previousSchool: z.string().max(250).optional(),

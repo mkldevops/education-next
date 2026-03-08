@@ -99,7 +99,7 @@ export async function changePasswordAction(data: {
   }
 }
 
-export type SessionInfo = {
+type SessionInfo = {
   id: string
   token: string
   userAgent: string | null
@@ -109,7 +109,7 @@ export type SessionInfo = {
   isCurrent: boolean
 }
 
-export async function listSessionsAction(): Promise<ActionResult<SessionInfo[]>> {
+async function listSessionsAction(): Promise<ActionResult<SessionInfo[]>> {
   try {
     const reqHeaders = await headers()
     const currentSession = await auth.api.getSession({ headers: reqHeaders })

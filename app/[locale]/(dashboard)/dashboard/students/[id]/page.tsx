@@ -83,7 +83,11 @@ export default async function StudentDetailPage({ params }: Props) {
     <div className="space-y-6">
       <Breadcrumbs
         items={[
-          { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
+          {
+            label: tBreadcrumbs('dashboard'),
+            href: '/dashboard',
+            icon: 'home',
+          },
           { label: tBreadcrumbs('students'), href: '/dashboard/students' },
           { label: `${student.person.name} ${student.person.lastname}` },
         ]}
@@ -148,7 +152,7 @@ export default async function StudentDetailPage({ params }: Props) {
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('enrollments')}</h2>
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="w-full min-w-[600px]">
+            <table className="w-full min-w-150">
               <thead>
                 <tr className="border-b bg-gray-50">
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
