@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const familyGatewayMock = {
+let familyGatewayMock = {
   findById: vi.fn(),
 }
-const enrollmentGatewayMock = {
+let enrollmentGatewayMock = {
   findActiveByFamily: vi.fn(),
 }
-const paymentGatewayMock = {
+let paymentGatewayMock = {
   createInTransaction: vi.fn(),
 }
 
