@@ -12,6 +12,12 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false, // Set to true in production
   },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+  },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
@@ -23,6 +29,7 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
+      allowDifferentEmails: true,
     },
   },
   trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'],

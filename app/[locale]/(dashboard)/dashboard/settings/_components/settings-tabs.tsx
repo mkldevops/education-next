@@ -26,6 +26,7 @@ type Props = {
     image: string | null
   }
   sessions: SessionData[]
+  linkedProviders: string[]
 }
 
 const tabs = [
@@ -37,7 +38,7 @@ const tabs = [
 
 type TabKey = (typeof tabs)[number]['key']
 
-export function SettingsTabs({ user, sessions }: Props) {
+export function SettingsTabs({ user, sessions, linkedProviders }: Props) {
   const t = useTranslations('settings')
   const [activeTab, setActiveTab] = useState<TabKey>('profile')
 
@@ -67,7 +68,9 @@ export function SettingsTabs({ user, sessions }: Props) {
       {activeTab === 'profile' && <ProfileSection user={user} />}
       {activeTab === 'security' && <PasswordSection />}
       {activeTab === 'sessions' && <SessionsSection sessions={sessions} />}
-      {activeTab === 'account' && <AccountSection email={user.email} />}
+      {activeTab === 'account' && (
+        <AccountSection email={user.email} linkedProviders={linkedProviders} />
+      )}
     </div>
   )
 }

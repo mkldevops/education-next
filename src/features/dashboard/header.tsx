@@ -3,7 +3,6 @@
 import { Bell, Search } from 'lucide-react'
 import { useState } from 'react'
 import { SearchModal } from '@/features/dashboard/search-modal'
-import { LanguageSwitcher } from '@/features/navbar/language-switcher'
 import { useSession } from '@/lib/auth-client'
 
 export function DashboardHeader() {
@@ -26,8 +25,6 @@ export function DashboardHeader() {
             ⌘K
           </kbd>
         </div>
-
-        <LanguageSwitcher />
 
         <button type="button" className="p-2 hover:bg-white/50 rounded-xl transition-colors">
           <Bell className="h-5 w-5 text-graphite-600" />

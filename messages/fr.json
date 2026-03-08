@@ -782,6 +782,10 @@
       "save": "Enregistrer",
       "success": "Profil mis à jour avec succès"
     },
+    "language": {
+      "title": "Langue",
+      "description": "Choisissez la langue de l'interface"
+    },
     "security": {
       "title": "Sécurité",
       "description": "Gérez votre mot de passe et la sécurité de votre compte",
@@ -811,6 +815,14 @@
       "confirmMessage": "Êtes-vous sûr de vouloir vous déconnecter ?",
       "confirm": "Oui, se déconnecter",
       "cancel": "Annuler"
+    },
+    "connectedAccounts": {
+      "title": "Comptes connectés",
+      "description": "Gérez les services liés à votre compte",
+      "connected": "Connecté",
+      "notConnected": "Non connecté",
+      "connect": "Connecter",
+      "disconnect": "Déconnecter"
     },
     "danger": {
       "title": "Zone de danger",

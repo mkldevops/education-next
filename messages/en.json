@@ -782,6 +782,10 @@
       "save": "Save",
       "success": "Profile updated successfully"
     },
+    "language": {
+      "title": "Language",
+      "description": "Choose the interface language"
+    },
     "security": {
       "title": "Security",
       "description": "Manage your password and account security",
@@ -811,6 +815,14 @@
       "confirmMessage": "Are you sure you want to sign out?",
       "confirm": "Yes, sign out",
       "cancel": "Cancel"
+    },
+    "connectedAccounts": {
+      "title": "Connected accounts",
+      "description": "Manage services linked to your account",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "connect": "Connect",
+      "disconnect": "Disconnect"
     },
     "danger": {
       "title": "Danger zone",

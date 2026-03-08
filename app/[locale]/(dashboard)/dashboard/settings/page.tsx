@@ -48,6 +48,15 @@ export default async function SettingsPage({ params }: Props) {
     isCurrent: s.token === session.session.token,
   }))
 
+  const accounts = await db.account.findMany({
+    where: { userId: session.user.id },
+    select: { providerId: true, accountId: true },
+  })
+
+  const linkedProviders = accounts
+    .filter((a) => a.providerId !== 'credential')
+    .map((a) => a.providerId)
+
   return (
     <SettingsTabs
       user={{
@@ -56,6 +65,7 @@ export default async function SettingsPage({ params }: Props) {
         image: session.user.image || null,
       }}
       sessions={sessionData}
+      linkedProviders={linkedProviders}
     />
   )
 }
