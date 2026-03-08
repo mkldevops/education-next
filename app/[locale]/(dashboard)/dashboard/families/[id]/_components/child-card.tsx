@@ -67,12 +67,15 @@ export async function ChildCard({ student, locale }: Props) {
         </div>
       )}
 
-      {Array.isArray(person.student.languagesAtHome) && person.student.languagesAtHome.length > 0 && (
-        <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-xs font-medium text-blue-900">{t('childCard.languages')}</p>
-          <p className="text-xs text-blue-800 mt-0.5">{person.student.languagesAtHome.join(', ')}</p>
-        </div>
-      )}
+      {Array.isArray(person.student.languagesAtHome) &&
+        person.student.languagesAtHome.length > 0 && (
+          <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-xs font-medium text-blue-900">{t('childCard.languages')}</p>
+            <p className="text-xs text-blue-800 mt-0.5">
+              {person.student.languagesAtHome.join(', ')}
+            </p>
+          </div>
+        )}
 
       <div className="space-y-2 mb-4 pb-4 border-b border-gray-200">
         {enrollments.length > 0 ? (
@@ -97,8 +100,14 @@ export async function ChildCard({ student, locale }: Props) {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">€{formatAmount(totalPaid)} / €{formatAmount(totalAmount)}</span>
-                  {remaining > 0 && <span className="text-xs font-medium text-amber-600">€{formatAmount(remaining)} restant</span>}
+                  <span className="text-xs text-gray-600">
+                    €{formatAmount(totalPaid)} / €{formatAmount(totalAmount)}
+                  </span>
+                  {remaining > 0 && (
+                    <span className="text-xs font-medium text-amber-600">
+                      €{formatAmount(remaining)} restant
+                    </span>
+                  )}
                 </div>
               </div>
             )
@@ -116,7 +125,10 @@ export async function ChildCard({ student, locale }: Props) {
           {t('childCard.viewProfile')}
         </Link>
         {enrollments.length === 0 && (
-          <button type="button" className="flex-1 px-3 py-2 text-xs font-medium text-center rounded-lg bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors">
+          <button
+            type="button"
+            className="flex-1 px-3 py-2 text-xs font-medium text-center rounded-lg bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors"
+          >
             {t('childCard.enroll')}
           </button>
         )}

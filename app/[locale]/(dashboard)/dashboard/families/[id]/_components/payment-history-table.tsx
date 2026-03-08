@@ -60,25 +60,40 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
         <table className="w-full">
           <thead>
             <tr className="border-b bg-gray-50">
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">{t('payments.student')}</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">{t('payments.amount')}</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">{t('payments.method')}</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">{t('payments.reference')}</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">{t('payments.paidAt')}</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">{t('payments.cashedAt')}</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                {t('payments.student')}
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                {t('payments.amount')}
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                {t('payments.method')}
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                {t('payments.reference')}
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                {t('payments.paidAt')}
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                {t('payments.cashedAt')}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {payments.map((payment) => (
               <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 text-sm text-gray-900">
-                  {payment.enrollment.student.person.name} {payment.enrollment.student.person.lastname}
+                  {payment.enrollment.student.person.name}{' '}
+                  {payment.enrollment.student.person.lastname}
                 </td>
                 <td className="px-4 py-3 text-sm font-semibold text-gray-900">
                   €{formatAmount(payment.amount)}
                 </td>
                 <td className="px-4 py-3 text-sm">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentMethodColor(payment.method)}`}>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentMethodColor(payment.method)}`}
+                  >
                     {getPaymentMethodLabel(payment.method)}
                   </span>
                 </td>

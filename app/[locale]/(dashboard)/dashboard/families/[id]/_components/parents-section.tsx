@@ -38,9 +38,13 @@ export async function ParentsSection({ persons }: Props) {
               </p>
               <p className="text-xs text-gray-600 mt-0.5">{parent.relationType}</p>
               {parent.person.phoneNumbers.length > 0 && (
-                <p className="text-xs text-gray-600 mt-1">{parent.person.phoneNumbers[0].phoneNumber}</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {parent.person.phoneNumbers[0].phoneNumber}
+                </p>
               )}
-              {parent.person.email && <p className="text-xs text-gray-600 mt-0.5 truncate">{parent.person.email}</p>}
+              {parent.person.email && (
+                <p className="text-xs text-gray-600 mt-0.5 truncate">{parent.person.email}</p>
+              )}
             </div>
           </div>
         </div>

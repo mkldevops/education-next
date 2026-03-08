@@ -8,7 +8,7 @@ class PeriodGatewaySpy {
 
   async create(data: unknown) {
     this.createdData = data
-    return this.periodToReturn || { id: 'period-123', ...data }
+    return (this.periodToReturn || { id: 'period-123', ...(data as object) }) as unknown as any
   }
 
   async update() {
@@ -44,7 +44,7 @@ describe('createPeriod', () => {
     }
 
     // WHEN
-    const result = await createPeriod(input, gateway)
+    const result = await createPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -59,7 +59,7 @@ describe('createPeriod', () => {
     }
 
     // WHEN
-    const result = await createPeriod(input, gateway)
+    const result = await createPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('invalidDates')
@@ -75,7 +75,7 @@ describe('createPeriod', () => {
     }
 
     // WHEN
-    const result = await createPeriod(input, gateway)
+    const result = await createPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('invalidDates')
@@ -91,7 +91,7 @@ describe('createPeriod', () => {
     }
 
     // WHEN
-    const result = await createPeriod(input, gateway)
+    const result = await createPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('overlappingPeriod')
@@ -106,7 +106,7 @@ describe('createPeriod', () => {
     }
 
     // WHEN
-    const result = await createPeriod(input, gateway)
+    const result = await createPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', 'period-123')
@@ -123,7 +123,7 @@ describe('createPeriod', () => {
     }
 
     // WHEN
-    await createPeriod(input, gateway)
+    await createPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.createdData).toMatchObject({

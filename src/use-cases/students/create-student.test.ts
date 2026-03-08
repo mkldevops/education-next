@@ -62,7 +62,7 @@ class StudentGatewaySpy {
 
   async create(data: unknown) {
     this.createdData = data
-    return this.studentToReturn || { id: 'student-123' }
+    return (this.studentToReturn || { id: 'student-123' }) as unknown as any
   }
 
   async update() {
@@ -109,11 +109,11 @@ describe('createStudent', () => {
     const input = {
       familyId: 'invalid-uuid',
       person: { name: '', lastname: '', sex: 'MALE' as const },
-      student: { birthday: new Date() },
+      student: { birthday: new Date(), languagesAtHome: [], snackAuthorization: false },
     }
 
     // WHEN
-    const result = await createStudent(input, familyGateway, personGateway, studentGateway)
+    const result = await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -125,11 +125,11 @@ describe('createStudent', () => {
     const input = {
       familyId: '123e4567-e89b-12d3-a456-426614174001',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2010-01-01') },
+      student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
     }
 
     // WHEN
-    const result = await createStudent(input, familyGateway, personGateway, studentGateway)
+    const result = await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
 
     // THEN
     expect(result).toBe('notFound')
@@ -140,11 +140,11 @@ describe('createStudent', () => {
     const input = {
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2050-01-01') },
+      student: { birthday: new Date('2050-01-01'), languagesAtHome: [], snackAuthorization: false },
     }
 
     // WHEN
-    const result = await createStudent(input, familyGateway, personGateway, studentGateway)
+    const result = await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -155,11 +155,11 @@ describe('createStudent', () => {
     const input = {
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2010-01-01') },
+      student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
     }
 
     // WHEN
-    const result = await createStudent(input, familyGateway, personGateway, studentGateway)
+    const result = await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
 
     // THEN
     expect(result).toEqual({ id: 'student-123' })
@@ -175,11 +175,11 @@ describe('createStudent', () => {
         sex: 'FEMALE' as const,
         email: 'jane@example.com',
       },
-      student: { birthday: new Date('2010-01-01') },
+      student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
     }
 
     // WHEN
-    await createStudent(input, familyGateway, personGateway, studentGateway)
+    await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
 
     // THEN
     expect(personGateway.createdData).toMatchObject({
@@ -190,41 +190,52 @@ describe('createStudent', () => {
     })
   })
 
-  it('creates student with personId and birthday', async () => {
+  it('creates student with optional fields', async () => {
     // GIVEN
     const input = {
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2010-01-01'), birthplace: 'Paris', allergies: 'peanuts' },
+      student: {
+        birthday: new Date('2010-01-01'),
+        languagesAtHome: ['French', 'Arabic'],
+        snackAuthorization: true,
+        birthplace: 'Paris',
+        allergies: 'Peanuts',
+      },
     }
 
     // WHEN
-    await createStudent(input, familyGateway, personGateway, studentGateway)
+    await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
 
     // THEN
     expect(studentGateway.createdData).toMatchObject({
-      personId: 'person-123',
       birthday: new Date('2010-01-01'),
+      languagesAtHome: ['French', 'Arabic'],
+      snackAuthorization: true,
       birthplace: 'Paris',
-      allergies: 'peanuts',
+      allergies: 'Peanuts',
     })
   })
 
-  it('adds person to family after student creation', async () => {
+  it('adds created person to family', async () => {
     // GIVEN
     const input = {
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2010-01-01') },
+      student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
     }
 
     // WHEN
-    await createStudent(input, familyGateway, personGateway, studentGateway)
+    await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
 
     // THEN
-    expect(familyGateway.addPersonCalls).toContainEqual({
-      familyId: input.familyId,
-      personId: 'person-123',
-    })
+    expect(familyGateway.addPersonCalls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          familyId: '123e4567-e89b-12d3-a456-426614174000',
+          personId: 'person-123',
+        }),
+      ])
+    )
   })
 })

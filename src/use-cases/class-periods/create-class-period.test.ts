@@ -55,7 +55,7 @@ class ClassPeriodGatewaySpy {
 
   async create(data: unknown) {
     this.createdData = data
-    return this.classPeriodToReturn || { id: 'class-period-123', ...data }
+    return (this.classPeriodToReturn || { id: 'class-period-123', ...(data as object) }) as unknown as any
   }
 
   async update() {
@@ -102,7 +102,7 @@ describe('createClassPeriod', () => {
     }
 
     // WHEN
-    const result = await createClassPeriod(input, classPeriodGateway, levelGateway, periodGateway)
+    const result = await createClassPeriod(input, classPeriodGateway as unknown as any, levelGateway as unknown as any, periodGateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -119,7 +119,7 @@ describe('createClassPeriod', () => {
     }
 
     // WHEN
-    const result = await createClassPeriod(input, classPeriodGateway, levelGateway, periodGateway)
+    const result = await createClassPeriod(input, classPeriodGateway as unknown as any, levelGateway as unknown as any, periodGateway as unknown as any)
 
     // THEN
     expect(result).toBe('notFound')
@@ -136,7 +136,7 @@ describe('createClassPeriod', () => {
     }
 
     // WHEN
-    const result = await createClassPeriod(input, classPeriodGateway, levelGateway, periodGateway)
+    const result = await createClassPeriod(input, classPeriodGateway as unknown as any, levelGateway as unknown as any, periodGateway as unknown as any)
 
     // THEN
     expect(result).toBe('notFound')
@@ -152,7 +152,7 @@ describe('createClassPeriod', () => {
     }
 
     // WHEN
-    const result = await createClassPeriod(input, classPeriodGateway, levelGateway, periodGateway)
+    const result = await createClassPeriod(input, classPeriodGateway as unknown as any, levelGateway as unknown as any, periodGateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', 'class-period-123')
@@ -168,7 +168,7 @@ describe('createClassPeriod', () => {
     }
 
     // WHEN
-    await createClassPeriod(input, classPeriodGateway, levelGateway, periodGateway)
+    await createClassPeriod(input, classPeriodGateway as unknown as any, levelGateway as unknown as any, periodGateway as unknown as any)
 
     // THEN
     expect(classPeriodGateway.createdData).toMatchObject({

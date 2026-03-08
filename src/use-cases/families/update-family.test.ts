@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-let familyGatewayMock = {
+const familyGatewayMock = {
   findById: vi.fn(),
   update: vi.fn(),
 }

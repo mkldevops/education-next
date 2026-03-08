@@ -1,7 +1,7 @@
 'use client'
 
-import { formatAmount } from '@/lib/decimal'
 import { useTranslations } from 'next-intl'
+import { formatAmount } from '@/lib/decimal'
 
 type Props = {
   totalDue: number
@@ -58,7 +58,9 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
         <div className="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-200">
           <div>
             <p className="text-xs text-gray-600">{t('financial.remaining')}</p>
-            <p className="text-sm font-semibold text-amber-900">€{formatAmount(remainingBalance)}</p>
+            <p className="text-sm font-semibold text-amber-900">
+              €{formatAmount(remainingBalance)}
+            </p>
           </div>
           <div className="w-3 h-3 rounded-full bg-amber-500" />
         </div>

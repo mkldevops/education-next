@@ -18,7 +18,8 @@ class ClassPeriodGatewaySpy {
   async update(id: string, data: unknown) {
     this.updatedId = id
     this.updatedData = data
-    return { id, ...this.classPeriodsByIdMap[id], ...data }
+    const existing = this.classPeriodsByIdMap[id] || {}
+    return { ...existing, id, ...(data as object) } as unknown as any
   }
 
   async create() {
@@ -54,7 +55,7 @@ describe('updateClassPeriod', () => {
     const input = { id: 'invalid-uuid', name: 'Updated Class' }
 
     // WHEN
-    const result = await updateClassPeriod(input, gateway)
+    const result = await updateClassPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -65,7 +66,7 @@ describe('updateClassPeriod', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000', name: 'Class B' }
 
     // WHEN
-    const result = await updateClassPeriod(input, gateway)
+    const result = await updateClassPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('notFound')
@@ -80,7 +81,7 @@ describe('updateClassPeriod', () => {
     }
 
     // WHEN
-    const result = await updateClassPeriod(input, gateway)
+    const result = await updateClassPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('capacityBelowEnrolled')
@@ -94,7 +95,7 @@ describe('updateClassPeriod', () => {
     }
 
     // WHEN
-    const result = await updateClassPeriod(input, gateway)
+    const result = await updateClassPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', classPeriodId1)
@@ -109,7 +110,7 @@ describe('updateClassPeriod', () => {
     }
 
     // WHEN
-    const result = await updateClassPeriod(input, gateway)
+    const result = await updateClassPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', classPeriodId1)
@@ -124,7 +125,7 @@ describe('updateClassPeriod', () => {
     }
 
     // WHEN
-    const result = await updateClassPeriod(input, gateway)
+    const result = await updateClassPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', classPeriodId1)
@@ -140,7 +141,7 @@ describe('updateClassPeriod', () => {
     }
 
     // WHEN
-    const result = await updateClassPeriod(input, gateway)
+    const result = await updateClassPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', classPeriodId1)
@@ -154,7 +155,7 @@ describe('updateClassPeriod', () => {
     }
 
     // WHEN
-    await updateClassPeriod(input, gateway)
+    await updateClassPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.updatedData).not.toHaveProperty('id')
@@ -169,7 +170,7 @@ describe('updateClassPeriod', () => {
     }
 
     // WHEN
-    const result = await updateClassPeriod(input, gateway)
+    const result = await updateClassPeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', classPeriodId1)

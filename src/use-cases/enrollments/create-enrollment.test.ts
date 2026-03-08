@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-let studentGatewayMock = {
+const studentGatewayMock = {
   findById: vi.fn(),
 }
-let planGatewayMock = {
+const planGatewayMock = {
   findById: vi.fn(),
 }
-let classPeriodGatewayMock = {
+const classPeriodGatewayMock = {
   findById: vi.fn(),
   countEnrolled: vi.fn(),
 }
-let enrollmentGatewayMock = {
+const enrollmentGatewayMock = {
   findDuplicate: vi.fn(),
 }
-let dbMock = {
+const dbMock = {
   $transaction: vi.fn(),
 }
 
@@ -50,7 +50,9 @@ describe('createEnrollment', () => {
     dbMock.$transaction = vi.fn(async (cb) => {
       const tx = {
         classAssignment: { count: vi.fn().mockResolvedValue(0), create: vi.fn() },
-        enrollment: { create: vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440003' }) },
+        enrollment: {
+          create: vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440003' }),
+        },
       }
       return cb(tx)
     })
@@ -61,7 +63,9 @@ describe('createEnrollment', () => {
       studentId: 'invalid-uuid',
       planId: '550e8400-e29b-41d4-a716-446655440000',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440000',
-    })
+      discount: 0,
+      canLeaveAlone: false,
+    } as unknown as any)
 
     expect(result).toBe('validationError')
   })
@@ -73,7 +77,9 @@ describe('createEnrollment', () => {
       studentId: '550e8400-e29b-41d4-a716-446655440000',
       planId: '550e8400-e29b-41d4-a716-446655440001',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
-    })
+      discount: 0,
+      canLeaveAlone: false,
+    } as unknown as any)
 
     expect(result).toBe('notFound')
   })
@@ -86,28 +92,38 @@ describe('createEnrollment', () => {
       studentId: '550e8400-e29b-41d4-a716-446655440000',
       planId: '550e8400-e29b-41d4-a716-446655440001',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
-    })
+      discount: 0,
+      canLeaveAlone: false,
+    } as unknown as any)
 
     expect(result).toBe('notFound')
   })
 
   it('should fail with class period not found', async () => {
     studentGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
-    planGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440001', amount: 100 })
+    planGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440001',
+      amount: 100,
+    })
     classPeriodGatewayMock.findById.mockResolvedValue(null)
 
     const result = await createEnrollment({
       studentId: '550e8400-e29b-41d4-a716-446655440000',
       planId: '550e8400-e29b-41d4-a716-446655440001',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
-    })
+      discount: 0,
+      canLeaveAlone: false,
+    } as unknown as any)
 
     expect(result).toBe('notFound')
   })
 
   it('should fail with duplicate enrollment', async () => {
     studentGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
-    planGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440001', amount: 100 })
+    planGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440001',
+      amount: 100,
+    })
     classPeriodGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440002',
       capacity: 10,
@@ -118,7 +134,9 @@ describe('createEnrollment', () => {
       studentId: '550e8400-e29b-41d4-a716-446655440000',
       planId: '550e8400-e29b-41d4-a716-446655440001',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
-    })
+      discount: 0,
+      canLeaveAlone: false,
+    } as unknown as any)
 
     expect(result).toBe('duplicateEnrollment')
   })

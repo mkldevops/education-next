@@ -19,7 +19,7 @@ describe('promotion domain', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         student: { id: 's1' },
-      } as Enrollment & { student: { id: string } },
+      } as unknown as Enrollment & { student: { id: string } },
       currentLevel: {
         id: 'l1',
         code: 'L1',
@@ -41,7 +41,7 @@ describe('promotion domain', () => {
               updatedAt: new Date(),
             }
           : null,
-      } as Level & { nextLevel: Level | null },
+      } as unknown as Level & { nextLevel: Level | null },
     })
 
     it('should return true for ACTIVE enrollment with next level', () => {

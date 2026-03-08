@@ -1,5 +1,12 @@
 import { Card } from '@peaklab/ui'
-import type { ClassAssignment, ClassPeriod, Enrollment, Payment, Plan, Student } from '@prisma/client'
+import type {
+  ClassAssignment,
+  ClassPeriod,
+  Enrollment,
+  Payment,
+  Plan,
+  Student,
+} from '@prisma/client'
 import { getTranslations } from 'next-intl/server'
 import { formatAmount } from '@/lib/decimal'
 
@@ -73,7 +80,9 @@ export async function ActivityFeed({ enrollments, payments }: Props) {
     })
   })
 
-  const sortedActivities = activities.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 8)
+  const sortedActivities = activities
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .slice(0, 8)
 
   if (sortedActivities.length === 0) {
     return (
@@ -86,12 +95,17 @@ export async function ActivityFeed({ enrollments, payments }: Props) {
   return (
     <div className="space-y-4">
       {sortedActivities.map((activity) => (
-        <div key={activity.id} className="flex gap-3 pb-3 last:pb-0 last:border-0 border-b border-gray-200">
+        <div
+          key={activity.id}
+          className="flex gap-3 pb-3 last:pb-0 last:border-0 border-b border-gray-200"
+        >
           <div className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${activity.color}`} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900">{activity.title}</p>
             <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{activity.description}</p>
-            <p className="text-xs text-gray-500 mt-1">{activity.date.toLocaleDateString('fr-FR')}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {activity.date.toLocaleDateString('fr-FR')}
+            </p>
           </div>
         </div>
       ))}
