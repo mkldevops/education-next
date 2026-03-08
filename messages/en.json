@@ -840,7 +840,9 @@
       "passwordMismatch": "Passwords do not match",
       "passwordTooShort": "Password must be at least 8 characters",
       "invalidCurrentPassword": "Current password is incorrect",
-      "sessionRevokeFailed": "Failed to revoke session"
+      "sessionRevokeFailed": "Failed to revoke session",
+      "linkFailed": "Failed to connect Google account",
+      "unlinkFailed": "Failed to disconnect Google account"
     }
   },
   "profile": {

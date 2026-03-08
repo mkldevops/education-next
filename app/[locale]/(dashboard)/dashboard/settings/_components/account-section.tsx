@@ -27,18 +27,25 @@ export function AccountSection({ email, linkedProviders }: Props) {
   const isGoogleLinked = providers.includes('google')
 
   const handleLinkGoogle = () => {
+    setError(null)
     startTransition(async () => {
-      await linkSocial({
+      const result = await linkSocial({
         provider: 'google',
         callbackURL: `/${locale}/dashboard/settings`,
       })
+      if (result.error) {
+        setError('linkFailed')
+      }
     })
   }
 
   const handleUnlinkGoogle = () => {
+    setError(null)
     startTransition(async () => {
       const result = await unlinkAccount({ providerId: 'google' })
-      if (!result.error) {
+      if (result.error) {
+        setError('unlinkFailed')
+      } else {
         setProviders((prev) => prev.filter((p) => p !== 'google'))
         router.refresh()
       }
@@ -83,6 +90,12 @@ export function AccountSection({ email, linkedProviders }: Props) {
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-gray-900">{t('connectedAccounts.title')}</h2>
         <p className="mt-1 text-sm text-gray-500">{t('connectedAccounts.description')}</p>
+
+        {error && (error === 'linkFailed' || error === 'unlinkFailed') && (
+          <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            {t(`errors.${error}`)}
+          </div>
+        )}
 
         <div className="mt-4 space-y-3">
           <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
