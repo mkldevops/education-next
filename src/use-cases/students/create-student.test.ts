@@ -113,7 +113,12 @@ describe('createStudent', () => {
     }
 
     // WHEN
-    const result = await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
+    const result = await createStudent(
+      input as unknown as any,
+      familyGateway as unknown as any,
+      personGateway as unknown as any,
+      studentGateway as unknown as any
+    )
 
     // THEN
     expect(result).toBe('validationError')
@@ -129,7 +134,12 @@ describe('createStudent', () => {
     }
 
     // WHEN
-    const result = await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
+    const result = await createStudent(
+      input as unknown as any,
+      familyGateway as unknown as any,
+      personGateway as unknown as any,
+      studentGateway as unknown as any
+    )
 
     // THEN
     expect(result).toBe('notFound')
@@ -144,7 +154,12 @@ describe('createStudent', () => {
     }
 
     // WHEN
-    const result = await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
+    const result = await createStudent(
+      input as unknown as any,
+      familyGateway as unknown as any,
+      personGateway as unknown as any,
+      studentGateway as unknown as any
+    )
 
     // THEN
     expect(result).toBe('validationError')
@@ -159,7 +174,12 @@ describe('createStudent', () => {
     }
 
     // WHEN
-    const result = await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
+    const result = await createStudent(
+      input as unknown as any,
+      familyGateway as unknown as any,
+      personGateway as unknown as any,
+      studentGateway as unknown as any
+    )
 
     // THEN
     expect(result).toEqual({ id: 'student-123' })
@@ -179,7 +199,12 @@ describe('createStudent', () => {
     }
 
     // WHEN
-    await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
+    await createStudent(
+      input as unknown as any,
+      familyGateway as unknown as any,
+      personGateway as unknown as any,
+      studentGateway as unknown as any
+    )
 
     // THEN
     expect(personGateway.createdData).toMatchObject({
@@ -205,7 +230,12 @@ describe('createStudent', () => {
     }
 
     // WHEN
-    await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
+    await createStudent(
+      input as unknown as any,
+      familyGateway as unknown as any,
+      personGateway as unknown as any,
+      studentGateway as unknown as any
+    )
 
     // THEN
     expect(studentGateway.createdData).toMatchObject({
@@ -226,7 +256,12 @@ describe('createStudent', () => {
     }
 
     // WHEN
-    await createStudent(input as unknown as any, familyGateway as unknown as any, personGateway as unknown as any, studentGateway as unknown as any)
+    await createStudent(
+      input as unknown as any,
+      familyGateway as unknown as any,
+      personGateway as unknown as any,
+      studentGateway as unknown as any
+    )
 
     // THEN
     expect(familyGateway.addPersonCalls).toEqual(

@@ -9,6 +9,7 @@ out
 # Build
 dist
 build
+tsconfig.tsbuildinfo
 
 # Env
 .env
@@ -32,3 +33,6 @@ yarn-error.log*
 
 # Prisma
 prisma/*.db
+
+# Claude Code
+.claude/worktrees/
