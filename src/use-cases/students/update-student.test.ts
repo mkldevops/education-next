@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { updateStudent } from './update-student'
 
+type Gateway = Parameters<typeof updateStudent>[1]
+
 class StudentGatewaySpy {
-  studentToReturn: { id: string; person: any } | null = null
+  studentToReturn: { id: string; person: Record<string, unknown> } | null = null
   updatedId: string | null = null
   updatedData: unknown = null
 
@@ -14,7 +16,7 @@ class StudentGatewaySpy {
     this.updatedId = id
     this.updatedData = data
     const existing = this.studentToReturn || {}
-    return { id, ...existing, ...(data as object) } as unknown as any
+    return { id, ...existing, ...(data as object) } as Record<string, unknown>
   }
 
   async create() {
@@ -51,7 +53,7 @@ describe('updateStudent', () => {
     const input = { id: 'invalid-uuid' }
 
     // WHEN
-    const result = await updateStudent(input, gateway as unknown as any)
+    const result = await updateStudent(input, gateway as unknown as Gateway)
 
     // THEN
     expect(result).toBe('validationError')
@@ -63,7 +65,7 @@ describe('updateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    const result = await updateStudent(input, gateway as unknown as any)
+    const result = await updateStudent(input, gateway as unknown as Gateway)
 
     // THEN
     expect(result).toBe('notFound')
@@ -77,7 +79,7 @@ describe('updateStudent', () => {
     }
 
     // WHEN
-    const result = await updateStudent(input, gateway as unknown as any)
+    const result = await updateStudent(input, gateway as unknown as Gateway)
 
     // THEN
     expect(result).toBe('validationError')
@@ -91,7 +93,7 @@ describe('updateStudent', () => {
     }
 
     // WHEN
-    const result = await updateStudent(input, gateway as unknown as any)
+    const result = await updateStudent(input, gateway as unknown as Gateway)
 
     // THEN
     expect(result).toHaveProperty('id', 'student-123')
@@ -105,7 +107,7 @@ describe('updateStudent', () => {
     }
 
     // WHEN
-    const result = await updateStudent(input, gateway as unknown as any)
+    const result = await updateStudent(input, gateway as unknown as Gateway)
 
     // THEN
     expect(result).toHaveProperty('id', 'student-123')
@@ -120,7 +122,7 @@ describe('updateStudent', () => {
     }
 
     // WHEN
-    await updateStudent(input, gateway as unknown as any)
+    await updateStudent(input, gateway as unknown as Gateway)
 
     // THEN
     expect(gateway.updatedId).toBe(input.id)
@@ -138,7 +140,7 @@ describe('updateStudent', () => {
     }
 
     // WHEN
-    await updateStudent(input, gateway as unknown as any)
+    await updateStudent(input, gateway as unknown as Gateway)
 
     // THEN
     expect(gateway.updatedData).not.toHaveProperty('id')
