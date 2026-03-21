@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { AccountSection } from './account-section'
+import { PasskeySection } from './passkey-section'
 import { PasswordSection } from './password-section'
 import { ProfileSection } from './profile-section'
 import { SessionsSection } from './sessions-section'
@@ -66,7 +67,12 @@ export function SettingsTabs({ user, sessions, linkedProviders }: Props) {
       </div>
 
       {activeTab === 'profile' && <ProfileSection user={user} />}
-      {activeTab === 'security' && <PasswordSection />}
+      {activeTab === 'security' && (
+        <div className="space-y-6">
+          <PasswordSection />
+          <PasskeySection />
+        </div>
+      )}
       {activeTab === 'sessions' && <SessionsSection sessions={sessions} />}
       {activeTab === 'account' && (
         <AccountSection email={user.email} linkedProviders={linkedProviders} />

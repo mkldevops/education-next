@@ -62,11 +62,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  sessions          Session[]
-  accounts          Account[]
-  families          UserFamily[]
-  createdFamilies   Family[]     @relation("createdBy")
-  createdInvitations Invitation[]
+  sessions            Session[]
+  accounts            Account[]
+  families            UserFamily[]
+  createdFamilies     Family[]        @relation("createdBy")
+  createdInvitations  Invitation[]
+  passkeys            Passkey[]
 }
 
 model Session {
@@ -350,4 +351,22 @@ model Invitation {
 
   @@index([email])
   @@index([token])
+}
+
+model Passkey {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String   @db.VarChar(250)
+  credentialId String   @unique
+  publicKey    String   @db.Text
+  counter      BigInt   @default(0)
+  deviceType   String   @db.VarChar(32)
+  backedUp     Boolean  @default(false)
+  transports   String?  @db.VarChar(250)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

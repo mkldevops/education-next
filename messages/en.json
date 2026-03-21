@@ -152,7 +152,10 @@
       "noAccount": "Don't have an account?",
       "register": "Create account",
       "contactAdmin": "Please contact an administrator to create an account.",
-      "error": "Invalid email or password"
+      "error": "Invalid email or password",
+      "or": "or",
+      "signInWithPasskey": "Sign in with a passkey",
+      "passkeyError": "Passkey authentication failed"
     },
     "register": {
       "title": "Create account",
@@ -905,6 +908,19 @@
       "sessionRevokeFailed": "Failed to revoke session",
       "linkFailed": "Failed to connect Google account",
       "unlinkFailed": "Failed to disconnect Google account"
+    },
+    "passkey": {
+      "title": "Passkeys",
+      "description": "Sign in with your fingerprint, Face ID, or a security key",
+      "registeredPasskeys": "Registered passkeys",
+      "register": "Add",
+      "namePlaceholder": "Key name (e.g. MacBook Touch ID)",
+      "nameRequired": "Please enter a name for the key",
+      "registered": "Passkey registered successfully",
+      "deleted": "Passkey removed",
+      "error": "Error registering passkey",
+      "deleteError": "Error removing passkey",
+      "cancelled": "Registration cancelled"
     }
   },
   "profile": {
