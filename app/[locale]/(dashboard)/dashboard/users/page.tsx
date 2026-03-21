@@ -69,7 +69,7 @@ export default async function UsersPage({ params }: Props) {
           ADMIN: 'blue',
           PARENT: 'green',
         }
-        return <StatusBadge status={roleColors[u.role] as string} label={tRoles(u.role)} />
+        return <StatusBadge status={roleColors[u.role] as any} label={tRoles(u.role)} />
       },
     },
     {
@@ -90,7 +90,7 @@ export default async function UsersPage({ params }: Props) {
       header: t('status'),
       render: (u) => (
         <StatusBadge
-          status={(u.isActive ? 'ACTIVE' : 'PENDING') as string}
+          status={(u.isActive ? 'ACTIVE' : 'PENDING') as any}
           label={u.isActive ? t('active') : t('inactive')}
         />
       ),
