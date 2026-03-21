@@ -563,7 +563,8 @@
           "types": {
             "TEXT": "Texte",
             "NUMBER": "Nombre",
-            "BOOLEAN": "Booléen"
+            "BOOLEAN": "Booléen",
+            "COLOR": "Couleur"
           },
           "enabled": "Activé",
           "cancel": "Annuler",

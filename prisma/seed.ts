@@ -336,9 +336,13 @@ async function seed() {
       { name: 'automatic_promotion', value: 'false', valueType: 'BOOLEAN' },
       { name: 'school_name', value: 'École Al-Nour', valueType: 'TEXT' },
       { name: 'max_students_per_class', value: '25', valueType: 'NUMBER' },
+      { name: 'theme_primary', value: '#3c6e71', valueType: 'COLOR' },
+      { name: 'theme_primary_hover', value: '#30595b', valueType: 'COLOR' },
+      { name: 'theme_primary_light', value: '#d3e7e8', valueType: 'COLOR' },
+      { name: 'theme_background', value: '#ffffff', valueType: 'COLOR' },
     ],
   })
-  console.log('Created 3 config entries')
+  console.log('Created 7 config entries')
 
   console.log('\n--- Seed complete ---')
   console.log('Admin login:  admin@school.test / admin123')

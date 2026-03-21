@@ -41,6 +41,7 @@ enum ConfigValueType {
   TEXT
   NUMBER
   BOOLEAN
+  COLOR
 }
 
 enum Role {
