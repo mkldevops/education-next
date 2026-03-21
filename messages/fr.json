@@ -358,6 +358,20 @@
           "cancel": "Annuler",
           "success": "Élève désactivé",
           "error": "Erreur lors de la désactivation"
+        },
+        "table": {
+          "search": "Rechercher...",
+          "noResults": "Aucun résultat",
+          "columns": "Colonnes",
+          "rowsPerPage": "Lignes par page",
+          "page": "Page {current} sur {total}",
+          "previous": "Précédent",
+          "next": "Suivant",
+          "sort": {
+            "asc": "Croissant",
+            "desc": "Décroissant",
+            "none": "Aucun tri"
+          }
         }
       },
       "periods": {
@@ -621,7 +635,8 @@
           "noLanguages": "Non spécifié",
           "noEnrollments": "Aucune inscription",
           "remaining": "€{amount} restant",
-          "age": "{age} ans"
+          "age": "{age} ans",
+          "paymentProgress": "Progression du paiement pour {plan}"
         },
         "payments": {
           "amount": "Montant",
@@ -690,6 +705,13 @@
             "CHECK": "Chèque",
             "STRIPE": "Stripe"
           }
+        },
+        "relationType": {
+          "PARENT": "Parent",
+          "TUTOR": "Tuteur / Tutrice",
+          "GRANDPARENT": "Grand-parent",
+          "SIBLING": "Frère / Sœur",
+          "OTHER": "Autre"
         }
       },
       "studentDetails": {
