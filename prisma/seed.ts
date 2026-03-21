@@ -222,7 +222,7 @@ async function seed() {
     },
   })
 
-  const period2026 = await prisma.period.create({
+  const _period2026 = await prisma.period.create({
     data: {
       name: '2026-2027',
       startAt: new Date('2026-09-01'),
@@ -240,7 +240,7 @@ async function seed() {
     data: { name: 'CE1-A', capacity: 25, levelId: ce1.id, periodId: period2025.id },
   })
 
-  const ce2Class = await prisma.classPeriod.create({
+  const _ce2Class = await prisma.classPeriod.create({
     data: { name: 'CE2-A', capacity: 20, levelId: ce2.id, periodId: period2025.id },
   })
   console.log('Created 3 class-periods')
@@ -336,9 +336,10 @@ async function seed() {
       { name: 'automatic_promotion', value: 'false', valueType: 'BOOLEAN' },
       { name: 'school_name', value: 'École Al-Nour', valueType: 'TEXT' },
       { name: 'max_students_per_class', value: '25', valueType: 'NUMBER' },
+      { name: 'logo_url', value: '', valueType: 'TEXT' },
     ],
   })
-  console.log('Created 3 config entries')
+  console.log('Created 4 config entries')
 
   console.log('\n--- Seed complete ---')
   console.log('Admin login:  admin@school.test / admin123')
@@ -346,8 +347,7 @@ async function seed() {
 }
 
 seed()
-  .catch((e) => {
-    console.error('Seed failed:', e)
+  .catch((_e) => {
     process.exit(1)
   })
   .finally(() => prisma.$disconnect())

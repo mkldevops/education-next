@@ -1,5 +1,5 @@
 import { setRequestLocale } from 'next-intl/server'
-import { Navbar } from '@/features/navbar'
+import { NavbarServer } from '@/features/navbar'
 
 type Props = {
   children: React.ReactNode
@@ -12,7 +12,7 @@ export default async function AuthLayout({ children, params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
+      <NavbarServer />
       <main className="flex-1">{children}</main>
     </div>
   )
