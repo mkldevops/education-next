@@ -152,7 +152,10 @@
       "noAccount": "Pas encore de compte ?",
       "register": "Créer un compte",
       "contactAdmin": "Veuillez contacter un administrateur pour créer un compte.",
-      "error": "Email ou mot de passe incorrect"
+      "error": "Email ou mot de passe incorrect",
+      "or": "ou",
+      "signInWithPasskey": "Se connecter avec une clé de sécurité",
+      "passkeyError": "Authentification par clé de sécurité échouée"
     },
     "register": {
       "title": "Créer un compte",
@@ -885,6 +888,19 @@
       "sessionRevokeFailed": "Impossible de révoquer la session",
       "linkFailed": "Impossible de connecter le compte Google",
       "unlinkFailed": "Impossible de déconnecter le compte Google"
+    },
+    "passkey": {
+      "title": "Clés de sécurité (Passkeys)",
+      "description": "Connectez-vous avec votre empreinte digitale, Face ID ou une clé matérielle",
+      "registeredPasskeys": "Clés enregistrées",
+      "register": "Ajouter",
+      "namePlaceholder": "Nom de la clé (ex : MacBook Touch ID)",
+      "nameRequired": "Veuillez saisir un nom pour la clé",
+      "registered": "Clé de sécurité enregistrée avec succès",
+      "deleted": "Clé de sécurité supprimée",
+      "error": "Erreur lors de l'enregistrement de la clé",
+      "deleteError": "Erreur lors de la suppression",
+      "cancelled": "Enregistrement annulé"
     }
   },
   "profile": {
