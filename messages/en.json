@@ -618,7 +618,8 @@
           "noLanguages": "Not specified",
           "noEnrollments": "No enrollments",
           "remaining": "€{amount} remaining",
-          "age": "{age} years old"
+          "age": "{age} years old",
+          "paymentProgress": "Payment progress for {plan}"
         },
         "payments": {
           "amount": "Amount",
@@ -687,6 +688,13 @@
             "CHECK": "Check",
             "STRIPE": "Stripe"
           }
+        },
+        "relationType": {
+          "PARENT": "Parent",
+          "TUTOR": "Tutor",
+          "GRANDPARENT": "Grandparent",
+          "SIBLING": "Sibling",
+          "OTHER": "Other"
         }
       },
       "studentDetails": {
