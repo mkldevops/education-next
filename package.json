@@ -32,6 +32,8 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.0",
     "better-auth": "^1.5.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
