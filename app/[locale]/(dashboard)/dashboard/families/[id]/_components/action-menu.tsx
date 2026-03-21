@@ -75,12 +75,7 @@ export function ActionMenu({ familyId: _familyId }: Props) {
 
   return (
     <div ref={ref} className="relative">
-      <Button
-        size="sm"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
+      <Button size="sm" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
         <Plus className="mr-1.5 h-4 w-4" />
         {t('new')}
       </Button>

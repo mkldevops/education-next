@@ -336,10 +336,9 @@ async function seed() {
       { name: 'automatic_promotion', value: 'false', valueType: 'BOOLEAN' },
       { name: 'school_name', value: 'École Al-Nour', valueType: 'TEXT' },
       { name: 'max_students_per_class', value: '25', valueType: 'NUMBER' },
-      { name: 'logo_url', value: '', valueType: 'TEXT' },
     ],
   })
-  console.log('Created 4 config entries')
+  console.log('Created 3 config entries')
 
   console.log('\n--- Seed complete ---')
   console.log('Admin login:  admin@school.test / admin123')
@@ -347,7 +346,9 @@ async function seed() {
 }
 
 seed()
-  .catch((_e) => {
+  .catch((e) => {
+    // biome-ignore lint/suspicious/noConsole: seed error output
+    console.error('Seed failed:', e)
     process.exit(1)
   })
   .finally(() => prisma.$disconnect())
