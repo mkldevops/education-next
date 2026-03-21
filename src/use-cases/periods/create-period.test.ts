@@ -4,7 +4,7 @@ import { createPeriod } from './create-period'
 class PeriodGatewaySpy {
   createdData: unknown = null
   overlapToReturn = false
-  periodToReturn: any = null
+  periodToReturn: unknown = null
 
   async create(data: unknown) {
     this.createdData = data

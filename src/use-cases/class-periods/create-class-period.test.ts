@@ -51,7 +51,7 @@ class PeriodGatewaySpy {
 
 class ClassPeriodGatewaySpy {
   createdData: unknown = null
-  classPeriodToReturn: any = null
+  classPeriodToReturn: unknown = null
 
   async create(data: unknown) {
     this.createdData = data

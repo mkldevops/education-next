@@ -3,7 +3,7 @@ import { createPlan } from './create-plan'
 
 class PlanGatewaySpy {
   createdData: unknown = null
-  planToReturn: any = null
+  planToReturn: unknown = null
 
   async create(data: unknown) {
     this.createdData = data

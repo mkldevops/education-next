@@ -1,6 +1,6 @@
 'use client'
 
-import { startAuthentication, startRegistration } from '@simplewebauthn/browser'
+import { startRegistration } from '@simplewebauthn/browser'
 import { KeyRound, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -56,7 +56,7 @@ export function PasskeySection() {
         return
       }
 
-      let response
+      let response: Awaited<ReturnType<typeof startRegistration>>
       try {
         response = await startRegistration({ optionsJSON: result.options })
       } catch {
