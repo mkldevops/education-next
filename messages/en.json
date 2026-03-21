@@ -580,9 +580,16 @@
           "edit": "Edit",
           "addChild": "Add Child"
         },
+        "actions": {
+          "new": "New",
+          "addChild": "Add child",
+          "addEnrollment": "New enrollment",
+          "addPayment": "New payment"
+        },
         "alert": {
           "needsAttention": "Children Needing Attention",
-          "assignNow": "Assign Now"
+          "assignNow": "Assign Now",
+          "pendingCount": "{count} pending enrollment(s)"
         },
         "kpis": {
           "enrolledChildren": "Enrolled Children",
@@ -608,7 +615,10 @@
           "enroll": "Enroll",
           "viewProfile": "View Profile",
           "noAllergies": "No allergies declared",
-          "noLanguages": "Not specified"
+          "noLanguages": "Not specified",
+          "noEnrollments": "No enrollments",
+          "remaining": "€{amount} remaining",
+          "age": "{age} years old"
         },
         "payments": {
           "amount": "Amount",
@@ -623,12 +633,15 @@
         "activity": {
           "payment": "Payment received",
           "enrollment": "Enrollment created",
-          "assignment": "Class assignment"
+          "assignment": "Class assignment",
+          "empty": "No recent activity"
         },
         "financial": {
           "paid": "Paid",
           "remaining": "Remaining",
-          "total": "Total"
+          "total": "Total",
+          "discount": "Discounts applied",
+          "chartTitle": "Financial breakdown chart"
         },
         "familyMembers": "Family Members",
         "table": {
@@ -666,7 +679,14 @@
           "reference": "Reference",
           "paidAt": "Payment Date",
           "cashedAt": "Cash Date",
-          "noPayments": "No payments registered"
+          "noPayments": "No payments registered",
+          "methods": {
+            "CARD": "Card",
+            "TRANSFER": "Transfer",
+            "CASH": "Cash",
+            "CHECK": "Check",
+            "STRIPE": "Stripe"
+          }
         }
       },
       "studentDetails": {

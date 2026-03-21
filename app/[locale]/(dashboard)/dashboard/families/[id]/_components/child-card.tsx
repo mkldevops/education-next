@@ -55,7 +55,7 @@ export async function ChildCard({ student, locale }: Props) {
             {person.name} {person.lastname}
           </h3>
           <p className="text-xs text-gray-600 mt-0.5">
-            {age} ans • {birthday.toLocaleDateString(locale)}
+            {t('childCard.age', { age })} • {birthday.toLocaleDateString(locale)}
           </p>
         </div>
       </div>
@@ -105,7 +105,7 @@ export async function ChildCard({ student, locale }: Props) {
                   </span>
                   {remaining > 0 && (
                     <span className="text-xs font-medium text-amber-600">
-                      €{formatAmount(remaining)} restant
+                      {t('childCard.remaining', { amount: formatAmount(remaining) })}
                     </span>
                   )}
                 </div>
@@ -113,7 +113,7 @@ export async function ChildCard({ student, locale }: Props) {
             )
           })
         ) : (
-          <p className="text-xs text-gray-600 text-center py-2">{t('childCard.noAllergies')}</p>
+          <p className="text-xs text-gray-600 text-center py-2">{t('childCard.noEnrollments')}</p>
         )}
       </div>
 

@@ -580,9 +580,16 @@
           "edit": "Modifier",
           "addChild": "Ajouter un enfant"
         },
+        "actions": {
+          "new": "Nouveau",
+          "addChild": "Ajouter un enfant",
+          "addEnrollment": "Nouvelle inscription",
+          "addPayment": "Nouveau paiement"
+        },
         "alert": {
           "needsAttention": "Enfants nécessitant une attention",
-          "assignNow": "Affecter maintenant"
+          "assignNow": "Affecter maintenant",
+          "pendingCount": "{count} inscription(s) en attente"
         },
         "kpis": {
           "enrolledChildren": "Enfants inscrits",
@@ -608,7 +615,10 @@
           "enroll": "Inscrire",
           "viewProfile": "Voir le profil",
           "noAllergies": "Aucune allergie déclarée",
-          "noLanguages": "Non spécifié"
+          "noLanguages": "Non spécifié",
+          "noEnrollments": "Aucune inscription",
+          "remaining": "€{amount} restant",
+          "age": "{age} ans"
         },
         "payments": {
           "amount": "Montant",
@@ -623,12 +633,15 @@
         "activity": {
           "payment": "Paiement reçu",
           "enrollment": "Inscription créée",
-          "assignment": "Affectation de classe"
+          "assignment": "Affectation de classe",
+          "empty": "Aucune activité récente"
         },
         "financial": {
           "paid": "Payé",
           "remaining": "Restant",
-          "total": "Total"
+          "total": "Total",
+          "discount": "Réductions appliquées",
+          "chartTitle": "Répartition financière"
         },
         "familyMembers": "Membres de la famille",
         "table": {
@@ -666,7 +679,14 @@
           "reference": "Référence",
           "paidAt": "Date de paiement",
           "cashedAt": "Date d'encaissement",
-          "noPayments": "Aucun paiement enregistré"
+          "noPayments": "Aucun paiement enregistré",
+          "methods": {
+            "CARD": "CB",
+            "TRANSFER": "Virement",
+            "CASH": "Espèces",
+            "CHECK": "Chèque",
+            "STRIPE": "Stripe"
+          }
         }
       },
       "studentDetails": {
