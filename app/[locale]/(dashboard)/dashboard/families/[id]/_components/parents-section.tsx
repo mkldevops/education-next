@@ -37,7 +37,9 @@ export async function ParentsSection({ persons }: Props) {
               <p className="text-sm font-medium text-gray-900">
                 {parent.person.name} {parent.person.lastname}
               </p>
-              <p className="text-xs text-gray-600 mt-0.5">{t(`relationType.${parent.relationType}`)}</p>
+              <p className="text-xs text-gray-600 mt-0.5">
+                {t(`relationType.${parent.relationType}`)}
+              </p>
               {parent.person.phoneNumbers.length > 0 && (
                 <p className="text-xs text-gray-600 mt-1">
                   {parent.person.phoneNumbers[0].phoneNumber}

@@ -11,17 +11,17 @@ import type {
 } from '@prisma/client'
 import {
   type ColumnDef,
-  type PaginationState,
-  type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type PaginationState,
+  type SortingState,
   useReactTable,
+  type VisibilityState,
 } from '@tanstack/react-table'
-import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react'
+import { ChevronDown, ChevronsUpDown, ChevronUp } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
@@ -73,9 +73,7 @@ export function StudentsDataTable({ data, locale }: Props) {
       id: 'birthday',
       header: t('birthday'),
       accessorFn: (row) => new Date(row.birthday).toLocaleDateString(locale),
-      cell: ({ getValue }) => (
-        <span className="text-gray-700">{getValue() as string}</span>
-      ),
+      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
       enableSorting: true,
     },
     {
@@ -83,9 +81,7 @@ export function StudentsDataTable({ data, locale }: Props) {
       header: t('family'),
       accessorFn: (row) =>
         row.person.families.length > 0 ? row.person.families[0].family.name : '-',
-      cell: ({ getValue }) => (
-        <span className="text-gray-700">{getValue() as string}</span>
-      ),
+      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
       enableSorting: true,
     },
     {
@@ -95,9 +91,7 @@ export function StudentsDataTable({ data, locale }: Props) {
         row.enrollments.length > 0 && row.enrollments[0].classAssignments.length > 0
           ? row.enrollments[0].classAssignments[0].classPeriod.name
           : '-',
-      cell: ({ getValue }) => (
-        <span className="text-gray-700">{getValue() as string}</span>
-      ),
+      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
       enableSorting: true,
     },
   ]
@@ -130,18 +124,17 @@ export function StudentsDataTable({ data, locale }: Props) {
           className="max-w-sm"
         />
         <div className="relative ml-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setColumnVisibilityOpen((v) => !v)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setColumnVisibilityOpen((v) => !v)}>
             {t('table.columns')}
             <ChevronDown className="ml-2 h-4 w-4" />
           </Button>
           {columnVisibilityOpen && (
             <div className="absolute right-0 top-full mt-1 z-10 bg-white border border-gray-200 rounded-md shadow-md p-2 min-w-[140px]">
               {table.getAllColumns().map((col) => (
-                <label key={col.id} className="flex items-center gap-2 px-2 py-1 text-sm cursor-pointer hover:bg-gray-50 rounded">
+                <label
+                  key={col.id}
+                  className="flex items-center gap-2 px-2 py-1 text-sm cursor-pointer hover:bg-gray-50 rounded"
+                >
                   <input
                     type="checkbox"
                     checked={col.getIsVisible()}
@@ -196,10 +189,7 @@ export function StudentsDataTable({ data, locale }: Props) {
           <tbody>
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td
-                  colSpan={columns.length}
-                  className="text-center py-8 text-gray-500"
-                >
+                <td colSpan={columns.length} className="text-center py-8 text-gray-500">
                   {globalFilter ? t('table.noResults') : t('noStudents')}
                 </td>
               </tr>
@@ -237,9 +227,7 @@ export function StudentsDataTable({ data, locale }: Props) {
           </select>
         </div>
         <div className="flex items-center gap-3 text-sm text-gray-600">
-          <span>
-            {t('table.page', { current: currentPage, total: totalPages || 1 })}
-          </span>
+          <span>{t('table.page', { current: currentPage, total: totalPages || 1 })}</span>
           <div className="flex gap-1">
             <Button
               variant="outline"
