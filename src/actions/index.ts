@@ -1,11 +1,4 @@
 export {
-  changePasswordAction,
-  deleteProfileAction,
-  getProfileAction,
-  revokeSessionAction,
-  updateProfileAction,
-} from './profile-actions'
-export {
   deletePasskey,
   getPasskeyAuthenticationOptions,
   getPasskeyRegistrationOptions,
@@ -13,3 +6,10 @@ export {
   verifyPasskeyAuthentication,
   verifyPasskeyRegistration,
 } from './passkey-actions'
+export {
+  changePasswordAction,
+  deleteProfileAction,
+  getProfileAction,
+  revokeSessionAction,
+  updateProfileAction,
+} from './profile-actions'
