@@ -618,7 +618,8 @@
           "noLanguages": "Non spécifié",
           "noEnrollments": "Aucune inscription",
           "remaining": "€{amount} restant",
-          "age": "{age} ans"
+          "age": "{age} ans",
+          "paymentProgress": "Progression du paiement pour {plan}"
         },
         "payments": {
           "amount": "Montant",

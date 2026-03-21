@@ -92,7 +92,14 @@ export async function ChildCard({ student, locale }: Props) {
                   <StatusBadge status={enrollment.status} />
                 </div>
 
-                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div
+                  role="progressbar"
+                  aria-valuenow={Math.round(paidPercentage)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={t('childCard.paymentProgress', { plan: enrollment.plan.name })}
+                  className="w-full bg-gray-200 rounded-full h-2 overflow-hidden"
+                >
                   <div
                     className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-300"
                     style={{ width: `${Math.min(paidPercentage, 100)}%` }}
