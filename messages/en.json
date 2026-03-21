@@ -581,7 +581,8 @@
           "types": {
             "TEXT": "Text",
             "NUMBER": "Number",
-            "BOOLEAN": "Boolean"
+            "BOOLEAN": "Boolean",
+            "COLOR": "Color"
           },
           "enabled": "Enabled",
           "cancel": "Cancel",

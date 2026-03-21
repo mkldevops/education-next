@@ -22,7 +22,7 @@ interface EditConfigDialogProps {
   config: {
     name: string
     value: string
-    valueType: 'TEXT' | 'NUMBER' | 'BOOLEAN'
+    valueType: 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'COLOR'
   }
 }
 
@@ -99,6 +99,35 @@ function EditConfigForm({ config }: EditConfigDialogProps) {
                 />
                 {config.value === 'true' ? t('true') : t('false')}
               </label>
+            ) : config.valueType === 'COLOR' ? (
+              <div className="flex items-center gap-3">
+                <input
+                  id="edit-config-value"
+                  name="value"
+                  type="color"
+                  defaultValue={config.value}
+                  required
+                  disabled={isPending}
+                  className="h-10 w-16 cursor-pointer rounded border border-gray-300 p-1"
+                />
+                <Input
+                  name="color-text"
+                  type="text"
+                  defaultValue={config.value}
+                  pattern="^#[0-9a-fA-F]{6}$"
+                  placeholder="#3c6e71"
+                  disabled={isPending}
+                  className="flex-1"
+                  onChange={(e) => {
+                    const colorInput = e.currentTarget
+                      .closest('form')
+                      ?.querySelector<HTMLInputElement>('#edit-config-value')
+                    if (colorInput && /^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
+                      colorInput.value = e.target.value
+                    }
+                  }}
+                />
+              </div>
             ) : (
               <Input
                 id="edit-config-value"

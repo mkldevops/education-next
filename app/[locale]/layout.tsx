@@ -4,8 +4,10 @@ import { connection } from 'next/server'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import { Toaster } from 'sonner'
+import { ThemeProvider } from '@/components/theme-provider'
 import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
+import { db } from '@/lib/db'
 import '@/styles/globals.css'
 
 type Props = {
@@ -39,21 +41,30 @@ export default async function LocaleLayout({ children, params }: Props) {
   await connection()
   const { locale } = await params
 
-  // Validate locale
   if (!routing.locales.includes(locale as Locale)) {
     notFound()
   }
 
-  // Enable static rendering
   setRequestLocale(locale)
 
-  // Load messages for client components
-  const messages = await getMessages()
+  const [messages, themeConfigs] = await Promise.all([
+    getMessages(),
+    db.config.findMany({
+      where: {
+        name: {
+          in: ['theme_primary', 'theme_primary_hover', 'theme_primary_light', 'theme_background'],
+        },
+        isActive: true,
+      },
+      select: { name: true, value: true },
+    }),
+  ])
 
   return (
     <html lang={locale}>
       <body className="flex min-h-screen flex-col">
         <NextIntlClientProvider messages={messages}>
+          <ThemeProvider configs={themeConfigs} />
           <ServiceWorkerRegister />
           {children}
           <Toaster richColors position="top-right" />

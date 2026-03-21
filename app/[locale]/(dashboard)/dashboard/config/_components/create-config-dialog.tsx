@@ -41,7 +41,7 @@ function CreateConfigForm() {
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
-  const [valueType, setValueType] = useState<'TEXT' | 'NUMBER' | 'BOOLEAN'>('TEXT')
+  const [valueType, setValueType] = useState<'TEXT' | 'NUMBER' | 'BOOLEAN' | 'COLOR'>('TEXT')
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -83,13 +83,16 @@ function CreateConfigForm() {
             <select
               id="config-type"
               value={valueType}
-              onChange={(e) => setValueType(e.target.value as 'TEXT' | 'NUMBER' | 'BOOLEAN')}
+              onChange={(e) =>
+                setValueType(e.target.value as 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'COLOR')
+              }
               disabled={isPending}
               className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
             >
               <option value="TEXT">{t('types.TEXT')}</option>
               <option value="NUMBER">{t('types.NUMBER')}</option>
               <option value="BOOLEAN">{t('types.BOOLEAN')}</option>
+              <option value="COLOR">{t('types.COLOR')}</option>
             </select>
           </div>
           <div className="space-y-2">
@@ -105,6 +108,16 @@ function CreateConfigForm() {
                 />
                 {t('enabled')}
               </label>
+            ) : valueType === 'COLOR' ? (
+              <input
+                id="config-value"
+                name="value"
+                type="color"
+                defaultValue="#3c6e71"
+                required
+                disabled={isPending}
+                className="h-10 w-16 cursor-pointer rounded border border-gray-300 p-1"
+              />
             ) : (
               <Input
                 id="config-value"
