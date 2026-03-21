@@ -22,7 +22,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
       <div className="flex items-center justify-center py-4">
         <div className="relative w-32 h-32">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-            <title>Financial breakdown chart</title>
+            <title>{t('financial.chartTitle')}</title>
             <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" strokeWidth="8" />
             <circle
               cx="50"

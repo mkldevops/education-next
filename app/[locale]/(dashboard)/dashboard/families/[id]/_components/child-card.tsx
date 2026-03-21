@@ -55,7 +55,7 @@ export async function ChildCard({ student, locale }: Props) {
             {person.name} {person.lastname}
           </h3>
           <p className="text-xs text-gray-600 mt-0.5">
-            {age} ans • {birthday.toLocaleDateString(locale)}
+            {t('childCard.age', { age })} • {birthday.toLocaleDateString(locale)}
           </p>
         </div>
       </div>

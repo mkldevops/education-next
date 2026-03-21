@@ -588,7 +588,8 @@
         },
         "alert": {
           "needsAttention": "Enfants nécessitant une attention",
-          "assignNow": "Affecter maintenant"
+          "assignNow": "Affecter maintenant",
+          "pendingCount": "{count} inscription(s) en attente"
         },
         "kpis": {
           "enrolledChildren": "Enfants inscrits",
@@ -616,7 +617,8 @@
           "noAllergies": "Aucune allergie déclarée",
           "noLanguages": "Non spécifié",
           "noEnrollments": "Aucune inscription",
-          "remaining": "€{amount} restant"
+          "remaining": "€{amount} restant",
+          "age": "{age} ans"
         },
         "payments": {
           "amount": "Montant",
@@ -638,7 +640,8 @@
           "paid": "Payé",
           "remaining": "Restant",
           "total": "Total",
-          "discount": "Réductions appliquées"
+          "discount": "Réductions appliquées",
+          "chartTitle": "Répartition financière"
         },
         "familyMembers": "Membres de la famille",
         "table": {

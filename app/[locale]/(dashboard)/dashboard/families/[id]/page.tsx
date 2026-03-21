@@ -155,8 +155,7 @@ export default async function FamilyDetailPage({ params }: Props) {
           <div className="flex-1">
             <h3 className="text-sm font-medium text-amber-900">{t('alert.needsAttention')}</h3>
             <p className="text-sm text-amber-800 mt-1">
-              {allEnrollments.filter((e) => e.status === 'PENDING').length} inscription(s) en
-              attente
+              {t('alert.pendingCount', { count: allEnrollments.filter((e) => e.status === 'PENDING').length })}
             </p>
           </div>
           <button
