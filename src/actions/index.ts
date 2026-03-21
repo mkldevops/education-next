@@ -3,7 +3,6 @@ export {
   getPasskeyAuthenticationOptions,
   getPasskeyRegistrationOptions,
   getUserPasskeys,
-  verifyPasskeyAuthentication,
   verifyPasskeyRegistration,
 } from './passkey-actions'
 export {

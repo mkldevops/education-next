@@ -222,7 +222,7 @@ async function seed() {
     },
   })
 
-  const period2026 = await prisma.period.create({
+  const _period2026 = await prisma.period.create({
     data: {
       name: '2026-2027',
       startAt: new Date('2026-09-01'),
@@ -240,7 +240,7 @@ async function seed() {
     data: { name: 'CE1-A', capacity: 25, levelId: ce1.id, periodId: period2025.id },
   })
 
-  const ce2Class = await prisma.classPeriod.create({
+  const _ce2Class = await prisma.classPeriod.create({
     data: { name: 'CE2-A', capacity: 20, levelId: ce2.id, periodId: period2025.id },
   })
   console.log('Created 3 class-periods')
@@ -347,6 +347,7 @@ async function seed() {
 
 seed()
   .catch((e) => {
+    // biome-ignore lint/suspicious/noConsole: seed error output
     console.error('Seed failed:', e)
     process.exit(1)
   })
