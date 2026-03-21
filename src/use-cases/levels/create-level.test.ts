@@ -3,11 +3,11 @@ import { createLevel } from './create-level'
 
 class LevelGatewaySpy {
   createdData: unknown = null
-  levelToReturn: any = null
+  levelToReturn: unknown = null
 
   async create(data: unknown) {
     this.createdData = data
-    return (this.levelToReturn || { id: 'level-123', ...(data as object) }) as unknown as any
+    return (this.levelToReturn || { id: 'level-123', ...(data as object) }) as unknown
   }
 
   async update() {
@@ -39,7 +39,7 @@ describe('createLevel', () => {
     const input = { name: '' }
 
     // WHEN
-    const result = await createLevel(input, gateway as unknown as any)
+    const result = await createLevel(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('validationError')
@@ -50,7 +50,7 @@ describe('createLevel', () => {
     const input = { name: 'a'.repeat(251) }
 
     // WHEN
-    const result = await createLevel(input, gateway as unknown as any)
+    const result = await createLevel(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('validationError')
@@ -61,7 +61,7 @@ describe('createLevel', () => {
     const input = { name: 'Grade 1' }
 
     // WHEN
-    const result = await createLevel(input, gateway as unknown as any)
+    const result = await createLevel(input, gateway as unknown)
 
     // THEN
     expect(result).toHaveProperty('id', 'level-123')
@@ -72,7 +72,7 @@ describe('createLevel', () => {
     const input = { name: 'Grade 2' }
 
     // WHEN
-    await createLevel(input, gateway as unknown as any)
+    await createLevel(input, gateway as unknown)
 
     // THEN
     expect(gateway.createdData).toMatchObject({ name: 'Grade 2' })

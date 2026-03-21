@@ -51,14 +51,14 @@ class PeriodGatewaySpy {
 
 class ClassPeriodGatewaySpy {
   createdData: unknown = null
-  classPeriodToReturn: any = null
+  classPeriodToReturn: unknown = null
 
   async create(data: unknown) {
     this.createdData = data
     return (this.classPeriodToReturn || {
       id: 'class-period-123',
       ...(data as object),
-    }) as unknown as any
+    }) as unknown
   }
 
   async update() {
@@ -107,9 +107,9 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown,
+      levelGateway as unknown,
+      periodGateway as unknown
     )
 
     // THEN
@@ -129,9 +129,9 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown,
+      levelGateway as unknown,
+      periodGateway as unknown
     )
 
     // THEN
@@ -151,9 +151,9 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown,
+      levelGateway as unknown,
+      periodGateway as unknown
     )
 
     // THEN
@@ -172,9 +172,9 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown,
+      levelGateway as unknown,
+      periodGateway as unknown
     )
 
     // THEN
@@ -193,9 +193,9 @@ describe('createClassPeriod', () => {
     // WHEN
     await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown,
+      levelGateway as unknown,
+      periodGateway as unknown
     )
 
     // THEN

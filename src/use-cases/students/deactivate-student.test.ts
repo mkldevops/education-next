@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { deactivateStudent } from './deactivate-student'
 
 class StudentGatewaySpy {
-  studentToReturn: { id: string; person: any } | null = null
+  studentToReturn: { id: string; person: unknown } | null = null
   hasActiveEnrollmentsReturn = false
   deactivatedId: string | null = null
 
@@ -49,7 +49,7 @@ describe('deactivateStudent', () => {
     const input = { id: 'invalid-uuid' }
 
     // WHEN
-    const result = await deactivateStudent(input, gateway as unknown as any)
+    const result = await deactivateStudent(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('validationError')
@@ -61,7 +61,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    const result = await deactivateStudent(input, gateway as unknown as any)
+    const result = await deactivateStudent(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('notFound')
@@ -73,7 +73,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    const result = await deactivateStudent(input, gateway as unknown as any)
+    const result = await deactivateStudent(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('hasActiveEnrollments')
@@ -84,7 +84,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    const result = await deactivateStudent(input, gateway as unknown as any)
+    const result = await deactivateStudent(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('OK')
@@ -95,7 +95,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    await deactivateStudent(input, gateway as unknown as any)
+    await deactivateStudent(input, gateway as unknown)
 
     // THEN
     expect(gateway.deactivatedId).toBe(input.id)
@@ -106,7 +106,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    await deactivateStudent(input, gateway as unknown as any)
+    await deactivateStudent(input, gateway as unknown)
 
     // THEN
     expect(gateway.hasActiveEnrollmentsReturn === false)

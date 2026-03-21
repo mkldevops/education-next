@@ -109,7 +109,7 @@ type SessionInfo = {
   isCurrent: boolean
 }
 
-async function listSessionsAction(): Promise<ActionResult<SessionInfo[]>> {
+async function _listSessionsAction(): Promise<ActionResult<SessionInfo[]>> {
   try {
     const reqHeaders = await headers()
     const currentSession = await auth.api.getSession({ headers: reqHeaders })

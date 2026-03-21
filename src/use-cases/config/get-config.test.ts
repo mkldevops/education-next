@@ -45,7 +45,7 @@ describe('getConfig', () => {
     const input = { name: '' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('validationError')
@@ -56,7 +56,7 @@ describe('getConfig', () => {
     const input = { name: 'a'.repeat(251) }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('validationError')
@@ -67,7 +67,7 @@ describe('getConfig', () => {
     const input = { name: 'nonexistent.config' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('notFound')
@@ -78,7 +78,7 @@ describe('getConfig', () => {
     const input = { name: 'app.timezone' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown)
 
     // THEN
     expect(result).toMatchObject({
@@ -93,7 +93,7 @@ describe('getConfig', () => {
     const input = { name: 'enrollment.max-capacity' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown)
 
     // THEN
     expect(result).toMatchObject({
@@ -108,7 +108,7 @@ describe('getConfig', () => {
     const input = { name: 'debug-mode' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown)
 
     // THEN
     expect(result).toMatchObject({

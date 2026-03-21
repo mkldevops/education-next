@@ -4,12 +4,12 @@ import { updatePlan } from './update-plan'
 class PlanGatewaySpy {
   updatedId: string | null = null
   updatedData: unknown = null
-  planToReturn: any = null
+  planToReturn: unknown = null
 
   async update(id: string, data: unknown) {
     this.updatedId = id
     this.updatedData = data
-    return { id, amount: 100, ...(data as object) } as unknown as any
+    return { id, amount: 100, ...(data as object) } as unknown
   }
 
   async create() {
@@ -37,7 +37,7 @@ describe('updatePlan', () => {
     const input = { id: 'invalid-uuid', name: 'Updated Plan' }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('validationError')
@@ -48,7 +48,7 @@ describe('updatePlan', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000', name: '' }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('validationError')
@@ -59,7 +59,7 @@ describe('updatePlan', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000', amount: 0 }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown)
 
     // THEN
     expect(result).toBe('validationError')
@@ -73,7 +73,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown)
 
     // THEN
     expect(result).toHaveProperty('id', '123e4567-e89b-12d3-a456-426614174000')
@@ -87,7 +87,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown)
 
     // THEN
     expect(result).toHaveProperty('id', '123e4567-e89b-12d3-a456-426614174000')
@@ -102,7 +102,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown)
 
     // THEN
     expect(result).toHaveProperty('id', '123e4567-e89b-12d3-a456-426614174000')
@@ -116,7 +116,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    await updatePlan(input, gateway as unknown as any)
+    await updatePlan(input, gateway as unknown)
 
     // THEN
     expect(gateway.updatedData).not.toHaveProperty('id')
@@ -131,7 +131,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    await updatePlan(input, gateway as unknown as any)
+    await updatePlan(input, gateway as unknown)
 
     // THEN
     expect(gateway.updatedId).toBe(planId)
