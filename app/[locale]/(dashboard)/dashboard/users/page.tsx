@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { requireRole } from '../../_lib/auth-helper'
 import { ActionCell } from './_components/action-cell'
+import { InviteUserDialog } from './_components/invite-user-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -110,7 +111,10 @@ export default async function UsersPage({ params }: Props) {
           { label: tBreadcrumbs('users') },
         ]}
       />
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <InviteUserDialog />
+      </div>
       <Card className="rounded-xl border border-gray-200">
         <DataTable
           data={users}
