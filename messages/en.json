@@ -480,6 +480,21 @@
           "submit": "Enroll",
           "success": "Enrollment created",
           "error": "Error creating enrollment"
+        },
+        "drawer": {
+          "title": "Enrollment Details",
+          "close": "Close",
+          "registeredAt": "Registration Date",
+          "family": "Family",
+          "plan": "Plan",
+          "status": "Status",
+          "pricing": "Pricing",
+          "totalAmount": "Total Amount",
+          "discount": "Discount",
+          "totalPaid": "Total Paid",
+          "remaining": "Remaining",
+          "classAssignments": "Class Assignments",
+          "payments": "Payments"
         }
       },
       "promotion": {
