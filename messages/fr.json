@@ -355,6 +355,20 @@
           "cancel": "Annuler",
           "success": "Élève désactivé",
           "error": "Erreur lors de la désactivation"
+        },
+        "table": {
+          "search": "Rechercher...",
+          "noResults": "Aucun résultat",
+          "columns": "Colonnes",
+          "rowsPerPage": "Lignes par page",
+          "page": "Page {current} sur {total}",
+          "previous": "Précédent",
+          "next": "Suivant",
+          "sort": {
+            "asc": "Croissant",
+            "desc": "Décroissant",
+            "none": "Aucun tri"
+          }
         }
       },
       "periods": {

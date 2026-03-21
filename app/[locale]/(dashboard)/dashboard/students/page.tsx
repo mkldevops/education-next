@@ -1,11 +1,11 @@
-import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
+import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { getSessionWithRole } from '../../_lib/auth-helper'
 import { CreateStudentDialog } from './_components/create-student-dialog'
+import { StudentsDataTable } from './_components/students-data-table'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -77,43 +77,6 @@ export default async function StudentsPage({ params, searchParams }: Props) {
     orderBy: { person: { lastname: 'asc' } },
   })
 
-  const columns: Column<(typeof students)[0]>[] = [
-    {
-      key: 'name',
-      header: t('name'),
-      render: (student) => (
-        <Link
-          href={`/dashboard/students/${student.id}`}
-          className="text-primary hover:text-primary-hover font-medium"
-        >
-          {student.person.name} {student.person.lastname}
-        </Link>
-      ),
-    },
-    {
-      key: 'birthday',
-      header: t('birthday'),
-      className: 'text-gray-700',
-      render: (student) => new Date(student.birthday).toLocaleDateString(locale),
-    },
-    {
-      key: 'family',
-      header: t('family'),
-      className: 'text-gray-700',
-      render: (student) =>
-        student.person.families.length > 0 ? student.person.families[0].family.name : '-',
-    },
-    {
-      key: 'class',
-      header: t('class'),
-      className: 'text-gray-700',
-      render: (student) =>
-        student.enrollments.length > 0 && student.enrollments[0].classAssignments.length > 0
-          ? student.enrollments[0].classAssignments[0].classPeriod.name
-          : '-',
-    },
-  ]
-
   return (
     <div className="space-y-6">
       <Breadcrumbs
@@ -128,13 +91,8 @@ export default async function StudentsPage({ params, searchParams }: Props) {
           <CreateStudentDialog families={families} defaultOpen={action === 'create'} />
         )}
       </div>
-      <Card className="rounded-xl border border-gray-200">
-        <DataTable
-          data={students}
-          columns={columns}
-          getRowKey={(student) => student.id}
-          emptyMessage={t('noStudents')}
-        />
+      <Card className="rounded-xl border border-gray-200 p-4">
+        <StudentsDataTable data={students} locale={locale} />
       </Card>
     </div>
   )
