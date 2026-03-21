@@ -39,7 +39,7 @@ describe('createLevel', () => {
     const input = { name: '' }
 
     // WHEN
-    const result = await createLevel(input, gateway as unknown)
+    const result = await createLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -50,7 +50,7 @@ describe('createLevel', () => {
     const input = { name: 'a'.repeat(251) }
 
     // WHEN
-    const result = await createLevel(input, gateway as unknown)
+    const result = await createLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -61,7 +61,7 @@ describe('createLevel', () => {
     const input = { name: 'Grade 1' }
 
     // WHEN
-    const result = await createLevel(input, gateway as unknown)
+    const result = await createLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', 'level-123')
@@ -72,7 +72,7 @@ describe('createLevel', () => {
     const input = { name: 'Grade 2' }
 
     // WHEN
-    await createLevel(input, gateway as unknown)
+    await createLevel(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.createdData).toMatchObject({ name: 'Grade 2' })

@@ -107,8 +107,8 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown,
-      levelGateway as unknown,
+      classPeriodGateway as unknown as any,
+      levelGateway as unknown as any,
       periodGateway as unknown
     )
 
@@ -129,8 +129,8 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown,
-      levelGateway as unknown,
+      classPeriodGateway as unknown as any,
+      levelGateway as unknown as any,
       periodGateway as unknown
     )
 
@@ -151,8 +151,8 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown,
-      levelGateway as unknown,
+      classPeriodGateway as unknown as any,
+      levelGateway as unknown as any,
       periodGateway as unknown
     )
 
@@ -172,8 +172,8 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown,
-      levelGateway as unknown,
+      classPeriodGateway as unknown as any,
+      levelGateway as unknown as any,
       periodGateway as unknown
     )
 
@@ -193,8 +193,8 @@ describe('createClassPeriod', () => {
     // WHEN
     await createClassPeriod(
       input,
-      classPeriodGateway as unknown,
-      levelGateway as unknown,
+      classPeriodGateway as unknown as any,
+      levelGateway as unknown as any,
       periodGateway as unknown
     )
 

@@ -31,7 +31,7 @@ describe('setConfig', () => {
     const input = { name: '', value: 'test', valueType: 'TEXT' as const }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown)
+    const result = await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -42,7 +42,7 @@ describe('setConfig', () => {
     const input = { name: 'test.config', value: 'test', valueType: 'INVALID' as unknown }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown)
+    const result = await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -53,7 +53,7 @@ describe('setConfig', () => {
     const input = { name: 'max.users', value: 'not-a-number', valueType: 'NUMBER' as const }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown)
+    const result = await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('invalidConfigValue')
@@ -64,7 +64,7 @@ describe('setConfig', () => {
     const input = { name: 'enable.feature', value: 'yes', valueType: 'BOOLEAN' as const }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown)
+    const result = await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('invalidConfigValue')
@@ -75,7 +75,7 @@ describe('setConfig', () => {
     const input = { name: 'app.name', value: 'Education Next', valueType: 'TEXT' as const }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown)
+    const result = await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('name', 'app.name')
@@ -86,7 +86,7 @@ describe('setConfig', () => {
     const input = { name: 'max.users', value: '100', valueType: 'NUMBER' as const }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown)
+    const result = await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('name', 'max.users')
@@ -97,7 +97,7 @@ describe('setConfig', () => {
     const input = { name: 'app.pi', value: '3.14159', valueType: 'NUMBER' as const }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown)
+    const result = await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('name', 'app.pi')
@@ -108,7 +108,7 @@ describe('setConfig', () => {
     const input = { name: 'enable.notifications', value: 'true', valueType: 'BOOLEAN' as const }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown)
+    const result = await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('name', 'enable.notifications')
@@ -119,7 +119,7 @@ describe('setConfig', () => {
     const input = { name: 'enable.notifications', value: 'false', valueType: 'BOOLEAN' as const }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown)
+    const result = await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('name', 'enable.notifications')
@@ -130,7 +130,7 @@ describe('setConfig', () => {
     const input = { name: 'test.setting', value: 'test-value', valueType: 'TEXT' as const }
 
     // WHEN
-    await setConfig(input, gateway as unknown)
+    await setConfig(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.setData).toMatchObject({

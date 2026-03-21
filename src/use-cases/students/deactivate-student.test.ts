@@ -49,7 +49,7 @@ describe('deactivateStudent', () => {
     const input = { id: 'invalid-uuid' }
 
     // WHEN
-    const result = await deactivateStudent(input, gateway as unknown)
+    const result = await deactivateStudent(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -61,7 +61,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    const result = await deactivateStudent(input, gateway as unknown)
+    const result = await deactivateStudent(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('notFound')
@@ -73,7 +73,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    const result = await deactivateStudent(input, gateway as unknown)
+    const result = await deactivateStudent(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('hasActiveEnrollments')
@@ -84,7 +84,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    const result = await deactivateStudent(input, gateway as unknown)
+    const result = await deactivateStudent(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('OK')
@@ -95,7 +95,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    await deactivateStudent(input, gateway as unknown)
+    await deactivateStudent(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.deactivatedId).toBe(input.id)
@@ -106,7 +106,7 @@ describe('deactivateStudent', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    await deactivateStudent(input, gateway as unknown)
+    await deactivateStudent(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.hasActiveEnrollmentsReturn === false)

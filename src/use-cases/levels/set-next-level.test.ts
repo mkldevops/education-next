@@ -52,7 +52,7 @@ describe('setNextLevel', () => {
     const input = { id: 'invalid-uuid', nextLevelId: null }
 
     // WHEN
-    const result = await setNextLevel(input, gateway as unknown)
+    const result = await setNextLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -63,7 +63,7 @@ describe('setNextLevel', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000', nextLevelId: null }
 
     // WHEN
-    const result = await setNextLevel(input, gateway as unknown)
+    const result = await setNextLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('notFound')
@@ -74,7 +74,7 @@ describe('setNextLevel', () => {
     const input = { id: levelId1, nextLevelId: '123e4567-e89b-12d3-a456-426614174999' }
 
     // WHEN
-    const result = await setNextLevel(input, gateway as unknown)
+    const result = await setNextLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('notFound')
@@ -85,7 +85,7 @@ describe('setNextLevel', () => {
     const input = { id: levelId1, nextLevelId: levelId1 }
 
     // WHEN
-    const result = await setNextLevel(input, gateway as unknown)
+    const result = await setNextLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('circularReference')
@@ -101,7 +101,7 @@ describe('setNextLevel', () => {
     const input = { id: levelId3, nextLevelId: levelId1 }
 
     // WHEN
-    const result = await setNextLevel(input, gateway as unknown)
+    const result = await setNextLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('circularReference')
@@ -112,7 +112,7 @@ describe('setNextLevel', () => {
     const input = { id: levelId1, nextLevelId: levelId2 }
 
     // WHEN
-    const result = await setNextLevel(input, gateway as unknown)
+    const result = await setNextLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('OK')
@@ -124,7 +124,7 @@ describe('setNextLevel', () => {
     const input = { id: levelId1, nextLevelId: null }
 
     // WHEN
-    const result = await setNextLevel(input, gateway as unknown)
+    const result = await setNextLevel(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('OK')
@@ -135,7 +135,7 @@ describe('setNextLevel', () => {
     const input = { id: levelId1, nextLevelId: levelId2 }
 
     // WHEN
-    await setNextLevel(input, gateway as unknown)
+    await setNextLevel(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.setNextLevelCalls).toContainEqual({
@@ -149,7 +149,7 @@ describe('setNextLevel', () => {
     const input = { id: levelId2, nextLevelId: null }
 
     // WHEN
-    await setNextLevel(input, gateway as unknown)
+    await setNextLevel(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.setNextLevelCalls).toContainEqual({

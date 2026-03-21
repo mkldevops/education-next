@@ -35,7 +35,7 @@ describe('createPlan', () => {
     const input = { name: '', amount: 100 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown)
+    const result = await createPlan(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -46,7 +46,7 @@ describe('createPlan', () => {
     const input = { name: 'a'.repeat(51), amount: 100 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown)
+    const result = await createPlan(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -57,7 +57,7 @@ describe('createPlan', () => {
     const input = { name: 'Basic Plan', amount: 0 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown)
+    const result = await createPlan(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -68,7 +68,7 @@ describe('createPlan', () => {
     const input = { name: 'Basic Plan', amount: -50 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown)
+    const result = await createPlan(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -79,7 +79,7 @@ describe('createPlan', () => {
     const input = { name: 'Basic Plan', amount: 99.99 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown)
+    const result = await createPlan(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', 'plan-123')
@@ -90,7 +90,7 @@ describe('createPlan', () => {
     const input = { name: 'Premium Plan', amount: 199.99 }
 
     // WHEN
-    await createPlan(input, gateway as unknown)
+    await createPlan(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.createdData).toMatchObject({
@@ -104,7 +104,7 @@ describe('createPlan', () => {
     const input = { name: 'Minimal Plan', amount: 0.01 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown)
+    const result = await createPlan(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', 'plan-123')

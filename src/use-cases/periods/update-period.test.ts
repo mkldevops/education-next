@@ -52,7 +52,7 @@ describe('updatePeriod', () => {
     const input = { id: 'invalid-uuid' }
 
     // WHEN
-    const result = await updatePeriod(input, gateway as unknown)
+    const result = await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('validationError')
@@ -63,7 +63,7 @@ describe('updatePeriod', () => {
     const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
-    const result = await updatePeriod(input, gateway as unknown)
+    const result = await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('notFound')
@@ -77,7 +77,7 @@ describe('updatePeriod', () => {
     }
 
     // WHEN
-    const result = await updatePeriod(input, gateway as unknown)
+    const result = await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('invalidDates')
@@ -91,7 +91,7 @@ describe('updatePeriod', () => {
     }
 
     // WHEN
-    const result = await updatePeriod(input, gateway as unknown)
+    const result = await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('invalidDates')
@@ -106,7 +106,7 @@ describe('updatePeriod', () => {
     }
 
     // WHEN
-    const result = await updatePeriod(input, gateway as unknown)
+    const result = await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toBe('overlappingPeriod')
@@ -120,7 +120,7 @@ describe('updatePeriod', () => {
     }
 
     // WHEN
-    const result = await updatePeriod(input, gateway as unknown)
+    const result = await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', periodId1)
@@ -135,7 +135,7 @@ describe('updatePeriod', () => {
     }
 
     // WHEN
-    const result = await updatePeriod(input, gateway as unknown)
+    const result = await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', periodId1)
@@ -150,7 +150,7 @@ describe('updatePeriod', () => {
     }
 
     // WHEN
-    const result = await updatePeriod(input, gateway as unknown)
+    const result = await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', periodId1)
@@ -165,7 +165,7 @@ describe('updatePeriod', () => {
     }
 
     // WHEN
-    await updatePeriod(input, gateway as unknown)
+    await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(gateway.updatedData).toMatchObject({
@@ -183,7 +183,7 @@ describe('updatePeriod', () => {
     }
 
     // WHEN
-    const result = await updatePeriod(input, gateway as unknown)
+    const result = await updatePeriod(input, gateway as unknown as any)
 
     // THEN
     expect(result).toHaveProperty('id', periodId1)
