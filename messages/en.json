@@ -688,6 +688,13 @@
             "CHECK": "Check",
             "STRIPE": "Stripe"
           }
+        },
+        "relationType": {
+          "PARENT": "Parent",
+          "TUTOR": "Tutor",
+          "GRANDPARENT": "Grandparent",
+          "SIBLING": "Sibling",
+          "OTHER": "Other"
         }
       },
       "studentDetails": {
