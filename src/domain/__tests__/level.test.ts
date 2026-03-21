@@ -102,7 +102,7 @@ describe('level domain', () => {
     })
 
     it('should return OK for single-level chain', () => {
-      const getNextLevel = vi.fn((id: string) => null)
+      const getNextLevel = vi.fn((_id: string) => null)
 
       const result = checkCircularReference('level1', 'level2', getNextLevel)
 
