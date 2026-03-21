@@ -1,12 +1,11 @@
-import { Breadcrumbs, Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
+import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
-import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../_lib/auth-helper'
 import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
+import { EnrollmentsTable } from './_components/enrollments-table'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -73,65 +72,45 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
     name: `${c.name} (${c.level.name} — ${c.period.name})`,
   }))
 
+  const availableClasses = isAdmin
+    ? await db.classPeriod.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+    : []
+
   const enrollments = await db.enrollment.findMany({
     where: { isActive: true, student: whereStudent },
     include: {
       student: {
         include: {
-          person: true,
+          person: {
+            include: {
+              families: {
+                include: { family: true },
+              },
+            },
+          },
         },
       },
       plan: true,
       classAssignments: {
-        where: { endAt: null },
         include: {
-          classPeriod: true,
+          classPeriod: {
+            include: {
+              level: true,
+              period: true,
+            },
+          },
         },
+      },
+      payments: {
+        orderBy: { paidAt: 'desc' },
       },
     },
     orderBy: { registeredAt: 'desc' },
   })
-
-  const columns: Column<(typeof enrollments)[0]>[] = [
-    {
-      key: 'student',
-      header: t('student'),
-      render: (enrollment) => (
-        <Link
-          href={`/dashboard/enrollments/${enrollment.id}`}
-          className="text-primary hover:text-primary-hover font-medium"
-        >
-          {enrollment.student.person.name} {enrollment.student.person.lastname}
-        </Link>
-      ),
-    },
-    {
-      key: 'plan',
-      header: t('plan'),
-      className: 'text-gray-700',
-      render: (enrollment) => enrollment.plan.name,
-    },
-    {
-      key: 'status',
-      header: t('status'),
-      render: (enrollment) => <StatusBadge status={enrollment.status} />,
-    },
-    {
-      key: 'class',
-      header: t('class'),
-      className: 'text-gray-700',
-      render: (enrollment) =>
-        enrollment.classAssignments.length > 0
-          ? enrollment.classAssignments[0].classPeriod.name
-          : '-',
-    },
-    {
-      key: 'totalAmount',
-      header: t('totalAmount'),
-      className: 'text-gray-700',
-      render: (enrollment) => `€${formatAmount(enrollment.totalAmount)}`,
-    },
-  ]
 
   return (
     <div className="space-y-6">
@@ -152,14 +131,12 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
           />
         )}
       </div>
-      <Card className="rounded-xl border border-gray-200">
-        <DataTable
-          data={enrollments}
-          columns={columns}
-          getRowKey={(enrollment) => enrollment.id}
-          emptyMessage={t('noEnrollments')}
-        />
-      </Card>
+      <EnrollmentsTable
+        enrollments={enrollments}
+        isAdmin={isAdmin}
+        availableClasses={availableClasses}
+        locale={locale}
+      />
     </div>
   )
 }

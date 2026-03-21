@@ -477,6 +477,21 @@
           "submit": "Inscrire",
           "success": "Inscription créée",
           "error": "Erreur lors de l'inscription"
+        },
+        "drawer": {
+          "title": "Détail de l'inscription",
+          "close": "Fermer",
+          "registeredAt": "Date d'inscription",
+          "family": "Famille",
+          "plan": "Plan",
+          "status": "Statut",
+          "pricing": "Tarification",
+          "totalAmount": "Montant total",
+          "discount": "Remise",
+          "totalPaid": "Total réglé",
+          "remaining": "Reste à payer",
+          "classAssignments": "Affectations de classe",
+          "payments": "Paiements"
         }
       },
       "promotion": {
