@@ -58,11 +58,11 @@ class PersonGatewaySpy {
 
 class StudentGatewaySpy {
   createdData: unknown = null
-  studentToReturn: any = null
+  studentToReturn: unknown = null
 
   async create(data: unknown) {
     this.createdData = data
-    return (this.studentToReturn || { id: 'student-123' }) as unknown as any
+    return (this.studentToReturn || { id: 'student-123' }) as unknown
   }
 
   async update() {
@@ -114,10 +114,10 @@ describe('createStudent', () => {
 
     // WHEN
     const result = await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as unknown,
+      familyGateway as unknown,
+      personGateway as unknown,
+      studentGateway as unknown
     )
 
     // THEN
@@ -135,10 +135,10 @@ describe('createStudent', () => {
 
     // WHEN
     const result = await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as unknown,
+      familyGateway as unknown,
+      personGateway as unknown,
+      studentGateway as unknown
     )
 
     // THEN
@@ -155,10 +155,10 @@ describe('createStudent', () => {
 
     // WHEN
     const result = await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as unknown,
+      familyGateway as unknown,
+      personGateway as unknown,
+      studentGateway as unknown
     )
 
     // THEN
@@ -175,10 +175,10 @@ describe('createStudent', () => {
 
     // WHEN
     const result = await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as unknown,
+      familyGateway as unknown,
+      personGateway as unknown,
+      studentGateway as unknown
     )
 
     // THEN
@@ -200,10 +200,10 @@ describe('createStudent', () => {
 
     // WHEN
     await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as unknown,
+      familyGateway as unknown,
+      personGateway as unknown,
+      studentGateway as unknown
     )
 
     // THEN
@@ -231,10 +231,10 @@ describe('createStudent', () => {
 
     // WHEN
     await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as unknown,
+      familyGateway as unknown,
+      personGateway as unknown,
+      studentGateway as unknown
     )
 
     // THEN
@@ -257,10 +257,10 @@ describe('createStudent', () => {
 
     // WHEN
     await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as unknown,
+      familyGateway as unknown,
+      personGateway as unknown,
+      studentGateway as unknown
     )
 
     // THEN
