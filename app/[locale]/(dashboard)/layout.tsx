@@ -11,7 +11,11 @@ type Props = {
 }
 
 async function DashboardSidebarServer() {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const [session, logoConfig] = await Promise.all([
+    auth.api.getSession({ headers: await headers() }),
+    db.config.findFirst({ where: { name: 'logo_url', isActive: true }, select: { value: true } }),
+  ])
+
   let role: Role = 'PARENT'
 
   if (session?.user.id) {
@@ -24,7 +28,7 @@ async function DashboardSidebarServer() {
     }
   }
 
-  return <Sidebar role={role} />
+  return <Sidebar role={role} logoUrl={logoConfig?.value || undefined} />
 }
 
 export default async function DashboardLayout({ children }: Props) {

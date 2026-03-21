@@ -142,9 +142,10 @@ function NavItem({
 
 type SidebarProps = {
   role: Role
+  logoUrl?: string
 }
 
-export function Sidebar({ role }: SidebarProps) {
+export function Sidebar({ role, logoUrl }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const company = useTranslations('company')
   const pathname = usePathname()
@@ -176,15 +177,25 @@ export function Sidebar({ role }: SidebarProps) {
         )}
       >
         {expanded ? (
-          <Link href="/" className="text-xl font-bold text-primary">
-            {company('name')}
+          <Link href="/" className="flex items-center gap-2">
+            {logoUrl ? (
+              // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
+              <img src={logoUrl} alt={company('name')} className="h-8 w-auto object-contain" />
+            ) : (
+              <span className="text-xl font-bold text-primary">{company('name')}</span>
+            )}
           </Link>
         ) : (
           <Link
             href="/"
             className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-stormy-teal to-yale-blue text-[15px] font-extrabold text-white"
           >
-            AN
+            {logoUrl ? (
+              // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
+              <img src={logoUrl} alt={company('name')} className="size-8 rounded object-contain" />
+            ) : (
+              'AN'
+            )}
           </Link>
         )}
       </div>

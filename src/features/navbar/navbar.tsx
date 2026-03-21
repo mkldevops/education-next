@@ -10,7 +10,11 @@ import { LanguageSwitcher } from './language-switcher'
 
 const navItems = [{ href: '/', key: 'home' }] as const
 
-export function Navbar() {
+interface NavbarProps {
+  logoUrl?: string
+}
+
+export function Navbar({ logoUrl }: NavbarProps) {
   const t = useTranslations('navbar')
   const company = useTranslations('company')
   const pathname = usePathname()
@@ -38,7 +42,12 @@ export function Navbar() {
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-primary">{company('name')}</span>
+          {logoUrl ? (
+            // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
+            <img src={logoUrl} alt={company('name')} className="h-8 w-auto object-contain" />
+          ) : (
+            <span className="text-xl font-bold text-primary">{company('name')}</span>
+          )}
         </Link>
 
         <div className="hidden items-center gap-6 md:flex">
