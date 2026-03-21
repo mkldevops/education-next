@@ -24,16 +24,18 @@ export default async function LoginPage({ params }: Props) {
   const t = await getTranslations('auth.login')
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-          <p className="mt-2 text-sm text-gray-600">{t('subtitle')}</p>
+    <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
+          <div className="bg-[var(--color-primary)] px-8 py-6 text-center">
+            <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
+            <p className="mt-1 text-sm text-white/80">{t('subtitle')}</p>
+          </div>
+          <div className="px-8 py-8">
+            <LoginForm />
+          </div>
         </div>
-
-        <LoginForm />
-
-        <p className="text-center text-sm text-gray-600">{t('contactAdmin')}</p>
+        <p className="mt-6 text-center text-sm text-gray-500">{t('contactAdmin')}</p>
       </div>
     </div>
   )

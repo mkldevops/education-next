@@ -9,7 +9,7 @@ import {
   activateEnrollmentAction,
   cancelEnrollmentAction,
   completeEnrollmentAction,
-} from '../../../../_lib/enrollment-actions'
+} from '../../../_lib/enrollment-actions'
 
 type Props = {
   enrollmentId: string

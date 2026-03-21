@@ -58,7 +58,7 @@ class PersonGatewaySpy {
 
 class StudentGatewaySpy {
   createdData: unknown = null
-  studentToReturn: any = null
+  studentToReturn: unknown = null
 
   async create(data: unknown) {
     this.createdData = data

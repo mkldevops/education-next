@@ -4,7 +4,7 @@ import { updatePlan } from './update-plan'
 class PlanGatewaySpy {
   updatedId: string | null = null
   updatedData: unknown = null
-  planToReturn: any = null
+  planToReturn: unknown = null
 
   async update(id: string, data: unknown) {
     this.updatedId = id

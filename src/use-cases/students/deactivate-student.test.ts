@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { deactivateStudent } from './deactivate-student'
 
 class StudentGatewaySpy {
-  studentToReturn: { id: string; person: any } | null = null
+  studentToReturn: { id: string; person: unknown } | null = null
   hasActiveEnrollmentsReturn = false
   deactivatedId: string | null = null
 

@@ -3,7 +3,7 @@ import { setConfig } from './set-config'
 
 class ConfigGatewaySpy {
   setData: unknown = null
-  configToReturn: any = null
+  configToReturn: unknown = null
 
   async set(data: unknown) {
     this.setData = data
@@ -39,7 +39,7 @@ describe('setConfig', () => {
 
   it('fails validation when value type is invalid', async () => {
     // GIVEN
-    const input = { name: 'test.config', value: 'test', valueType: 'INVALID' as any }
+    const input = { name: 'test.config', value: 'test', valueType: 'INVALID' as unknown as any }
 
     // WHEN
     const result = await setConfig(input, gateway as unknown as any)

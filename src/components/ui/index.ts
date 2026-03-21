@@ -41,6 +41,26 @@ export {
   type DialogTriggerProps,
   useDialog,
 } from './dialog/dialog'
+// Drawer
+export {
+  Drawer,
+  DrawerBody,
+  type DrawerBodyProps,
+  DrawerClose,
+  type DrawerCloseProps,
+  DrawerContent,
+  type DrawerContentProps,
+  DrawerFooter,
+  type DrawerFooterProps,
+  DrawerHeader,
+  type DrawerHeaderProps,
+  type DrawerProps,
+  DrawerTitle,
+  type DrawerTitleProps,
+  DrawerTrigger,
+  type DrawerTriggerProps,
+  useDrawer,
+} from './drawer'
 // Empty State
 export { EmptyState, type EmptyStateProps } from './empty-state'
 // Form Dialog

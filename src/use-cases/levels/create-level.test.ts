@@ -3,7 +3,7 @@ import { createLevel } from './create-level'
 
 class LevelGatewaySpy {
   createdData: unknown = null
-  levelToReturn: any = null
+  levelToReturn: unknown = null
 
   async create(data: unknown) {
     this.createdData = data

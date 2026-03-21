@@ -480,6 +480,21 @@
           "submit": "Enroll",
           "success": "Enrollment created",
           "error": "Error creating enrollment"
+        },
+        "drawer": {
+          "title": "Enrollment Details",
+          "close": "Close",
+          "registeredAt": "Registration Date",
+          "family": "Family",
+          "plan": "Plan",
+          "status": "Status",
+          "pricing": "Pricing",
+          "totalAmount": "Total Amount",
+          "discount": "Discount",
+          "totalPaid": "Total Paid",
+          "remaining": "Remaining",
+          "classAssignments": "Class Assignments",
+          "payments": "Payments"
         }
       },
       "promotion": {
@@ -566,7 +581,8 @@
           "types": {
             "TEXT": "Text",
             "NUMBER": "Number",
-            "BOOLEAN": "Boolean"
+            "BOOLEAN": "Boolean",
+            "COLOR": "Color"
           },
           "enabled": "Enabled",
           "cancel": "Cancel",
@@ -806,7 +822,27 @@
         "noUsers": "No users found",
         "roleChanged": "Role changed successfully",
         "userDeactivated": "User deactivated",
-        "error": "An error occurred"
+        "error": "An error occurred",
+        "invite": {
+          "button": "Invite a user",
+          "title": "Invite a user",
+          "email": "Email address",
+          "role": "Role",
+          "send": "Send invitation",
+          "cancel": "Cancel",
+          "success": "Invitation sent to {email}",
+          "error": "Failed to send invitation",
+          "emailAlreadyUsed": "An account already exists with this email",
+          "expired": "This invitation link has expired",
+          "alreadyUsed": "This link has already been used",
+          "invalid": "Invalid link",
+          "accept": {
+            "title": "Create your account",
+            "name": "First and last name",
+            "password": "Password",
+            "submit": "Create my account"
+          }
+        }
       }
     }
   },

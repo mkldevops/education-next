@@ -12,8 +12,9 @@ export default async function AuthLayout({ children, params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <div className="h-1 bg-[var(--color-primary)]" />
       <NavbarServer />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 bg-gray-50">{children}</main>
     </div>
   )
 }
