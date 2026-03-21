@@ -8,7 +8,7 @@ class PeriodGatewaySpy {
 
   async create(data: unknown) {
     this.createdData = data
-    return (this.periodToReturn || { id: 'period-123', ...(data as object) }) as unknown
+    return (this.periodToReturn || { id: 'period-123', ...(data as object) }) as unknown as any
   }
 
   async update() {

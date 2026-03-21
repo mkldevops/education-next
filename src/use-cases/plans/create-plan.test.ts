@@ -7,7 +7,7 @@ class PlanGatewaySpy {
 
   async create(data: unknown) {
     this.createdData = data
-    return (this.planToReturn || { id: 'plan-123', ...(data as object) }) as unknown
+    return (this.planToReturn || { id: 'plan-123', ...(data as object) }) as unknown as any
   }
 
   async update() {

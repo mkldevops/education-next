@@ -7,7 +7,7 @@ class LevelGatewaySpy {
 
   async create(data: unknown) {
     this.createdData = data
-    return (this.levelToReturn || { id: 'level-123', ...(data as object) }) as unknown
+    return (this.levelToReturn || { id: 'level-123', ...(data as object) }) as unknown as any
   }
 
   async update() {

@@ -58,7 +58,7 @@ class ClassPeriodGatewaySpy {
     return (this.classPeriodToReturn || {
       id: 'class-period-123',
       ...(data as object),
-    }) as unknown
+    }) as unknown as any
   }
 
   async update() {
@@ -109,7 +109,7 @@ describe('createClassPeriod', () => {
       input,
       classPeriodGateway as unknown as any,
       levelGateway as unknown as any,
-      periodGateway as unknown
+      periodGateway as unknown as any
     )
 
     // THEN
@@ -131,7 +131,7 @@ describe('createClassPeriod', () => {
       input,
       classPeriodGateway as unknown as any,
       levelGateway as unknown as any,
-      periodGateway as unknown
+      periodGateway as unknown as any
     )
 
     // THEN
@@ -153,7 +153,7 @@ describe('createClassPeriod', () => {
       input,
       classPeriodGateway as unknown as any,
       levelGateway as unknown as any,
-      periodGateway as unknown
+      periodGateway as unknown as any
     )
 
     // THEN
@@ -174,7 +174,7 @@ describe('createClassPeriod', () => {
       input,
       classPeriodGateway as unknown as any,
       levelGateway as unknown as any,
-      periodGateway as unknown
+      periodGateway as unknown as any
     )
 
     // THEN
@@ -195,7 +195,7 @@ describe('createClassPeriod', () => {
       input,
       classPeriodGateway as unknown as any,
       levelGateway as unknown as any,
-      periodGateway as unknown
+      periodGateway as unknown as any
     )
 
     // THEN

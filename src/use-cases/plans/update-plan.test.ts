@@ -9,7 +9,7 @@ class PlanGatewaySpy {
   async update(id: string, data: unknown) {
     this.updatedId = id
     this.updatedData = data
-    return { id, amount: 100, ...(data as object) } as unknown
+    return { id, amount: 100, ...(data as object) } as unknown as any
   }
 
   async create() {

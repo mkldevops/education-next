@@ -19,7 +19,7 @@ class ClassPeriodGatewaySpy {
     this.updatedId = id
     this.updatedData = data
     const existing = this.classPeriodsByIdMap[id] || {}
-    return { ...existing, id, ...(data as object) } as unknown
+    return { ...existing, id, ...(data as object) } as unknown as any
   }
 
   async create() {

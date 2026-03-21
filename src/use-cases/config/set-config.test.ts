@@ -7,7 +7,7 @@ class ConfigGatewaySpy {
 
   async set(data: unknown) {
     this.setData = data
-    return (this.configToReturn || { id: 'config-123', ...(data as object) }) as unknown
+    return (this.configToReturn || { id: 'config-123', ...(data as object) }) as unknown as any
   }
 
   async get() {
@@ -39,7 +39,7 @@ describe('setConfig', () => {
 
   it('fails validation when value type is invalid', async () => {
     // GIVEN
-    const input = { name: 'test.config', value: 'test', valueType: 'INVALID' as unknown }
+    const input = { name: 'test.config', value: 'test', valueType: 'INVALID' as unknown as any }
 
     // WHEN
     const result = await setConfig(input, gateway as unknown as any)
