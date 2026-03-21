@@ -31,6 +31,7 @@ type PaymentWithRelation = Payment & {
 type Props = {
   enrollments: EnrollmentWithRelation[]
   payments: PaymentWithRelation[]
+  locale: string
 }
 
 type Activity = {
@@ -42,7 +43,7 @@ type Activity = {
   color: string
 }
 
-export async function ActivityFeed({ enrollments, payments }: Props) {
+export async function ActivityFeed({ enrollments, payments, locale }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   const activities: Activity[] = []
@@ -87,7 +88,7 @@ export async function ActivityFeed({ enrollments, payments }: Props) {
   if (sortedActivities.length === 0) {
     return (
       <Card className="p-6 text-center text-gray-600">
-        <p className="text-sm">Aucune activité récente</p>
+        <p className="text-sm">{t('activity.empty')}</p>
       </Card>
     )
   }
@@ -103,9 +104,7 @@ export async function ActivityFeed({ enrollments, payments }: Props) {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900">{activity.title}</p>
             <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{activity.description}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              {activity.date.toLocaleDateString('fr-FR')}
-            </p>
+            <p className="text-xs text-gray-500 mt-1">{activity.date.toLocaleDateString(locale)}</p>
           </div>
         </div>
       ))}

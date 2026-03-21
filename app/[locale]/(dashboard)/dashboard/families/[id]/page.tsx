@@ -38,8 +38,9 @@ export default async function FamilyDetailPage({ params }: Props) {
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const { role, familyId } = await getSessionWithRole()
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
-  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && familyId !== id) notFound()
+  if (!isAdmin && familyId !== id) notFound()
 
   const family = await db.family.findUnique({
     where: { id },
@@ -116,7 +117,6 @@ export default async function FamilyDetailPage({ params }: Props) {
 
   const enrolledChildren = students.filter((s) => s.person.student.enrollments.length > 0).length
   const activeEnrollments = allEnrollments.filter((e) => e.status === 'ACTIVE').length
-  const _pendingEnrollments = allEnrollments.filter((e) => e.status === 'PENDING').length
 
   return (
     <div className="space-y-6">
@@ -130,11 +130,12 @@ export default async function FamilyDetailPage({ params }: Props) {
 
       <HeroBanner
         family={family}
+        membersCount={family.persons.length}
         studentsCount={students.length}
         enrollmentsCount={allEnrollments.length}
-        showActions={role === 'ADMIN' || role === 'SUPER_ADMIN'}
+        showActions={isAdmin}
       >
-        {(role === 'ADMIN' || role === 'SUPER_ADMIN') && (
+        {isAdmin && (
           <div className="flex gap-2">
             <EditFamilyDialog
               family={{
@@ -236,7 +237,7 @@ export default async function FamilyDetailPage({ params }: Props) {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               {t('sections.activityTitle')}
             </h2>
-            <ActivityFeed enrollments={allEnrollments} payments={family.payments} />
+            <ActivityFeed enrollments={allEnrollments} payments={family.payments} locale={locale} />
           </div>
 
           {allEnrollments.some((e) => e.classAssignments.length > 0) && (

@@ -32,17 +32,6 @@ function getPaymentMethodColor(method: PaymentMethod): string {
   }
 }
 
-function getPaymentMethodLabel(method: PaymentMethod): string {
-  const labels: Record<PaymentMethod, string> = {
-    CARD: 'CB',
-    TRANSFER: 'Virement',
-    CASH: 'Espèces',
-    CHECK: 'Chèque',
-    STRIPE: 'Stripe',
-  }
-  return labels[method] || method
-}
-
 export async function PaymentHistoryTable({ payments, locale }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
@@ -94,7 +83,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentMethodColor(payment.method)}`}
                   >
-                    {getPaymentMethodLabel(payment.method)}
+                    {t(`paymentHistory.methods.${payment.method}`)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-700">{payment.reference || '-'}</td>

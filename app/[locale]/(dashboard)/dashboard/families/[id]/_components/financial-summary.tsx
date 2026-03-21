@@ -76,7 +76,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
 
       {totalDiscount > 0 && (
         <div className="pt-2 border-t border-gray-200">
-          <p className="text-xs text-gray-600">Réductions appliquées</p>
+          <p className="text-xs text-gray-600">{t('financial.discount')}</p>
           <p className="text-sm font-semibold text-gray-900">€{formatAmount(totalDiscount)}</p>
         </div>
       )}
