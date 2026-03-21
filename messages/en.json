@@ -803,7 +803,27 @@
         "noUsers": "No users found",
         "roleChanged": "Role changed successfully",
         "userDeactivated": "User deactivated",
-        "error": "An error occurred"
+        "error": "An error occurred",
+        "invite": {
+          "button": "Invite a user",
+          "title": "Invite a user",
+          "email": "Email address",
+          "role": "Role",
+          "send": "Send invitation",
+          "cancel": "Cancel",
+          "success": "Invitation sent to {email}",
+          "error": "Failed to send invitation",
+          "emailAlreadyUsed": "An account already exists with this email",
+          "expired": "This invitation link has expired",
+          "alreadyUsed": "This link has already been used",
+          "invalid": "Invalid link",
+          "accept": {
+            "title": "Create your account",
+            "name": "First and last name",
+            "password": "Password",
+            "submit": "Create my account"
+          }
+        }
       }
     }
   },

@@ -803,7 +803,27 @@
         "noUsers": "Aucun utilisateur enregistré",
         "roleChanged": "Rôle modifié avec succès",
         "userDeactivated": "Utilisateur désactivé",
-        "error": "Une erreur est survenue"
+        "error": "Une erreur est survenue",
+        "invite": {
+          "button": "Inviter un utilisateur",
+          "title": "Inviter un utilisateur",
+          "email": "Adresse email",
+          "role": "Rôle",
+          "send": "Envoyer l'invitation",
+          "cancel": "Annuler",
+          "success": "Invitation envoyée à {email}",
+          "error": "Impossible d'envoyer l'invitation",
+          "emailAlreadyUsed": "Un compte existe déjà avec cet email",
+          "expired": "Ce lien d'invitation a expiré",
+          "alreadyUsed": "Ce lien a déjà été utilisé",
+          "invalid": "Lien invalide",
+          "accept": {
+            "title": "Créer votre compte",
+            "name": "Prénom et nom",
+            "password": "Mot de passe",
+            "submit": "Créer mon compte"
+          }
+        }
       }
     }
   },

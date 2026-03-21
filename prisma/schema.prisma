@@ -62,10 +62,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  sessions        Session[]
-  accounts        Account[]
-  families        UserFamily[]
-  createdFamilies Family[]   @relation("createdBy")
+  sessions          Session[]
+  accounts          Account[]
+  families          UserFamily[]
+  createdFamilies   Family[]     @relation("createdBy")
+  createdInvitations Invitation[]
 }
 
 model Session {
@@ -333,4 +334,20 @@ model Plan {
   updatedAt DateTime @updatedAt
 
   enrollments Enrollment[]
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  email       String
+  role        Role      @default(PARENT)
+  token       String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@index([email])
+  @@index([token])
 }
