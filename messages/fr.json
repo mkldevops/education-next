@@ -240,7 +240,10 @@
       "logout": "Déconnexion",
       "sectionGestion": "Gestion",
       "sectionConfig": "Configuration",
-      "collapse": "Réduire"
+      "collapse": "Réduire",
+      "openMenu": "Ouvrir le menu",
+      "closeMenu": "Fermer le menu",
+      "searchPlaceholder": "Rechercher..."
     },
     "pages": {
       "families": {

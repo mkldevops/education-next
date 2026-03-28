@@ -1,6 +1,7 @@
 'use client'
 
 import { Bell, Menu, Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { PeriodSelector } from '@/features/dashboard/period-selector'
 import { SearchModal } from '@/features/dashboard/search-modal'
@@ -13,6 +14,7 @@ interface DashboardHeaderClientProps {
 }
 
 export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHeaderClientProps) {
+  const t = useTranslations('dashboard.sidebar')
   const { data: session } = useSession()
   const [searchOpen, setSearchOpen] = useState(false)
   const { toggleMobile } = useSidebarStore()
@@ -23,7 +25,7 @@ export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHe
         <button
           type="button"
           onClick={toggleMobile}
-          aria-label="Ouvrir le menu"
+          aria-label={t('openMenu')}
           className="rounded-xl p-2 text-graphite-700 transition-colors hover:bg-alabaster-900 md:hidden"
         >
           <Menu className="h-5 w-5" />
@@ -36,7 +38,7 @@ export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHe
           <Search className="absolute left-3 h-4 w-4 text-graphite-700" />
           <input
             type="text"
-            placeholder="Rechercher..."
+            placeholder={t('searchPlaceholder')}
             className="w-64 cursor-pointer rounded-xl border border-alabaster-700 bg-white py-2 pl-9 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
             onClick={() => setSearchOpen(true)}
             readOnly
@@ -55,7 +57,7 @@ export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHe
         </button>
 
         {session?.user && (
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stormy-teal to-yale-blue text-xs font-semibold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stormy-teal to-yale-blue text-xs font-semibold text-white">
             {session.user.name?.charAt(0).toUpperCase() ||
               session.user.email?.charAt(0).toUpperCase()}
           </div>

@@ -136,7 +136,7 @@ function NavItem({
           : 'text-graphite-800 hover:bg-alabaster-900 hover:text-graphite-600'
       )}
     >
-      <Icon size={20} className="flex-shrink-0" />
+      <Icon size={20} className="shrink-0" />
       {expanded && <span className="text-sm font-medium">{label}</span>}
     </Link>
   )
@@ -172,7 +172,12 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
   const handleNavClick = () => setMobileOpen(false)
 
   const handleSignOut = async () => {
-    await signOut()
+    await signOut({
+      fetchOptions: {
+        onSuccess: () =>
+          window.location.replace(process.env.NEXT_PUBLIC_URL_LANDING_PAGE || '/signin'),
+      },
+    })
   }
 
   return (
@@ -180,9 +185,10 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
       {mobileOpen && (
         <button
           type="button"
-          aria-label="Fermer le menu"
+          aria-label={t('closeMenu')}
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={() => setMobileOpen(false)}
+          onKeyDown={(e) => e.key === 'Escape' && setMobileOpen(false)}
         />
       )}
       <aside
@@ -195,7 +201,7 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
       >
         <div
           className={cn(
-            'flex flex-shrink-0 items-center py-4',
+            'flex shrink-0 items-center py-4',
             expanded ? 'h-16 border-b border-alabaster-700 px-6' : 'justify-center'
           )}
         >
@@ -273,10 +279,10 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
           )}
         </nav>
 
-        <div className="flex-shrink-0 border-t border-alabaster-700 p-3">
+        <div className="shrink-0 border-t border-alabaster-700 p-3">
           {expanded && userName && (
             <div className="mb-2 flex items-center gap-3 rounded-xl px-3 py-2">
-              <div className="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stormy-teal to-yale-blue text-xs font-bold text-white">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stormy-teal to-yale-blue text-xs font-bold text-white">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <span className="truncate text-sm font-medium text-graphite-600">{userName}</span>
@@ -305,7 +311,7 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
           >
             {expanded ? (
               <>
-                <LogOut size={18} className="flex-shrink-0" />
+                <LogOut size={18} className="shrink-0" />
                 <span className="text-xs font-medium">{t('logout')}</span>
               </>
             ) : (
@@ -325,7 +331,7 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
           >
             {expanded ? (
               <>
-                <ChevronsLeft size={18} className="flex-shrink-0" />
+                <ChevronsLeft size={18} className="shrink-0" />
                 <span className="text-xs font-medium">{t('collapse')}</span>
               </>
             ) : (

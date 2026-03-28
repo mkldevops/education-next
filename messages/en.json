@@ -240,7 +240,10 @@
       "logout": "Logout",
       "sectionGestion": "Management",
       "sectionConfig": "Configuration",
-      "collapse": "Collapse"
+      "collapse": "Collapse",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "searchPlaceholder": "Search..."
     },
     "pages": {
       "families": {
