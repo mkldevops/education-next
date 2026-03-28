@@ -7,6 +7,7 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from '@simplewebauthn/server'
+import { randomBytes } from 'crypto'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
@@ -111,25 +112,30 @@ export async function getPasskeyAuthenticationOptions() {
     userVerification: 'preferred',
   })
 
+  const challengeId = randomBytes(16).toString('hex')
+
   await db.verification.upsert({
-    where: { identifier: 'passkey-auth-challenge' },
+    where: { identifier: `passkey-auth-challenge:${challengeId}` },
     update: {
       value: options.challenge,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     },
     create: {
-      identifier: 'passkey-auth-challenge',
+      identifier: `passkey-auth-challenge:${challengeId}`,
       value: options.challenge,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     },
   })
 
-  return options
+  return { ...options, challengeId }
 }
 
-export async function verifyPasskeyAuthentication(response: AuthenticationResponseJSON) {
+export async function verifyPasskeyAuthentication(
+  response: AuthenticationResponseJSON,
+  challengeId: string
+) {
   const challengeRecord = await db.verification.findUnique({
-    where: { identifier: 'passkey-auth-challenge' },
+    where: { identifier: `passkey-auth-challenge:${challengeId}` },
   })
 
   if (!challengeRecord || challengeRecord.expiresAt < new Date()) {
@@ -165,7 +171,7 @@ export async function verifyPasskeyAuthentication(response: AuthenticationRespon
     data: { counter: verification.authenticationInfo.newCounter },
   })
 
-  await db.verification.delete({ where: { identifier: 'passkey-auth-challenge' } })
+  await db.verification.delete({ where: { identifier: `passkey-auth-challenge:${challengeId}` } })
 
   return { userId: passkey.userId, email: passkey.user.email }
 }

@@ -14,9 +14,13 @@ function generateToken() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as AuthenticationResponseJSON
+  const body = (await request.json()) as AuthenticationResponseJSON & { challengeId?: string }
 
-  const result = await verifyPasskeyAuthentication(body)
+  if (!body.challengeId) {
+    return NextResponse.json({ error: 'missingChallengeId' }, { status: 400 })
+  }
+
+  const result = await verifyPasskeyAuthentication(body, body.challengeId)
 
   if (typeof result === 'string') {
     return NextResponse.json({ error: result }, { status: 400 })
