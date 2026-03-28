@@ -45,13 +45,14 @@ export function LoginForm() {
     setIsPasskeyLoading(true)
 
     try {
-      const options = await getPasskeyAuthenticationOptions()
+      const optionsData = await getPasskeyAuthenticationOptions()
+      const { challengeId, ...options } = optionsData
       const response = await startAuthentication({ optionsJSON: options })
 
       const res = await fetch('/api/passkey/authenticate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(response),
+        body: JSON.stringify({ ...response, challengeId }),
       })
 
       if (!res.ok) {

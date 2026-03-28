@@ -1,5 +1,6 @@
 'use server'
 
+import { randomBytes } from 'node:crypto'
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server'
 import {
   generateAuthenticationOptions,
@@ -111,28 +112,36 @@ export async function getPasskeyAuthenticationOptions() {
     userVerification: 'preferred',
   })
 
+  const challengeId = randomBytes(16).toString('hex')
+
   await db.verification.upsert({
-    where: { identifier: 'passkey-auth-challenge' },
+    where: { identifier: `passkey-auth-challenge:${challengeId}` },
     update: {
       value: options.challenge,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     },
     create: {
-      identifier: 'passkey-auth-challenge',
+      identifier: `passkey-auth-challenge:${challengeId}`,
       value: options.challenge,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     },
   })
 
-  return options
+  return { ...options, challengeId }
 }
 
-export async function verifyPasskeyAuthentication(response: AuthenticationResponseJSON) {
+export async function verifyPasskeyAuthentication(
+  response: AuthenticationResponseJSON,
+  challengeId: string
+) {
   const challengeRecord = await db.verification.findUnique({
-    where: { identifier: 'passkey-auth-challenge' },
+    where: { identifier: `passkey-auth-challenge:${challengeId}` },
   })
 
   if (!challengeRecord || challengeRecord.expiresAt < new Date()) {
+    await db.verification
+      .delete({ where: { identifier: `passkey-auth-challenge:${challengeId}` } })
+      .catch(() => {})
     return 'challengeExpired' as const
   }
 
@@ -141,7 +150,12 @@ export async function verifyPasskeyAuthentication(response: AuthenticationRespon
     include: { user: true },
   })
 
-  if (!passkey) return 'passkeyNotFound' as const
+  if (!passkey) {
+    await db.verification
+      .delete({ where: { identifier: `passkey-auth-challenge:${challengeId}` } })
+      .catch(() => {})
+    return 'passkeyNotFound' as const
+  }
 
   const verification = await verifyAuthenticationResponse({
     response,
@@ -158,14 +172,19 @@ export async function verifyPasskeyAuthentication(response: AuthenticationRespon
     },
   })
 
-  if (!verification.verified) return 'verificationFailed' as const
+  if (!verification.verified) {
+    await db.verification
+      .delete({ where: { identifier: `passkey-auth-challenge:${challengeId}` } })
+      .catch(() => {})
+    return 'verificationFailed' as const
+  }
 
   await db.passkey.update({
     where: { credentialId: response.id },
     data: { counter: verification.authenticationInfo.newCounter },
   })
 
-  await db.verification.delete({ where: { identifier: 'passkey-auth-challenge' } })
+  await db.verification.delete({ where: { identifier: `passkey-auth-challenge:${challengeId}` } })
 
   return { userId: passkey.userId, email: passkey.user.email }
 }
