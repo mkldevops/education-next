@@ -14,49 +14,53 @@ function generateToken() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as AuthenticationResponseJSON & { challengeId?: string }
+  try {
+    const body = (await request.json()) as AuthenticationResponseJSON & { challengeId?: string }
 
-  if (!body.challengeId) {
-    return NextResponse.json({ error: 'missingChallengeId' }, { status: 400 })
+    if (!body.challengeId) {
+      return NextResponse.json({ error: 'missingChallengeId' }, { status: 400 })
+    }
+
+    if (!/^[a-f0-9]{32}$/.test(body.challengeId)) {
+      return NextResponse.json({ error: 'invalidChallengeId' }, { status: 400 })
+    }
+
+    const result = await verifyPasskeyAuthentication(body, body.challengeId)
+
+    if (typeof result === 'string') {
+      return NextResponse.json({ error: result }, { status: 400 })
+    }
+
+    const user = await db.user.findUnique({ where: { id: result.userId } })
+    if (!user?.isActive) {
+      return NextResponse.json({ error: 'userNotFound' }, { status: 400 })
+    }
+
+    const token = generateToken()
+    const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000)
+    const requestHeaders = request.headers
+
+    await db.session.create({
+      data: {
+        token,
+        userId: user.id,
+        expiresAt,
+        ipAddress: requestHeaders.get('x-forwarded-for') ?? requestHeaders.get('x-real-ip') ?? null,
+        userAgent: requestHeaders.get('user-agent') ?? null,
+      },
+    })
+
+    const cookieStore = await cookies()
+    cookieStore.set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: expiresAt,
+      path: '/',
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ error: 'serverError' }, { status: 500 })
   }
-
-  if (!/^[a-f0-9]{32}$/.test(body.challengeId)) {
-    return NextResponse.json({ error: 'invalidChallengeId' }, { status: 400 })
-  }
-
-  const result = await verifyPasskeyAuthentication(body, body.challengeId)
-
-  if (typeof result === 'string') {
-    return NextResponse.json({ error: result }, { status: 400 })
-  }
-
-  const user = await db.user.findUnique({ where: { id: result.userId } })
-  if (!user?.isActive) {
-    return NextResponse.json({ error: 'userNotFound' }, { status: 400 })
-  }
-
-  const token = generateToken()
-  const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000)
-  const requestHeaders = request.headers
-
-  await db.session.create({
-    data: {
-      token,
-      userId: user.id,
-      expiresAt,
-      ipAddress: requestHeaders.get('x-forwarded-for') ?? requestHeaders.get('x-real-ip') ?? null,
-      userAgent: requestHeaders.get('user-agent') ?? null,
-    },
-  })
-
-  const cookieStore = await cookies()
-  cookieStore.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    expires: expiresAt,
-    path: '/',
-  })
-
-  return NextResponse.json({ ok: true })
 }
