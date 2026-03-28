@@ -28,7 +28,9 @@ async function DashboardSidebarServer() {
     }
   }
 
-  return <Sidebar role={role} logoUrl={logoConfig?.value || undefined} />
+  const userName = session?.user?.name || session?.user?.email || undefined
+
+  return <Sidebar role={role} logoUrl={logoConfig?.value || undefined} userName={userName} />
 }
 
 export default async function DashboardLayout({ children }: Props) {
