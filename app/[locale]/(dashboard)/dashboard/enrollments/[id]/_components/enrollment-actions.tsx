@@ -1,0 +1,110 @@
+'use client'
+
+import type { EnrollmentStatus } from '@prisma/client'
+import { useTranslations } from 'next-intl'
+import { useTransition } from 'react'
+import { Button } from '@/components/ui/button/button'
+import { useRouter } from '@/i18n/routing'
+import { toast } from '@/lib/toast'
+import {
+  activateEnrollmentAction,
+  cancelEnrollmentAction,
+  completeEnrollmentAction,
+} from '../../../../_lib/enrollment-actions'
+import { ApplyDiscountDialog } from '../../_components/apply-discount-dialog'
+import { ReassignClassDialog } from '../../_components/reassign-class-dialog'
+
+interface Props {
+  enrollmentId: string
+  status: EnrollmentStatus
+  isAdmin: boolean
+  currentClassId: string | null
+  availableClasses: Array<{ id: string; name: string }>
+  currentDiscount: number
+}
+
+export function EnrollmentActions({
+  enrollmentId,
+  status,
+  isAdmin,
+  currentClassId,
+  availableClasses,
+  currentDiscount,
+}: Props) {
+  const t = useTranslations('dashboard.pages.enrollmentDetails.actions')
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+
+  const handleActivate = () => {
+    startTransition(async () => {
+      const result = await activateEnrollmentAction({ id: enrollmentId })
+      if (result === 'OK') {
+        toast.success(t('activated'))
+        router.refresh()
+      } else {
+        toast.error(t('error'))
+      }
+    })
+  }
+
+  const handleComplete = () => {
+    startTransition(async () => {
+      const result = await completeEnrollmentAction({ id: enrollmentId })
+      if (result === 'OK') {
+        toast.success(t('completed'))
+        router.refresh()
+      } else {
+        toast.error(t('error'))
+      }
+    })
+  }
+
+  const handleCancel = () => {
+    startTransition(async () => {
+      const result = await cancelEnrollmentAction(enrollmentId)
+      if (result === 'OK') {
+        toast.success(t('cancelled'))
+        router.refresh()
+      } else {
+        toast.error(t('error'))
+      }
+    })
+  }
+
+  const canAct = status === 'PENDING' || status === 'ACTIVE'
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {status === 'PENDING' && (
+        <>
+          <Button size="sm" disabled={isPending} onClick={handleActivate}>
+            {t('activate')}
+          </Button>
+          <Button size="sm" variant="outline" disabled={isPending} onClick={handleCancel}>
+            {t('cancel')}
+          </Button>
+        </>
+      )}
+      {status === 'ACTIVE' && (
+        <>
+          <Button size="sm" disabled={isPending} onClick={handleComplete}>
+            {t('complete')}
+          </Button>
+          <Button size="sm" variant="outline" disabled={isPending} onClick={handleCancel}>
+            {t('cancel')}
+          </Button>
+        </>
+      )}
+      {isAdmin && canAct && (
+        <>
+          <ReassignClassDialog
+            enrollmentId={enrollmentId}
+            currentClassId={currentClassId}
+            classes={availableClasses}
+          />
+          <ApplyDiscountDialog enrollmentId={enrollmentId} currentDiscount={currentDiscount} />
+        </>
+      )}
+    </div>
+  )
+}

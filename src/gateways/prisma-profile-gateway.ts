@@ -10,7 +10,10 @@ type PrismaLike = {
       createdAt: Date
       updatedAt: Date
     } | null>
-    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>
+    update: (args: {
+      where: { id: string }
+      data: { name?: string; image?: string | null; updatedAt?: Date }
+    }) => Promise<unknown>
     delete: (args: { where: { id: string } }) => Promise<unknown>
   }
 }

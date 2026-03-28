@@ -12,8 +12,8 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 const rpName = process.env.NEXT_PUBLIC_APP_NAME || 'Education App'
-const rpID = process.env.NEXT_PUBLIC_APP_DOMAIN || 'localhost'
-const origin = process.env.NEXT_PUBLIC_APP_URL || `https://${rpID}`
+const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const rpID = process.env.NEXT_PUBLIC_APP_DOMAIN || new URL(origin).hostname
 
 export async function getPasskeyRegistrationOptions(passkeyName: string) {
   const session = await auth.api.getSession({ headers: await headers() })

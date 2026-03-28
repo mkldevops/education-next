@@ -1,5 +1,6 @@
 import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
@@ -29,6 +30,8 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
+  const selectedPeriodId = (await cookies()).get('selected_period')?.value ?? null
+
   const { role, familyId } = await getSessionWithRole()
 
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
@@ -55,7 +58,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
           orderBy: { name: 'asc' },
         }),
         db.classPeriod.findMany({
-          where: { isActive: true },
+          where: { isActive: true, ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}) },
           include: { level: true, period: true },
           orderBy: { name: 'asc' },
         }),
@@ -74,7 +77,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
 
   const availableClasses = isAdmin
     ? await db.classPeriod.findMany({
-        where: { isActive: true },
+        where: { isActive: true, ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}) },
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
       })
