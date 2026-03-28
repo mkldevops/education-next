@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { DashboardHeader, Sidebar } from '@/features/dashboard'
@@ -11,24 +12,21 @@ type Props = {
 }
 
 async function DashboardSidebarServer() {
-  const [session, logoConfig] = await Promise.all([
-    auth.api.getSession({ headers: await headers() }),
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user?.id) redirect('/signin')
+
+  const [logoConfig, dbUser] = await Promise.all([
     db.config.findFirst({ where: { name: 'logo_url', isActive: true }, select: { value: true } }),
-  ])
-
-  let role: Role = 'PARENT'
-
-  if (session?.user.id) {
-    const dbUser = await db.user.findUnique({
+    db.user.findUnique({
       where: { id: session.user.id },
       select: { role: true },
-    })
-    if (dbUser) {
-      role = dbUser.role
-    }
-  }
+    }),
+  ])
 
-  return <Sidebar role={role} logoUrl={logoConfig?.value || undefined} />
+  const role: Role = dbUser?.role || 'PARENT'
+  const userName = session.user.name || session.user.email || undefined
+
+  return <Sidebar role={role} logoUrl={logoConfig?.value || undefined} userName={userName} />
 }
 
 export default async function DashboardLayout({ children }: Props) {
@@ -36,16 +34,16 @@ export default async function DashboardLayout({ children }: Props) {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Suspense fallback={<div className="w-64 bg-white" />}>
+      <Suspense fallback={<div className="hidden w-64 bg-white md:block" />}>
         <DashboardSidebarServer />
       </Suspense>
       <div className="relative flex flex-1 flex-col">
-        <div className="absolute inset-x-0 top-0 z-10">
+        <div className="sticky top-0 z-10">
           <Suspense fallback={<header className="h-16" />}>
             <DashboardHeader />
           </Suspense>
         </div>
-        <main className="flex-1 p-6 pt-16">
+        <main className="flex-1 p-6">
           <Suspense fallback={<div className="p-6">Loading...</div>}>{children}</Suspense>
         </main>
       </div>

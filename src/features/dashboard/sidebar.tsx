@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Layers,
   LayoutGrid,
+  LogOut,
   Settings,
   Shield,
   Users,
@@ -21,6 +22,7 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, usePathname } from '@/i18n/routing'
+import { signOut } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 import type { Role } from '@/types/enums'
 import { useSidebarStore } from './sidebar-store'
@@ -113,16 +115,19 @@ function NavItem({
   label,
   active,
   expanded,
+  onClick,
 }: {
   href: string
   icon: LucideIcon
   label: string
   active: boolean
   expanded: boolean
+  onClick?: () => void
 }) {
   const link = (
     <Link
       href={href}
+      onClick={onClick}
       className={cn(
         'flex items-center rounded-xl transition-all duration-150',
         expanded ? 'gap-3 px-3 py-2' : 'size-11 justify-center',
@@ -131,7 +136,7 @@ function NavItem({
           : 'text-graphite-800 hover:bg-alabaster-900 hover:text-graphite-600'
       )}
     >
-      <Icon size={20} className="flex-shrink-0" />
+      <Icon size={20} className="shrink-0" />
       {expanded && <span className="text-sm font-medium">{label}</span>}
     </Link>
   )
@@ -143,13 +148,14 @@ function NavItem({
 type SidebarProps = {
   role: Role
   logoUrl?: string
+  userName?: string
 }
 
-export function Sidebar({ role, logoUrl }: SidebarProps) {
+export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const company = useTranslations('company')
   const pathname = usePathname()
-  const { expanded, toggle } = useSidebarStore()
+  const { expanded, toggle, mobileOpen, setMobileOpen } = useSidebarStore()
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
@@ -163,51 +169,127 @@ export function Sidebar({ role, logoUrl }: SidebarProps) {
 
   const visibleConfigItems = configItems.filter(canViewItem)
 
+  const handleNavClick = () => setMobileOpen(false)
+
+  const handleSignOut = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () =>
+          window.location.replace(process.env.NEXT_PUBLIC_URL_LANDING_PAGE || '/signin'),
+      },
+    })
+  }
+
   return (
-    <aside
-      className={cn(
-        'sticky top-0 z-30 flex h-screen flex-col border-r border-alabaster-700 bg-white transition-all duration-200',
-        expanded ? 'w-64' : 'w-[72px]'
+    <>
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label={t('closeMenu')}
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          onKeyDown={(e) => e.key === 'Escape' && setMobileOpen(false)}
+        />
       )}
-    >
-      <div
+      <aside
         className={cn(
-          'flex items-center flex-shrink-0 py-4',
-          expanded ? 'h-16 border-b border-alabaster-700 px-6' : 'justify-center'
+          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-alabaster-700 bg-white transition-all duration-200',
+          'md:sticky md:top-0 md:z-30',
+          expanded ? 'w-64' : 'w-64 md:w-[72px]',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >
-        {expanded ? (
-          <Link href="/" className="flex items-center gap-2">
-            {logoUrl ? (
-              // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
-              <img src={logoUrl} alt={company('name')} className="h-8 w-auto object-contain" />
-            ) : (
-              <span className="text-xl font-bold text-primary">{company('name')}</span>
-            )}
-          </Link>
-        ) : (
-          <Link
-            href="/"
-            className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-stormy-teal to-yale-blue text-[15px] font-extrabold text-white"
-          >
-            {logoUrl ? (
-              // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
-              <img src={logoUrl} alt={company('name')} className="size-8 rounded object-contain" />
-            ) : (
-              'AN'
-            )}
-          </Link>
-        )}
-      </div>
+        <div
+          className={cn(
+            'flex shrink-0 items-center py-4',
+            expanded ? 'h-16 border-b border-alabaster-700 px-6' : 'justify-center'
+          )}
+        >
+          {expanded ? (
+            <Link href="/" className="flex items-center gap-2">
+              {logoUrl ? (
+                // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
+                <img src={logoUrl} alt={company('name')} className="h-8 w-auto object-contain" />
+              ) : (
+                <span className="text-xl font-bold text-primary">{company('name')}</span>
+              )}
+            </Link>
+          ) : (
+            <Link
+              href="/"
+              className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-stormy-teal to-yale-blue text-[15px] font-extrabold text-white"
+            >
+              {logoUrl ? (
+                // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
+                <img
+                  src={logoUrl}
+                  alt={company('name')}
+                  className="size-8 rounded object-contain"
+                />
+              ) : (
+                'AN'
+              )}
+            </Link>
+          )}
+        </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {expanded && (
-          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            {t('sectionGestion')}
-          </p>
-        )}
-        <div className="space-y-1">
-          {gestionItems.map((item) => (
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          {expanded && (
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              {t('sectionGestion')}
+            </p>
+          )}
+          <div className="space-y-1">
+            {gestionItems.map((item) => (
+              <NavItem
+                key={item.key}
+                href={item.href}
+                icon={item.icon}
+                label={t(item.key)}
+                active={isActive(item.href)}
+                expanded={expanded}
+                onClick={handleNavClick}
+              />
+            ))}
+          </div>
+
+          {visibleConfigItems.length > 0 && (
+            <>
+              {expanded ? (
+                <p className="mb-2 mt-6 border-t border-alabaster-700 px-3 pt-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  {t('sectionConfig')}
+                </p>
+              ) : (
+                <div className="my-4 border-t border-alabaster-700" />
+              )}
+              <div className="space-y-1">
+                {visibleConfigItems.map((item) => (
+                  <NavItem
+                    key={item.key}
+                    href={item.href}
+                    icon={item.icon}
+                    label={t(item.key)}
+                    active={isActive(item.href)}
+                    expanded={expanded}
+                    onClick={handleNavClick}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </nav>
+
+        <div className="shrink-0 border-t border-alabaster-700 p-3">
+          {expanded && userName && (
+            <div className="mb-2 flex items-center gap-3 rounded-xl px-3 py-2">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stormy-teal to-yale-blue text-xs font-bold text-white">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+              <span className="truncate text-sm font-medium text-graphite-600">{userName}</span>
+            </div>
+          )}
+
+          {bottomItems.map((item) => (
             <NavItem
               key={item.key}
               href={item.href}
@@ -215,65 +297,49 @@ export function Sidebar({ role, logoUrl }: SidebarProps) {
               label={t(item.key)}
               active={isActive(item.href)}
               expanded={expanded}
+              onClick={handleNavClick}
             />
           ))}
-        </div>
 
-        {visibleConfigItems.length > 0 && (
-          <>
-            {expanded ? (
-              <p className="mb-2 mt-6 border-t border-alabaster-700 pt-4 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                {t('sectionConfig')}
-              </p>
-            ) : (
-              <div className="my-4 border-t border-alabaster-700" />
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className={cn(
+              'mt-1 flex w-full items-center rounded-xl py-2 text-graphite-800 transition-all duration-150 hover:bg-alabaster-900 hover:text-graphite-600',
+              expanded ? 'gap-3 px-3' : 'justify-center px-2'
             )}
-            <div className="space-y-1">
-              {visibleConfigItems.map((item) => (
-                <NavItem
-                  key={item.key}
-                  href={item.href}
-                  icon={item.icon}
-                  label={t(item.key)}
-                  active={isActive(item.href)}
-                  expanded={expanded}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </nav>
+          >
+            {expanded ? (
+              <>
+                <LogOut size={18} className="shrink-0" />
+                <span className="text-xs font-medium">{t('logout')}</span>
+              </>
+            ) : (
+              <Tooltip label={t('logout')}>
+                <LogOut size={18} />
+              </Tooltip>
+            )}
+          </button>
 
-      <div className="border-t border-alabaster-700 p-3 flex-shrink-0">
-        {bottomItems.map((item) => (
-          <NavItem
-            key={item.key}
-            href={item.href}
-            icon={item.icon}
-            label={t(item.key)}
-            active={isActive(item.href)}
-            expanded={expanded}
-          />
-        ))}
-
-        <button
-          type="button"
-          onClick={toggle}
-          className={cn(
-            'mt-2 flex w-full items-center rounded-xl py-2 text-graphite-800 transition-all duration-150 hover:bg-alabaster-900 hover:text-graphite-600',
-            expanded ? 'gap-3 px-3' : 'justify-center px-2'
-          )}
-        >
-          {expanded ? (
-            <>
-              <ChevronsLeft size={18} className="flex-shrink-0" />
-              <span className="text-xs font-medium">{t('collapse')}</span>
-            </>
-          ) : (
-            <ChevronsRight size={18} />
-          )}
-        </button>
-      </div>
-    </aside>
+          <button
+            type="button"
+            onClick={toggle}
+            className={cn(
+              'mt-1 hidden w-full items-center rounded-xl py-2 text-graphite-800 transition-all duration-150 hover:bg-alabaster-900 hover:text-graphite-600 md:flex',
+              expanded ? 'gap-3 px-3' : 'justify-center px-2'
+            )}
+          >
+            {expanded ? (
+              <>
+                <ChevronsLeft size={18} className="shrink-0" />
+                <span className="text-xs font-medium">{t('collapse')}</span>
+              </>
+            ) : (
+              <ChevronsRight size={18} />
+            )}
+          </button>
+        </div>
+      </aside>
+    </>
   )
 }
