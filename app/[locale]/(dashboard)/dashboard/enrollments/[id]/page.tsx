@@ -6,7 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
-import { getSessionWithRole } from '../../../../_lib/auth-helper'
+import { getSessionWithRole } from '../../../_lib/auth-helper'
 import { EnrollmentActions } from './_components/enrollment-actions'
 
 type Props = {
