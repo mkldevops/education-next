@@ -1,5 +1,6 @@
 'use server'
 
+import { randomBytes } from 'node:crypto'
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server'
 import {
   generateAuthenticationOptions,
@@ -7,7 +8,6 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from '@simplewebauthn/server'
-import { randomBytes } from 'crypto'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
@@ -139,6 +139,9 @@ export async function verifyPasskeyAuthentication(
   })
 
   if (!challengeRecord || challengeRecord.expiresAt < new Date()) {
+    await db.verification
+      .delete({ where: { identifier: `passkey-auth-challenge:${challengeId}` } })
+      .catch(() => {})
     return 'challengeExpired' as const
   }
 
@@ -147,7 +150,12 @@ export async function verifyPasskeyAuthentication(
     include: { user: true },
   })
 
-  if (!passkey) return 'passkeyNotFound' as const
+  if (!passkey) {
+    await db.verification
+      .delete({ where: { identifier: `passkey-auth-challenge:${challengeId}` } })
+      .catch(() => {})
+    return 'passkeyNotFound' as const
+  }
 
   const verification = await verifyAuthenticationResponse({
     response,
@@ -164,7 +172,12 @@ export async function verifyPasskeyAuthentication(
     },
   })
 
-  if (!verification.verified) return 'verificationFailed' as const
+  if (!verification.verified) {
+    await db.verification
+      .delete({ where: { identifier: `passkey-auth-challenge:${challengeId}` } })
+      .catch(() => {})
+    return 'verificationFailed' as const
+  }
 
   await db.passkey.update({
     where: { credentialId: response.id },
