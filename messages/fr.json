@@ -179,6 +179,18 @@
       "successMessage": "Si un compte existe avec cette adresse, vous recevrez un email de réinitialisation.",
       "backToLogin": "Retour à la connexion",
       "error": "Erreur lors de l'envoi"
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Entrez votre nouveau mot de passe",
+      "password": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "submit": "Réinitialiser",
+      "success": "Mot de passe réinitialisé avec succès",
+      "backToLogin": "Retour à la connexion",
+      "error": "Erreur lors de la réinitialisation",
+      "invalidToken": "Lien invalide ou expiré",
+      "passwordMismatch": "Les mots de passe ne correspondent pas"
     }
   },
   "dashboard": {
