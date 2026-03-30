@@ -11,20 +11,34 @@ const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX = 10
 const ipRequests = new Map<string, number[]>()
 
+setInterval(() => {
+  const windowStart = Date.now() - RATE_LIMIT_WINDOW_MS
+  for (const [ip, timestamps] of ipRequests) {
+    if (timestamps.every((t) => t <= windowStart)) {
+      ipRequests.delete(ip)
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS)
+
 function getClientIp(request: Request): string {
   const headers = request.headers
-  return (
-    headers.get('x-forwarded-for')?.split(',')[0].trim() ?? headers.get('x-real-ip') ?? 'unknown'
-  )
+  const realIp = headers.get('x-real-ip')
+  if (realIp) return realIp.trim()
+  const forwarded = headers.get('x-forwarded-for')
+  if (forwarded) {
+    const parts = forwarded.split(',')
+    return parts[parts.length - 1].trim()
+  }
+  return 'unknown'
 }
 
-function isRateLimited(ip: string): boolean {
+function allowRequest(ip: string): boolean {
   const now = Date.now()
   const windowStart = now - RATE_LIMIT_WINDOW_MS
   const timestamps = (ipRequests.get(ip) ?? []).filter((t) => t > windowStart)
-  if (timestamps.length >= RATE_LIMIT_MAX) return true
+  if (timestamps.length >= RATE_LIMIT_MAX) return false
   ipRequests.set(ip, [...timestamps, now])
-  return false
+  return true
 }
 
 function generateToken() {
@@ -35,7 +49,7 @@ function generateToken() {
 
 export async function POST(request: Request) {
   const ip = getClientIp(request)
-  if (isRateLimited(ip)) {
+  if (!allowRequest(ip)) {
     return NextResponse.json({ error: 'tooManyRequests' }, { status: 429 })
   }
 
@@ -64,15 +78,14 @@ export async function POST(request: Request) {
 
     const token = generateToken()
     const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000)
-    const requestHeaders = request.headers
 
     await db.session.create({
       data: {
         token,
         userId: user.id,
         expiresAt,
-        ipAddress: requestHeaders.get('x-forwarded-for') ?? requestHeaders.get('x-real-ip') ?? null,
-        userAgent: requestHeaders.get('user-agent') ?? null,
+        ipAddress: ip,
+        userAgent: request.headers.get('user-agent') ?? null,
       },
     })
 
