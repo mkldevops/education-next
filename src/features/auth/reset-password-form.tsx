@@ -46,6 +46,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (isLoading) return
     setError(null)
     setIsLoading(true)
 
@@ -86,6 +87,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           type="password"
           autoComplete="new-password"
           required
+          minLength={8}
           className="mt-1"
         />
       </div>

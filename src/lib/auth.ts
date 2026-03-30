@@ -12,11 +12,11 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Set to true in production
-    sendResetPasswordEmail: async ({ user, url }: { user: { email: string }; url: string }) => {
+    sendResetPassword: async (data) => {
       await sendEmail({
-        to: user.email,
+        to: data.user.email,
         subject: 'Réinitialisation de votre mot de passe',
-        html: `<p>Cliquez <a href="${url}">ici</a> pour réinitialiser votre mot de passe.</p><p>Ce lien expire dans 1 heure.</p>`,
+        html: `<p>Cliquez <a href="${data.url}">ici</a> pour réinitialiser votre mot de passe.</p><p>Ce lien expire dans 1 heure.</p>`,
       })
     },
   },
