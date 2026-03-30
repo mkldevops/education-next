@@ -179,6 +179,18 @@
       "successMessage": "If an account exists with this email, you will receive a reset email.",
       "backToLogin": "Back to login",
       "error": "Error sending email"
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "subtitle": "Enter your new password",
+      "password": "New password",
+      "confirmPassword": "Confirm password",
+      "submit": "Reset password",
+      "success": "Password reset successfully",
+      "backToLogin": "Back to login",
+      "error": "Error resetting password",
+      "invalidToken": "Invalid or expired link",
+      "passwordMismatch": "Passwords do not match"
     }
   },
   "dashboard": {

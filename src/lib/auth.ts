@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { sendEmail } from '@/lib/email'
 
 const prisma = new PrismaClient()
 
@@ -11,6 +12,13 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Set to true in production
+    sendResetPasswordEmail: async ({ user, url }: { user: { email: string }; url: string }) => {
+      await sendEmail({
+        to: user.email,
+        subject: 'Réinitialisation de votre mot de passe',
+        html: `<p>Cliquez <a href="${url}">ici</a> pour réinitialiser votre mot de passe.</p><p>Ce lien expire dans 1 heure.</p>`,
+      })
+    },
   },
   socialProviders: {
     google: {
