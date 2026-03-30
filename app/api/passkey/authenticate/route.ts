@@ -28,7 +28,8 @@ export async function POST(request: Request) {
     const result = await verifyPasskeyAuthentication(body, body.challengeId)
 
     if (typeof result === 'string') {
-      return NextResponse.json({ error: result }, { status: 400 })
+      console.error('[passkey/authenticate] authentication failed:', result)
+      return NextResponse.json({ error: 'authenticationFailed' }, { status: 400 })
     }
 
     const user = await db.user.findUnique({ where: { id: result.userId } })
