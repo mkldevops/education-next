@@ -7,6 +7,26 @@ import { db } from '@/lib/db'
 const SESSION_COOKIE = 'better-auth.session_token'
 const SESSION_TTL_DAYS = 7
 
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX = 10
+const ipRequests = new Map<string, number[]>()
+
+function getClientIp(request: Request): string {
+  const headers = request.headers
+  return (
+    headers.get('x-forwarded-for')?.split(',')[0].trim() ?? headers.get('x-real-ip') ?? 'unknown'
+  )
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const windowStart = now - RATE_LIMIT_WINDOW_MS
+  const timestamps = (ipRequests.get(ip) ?? []).filter((t) => t > windowStart)
+  if (timestamps.length >= RATE_LIMIT_MAX) return true
+  ipRequests.set(ip, [...timestamps, now])
+  return false
+}
+
 function generateToken() {
   const array = new Uint8Array(32)
   crypto.getRandomValues(array)
@@ -14,6 +34,11 @@ function generateToken() {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request)
+  if (isRateLimited(ip)) {
+    return NextResponse.json({ error: 'tooManyRequests' }, { status: 429 })
+  }
+
   try {
     const body = (await request.json()) as AuthenticationResponseJSON & { challengeId?: string }
 
