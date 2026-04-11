@@ -233,6 +233,7 @@
       "classes": "Classes",
       "plans": "Plans tarifaires",
       "config": "Configuration",
+      "pages": "Pages",
       "users": "Utilisateurs"
     },
     "sidebar": {
@@ -246,6 +247,7 @@
       "payments": "Paiements",
       "plans": "Plans tarifaires",
       "config": "Configuration",
+      "pages": "Pages",
       "users": "Utilisateurs",
       "profile": "Profil",
       "settings": "Paramètres",
@@ -579,6 +581,78 @@
           "submit": "Enregistrer",
           "success": "Plan mis à jour",
           "error": "Erreur lors de la mise à jour"
+        }
+      },
+      "pages": {
+        "title": "Pages",
+        "noPages": "Aucune page créée",
+        "badge": {
+          "home": "Accueil",
+          "draft": "Brouillon"
+        },
+        "action": {
+          "preview": "Aperçu",
+          "edit": "Modifier",
+          "delete": "Supprimer"
+        },
+        "create": {
+          "title": "Nouvelle page",
+          "titleLabel": "Titre",
+          "slugLabel": "Slug (URL)",
+          "slugPlaceholder": "ma-page",
+          "slugHint": "Laissez vide pour générer automatiquement depuis le titre",
+          "slugError": "Ce slug est déjà utilisé",
+          "isHome": "Page d'accueil",
+          "cancel": "Annuler",
+          "submit": "Créer",
+          "success": "Page créée",
+          "error": "Erreur lors de la création"
+        },
+        "edit": {
+          "title": "Modifier la page",
+          "sectionMeta": "Informations",
+          "sectionBlocks": "Blocs de contenu",
+          "titleLabel": "Titre",
+          "slugLabel": "Slug (URL)",
+          "slugError": "Ce slug est déjà utilisé",
+          "isHome": "Page d'accueil",
+          "published": "Publiée",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Page mise à jour",
+          "error": "Erreur lors de la mise à jour"
+        },
+        "delete": {
+          "confirm": "Supprimer cette page ? Cette action est irréversible.",
+          "success": "Page supprimée",
+          "error": "Erreur lors de la suppression"
+        },
+        "blockEditor": {
+          "addBlock": "Ajouter un bloc",
+          "hero": "Héro",
+          "text": "Texte",
+          "features": "Fonctionnalités",
+          "cta": "Appel à l'action",
+          "stats": "Statistiques",
+          "contact": "Contact",
+          "fields": {
+            "title": "Titre",
+            "subtitle": "Sous-titre",
+            "content": "Contenu",
+            "ctaLabel": "Texte du bouton",
+            "ctaHref": "Lien du bouton",
+            "backgroundImage": "Image de fond (URL)",
+            "itemTitle": "Titre",
+            "itemDescription": "Description",
+            "icon": "Icône (emoji)",
+            "statValue": "Valeur (ex: 500+)",
+            "statLabel": "Libellé",
+            "showEmail": "Afficher l'email",
+            "showPhone": "Afficher le téléphone",
+            "showAddress": "Afficher l'adresse",
+            "addItem": "Ajouter un élément",
+            "remove": "Supprimer"
+          }
         }
       },
       "config": {

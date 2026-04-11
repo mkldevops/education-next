@@ -8,6 +8,7 @@ import {
   ChevronsRight,
   ClipboardList,
   CreditCard,
+  Globe,
   GraduationCap,
   Layers,
   LayoutGrid,
@@ -62,6 +63,12 @@ const configItems: NavItemConfig[] = [
     requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
   },
   { href: '/dashboard/plans', icon: Wallet, key: 'plans', requiredRoles: ['ADMIN', 'SUPER_ADMIN'] },
+  {
+    href: '/dashboard/pages',
+    icon: Globe,
+    key: 'pages',
+    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+  },
   {
     href: '/dashboard/config',
     icon: Wrench,
