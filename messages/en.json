@@ -233,6 +233,7 @@
       "classes": "Classes",
       "plans": "Pricing Plans",
       "config": "Configuration",
+      "pages": "Pages",
       "users": "Users"
     },
     "sidebar": {
@@ -246,6 +247,7 @@
       "payments": "Payments",
       "plans": "Pricing plans",
       "config": "Configuration",
+      "pages": "Pages",
       "users": "Users",
       "profile": "Profile",
       "settings": "Settings",
@@ -579,6 +581,77 @@
           "submit": "Save",
           "success": "Plan updated",
           "error": "Error updating plan"
+        }
+      },
+      "pages": {
+        "title": "Pages",
+        "noPages": "No pages created",
+        "badge": {
+          "home": "Home",
+          "draft": "Draft"
+        },
+        "action": {
+          "preview": "Preview",
+          "edit": "Edit",
+          "delete": "Delete"
+        },
+        "create": {
+          "title": "New page",
+          "titleLabel": "Title",
+          "slugLabel": "Slug (URL)",
+          "slugPlaceholder": "my-page",
+          "slugHint": "Leave empty to auto-generate from title",
+          "slugError": "This slug is already in use",
+          "isHome": "Homepage",
+          "cancel": "Cancel",
+          "submit": "Create",
+          "success": "Page created",
+          "error": "Error creating page"
+        },
+        "edit": {
+          "title": "Edit page",
+          "sectionMeta": "Information",
+          "sectionBlocks": "Content blocks",
+          "titleLabel": "Title",
+          "slugLabel": "Slug (URL)",
+          "slugError": "This slug is already in use",
+          "isHome": "Homepage",
+          "published": "Published",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Page updated",
+          "error": "Error updating page"
+        },
+        "delete": {
+          "success": "Page deleted",
+          "error": "Error deleting page"
+        },
+        "blockEditor": {
+          "addBlock": "Add a block",
+          "hero": "Hero",
+          "text": "Text",
+          "features": "Features",
+          "cta": "Call to action",
+          "stats": "Statistics",
+          "contact": "Contact",
+          "fields": {
+            "title": "Title",
+            "subtitle": "Subtitle",
+            "content": "Content",
+            "ctaLabel": "Button text",
+            "ctaHref": "Button link",
+            "backgroundImage": "Background image (URL)",
+            "itemTitle": "Title",
+            "itemDescription": "Description",
+            "icon": "Icon (emoji)",
+            "statValue": "Value (e.g. 500+)",
+            "statLabel": "Label",
+            "showEmail": "Show email",
+            "showPhone": "Show phone",
+            "showAddress": "Show address",
+            "addItem": "Add item",
+            "remove": "Remove"
+          }
         }
       },
       "config": {
