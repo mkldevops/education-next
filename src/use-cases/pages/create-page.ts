@@ -15,6 +15,7 @@ export async function createPage(
   if (slugExists) return 'slugAlreadyExists'
 
   try {
+    if (parsed.data.isHome) await gateway.unsetHome()
     await gateway.create(parsed.data)
     return 'OK'
   } catch {

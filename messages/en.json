@@ -623,6 +623,7 @@
           "error": "Error updating page"
         },
         "delete": {
+          "confirm": "Delete this page? This action cannot be undone.",
           "success": "Page deleted",
           "error": "Error deleting page"
         },

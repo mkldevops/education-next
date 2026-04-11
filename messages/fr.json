@@ -623,6 +623,7 @@
           "error": "Erreur lors de la mise à jour"
         },
         "delete": {
+          "confirm": "Supprimer cette page ? Cette action est irréversible.",
           "success": "Page supprimée",
           "error": "Erreur lors de la suppression"
         },

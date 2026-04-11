@@ -1,18 +1,27 @@
 import { z } from 'zod'
 
+const safeHref = (v: string) => /^(https?:\/\/|\/)/.test(v)
+
 export const heroBlockSchema = z.object({
   type: z.literal('hero'),
   title: z.string().min(1).max(250),
   subtitle: z.string().max(500).optional(),
   ctaLabel: z.string().max(100).optional(),
-  ctaHref: z.string().max(250).optional(),
+  ctaHref: z
+    .string()
+    .max(250)
+    .refine(
+      (v) => !v || safeHref(v),
+      'Button link must be a relative path or start with http(s)://'
+    )
+    .optional(),
   backgroundImage: z.string().url().max(500).optional(),
 })
 
 export const textBlockSchema = z.object({
   type: z.literal('text'),
   title: z.string().max(250).optional(),
-  content: z.string().min(1),
+  content: z.string().min(1).max(50000),
 })
 
 export const featureItemSchema = z.object({
@@ -32,7 +41,10 @@ export const ctaBlockSchema = z.object({
   title: z.string().min(1).max(250),
   subtitle: z.string().max(500).optional(),
   ctaLabel: z.string().max(100),
-  ctaHref: z.string().max(250),
+  ctaHref: z
+    .string()
+    .max(250)
+    .refine(safeHref, 'Button link must be a relative path or start with http(s)://'),
 })
 
 export const statItemSchema = z.object({
@@ -66,12 +78,15 @@ export const blockSchema = z.discriminatedUnion('type', [
 export type Block = z.infer<typeof blockSchema>
 export type BlockType = Block['type']
 
+const RESERVED_SLUGS = ['a-propos', 'contact', 'legal-notices', 'privacy-policy']
+
 export const pageInputSchema = z.object({
   slug: z
     .string()
     .min(1)
     .max(100)
-    .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+    .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens')
+    .refine((s) => !RESERVED_SLUGS.includes(s), 'This slug is reserved for existing pages'),
   title: z.string().min(1).max(250),
   isHome: z.boolean().default(false),
   published: z.boolean().default(true),

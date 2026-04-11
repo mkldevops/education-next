@@ -1,3 +1,4 @@
+import { connection } from 'next/server'
 import { setRequestLocale } from 'next-intl/server'
 import { Hero } from '@/features/hero'
 import { BlockRenderer } from '@/features/landing/block-renderer'
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export default async function HomePage({ params }: Props) {
+  await connection()
   const { locale } = await params
   setRequestLocale(locale)
 

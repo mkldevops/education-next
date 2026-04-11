@@ -25,7 +25,7 @@ export const pageGateway = {
 
   getBySlug: (slug: string) =>
     db.page.findFirst({
-      where: { slug, isActive: true },
+      where: { slug, isActive: true, published: true },
     }),
 
   getHome: () =>
@@ -53,7 +53,16 @@ export const pageGateway = {
   softDelete: (id: string) =>
     db.page.update({
       where: { id },
-      data: { isActive: false },
+      data: { isActive: false, slug: `del-${id}` },
+    }),
+
+  unsetHome: (excludeId?: string) =>
+    db.page.updateMany({
+      where: {
+        isHome: true,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      data: { isHome: false },
     }),
 
   existsBySlug: async (slug: string, excludeId?: string) => {

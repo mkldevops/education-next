@@ -20,6 +20,7 @@ export async function updatePage(
   const { id, ...data } = parsed.data
 
   try {
+    if (parsed.data.isHome) await gateway.unsetHome(id)
     await gateway.update(id, data)
     return 'OK'
   } catch {

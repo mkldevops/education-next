@@ -46,6 +46,7 @@ const modelsWithIsActive = new Set([
   'Enrollment',
   'Payment',
   'Plan',
+  'Page',
 ])
 
 function hasIsActive(model: string | undefined): boolean {
