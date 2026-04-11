@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const safeHref = (v: string) => /^(https?:\/\/|\/)/.test(v)
 
-export const heroBlockSchema = z.object({
+const heroBlockSchema = z.object({
   type: z.literal('hero'),
   title: z.string().min(1).max(250),
   subtitle: z.string().max(500).optional(),
@@ -18,25 +18,25 @@ export const heroBlockSchema = z.object({
   backgroundImage: z.string().url().max(500).optional(),
 })
 
-export const textBlockSchema = z.object({
+const textBlockSchema = z.object({
   type: z.literal('text'),
   title: z.string().max(250).optional(),
   content: z.string().min(1).max(50000),
 })
 
-export const featureItemSchema = z.object({
+const featureItemSchema = z.object({
   title: z.string().min(1).max(150),
   description: z.string().max(500),
   icon: z.string().max(50).optional(),
 })
 
-export const featuresBlockSchema = z.object({
+const featuresBlockSchema = z.object({
   type: z.literal('features'),
   title: z.string().max(250).optional(),
   items: z.array(featureItemSchema).min(1).max(12),
 })
 
-export const ctaBlockSchema = z.object({
+const ctaBlockSchema = z.object({
   type: z.literal('cta'),
   title: z.string().min(1).max(250),
   subtitle: z.string().max(500).optional(),
@@ -47,18 +47,18 @@ export const ctaBlockSchema = z.object({
     .refine(safeHref, 'Button link must be a relative path or start with http(s)://'),
 })
 
-export const statItemSchema = z.object({
+const statItemSchema = z.object({
   label: z.string().min(1).max(100),
   value: z.string().min(1).max(50),
 })
 
-export const statsBlockSchema = z.object({
+const statsBlockSchema = z.object({
   type: z.literal('stats'),
   title: z.string().max(250).optional(),
   items: z.array(statItemSchema).min(1).max(8),
 })
 
-export const contactBlockSchema = z.object({
+const contactBlockSchema = z.object({
   type: z.literal('contact'),
   title: z.string().max(250).optional(),
   showEmail: z.boolean().default(true),
@@ -80,7 +80,7 @@ export type BlockType = Block['type']
 
 const RESERVED_SLUGS = ['a-propos', 'contact', 'legal-notices', 'privacy-policy']
 
-export const pageInputSchema = z.object({
+const pageInputSchema = z.object({
   slug: z
     .string()
     .min(1)
@@ -98,14 +98,6 @@ export const createPageSchema = pageInputSchema
 
 export const updatePageSchema = pageInputSchema.extend({
   id: z.string().uuid(),
-})
-
-export const getPageSchema = z.object({
-  id: z.string().uuid(),
-})
-
-export const getPageBySlugSchema = z.object({
-  slug: z.string().min(1).max(100),
 })
 
 export const deletePageSchema = z.object({

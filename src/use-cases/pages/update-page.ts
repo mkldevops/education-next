@@ -2,7 +2,7 @@ import { pageGateway } from '@/gateways/page-gateway'
 import type { UpdatePageInput } from './schemas'
 import { updatePageSchema } from './schemas'
 
-export type UpdatePageFailure = 'validationError' | 'notFound' | 'slugAlreadyExists' | 'saveFailed'
+type UpdatePageFailure = 'validationError' | 'notFound' | 'slugAlreadyExists' | 'saveFailed'
 
 export async function updatePage(
   input: UpdatePageInput,

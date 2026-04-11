@@ -2,7 +2,7 @@ import { pageGateway } from '@/gateways/page-gateway'
 import type { CreatePageInput } from './schemas'
 import { createPageSchema } from './schemas'
 
-export type CreatePageFailure = 'validationError' | 'slugAlreadyExists' | 'saveFailed'
+type CreatePageFailure = 'validationError' | 'slugAlreadyExists' | 'saveFailed'
 
 export async function createPage(
   input: CreatePageInput,

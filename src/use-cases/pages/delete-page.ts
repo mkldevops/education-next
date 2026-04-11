@@ -1,7 +1,7 @@
 import { pageGateway } from '@/gateways/page-gateway'
 import { deletePageSchema } from './schemas'
 
-export type DeletePageFailure = 'validationError' | 'notFound' | 'deleteFailed'
+type DeletePageFailure = 'validationError' | 'notFound' | 'deleteFailed'
 
 export async function deletePage(
   input: { id: string },
