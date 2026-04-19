@@ -81,6 +81,9 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                             },
                           },
                         },
+                        payments: {
+                          where: { isActive: true },
+                        },
                       },
                     },
                   },
