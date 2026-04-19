@@ -60,7 +60,8 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ ok: true })
-  } catch {
+  } catch (error) {
+    console.error('[passkey/authenticate] unexpected error:', error)
     return NextResponse.json({ error: 'serverError' }, { status: 500 })
   }
 }

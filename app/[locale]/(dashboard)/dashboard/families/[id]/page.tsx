@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { z } from 'zod'
 import { Tabs } from '@/components/ui/tabs/tabs'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
@@ -107,7 +108,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   if (!family) notFound()
 
-  const selectedPeriodId = (await cookies()).get('selected_period')?.value ?? null
+  const rawPeriod = (await cookies()).get('selected_period')?.value
+  const selectedPeriodId = z.string().cuid().safeParse(rawPeriod).data ?? null
   const [plans, classes] = isAdmin
     ? await Promise.all([
         db.plan.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
@@ -140,6 +142,9 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   const enrolledChildren = students.filter((s) => s.person.student.enrollments.length > 0).length
   const activeEnrollments = allEnrollments.filter((e) => e.status === 'ACTIVE').length
+  const scopedStudentId = students.some((s) => s.person.student.id === studentId)
+    ? studentId
+    : undefined
 
   return (
     <div className="space-y-6">
@@ -171,7 +176,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 name: `${c.name} (${c.level.name} — ${c.period.name})`,
               }))}
               defaultOpen={action === 'addEnrollment'}
-              defaultStudentId={studentId}
+              defaultStudentId={scopedStudentId}
               redirectTo={`/dashboard/families/${family.id}`}
               showTrigger={false}
             />

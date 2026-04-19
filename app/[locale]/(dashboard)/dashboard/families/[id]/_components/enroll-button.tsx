@@ -1,26 +1,21 @@
-'use client'
-
-import { useTranslations } from 'next-intl'
-import { useRouter } from '@/i18n/routing'
+import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/routing'
 
 type Props = {
   familyId: string
   studentId: string
 }
 
-export function EnrollButton({ familyId, studentId }: Props) {
-  const t = useTranslations('dashboard.pages.familyDetails')
-  const router = useRouter()
+export async function EnrollButton({ familyId, studentId }: Props) {
+  const t = await getTranslations('dashboard.pages.familyDetails')
+  const query = new URLSearchParams({ action: 'addEnrollment', studentId }).toString()
 
   return (
-    <button
-      type="button"
-      onClick={() =>
-        router.push(`/dashboard/families/${familyId}?action=addEnrollment&studentId=${studentId}`)
-      }
+    <Link
+      href={`/dashboard/families/${familyId}?${query}`}
       className="flex-1 px-3 py-2 text-xs font-medium text-center rounded-lg bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors"
     >
       {t('childCard.enroll')}
-    </button>
+    </Link>
   )
 }

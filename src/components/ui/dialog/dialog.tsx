@@ -26,10 +26,6 @@ export interface DialogProps {
 export function Dialog({ children, initialOpen = false }: DialogProps) {
   const [open, setOpen] = useState(initialOpen)
 
-  useEffect(() => {
-    if (initialOpen) setOpen(true)
-  }, [initialOpen])
-
   return (
     <DialogStateContext.Provider value={{ open, setOpen }}>{children}</DialogStateContext.Provider>
   )
