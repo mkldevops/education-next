@@ -28,7 +28,6 @@ export async function POST(request: Request) {
     const result = await verifyPasskeyAuthentication(body, body.challengeId)
 
     if (typeof result === 'string') {
-      console.error('[passkey/authenticate] authentication failed:', result)
       return NextResponse.json({ error: 'authenticationFailed' }, { status: 400 })
     }
 
@@ -61,7 +60,8 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ ok: true })
-  } catch {
+  } catch (error) {
+    console.error('[passkey/authenticate] unexpected error:', error)
     return NextResponse.json({ error: 'serverError' }, { status: 500 })
   }
 }

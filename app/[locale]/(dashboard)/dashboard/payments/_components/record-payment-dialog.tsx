@@ -33,7 +33,7 @@ export function RecordPaymentDialog({
   const t = useTranslations('dashboard.pages.payments.record')
 
   return (
-    <Dialog>
+    <Dialog initialOpen={defaultOpen}>
       <DialogTrigger>
         <Button>+ {t('title')}</Button>
       </DialogTrigger>

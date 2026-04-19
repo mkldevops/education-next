@@ -32,7 +32,7 @@ services:
       retries: 5
 
   mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.21.0
     container_name: education-next-mailpit
     ports:
       - "${PORT_MAILPIT_SMTP}:1025"

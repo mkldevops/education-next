@@ -4,12 +4,11 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { getSessionWithRole } from '../../_lib/auth-helper'
-import { CreateStudentDialog } from './_components/create-student-dialog'
 import { StudentsDataTable } from './_components/students-data-table'
 
 type Props = {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ action?: string }>
+  searchParams: Promise<Record<string, never>>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -21,10 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function StudentsPage({ params, searchParams }: Props) {
+export default async function StudentsPage({ params }: Props) {
   await connection()
   const { locale } = await params
-  const { action } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.students')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -33,19 +31,6 @@ export default async function StudentsPage({ params, searchParams }: Props) {
 
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
   const whereFamilies = isAdmin ? undefined : { some: { familyId } }
-
-  const families = isAdmin
-    ? await db.family.findMany({
-        where: { isActive: true },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' },
-      })
-    : familyId
-      ? await db.family.findMany({
-          where: { id: familyId, isActive: true },
-          select: { id: true, name: true },
-        })
-      : []
 
   const students = await db.student.findMany({
     where: {
@@ -87,9 +72,6 @@ export default async function StudentsPage({ params, searchParams }: Props) {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        {families.length > 0 && (
-          <CreateStudentDialog families={families} defaultOpen={action === 'create'} />
-        )}
       </div>
       <Card className="rounded-xl border border-gray-200 p-4">
         <StudentsDataTable data={students} locale={locale} />

@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useEffect, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -28,6 +28,9 @@ interface CreateEnrollmentDialogProps {
   plans: Option[]
   classes: Option[]
   defaultOpen?: boolean
+  defaultStudentId?: string
+  redirectTo?: string
+  showTrigger?: boolean
 }
 
 export function CreateEnrollmentDialog({
@@ -35,14 +38,19 @@ export function CreateEnrollmentDialog({
   plans,
   classes,
   defaultOpen = false,
+  defaultStudentId,
+  redirectTo,
+  showTrigger = true,
 }: CreateEnrollmentDialogProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
 
   return (
-    <Dialog>
-      <DialogTrigger>
-        <Button>+ {t('title')}</Button>
-      </DialogTrigger>
+    <Dialog initialOpen={defaultOpen}>
+      {showTrigger && (
+        <DialogTrigger>
+          <Button>+ {t('title')}</Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
@@ -52,6 +60,8 @@ export function CreateEnrollmentDialog({
           plans={plans}
           classes={classes}
           defaultOpen={defaultOpen}
+          defaultStudentId={defaultStudentId}
+          redirectTo={redirectTo}
         />
       </DialogContent>
     </Dialog>
@@ -63,18 +73,21 @@ function CreateEnrollmentForm({
   plans,
   classes,
   defaultOpen = false,
+  defaultStudentId,
+  redirectTo,
 }: CreateEnrollmentDialogProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const [effectiveStudentId] = useState(defaultStudentId)
 
   useEffect(() => {
     if (defaultOpen) {
       setOpen(true)
-      router.replace('/dashboard/enrollments')
+      router.replace(redirectTo ?? '/dashboard/enrollments')
     }
-  }, [defaultOpen, setOpen, router])
+  }, [defaultOpen, setOpen, router, redirectTo])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -93,6 +106,7 @@ function CreateEnrollmentForm({
       } else {
         toast.success(t('success'))
         setOpen(false)
+        if (redirectTo) router.push(redirectTo)
       }
     })
   }
@@ -101,22 +115,26 @@ function CreateEnrollmentForm({
     <form onSubmit={handleSubmit}>
       <DialogBody>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="enroll-student">{t('selectStudent')}</Label>
-            <select
-              id="enroll-student"
-              name="studentId"
-              required
-              disabled={isPending}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
-            >
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {effectiveStudentId ? (
+            <input type="hidden" name="studentId" value={effectiveStudentId} />
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="enroll-student">{t('selectStudent')}</Label>
+              <select
+                id="enroll-student"
+                name="studentId"
+                required
+                disabled={isPending}
+                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              >
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="enroll-plan">{t('selectPlan')}</Label>

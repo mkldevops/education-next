@@ -10,7 +10,7 @@ import { EnrollmentsTable } from './_components/enrollments-table'
 
 type Props = {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ action?: string }>
+  searchParams: Promise<{ action?: string; studentId?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function EnrollmentsPage({ params, searchParams }: Props) {
   await connection()
   const { locale } = await params
-  const { action } = await searchParams
+  const { action, studentId } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -131,6 +131,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
             plans={planOptions}
             classes={classOptions}
             defaultOpen={action === 'create'}
+            defaultStudentId={studentId}
           />
         )}
       </div>

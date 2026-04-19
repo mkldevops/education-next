@@ -11,6 +11,7 @@ import type {
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { formatAmount } from '@/lib/decimal'
+import { EnrollButton } from './enroll-button'
 
 type StudentWithRelation = {
   person: Person & {
@@ -33,9 +34,10 @@ type StudentWithRelation = {
 type Props = {
   student: StudentWithRelation
   locale: string
+  familyId: string
 }
 
-export async function ChildCard({ student, locale }: Props) {
+export async function ChildCard({ student, locale, familyId }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   const { person } = student
@@ -132,12 +134,7 @@ export async function ChildCard({ student, locale }: Props) {
           {t('childCard.viewProfile')}
         </Link>
         {enrollments.length === 0 && (
-          <button
-            type="button"
-            className="flex-1 px-3 py-2 text-xs font-medium text-center rounded-lg bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors"
-          >
-            {t('childCard.enroll')}
-          </button>
+          <EnrollButton familyId={familyId} studentId={person.student.id} />
         )}
       </div>
     </Card>

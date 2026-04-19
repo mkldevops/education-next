@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { cn } from '../utils'
 
 interface DialogContextType {
@@ -20,10 +20,11 @@ export function useDialog() {
 
 export interface DialogProps {
   children: React.ReactNode
+  initialOpen?: boolean
 }
 
-export function Dialog({ children }: DialogProps) {
-  const [open, setOpen] = useState(false)
+export function Dialog({ children, initialOpen = false }: DialogProps) {
+  const [open, setOpen] = useState(initialOpen)
 
   return (
     <DialogStateContext.Provider value={{ open, setOpen }}>{children}</DialogStateContext.Provider>
@@ -68,42 +69,29 @@ export interface DialogContentProps {
 
 export function DialogContent({ children, className }: DialogContentProps) {
   const { open, setOpen } = useDialog()
-  const dialogRef = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, setOpen])
 
   if (!open) return null
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
-    if (e.target === dialogRef.current) {
-      setOpen(false)
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDialogElement>) => {
-    if (e.key === 'Escape') {
-      setOpen(false)
-    }
-  }
-
   return (
-    <dialog
-      ref={dialogRef}
-      className={cn(
-        'fixed inset-0 z-50 m-auto w-full max-w-lg rounded-lg bg-white shadow-lg',
-        'backdrop:bg-black/40 backdrop:backdrop-blur-sm',
-        className
-      )}
-      open={open}
-      onClick={handleBackdropClick}
-      onKeyDown={handleKeyDown}
-    >
-      {children}
-      <style>{`
-        dialog::backdrop {
-          background-color: rgba(0, 0, 0, 0.4);
-          backdrop-filter: blur(4px);
-        }
-      `}</style>
-    </dialog>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="Close dialog"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={() => setOpen(false)}
+      />
+      <div className={cn('relative z-10 w-full max-w-lg rounded-lg bg-white shadow-xl', className)}>
+        {children}
+      </div>
+    </div>
   )
 }
 

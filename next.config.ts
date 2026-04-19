@@ -14,6 +14,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  async redirects() {
+    return [{ source: '/:locale/signin', destination: '/:locale/login', permanent: true }]
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },

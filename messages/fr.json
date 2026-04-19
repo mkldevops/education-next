@@ -620,7 +620,8 @@
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Page mise à jour",
-          "error": "Erreur lors de la mise à jour"
+          "error": "Erreur lors de la mise à jour",
+          "noBlocks": "Aucun bloc"
         },
         "delete": {
           "confirm": "Supprimer cette page ? Cette action est irréversible.",
@@ -721,13 +722,22 @@
           "totalPaid": "Total payé",
           "remainingBalance": "Solde restant"
         },
+        "tabs": {
+          "overview": "Résumé",
+          "children": "Élèves",
+          "payments": "Paiements",
+          "activity": "Activité"
+        },
         "sections": {
           "parentsTitle": "Parents & Tuteurs",
           "financialTitle": "Résumé financier",
-          "childrenTitle": "Enfants",
+          "childrenTitle": "Élèves",
           "paymentsTitle": "Historique des paiements",
           "activityTitle": "Activité récente",
-          "assignmentsTitle": "Affectations de classe"
+          "assignmentsTitle": "Affectations de classe",
+          "noChildren": "Aucun élève dans cette famille",
+          "noPayments": "Aucun paiement enregistré",
+          "noActivity": "Aucune activité récente"
         },
         "childCard": {
           "birthday": "Date de naissance",

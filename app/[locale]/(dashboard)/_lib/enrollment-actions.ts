@@ -31,6 +31,7 @@ export async function createEnrollmentAction(data: CreateEnrollmentInput) {
   const result = await createEnrollment(data)
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/enrollments')
+  revalidatePath('/dashboard/families', 'layout')
   return result
 }
 

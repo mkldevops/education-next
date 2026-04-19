@@ -36,3 +36,4 @@ prisma/*.db
 
 # Claude Code
 .claude/worktrees/
+.claude/settings.local.json
