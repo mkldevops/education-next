@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -80,7 +80,6 @@ function CreateEnrollmentForm({
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
-  const [effectiveStudentId] = useState(defaultStudentId)
 
   useEffect(() => {
     if (defaultOpen) {
@@ -115,8 +114,8 @@ function CreateEnrollmentForm({
     <form onSubmit={handleSubmit}>
       <DialogBody>
         <div className="space-y-4">
-          {effectiveStudentId ? (
-            <input type="hidden" name="studentId" value={effectiveStudentId} />
+          {defaultStudentId ? (
+            <input type="hidden" name="studentId" value={defaultStudentId} />
           ) : (
             <div className="space-y-2">
               <Label htmlFor="enroll-student">{t('selectStudent')}</Label>
