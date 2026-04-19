@@ -33,11 +33,15 @@ const getFamilyName = cache(async (id: string) =>
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
-  const [name, t] = await Promise.all([
-    getFamilyName(id),
+  const [{ role, familyId }, t] = await Promise.all([
+    getSessionWithRole(),
     getTranslations({ locale, namespace: 'dashboard.pages.familyDetails' }),
   ])
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
+  if (!isAdmin && familyId !== id) return { title: t('title') }
+
+  const name = await getFamilyName(id)
   return { title: name || t('title') }
 }
 
