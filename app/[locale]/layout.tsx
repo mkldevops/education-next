@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { NextIntlClientProvider } from 'next-intl'
@@ -13,6 +13,11 @@ import '@/styles/globals.css'
 type Props = {
   children: React.ReactNode
   params: Promise<{ locale: string }>
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export function generateStaticParams() {

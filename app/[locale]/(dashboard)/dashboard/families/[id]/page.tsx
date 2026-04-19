@@ -1,12 +1,16 @@
 import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { Tabs } from '@/components/ui/tabs/tabs'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
+import { CreateStudentDialog } from '../../students/_components/create-student-dialog'
 import { DeactivateFamilyButton } from '../_components/deactivate-family-button'
 import { EditFamilyDialog } from '../_components/edit-family-dialog'
 import { ActivityFeed } from './_components/activity-feed'
@@ -18,6 +22,7 @@ import { PaymentHistoryTable } from './_components/payment-history-table'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
+  searchParams: Promise<{ action?: string; studentId?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -30,9 +35,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function FamilyDetailPage({ params }: Props) {
+export default async function FamilyDetailPage({ params, searchParams }: Props) {
   await connection()
   const { locale, id } = await params
+  const { action, studentId } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.familyDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -101,6 +107,18 @@ export default async function FamilyDetailPage({ params }: Props) {
 
   if (!family) notFound()
 
+  const selectedPeriodId = (await cookies()).get('selected_period')?.value ?? null
+  const [plans, classes] = isAdmin
+    ? await Promise.all([
+        db.plan.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
+        db.classPeriod.findMany({
+          where: { isActive: true, ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}) },
+          include: { level: true, period: true },
+          orderBy: { name: 'asc' },
+        }),
+      ])
+    : [[], []]
+
   const students = family.persons.filter(
     (
       fp
@@ -109,7 +127,12 @@ export default async function FamilyDetailPage({ params }: Props) {
     } => fp.person.student !== null
   )
 
-  const allEnrollments = students.flatMap((s) => s.person.student.enrollments)
+  const allEnrollments = students.flatMap((s) =>
+    s.person.student.enrollments.map((e) => ({
+      ...e,
+      studentName: `${s.person.name} ${s.person.lastname}`,
+    }))
+  )
   const totalDue = allEnrollments.reduce((sum, e) => sum + Number(e.totalAmount), 0)
   const totalDiscount = allEnrollments.reduce((sum, e) => sum + Number(e.discount), 0)
   const totalPaid = family.payments.reduce((sum, p) => sum + Number(p.amount), 0)
@@ -136,142 +159,158 @@ export default async function FamilyDetailPage({ params }: Props) {
         showActions={isAdmin}
       >
         {isAdmin && (
-          <div className="flex gap-2">
-            <EditFamilyDialog
-              family={{
-                id: family.id,
-                name: family.name,
-                emergencyContact: family.emergencyContact,
-                authorizedPickup: family.authorizedPickup,
-              }}
+          <>
+            <CreateEnrollmentDialog
+              students={students.map((s) => ({
+                id: s.person.student.id,
+                name: `${s.person.lastname} ${s.person.name}`,
+              }))}
+              plans={plans.map((p) => ({ id: p.id, name: p.name }))}
+              classes={classes.map((c) => ({
+                id: c.id,
+                name: `${c.name} (${c.level.name} — ${c.period.name})`,
+              }))}
+              defaultOpen={action === 'addEnrollment'}
+              defaultStudentId={studentId}
+              redirectTo={`/dashboard/families/${family.id}`}
+              showTrigger={false}
             />
-            <DeactivateFamilyButton familyId={family.id} />
-          </div>
+            <div className="flex gap-2">
+              <CreateStudentDialog familyId={family.id} defaultOpen={action === 'addStudent'} />
+              <EditFamilyDialog
+                family={{
+                  id: family.id,
+                  name: family.name,
+                  emergencyContact: family.emergencyContact,
+                  authorizedPickup: family.authorizedPickup,
+                }}
+              />
+              <DeactivateFamilyButton familyId={family.id} />
+            </div>
+          </>
         )}
       </HeroBanner>
 
-      {allEnrollments.some((e) => e.status === 'PENDING') && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-amber-900">{t('alert.needsAttention')}</h3>
-            <p className="text-sm text-amber-800 mt-1">
-              {t('alert.pendingCount', {
-                count: allEnrollments.filter((e) => e.status === 'PENDING').length,
-              })}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="text-sm font-medium text-amber-700 hover:text-amber-900 whitespace-nowrap"
-          >
-            {t('alert.assignNow')}
-          </button>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label={t('kpis.enrolledChildren')} value={enrolledChildren} icon="👶" />
-        <KPICard
-          label={t('kpis.totalEnrollments')}
-          value={allEnrollments.length}
-          subValue={`${activeEnrollments} ${t('kpis.active')}`}
-          icon="📚"
-        />
-        <KPICard
-          label={t('kpis.totalPaid')}
-          value={`€${formatAmount(totalPaid)}`}
-          icon="✓"
-          color="green"
-        />
-        <KPICard
-          label={t('kpis.remainingBalance')}
-          value={`€${formatAmount(remainingBalance)}`}
-          icon="⚠"
-          color={remainingBalance > 0 ? 'amber' : 'green'}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('sections.parentsTitle')}</h2>
-          <ParentsSection persons={family.persons} />
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {t('sections.financialTitle')}
-          </h2>
-          <FinancialSummary
-            totalDue={totalDue}
-            totalPaid={totalPaid}
-            totalDiscount={totalDiscount}
-            remainingBalance={remainingBalance}
-          />
-        </Card>
-      </div>
-
-      {students.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {t('sections.childrenTitle')}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {students.map((student) => (
-              <ChildCard key={student.person.id} student={student} locale={locale} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {family.payments.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {t('sections.paymentsTitle')}
-          </h2>
-          <PaymentHistoryTable payments={family.payments} locale={locale} />
-        </div>
-      )}
-
-      {allEnrollments.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {t('sections.activityTitle')}
-            </h2>
-            <ActivityFeed enrollments={allEnrollments} payments={family.payments} locale={locale} />
-          </div>
-
-          {allEnrollments.some((e) => e.classAssignments.length > 0) && (
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                {t('sections.assignmentsTitle')}
-              </h2>
-              <Card className="p-4 space-y-3">
-                {allEnrollments.map((enrollment) =>
-                  enrollment.classAssignments.map((assignment) => (
-                    <div
-                      key={assignment.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {assignment.classPeriod.name}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {assignment.classPeriod.level.name} • {assignment.classPeriod.period.name}
-                        </p>
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {new Date(assignment.startAt).toLocaleDateString(locale)}
-                      </span>
+      <Tabs
+        tabs={[
+          {
+            label: t('tabs.overview'),
+            content: (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <KPICard label={t('kpis.enrolledChildren')} value={enrolledChildren} icon="👶" />
+                  <KPICard
+                    label={t('kpis.totalEnrollments')}
+                    value={allEnrollments.length}
+                    subValue={`${activeEnrollments} ${t('kpis.active')}`}
+                    icon="📚"
+                  />
+                  <KPICard
+                    label={t('kpis.totalPaid')}
+                    value={`€${formatAmount(totalPaid)}`}
+                    icon="✓"
+                    color="green"
+                  />
+                  <KPICard
+                    label={t('kpis.remainingBalance')}
+                    value={`€${formatAmount(remainingBalance)}`}
+                    icon="⚠"
+                    color={remainingBalance > 0 ? 'amber' : 'green'}
+                  />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      {t('sections.parentsTitle')}
+                    </h2>
+                    <ParentsSection persons={family.persons} />
+                  </Card>
+                  <Card className="p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      {t('sections.financialTitle')}
+                    </h2>
+                    <FinancialSummary
+                      totalDue={totalDue}
+                      totalPaid={totalPaid}
+                      totalDiscount={totalDiscount}
+                      remainingBalance={remainingBalance}
+                    />
+                  </Card>
+                </div>
+              </div>
+            ),
+          },
+          {
+            label: t('tabs.children'),
+            content: (
+              <div className="space-y-4">
+                {allEnrollments.some((e) => e.status === 'PENDING') && (
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-amber-900">
+                        {t('alert.needsAttention')}
+                      </h3>
+                      <p className="text-sm text-amber-800 mt-1">
+                        {t('alert.pendingCount', {
+                          count: allEnrollments.filter((e) => e.status === 'PENDING').length,
+                        })}
+                      </p>
                     </div>
-                  ))
+                  </div>
                 )}
-              </Card>
-            </div>
-          )}
-        </div>
-      )}
+                {students.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {students.map((student) => (
+                      <ChildCard
+                        key={student.person.id}
+                        student={student}
+                        locale={locale}
+                        familyId={family.id}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-8">
+                    {t('sections.noChildren')}
+                  </p>
+                )}
+              </div>
+            ),
+          },
+          {
+            label: t('tabs.payments'),
+            content: (
+              <div className="space-y-6">
+                {family.payments.length > 0 ? (
+                  <PaymentHistoryTable payments={family.payments} locale={locale} />
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-8">
+                    {t('sections.noPayments')}
+                  </p>
+                )}
+              </div>
+            ),
+          },
+          {
+            label: t('tabs.activity'),
+            content: (
+              <div className="space-y-6">
+                {allEnrollments.length > 0 ? (
+                  <ActivityFeed
+                    enrollments={allEnrollments}
+                    payments={family.payments}
+                    locale={locale}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-8">
+                    {t('sections.noActivity')}
+                  </p>
+                )}
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

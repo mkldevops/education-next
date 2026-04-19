@@ -28,7 +28,6 @@ export async function POST(request: Request) {
     const result = await verifyPasskeyAuthentication(body, body.challengeId)
 
     if (typeof result === 'string') {
-      console.error('[passkey/authenticate] authentication failed:', result)
       return NextResponse.json({ error: 'authenticationFailed' }, { status: 400 })
     }
 

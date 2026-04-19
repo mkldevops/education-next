@@ -23,7 +23,7 @@ export function CreateFamilyDialog({ defaultOpen = false }: { defaultOpen?: bool
   const t = useTranslations('dashboard.pages.families.create')
 
   return (
-    <Dialog>
+    <Dialog initialOpen={defaultOpen}>
       <DialogTrigger asChild>
         <Button>+ {t('title')}</Button>
       </DialogTrigger>
@@ -73,6 +73,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
       } else {
         toast.success(t('success'))
         setOpen(false)
+        router.push(`/dashboard/families/${result.id}`)
       }
     })
   }

@@ -25,15 +25,17 @@ interface Family {
 
 export function CreateStudentDialog({
   families,
+  familyId,
   defaultOpen = false,
 }: {
-  families: Family[]
+  families?: Family[]
+  familyId?: string
   defaultOpen?: boolean
 }) {
   const t = useTranslations('dashboard.pages.students.create')
 
   return (
-    <Dialog>
+    <Dialog initialOpen={defaultOpen}>
       <DialogTrigger>
         <Button>+ {t('title')}</Button>
       </DialogTrigger>
@@ -41,7 +43,7 @@ export function CreateStudentDialog({
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreateStudentForm families={families} defaultOpen={defaultOpen} />
+        <CreateStudentForm families={families} familyId={familyId} defaultOpen={defaultOpen} />
       </DialogContent>
     </Dialog>
   )
@@ -49,9 +51,11 @@ export function CreateStudentDialog({
 
 function CreateStudentForm({
   families,
+  familyId,
   defaultOpen = false,
 }: {
-  families: Family[]
+  families?: Family[]
+  familyId?: string
   defaultOpen?: boolean
 }) {
   const t = useTranslations('dashboard.pages.students.create')
@@ -62,9 +66,9 @@ function CreateStudentForm({
   useEffect(() => {
     if (defaultOpen) {
       setOpen(true)
-      router.replace('/dashboard/students')
+      router.replace(familyId ? `/dashboard/families/${familyId}` : '/dashboard/students')
     }
-  }, [defaultOpen, setOpen, router])
+  }, [defaultOpen, setOpen, router, familyId])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -96,6 +100,7 @@ function CreateStudentForm({
       } else {
         toast.success(t('success'))
         setOpen(false)
+        if (familyId) router.push(`/dashboard/families/${familyId}`)
       }
     })
   }
@@ -104,22 +109,26 @@ function CreateStudentForm({
     <form onSubmit={handleSubmit}>
       <DialogBody>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="student-family">{t('selectFamily')}</Label>
-            <select
-              id="student-family"
-              name="familyId"
-              required
-              disabled={isPending}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
-            >
-              {families.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {familyId ? (
+            <input type="hidden" name="familyId" value={familyId} />
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="student-family">{t('selectFamily')}</Label>
+              <select
+                id="student-family"
+                name="familyId"
+                required
+                disabled={isPending}
+                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              >
+                {families?.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="student-name">{t('firstname')}</Label>

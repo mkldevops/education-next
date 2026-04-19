@@ -12,6 +12,7 @@ import { formatAmount } from '@/lib/decimal'
 
 type EnrollmentWithRelation = Enrollment & {
   plan: Plan
+  studentName?: string
   classAssignments: Array<
     ClassAssignment & {
       classPeriod: ClassPeriod
@@ -40,6 +41,7 @@ type Activity = {
   type: 'payment' | 'enrollment' | 'assignment'
   title: string
   description: string
+  student?: string
   color: string
 }
 
@@ -54,7 +56,8 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
       date: payment.paidAt,
       type: 'payment',
       title: t('activity.payment'),
-      description: `€${formatAmount(payment.amount)} - ${payment.enrollment.plan.name}`,
+      description: `€${formatAmount(payment.amount)} — ${payment.enrollment.plan.name}`,
+      student: `${payment.enrollment.student.person.name} ${payment.enrollment.student.person.lastname}`,
       color: 'bg-green-500',
     })
   })
@@ -66,6 +69,7 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
       type: 'enrollment',
       title: t('activity.enrollment'),
       description: enrollment.plan.name,
+      student: enrollment.studentName,
       color: 'bg-blue-500',
     })
 
@@ -76,6 +80,7 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
         type: 'assignment',
         title: t('activity.assignment'),
         description: assignment.classPeriod.name,
+        student: enrollment.studentName,
         color: 'bg-purple-500',
       })
     })
@@ -104,6 +109,9 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900">{activity.title}</p>
             <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{activity.description}</p>
+            {activity.student && (
+              <p className="text-xs font-medium text-gray-700 mt-0.5">{activity.student}</p>
+            )}
             <p className="text-xs text-gray-500 mt-1">{activity.date.toLocaleDateString(locale)}</p>
           </div>
         </div>

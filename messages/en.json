@@ -620,7 +620,8 @@
           "cancel": "Cancel",
           "submit": "Save",
           "success": "Page updated",
-          "error": "Error updating page"
+          "error": "Error updating page",
+          "noBlocks": "No blocks yet. Add one below."
         },
         "delete": {
           "confirm": "Delete this page? This action cannot be undone.",
@@ -721,13 +722,22 @@
           "totalPaid": "Total Paid",
           "remainingBalance": "Remaining Balance"
         },
+        "tabs": {
+          "overview": "Overview",
+          "children": "Students",
+          "payments": "Payments",
+          "activity": "Activity"
+        },
         "sections": {
           "parentsTitle": "Parents & Tutors",
           "financialTitle": "Financial Summary",
-          "childrenTitle": "Children",
+          "childrenTitle": "Students",
           "paymentsTitle": "Payment History",
           "activityTitle": "Recent Activity",
-          "assignmentsTitle": "Class Assignments"
+          "assignmentsTitle": "Class Assignments",
+          "noChildren": "No students in this family",
+          "noPayments": "No payments recorded",
+          "noActivity": "No recent activity"
         },
         "childCard": {
           "birthday": "Birthday",
