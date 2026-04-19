@@ -8,6 +8,7 @@ const SESSION_COOKIE = 'better-auth.session_token'
 const SESSION_TTL_DAYS = 7
 const RATE_LIMIT = 10
 const RATE_WINDOW_MS = 60 * 1000
+const MAX_TRACKED_IPS = 10_000
 
 const ipTimestamps = new Map<string, number[]>()
 
@@ -17,7 +18,15 @@ function isRateLimited(ip: string): boolean {
   if (recent.length >= RATE_LIMIT) return true
   recent.push(now)
   ipTimestamps.set(ip, recent)
+  if (ipTimestamps.size > MAX_TRACKED_IPS) {
+    ipTimestamps.delete(ipTimestamps.keys().next().value!)
+  }
   return false
+}
+
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for')
+  return xff?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? 'unknown'
 }
 
 function generateToken() {
@@ -43,14 +52,20 @@ const AuthBodySchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const ip =
-      request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown'
+    const ip = getClientIp(request)
 
     if (isRateLimited(ip)) {
       return NextResponse.json({ error: 'tooManyRequests' }, { status: 429 })
     }
 
-    const parsed = AuthBodySchema.safeParse(await request.json())
+    let rawBody: unknown
+    try {
+      rawBody = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'invalidRequest' }, { status: 400 })
+    }
+
+    const parsed = AuthBodySchema.safeParse(rawBody)
     if (!parsed.success) {
       return NextResponse.json({ error: 'invalidRequest' }, { status: 400 })
     }
