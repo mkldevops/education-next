@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { cache } from 'react'
 import { z } from 'zod'
 import { Tabs } from '@/components/ui/tabs/tabs'
 import { db } from '@/lib/db'
@@ -26,14 +27,18 @@ type Props = {
   searchParams: Promise<{ action?: string; studentId?: string }>
 }
 
+const getFamilyName = cache(async (id: string) =>
+  db.family.findUnique({ where: { id }, select: { name: true } }).then((f) => f?.name)
+)
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
-  const family = await db.family.findUnique({ where: { id } })
-  const t = await getTranslations({ locale, namespace: 'dashboard.pages.familyDetails' })
+  const [name, t] = await Promise.all([
+    getFamilyName(id),
+    getTranslations({ locale, namespace: 'dashboard.pages.familyDetails' }),
+  ])
 
-  return {
-    title: family?.name || t('title'),
-  }
+  return { title: name || t('title') }
 }
 
 export default async function FamilyDetailPage({ params, searchParams }: Props) {
@@ -49,67 +54,67 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   if (!isAdmin && familyId !== id) notFound()
 
-  const family = await db.family.findUnique({
-    where: { id },
-    include: {
-      persons: {
-        where: { person: { isActive: true } },
-        include: {
-          person: {
-            include: {
-              student: {
-                where: { isActive: true },
-                include: {
-                  enrollments: {
-                    where: { isActive: true },
-                    include: {
-                      plan: true,
-                      classAssignments: {
-                        where: { endAt: null },
-                        include: {
-                          classPeriod: {
-                            include: {
-                              period: true,
-                              level: true,
+  const [family, cookieStore] = await Promise.all([
+    db.family.findUnique({
+      where: { id },
+      include: {
+        persons: {
+          where: { person: { isActive: true } },
+          include: {
+            person: {
+              include: {
+                student: {
+                  where: { isActive: true },
+                  include: {
+                    enrollments: {
+                      where: { isActive: true },
+                      include: {
+                        plan: true,
+                        classAssignments: {
+                          where: { endAt: null },
+                          include: {
+                            classPeriod: {
+                              include: {
+                                period: true,
+                                level: true,
+                              },
                             },
                           },
                         },
                       },
-                      payments: {
-                        where: { isActive: true },
-                      },
                     },
                   },
                 },
-              },
-              phoneNumbers: {
-                where: { isActive: true },
+                phoneNumbers: {
+                  where: { isActive: true },
+                },
               },
             },
           },
         },
-      },
-      payments: {
-        where: { isActive: true },
-        include: {
-          enrollment: {
-            include: {
-              student: {
-                include: { person: true },
+        payments: {
+          where: { isActive: true },
+          include: {
+            enrollment: {
+              include: {
+                student: {
+                  include: { person: true },
+                },
+                plan: true,
               },
-              plan: true,
             },
           },
+          orderBy: { paidAt: 'desc' as const },
         },
-        orderBy: { paidAt: 'desc' as const },
       },
-    },
-  })
+    }),
+    cookies(),
+  ])
 
   if (!family) notFound()
 
-  const rawPeriod = (await cookies()).get('selected_period')?.value
-  const selectedPeriodId = z.string().cuid().safeParse(rawPeriod).data ?? null
+  const rawPeriod = cookieStore.get('selected_period')?.value
+  const selectedPeriodId = z.uuid().safeParse(rawPeriod).data ?? null
   const [plans, classes] = isAdmin
     ? await Promise.all([
         db.plan.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
