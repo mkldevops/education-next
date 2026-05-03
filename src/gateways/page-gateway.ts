@@ -1,3 +1,4 @@
+import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import type { PageInput } from '@/use-cases/pages/schemas'
 
@@ -37,7 +38,7 @@ export const pageGateway = {
     db.page.create({
       data: {
         ...data,
-        blocks: data.blocks as unknown as Record<string, unknown>[],
+        blocks: data.blocks as Prisma.InputJsonValue,
       },
     }),
 
@@ -46,7 +47,7 @@ export const pageGateway = {
       where: { id },
       data: {
         ...data,
-        blocks: data.blocks as unknown as Record<string, unknown>[],
+        blocks: data.blocks as Prisma.InputJsonValue,
       },
     }),
 

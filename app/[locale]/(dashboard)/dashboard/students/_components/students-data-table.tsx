@@ -1,14 +1,5 @@
 'use client'
 
-import type {
-  ClassAssignment,
-  ClassPeriod,
-  Enrollment,
-  Family,
-  FamilyPerson,
-  Person,
-  Student,
-} from '@prisma/client'
 import {
   type ColumnDef,
   flexRender,
@@ -26,6 +17,15 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { cn } from '@/components/ui/utils'
+import type {
+  ClassAssignment,
+  ClassPeriod,
+  Enrollment,
+  Family,
+  FamilyPerson,
+  Person,
+  Student,
+} from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 
 type StudentRow = Student & {

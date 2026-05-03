@@ -1,5 +1,5 @@
-import type { FamilyPerson, Person, PhoneNumber } from '@prisma/client'
 import { getTranslations } from 'next-intl/server'
+import type { FamilyPerson, Person, PhoneNumber } from '@/generated/prisma/client'
 
 type PersonWithRelation = FamilyPerson & {
   person: Person & {

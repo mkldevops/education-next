@@ -1,6 +1,6 @@
 import { Card } from '@peaklab/ui'
-import type { Enrollment, Payment, PaymentMethod, Plan, Student } from '@prisma/client'
 import { getTranslations } from 'next-intl/server'
+import type { Enrollment, Payment, PaymentMethod, Plan, Student } from '@/generated/prisma/client'
 import { formatAmount } from '@/lib/decimal'
 
 type PaymentWithRelation = Payment & {

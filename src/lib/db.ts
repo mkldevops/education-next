@@ -1,4 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import type { PrismaClient } from '@/generated/prisma/client'
+import { PrismaClient as PrismaClientBase } from '@/generated/prisma/client'
 
 function createSoftDeleteExtension(client: PrismaClient) {
   return client.$extends({
@@ -53,17 +55,31 @@ function hasIsActive(model: string | undefined): boolean {
   return model !== undefined && modelsWithIsActive.has(model)
 }
 
+type ExtendedClient = ReturnType<typeof createSoftDeleteExtension>
+
 const globalForPrisma = globalThis as unknown as {
-  prisma: ReturnType<typeof createSoftDeleteExtension> | undefined
+  prisma: ExtendedClient | undefined
 }
 
-function createClient() {
-  const base = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  })
+function createClient(): ExtendedClient {
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is required')
+  }
+  const adapter = new PrismaPg({ connectionString })
+  const base = new PrismaClientBase({ adapter })
   return createSoftDeleteExtension(base)
 }
 
-export const db = globalForPrisma.prisma ?? createClient()
+function getClient(): ExtendedClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createClient()
+  }
+  return globalForPrisma.prisma
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+export const db = new Proxy({} as ExtendedClient, {
+  get(_, prop) {
+    return Reflect.get(getClient(), prop)
+  },
+})

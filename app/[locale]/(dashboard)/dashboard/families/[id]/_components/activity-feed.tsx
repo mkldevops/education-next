@@ -1,4 +1,5 @@
 import { Card } from '@peaklab/ui'
+import { getTranslations } from 'next-intl/server'
 import type {
   ClassAssignment,
   ClassPeriod,
@@ -6,8 +7,7 @@ import type {
   Payment,
   Plan,
   Student,
-} from '@prisma/client'
-import { getTranslations } from 'next-intl/server'
+} from '@/generated/prisma/client'
 import { formatAmount } from '@/lib/decimal'
 
 type EnrollmentWithRelation = Enrollment & {

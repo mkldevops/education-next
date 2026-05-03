@@ -1,4 +1,4 @@
-import type { PaymentMethod } from '@prisma/client'
+import type { PaymentMethod } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
 export const paymentGateway = {

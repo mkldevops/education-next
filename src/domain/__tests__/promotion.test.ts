@@ -1,5 +1,5 @@
-import type { Enrollment, Level } from '@prisma/client'
 import { describe, expect, it } from 'vitest'
+import type { Enrollment, Level } from '@/generated/prisma/client'
 import { isEligibleForPromotion, type PromotionCandidate } from '../promotion'
 
 describe('promotion domain', () => {

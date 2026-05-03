@@ -1,4 +1,4 @@
-import type { Enrollment, Level } from '@prisma/client'
+import type { Enrollment, Level } from '@/generated/prisma/client'
 
 export interface PromotionCandidate {
   enrollment: Enrollment & { student: { id: string } }

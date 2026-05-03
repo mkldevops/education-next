@@ -23,7 +23,15 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "dotenv -- tsx prisma/seed.ts"
+    "db:seed": "dotenv -- tsx prisma/seed.ts",
+    "postinstall": "prisma generate"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma"
+    ]
   },
   "lint-staged": {
     "*.{js,ts,jsx,tsx,json,css,md}": [
@@ -31,7 +39,8 @@
     ]
   },
   "dependencies": {
-    "@prisma/client": "^6.19.2",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.0",
     "@tanstack/react-table": "^8.21.3",
@@ -43,6 +52,7 @@
     "motion": "^12.34.4",
     "next": "^16.1.6",
     "next-intl": "^4.8.3",
+    "pg": "^8.20.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "resend": "^4.8.0",
@@ -66,9 +76,8 @@
     "knip": "^5.85.0",
     "lint-staged": "^16.3.1",
     "mysql2": "^3.22.0",
-    "pg": "^8.20.0",
     "postcss": "^8.5.8",
-    "prisma": "^6.19.2",
+    "prisma": "^7.8.0",
     "tailwindcss": "^4.2.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

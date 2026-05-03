@@ -56,7 +56,8 @@
       "!**/*.config.mjs",
       "!**/*.css",
       "!next-env.d.ts",
-      "!.claude/worktrees"
+      "!.claude/worktrees",
+      "!src/generated"
     ]
   }
 }

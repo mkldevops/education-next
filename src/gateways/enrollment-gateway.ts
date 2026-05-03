@@ -1,4 +1,4 @@
-import type { EnrollmentStatus } from '@prisma/client'
+import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
 export const enrollmentGateway = {

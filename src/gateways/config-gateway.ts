@@ -1,4 +1,4 @@
-import type { ConfigValueType } from '@prisma/client'
+import type { ConfigValueType } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
 export const configGateway = {
