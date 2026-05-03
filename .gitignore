@@ -1,6 +1,7 @@
 # Dependencies
 node_modules
 .pnpm-store
+package-lock.json
 
 # Next.js
 .next
@@ -38,3 +39,4 @@ src/generated/
 # Claude Code
 .claude/worktrees/
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
