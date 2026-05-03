@@ -38,7 +38,7 @@ export const pageGateway = {
     db.page.create({
       data: {
         ...data,
-        blocks: data.blocks as unknown as Prisma.JsonArray,
+        blocks: data.blocks as Prisma.InputJsonValue,
       },
     }),
 
@@ -47,7 +47,7 @@ export const pageGateway = {
       where: { id },
       data: {
         ...data,
-        blocks: data.blocks as unknown as Prisma.JsonArray,
+        blocks: data.blocks as Prisma.InputJsonValue,
       },
     }),
 
