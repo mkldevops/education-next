@@ -1,5 +1,5 @@
-import type { EnrollmentStatus } from '@prisma/client'
 import { describe, expect, it } from 'vitest'
+import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { calculateTotalAmount, VALID_TRANSITIONS, validateTransition } from '../enrollment'
 
 describe('enrollment domain', () => {

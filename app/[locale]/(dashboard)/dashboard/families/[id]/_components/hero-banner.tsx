@@ -1,5 +1,5 @@
-import type { Family } from '@prisma/client'
 import { getTranslations } from 'next-intl/server'
+import type { Family } from '@/generated/prisma/client'
 import { ActionMenu } from './action-menu'
 
 type Props = {

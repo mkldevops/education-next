@@ -1,4 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import type { PrismaClient } from '@/generated/prisma/client'
+import { PrismaClient as PrismaClientBase } from '@/generated/prisma/client'
 
 function createSoftDeleteExtension(client: PrismaClient) {
   return client.$extends({
@@ -58,9 +60,10 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createClient() {
-  const base = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL as string,
   })
+  const base = new PrismaClientBase({ adapter })
   return createSoftDeleteExtension(base)
 }
 

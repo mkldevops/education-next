@@ -1,4 +1,4 @@
-import type { EnrollmentStatus } from '@prisma/client'
+import type { EnrollmentStatus } from '@/generated/prisma/client'
 
 export const VALID_TRANSITIONS: Record<EnrollmentStatus, EnrollmentStatus[]> = {
   PENDING: ['ACTIVE', 'CANCELLED'],

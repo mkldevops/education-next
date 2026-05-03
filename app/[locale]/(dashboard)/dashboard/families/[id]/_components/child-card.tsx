@@ -1,4 +1,5 @@
 import { Card, StatusBadge } from '@peaklab/ui'
+import { getTranslations } from 'next-intl/server'
 import type {
   ClassAssignment,
   ClassPeriod,
@@ -7,8 +8,7 @@ import type {
   Person,
   Plan,
   Student,
-} from '@prisma/client'
-import { getTranslations } from 'next-intl/server'
+} from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { formatAmount } from '@/lib/decimal'
 import { EnrollButton } from './enroll-button'

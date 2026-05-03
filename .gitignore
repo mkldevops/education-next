@@ -33,6 +33,7 @@ yarn-error.log*
 
 # Prisma
 prisma/*.db
+src/generated/
 
 # Claude Code
 .claude/worktrees/

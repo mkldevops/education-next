@@ -1,9 +1,9 @@
 'use client'
 
-import type { EnrollmentStatus } from '@prisma/client'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
+import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import {

@@ -1,6 +1,5 @@
 'use client'
 
-import type { User } from '@prisma/client'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button/button'
@@ -15,6 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Label } from '@/components/ui/input/input'
+import type { User } from '@/generated/prisma/client'
 import { toast } from '@/lib/toast'
 import type { Role } from '@/types/enums'
 import { changeUserRoleAction, deactivateUserAction } from '../../../_lib/user-actions'
