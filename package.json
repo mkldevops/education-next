@@ -2,7 +2,7 @@
   "name": "education-next",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.28.1",
+  "packageManager": "pnpm@11.1.2",
   "scripts": {
     "predev": "docker compose up -d",
     "dev": "dotenv -- next dev",
@@ -28,9 +28,13 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@parcel/watcher",
       "@prisma/client",
       "@prisma/engines",
-      "prisma"
+      "@swc/core",
+      "esbuild",
+      "prisma",
+      "sharp"
     ]
   },
   "lint-staged": {
@@ -44,43 +48,43 @@
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.0",
     "@tanstack/react-table": "^8.21.3",
-    "better-auth": "^1.6.9",
+    "better-auth": "^1.6.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "lucide-react": "^1.14.0",
+    "lucide-react": "^1.16.0",
     "motion": "^12.38.0",
-    "next": "^16.2.4",
-    "next-intl": "^4.11.0",
+    "next": "^16.2.6",
+    "next-intl": "^4.12.0",
     "pg": "^8.20.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "resend": "^6.12.2",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "resend": "^6.12.3",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.5.0",
-    "zod": "^4.4.2",
-    "zustand": "^5.0.12"
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.14",
-    "@tailwindcss/postcss": "^4.2.4",
+    "@biomejs/biome": "^2.4.15",
+    "@tailwindcss/postcss": "^4.3.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.8.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "19.0.0-beta-af1b7da-20250417",
     "dotenv-cli": "^11.0.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "knip": "^6.11.0",
+    "knip": "^6.14.1",
     "lint-staged": "^16.4.0",
     "mysql2": "^3.22.3",
-    "postcss": "^8.5.13",
+    "postcss": "^8.5.14",
     "prisma": "^7.8.0",
-    "tailwindcss": "^4.2.4",
-    "tsx": "^4.21.0",
+    "tailwindcss": "^4.3.0",
+    "tsx": "^4.22.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   }
 }
