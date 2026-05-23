@@ -1,4 +1,4 @@
-const CACHE_NAME = 'education-app-v1'
+const CACHE_NAME = 'education-app-v2'
 const STATIC_ASSETS = ['/', '/manifest.webmanifest', '/icon-192x192.png', '/icon-512x512.png']
 
 self.addEventListener('install', (event) => {
@@ -30,6 +30,11 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') {
+    return
+  }
+
+  const url = new URL(event.request.url)
+  if (url.origin !== self.location.origin || !STATIC_ASSETS.includes(url.pathname)) {
     return
   }
 
