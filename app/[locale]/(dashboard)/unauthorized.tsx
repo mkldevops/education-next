@@ -1,18 +1,25 @@
-import { getTranslations } from 'next-intl/server'
-import { Button } from '@/components/ui/button/button'
-import { Link } from '@/i18n/routing'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { ErrorPageShell } from '@/features/error-pages'
+import { localizedHref } from '@/i18n/localized-href'
 
 export default async function DashboardUnauthorized() {
+  const locale = await getLocale()
   const t = await getTranslations('errorPages')
 
   return (
-    <div className="flex flex-col items-center justify-center py-24 px-4">
-      <p className="text-sm font-medium text-yellow-600">401</p>
-      <h1 className="mt-2 text-3xl font-bold text-gray-900">{t('401.title')}</h1>
-      <p className="mt-2 text-center text-gray-600">{t('401.description')}</p>
-      <Link href="/auth/login" className="mt-6">
-        <Button>{t('actions.login')}</Button>
-      </Link>
-    </div>
+    <ErrorPageShell
+      statusCode="401"
+      title={t('401.title')}
+      description={t('401.description')}
+      minHeight="content"
+      actions={[
+        {
+          href: localizedHref(locale, '/login'),
+          icon: 'login',
+          label: t('actions.login'),
+          variant: 'default',
+        },
+      ]}
+    />
   )
 }

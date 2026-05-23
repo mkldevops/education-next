@@ -1,18 +1,25 @@
-import { getTranslations } from 'next-intl/server'
-import { Button } from '@/components/ui/button/button'
-import { Link } from '@/i18n/routing'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { ErrorPageShell } from '@/features/error-pages'
+import { localizedHref } from '@/i18n/localized-href'
 
 export default async function DashboardNotFound() {
+  const locale = await getLocale()
   const t = await getTranslations('errorPages')
 
   return (
-    <div className="flex flex-col items-center justify-center py-24 px-4">
-      <p className="text-sm font-medium text-gray-500">404</p>
-      <h1 className="mt-2 text-3xl font-bold text-gray-900">{t('404.title')}</h1>
-      <p className="mt-2 text-center text-gray-600">{t('404.description')}</p>
-      <Link href="/dashboard" className="mt-6">
-        <Button>{t('actions.dashboard')}</Button>
-      </Link>
-    </div>
+    <ErrorPageShell
+      statusCode="404"
+      title={t('404.title')}
+      description={t('404.description')}
+      minHeight="content"
+      actions={[
+        {
+          href: localizedHref(locale, '/dashboard'),
+          icon: 'dashboard',
+          label: t('actions.dashboard'),
+          variant: 'default',
+        },
+      ]}
+    />
   )
 }
