@@ -22,7 +22,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link, usePathname } from '@/i18n/routing'
+import { Link, usePathname, useRouter } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 import type { Role } from '@/types/enums'
@@ -162,6 +162,7 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const company = useTranslations('company')
   const pathname = usePathname()
+  const router = useRouter()
   const { expanded, toggle, mobileOpen, setMobileOpen } = useSidebarStore()
 
   const isActive = (href: string) => {
@@ -179,12 +180,9 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
   const handleNavClick = () => setMobileOpen(false)
 
   const handleSignOut = async () => {
-    await signOut({
-      fetchOptions: {
-        onSuccess: () =>
-          window.location.replace(process.env.NEXT_PUBLIC_URL_LANDING_PAGE || '/signin'),
-      },
-    })
+    await signOut()
+    setMobileOpen(false)
+    router.replace('/')
   }
 
   return (

@@ -226,7 +226,7 @@ function HeroForm({
         <TextInput
           value={block.ctaHref ?? ''}
           onChange={(v) => onChange({ ...block, ctaHref: v })}
-          placeholder="/auth/login"
+          placeholder="/login"
         />
       </Field>
       <Field label={t('backgroundImage')}>
@@ -373,7 +373,7 @@ function CtaForm({
         <TextInput
           value={block.ctaHref}
           onChange={(v) => onChange({ ...block, ctaHref: v })}
-          placeholder="/auth/login"
+          placeholder="/login"
           required
         />
       </Field>

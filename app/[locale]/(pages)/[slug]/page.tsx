@@ -14,7 +14,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const page = await getPageBySlug(slug)
-  if (!page?.published) return {}
+  if (!page?.published) notFound()
   return { title: page.title }
 }
 

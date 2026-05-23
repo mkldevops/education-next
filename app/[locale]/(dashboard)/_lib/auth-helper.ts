@@ -2,10 +2,17 @@
 
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
+import { localizedHref } from '@/i18n/localized-href'
 import type { User } from '@/lib/auth'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import type { Role } from '@/types/enums'
+
+async function getLoginHref() {
+  const locale = await getLocale()
+  return localizedHref(locale, '/login')
+}
 
 export async function requireAdmin(): Promise<User | null> {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -43,13 +50,13 @@ export type SessionWithRole = {
 
 export async function getSessionWithRole(): Promise<SessionWithRole> {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) redirect('/signin')
+  if (!session) redirect(await getLoginHref())
 
   const dbUser = await db.user.findUnique({
     where: { id: session.user.id },
     select: { role: true },
   })
-  if (!dbUser) redirect('/signin')
+  if (!dbUser) redirect(await getLoginHref())
 
   let familyId: string | undefined
 

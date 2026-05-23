@@ -3,17 +3,19 @@ import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { DashboardHeader, Sidebar } from '@/features/dashboard'
+import { localizedHref } from '@/i18n/localized-href'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import type { Role } from '@/types/enums'
 
 type Props = {
   children: React.ReactNode
+  params: Promise<{ locale: string }>
 }
 
-async function DashboardSidebarServer() {
+async function DashboardSidebarServer({ locale }: { locale: string }) {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user?.id) redirect('/signin')
+  if (!session?.user?.id) redirect(localizedHref(locale, '/login'))
 
   const [logoConfig, dbUser] = await Promise.all([
     db.config.findFirst({ where: { name: 'logo_url', isActive: true }, select: { value: true } }),
@@ -29,13 +31,14 @@ async function DashboardSidebarServer() {
   return <Sidebar role={role} logoUrl={logoConfig?.value || undefined} userName={userName} />
 }
 
-export default async function DashboardLayout({ children }: Props) {
+export default async function DashboardLayout({ children, params }: Props) {
   await connection()
+  const { locale } = await params
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Suspense fallback={<div className="hidden w-64 bg-white md:block" />}>
-        <DashboardSidebarServer />
+        <DashboardSidebarServer locale={locale} />
       </Suspense>
       <div className="relative flex flex-1 flex-col">
         <div className="sticky top-0 z-10">
