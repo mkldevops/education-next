@@ -663,6 +663,11 @@
         "type": "Type",
         "actions": "Actions",
         "noConfig": "No configuration registered",
+        "notConfigured": "Not configured",
+        "known": {
+          "logo": "Logo",
+          "favicon": "Favicon"
+        },
         "create": {
           "title": "New Parameter",
           "name": "Parameter Name",
