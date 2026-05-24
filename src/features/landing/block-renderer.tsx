@@ -57,16 +57,18 @@ function localizeBlockHref(locale: string, href: string) {
     return href
   }
 
+  const normalizedHref = href.replace(/^(\/?(?:(?:fr|en)\/)?)(sign-?in)(?=$|[/?#])/, '$1login')
+
   const alreadyLocalized = routing.locales.some(
     (supportedLocale) =>
-      href === `/${supportedLocale}` ||
-      href.startsWith(`/${supportedLocale}/`) ||
-      href.startsWith(`/${supportedLocale}?`) ||
-      href.startsWith(`/${supportedLocale}#`)
+      normalizedHref === `/${supportedLocale}` ||
+      normalizedHref.startsWith(`/${supportedLocale}/`) ||
+      normalizedHref.startsWith(`/${supportedLocale}?`) ||
+      normalizedHref.startsWith(`/${supportedLocale}#`)
   )
-  if (alreadyLocalized) return href
+  if (alreadyLocalized) return normalizedHref
 
-  return localizedHref(locale, href)
+  return localizedHref(locale, normalizedHref)
 }
 
 function HeroBlock({ block, locale }: { block: Extract<Block, { type: 'hero' }>; locale: string }) {
