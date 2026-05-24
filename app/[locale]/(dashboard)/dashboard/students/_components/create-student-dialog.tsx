@@ -1,5 +1,6 @@
 'use client'
 
+import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
@@ -37,7 +38,10 @@ export function CreateStudentDialog({
   return (
     <Dialog initialOpen={defaultOpen}>
       <DialogTrigger>
-        <Button>+ {t('title')}</Button>
+        <Button size="sm">
+          <Plus className="h-4 w-4" />
+          {t('title')}
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
