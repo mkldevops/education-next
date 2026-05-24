@@ -1,7 +1,7 @@
 'use client'
 
 import { Card } from '@peaklab/ui'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import { Input, Label } from '@/components/ui/input/input'
@@ -25,6 +25,7 @@ type PageData = {
 
 export function EditPageForm({ page }: { page: PageData }) {
   const t = useTranslations('dashboard.pages.pages.edit')
+  const locale = useLocale()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -154,7 +155,7 @@ export function EditPageForm({ page }: { page: PageData }) {
                     <p className="text-sm">{t('noBlocks')}</p>
                   </div>
                 ) : (
-                  <BlockRenderer blocks={blocks} />
+                  <BlockRenderer blocks={blocks} locale={locale} />
                 )}
               </div>
             </div>
