@@ -192,7 +192,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               redirectTo={`/dashboard/families/${family.id}`}
               showTrigger={false}
             />
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <CreateStudentDialog familyId={family.id} defaultOpen={action === 'addStudent'} />
               <EditFamilyDialog
                 family={{
