@@ -96,6 +96,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-af1b7da-20250417
         version: 19.0.0-beta-af1b7da-20250417
+      dotenv:
+        specifier: 17.4.2
+        version: 17.4.2
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
