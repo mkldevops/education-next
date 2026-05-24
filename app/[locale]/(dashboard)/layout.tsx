@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import { DashboardHeader, Sidebar } from '@/features/dashboard'
 import { localizedHref } from '@/i18n/localized-href'
 import { auth } from '@/lib/auth'
+import { getBrandingConfig } from '@/lib/branding'
 import { db } from '@/lib/db'
 import type { Role } from '@/types/enums'
 
@@ -17,8 +18,8 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user?.id) redirect(localizedHref(locale, '/login'))
 
-  const [logoConfig, dbUser] = await Promise.all([
-    db.config.findFirst({ where: { name: 'logo_url', isActive: true }, select: { value: true } }),
+  const [branding, dbUser] = await Promise.all([
+    getBrandingConfig(),
     db.user.findUnique({
       where: { id: session.user.id },
       select: { role: true },
@@ -28,7 +29,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
   const role: Role = dbUser?.role || 'PARENT'
   const userName = session.user.name || session.user.email || undefined
 
-  return <Sidebar role={role} logoUrl={logoConfig?.value || undefined} userName={userName} />
+  return <Sidebar role={role} logoUrl={branding.logoUrl} userName={userName} />
 }
 
 export default async function DashboardLayout({ children, params }: Props) {

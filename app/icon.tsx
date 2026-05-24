@@ -1,21 +1,17 @@
 import { ImageResponse } from 'next/og'
-import { db } from '@/lib/db'
+import { getBrandingConfig } from '@/lib/branding'
 
 export const dynamic = 'force-dynamic'
 export const size = { width: 32, height: 32 }
 export const contentType = 'image/png'
 
 export default async function Icon() {
-  const config = await db.config.findFirst({
-    where: { name: 'logo_url', isActive: true },
-    select: { value: true },
-  })
-  const logoUrl = config?.value || ''
+  const { faviconUrl } = await getBrandingConfig()
 
   return new ImageResponse(
-    logoUrl ? (
+    faviconUrl ? (
       // biome-ignore lint/performance/noImgElement: ImageResponse requires native <img>
-      <img src={logoUrl} width={32} height={32} alt="logo" />
+      <img src={faviconUrl} width={32} height={32} alt="favicon" />
     ) : (
       <div
         style={{

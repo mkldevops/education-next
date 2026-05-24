@@ -341,10 +341,12 @@ async function seed() {
     data: [
       { name: 'automatic_promotion', value: 'false', valueType: 'BOOLEAN' },
       { name: 'school_name', value: 'École Al-Nour', valueType: 'TEXT' },
+      { name: 'logo_url', value: '', valueType: 'TEXT' },
+      { name: 'favicon_url', value: '', valueType: 'TEXT' },
       { name: 'max_students_per_class', value: '25', valueType: 'NUMBER' },
     ],
   })
-  console.log('Created 3 config entries')
+  console.log('Created 5 config entries')
 
   console.log('\n--- Seed complete ---')
   console.log('Admin login:  admin@school.test / admin123')
