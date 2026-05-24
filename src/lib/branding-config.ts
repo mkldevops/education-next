@@ -15,5 +15,3 @@ export const BRANDING_CONFIG_DEFAULTS = [
     valueType: 'TEXT',
   },
 ] as const
-
-export type BrandingConfigKey = (typeof BRANDING_CONFIG_KEYS)[keyof typeof BRANDING_CONFIG_KEYS]
