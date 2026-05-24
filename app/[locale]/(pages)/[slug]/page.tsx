@@ -27,5 +27,5 @@ export default async function PublicPage({ params }: Props) {
 
   if (!page?.published) notFound()
 
-  return <BlockRenderer blocks={parseBlocks(page.blocks)} branding={branding} />
+  return <BlockRenderer blocks={parseBlocks(page.blocks)} branding={branding} locale={locale} />
 }

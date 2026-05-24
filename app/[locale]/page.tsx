@@ -21,5 +21,5 @@ export default async function HomePage({ params }: Props) {
     return <Hero />
   }
 
-  return <BlockRenderer blocks={parseBlocks(homePage.blocks)} branding={branding} />
+  return <BlockRenderer blocks={parseBlocks(homePage.blocks)} branding={branding} locale={locale} />
 }

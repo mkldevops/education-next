@@ -1,3 +1,5 @@
+import { localizedHref } from '@/i18n/localized-href'
+import { routing } from '@/i18n/routing'
 import type { Block } from '@/use-cases/pages/schemas'
 
 type Branding = {
@@ -6,27 +8,43 @@ type Branding = {
   address?: string | null
 }
 
-export function BlockRenderer({ blocks, branding }: { blocks: Block[]; branding?: Branding }) {
+export function BlockRenderer({
+  blocks,
+  branding,
+  locale,
+}: {
+  blocks: Block[]
+  branding?: Branding
+  locale: string
+}) {
   return (
     <>
       {blocks.map((block, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: blocks have no stable id
-        <BlockSwitch key={`${block.type}-${i}`} block={block} branding={branding} />
+        <BlockSwitch key={`${block.type}-${i}`} block={block} branding={branding} locale={locale} />
       ))}
     </>
   )
 }
 
-function BlockSwitch({ block, branding }: { block: Block; branding?: Branding }) {
+function BlockSwitch({
+  block,
+  branding,
+  locale,
+}: {
+  block: Block
+  branding?: Branding
+  locale: string
+}) {
   switch (block.type) {
     case 'hero':
-      return <HeroBlock block={block} />
+      return <HeroBlock block={block} locale={locale} />
     case 'text':
       return <TextBlock block={block} />
     case 'features':
       return <FeaturesBlock block={block} />
     case 'cta':
-      return <CtaBlock block={block} />
+      return <CtaBlock block={block} locale={locale} />
     case 'stats':
       return <StatsBlock block={block} />
     case 'contact':
@@ -34,7 +52,24 @@ function BlockSwitch({ block, branding }: { block: Block; branding?: Branding })
   }
 }
 
-function HeroBlock({ block }: { block: Extract<Block, { type: 'hero' }> }) {
+function localizeBlockHref(locale: string, href: string) {
+  if (href.startsWith('#') || href.startsWith('//') || /^[a-z][a-z\d+.-]*:/i.test(href)) {
+    return href
+  }
+
+  const alreadyLocalized = routing.locales.some(
+    (supportedLocale) =>
+      href === `/${supportedLocale}` ||
+      href.startsWith(`/${supportedLocale}/`) ||
+      href.startsWith(`/${supportedLocale}?`) ||
+      href.startsWith(`/${supportedLocale}#`)
+  )
+  if (alreadyLocalized) return href
+
+  return localizedHref(locale, href)
+}
+
+function HeroBlock({ block, locale }: { block: Extract<Block, { type: 'hero' }>; locale: string }) {
   return (
     <section
       className="relative flex min-h-[60vh] flex-col items-center justify-center bg-primary px-6 py-24 text-center text-white"
@@ -54,7 +89,7 @@ function HeroBlock({ block }: { block: Extract<Block, { type: 'hero' }> }) {
         {block.subtitle && <p className="text-lg opacity-90 md:text-xl">{block.subtitle}</p>}
         {block.ctaLabel && block.ctaHref && (
           <a
-            href={block.ctaHref}
+            href={localizeBlockHref(locale, block.ctaHref)}
             className="inline-block rounded-lg bg-white px-8 py-3 text-base font-semibold text-primary transition-opacity hover:opacity-90"
           >
             {block.ctaLabel}
@@ -98,14 +133,14 @@ function FeaturesBlock({ block }: { block: Extract<Block, { type: 'features' }> 
   )
 }
 
-function CtaBlock({ block }: { block: Extract<Block, { type: 'cta' }> }) {
+function CtaBlock({ block, locale }: { block: Extract<Block, { type: 'cta' }>; locale: string }) {
   return (
     <section className="bg-primary px-6 py-16 text-center text-white">
       <div className="mx-auto max-w-2xl space-y-6">
         <h2 className="text-3xl font-bold">{block.title}</h2>
         {block.subtitle && <p className="text-lg opacity-90">{block.subtitle}</p>}
         <a
-          href={block.ctaHref}
+          href={localizeBlockHref(locale, block.ctaHref)}
           className="inline-block rounded-lg bg-white px-8 py-3 text-base font-semibold text-primary transition-opacity hover:opacity-90"
         >
           {block.ctaLabel}
