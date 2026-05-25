@@ -28,51 +28,63 @@ export function CreateStudentDialog({
   families,
   familyId,
   defaultOpen = false,
+  redirectTo,
+  showTrigger = true,
 }: {
   families?: Family[]
   familyId?: string
   defaultOpen?: boolean
+  redirectTo?: string
+  showTrigger?: boolean
 }) {
   const t = useTranslations('dashboard.pages.students.create')
+  const routeAfterOpen =
+    redirectTo ?? (familyId ? `/dashboard/families/${familyId}` : '/dashboard/students')
 
   return (
     <Dialog initialOpen={defaultOpen}>
-      <DialogTrigger>
-        <Button size="sm">
-          <Plus className="h-4 w-4" />
-          {t('title')}
-        </Button>
-      </DialogTrigger>
+      <DialogRouteCleanup defaultOpen={defaultOpen} redirectTo={routeAfterOpen} />
+      {showTrigger && (
+        <DialogTrigger>
+          <Button size="sm">
+            <Plus className="h-4 w-4" />
+            {t('title')}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreateStudentForm families={families} familyId={familyId} defaultOpen={defaultOpen} />
+        <CreateStudentForm families={families} familyId={familyId} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function CreateStudentForm({
-  families,
-  familyId,
-  defaultOpen = false,
+function DialogRouteCleanup({
+  defaultOpen,
+  redirectTo,
 }: {
-  families?: Family[]
-  familyId?: string
-  defaultOpen?: boolean
+  defaultOpen: boolean
+  redirectTo: string
 }) {
+  const { setOpen } = useDialog()
+
+  useEffect(() => {
+    if (!defaultOpen) return
+    setOpen(true)
+    window.history.replaceState(null, '', redirectTo)
+  }, [defaultOpen, redirectTo, setOpen])
+
+  return null
+}
+
+function CreateStudentForm({ families, familyId }: { families?: Family[]; familyId?: string }) {
   const t = useTranslations('dashboard.pages.students.create')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
-
-  useEffect(() => {
-    if (defaultOpen) {
-      setOpen(true)
-      router.replace(familyId ? `/dashboard/families/${familyId}` : '/dashboard/students')
-    }
-  }, [defaultOpen, setOpen, router, familyId])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

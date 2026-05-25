@@ -1,35 +1,117 @@
 'use client'
 
 import { Button } from '@peaklab/ui'
-import { CreditCard, Plus, UserPlus } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { Archive, CreditCard, MoreHorizontal, Pencil, Trash2, UserPlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from '@/i18n/routing'
+import { cn } from '@/lib/utils'
 
 type Props = {
   familyId: string
 }
 
+type FamilyAction = 'addPayment' | 'addStudent' | 'editFamily' | 'archiveFamily'
+
+type FamilyActionItem = {
+  key: string
+  label: string
+  icon: LucideIcon
+  action?: FamilyAction
+  danger?: boolean
+  disabled?: boolean
+  title?: string
+}
+
 export function ActionMenu({ familyId }: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.actions')
+  const router = useRouter()
+
+  const handleAction = useCallback(
+    (action: FamilyAction) => {
+      router.push(`/dashboard/families/${familyId}?action=${action}`)
+    },
+    [familyId, router]
+  )
+
+  const primaryActions: FamilyActionItem[] = [
+    {
+      key: 'pay',
+      label: t('pay'),
+      icon: CreditCard,
+      action: 'addPayment',
+    },
+    {
+      key: 'newStudent',
+      label: t('newStudent'),
+      icon: UserPlus,
+      action: 'addStudent',
+    },
+  ]
+
+  const managementActions: FamilyActionItem[] = [
+    {
+      key: 'edit',
+      label: t('edit'),
+      icon: Pencil,
+      action: 'editFamily',
+    },
+    {
+      key: 'delete',
+      label: t('delete'),
+      icon: Trash2,
+      disabled: true,
+      title: t('deleteUnavailable'),
+    },
+    {
+      key: 'archive',
+      label: t('archive'),
+      icon: Archive,
+      action: 'archiveFamily',
+      danger: true,
+    },
+  ]
+
+  const mobileActions = [...primaryActions, ...managementActions]
+
+  return (
+    <>
+      <div className="hidden items-center gap-2 md:flex">
+        {primaryActions.map(({ key, label, icon: Icon, action }) => (
+          <Button key={key} size="sm" onClick={() => action && handleAction(action)}>
+            <Icon className="h-4 w-4" />
+            {label}
+          </Button>
+        ))}
+        <ActionDropdown ariaLabel={t('manage')} items={managementActions} onSelect={handleAction} />
+      </div>
+
+      <div className="md:hidden">
+        <ActionDropdown ariaLabel={t('manage')} items={mobileActions} onSelect={handleAction} />
+      </div>
+    </>
+  )
+}
+
+function ActionDropdown({
+  ariaLabel,
+  items,
+  onSelect,
+}: {
+  ariaLabel: string
+  items: FamilyActionItem[]
+  onSelect: (action: FamilyAction) => void
+}) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
 
   const close = useCallback(() => {
     setOpen(false)
     const trigger = ref.current?.querySelector<HTMLButtonElement>('button[aria-haspopup]')
     trigger?.focus()
   }, [])
-
-  const handleAction = useCallback(
-    (path: string) => {
-      close()
-      router.push(path)
-    },
-    [close, router]
-  )
 
   useEffect(() => {
     if (!open) return
@@ -49,10 +131,13 @@ export function ActionMenu({ familyId }: Props) {
       }
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault()
-        const items = menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')
-        if (!items || items.length === 0) return
-        const focused = document.activeElement
-        const currentIndex = Array.from(items).indexOf(focused as HTMLButtonElement)
+        const items = Array.from(
+          menuRef.current?.querySelectorAll<HTMLButtonElement>(
+            '[role="menuitem"]:not(:disabled)'
+          ) ?? []
+        )
+        if (items.length === 0) return
+        const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
         const next =
           e.key === 'ArrowDown'
             ? currentIndex < items.length - 1
@@ -69,48 +154,60 @@ export function ActionMenu({ familyId }: Props) {
   }, [open, close])
 
   useEffect(() => {
-    if (open) {
-      const firstItem = menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')
-      firstItem?.focus()
-    }
+    if (!open) return
+    const firstItem = menuRef.current?.querySelector<HTMLButtonElement>(
+      '[role="menuitem"]:not(:disabled)'
+    )
+    firstItem?.focus()
   }, [open])
-
-  const actions = [
-    {
-      key: 'addChild',
-      icon: UserPlus,
-      path: `/dashboard/families/${familyId}?action=addStudent`,
-    },
-    {
-      key: 'addPayment',
-      icon: CreditCard,
-      path: `/dashboard/payments?action=create`,
-    },
-  ] as const
 
   return (
     <div ref={ref} className="relative">
-      <Button size="sm" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <Plus className="h-4 w-4" />
-        {t('new')}
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-8 px-0"
+        aria-label={ariaLabel}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <MoreHorizontal className="h-4 w-4" />
       </Button>
-
       {open && (
         <div
           ref={menuRef}
           role="menu"
           className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
         >
-          {actions.map(({ key, icon: Icon, path }) => (
+          {items.map(({ key, label, icon: Icon, action, danger, disabled, title }) => (
             <button
               key={key}
               type="button"
               role="menuitem"
-              onClick={() => handleAction(path)}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={disabled}
+              title={title}
+              onClick={() => {
+                if (!action) return
+                close()
+                onSelect(action)
+              }}
+              className={cn(
+                'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors',
+                disabled && 'cursor-not-allowed text-gray-400',
+                !disabled && !danger && 'text-gray-700 hover:bg-gray-50',
+                !disabled && danger && 'text-red-600 hover:bg-red-50'
+              )}
             >
-              <Icon className="h-4 w-4 text-gray-400" />
-              {t(key)}
+              <Icon
+                className={cn(
+                  'h-4 w-4',
+                  disabled && 'text-gray-300',
+                  !disabled && !danger && 'text-gray-400',
+                  !disabled && danger && 'text-red-500'
+                )}
+              />
+              {label}
             </button>
           ))}
         </div>

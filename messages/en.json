@@ -290,12 +290,12 @@
           "error": "Error updating family"
         },
         "deactivate": {
-          "title": "Deactivate Family",
-          "description": "Are you sure you want to deactivate this family? This will hide the family and its members.",
-          "confirm": "Deactivate",
+          "title": "Archive Family",
+          "description": "Are you sure you want to archive this family? This will hide the family and its members.",
+          "confirm": "Archive",
           "cancel": "Cancel",
-          "success": "Family deactivated",
-          "error": "Error deactivating family"
+          "success": "Family archived",
+          "error": "Error archiving family"
         },
         "addPerson": {
           "title": "Add Member",
@@ -710,6 +710,13 @@
         },
         "actions": {
           "new": "New",
+          "pay": "Pay",
+          "newStudent": "New student",
+          "manage": "Actions",
+          "edit": "Edit",
+          "delete": "Delete",
+          "deleteUnavailable": "Permanent deletion is not available yet",
+          "archive": "Archive",
           "addChild": "Add child",
           "addEnrollment": "New enrollment",
           "addPayment": "New payment"
