@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -17,16 +17,39 @@ import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { deactivateFamilyAction } from '../../../_lib/family-actions'
 
-export function DeactivateFamilyButton({ familyId }: { familyId: string }) {
+type DeactivateFamilyDialogProps = {
+  familyId: string
+  defaultOpen?: boolean
+  redirectTo?: string
+  showTrigger?: boolean
+  title?: string
+}
+
+export function DeactivateFamilyButton(props: DeactivateFamilyDialogProps) {
+  const t = useTranslations('dashboard.pages.families.deactivate')
+
+  return <DeactivateFamilyDialog {...props} title={props.title ?? t('title')} />
+}
+
+export function DeactivateFamilyDialog({
+  familyId,
+  defaultOpen = false,
+  redirectTo,
+  showTrigger = true,
+  title,
+}: DeactivateFamilyDialogProps) {
   const t = useTranslations('dashboard.pages.families.deactivate')
 
   return (
-    <Dialog>
-      <DialogTrigger>
-        <Button variant="destructive" size="sm">
-          {t('title')}
-        </Button>
-      </DialogTrigger>
+    <Dialog initialOpen={defaultOpen}>
+      <DialogRouteCleanup defaultOpen={defaultOpen} redirectTo={redirectTo} />
+      {showTrigger && (
+        <DialogTrigger>
+          <Button variant="destructive" size="sm">
+            {title ?? t('title')}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
@@ -35,6 +58,24 @@ export function DeactivateFamilyButton({ familyId }: { familyId: string }) {
       </DialogContent>
     </Dialog>
   )
+}
+
+function DialogRouteCleanup({
+  defaultOpen,
+  redirectTo,
+}: {
+  defaultOpen: boolean
+  redirectTo?: string
+}) {
+  const { setOpen } = useDialog()
+
+  useEffect(() => {
+    if (!defaultOpen) return
+    setOpen(true)
+    if (redirectTo) window.history.replaceState(null, '', redirectTo)
+  }, [defaultOpen, redirectTo, setOpen])
+
+  return null
 }
 
 function DeactivateForm({ familyId }: { familyId: string }) {

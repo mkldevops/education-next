@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -24,18 +24,29 @@ interface EditFamilyDialogProps {
     emergencyContact: string | null
     authorizedPickup: string | null
   }
+  defaultOpen?: boolean
+  redirectTo?: string
+  showTrigger?: boolean
 }
 
-export function EditFamilyDialog({ family }: EditFamilyDialogProps) {
+export function EditFamilyDialog({
+  family,
+  defaultOpen = false,
+  redirectTo,
+  showTrigger = true,
+}: EditFamilyDialogProps) {
   const t = useTranslations('dashboard.pages.families.edit')
 
   return (
-    <Dialog>
-      <DialogTrigger>
-        <Button variant="outline" size="sm">
-          {t('title')}
-        </Button>
-      </DialogTrigger>
+    <Dialog initialOpen={defaultOpen}>
+      <DialogRouteCleanup defaultOpen={defaultOpen} redirectTo={redirectTo} />
+      {showTrigger && (
+        <DialogTrigger>
+          <Button variant="outline" size="sm">
+            {t('title')}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
@@ -46,7 +57,25 @@ export function EditFamilyDialog({ family }: EditFamilyDialogProps) {
   )
 }
 
-function EditFamilyForm({ family }: EditFamilyDialogProps) {
+function DialogRouteCleanup({
+  defaultOpen,
+  redirectTo,
+}: {
+  defaultOpen: boolean
+  redirectTo?: string
+}) {
+  const { setOpen } = useDialog()
+
+  useEffect(() => {
+    if (!defaultOpen) return
+    setOpen(true)
+    if (redirectTo) window.history.replaceState(null, '', redirectTo)
+  }, [defaultOpen, redirectTo, setOpen])
+
+  return null
+}
+
+function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
   const t = useTranslations('dashboard.pages.families.edit')
   const tCreate = useTranslations('dashboard.pages.families.create')
   const { setOpen } = useDialog()

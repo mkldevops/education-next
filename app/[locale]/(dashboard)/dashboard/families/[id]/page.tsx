@@ -12,6 +12,7 @@ import { formatAmount } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
+import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
 import { CreateStudentDialog } from '../../students/_components/create-student-dialog'
 import { DeactivateFamilyButton } from '../_components/deactivate-family-button'
 import { EditFamilyDialog } from '../_components/edit-family-dialog'
@@ -192,18 +193,34 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               redirectTo={`/dashboard/families/${family.id}`}
               showTrigger={false}
             />
-            <div className="flex items-center gap-2">
-              <CreateStudentDialog familyId={family.id} defaultOpen={action === 'addStudent'} />
-              <EditFamilyDialog
-                family={{
-                  id: family.id,
-                  name: family.name,
-                  emergencyContact: family.emergencyContact,
-                  authorizedPickup: family.authorizedPickup,
-                }}
-              />
-              <DeactivateFamilyButton familyId={family.id} />
-            </div>
+            <RecordPaymentDialog
+              families={[{ id: family.id, name: family.name }]}
+              defaultOpen={action === 'addPayment'}
+              redirectTo={`/dashboard/families/${family.id}`}
+              showTrigger={false}
+            />
+            <CreateStudentDialog
+              familyId={family.id}
+              defaultOpen={action === 'addStudent'}
+              showTrigger={false}
+            />
+            <EditFamilyDialog
+              family={{
+                id: family.id,
+                name: family.name,
+                emergencyContact: family.emergencyContact,
+                authorizedPickup: family.authorizedPickup,
+              }}
+              defaultOpen={action === 'editFamily'}
+              redirectTo={`/dashboard/families/${family.id}`}
+              showTrigger={false}
+            />
+            <DeactivateFamilyButton
+              familyId={family.id}
+              defaultOpen={action === 'archiveFamily'}
+              redirectTo={`/dashboard/families/${family.id}`}
+              showTrigger={false}
+            />
           </>
         )}
       </HeroBanner>

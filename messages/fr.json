@@ -290,12 +290,12 @@
           "error": "Erreur lors de la modification"
         },
         "deactivate": {
-          "title": "Désactiver la famille",
-          "description": "Êtes-vous sûr de vouloir désactiver cette famille ? Cette action masquera la famille et ses membres.",
-          "confirm": "Désactiver",
+          "title": "Archiver la famille",
+          "description": "Êtes-vous sûr de vouloir archiver cette famille ? Cette action masquera la famille et ses membres.",
+          "confirm": "Archiver",
           "cancel": "Annuler",
-          "success": "Famille désactivée",
-          "error": "Erreur lors de la désactivation"
+          "success": "Famille archivée",
+          "error": "Erreur lors de l'archivage"
         },
         "addPerson": {
           "title": "Ajouter un membre",
@@ -710,6 +710,13 @@
         },
         "actions": {
           "new": "Nouveau",
+          "pay": "Payer",
+          "newStudent": "Nouvel élève",
+          "manage": "Actions",
+          "edit": "Modifier",
+          "delete": "Supprimer",
+          "deleteUnavailable": "La suppression définitive n'est pas encore disponible",
+          "archive": "Archiver",
           "addChild": "Ajouter un enfant",
           "addEnrollment": "Nouvelle inscription",
           "addPayment": "Nouveau paiement"

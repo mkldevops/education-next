@@ -22,7 +22,7 @@ export async function HeroBanner({
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{family.name}</h1>
         <div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
@@ -39,7 +39,7 @@ export async function HeroBanner({
       </div>
 
       {(showActions || children) && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start md:self-auto">
           {showActions && <ActionMenu familyId={family.id} />}
           {children}
         </div>

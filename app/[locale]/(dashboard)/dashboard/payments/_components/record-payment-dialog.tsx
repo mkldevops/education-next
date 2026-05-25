@@ -26,45 +26,57 @@ interface Option {
 export function RecordPaymentDialog({
   families,
   defaultOpen = false,
+  redirectTo = '/dashboard/payments',
+  showTrigger = true,
 }: {
   families: Option[]
   defaultOpen?: boolean
+  redirectTo?: string
+  showTrigger?: boolean
 }) {
   const t = useTranslations('dashboard.pages.payments.record')
 
   return (
     <Dialog initialOpen={defaultOpen}>
-      <DialogTrigger>
-        <Button>+ {t('title')}</Button>
-      </DialogTrigger>
+      <DialogRouteCleanup defaultOpen={defaultOpen} redirectTo={redirectTo} />
+      {showTrigger && (
+        <DialogTrigger>
+          <Button>+ {t('title')}</Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <RecordPaymentForm families={families} defaultOpen={defaultOpen} />
+        <RecordPaymentForm families={families} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function RecordPaymentForm({
-  families,
-  defaultOpen = false,
+function DialogRouteCleanup({
+  defaultOpen,
+  redirectTo,
 }: {
-  families: Option[]
-  defaultOpen?: boolean
+  defaultOpen: boolean
+  redirectTo: string
 }) {
+  const { setOpen } = useDialog()
+
+  useEffect(() => {
+    if (!defaultOpen) return
+    setOpen(true)
+    window.history.replaceState(null, '', redirectTo)
+  }, [defaultOpen, redirectTo, setOpen])
+
+  return null
+}
+
+function RecordPaymentForm({ families }: { families: Option[] }) {
   const t = useTranslations('dashboard.pages.payments.record')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
-
-  useEffect(() => {
-    if (defaultOpen) {
-      setOpen(true)
-      router.replace('/dashboard/payments')
-    }
-  }, [defaultOpen, setOpen, router])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
