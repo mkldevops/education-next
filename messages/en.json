@@ -58,89 +58,6 @@
     "title": "École Al-Nour — School Management",
     "description": "Enrollment management and school tracking platform"
   },
-  "navbar": {
-    "home": "Home",
-    "dashboard": "Dashboard",
-    "login": "Login",
-    "logout": "Logout"
-  },
-  "footer": {
-    "tagline": "Enrollment management and school tracking platform for educational institutions.",
-    "legal": "Legal notices",
-    "privacy": "Privacy policy",
-    "copyright": "All rights reserved."
-  },
-  "hero": {
-    "tagline": "School management platform",
-    "title": "Manage your school enrollments with ease",
-    "subtitle": "Enrollments, family tracking, payments and class management — all in one place.",
-    "cta": "Access portal",
-    "secondary": "Learn more"
-  },
-  "pages": {
-    "about": {
-      "title": "About",
-      "description": "Discover our story and values",
-      "intro": "We are an innovative school management platform dedicated to educational institutions.",
-      "mission": {
-        "title": "Our Mission",
-        "description": "Simplify enrollment management and academic tracking for schools and families."
-      },
-      "values": {
-        "title": "Our Values",
-        "innovation": {
-          "title": "Innovation",
-          "description": "We continuously invest in technology to improve our platform."
-        },
-        "quality": {
-          "title": "Quality",
-          "description": "We are committed to providing high-quality service to each user."
-        },
-        "collaboration": {
-          "title": "Collaboration",
-          "description": "We believe in the power of collaboration between schools, families and students."
-        }
-      },
-      "team": {
-        "title": "Our Team",
-        "description": "Our team is made up of professionals passionate about education and technology."
-      }
-    },
-    "privacy": {
-      "title": "Privacy policy",
-      "description": "How we protect your data"
-    },
-    "legal": {
-      "title": "Legal notices",
-      "description": "Legal information about our company",
-      "sections": {
-        "publisher": {
-          "title": "1. Website publisher",
-          "siret": "SIRET"
-        },
-        "director": {
-          "title": "2. Publication director",
-          "content": "The publication director is {name}."
-        },
-        "host": {
-          "title": "3. Host",
-          "intro": "This site is hosted by:"
-        },
-        "intellectual": {
-          "title": "4. Intellectual property",
-          "content": "All content on this site (texts, images, videos) is protected by copyright. Any reproduction, even partial, is prohibited without prior authorization."
-        },
-        "data": {
-          "title": "5. Personal data",
-          "content": "For more information on how we manage your personal data, please consult our privacy policy."
-        },
-        "contact": {
-          "title": "6. Contact",
-          "content": "For any questions regarding these legal notices, you can contact us via our contact form."
-        }
-      }
-    }
-  },
   "auth": {
     "login": {
       "title": "Login",
@@ -233,7 +150,6 @@
       "classes": "Classes",
       "plans": "Pricing Plans",
       "config": "Configuration",
-      "pages": "Pages",
       "users": "Users"
     },
     "sidebar": {
@@ -247,7 +163,6 @@
       "payments": "Payments",
       "plans": "Pricing plans",
       "config": "Configuration",
-      "pages": "Pages",
       "users": "Users",
       "profile": "Profile",
       "settings": "Settings",
@@ -581,79 +496,6 @@
           "submit": "Save",
           "success": "Plan updated",
           "error": "Error updating plan"
-        }
-      },
-      "pages": {
-        "title": "Pages",
-        "noPages": "No pages created",
-        "badge": {
-          "home": "Home",
-          "draft": "Draft"
-        },
-        "action": {
-          "preview": "Preview",
-          "edit": "Edit",
-          "delete": "Delete"
-        },
-        "create": {
-          "title": "New page",
-          "titleLabel": "Title",
-          "slugLabel": "Slug (URL)",
-          "slugPlaceholder": "my-page",
-          "slugHint": "Leave empty to auto-generate from title",
-          "slugError": "This slug is already in use",
-          "isHome": "Homepage",
-          "cancel": "Cancel",
-          "submit": "Create",
-          "success": "Page created",
-          "error": "Error creating page"
-        },
-        "edit": {
-          "title": "Edit page",
-          "sectionMeta": "Information",
-          "sectionBlocks": "Content blocks",
-          "titleLabel": "Title",
-          "slugLabel": "Slug (URL)",
-          "slugError": "This slug is already in use",
-          "isHome": "Homepage",
-          "published": "Published",
-          "cancel": "Cancel",
-          "submit": "Save",
-          "success": "Page updated",
-          "error": "Error updating page",
-          "noBlocks": "No blocks yet. Add one below."
-        },
-        "delete": {
-          "confirm": "Delete this page? This action cannot be undone.",
-          "success": "Page deleted",
-          "error": "Error deleting page"
-        },
-        "blockEditor": {
-          "addBlock": "Add a block",
-          "hero": "Hero",
-          "text": "Text",
-          "features": "Features",
-          "cta": "Call to action",
-          "stats": "Statistics",
-          "contact": "Contact",
-          "fields": {
-            "title": "Title",
-            "subtitle": "Subtitle",
-            "content": "Content",
-            "ctaLabel": "Button text",
-            "ctaHref": "Button link",
-            "backgroundImage": "Background image (URL)",
-            "itemTitle": "Title",
-            "itemDescription": "Description",
-            "icon": "Icon (emoji)",
-            "statValue": "Value (e.g. 500+)",
-            "statLabel": "Label",
-            "showEmail": "Show email",
-            "showPhone": "Show phone",
-            "showAddress": "Show address",
-            "addItem": "Add item",
-            "remove": "Remove"
-          }
         }
       },
       "config": {
@@ -1084,19 +926,6 @@
     "overpayment": "Amount exceeds the remaining balance due",
     "noActiveEnrollments": "No active enrollments for this family",
     "refundExceedsPaid": "Refund exceeds the amount already paid"
-  },
-  "contact": {
-    "title": "Contact Us",
-    "subtitle": "Send us a message and we'll get back to you as soon as possible",
-    "form": {
-      "name": "Name",
-      "email": "Email",
-      "subject": "Subject",
-      "message": "Message",
-      "submit": "Send",
-      "success": "Message sent successfully",
-      "error": "Error sending message"
-    }
   },
   "search": {
     "placeholder": "Search students and families...",

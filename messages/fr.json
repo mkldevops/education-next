@@ -58,89 +58,6 @@
     "title": "École Al-Nour — Gestion scolaire",
     "description": "Plateforme de gestion des inscriptions et du suivi scolaire"
   },
-  "navbar": {
-    "home": "Accueil",
-    "dashboard": "Tableau de bord",
-    "login": "Connexion",
-    "logout": "Déconnexion"
-  },
-  "footer": {
-    "tagline": "Plateforme de gestion des inscriptions et du suivi scolaire pour les établissements d'enseignement.",
-    "legal": "Mentions légales",
-    "privacy": "Politique de confidentialité",
-    "copyright": "Tous droits réservés."
-  },
-  "hero": {
-    "tagline": "Plateforme de gestion scolaire",
-    "title": "Gérez les inscriptions de votre école en toute simplicité",
-    "subtitle": "Inscriptions, suivi des familles, paiements et gestion des classes — tout en un seul endroit.",
-    "cta": "Accéder au portail",
-    "secondary": "En savoir plus"
-  },
-  "pages": {
-    "about": {
-      "title": "À propos",
-      "description": "Découvrez notre histoire et nos valeurs",
-      "intro": "Nous sommes une plateforme de gestion scolaire innovante dédiée aux établissements d'enseignement.",
-      "mission": {
-        "title": "Notre mission",
-        "description": "Simplifier la gestion des inscriptions et du suivi scolaire pour les écoles et les familles."
-      },
-      "values": {
-        "title": "Nos valeurs",
-        "innovation": {
-          "title": "Innovation",
-          "description": "Nous investissons continuellement dans la technologie pour améliorer notre plateforme."
-        },
-        "quality": {
-          "title": "Qualité",
-          "description": "Nous nous engageons à fournir un service de haute qualité à chaque utilisateur."
-        },
-        "collaboration": {
-          "title": "Collaboration",
-          "description": "Nous croyons au pouvoir de la collaboration entre les écoles, les familles et les étudiants."
-        }
-      },
-      "team": {
-        "title": "Notre équipe",
-        "description": "Notre équipe est composée de professionnels passionnés par l'éducation et la technologie."
-      }
-    },
-    "privacy": {
-      "title": "Politique de confidentialité",
-      "description": "Comment nous protégeons vos données"
-    },
-    "legal": {
-      "title": "Mentions légales",
-      "description": "Informations légales sur notre entreprise",
-      "sections": {
-        "publisher": {
-          "title": "1. Éditeur du site",
-          "siret": "SIRET"
-        },
-        "director": {
-          "title": "2. Directeur de la publication",
-          "content": "Le directeur de la publication est {name}."
-        },
-        "host": {
-          "title": "3. Hébergeur",
-          "intro": "Ce site est hébergé par :"
-        },
-        "intellectual": {
-          "title": "4. Propriété intellectuelle",
-          "content": "L'ensemble du contenu de ce site (textes, images, vidéos) est protégé par le droit d'auteur. Toute reproduction, même partielle, est interdite sans autorisation préalable."
-        },
-        "data": {
-          "title": "5. Données personnelles",
-          "content": "Pour plus d'informations sur la gestion de vos données personnelles, veuillez consulter notre politique de confidentialité."
-        },
-        "contact": {
-          "title": "6. Contact",
-          "content": "Pour toute question concernant ces mentions légales, vous pouvez nous contacter via notre formulaire de contact."
-        }
-      }
-    }
-  },
   "auth": {
     "login": {
       "title": "Connexion",
@@ -233,7 +150,6 @@
       "classes": "Classes",
       "plans": "Plans tarifaires",
       "config": "Configuration",
-      "pages": "Pages",
       "users": "Utilisateurs"
     },
     "sidebar": {
@@ -247,7 +163,6 @@
       "payments": "Paiements",
       "plans": "Plans tarifaires",
       "config": "Configuration",
-      "pages": "Pages",
       "users": "Utilisateurs",
       "profile": "Profil",
       "settings": "Paramètres",
@@ -581,79 +496,6 @@
           "submit": "Enregistrer",
           "success": "Plan mis à jour",
           "error": "Erreur lors de la mise à jour"
-        }
-      },
-      "pages": {
-        "title": "Pages",
-        "noPages": "Aucune page créée",
-        "badge": {
-          "home": "Accueil",
-          "draft": "Brouillon"
-        },
-        "action": {
-          "preview": "Aperçu",
-          "edit": "Modifier",
-          "delete": "Supprimer"
-        },
-        "create": {
-          "title": "Nouvelle page",
-          "titleLabel": "Titre",
-          "slugLabel": "Slug (URL)",
-          "slugPlaceholder": "ma-page",
-          "slugHint": "Laissez vide pour générer automatiquement depuis le titre",
-          "slugError": "Ce slug est déjà utilisé",
-          "isHome": "Page d'accueil",
-          "cancel": "Annuler",
-          "submit": "Créer",
-          "success": "Page créée",
-          "error": "Erreur lors de la création"
-        },
-        "edit": {
-          "title": "Modifier la page",
-          "sectionMeta": "Informations",
-          "sectionBlocks": "Blocs de contenu",
-          "titleLabel": "Titre",
-          "slugLabel": "Slug (URL)",
-          "slugError": "Ce slug est déjà utilisé",
-          "isHome": "Page d'accueil",
-          "published": "Publiée",
-          "cancel": "Annuler",
-          "submit": "Enregistrer",
-          "success": "Page mise à jour",
-          "error": "Erreur lors de la mise à jour",
-          "noBlocks": "Aucun bloc"
-        },
-        "delete": {
-          "confirm": "Supprimer cette page ? Cette action est irréversible.",
-          "success": "Page supprimée",
-          "error": "Erreur lors de la suppression"
-        },
-        "blockEditor": {
-          "addBlock": "Ajouter un bloc",
-          "hero": "Héro",
-          "text": "Texte",
-          "features": "Fonctionnalités",
-          "cta": "Appel à l'action",
-          "stats": "Statistiques",
-          "contact": "Contact",
-          "fields": {
-            "title": "Titre",
-            "subtitle": "Sous-titre",
-            "content": "Contenu",
-            "ctaLabel": "Texte du bouton",
-            "ctaHref": "Lien du bouton",
-            "backgroundImage": "Image de fond (URL)",
-            "itemTitle": "Titre",
-            "itemDescription": "Description",
-            "icon": "Icône (emoji)",
-            "statValue": "Valeur (ex: 500+)",
-            "statLabel": "Libellé",
-            "showEmail": "Afficher l'email",
-            "showPhone": "Afficher le téléphone",
-            "showAddress": "Afficher l'adresse",
-            "addItem": "Ajouter un élément",
-            "remove": "Supprimer"
-          }
         }
       },
       "config": {
@@ -1084,19 +926,6 @@
     "overpayment": "Le montant dépasse le solde restant dû",
     "noActiveEnrollments": "Aucune inscription active pour cette famille",
     "refundExceedsPaid": "Le remboursement dépasse le montant déjà payé"
-  },
-  "contact": {
-    "title": "Nous contacter",
-    "subtitle": "Envoyez-nous un message et nous vous répondrons dès que possible",
-    "form": {
-      "name": "Nom",
-      "email": "Email",
-      "subject": "Objet",
-      "message": "Message",
-      "submit": "Envoyer",
-      "success": "Message envoyé avec succès",
-      "error": "Erreur lors de l'envoi du message"
-    }
   },
   "search": {
     "placeholder": "Rechercher élèves et familles...",
