@@ -44,5 +44,6 @@ Do not import `@/lib/auth`, `@/lib/db`, or other server infrastructure into a `'
 ## Intentional Public Flows
 
 Invitation acceptance and the passkey authentication option/verification stages are intentionally
-public. Keep their validation, challenge checks, rate limiting, and error responses intact. Do not
-generalize those exceptions to endpoints that read or mutate user data.
+public. Preserve the validation and error handling each flow implements. For passkey authentication,
+keep challenge verification and the route handler's rate limiter intact. Do not generalize those
+exceptions to endpoints that read or mutate user data.

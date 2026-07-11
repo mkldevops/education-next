@@ -4,11 +4,17 @@ paths:
   - "**/*.spec.*"
   - "vitest.config.ts"
   - "src/test/**"
+  - "src/domain/**"
+  - "src/use-cases/**"
+  - "src/components/**"
+  - "src/features/**"
+  - "app/**/_components/**"
 ---
 
 # Vitest Rules
 
-Scope: **/*.test.*, **/*.spec.*, vitest.config.ts, src/test/**
+Scope: **/*.test.*, **/*.spec.*, vitest.config.ts, src/test/**, src/domain/**, src/use-cases/**,
+  src/components/**, src/features/**, app/**/_components/**
 
 ## Proactive Behavior
 

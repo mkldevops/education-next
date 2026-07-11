@@ -16,8 +16,9 @@ pnpm format
 pnpm type-check
 ```
 
-The pre-commit hook runs `pnpm exec lint-staged`; matching staged JavaScript, TypeScript, JSON, CSS,
-and Markdown files are checked and fixed by Biome. The pre-push hook runs `pnpm test`.
+The pre-commit hook runs `pnpm exec lint-staged`. Its glob includes JavaScript, TypeScript, JSON, CSS,
+and Markdown, but Biome ignores file types excluded or unsupported by the current configuration;
+notably, `biome.json` excludes CSS. The pre-push hook runs `pnpm test`.
 
 ## Formatting and Types
 
