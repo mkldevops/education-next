@@ -117,7 +117,11 @@ export interface DialogBodyProps {
 }
 
 export function DialogBody({ children, className }: DialogBodyProps) {
-  return <div className={cn('space-y-4 px-6 py-4', className)}>{children}</div>
+  return (
+    <div className={cn('max-h-[65vh] space-y-4 overflow-y-auto px-6 py-4', className)}>
+      {children}
+    </div>
+  )
 }
 
 export interface DialogFooterProps {

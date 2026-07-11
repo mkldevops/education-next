@@ -96,6 +96,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
         toast.success(t('success'))
         setOpen(false)
         setParentKeys([0])
+        nextKey.current = 1
         router.push(`/dashboard/families/${result.id}`)
       }
     })

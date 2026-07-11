@@ -1,13 +1,6 @@
 import { db } from '@/lib/db'
 
 export const familyGateway = {
-  create: (data: {
-    name: string
-    emergencyContact?: string
-    authorizedPickup?: string
-    createdById: string
-  }) => db.family.create({ data }),
-
   createWithParents: (data: {
     name: string
     emergencyContact?: string
