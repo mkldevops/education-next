@@ -115,6 +115,17 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
     orderBy: { registeredAt: 'desc' },
   })
 
+  const serializableEnrollments = enrollments.map((enrollment) => ({
+    ...enrollment,
+    totalAmount: Number(enrollment.totalAmount),
+    discount: Number(enrollment.discount),
+    plan: { ...enrollment.plan, amount: Number(enrollment.plan.amount) },
+    payments: enrollment.payments.map((payment) => ({
+      ...payment,
+      amount: Number(payment.amount),
+    })),
+  }))
+
   return (
     <div className="space-y-6">
       <Breadcrumbs
@@ -136,7 +147,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
         )}
       </div>
       <EnrollmentsTable
-        enrollments={enrollments}
+        enrollments={serializableEnrollments}
         isAdmin={isAdmin}
         availableClasses={availableClasses}
         locale={locale}

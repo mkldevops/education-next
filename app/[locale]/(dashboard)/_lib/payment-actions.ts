@@ -12,7 +12,7 @@ export async function recordPaymentAction(data: RecordPaymentInput) {
   const user = await requireAdmin()
   if (!user) return 'unauthorized' as const
   const result = await recordPayment(data)
-  if (typeof result === 'string') return result
+  if (result !== 'OK') return result
   revalidatePath('/dashboard/payments')
   return result
 }

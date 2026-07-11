@@ -371,19 +371,3 @@ model Passkey {
 
   @@index([userId])
 }
-
-model Page {
-  id        String   @id @default(uuid())
-  slug      String   @unique @db.VarChar(100)
-  title     String   @db.VarChar(250)
-  isHome    Boolean  @default(false)
-  published Boolean  @default(true)
-  blocks    Json     @default("[]")
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([slug])
-  @@index([isHome])
-}

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { cloneElement, createContext, isValidElement, useContext, useEffect, useState } from 'react'
 import { cn } from '../utils'
 
 interface DialogContextType {
@@ -33,26 +33,19 @@ export function Dialog({ children, initialOpen = false }: DialogProps) {
 
 export interface DialogTriggerProps {
   children: React.ReactNode
-  asChild?: boolean
 }
 
-export function DialogTrigger({ children, asChild }: DialogTriggerProps) {
+export function DialogTrigger({ children }: DialogTriggerProps) {
   const { setOpen } = useDialog()
 
-  if (asChild) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            setOpen(true)
-          }
-        }}
-        type="button"
-      >
-        {children}
-      </button>
-    )
+  if (isValidElement<{ onClick?: React.MouseEventHandler }>(children)) {
+    const childOnClick = children.props.onClick
+    return cloneElement(children, {
+      onClick: (e: React.MouseEvent) => {
+        childOnClick?.(e)
+        setOpen(true)
+      },
+    })
   }
 
   return (

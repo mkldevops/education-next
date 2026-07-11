@@ -1,6 +1,14 @@
 'use client'
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import {
+  cloneElement,
+  createContext,
+  isValidElement,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { cn } from '../utils'
 
 interface DrawerContextType {
@@ -42,18 +50,19 @@ export function Drawer({ children, open: controlledOpen, onOpenChange }: DrawerP
 
 export interface DrawerTriggerProps {
   children: React.ReactNode
-  asChild?: boolean
 }
 
-export function DrawerTrigger({ children, asChild }: DrawerTriggerProps) {
+export function DrawerTrigger({ children }: DrawerTriggerProps) {
   const { setOpen } = useDrawer()
 
-  if (asChild) {
-    return (
-      <button onClick={() => setOpen(true)} type="button">
-        {children}
-      </button>
-    )
+  if (isValidElement<{ onClick?: React.MouseEventHandler }>(children)) {
+    const childOnClick = children.props.onClick
+    return cloneElement(children, {
+      onClick: (e: React.MouseEvent) => {
+        childOnClick?.(e)
+        setOpen(true)
+      },
+    })
   }
 
   return (
