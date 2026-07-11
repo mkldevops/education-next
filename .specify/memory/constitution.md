@@ -7,7 +7,7 @@
   Expanded sections:
     - Technology Stack: added precise versions, tooling, Docker services
     - Development Workflow: added Clean Architecture flow, conventions,
-      validation, testing, and i18n patterns from CLAUDE.md
+      validation, testing, and i18n patterns from AGENTS.md
   Removed sections: None
   Templates requiring updates:
     - .specify/templates/plan-template.md ✅ (compatible, Source Code
