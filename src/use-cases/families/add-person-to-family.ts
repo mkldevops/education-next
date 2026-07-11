@@ -12,9 +12,12 @@ export async function addPersonToFamily(input: Input) {
   const family = await familyGateway.findById(parsed.data.familyId)
   if (!family) return 'notFound' as const
 
-  const person = await personGateway.create(parsed.data.person)
-
-  await familyGateway.addPerson(parsed.data.familyId, person.id, parsed.data.relationType)
+  const person = await personGateway.createWithFamily(
+    parsed.data.familyId,
+    parsed.data.relationType,
+    parsed.data.person,
+    parsed.data.phoneNumber
+  )
 
   return person
 }

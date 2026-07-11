@@ -195,7 +195,21 @@
           "submit": "Créer",
           "cancel": "Annuler",
           "success": "Famille créée avec succès",
-          "error": "Erreur lors de la création de la famille"
+          "error": "Erreur lors de la création de la famille",
+          "parentsTitle": "Parents",
+          "addParent": "Ajouter un parent",
+          "removeParent": "Retirer",
+          "firstname": "Prénom",
+          "lastname": "Nom",
+          "sex": "Sexe",
+          "male": "Masculin",
+          "female": "Féminin",
+          "email": "Email",
+          "phone": "Téléphone",
+          "addressTitle": "Adresse",
+          "address": "Adresse",
+          "postCode": "Code postal",
+          "city": "Ville"
         },
         "edit": {
           "title": "Modifier la famille",
@@ -229,7 +243,11 @@
           "submit": "Ajouter",
           "cancel": "Annuler",
           "success": "Membre ajouté avec succès",
-          "error": "Erreur lors de l'ajout"
+          "error": "Erreur lors de l'ajout",
+          "phone": "Téléphone",
+          "address": "Adresse",
+          "postCode": "Code postal",
+          "city": "Ville"
         },
         "addPhone": {
           "title": "Ajouter un téléphone",

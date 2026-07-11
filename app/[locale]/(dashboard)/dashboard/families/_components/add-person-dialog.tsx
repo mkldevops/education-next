@@ -52,6 +52,9 @@ function AddPersonForm({ familyId }: { familyId: string }) {
           lastname: formData.get('lastname') as string,
           sex: formData.get('sex') as 'MALE' | 'FEMALE',
           email: (formData.get('email') as string) || undefined,
+          address: (formData.get('address') as string) || undefined,
+          postCode: (formData.get('postCode') as string) || undefined,
+          city: (formData.get('city') as string) || undefined,
         },
         relationType: formData.get('relationType') as
           | 'PARENT'
@@ -59,6 +62,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
           | 'GRANDPARENT'
           | 'SIBLING'
           | 'OTHER',
+        phoneNumber: (formData.get('phoneNumber') as string) || undefined,
       })
       if (typeof result === 'string') {
         toast.error(t('error'))
@@ -120,15 +124,41 @@ function AddPersonForm({ familyId }: { familyId: string }) {
               </select>
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="person-email">{t('email')}</Label>
+              <Input
+                id="person-email"
+                name="email"
+                type="email"
+                maxLength={250}
+                disabled={isPending}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="person-phone">{t('phone')}</Label>
+              <Input
+                id="person-phone"
+                name="phoneNumber"
+                type="tel"
+                maxLength={20}
+                disabled={isPending}
+              />
+            </div>
+          </div>
           <div className="space-y-2">
-            <Label htmlFor="person-email">{t('email')}</Label>
-            <Input
-              id="person-email"
-              name="email"
-              type="email"
-              maxLength={250}
-              disabled={isPending}
-            />
+            <Label htmlFor="person-address">{t('address')}</Label>
+            <Input id="person-address" name="address" maxLength={250} disabled={isPending} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="person-postcode">{t('postCode')}</Label>
+              <Input id="person-postcode" name="postCode" maxLength={10} disabled={isPending} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="person-city">{t('city')}</Label>
+              <Input id="person-city" name="city" maxLength={250} disabled={isPending} />
+            </div>
           </div>
         </div>
       </DialogBody>

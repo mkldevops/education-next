@@ -12,6 +12,28 @@ export const personGateway = {
     city?: string
   }) => db.person.create({ data }),
 
+  createWithFamily: (
+    familyId: string,
+    relationType: 'PARENT' | 'TUTOR' | 'GRANDPARENT' | 'SIBLING' | 'OTHER',
+    data: {
+      name: string
+      lastname: string
+      sex: 'MALE' | 'FEMALE'
+      email?: string
+      address?: string
+      postCode?: string
+      city?: string
+    },
+    phoneNumber?: string
+  ) =>
+    db.person.create({
+      data: {
+        ...data,
+        families: { create: { familyId, relationType } },
+        ...(phoneNumber ? { phoneNumbers: { create: { phoneNumber, channels: [] } } } : {}),
+      },
+    }),
+
   update: (id: string, data: Prisma.PersonUpdateInput) =>
     db.person.update({
       where: { id },

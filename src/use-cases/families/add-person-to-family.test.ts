@@ -2,10 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const familyGatewayMock = {
   findById: vi.fn(),
-  addPerson: vi.fn(),
 }
 const personGatewayMock = {
-  create: vi.fn(),
+  createWithFamily: vi.fn(),
 }
 
 vi.mock('@/gateways/family-gateway', () => ({
@@ -22,8 +21,7 @@ describe('addPersonToFamily', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     familyGatewayMock.findById = vi.fn()
-    familyGatewayMock.addPerson = vi.fn()
-    personGatewayMock.create = vi.fn().mockResolvedValue({
+    personGatewayMock.createWithFamily = vi.fn().mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440001',
     })
   })
@@ -88,7 +86,7 @@ describe('addPersonToFamily', () => {
     expect(result).toHaveProperty('id')
   })
 
-  it('should create person with correct data', async () => {
+  it('should create person linked to family with correct data', async () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 
     await addPersonToFamily({
@@ -102,17 +100,48 @@ describe('addPersonToFamily', () => {
       relationType: 'PARENT',
     })
 
-    expect(personGatewayMock.create).toHaveBeenCalledWith(
+    expect(personGatewayMock.createWithFamily).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000',
+      'PARENT',
       expect.objectContaining({
         name: 'John',
         lastname: 'Doe',
         sex: 'MALE',
         email: 'john@example.com',
-      })
+      }),
+      undefined
     )
   })
 
-  it('should add person to family', async () => {
+  it('should pass address fields to gateway', async () => {
+    familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
+
+    await addPersonToFamily({
+      familyId: '550e8400-e29b-41d4-a716-446655440000',
+      person: {
+        name: 'Jane',
+        lastname: 'Doe',
+        sex: 'FEMALE',
+        address: '1 rue de la Paix',
+        postCode: '75001',
+        city: 'Paris',
+      },
+      relationType: 'TUTOR',
+    })
+
+    expect(personGatewayMock.createWithFamily).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000',
+      'TUTOR',
+      expect.objectContaining({
+        address: '1 rue de la Paix',
+        postCode: '75001',
+        city: 'Paris',
+      }),
+      undefined
+    )
+  })
+
+  it('should pass phone number to gateway', async () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 
     await addPersonToFamily({
@@ -122,13 +151,15 @@ describe('addPersonToFamily', () => {
         lastname: 'Doe',
         sex: 'FEMALE',
       },
-      relationType: 'TUTOR',
+      relationType: 'PARENT',
+      phoneNumber: '0612345678',
     })
 
-    expect(familyGatewayMock.addPerson).toHaveBeenCalledWith(
-      '550e8400-e29b-41d4-a716-446655440000',
-      '550e8400-e29b-41d4-a716-446655440001',
-      'TUTOR'
+    expect(personGatewayMock.createWithFamily).toHaveBeenCalledWith(
+      expect.anything(),
+      'PARENT',
+      expect.anything(),
+      '0612345678'
     )
   })
 
@@ -146,10 +177,11 @@ describe('addPersonToFamily', () => {
     })
 
     expect(result).toHaveProperty('id')
-    expect(familyGatewayMock.addPerson).toHaveBeenCalledWith(
+    expect(personGatewayMock.createWithFamily).toHaveBeenCalledWith(
       expect.anything(),
+      'GRANDPARENT',
       expect.anything(),
-      'GRANDPARENT'
+      undefined
     )
   })
 

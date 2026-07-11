@@ -10,10 +10,20 @@ export const personInputSchema = z.object({
   city: z.string().max(250).optional(),
 })
 
+const parentInputSchema = personInputSchema
+  .omit({ address: true, postCode: true, city: true })
+  .extend({
+    phoneNumber: z.string().min(1).max(20).optional(),
+  })
+
 export const createFamilySchema = z.object({
   name: z.string().min(1).max(50),
   emergencyContact: z.string().max(250).optional(),
   authorizedPickup: z.string().optional(),
+  parents: z.array(parentInputSchema).min(1),
+  address: z.string().max(250).optional(),
+  postCode: z.string().max(10).optional(),
+  city: z.string().max(250).optional(),
 })
 
 export const updateFamilySchema = z.object({
@@ -27,6 +37,7 @@ export const addPersonToFamilySchema = z.object({
   familyId: z.string().uuid(),
   person: personInputSchema,
   relationType: z.enum(['PARENT', 'TUTOR', 'GRANDPARENT', 'SIBLING', 'OTHER']),
+  phoneNumber: z.string().min(1).max(20).optional(),
 })
 
 export const phoneNumberSchema = z.object({

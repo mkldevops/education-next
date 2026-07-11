@@ -195,7 +195,21 @@
           "submit": "Create",
           "cancel": "Cancel",
           "success": "Family created successfully",
-          "error": "Error creating family"
+          "error": "Error creating family",
+          "parentsTitle": "Parents",
+          "addParent": "Add a parent",
+          "removeParent": "Remove",
+          "firstname": "First name",
+          "lastname": "Last name",
+          "sex": "Sex",
+          "male": "Male",
+          "female": "Female",
+          "email": "Email",
+          "phone": "Phone",
+          "addressTitle": "Address",
+          "address": "Address",
+          "postCode": "Postal code",
+          "city": "City"
         },
         "edit": {
           "title": "Edit Family",
@@ -229,7 +243,11 @@
           "submit": "Add",
           "cancel": "Cancel",
           "success": "Member added successfully",
-          "error": "Error adding member"
+          "error": "Error adding member",
+          "phone": "Phone",
+          "address": "Address",
+          "postCode": "Postal code",
+          "city": "City"
         },
         "addPhone": {
           "title": "Add Phone Number",

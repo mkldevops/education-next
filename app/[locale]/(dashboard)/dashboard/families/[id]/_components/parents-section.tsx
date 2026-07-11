@@ -48,6 +48,16 @@ export async function ParentsSection({ persons }: Props) {
               {parent.person.email && (
                 <p className="text-xs text-gray-600 mt-0.5 truncate">{parent.person.email}</p>
               )}
+              {parent.person.address && (
+                <p className="text-xs text-gray-600 mt-0.5 truncate">
+                  {[
+                    parent.person.address,
+                    [parent.person.postCode, parent.person.city].filter(Boolean).join(' '),
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+              )}
             </div>
           </div>
         </div>
