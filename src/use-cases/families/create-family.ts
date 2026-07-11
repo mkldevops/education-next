@@ -12,9 +12,11 @@ export async function createFamily(input: Input) {
   const nameCheck = validateFamilyName(parsed.data.name)
   if (nameCheck !== 'OK') return nameCheck
 
-  const family = await familyGateway.create({
-    ...parsed.data,
+  const { parents, address, postCode, city, ...familyData } = parsed.data
+  const family = await familyGateway.createWithParents({
+    ...familyData,
     createdById: input.createdById,
+    parents: parents.map((parent) => ({ ...parent, address, postCode, city })),
   })
 
   return family

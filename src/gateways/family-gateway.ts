@@ -1,12 +1,38 @@
 import { db } from '@/lib/db'
 
 export const familyGateway = {
-  create: (data: {
+  createWithParents: (data: {
     name: string
     emergencyContact?: string
     authorizedPickup?: string
     createdById: string
-  }) => db.family.create({ data }),
+    parents: Array<{
+      name: string
+      lastname: string
+      sex: 'MALE' | 'FEMALE'
+      email?: string
+      address?: string
+      postCode?: string
+      city?: string
+      phoneNumber?: string
+    }>
+  }) =>
+    db.$transaction(async (tx) => {
+      const { parents, ...familyData } = data
+      const family = await tx.family.create({ data: familyData })
+      for (const { phoneNumber, ...person } of parents) {
+        await tx.person.create({
+          data: {
+            ...person,
+            families: {
+              create: { familyId: family.id, relationType: 'PARENT' },
+            },
+            ...(phoneNumber ? { phoneNumbers: { create: { phoneNumber, channels: [] } } } : {}),
+          },
+        })
+      }
+      return family
+    }),
 
   update: (
     id: string,
