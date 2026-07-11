@@ -24,7 +24,7 @@ export function CreateFamilyDialog({ defaultOpen = false }: { defaultOpen?: bool
 
   return (
     <Dialog initialOpen={defaultOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button>+ {t('title')}</Button>
       </DialogTrigger>
       <DialogContent>

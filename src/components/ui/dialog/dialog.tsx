@@ -33,7 +33,6 @@ export function Dialog({ children, initialOpen = false }: DialogProps) {
 
 export interface DialogTriggerProps {
   children: React.ReactNode
-  asChild?: boolean
 }
 
 export function DialogTrigger({ children }: DialogTriggerProps) {

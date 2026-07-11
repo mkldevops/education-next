@@ -50,7 +50,6 @@ export function Drawer({ children, open: controlledOpen, onOpenChange }: DrawerP
 
 export interface DrawerTriggerProps {
   children: React.ReactNode
-  asChild?: boolean
 }
 
 export function DrawerTrigger({ children }: DrawerTriggerProps) {

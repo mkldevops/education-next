@@ -54,7 +54,7 @@ export function ActionCell({ user }: ActionCellProps) {
   return (
     <div className="flex gap-2">
       <Dialog>
-        <DialogTrigger asChild>
+        <DialogTrigger>
           <Button variant="outline" size="sm" disabled={isPending}>
             {t('changeRole')}
           </Button>
