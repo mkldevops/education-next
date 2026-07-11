@@ -93,7 +93,7 @@ function RecordPaymentForm({ families }: { families: Option[] }) {
           ? new Date(formData.get('cashedAt') as string)
           : undefined,
       })
-      if (typeof result === 'string') {
+      if (result !== 'OK') {
         toast.error(t('error'))
       } else {
         toast.success(t('success'))
