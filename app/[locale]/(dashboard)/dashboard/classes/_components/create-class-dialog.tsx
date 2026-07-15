@@ -81,7 +81,7 @@ function CreateClassForm({ levels, periods }: CreateClassDialogProps) {
               name="name"
               required
               maxLength={250}
-              placeholder="CP-A, CE1-B..."
+              placeholder={t('namePlaceholder')}
               disabled={isPending}
             />
           </div>

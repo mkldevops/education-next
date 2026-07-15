@@ -5,7 +5,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import { db } from '@/lib/db'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
 import { DeactivateStudentButton } from '../_components/deactivate-student-button'
 import { EditStudentDialog } from '../_components/edit-student-dialog'
@@ -210,7 +210,7 @@ export default async function StudentDetailPage({ params }: Props) {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{className}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        €{formatAmount(enrollment.totalAmount)}
+                        {formatCurrency(enrollment.totalAmount, locale)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         {new Date(enrollment.registeredAt).toLocaleDateString(locale)}

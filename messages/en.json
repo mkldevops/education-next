@@ -190,8 +190,11 @@
         "create": {
           "title": "Create Family",
           "name": "Family Name",
+          "namePlaceholder": "Smith family",
           "emergencyContact": "Emergency Contact",
+          "emergencyContactPlaceholder": "Contact name and phone",
           "authorizedPickup": "Authorized Pickup Persons",
+          "authorizedPickupPlaceholder": "Names of authorized persons...",
           "submit": "Create",
           "cancel": "Cancel",
           "success": "Family created successfully",
@@ -287,6 +290,7 @@
           "allergies": "Allergies",
           "healthNotes": "Health Notes",
           "languages": "Languages at Home",
+          "languagesPlaceholder": "French, Arabic",
           "snackAuthorization": "Snack Authorization",
           "submit": "Create",
           "cancel": "Cancel",
@@ -335,6 +339,7 @@
         "create": {
           "title": "New Period",
           "name": "Name",
+          "namePlaceholder": "2025-2026",
           "startDate": "Start Date",
           "endDate": "End Date",
           "cancel": "Cancel",
@@ -362,6 +367,7 @@
         "create": {
           "title": "New Level",
           "name": "Name",
+          "namePlaceholder": "CP, CE1, CE2...",
           "cancel": "Cancel",
           "submit": "Create",
           "success": "Level created",
@@ -389,6 +395,7 @@
         "create": {
           "title": "New Class",
           "name": "Name",
+          "namePlaceholder": "CP-A, CE1-B...",
           "capacity": "Capacity",
           "selectLevel": "Level",
           "selectPeriod": "Period",
@@ -418,7 +425,7 @@
         "from": "From",
         "to": "To",
         "current": "Current",
-        "balanceBadge": "€{amount} due",
+        "balanceBadge": "{amount} due",
         "noEnrollments": "No enrollments registered",
         "filterStatus": "Filter by status",
         "statusAll": "All statuses",
@@ -455,7 +462,7 @@
           "discount": "Discount",
           "totalPaid": "Total Paid",
           "remaining": "Remaining",
-          "balanceBadge": "€{amount} due",
+          "balanceBadge": "{amount} due",
           "classAssignments": "Class Assignments",
           "payments": "Payments"
         }
@@ -570,6 +577,7 @@
         "edit": {
           "title": "Edit",
           "value": "Value",
+          "colorPlaceholder": "#3c6e71",
           "true": "True",
           "false": "False",
           "cancel": "Cancel",
@@ -643,7 +651,7 @@
           "noAllergies": "No allergies declared",
           "noLanguages": "Not specified",
           "noEnrollments": "No enrollments",
-          "remaining": "€{amount} remaining",
+          "remaining": "{amount} remaining",
           "age": "{age} years old",
           "paymentProgress": "Payment progress for {plan}"
         },
@@ -755,7 +763,7 @@
         "discount": "Discount",
         "totalPaid": "Total Paid",
         "remaining": "Remaining",
-        "balanceBadge": "€{amount} due",
+        "balanceBadge": "{amount} due",
         "classAssignments": "Class Assignments",
         "classAssignmentTable": {
           "class": "Class",
@@ -821,6 +829,7 @@
           "button": "Invite a user",
           "title": "Invite a user",
           "email": "Email address",
+          "emailPlaceholder": "user@example.com",
           "role": "Role",
           "send": "Send invitation",
           "cancel": "Cancel",
@@ -833,6 +842,7 @@
           "accept": {
             "title": "Create your account",
             "name": "First and last name",
+            "namePlaceholder": "John Doe",
             "password": "Password",
             "submit": "Create my account"
           }

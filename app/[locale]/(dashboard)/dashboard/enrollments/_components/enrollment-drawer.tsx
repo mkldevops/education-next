@@ -17,7 +17,7 @@ import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
 import { useRouter } from '@/i18n/routing'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 import { toast } from '@/lib/toast'
 import {
   activateEnrollmentAction,
@@ -199,7 +199,9 @@ export function EnrollmentDrawer({
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <EnrollmentStatusBadge status={enrollment.status} />
                   {remaining > 0 && (
-                    <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
+                    <BalanceBadge
+                      label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
+                    />
                   )}
                 </div>
               </div>
@@ -254,20 +256,26 @@ export function EnrollmentDrawer({
             <div className="space-y-2 rounded-lg border border-gray-200 p-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">{t('totalAmount')}</span>
-                <span className="font-medium text-gray-900">€{formatAmount(totalAmountNum)}</span>
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(totalAmountNum, locale)}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">{t('discount')}</span>
-                <span className="font-medium text-gray-900">-€{formatAmount(discountNum)}</span>
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(-discountNum, locale)}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">{t('totalPaid')}</span>
-                <span className="font-medium text-gray-900">€{formatAmount(totalPaid)}</span>
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(totalPaid, locale)}
+                </span>
               </div>
               <div className="flex justify-between border-t pt-2 text-sm font-semibold">
                 <span className="text-gray-900">{t('remaining')}</span>
                 <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
-                  €{formatAmount(remaining)}
+                  {formatCurrency(remaining, locale)}
                 </span>
               </div>
             </div>
@@ -321,7 +329,9 @@ export function EnrollmentDrawer({
                   <tbody className="divide-y">
                     {enrollment.payments.map((p) => (
                       <tr key={p.id} className="text-sm">
-                        <td className="px-3 py-2 font-medium">€{formatAmount(p.amount)}</td>
+                        <td className="px-3 py-2 font-medium">
+                          {formatCurrency(p.amount, locale)}
+                        </td>
                         <td className="px-3 py-2 text-gray-600">
                           <PaymentMethodLabel method={p.method} />
                         </td>

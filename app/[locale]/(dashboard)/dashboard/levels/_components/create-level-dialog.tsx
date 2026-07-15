@@ -68,7 +68,7 @@ function CreateLevelForm() {
               name="name"
               required
               maxLength={250}
-              placeholder="CP, CE1, CE2..."
+              placeholder={t('namePlaceholder')}
               disabled={isPending}
             />
           </div>

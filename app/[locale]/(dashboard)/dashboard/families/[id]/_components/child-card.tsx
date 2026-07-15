@@ -11,7 +11,7 @@ import type {
   Student,
 } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 import { EnrollButton } from './enroll-button'
 
 type StudentWithRelation = {
@@ -111,11 +111,11 @@ export async function ChildCard({ student, locale, familyId }: Props) {
 
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-600">
-                    €{formatAmount(totalPaid)} / €{formatAmount(totalAmount)}
+                    {formatCurrency(totalPaid, locale)} / {formatCurrency(totalAmount, locale)}
                   </span>
                   {remaining > 0 && (
                     <span className="text-xs font-medium text-amber-600">
-                      {t('childCard.remaining', { amount: formatAmount(remaining) })}
+                      {t('childCard.remaining', { amount: formatCurrency(remaining, locale) })}
                     </span>
                   )}
                 </div>

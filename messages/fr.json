@@ -190,8 +190,11 @@
         "create": {
           "title": "Créer une famille",
           "name": "Nom de la famille",
+          "namePlaceholder": "Famille Dupont",
           "emergencyContact": "Contact d'urgence",
+          "emergencyContactPlaceholder": "Nom et téléphone du contact",
           "authorizedPickup": "Personnes autorisées à récupérer",
+          "authorizedPickupPlaceholder": "Noms des personnes autorisées...",
           "submit": "Créer",
           "cancel": "Annuler",
           "success": "Famille créée avec succès",
@@ -287,6 +290,7 @@
           "allergies": "Allergies",
           "healthNotes": "Notes de santé",
           "languages": "Langues à la maison",
+          "languagesPlaceholder": "Français, Arabe",
           "snackAuthorization": "Autorisation goûter",
           "submit": "Créer",
           "cancel": "Annuler",
@@ -335,6 +339,7 @@
         "create": {
           "title": "Nouvelle période",
           "name": "Nom",
+          "namePlaceholder": "2025-2026",
           "startDate": "Date de début",
           "endDate": "Date de fin",
           "cancel": "Annuler",
@@ -362,6 +367,7 @@
         "create": {
           "title": "Nouveau niveau",
           "name": "Nom",
+          "namePlaceholder": "CP, CE1, CE2...",
           "cancel": "Annuler",
           "submit": "Créer",
           "success": "Niveau créé",
@@ -389,6 +395,7 @@
         "create": {
           "title": "Nouvelle classe",
           "name": "Nom",
+          "namePlaceholder": "CP-A, CE1-B...",
           "capacity": "Capacité",
           "selectLevel": "Niveau",
           "selectPeriod": "Période",
@@ -418,7 +425,7 @@
         "from": "Du",
         "to": "Au",
         "current": "Actuelle",
-        "balanceBadge": "€{amount} restant",
+        "balanceBadge": "{amount} restant",
         "noEnrollments": "Aucune inscription enregistrée",
         "filterStatus": "Filtrer par statut",
         "statusAll": "Tous les statuts",
@@ -455,7 +462,7 @@
           "discount": "Remise",
           "totalPaid": "Total réglé",
           "remaining": "Reste à payer",
-          "balanceBadge": "€{amount} restant",
+          "balanceBadge": "{amount} restant",
           "classAssignments": "Affectations de classe",
           "payments": "Paiements"
         }
@@ -570,6 +577,7 @@
         "edit": {
           "title": "Modifier",
           "value": "Valeur",
+          "colorPlaceholder": "#3c6e71",
           "true": "Vrai",
           "false": "Faux",
           "cancel": "Annuler",
@@ -643,7 +651,7 @@
           "noAllergies": "Aucune allergie déclarée",
           "noLanguages": "Non spécifié",
           "noEnrollments": "Aucune inscription",
-          "remaining": "€{amount} restant",
+          "remaining": "{amount} restant",
           "age": "{age} ans",
           "paymentProgress": "Progression du paiement pour {plan}"
         },
@@ -755,7 +763,7 @@
         "discount": "Réduction",
         "totalPaid": "Total payé",
         "remaining": "Restant dû",
-        "balanceBadge": "€{amount} restant",
+        "balanceBadge": "{amount} restant",
         "classAssignments": "Affectations de classe",
         "classAssignmentTable": {
           "class": "Classe",
@@ -821,6 +829,7 @@
           "button": "Inviter un utilisateur",
           "title": "Inviter un utilisateur",
           "email": "Adresse email",
+          "emailPlaceholder": "utilisateur@exemple.com",
           "role": "Rôle",
           "send": "Envoyer l'invitation",
           "cancel": "Annuler",
@@ -833,6 +842,7 @@
           "accept": {
             "title": "Créer votre compte",
             "name": "Prénom et nom",
+            "namePlaceholder": "Jean Dupont",
             "password": "Mot de passe",
             "submit": "Créer mon compte"
           }

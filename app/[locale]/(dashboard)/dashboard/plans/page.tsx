@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 import { requireAdmin } from '../../_lib/auth-helper'
 import { CreatePlanDialog } from './_components/create-plan-dialog'
 import { EditPlanDialog } from './_components/edit-plan-dialog'
@@ -51,7 +51,7 @@ export default async function PlansPage({ params }: Props) {
       key: 'amount',
       header: t('amount'),
       className: 'font-medium text-gray-900',
-      render: (plan) => `€${formatAmount(plan.amount)}`,
+      render: (plan) => formatCurrency(plan.amount, locale),
     },
     {
       key: 'enrollments',

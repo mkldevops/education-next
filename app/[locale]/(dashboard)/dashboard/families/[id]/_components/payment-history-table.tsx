@@ -1,7 +1,7 @@
 import { Card } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
 import type { Enrollment, Payment, PaymentMethod, Plan, Student } from '@/generated/prisma/client'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 
 type PaymentWithRelation = Payment & {
   enrollment: Enrollment & {
@@ -77,7 +77,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
                   {payment.enrollment.student.person.lastname}
                 </td>
                 <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                  €{formatAmount(payment.amount)}
+                  {formatCurrency(payment.amount, locale)}
                 </td>
                 <td className="px-4 py-3 text-sm">
                   <span

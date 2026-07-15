@@ -6,7 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { db } from '@/lib/db'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
 import { EnrollmentActions } from './_components/enrollment-actions'
 
@@ -147,7 +147,9 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <EnrollmentStatusBadge status={enrollment.status} />
                 {remaining > 0 && (
-                  <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
+                  <BalanceBadge
+                    label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
+                  />
                 )}
               </div>
             </div>
@@ -169,20 +171,22 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{t('totalAmount')}</span>
-              <span className="font-medium text-gray-900">€{formatAmount(totalAmount)}</span>
+              <span className="font-medium text-gray-900">
+                {formatCurrency(totalAmount, locale)}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{t('discount')}</span>
-              <span className="font-medium text-gray-900">-€{formatAmount(discount)}</span>
+              <span className="font-medium text-gray-900">{formatCurrency(-discount, locale)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{t('totalPaid')}</span>
-              <span className="font-medium text-gray-900">€{formatAmount(totalPaid)}</span>
+              <span className="font-medium text-gray-900">{formatCurrency(totalPaid, locale)}</span>
             </div>
             <div className="flex justify-between border-t pt-2 text-sm font-semibold">
               <span className="text-gray-900">{t('remaining')}</span>
               <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
-                €{formatAmount(remaining)}
+                {formatCurrency(remaining, locale)}
               </span>
             </div>
           </div>
@@ -241,7 +245,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 {enrollment.payments.map((p) => (
                   <tr key={p.id} className="text-sm">
                     <td className="py-3 pr-4 font-medium text-gray-900">
-                      €{formatAmount(p.amount)}
+                      {formatCurrency(p.amount, locale)}
                     </td>
                     <td className="py-3 pr-4 text-gray-600">
                       <PaymentMethodLabel method={p.method} />

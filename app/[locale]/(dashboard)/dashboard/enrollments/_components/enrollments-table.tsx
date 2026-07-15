@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
 import { EnrollmentDrawer } from './enrollment-drawer'
 
@@ -72,7 +72,9 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
           <div className="flex flex-wrap items-center gap-2">
             <EnrollmentStatusBadge status={row.original.status} />
             {remaining > 0 && (
-              <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
+              <BalanceBadge
+                label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
+              />
             )}
           </div>
         )
@@ -92,7 +94,7 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
       header: t('totalAmount'),
       accessorFn: (row) => toNumber(row.totalAmount),
       cell: ({ row }) => (
-        <span className="text-gray-700">€{formatAmount(row.original.totalAmount)}</span>
+        <span className="text-gray-700">{formatCurrency(row.original.totalAmount, locale)}</span>
       ),
       enableSorting: true,
     },

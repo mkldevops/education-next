@@ -10,3 +10,14 @@ export function formatAmount(
     typeof value === 'number' ? value : value.toNumber ? value.toNumber() : Number(value.toString())
   return roundHalfUp(num).toFixed(2)
 }
+
+export function formatCurrency(
+  value: number | { toNumber?: () => number; toString: () => string },
+  locale: string
+): string {
+  const num =
+    typeof value === 'number' ? value : value.toNumber ? value.toNumber() : Number(value.toString())
+  return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(
+    roundHalfUp(num)
+  )
+}
