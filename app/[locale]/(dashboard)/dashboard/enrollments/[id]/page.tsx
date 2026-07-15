@@ -15,11 +15,23 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
-  const t = await getTranslations({ locale, namespace: 'dashboard.pages.enrollmentDetails' })
-  const enrollment = await db.enrollment.findUnique({
-    where: { id },
-    include: { student: { include: { person: true } } },
-  })
+  const [{ role, familyId }, t] = await Promise.all([
+    getSessionWithRole(),
+    getTranslations({ locale, namespace: 'dashboard.pages.enrollmentDetails' }),
+  ])
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+
+  const enrollment = isAdmin
+    ? await db.enrollment.findUnique({
+        where: { id },
+        include: { student: { include: { person: true } } },
+      })
+    : familyId
+      ? await db.enrollment.findFirst({
+          where: { id, student: { person: { families: { some: { familyId } } } } },
+          include: { student: { include: { person: true } } },
+        })
+      : null
 
   return {
     title: enrollment
