@@ -113,7 +113,17 @@ export default async function StudentDetailPage({ params }: Props) {
         </div>
         {isAdmin && (
           <div className="flex gap-2">
-            <EditStudentDialog student={student} />
+            <EditStudentDialog
+              student={{
+                id: student.id,
+                birthday: student.birthday,
+                birthplace: student.birthplace,
+                allergies: student.allergies,
+                healthNotes: student.healthNotes,
+                languagesAtHome: student.languagesAtHome,
+                snackAuthorization: student.snackAuthorization,
+              }}
+            />
             <DeactivateStudentButton studentId={student.id} />
           </div>
         )}

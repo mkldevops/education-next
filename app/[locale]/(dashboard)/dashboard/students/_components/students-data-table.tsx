@@ -17,26 +17,18 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { cn } from '@/components/ui/utils'
-import type {
-  ClassAssignment,
-  ClassPeriod,
-  Enrollment,
-  Family,
-  FamilyPerson,
-  Person,
-  Student,
-} from '@/generated/prisma/client'
+import type { Family, FamilyPerson, Person, Student } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 
 type StudentRow = Student & {
   person: Person & {
     families: (FamilyPerson & { family: Family })[]
   }
-  enrollments: (Enrollment & {
-    classAssignments: (ClassAssignment & {
-      classPeriod: ClassPeriod
-    })[]
-  })[]
+  enrollments: {
+    classAssignments: {
+      classPeriod: { name: string }
+    }[]
+  }[]
 }
 
 type Props = {
