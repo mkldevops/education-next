@@ -1,6 +1,6 @@
 import { Card } from '@peaklab/ui'
-import { getTranslations } from 'next-intl/server'
-import { formatAmount } from '@/lib/decimal'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { formatCurrency } from '@/lib/decimal'
 
 interface PaymentSummaryProps {
   totalDue: number
@@ -10,6 +10,7 @@ interface PaymentSummaryProps {
 
 export async function PaymentSummary({ totalDue, totalDiscount, totalPaid }: PaymentSummaryProps) {
   const t = await getTranslations('dashboard.pages.familyDetails.paymentSummary')
+  const locale = await getLocale()
 
   const remaining = Math.max(0, totalDue - totalDiscount - totalPaid)
 
@@ -19,24 +20,28 @@ export async function PaymentSummary({ totalDue, totalDiscount, totalPaid }: Pay
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div>
           <p className="text-sm text-gray-500">{t('totalDue')}</p>
-          <p className="mt-1 text-lg font-semibold text-gray-900">€{formatAmount(totalDue)}</p>
+          <p className="mt-1 text-lg font-semibold text-gray-900">
+            {formatCurrency(totalDue, locale)}
+          </p>
         </div>
         <div>
           <p className="text-sm text-gray-500">{t('discount')}</p>
           <p className="mt-1 text-lg font-semibold text-gray-900">
-            -€{formatAmount(totalDiscount)}
+            {formatCurrency(-totalDiscount, locale)}
           </p>
         </div>
         <div>
           <p className="text-sm text-gray-500">{t('totalPaid')}</p>
-          <p className="mt-1 text-lg font-semibold text-green-600">€{formatAmount(totalPaid)}</p>
+          <p className="mt-1 text-lg font-semibold text-green-600">
+            {formatCurrency(totalPaid, locale)}
+          </p>
         </div>
         <div>
           <p className="text-sm text-gray-500">{t('remaining')}</p>
           <p
             className={`mt-1 text-lg font-semibold ${remaining > 0 ? 'text-red-600' : 'text-green-600'}`}
           >
-            €{formatAmount(remaining)}
+            {formatCurrency(remaining, locale)}
           </p>
         </div>
       </div>

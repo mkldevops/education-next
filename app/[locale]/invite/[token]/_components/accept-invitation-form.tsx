@@ -65,7 +65,7 @@ export function AcceptInvitationForm({ token, email }: Props) {
             type="text"
             required
             disabled={isPending}
-            placeholder="Jean Dupont"
+            placeholder={t('namePlaceholder')}
           />
         </div>
         <div className="space-y-2">

@@ -7,7 +7,7 @@ import { cache } from 'react'
 import { Tabs } from '@/components/ui/tabs/tabs'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
@@ -238,13 +238,13 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                   />
                   <KPICard
                     label={t('kpis.totalPaid')}
-                    value={`€${formatAmount(totalPaid)}`}
+                    value={formatCurrency(totalPaid, locale)}
                     icon="✓"
                     color="green"
                   />
                   <KPICard
                     label={t('kpis.remainingBalance')}
-                    value={`€${formatAmount(remainingBalance)}`}
+                    value={formatCurrency(remainingBalance, locale)}
                     icon="⚠"
                     color={remainingBalance > 0 ? 'amber' : 'green'}
                   />

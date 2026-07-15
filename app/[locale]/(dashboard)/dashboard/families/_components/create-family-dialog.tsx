@@ -124,7 +124,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
               id="name"
               name="name"
               type="text"
-              placeholder="Family name"
+              placeholder={t('namePlaceholder')}
               required
               maxLength={50}
               disabled={isPending}
@@ -137,7 +137,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
               id="emergencyContact"
               name="emergencyContact"
               type="text"
-              placeholder="Contact name and phone"
+              placeholder={t('emergencyContactPlaceholder')}
               maxLength={250}
               disabled={isPending}
             />
@@ -148,7 +148,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
             <Textarea
               id="authorizedPickup"
               name="authorizedPickup"
-              placeholder="Names of authorized persons..."
+              placeholder={t('authorizedPickupPlaceholder')}
               disabled={isPending}
             />
           </div>

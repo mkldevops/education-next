@@ -72,7 +72,7 @@ function InviteForm() {
               type="email"
               required
               disabled={isPending}
-              placeholder="user@example.com"
+              placeholder={t('emailPlaceholder')}
             />
           </div>
           <div className="space-y-2">

@@ -115,7 +115,7 @@ function EditConfigForm({ config }: EditConfigDialogProps) {
                   type="text"
                   defaultValue={config.value}
                   pattern="^#[0-9a-fA-F]{6}$"
-                  placeholder="#3c6e71"
+                  placeholder={t('colorPlaceholder')}
                   disabled={isPending}
                   className="flex-1"
                   onChange={(e) => {

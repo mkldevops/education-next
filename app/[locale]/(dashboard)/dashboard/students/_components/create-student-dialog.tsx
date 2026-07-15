@@ -210,7 +210,7 @@ function CreateStudentForm({ families, familyId }: { families?: Family[]; family
             <Input
               id="student-languages"
               name="languagesAtHome"
-              placeholder="Français, Arabe"
+              placeholder={t('languagesPlaceholder')}
               disabled={isPending}
             />
           </div>

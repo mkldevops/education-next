@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { PaymentMethodLabel } from '@/features/enums'
 import type { PaymentMethod } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 
 export interface PaymentRow {
   id: string
@@ -58,7 +58,9 @@ export function PaymentsTable({ payments, locale, isAdmin }: Props) {
       header: t('amount'),
       accessorFn: (row) => row.amount,
       cell: ({ row }) => (
-        <span className="font-medium text-gray-900">€{formatAmount(row.original.amount)}</span>
+        <span className="font-medium text-gray-900">
+          {formatCurrency(row.original.amount, locale)}
+        </span>
       ),
       enableSorting: true,
     },

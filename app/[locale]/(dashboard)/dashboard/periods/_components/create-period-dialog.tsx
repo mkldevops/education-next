@@ -70,7 +70,7 @@ function CreatePeriodForm() {
               name="name"
               required
               maxLength={50}
-              placeholder="2025-2026"
+              placeholder={t('namePlaceholder')}
               disabled={isPending}
             />
           </div>

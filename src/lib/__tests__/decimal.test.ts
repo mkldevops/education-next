@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatAmount, roundHalfUp } from '../decimal'
+import { formatAmount, formatCurrency, roundHalfUp } from '../decimal'
 
 describe('decimal utilities', () => {
   describe('roundHalfUp', () => {
@@ -161,6 +161,32 @@ describe('decimal utilities', () => {
     it('should round up amounts at .5 cents', () => {
       const result = formatAmount(99.995)
       expect(result).toBe('100.00')
+    })
+  })
+
+  describe('formatCurrency', () => {
+    const expected = (value: number, locale: string) =>
+      new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(value)
+
+    it('should format euros for the fr locale', () => {
+      expect(formatCurrency(400, 'fr')).toBe(expected(400, 'fr'))
+    })
+
+    it('should format euros for the en locale', () => {
+      expect(formatCurrency(400, 'en')).toBe(expected(400, 'en'))
+    })
+
+    it('should round half up before formatting', () => {
+      expect(formatCurrency(99.995, 'en')).toBe(expected(100, 'en'))
+    })
+
+    it('should format a Decimal-like object', () => {
+      const decimalObj = { toNumber: () => 123.45, toString: () => '123.45' }
+      expect(formatCurrency(decimalObj, 'fr')).toBe(expected(123.45, 'fr'))
+    })
+
+    it('should format negative amounts', () => {
+      expect(formatCurrency(-400, 'fr')).toBe(expected(-400, 'fr'))
     })
   })
 })

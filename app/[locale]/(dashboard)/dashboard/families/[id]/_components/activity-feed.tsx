@@ -8,7 +8,7 @@ import type {
   Plan,
   Student,
 } from '@/generated/prisma/client'
-import { formatAmount } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 
 type EnrollmentWithRelation = Enrollment & {
   plan: Plan
@@ -56,7 +56,7 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
       date: payment.paidAt,
       type: 'payment',
       title: t('activity.payment'),
-      description: `€${formatAmount(payment.amount)} — ${payment.enrollment.plan.name}`,
+      description: `${formatCurrency(payment.amount, locale)} — ${payment.enrollment.plan.name}`,
       student: `${payment.enrollment.student.person.name} ${payment.enrollment.student.person.lastname}`,
       color: 'bg-green-500',
     })
