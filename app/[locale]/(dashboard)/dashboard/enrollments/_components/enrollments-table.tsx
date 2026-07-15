@@ -1,9 +1,10 @@
 'use client'
 
-import { BalanceBadge, Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
+import { BalanceBadge, Card, type Column, DataTable } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
+import { EnrollmentStatusBadge } from '@/features/enums'
 import { formatAmount } from '@/lib/decimal'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
 import { EnrollmentDrawer } from './enrollment-drawer'
@@ -60,7 +61,7 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
         )
         return (
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={enrollment.status} />
+            <EnrollmentStatusBadge status={enrollment.status} />
             {remaining > 0 && (
               <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
             )}

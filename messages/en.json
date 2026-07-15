@@ -118,7 +118,7 @@
       "newFamily": "New family",
       "newEnrollment": "Enroll a student",
       "newPayment": "Record a payment",
-      "promote": "Promote students"
+      "newStudent": "Add student"
     },
     "recentEnrollments": "Recent enrollments",
     "viewAll": "View all",
@@ -930,6 +930,19 @@
     "ACTIVE": "Active",
     "COMPLETED": "Completed",
     "CANCELLED": "Cancelled"
+  },
+  "paymentMethod": {
+    "CASH": "Cash",
+    "CARD": "Card",
+    "TRANSFER": "Transfer",
+    "CHECK": "Check",
+    "STRIPE": "Stripe"
+  },
+  "configValueType": {
+    "TEXT": "Text",
+    "NUMBER": "Number",
+    "BOOLEAN": "Boolean",
+    "COLOR": "Color"
   },
   "errors": {
     "unauthorized": "You must be logged in to perform this action",

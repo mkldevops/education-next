@@ -6,18 +6,25 @@ import { useEffect, useState } from 'react'
 import { PeriodSelector } from '@/features/dashboard/period-selector'
 import { SearchModal } from '@/features/dashboard/search-modal'
 import { useSidebarStore } from '@/features/dashboard/sidebar-store'
-import { useSession } from '@/lib/auth-client'
 
 interface DashboardHeaderClientProps {
   periods: { id: string; name: string }[]
   selectedPeriodId: string | null
+  userName: string | null
+  userEmail: string | null
 }
 
-export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHeaderClientProps) {
+export function DashboardHeaderClient({
+  periods,
+  selectedPeriodId,
+  userName,
+  userEmail,
+}: DashboardHeaderClientProps) {
   const t = useTranslations('dashboard.sidebar')
-  const { data: session } = useSession()
   const [searchOpen, setSearchOpen] = useState(false)
   const { toggleMobile } = useSidebarStore()
+
+  const userInitial = userName?.charAt(0).toUpperCase() || userEmail?.charAt(0).toUpperCase()
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -68,10 +75,9 @@ export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHe
           <Bell className="h-5 w-5 text-graphite-600" />
         </button>
 
-        {session?.user && (
+        {userInitial && (
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stormy-teal to-yale-blue text-xs font-semibold text-white">
-            {session.user.name?.charAt(0).toUpperCase() ||
-              session.user.email?.charAt(0).toUpperCase()}
+            {userInitial}
           </div>
         )}
       </div>

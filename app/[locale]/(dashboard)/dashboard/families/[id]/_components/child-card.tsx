@@ -1,5 +1,6 @@
-import { Card, StatusBadge } from '@peaklab/ui'
+import { Card } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
+import { EnrollmentStatusBadge } from '@/features/enums'
 import type {
   ClassAssignment,
   ClassPeriod,
@@ -91,7 +92,7 @@ export async function ChildCard({ student, locale, familyId }: Props) {
               <div key={enrollment.id} className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-gray-900">{enrollment.plan.name}</p>
-                  <StatusBadge status={enrollment.status} />
+                  <EnrollmentStatusBadge status={enrollment.status} />
                 </div>
 
                 <div

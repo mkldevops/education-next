@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { ReactNode } from 'react'
+import { ConfigValueTypeLabel } from '@/features/enums'
 import { BRANDING_CONFIG_DEFAULTS, BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import { db } from '@/lib/db'
 import { getSessionWithRole } from '../../_lib/auth-helper'
@@ -107,7 +108,7 @@ export default async function ConfigPage({ params }: Props) {
       className: 'text-gray-700',
       render: (config): ReactNode => (
         <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
-          {config.valueType}
+          <ConfigValueTypeLabel valueType={config.valueType} />
         </span>
       ),
     },

@@ -3,8 +3,8 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { StatusBadge } from '@/components/ui/status-badge'
 import { calculateRemainingBalance } from '@/domain/enrollment'
+import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
@@ -145,7 +145,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
             <div>
               <p className="text-sm font-medium text-gray-500">{t('status')}</p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
-                <StatusBadge status={enrollment.status} />
+                <EnrollmentStatusBadge status={enrollment.status} />
                 {remaining > 0 && (
                   <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
                 )}
@@ -243,7 +243,9 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                     <td className="py-3 pr-4 font-medium text-gray-900">
                       €{formatAmount(p.amount)}
                     </td>
-                    <td className="py-3 pr-4 text-gray-600">{p.method}</td>
+                    <td className="py-3 pr-4 text-gray-600">
+                      <PaymentMethodLabel method={p.method} />
+                    </td>
                     <td className="py-3 pr-4 text-gray-600">{p.reference ?? '-'}</td>
                     <td className="py-3 pr-4 text-gray-600">
                       {new Date(p.paidAt).toLocaleDateString(locale)}

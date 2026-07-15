@@ -1,8 +1,9 @@
-import { Breadcrumbs, Card, StatusBadge } from '@peaklab/ui'
+import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { EnrollmentStatusBadge } from '@/features/enums'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
@@ -113,7 +114,17 @@ export default async function StudentDetailPage({ params }: Props) {
         </div>
         {isAdmin && (
           <div className="flex gap-2">
-            <EditStudentDialog student={student} />
+            <EditStudentDialog
+              student={{
+                id: student.id,
+                birthday: student.birthday,
+                birthplace: student.birthplace,
+                allergies: student.allergies,
+                healthNotes: student.healthNotes,
+                languagesAtHome: student.languagesAtHome,
+                snackAuthorization: student.snackAuthorization,
+              }}
+            />
             <DeactivateStudentButton studentId={student.id} />
           </div>
         )}
@@ -195,7 +206,7 @@ export default async function StudentDetailPage({ params }: Props) {
                     <tr key={enrollment.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm">{enrollment.plan.name}</td>
                       <td className="px-4 py-3 text-sm">
-                        <StatusBadge status={enrollment.status} />
+                        <EnrollmentStatusBadge status={enrollment.status} />
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{className}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">

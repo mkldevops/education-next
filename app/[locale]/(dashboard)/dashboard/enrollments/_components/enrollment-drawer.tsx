@@ -13,9 +13,9 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
-import { StatusBadge } from '@/components/ui/status-badge'
 import { calculateRemainingBalance } from '@/domain/enrollment'
-import type { EnrollmentStatus } from '@/generated/prisma/client'
+import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
+import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
 import { useRouter } from '@/i18n/routing'
 import { formatAmount } from '@/lib/decimal'
 import { toast } from '@/lib/toast'
@@ -42,7 +42,7 @@ interface ClassAssignment {
 interface Payment {
   id: string
   amount: number | { toNumber?: () => number; toString: () => string }
-  method: string
+  method: PaymentMethod
   reference: string | null
   paidAt: Date
   cashedAt: Date | null
@@ -197,7 +197,7 @@ export function EnrollmentDrawer({
               <div>
                 <p className="text-sm font-medium text-gray-500">{t('status')}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <StatusBadge status={enrollment.status} />
+                  <EnrollmentStatusBadge status={enrollment.status} />
                   {remaining > 0 && (
                     <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
                   )}
@@ -322,7 +322,9 @@ export function EnrollmentDrawer({
                     {enrollment.payments.map((p) => (
                       <tr key={p.id} className="text-sm">
                         <td className="px-3 py-2 font-medium">€{formatAmount(p.amount)}</td>
-                        <td className="px-3 py-2 text-gray-600">{p.method}</td>
+                        <td className="px-3 py-2 text-gray-600">
+                          <PaymentMethodLabel method={p.method} />
+                        </td>
                         <td className="px-3 py-2 text-gray-600">{p.reference ?? '-'}</td>
                         <td className="px-3 py-2 text-gray-600">
                           {new Date(p.paidAt).toLocaleDateString(locale)}

@@ -118,7 +118,7 @@
       "newFamily": "Nouvelle famille",
       "newEnrollment": "Inscrire un élève",
       "newPayment": "Saisir un paiement",
-      "promote": "Promouvoir élèves"
+      "newStudent": "Ajouter un élève"
     },
     "recentEnrollments": "Inscriptions récentes",
     "viewAll": "Voir tout",
@@ -930,6 +930,19 @@
     "ACTIVE": "Active",
     "COMPLETED": "Terminée",
     "CANCELLED": "Annulée"
+  },
+  "paymentMethod": {
+    "CASH": "Espèces",
+    "CARD": "Carte",
+    "TRANSFER": "Virement",
+    "CHECK": "Chèque",
+    "STRIPE": "Stripe"
+  },
+  "configValueType": {
+    "TEXT": "Texte",
+    "NUMBER": "Nombre",
+    "BOOLEAN": "Booléen",
+    "COLOR": "Couleur"
   },
   "errors": {
     "unauthorized": "Vous devez être connecté pour effectuer cette action",
