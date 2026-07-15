@@ -933,18 +933,6 @@
       "cancelled": "Registration cancelled"
     }
   },
-  "profile": {
-    "title": "Profile",
-    "anonymous": "User",
-    "stats": {
-      "memberSince": "Member since",
-      "lastUpdated": "Last updated"
-    },
-    "activity": {
-      "title": "Recent activity",
-      "empty": "No recent activity"
-    }
-  },
   "status": {
     "PENDING": "Pending",
     "ACTIVE": "Active",
