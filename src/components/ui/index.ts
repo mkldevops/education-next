@@ -1,5 +1,7 @@
 // Utils
 
+// Balance Badge
+export { BalanceBadge, type BalanceBadgeProps } from './balance-badge'
 // Breadcrumbs
 export { type BreadcrumbItem, Breadcrumbs } from './breadcrumbs'
 // Button

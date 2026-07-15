@@ -118,7 +118,7 @@
       "newFamily": "New family",
       "newEnrollment": "Enroll a student",
       "newPayment": "Record a payment",
-      "promote": "Promote students"
+      "newStudent": "Add student"
     },
     "recentEnrollments": "Recent enrollments",
     "viewAll": "View all",
@@ -126,7 +126,7 @@
       "student": "Student",
       "plan": "Plan",
       "status": "Status",
-      "progress": "Progress",
+      "payment": "Payment",
       "date": "Date"
     },
     "welcome": {
@@ -418,15 +418,10 @@
         "from": "From",
         "to": "To",
         "current": "Current",
+        "balanceBadge": "€{amount} due",
         "noEnrollments": "No enrollments registered",
         "filterStatus": "Filter by status",
         "statusAll": "All statuses",
-        "statusLabels": {
-          "PENDING": "Pending",
-          "ACTIVE": "Active",
-          "COMPLETED": "Completed",
-          "CANCELLED": "Cancelled"
-        },
         "table": {
           "search": "Search...",
           "noResults": "No results",
@@ -460,6 +455,7 @@
           "discount": "Discount",
           "totalPaid": "Total Paid",
           "remaining": "Remaining",
+          "balanceBadge": "€{amount} due",
           "classAssignments": "Class Assignments",
           "payments": "Payments"
         }
@@ -759,6 +755,7 @@
         "discount": "Discount",
         "totalPaid": "Total Paid",
         "remaining": "Remaining",
+        "balanceBadge": "€{amount} due",
         "classAssignments": "Class Assignments",
         "classAssignmentTable": {
           "class": "Class",
@@ -953,6 +950,19 @@
     "ACTIVE": "Active",
     "COMPLETED": "Completed",
     "CANCELLED": "Cancelled"
+  },
+  "paymentMethod": {
+    "CASH": "Cash",
+    "CARD": "Card",
+    "TRANSFER": "Transfer",
+    "CHECK": "Check",
+    "STRIPE": "Stripe"
+  },
+  "configValueType": {
+    "TEXT": "Text",
+    "NUMBER": "Number",
+    "BOOLEAN": "Boolean",
+    "COLOR": "Color"
   },
   "errors": {
     "unauthorized": "You must be logged in to perform this action",

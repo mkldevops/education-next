@@ -3,26 +3,18 @@
 import { RichDataTable, type RichDataTableLabels } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
-import type {
-  ClassAssignment,
-  ClassPeriod,
-  Enrollment,
-  Family,
-  FamilyPerson,
-  Person,
-  Student,
-} from '@/generated/prisma/client'
+import type { Family, FamilyPerson, Person, Student } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 
 type StudentRow = Student & {
   person: Person & {
     families: (FamilyPerson & { family: Family })[]
   }
-  enrollments: (Enrollment & {
-    classAssignments: (ClassAssignment & {
-      classPeriod: ClassPeriod
-    })[]
-  })[]
+  enrollments: {
+    classAssignments: {
+      classPeriod: { name: string }
+    }[]
+  }[]
 }
 
 type Props = {

@@ -1,9 +1,11 @@
 'use client'
 
-import { RichDataTable, type RichDataTableLabels, StatusBadge } from '@peaklab/ui'
+import { BalanceBadge, RichDataTable, type RichDataTableLabels } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
 import { useMemo, useState } from 'react'
+import { calculateRemainingBalance } from '@/domain/enrollment'
+import { EnrollmentStatusBadge } from '@/features/enums'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { formatAmount } from '@/lib/decimal'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
@@ -18,8 +20,14 @@ interface Props {
 
 const STATUS_VALUES: EnrollmentStatus[] = ['PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED']
 
+function toNumber(value: number | { toNumber?: () => number; toString: () => string }): number {
+  if (typeof value === 'number') return value
+  return value.toNumber ? value.toNumber() : Number(value.toString())
+}
+
 export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, locale }: Props) {
   const t = useTranslations('dashboard.pages.enrollments')
+  const tStatus = useTranslations('status')
   const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentDrawerData | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'ALL' | EnrollmentStatus>('ALL')
@@ -55,12 +63,20 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
       id: 'status',
       header: t('status'),
       accessorFn: (row) => row.status,
-      cell: ({ row }) => (
-        <StatusBadge
-          status={row.original.status}
-          label={t(`statusLabels.${row.original.status}`)}
-        />
-      ),
+      cell: ({ row }) => {
+        const remaining = calculateRemainingBalance(
+          toNumber(row.original.totalAmount),
+          row.original.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
+        )
+        return (
+          <div className="flex flex-wrap items-center gap-2">
+            <EnrollmentStatusBadge status={row.original.status} />
+            {remaining > 0 && (
+              <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
+            )}
+          </div>
+        )
+      },
       enableSorting: true,
     },
     {
@@ -74,7 +90,7 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
     {
       id: 'totalAmount',
       header: t('totalAmount'),
-      accessorFn: (row) => Number(row.totalAmount),
+      accessorFn: (row) => toNumber(row.totalAmount),
       cell: ({ row }) => (
         <span className="text-gray-700">€{formatAmount(row.original.totalAmount)}</span>
       ),
@@ -115,7 +131,7 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
             <option value="ALL">{t('statusAll')}</option>
             {STATUS_VALUES.map((status) => (
               <option key={status} value={status}>
-                {t(`statusLabels.${status}`)}
+                {tStatus(status)}
               </option>
             ))}
           </select>

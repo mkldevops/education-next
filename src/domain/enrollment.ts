@@ -21,3 +21,7 @@ export function validateTransition(
 export function calculateTotalAmount(planAmount: number, discount: number): number {
   return planAmount - discount
 }
+
+export function calculateRemainingBalance(totalAmount: number, totalPaid: number): number {
+  return Math.max(0, totalAmount - totalPaid)
+}

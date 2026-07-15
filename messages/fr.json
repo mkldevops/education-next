@@ -118,7 +118,7 @@
       "newFamily": "Nouvelle famille",
       "newEnrollment": "Inscrire un élève",
       "newPayment": "Saisir un paiement",
-      "promote": "Promouvoir élèves"
+      "newStudent": "Ajouter un élève"
     },
     "recentEnrollments": "Inscriptions récentes",
     "viewAll": "Voir tout",
@@ -126,7 +126,7 @@
       "student": "Élève",
       "plan": "Plan",
       "status": "Statut",
-      "progress": "Progression",
+      "payment": "Paiement",
       "date": "Date"
     },
     "welcome": {
@@ -418,15 +418,10 @@
         "from": "Du",
         "to": "Au",
         "current": "Actuelle",
+        "balanceBadge": "€{amount} restant",
         "noEnrollments": "Aucune inscription enregistrée",
         "filterStatus": "Filtrer par statut",
         "statusAll": "Tous les statuts",
-        "statusLabels": {
-          "PENDING": "En attente",
-          "ACTIVE": "Active",
-          "COMPLETED": "Terminée",
-          "CANCELLED": "Annulée"
-        },
         "table": {
           "search": "Rechercher...",
           "noResults": "Aucun résultat",
@@ -460,6 +455,7 @@
           "discount": "Remise",
           "totalPaid": "Total réglé",
           "remaining": "Reste à payer",
+          "balanceBadge": "€{amount} restant",
           "classAssignments": "Affectations de classe",
           "payments": "Paiements"
         }
@@ -759,6 +755,7 @@
         "discount": "Réduction",
         "totalPaid": "Total payé",
         "remaining": "Restant dû",
+        "balanceBadge": "€{amount} restant",
         "classAssignments": "Affectations de classe",
         "classAssignmentTable": {
           "class": "Classe",
@@ -953,6 +950,19 @@
     "ACTIVE": "Active",
     "COMPLETED": "Terminée",
     "CANCELLED": "Annulée"
+  },
+  "paymentMethod": {
+    "CASH": "Espèces",
+    "CARD": "Carte",
+    "TRANSFER": "Virement",
+    "CHECK": "Chèque",
+    "STRIPE": "Stripe"
+  },
+  "configValueType": {
+    "TEXT": "Texte",
+    "NUMBER": "Nombre",
+    "BOOLEAN": "Booléen",
+    "COLOR": "Couleur"
   },
   "errors": {
     "unauthorized": "Vous devez être connecté pour effectuer cette action",

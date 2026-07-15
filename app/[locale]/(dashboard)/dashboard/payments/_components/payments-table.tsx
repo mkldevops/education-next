@@ -3,6 +3,8 @@
 import { RichDataTable, type RichDataTableLabels } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
+import { PaymentMethodLabel } from '@/features/enums'
+import type { PaymentMethod } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { formatAmount } from '@/lib/decimal'
 
@@ -12,7 +14,7 @@ export interface PaymentRow {
   familyName: string
   studentName: string
   amount: number
-  method: string
+  method: PaymentMethod
   reference: string | null
   paidAt: Date
   cashedAt: Date | null
@@ -61,7 +63,11 @@ export function PaymentsTable({ payments, locale }: Props) {
       id: 'method',
       header: t('method'),
       accessorFn: (row) => row.method,
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      cell: ({ row }) => (
+        <span className="text-gray-700">
+          <PaymentMethodLabel method={row.original.method} />
+        </span>
+      ),
       enableSorting: true,
     },
     {

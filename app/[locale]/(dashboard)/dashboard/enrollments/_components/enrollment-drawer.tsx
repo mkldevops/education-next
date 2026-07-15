@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
+import { BalanceBadge } from '@/components/ui/balance-badge'
 import { Button } from '@/components/ui/button/button'
 import {
   Drawer,
@@ -12,8 +13,9 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
-import { StatusBadge } from '@/components/ui/status-badge'
-import type { EnrollmentStatus } from '@/generated/prisma/client'
+import { calculateRemainingBalance } from '@/domain/enrollment'
+import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
+import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
 import { useRouter } from '@/i18n/routing'
 import { formatAmount } from '@/lib/decimal'
 import { toast } from '@/lib/toast'
@@ -40,7 +42,7 @@ interface ClassAssignment {
 interface Payment {
   id: string
   amount: number | { toNumber?: () => number; toString: () => string }
-  method: string
+  method: PaymentMethod
   reference: string | null
   paidAt: Date
   cashedAt: Date | null
@@ -117,7 +119,7 @@ export function EnrollmentDrawer({
         ? enrollment.discount.toNumber()
         : Number(enrollment.discount.toString())
 
-  const remaining = Math.max(0, totalAmountNum - discountNum - totalPaid)
+  const remaining = calculateRemainingBalance(totalAmountNum, totalPaid)
 
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
 
@@ -194,8 +196,11 @@ export function EnrollmentDrawer({
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">{t('status')}</p>
-                <div className="mt-1">
-                  <StatusBadge status={enrollment.status} />
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <EnrollmentStatusBadge status={enrollment.status} />
+                  {remaining > 0 && (
+                    <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
+                  )}
                 </div>
               </div>
               <div>
@@ -261,7 +266,9 @@ export function EnrollmentDrawer({
               </div>
               <div className="flex justify-between border-t pt-2 text-sm font-semibold">
                 <span className="text-gray-900">{t('remaining')}</span>
-                <span className="text-gray-900">€{formatAmount(remaining)}</span>
+                <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
+                  €{formatAmount(remaining)}
+                </span>
               </div>
             </div>
           </div>
@@ -315,7 +322,9 @@ export function EnrollmentDrawer({
                     {enrollment.payments.map((p) => (
                       <tr key={p.id} className="text-sm">
                         <td className="px-3 py-2 font-medium">€{formatAmount(p.amount)}</td>
-                        <td className="px-3 py-2 text-gray-600">{p.method}</td>
+                        <td className="px-3 py-2 text-gray-600">
+                          <PaymentMethodLabel method={p.method} />
+                        </td>
                         <td className="px-3 py-2 text-gray-600">{p.reference ?? '-'}</td>
                         <td className="px-3 py-2 text-gray-600">
                           {new Date(p.paidAt).toLocaleDateString(locale)}
