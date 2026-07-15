@@ -1,8 +1,10 @@
 'use client'
 
-import { Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
+import { RichDataTable, type RichDataTableLabels, StatusBadge } from '@peaklab/ui'
+import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { formatAmount } from '@/lib/decimal'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
 import { EnrollmentDrawer } from './enrollment-drawer'
@@ -14,68 +16,111 @@ interface Props {
   locale: string
 }
 
+const STATUS_VALUES: EnrollmentStatus[] = ['PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED']
+
 export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, locale }: Props) {
   const t = useTranslations('dashboard.pages.enrollments')
   const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentDrawerData | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<'ALL' | EnrollmentStatus>('ALL')
+
+  const filtered = useMemo(
+    () =>
+      statusFilter === 'ALL'
+        ? enrollments
+        : enrollments.filter((enrollment) => enrollment.status === statusFilter),
+    [enrollments, statusFilter]
+  )
+
+  const columns: ColumnDef<EnrollmentDrawerData>[] = [
+    {
+      id: 'student',
+      header: t('student'),
+      accessorFn: (row) => `${row.student.person.name} ${row.student.person.lastname}`,
+      cell: ({ row }) => (
+        <span className="font-medium text-primary">
+          {row.original.student.person.name} {row.original.student.person.lastname}
+        </span>
+      ),
+      enableSorting: true,
+    },
+    {
+      id: 'plan',
+      header: t('plan'),
+      accessorFn: (row) => row.plan.name,
+      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      enableSorting: true,
+    },
+    {
+      id: 'status',
+      header: t('status'),
+      accessorFn: (row) => row.status,
+      cell: ({ row }) => (
+        <StatusBadge
+          status={row.original.status}
+          label={t(`statusLabels.${row.original.status}`)}
+        />
+      ),
+      enableSorting: true,
+    },
+    {
+      id: 'class',
+      header: t('class'),
+      accessorFn: (row) =>
+        row.classAssignments.length > 0 ? row.classAssignments[0].classPeriod.name : '-',
+      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      enableSorting: true,
+    },
+    {
+      id: 'totalAmount',
+      header: t('totalAmount'),
+      accessorFn: (row) => Number(row.totalAmount),
+      cell: ({ row }) => (
+        <span className="text-gray-700">€{formatAmount(row.original.totalAmount)}</span>
+      ),
+      enableSorting: true,
+    },
+  ]
+
+  const labels: RichDataTableLabels = {
+    search: t('table.search'),
+    noResults: t('table.noResults'),
+    columns: t('table.columns'),
+    rowsPerPage: t('table.rowsPerPage'),
+    previous: t('table.previous'),
+    next: t('table.next'),
+    page: (current, total) => t('table.page', { current, total }),
+  }
 
   const handleRowClick = (enrollment: EnrollmentDrawerData) => {
     setSelectedEnrollment(enrollment)
     setDrawerOpen(true)
   }
 
-  const columns: Column<EnrollmentDrawerData>[] = [
-    {
-      key: 'student',
-      header: t('student'),
-      render: (enrollment) => (
-        <button
-          type="button"
-          className="text-left font-medium text-primary hover:text-primary-hover"
-          onClick={() => handleRowClick(enrollment)}
-        >
-          {enrollment.student.person.name} {enrollment.student.person.lastname}
-        </button>
-      ),
-    },
-    {
-      key: 'plan',
-      header: t('plan'),
-      className: 'text-gray-700',
-      render: (enrollment) => enrollment.plan.name,
-    },
-    {
-      key: 'status',
-      header: t('status'),
-      render: (enrollment) => <StatusBadge status={enrollment.status} />,
-    },
-    {
-      key: 'class',
-      header: t('class'),
-      className: 'text-gray-700',
-      render: (enrollment) =>
-        enrollment.classAssignments.length > 0
-          ? enrollment.classAssignments[0].classPeriod.name
-          : '-',
-    },
-    {
-      key: 'totalAmount',
-      header: t('totalAmount'),
-      className: 'text-gray-700',
-      render: (enrollment) => `€${formatAmount(enrollment.totalAmount)}`,
-    },
-  ]
-
   return (
     <>
-      <Card className="rounded-xl border border-gray-200">
-        <DataTable
-          data={enrollments}
-          columns={columns}
-          getRowKey={(enrollment) => enrollment.id}
-          emptyMessage={t('noEnrollments')}
-        />
-      </Card>
+      <RichDataTable
+        data={filtered}
+        columns={columns}
+        labels={labels}
+        emptyMessage={t('noEnrollments')}
+        onRowClick={handleRowClick}
+        toolbar={
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'ALL' | EnrollmentStatus)}
+            className="border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
+            aria-label={t('filterStatus')}
+          >
+            <option value="ALL">{t('statusAll')}</option>
+            {STATUS_VALUES.map((status) => (
+              <option key={status} value={status}>
+                {t(`statusLabels.${status}`)}
+              </option>
+            ))}
+          </select>
+        }
+      />
 
       <EnrollmentDrawer
         enrollment={selectedEnrollment}
