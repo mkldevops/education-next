@@ -928,6 +928,19 @@
     "COMPLETED": "Completed",
     "CANCELLED": "Cancelled"
   },
+  "paymentMethod": {
+    "CASH": "Cash",
+    "CARD": "Card",
+    "TRANSFER": "Transfer",
+    "CHECK": "Check",
+    "STRIPE": "Stripe"
+  },
+  "configValueType": {
+    "TEXT": "Text",
+    "NUMBER": "Number",
+    "BOOLEAN": "Boolean",
+    "COLOR": "Color"
+  },
   "errors": {
     "unauthorized": "You must be logged in to perform this action",
     "validationError": "The submitted data is invalid",

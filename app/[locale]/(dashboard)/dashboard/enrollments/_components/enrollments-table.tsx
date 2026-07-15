@@ -1,8 +1,9 @@
 'use client'
 
-import { Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
+import { Card, type Column, DataTable } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
+import { EnrollmentStatusBadge } from '@/features/enums'
 import { formatAmount } from '@/lib/decimal'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
 import { EnrollmentDrawer } from './enrollment-drawer'
@@ -47,7 +48,7 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
     {
       key: 'status',
       header: t('status'),
-      render: (enrollment) => <StatusBadge status={enrollment.status} />,
+      render: (enrollment) => <EnrollmentStatusBadge status={enrollment.status} />,
     },
     {
       key: 'class',

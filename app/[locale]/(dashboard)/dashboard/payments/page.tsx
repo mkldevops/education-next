@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
+import { PaymentMethodLabel } from '@/features/enums'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../_lib/auth-helper'
@@ -95,7 +96,7 @@ export default async function PaymentsPage({ params, searchParams }: Props) {
     {
       key: 'method',
       header: t('method'),
-      render: (payment) => payment.method,
+      render: (payment) => <PaymentMethodLabel method={payment.method} />,
       className: 'text-gray-700',
     },
     {

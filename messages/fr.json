@@ -928,6 +928,19 @@
     "COMPLETED": "Terminée",
     "CANCELLED": "Annulée"
   },
+  "paymentMethod": {
+    "CASH": "Espèces",
+    "CARD": "Carte",
+    "TRANSFER": "Virement",
+    "CHECK": "Chèque",
+    "STRIPE": "Stripe"
+  },
+  "configValueType": {
+    "TEXT": "Texte",
+    "NUMBER": "Nombre",
+    "BOOLEAN": "Booléen",
+    "COLOR": "Couleur"
+  },
   "errors": {
     "unauthorized": "Vous devez être connecté pour effectuer cette action",
     "validationError": "Les données saisies sont invalides",
