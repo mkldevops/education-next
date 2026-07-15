@@ -2,7 +2,7 @@
 
 import { Bell, Menu, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PeriodSelector } from '@/features/dashboard/period-selector'
 import { SearchModal } from '@/features/dashboard/search-modal'
 import { useSidebarStore } from '@/features/dashboard/sidebar-store'
@@ -18,6 +18,18 @@ export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHe
   const { data: session } = useSession()
   const [searchOpen, setSearchOpen] = useState(false)
   const { toggleMobile } = useSidebarStore()
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-alabaster-700 bg-white/95 px-4 backdrop-blur-sm sm:px-6">
