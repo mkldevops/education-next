@@ -145,8 +145,8 @@ export default async function DashboardPage({ params }: Props) {
       ),
     },
     {
-      key: 'progress',
-      header: t('table.progress'),
+      key: 'payment',
+      header: t('table.payment'),
       render: (item) => {
         const totalAmount = Number(item.totalAmount)
         const discount = Number(item.discount)

@@ -126,7 +126,7 @@
       "student": "Student",
       "plan": "Plan",
       "status": "Status",
-      "progress": "Progress",
+      "payment": "Payment",
       "date": "Date"
     },
     "welcome": {
@@ -418,6 +418,7 @@
         "from": "From",
         "to": "To",
         "current": "Current",
+        "balanceBadge": "€{amount} due",
         "noEnrollments": "No enrollments registered",
         "create": {
           "title": "New Enrollment",
@@ -443,6 +444,7 @@
           "discount": "Discount",
           "totalPaid": "Total Paid",
           "remaining": "Remaining",
+          "balanceBadge": "€{amount} due",
           "classAssignments": "Class Assignments",
           "payments": "Payments"
         }
@@ -733,6 +735,7 @@
         "discount": "Discount",
         "totalPaid": "Total Paid",
         "remaining": "Remaining",
+        "balanceBadge": "€{amount} due",
         "classAssignments": "Class Assignments",
         "classAssignmentTable": {
           "class": "Class",

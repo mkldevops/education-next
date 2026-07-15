@@ -1,8 +1,9 @@
 'use client'
 
-import { Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
+import { BalanceBadge, Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
+import { calculateRemainingBalance } from '@/domain/enrollment'
 import { formatAmount } from '@/lib/decimal'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
 import { EnrollmentDrawer } from './enrollment-drawer'
@@ -12,6 +13,11 @@ interface Props {
   isAdmin: boolean
   availableClasses: Array<{ id: string; name: string }>
   locale: string
+}
+
+function toNumber(value: number | { toNumber?: () => number; toString: () => string }): number {
+  if (typeof value === 'number') return value
+  return value.toNumber ? value.toNumber() : Number(value.toString())
 }
 
 export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, locale }: Props) {
@@ -47,7 +53,21 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
     {
       key: 'status',
       header: t('status'),
-      render: (enrollment) => <StatusBadge status={enrollment.status} />,
+      render: (enrollment) => {
+        const remaining = calculateRemainingBalance(
+          toNumber(enrollment.totalAmount),
+          toNumber(enrollment.discount),
+          enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
+        )
+        return (
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={enrollment.status} />
+            {remaining > 0 && (
+              <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
+            )}
+          </div>
+        )
+      },
     },
     {
       key: 'class',

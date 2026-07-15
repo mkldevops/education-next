@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
-import { calculateTotalAmount, VALID_TRANSITIONS, validateTransition } from '../enrollment'
+import {
+  calculateRemainingBalance,
+  calculateTotalAmount,
+  VALID_TRANSITIONS,
+  validateTransition,
+} from '../enrollment'
 
 describe('enrollment domain', () => {
   describe('calculateTotalAmount', () => {
@@ -22,6 +27,28 @@ describe('enrollment domain', () => {
     it('should work with decimal amounts', () => {
       const result = calculateTotalAmount(99.99, 9.99)
       expect(result).toBeCloseTo(90, 2)
+    })
+  })
+
+  describe('calculateRemainingBalance', () => {
+    it('should subtract discount and payments from the total amount', () => {
+      const result = calculateRemainingBalance(350, 0, 0)
+      expect(result).toBe(350)
+    })
+
+    it('should return zero when fully paid', () => {
+      const result = calculateRemainingBalance(350, 50, 300)
+      expect(result).toBe(0)
+    })
+
+    it('should never return a negative balance when overpaid', () => {
+      const result = calculateRemainingBalance(350, 0, 400)
+      expect(result).toBe(0)
+    })
+
+    it('should report the outstanding balance for a partially paid enrollment', () => {
+      const result = calculateRemainingBalance(700, 0, 350)
+      expect(result).toBe(350)
     })
   })
 
