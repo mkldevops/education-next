@@ -1,8 +1,9 @@
-import { Breadcrumbs, Card } from '@peaklab/ui'
+import { BalanceBadge, Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
@@ -98,7 +99,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const totalAmount = Number(enrollment.totalAmount)
   const discount = Number(enrollment.discount)
   const totalPaid = enrollment.payments.reduce((sum, p) => sum + Number(p.amount), 0)
-  const remaining = Math.max(0, totalAmount - discount - totalPaid)
+  const remaining = calculateRemainingBalance(totalAmount, totalPaid)
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
   const familyName =
     enrollment.student.person.families.length > 0
@@ -143,8 +144,11 @@ export default async function EnrollmentDetailPage({ params }: Props) {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">{t('status')}</p>
-              <div className="mt-1">
+              <div className="mt-1 flex flex-wrap items-center gap-2">
                 <EnrollmentStatusBadge status={enrollment.status} />
+                {remaining > 0 && (
+                  <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
+                )}
               </div>
             </div>
             <div>
