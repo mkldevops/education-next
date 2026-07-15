@@ -76,6 +76,12 @@ export {
   Textarea,
   type TextareaProps,
 } from './input'
+// Rich Data Table
+export {
+  RichDataTable,
+  type RichDataTableLabels,
+  type RichDataTableProps,
+} from './rich-data-table'
 // Status Badge
 export { StatusBadge, type StatusBadgeProps, statusBadgeVariants } from './status-badge'
 export { cn } from './utils'

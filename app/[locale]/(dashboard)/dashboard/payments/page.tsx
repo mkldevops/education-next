@@ -1,12 +1,11 @@
-import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
+import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
-import { PaymentMethodLabel } from '@/features/enums'
 import { db } from '@/lib/db'
-import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../_lib/auth-helper'
+import { PaymentsTable } from './_components/payments-table'
 import { RecordPaymentDialog } from './_components/record-payment-dialog'
 
 type Props = {
@@ -74,51 +73,17 @@ export default async function PaymentsPage({ params, searchParams }: Props) {
     orderBy: { paidAt: 'desc' },
   })
 
-  const columns: Column<(typeof payments)[0]>[] = [
-    {
-      key: 'family',
-      header: t('family'),
-      render: (payment) => payment.family.name,
-    },
-    {
-      key: 'student',
-      header: t('student'),
-      render: (payment) =>
-        `${payment.enrollment.student.person.name} ${payment.enrollment.student.person.lastname}`,
-      className: 'text-gray-700',
-    },
-    {
-      key: 'amount',
-      header: t('amount'),
-      render: (payment) => `€${formatAmount(payment.amount)}`,
-      className: 'font-medium text-gray-900',
-    },
-    {
-      key: 'method',
-      header: t('method'),
-      render: (payment) => <PaymentMethodLabel method={payment.method} />,
-      className: 'text-gray-700',
-    },
-    {
-      key: 'reference',
-      header: t('reference'),
-      render: (payment) => payment.reference || '-',
-      className: 'text-gray-700',
-    },
-    {
-      key: 'paidAt',
-      header: t('paidAt'),
-      render: (payment) => new Date(payment.paidAt).toLocaleDateString(locale),
-      className: 'text-gray-700',
-    },
-    {
-      key: 'cashedAt',
-      header: t('cashedAt'),
-      render: (payment) =>
-        payment.cashedAt ? new Date(payment.cashedAt).toLocaleDateString(locale) : '-',
-      className: 'text-gray-700',
-    },
-  ]
+  const paymentRows = payments.map((payment) => ({
+    id: payment.id,
+    enrollmentId: payment.enrollmentId,
+    familyName: payment.family.name,
+    studentName: `${payment.enrollment.student.person.name} ${payment.enrollment.student.person.lastname}`,
+    amount: Number(payment.amount),
+    method: payment.method,
+    reference: payment.reference,
+    paidAt: payment.paidAt,
+    cashedAt: payment.cashedAt,
+  }))
 
   return (
     <div className="space-y-6">
@@ -135,12 +100,7 @@ export default async function PaymentsPage({ params, searchParams }: Props) {
         )}
       </div>
       <Card className="rounded-xl border border-gray-200">
-        <DataTable
-          data={payments}
-          columns={columns}
-          getRowKey={(payment) => payment.id}
-          emptyMessage={t('noPayments')}
-        />
+        <PaymentsTable payments={paymentRows} locale={locale} />
       </Card>
     </div>
   )

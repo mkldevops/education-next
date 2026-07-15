@@ -420,6 +420,17 @@
         "current": "Current",
         "balanceBadge": "€{amount} due",
         "noEnrollments": "No enrollments registered",
+        "filterStatus": "Filter by status",
+        "statusAll": "All statuses",
+        "table": {
+          "search": "Search...",
+          "noResults": "No results",
+          "columns": "Columns",
+          "rowsPerPage": "Rows per page",
+          "page": "Page {current} of {total}",
+          "previous": "Previous",
+          "next": "Next"
+        },
         "create": {
           "title": "New Enrollment",
           "selectStudent": "Student",
@@ -473,6 +484,15 @@
         "cashedAt": "Cash Date",
         "pending": "Pending",
         "noPayments": "No payments registered",
+        "table": {
+          "search": "Search...",
+          "noResults": "No results",
+          "columns": "Columns",
+          "rowsPerPage": "Rows per page",
+          "page": "Page {current} of {total}",
+          "previous": "Previous",
+          "next": "Next"
+        },
         "record": {
           "title": "Record Payment",
           "selectFamily": "Family",

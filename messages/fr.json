@@ -420,6 +420,17 @@
         "current": "Actuelle",
         "balanceBadge": "€{amount} restant",
         "noEnrollments": "Aucune inscription enregistrée",
+        "filterStatus": "Filtrer par statut",
+        "statusAll": "Tous les statuts",
+        "table": {
+          "search": "Rechercher...",
+          "noResults": "Aucun résultat",
+          "columns": "Colonnes",
+          "rowsPerPage": "Lignes par page",
+          "page": "Page {current} sur {total}",
+          "previous": "Précédent",
+          "next": "Suivant"
+        },
         "create": {
           "title": "Nouvelle inscription",
           "selectStudent": "Élève",
@@ -473,6 +484,15 @@
         "cashedAt": "Date d'encaissement",
         "pending": "En attente",
         "noPayments": "Aucun paiement enregistré",
+        "table": {
+          "search": "Rechercher...",
+          "noResults": "Aucun résultat",
+          "columns": "Colonnes",
+          "rowsPerPage": "Lignes par page",
+          "page": "Page {current} sur {total}",
+          "previous": "Précédent",
+          "next": "Suivant"
+        },
         "record": {
           "title": "Saisir un paiement",
           "selectFamily": "Famille",

@@ -1,10 +1,12 @@
 'use client'
 
-import { BalanceBadge, Card, type Column, DataTable } from '@peaklab/ui'
+import { BalanceBadge, RichDataTable, type RichDataTableLabels } from '@peaklab/ui'
+import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge } from '@/features/enums'
+import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { formatAmount } from '@/lib/decimal'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
 import { EnrollmentDrawer } from './enrollment-drawer'
@@ -16,6 +18,8 @@ interface Props {
   locale: string
 }
 
+const STATUS_VALUES: EnrollmentStatus[] = ['PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED']
+
 function toNumber(value: number | { toNumber?: () => number; toString: () => string }): number {
   if (typeof value === 'number') return value
   return value.toNumber ? value.toNumber() : Number(value.toString())
@@ -23,79 +27,116 @@ function toNumber(value: number | { toNumber?: () => number; toString: () => str
 
 export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, locale }: Props) {
   const t = useTranslations('dashboard.pages.enrollments')
+  const tStatus = useTranslations('status')
   const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentDrawerData | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<'ALL' | EnrollmentStatus>('ALL')
 
-  const handleRowClick = (enrollment: EnrollmentDrawerData) => {
-    setSelectedEnrollment(enrollment)
-    setDrawerOpen(true)
-  }
+  const filtered = useMemo(
+    () =>
+      statusFilter === 'ALL'
+        ? enrollments
+        : enrollments.filter((enrollment) => enrollment.status === statusFilter),
+    [enrollments, statusFilter]
+  )
 
-  const columns: Column<EnrollmentDrawerData>[] = [
+  const columns: ColumnDef<EnrollmentDrawerData>[] = [
     {
-      key: 'student',
+      id: 'student',
       header: t('student'),
-      render: (enrollment) => (
-        <button
-          type="button"
-          className="text-left font-medium text-primary hover:text-primary-hover"
-          onClick={() => handleRowClick(enrollment)}
-        >
-          {enrollment.student.person.name} {enrollment.student.person.lastname}
-        </button>
+      accessorFn: (row) => `${row.student.person.name} ${row.student.person.lastname}`,
+      cell: ({ row }) => (
+        <span className="font-medium text-primary">
+          {row.original.student.person.name} {row.original.student.person.lastname}
+        </span>
       ),
+      enableSorting: true,
     },
     {
-      key: 'plan',
+      id: 'plan',
       header: t('plan'),
-      className: 'text-gray-700',
-      render: (enrollment) => enrollment.plan.name,
+      accessorFn: (row) => row.plan.name,
+      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      enableSorting: true,
     },
     {
-      key: 'status',
+      id: 'status',
       header: t('status'),
-      render: (enrollment) => {
+      accessorFn: (row) => row.status,
+      cell: ({ row }) => {
         const remaining = calculateRemainingBalance(
-          toNumber(enrollment.totalAmount),
-          enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
+          toNumber(row.original.totalAmount),
+          row.original.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
         )
         return (
           <div className="flex flex-wrap items-center gap-2">
-            <EnrollmentStatusBadge status={enrollment.status} />
+            <EnrollmentStatusBadge status={row.original.status} />
             {remaining > 0 && (
               <BalanceBadge label={t('balanceBadge', { amount: formatAmount(remaining) })} />
             )}
           </div>
         )
       },
+      enableSorting: true,
     },
     {
-      key: 'class',
+      id: 'class',
       header: t('class'),
-      className: 'text-gray-700',
-      render: (enrollment) =>
-        enrollment.classAssignments.length > 0
-          ? enrollment.classAssignments[0].classPeriod.name
-          : '-',
+      accessorFn: (row) =>
+        row.classAssignments.length > 0 ? row.classAssignments[0].classPeriod.name : '-',
+      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      enableSorting: true,
     },
     {
-      key: 'totalAmount',
+      id: 'totalAmount',
       header: t('totalAmount'),
-      className: 'text-gray-700',
-      render: (enrollment) => `€${formatAmount(enrollment.totalAmount)}`,
+      accessorFn: (row) => toNumber(row.totalAmount),
+      cell: ({ row }) => (
+        <span className="text-gray-700">€{formatAmount(row.original.totalAmount)}</span>
+      ),
+      enableSorting: true,
     },
   ]
 
+  const labels: RichDataTableLabels = {
+    search: t('table.search'),
+    noResults: t('table.noResults'),
+    columns: t('table.columns'),
+    rowsPerPage: t('table.rowsPerPage'),
+    previous: t('table.previous'),
+    next: t('table.next'),
+    page: (current, total) => t('table.page', { current, total }),
+  }
+
+  const handleRowClick = (enrollment: EnrollmentDrawerData) => {
+    setSelectedEnrollment(enrollment)
+    setDrawerOpen(true)
+  }
+
   return (
     <>
-      <Card className="rounded-xl border border-gray-200">
-        <DataTable
-          data={enrollments}
-          columns={columns}
-          getRowKey={(enrollment) => enrollment.id}
-          emptyMessage={t('noEnrollments')}
-        />
-      </Card>
+      <RichDataTable
+        data={filtered}
+        columns={columns}
+        labels={labels}
+        emptyMessage={t('noEnrollments')}
+        onRowClick={handleRowClick}
+        toolbar={
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'ALL' | EnrollmentStatus)}
+            className="border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
+            aria-label={t('filterStatus')}
+          >
+            <option value="ALL">{t('statusAll')}</option>
+            {STATUS_VALUES.map((status) => (
+              <option key={status} value={status}>
+                {tStatus(status)}
+              </option>
+            ))}
+          </select>
+        }
+      />
 
       <EnrollmentDrawer
         enrollment={selectedEnrollment}
