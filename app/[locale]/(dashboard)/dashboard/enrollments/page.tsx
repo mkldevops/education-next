@@ -4,7 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
-import { getSessionWithRole } from '../../_lib/auth-helper'
+import { requireFamilyScope } from '../../_lib/auth-helper'
 import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
 import { EnrollmentsTable } from './_components/enrollments-table'
 
@@ -32,16 +32,16 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
 
   const selectedPeriodId = await getSelectedPeriodId()
 
-  const { role, familyId } = await getSessionWithRole()
+  const scope = await requireFamilyScope()
 
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const isAdmin = scope.isAdmin
 
-  const whereStudent = isAdmin
+  const whereStudent = scope.isAdmin
     ? {}
     : {
         person: {
           families: {
-            some: { familyId },
+            some: { familyId: scope.familyId },
           },
         },
       }

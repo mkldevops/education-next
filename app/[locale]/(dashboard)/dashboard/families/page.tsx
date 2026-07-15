@@ -4,7 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
-import { getSessionWithRole } from '../../_lib/auth-helper'
+import { requireFamilyScope } from '../../_lib/auth-helper'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
 
 type Props = {
@@ -29,10 +29,10 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.families')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { role, familyId } = await getSessionWithRole()
+  const scope = await requireFamilyScope()
 
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
-  const whereClause = isAdmin ? { isActive: true } : { isActive: true, id: familyId }
+  const isAdmin = scope.isAdmin
+  const whereClause = scope.isAdmin ? { isActive: true } : { isActive: true, id: scope.familyId }
 
   const families = await db.family.findMany({
     where: whereClause,
@@ -113,7 +113,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        <CreateFamilyDialog defaultOpen={action === 'create'} />
+        {isAdmin && <CreateFamilyDialog defaultOpen={action === 'create'} />}
       </div>
       <Card className="rounded-xl border border-gray-200">
         <DataTable
