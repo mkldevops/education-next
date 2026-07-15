@@ -148,9 +148,7 @@ export default async function DashboardPage({ params }: Props) {
       key: 'payment',
       header: t('table.payment'),
       render: (item) => {
-        const totalAmount = Number(item.totalAmount)
-        const discount = Number(item.discount)
-        const finalAmount = totalAmount - discount
+        const finalAmount = Number(item.totalAmount)
         const totalPaid = item.payments.reduce((sum, p) => sum + Number(p.amount), 0)
         const ratio = finalAmount > 0 ? (totalPaid / finalAmount) * 100 : 0
         return <ProgressBar value={ratio} />

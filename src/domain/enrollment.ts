@@ -22,10 +22,6 @@ export function calculateTotalAmount(planAmount: number, discount: number): numb
   return planAmount - discount
 }
 
-export function calculateRemainingBalance(
-  totalAmount: number,
-  discount: number,
-  totalPaid: number
-): number {
-  return Math.max(0, totalAmount - discount - totalPaid)
+export function calculateRemainingBalance(totalAmount: number, totalPaid: number): number {
+  return Math.max(0, totalAmount - totalPaid)
 }

@@ -119,7 +119,7 @@ export function EnrollmentDrawer({
         ? enrollment.discount.toNumber()
         : Number(enrollment.discount.toString())
 
-  const remaining = calculateRemainingBalance(totalAmountNum, discountNum, totalPaid)
+  const remaining = calculateRemainingBalance(totalAmountNum, totalPaid)
 
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
 

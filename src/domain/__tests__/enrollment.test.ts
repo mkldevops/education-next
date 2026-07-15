@@ -31,24 +31,25 @@ describe('enrollment domain', () => {
   })
 
   describe('calculateRemainingBalance', () => {
-    it('should subtract discount and payments from the total amount', () => {
-      const result = calculateRemainingBalance(350, 0, 0)
+    it('should subtract payments from the discount-net total amount', () => {
+      const result = calculateRemainingBalance(350, 0)
       expect(result).toBe(350)
     })
 
     it('should return zero when fully paid', () => {
-      const result = calculateRemainingBalance(350, 50, 300)
+      const result = calculateRemainingBalance(250, 250)
       expect(result).toBe(0)
     })
 
     it('should never return a negative balance when overpaid', () => {
-      const result = calculateRemainingBalance(350, 0, 400)
+      const result = calculateRemainingBalance(350, 400)
       expect(result).toBe(0)
     })
 
-    it('should report the outstanding balance for a partially paid enrollment', () => {
-      const result = calculateRemainingBalance(700, 0, 350)
-      expect(result).toBe(350)
+    it('should not subtract the discount again when the total is already net', () => {
+      const totalAmount = calculateTotalAmount(300, 50)
+      const result = calculateRemainingBalance(totalAmount, 200)
+      expect(result).toBe(50)
     })
   })
 

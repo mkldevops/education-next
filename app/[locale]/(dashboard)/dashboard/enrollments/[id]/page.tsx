@@ -99,7 +99,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const totalAmount = Number(enrollment.totalAmount)
   const discount = Number(enrollment.discount)
   const totalPaid = enrollment.payments.reduce((sum, p) => sum + Number(p.amount), 0)
-  const remaining = calculateRemainingBalance(totalAmount, discount, totalPaid)
+  const remaining = calculateRemainingBalance(totalAmount, totalPaid)
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
   const familyName =
     enrollment.student.person.families.length > 0

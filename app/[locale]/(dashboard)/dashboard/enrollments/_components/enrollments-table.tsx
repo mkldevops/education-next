@@ -56,7 +56,6 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
       render: (enrollment) => {
         const remaining = calculateRemainingBalance(
           toNumber(enrollment.totalAmount),
-          toNumber(enrollment.discount),
           enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
         )
         return (
