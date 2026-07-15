@@ -1,8 +1,10 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
+import { requireAdmin } from '../../_lib/auth-helper'
 import { CreatePeriodDialog } from './_components/create-period-dialog'
 import { EditPeriodDialog } from './_components/edit-period-dialog'
 
@@ -25,6 +27,9 @@ export default async function PeriodsPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.periods')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
+
+  const user = await requireAdmin()
+  if (!user) notFound()
 
   const periods = await db.period.findMany({
     where: { isActive: true },

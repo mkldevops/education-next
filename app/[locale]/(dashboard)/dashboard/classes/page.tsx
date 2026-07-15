@@ -1,9 +1,11 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
+import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
+import { requireAdmin } from '../../_lib/auth-helper'
 import { CreateClassDialog } from './_components/create-class-dialog'
 import { EditClassDialog } from './_components/edit-class-dialog'
 
@@ -26,6 +28,9 @@ export default async function ClassesPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.classes')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
+
+  const user = await requireAdmin()
+  if (!user) notFound()
 
   const selectedPeriodId = (await cookies()).get('selected_period')?.value ?? null
 
