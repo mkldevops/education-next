@@ -23,19 +23,22 @@ export interface PaymentRow {
 interface Props {
   payments: PaymentRow[]
   locale: string
+  isAdmin: boolean
 }
 
-export function PaymentsTable({ payments, locale }: Props) {
+export function PaymentsTable({ payments, locale, isAdmin }: Props) {
   const t = useTranslations('dashboard.pages.payments')
 
+  const familyColumn: ColumnDef<PaymentRow> = {
+    id: 'family',
+    header: t('family'),
+    accessorFn: (row) => row.familyName,
+    cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+    enableSorting: true,
+  }
+
   const columns: ColumnDef<PaymentRow>[] = [
-    {
-      id: 'family',
-      header: t('family'),
-      accessorFn: (row) => row.familyName,
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
-      enableSorting: true,
-    },
+    ...(isAdmin ? [familyColumn] : []),
     {
       id: 'student',
       header: t('student'),
@@ -109,6 +112,9 @@ export function PaymentsTable({ payments, locale }: Props) {
       columns={columns}
       labels={labels}
       emptyMessage={t('noPayments')}
+      enableSearch={isAdmin}
+      enableColumnVisibility={isAdmin}
+      enablePagination={isAdmin}
     />
   )
 }

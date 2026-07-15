@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
-import { getSessionWithRole } from '../../_lib/auth-helper'
+import { requireFamilyScope } from '../../_lib/auth-helper'
 import { CreateStudentDialog } from './_components/create-student-dialog'
 import { StudentsDataTable } from './_components/students-data-table'
 
@@ -29,12 +29,12 @@ export default async function StudentsPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.students')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { role, familyId } = await getSessionWithRole()
+  const scope = await requireFamilyScope()
 
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
-  const whereFamilies = isAdmin ? undefined : { some: { familyId } }
+  const isAdmin = scope.isAdmin
+  const whereFamilies = scope.isAdmin ? undefined : { some: { familyId: scope.familyId } }
 
-  const families = isAdmin
+  const families = scope.isAdmin
     ? await db.family.findMany({
         where: { isActive: true },
         select: { id: true, name: true },
@@ -85,7 +85,7 @@ export default async function StudentsPage({ params, searchParams }: Props) {
         {isAdmin && <CreateStudentDialog families={families} defaultOpen={action === 'create'} />}
       </div>
       <Card className="rounded-xl border border-gray-200 p-4">
-        <StudentsDataTable data={students} locale={locale} />
+        <StudentsDataTable data={students} locale={locale} isAdmin={isAdmin} />
       </Card>
     </div>
   )

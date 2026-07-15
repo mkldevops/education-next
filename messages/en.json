@@ -484,6 +484,12 @@
         "cashedAt": "Cash Date",
         "pending": "Pending",
         "noPayments": "No payments registered",
+        "summary": {
+          "remaining": "Remaining balance",
+          "upToDate": "Up to date",
+          "outstanding": "Payment outstanding",
+          "viewFamily": "View my family details"
+        },
         "table": {
           "search": "Search...",
           "noResults": "No results",

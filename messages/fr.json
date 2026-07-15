@@ -484,6 +484,12 @@
         "cashedAt": "Date d'encaissement",
         "pending": "En attente",
         "noPayments": "Aucun paiement enregistré",
+        "summary": {
+          "remaining": "Solde restant",
+          "upToDate": "À jour",
+          "outstanding": "Paiement en attente",
+          "viewFamily": "Voir le détail de ma famille"
+        },
         "table": {
           "search": "Rechercher...",
           "noResults": "Aucun résultat",

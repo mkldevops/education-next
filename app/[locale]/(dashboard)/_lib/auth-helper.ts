@@ -1,7 +1,7 @@
 'use server'
 
 import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
 import { localizedHref } from '@/i18n/localized-href'
 import type { User } from '@/lib/auth'
@@ -73,4 +73,13 @@ export async function getSessionWithRole(): Promise<SessionWithRole> {
     role: dbUser.role,
     familyId,
   }
+}
+
+export type FamilyScope = { isAdmin: true } | { isAdmin: false; familyId: string }
+
+export async function requireFamilyScope(): Promise<FamilyScope> {
+  const { role, familyId } = await getSessionWithRole()
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return { isAdmin: true }
+  if (!familyId) notFound()
+  return { isAdmin: false, familyId }
 }

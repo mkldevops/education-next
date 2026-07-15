@@ -8,7 +8,7 @@ import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { getSessionWithRole } from '../_lib/auth-helper'
+import { requireFamilyScope } from '../_lib/auth-helper'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -31,9 +31,9 @@ export default async function DashboardPage({ params }: Props) {
   const tStatus = await getTranslations('status')
 
   const session = await auth.api.getSession({ headers: await headers() })
-  const { role, familyId } = await getSessionWithRole()
+  const scope = await requireFamilyScope()
 
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const isAdmin = scope.isAdmin
 
   const selectedPeriodId = await getSelectedPeriodId()
   const periodFilter = selectedPeriodId
@@ -45,7 +45,7 @@ export default async function DashboardPage({ params }: Props) {
       db.family.count({
         where: {
           isActive: true,
-          ...(isAdmin ? {} : { id: familyId }),
+          ...(scope.isAdmin ? {} : { id: scope.familyId }),
         },
       }),
       db.student.count({
@@ -53,7 +53,7 @@ export default async function DashboardPage({ params }: Props) {
           isActive: true,
           person: {
             families: {
-              some: isAdmin ? {} : { familyId },
+              some: scope.isAdmin ? {} : { familyId: scope.familyId },
             },
           },
         },
@@ -66,7 +66,7 @@ export default async function DashboardPage({ params }: Props) {
           student: {
             person: {
               families: {
-                some: isAdmin ? {} : { familyId },
+                some: scope.isAdmin ? {} : { familyId: scope.familyId },
               },
             },
           },
@@ -80,7 +80,7 @@ export default async function DashboardPage({ params }: Props) {
           student: {
             person: {
               families: {
-                some: isAdmin ? {} : { familyId },
+                some: scope.isAdmin ? {} : { familyId: scope.familyId },
               },
             },
           },
@@ -90,13 +90,13 @@ export default async function DashboardPage({ params }: Props) {
         where: {
           isActive: true,
           ...periodFilter,
-          ...(isAdmin
+          ...(scope.isAdmin
             ? {}
             : {
                 student: {
                   person: {
                     families: {
-                      some: { familyId },
+                      some: { familyId: scope.familyId },
                     },
                   },
                 },

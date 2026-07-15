@@ -37,6 +37,7 @@ export interface RichDataTableProps<T> {
   onRowClick?: (row: T) => void
   enableSearch?: boolean
   enableColumnVisibility?: boolean
+  enablePagination?: boolean
   initialPageSize?: number
   pageSizeOptions?: number[]
 }
@@ -52,6 +53,7 @@ export function RichDataTable<T>({
   onRowClick,
   enableSearch = true,
   enableColumnVisibility = true,
+  enablePagination = true,
   initialPageSize = 10,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
 }: RichDataTableProps<T>) {
@@ -60,7 +62,7 @@ export function RichDataTable<T>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: initialPageSize,
+    pageSize: enablePagination ? initialPageSize : Math.max(data.length, 1),
   })
   const [columnVisibilityOpen, setColumnVisibilityOpen] = useState(false)
 
@@ -207,43 +209,45 @@ export function RichDataTable<T>({
         </table>
       </div>
 
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <span>{labels.rowsPerPage}</span>
-          <select
-            value={pagination.pageSize}
-            onChange={(e) => table.setPageSize(Number(e.target.value))}
-            className="border border-gray-200 rounded px-2 py-1 text-sm bg-white"
-          >
-            {pageSizeOptions.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-gray-600">
-          <span>{labels.page(currentPage, totalPages || 1)}</span>
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+      {enablePagination && (
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>{labels.rowsPerPage}</span>
+            <select
+              value={pagination.pageSize}
+              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              className="border border-gray-200 rounded px-2 py-1 text-sm bg-white"
             >
-              {labels.previous}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              {labels.next}
-            </Button>
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-gray-600">
+            <span>{labels.page(currentPage, totalPages || 1)}</span>
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                {labels.previous}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                {labels.next}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

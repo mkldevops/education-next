@@ -20,10 +20,20 @@ type StudentRow = Student & {
 type Props = {
   data: StudentRow[]
   locale: string
+  isAdmin: boolean
 }
 
-export function StudentsDataTable({ data, locale }: Props) {
+export function StudentsDataTable({ data, locale, isAdmin }: Props) {
   const t = useTranslations('dashboard.pages.students')
+
+  const familyColumn: ColumnDef<StudentRow> = {
+    id: 'family',
+    header: t('family'),
+    accessorFn: (row) =>
+      row.person.families.length > 0 ? row.person.families[0].family.name : '-',
+    cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+    enableSorting: true,
+  }
 
   const columns: ColumnDef<StudentRow>[] = [
     {
@@ -47,14 +57,7 @@ export function StudentsDataTable({ data, locale }: Props) {
       cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
       enableSorting: true,
     },
-    {
-      id: 'family',
-      header: t('family'),
-      accessorFn: (row) =>
-        row.person.families.length > 0 ? row.person.families[0].family.name : '-',
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
-      enableSorting: true,
-    },
+    ...(isAdmin ? [familyColumn] : []),
     {
       id: 'class',
       header: t('class'),
@@ -78,6 +81,14 @@ export function StudentsDataTable({ data, locale }: Props) {
   }
 
   return (
-    <RichDataTable data={data} columns={columns} labels={labels} emptyMessage={t('noStudents')} />
+    <RichDataTable
+      data={data}
+      columns={columns}
+      labels={labels}
+      emptyMessage={t('noStudents')}
+      enableSearch={isAdmin}
+      enableColumnVisibility={isAdmin}
+      enablePagination={isAdmin}
+    />
   )
 }
