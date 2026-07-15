@@ -178,9 +178,22 @@ export function RichDataTable<T>({
                   key={row.id}
                   className={cn(
                     'border-b border-gray-100 hover:bg-gray-50 transition-colors',
-                    onRowClick && 'cursor-pointer'
+                    onRowClick &&
+                      'cursor-pointer focus-visible:outline-none focus-visible:bg-gray-50'
                   )}
+                  role={onRowClick ? 'button' : undefined}
+                  tabIndex={onRowClick ? 0 : undefined}
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                  onKeyDown={
+                    onRowClick
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            onRowClick(row.original)
+                          }
+                        }
+                      : undefined
+                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3">
