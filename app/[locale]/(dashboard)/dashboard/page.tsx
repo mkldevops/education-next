@@ -1,5 +1,5 @@
 import { Card, type Column, DataTable, ProgressBar, StatusDot } from '@peaklab/ui'
-import { AlertCircle, CreditCard, GraduationCap, Layers, TrendingUp, Users } from 'lucide-react'
+import { AlertCircle, CreditCard, GraduationCap, TrendingUp, UserPlus, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { connection } from 'next/server'
@@ -170,44 +170,46 @@ export default async function DashboardPage({ params }: Props) {
         <h1 className="text-3xl font-bold text-graphite">{t('greeting', { name: userName })}</h1>
         <p className="mt-2 text-graphite-600">{t('greetingSubtitle')}</p>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Link
-            href="/dashboard/families?action=create"
-            className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
-          >
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-gray-600" />
-              <span className="font-medium text-gray-900">{t('quickActions.newFamily')}</span>
-            </div>
-          </Link>
-          <Link
-            href="/dashboard/enrollments?action=create"
-            className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
-          >
-            <div className="flex items-center gap-3">
-              <GraduationCap className="h-5 w-5 text-gray-600" />
-              <span className="font-medium text-gray-900">{t('quickActions.newEnrollment')}</span>
-            </div>
-          </Link>
-          <Link
-            href="/dashboard/payments?action=create"
-            className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
-          >
-            <div className="flex items-center gap-3">
-              <CreditCard className="h-5 w-5 text-gray-600" />
-              <span className="font-medium text-gray-900">{t('quickActions.newPayment')}</span>
-            </div>
-          </Link>
-          <Link
-            href="/dashboard/students?action=create"
-            className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
-          >
-            <div className="flex items-center gap-3">
-              <Layers className="h-5 w-5 text-gray-600" />
-              <span className="font-medium text-gray-900">{t('quickActions.promote')}</span>
-            </div>
-          </Link>
-        </div>
+        {isAdmin && (
+          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Link
+              href="/dashboard/families?action=create"
+              className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
+            >
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 text-gray-600" />
+                <span className="font-medium text-gray-900">{t('quickActions.newFamily')}</span>
+              </div>
+            </Link>
+            <Link
+              href="/dashboard/enrollments?action=create"
+              className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
+            >
+              <div className="flex items-center gap-3">
+                <GraduationCap className="h-5 w-5 text-gray-600" />
+                <span className="font-medium text-gray-900">{t('quickActions.newEnrollment')}</span>
+              </div>
+            </Link>
+            <Link
+              href="/dashboard/payments?action=create"
+              className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
+            >
+              <div className="flex items-center gap-3">
+                <CreditCard className="h-5 w-5 text-gray-600" />
+                <span className="font-medium text-gray-900">{t('quickActions.newPayment')}</span>
+              </div>
+            </Link>
+            <Link
+              href="/dashboard/students?action=create"
+              className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
+            >
+              <div className="flex items-center gap-3">
+                <UserPlus className="h-5 w-5 text-gray-600" />
+                <span className="font-medium text-gray-900">{t('quickActions.newStudent')}</span>
+              </div>
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="-mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
