@@ -933,18 +933,6 @@
       "cancelled": "Enregistrement annulé"
     }
   },
-  "profile": {
-    "title": "Profil",
-    "anonymous": "Utilisateur",
-    "stats": {
-      "memberSince": "Membre depuis",
-      "lastUpdated": "Dernière mise à jour"
-    },
-    "activity": {
-      "title": "Activité récente",
-      "empty": "Aucune activité récente"
-    }
-  },
   "status": {
     "PENDING": "En attente",
     "ACTIVE": "Active",

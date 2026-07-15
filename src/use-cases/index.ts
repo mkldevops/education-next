@@ -4,4 +4,3 @@ export {
   type UpdateProfileFailure,
   updateProfile,
 } from './commands/update-profile'
-export { type GetProfileResult, getProfile } from './queries/get-profile'

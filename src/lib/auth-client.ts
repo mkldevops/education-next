@@ -8,7 +8,6 @@ export const {
   signIn,
   signUp,
   signOut,
-  useSession,
   linkSocial,
   unlinkAccount,
   resetPassword,
