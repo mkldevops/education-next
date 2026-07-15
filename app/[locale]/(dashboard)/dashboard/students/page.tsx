@@ -59,11 +59,11 @@ export default async function StudentsPage({ params, searchParams }: Props) {
       },
       enrollments: {
         where: { status: { in: ['PENDING', 'ACTIVE'] } },
-        include: {
+        select: {
           classAssignments: {
             where: { endAt: null },
-            include: {
-              classPeriod: true,
+            select: {
+              classPeriod: { select: { name: true } },
             },
           },
         },
