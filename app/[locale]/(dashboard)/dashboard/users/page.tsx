@@ -1,6 +1,6 @@
 import { Breadcrumbs, Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { forbidden } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
@@ -30,7 +30,7 @@ export default async function UsersPage({ params }: Props) {
   const tRoles = await getTranslations('roles')
 
   const user = await requireRole(['SUPER_ADMIN'])
-  if (!user) forbidden()
+  if (!user) notFound()
 
   const users = await db.user.findMany({
     include: {
