@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
@@ -34,6 +35,11 @@ export default async function DashboardPage({ params }: Props) {
 
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
+  const selectedPeriodId = await getSelectedPeriodId()
+  const periodFilter = selectedPeriodId
+    ? { classAssignments: { some: { classPeriod: { periodId: selectedPeriodId } } } }
+    : {}
+
   const [familyCount, studentCount, enrollmentCount, pendingPaymentCount, recentEnrollments] =
     await Promise.all([
       db.family.count({
@@ -56,6 +62,7 @@ export default async function DashboardPage({ params }: Props) {
         where: {
           status: { in: ['PENDING', 'ACTIVE'] },
           isActive: true,
+          ...periodFilter,
           student: {
             person: {
               families: {
@@ -69,6 +76,7 @@ export default async function DashboardPage({ params }: Props) {
         where: {
           status: 'PENDING',
           isActive: true,
+          ...periodFilter,
           student: {
             person: {
               families: {
@@ -81,6 +89,7 @@ export default async function DashboardPage({ params }: Props) {
       db.enrollment.findMany({
         where: {
           isActive: true,
+          ...periodFilter,
           ...(isAdmin
             ? {}
             : {

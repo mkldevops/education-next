@@ -1,12 +1,11 @@
 import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { cache } from 'react'
-import { z } from 'zod'
 import { Tabs } from '@/components/ui/tabs/tabs'
+import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
@@ -59,7 +58,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   if (!isAdmin && familyId !== id) notFound()
 
-  const [family, cookieStore] = await Promise.all([
+  const [family, selectedPeriodId] = await Promise.all([
     db.family.findUnique({
       where: { id },
       include: {
@@ -116,13 +115,11 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         },
       },
     }),
-    cookies(),
+    getSelectedPeriodId(),
   ])
 
   if (!family) notFound()
 
-  const rawPeriod = cookieStore.get('selected_period')?.value
-  const selectedPeriodId = z.uuid().safeParse(rawPeriod).data ?? null
   const [plans, classes] = isAdmin
     ? await Promise.all([
         db.plan.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),

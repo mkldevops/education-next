@@ -1,19 +1,16 @@
-import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { DashboardHeaderClient } from './header-client'
+import { getSelectedPeriodId } from './period'
 
 export async function DashboardHeader() {
-  const [periods, cookieStore] = await Promise.all([
+  const [periods, selectedPeriodId] = await Promise.all([
     db.period.findMany({
       where: { isActive: true },
       select: { id: true, name: true },
       orderBy: { startAt: 'desc' },
     }),
-    cookies(),
+    getSelectedPeriodId(),
   ])
-
-  const cookiePeriodId = cookieStore.get('selected_period')?.value ?? null
-  const selectedPeriodId = cookiePeriodId ?? periods[0]?.id ?? null
 
   return <DashboardHeaderClient periods={periods} selectedPeriodId={selectedPeriodId} />
 }

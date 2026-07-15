@@ -2,6 +2,7 @@ import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { formatAmount } from '@/lib/decimal'
 import { getSessionWithRole } from '../../_lib/auth-helper'
@@ -41,7 +42,19 @@ export default async function PaymentsPage({ params, searchParams }: Props) {
       })
     : []
 
-  const whereClause = isAdmin ? { isActive: true } : { isActive: true, familyId }
+  const selectedPeriodId = await getSelectedPeriodId()
+
+  const whereClause = {
+    isActive: true,
+    ...(isAdmin ? {} : { familyId }),
+    ...(selectedPeriodId
+      ? {
+          enrollment: {
+            classAssignments: { some: { classPeriod: { periodId: selectedPeriodId } } },
+          },
+        }
+      : {}),
+  }
 
   const payments = await db.payment.findMany({
     where: whereClause,

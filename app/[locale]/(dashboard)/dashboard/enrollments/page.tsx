@@ -1,8 +1,8 @@
 import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { cookies } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { getSessionWithRole } from '../../_lib/auth-helper'
 import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
@@ -30,7 +30,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const selectedPeriodId = (await cookies()).get('selected_period')?.value ?? null
+  const selectedPeriodId = await getSelectedPeriodId()
 
   const { role, familyId } = await getSessionWithRole()
 
@@ -84,7 +84,13 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
     : []
 
   const enrollments = await db.enrollment.findMany({
-    where: { isActive: true, student: whereStudent },
+    where: {
+      isActive: true,
+      student: whereStudent,
+      ...(selectedPeriodId
+        ? { classAssignments: { some: { classPeriod: { periodId: selectedPeriodId } } } }
+        : {}),
+    },
     include: {
       student: {
         include: {

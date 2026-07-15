@@ -1,8 +1,8 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { cookies } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { CreateClassDialog } from './_components/create-class-dialog'
 import { EditClassDialog } from './_components/edit-class-dialog'
@@ -27,7 +27,7 @@ export default async function ClassesPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.classes')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const selectedPeriodId = (await cookies()).get('selected_period')?.value ?? null
+  const selectedPeriodId = await getSelectedPeriodId()
 
   const [levels, periods] = await Promise.all([
     db.level.findMany({
