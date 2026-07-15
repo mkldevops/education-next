@@ -4,6 +4,7 @@ import { Button, Input, Label } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { Link } from '@/i18n/routing'
+import { requestPasswordReset } from '@/lib/auth-client'
 
 export default function ForgotPasswordPage() {
   const t = useTranslations('auth.forgotPassword')
@@ -18,21 +19,13 @@ export default function ForgotPasswordPage() {
     setError(null)
 
     try {
-      // Call forget password API
-      const response = await fetch('/api/auth/forget-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          redirectTo: '/reset-password',
-        }),
-      })
+      const { error } = await requestPasswordReset({ email, redirectTo: '/reset-password' })
 
-      if (!response.ok) {
-        throw new Error(t('error'))
+      if (error) {
+        setError(t('error'))
+      } else {
+        setIsSuccess(true)
       }
-
-      setIsSuccess(true)
     } catch {
       setError(t('error'))
     } finally {
