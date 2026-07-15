@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+const phoneNumberFormat = /^\+?[\d\s().-]{6,20}$/
+
 export const personInputSchema = z.object({
   name: z.string().min(1).max(250),
   lastname: z.string().min(1).max(250),
@@ -13,7 +15,7 @@ export const personInputSchema = z.object({
 const parentInputSchema = personInputSchema
   .omit({ address: true, postCode: true, city: true })
   .extend({
-    phoneNumber: z.string().min(1).max(20).optional(),
+    phoneNumber: z.string().min(1).max(20).regex(phoneNumberFormat).optional(),
   })
 
 export const createFamilySchema = z.object({
@@ -41,7 +43,7 @@ export const addPersonToFamilySchema = z.object({
 })
 
 export const phoneNumberSchema = z.object({
-  phoneNumber: z.string().min(1).max(20),
+  phoneNumber: z.string().min(1).max(20).regex(phoneNumberFormat),
   channels: z.array(z.enum(['sms', 'whatsapp', 'call'])).default([]),
 })
 

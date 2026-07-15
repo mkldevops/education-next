@@ -29,7 +29,7 @@ export function LoginForm() {
       const { error } = await signIn.email({ email, password })
 
       if (error) {
-        setError(t('error'))
+        setError(error.status && error.status >= 500 ? t('serviceUnavailable') : t('error'))
       } else {
         router.push('/dashboard')
       }

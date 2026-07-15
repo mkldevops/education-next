@@ -169,6 +169,30 @@ describe('createFamily', () => {
     )
   })
 
+  it('should fail validation when a parent phone has an invalid format', async () => {
+    const result = await createFamily({
+      name: 'Torres Family',
+      parents: [{ ...aParent, phoneNumber: 'abc' }],
+      createdById: '550e8400-e29b-41d4-a716-446655440000',
+    })
+
+    expect(result).toBe('validationError')
+  })
+
+  it('should accept an international parent phone format', async () => {
+    await createFamily({
+      name: 'Torres Family',
+      parents: [{ ...aParent, phoneNumber: '+33 6 12 34 56 78' }],
+      createdById: '550e8400-e29b-41d4-a716-446655440000',
+    })
+
+    expect(familyGatewayMock.createWithParents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        parents: [expect.objectContaining({ phoneNumber: '+33 6 12 34 56 78' })],
+      })
+    )
+  })
+
   it('should return created family', async () => {
     const result = await createFamily({
       name: 'Torres Family',

@@ -26,16 +26,20 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
                   <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
                 </li>
               )}
-              <li>
+              <li className="min-w-0">
                 {isLast || !item.href ? (
-                  <span className="font-medium text-gray-900">
+                  <span
+                    className="block max-w-[12rem] truncate font-medium text-gray-900"
+                    title={item.icon ? undefined : item.label}
+                  >
                     {item.icon === 'home' && <Home className="inline h-4 w-4" />}
                     {!item.icon && item.label}
                   </span>
                 ) : (
                   <Link
                     href={item.href}
-                    className="text-gray-500 transition-colors hover:text-gray-700"
+                    className="block max-w-[12rem] truncate text-gray-500 transition-colors hover:text-gray-700"
+                    title={item.icon ? undefined : item.label}
                   >
                     {item.icon === 'home' ? <Home className="inline h-4 w-4" /> : item.label}
                   </Link>
