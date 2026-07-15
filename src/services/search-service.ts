@@ -49,6 +49,8 @@ export async function searchStudentsAndFamilies(
     familyId = userFamily?.familyId
   }
 
+  if (!isAdmin && !familyId) return []
+
   const searchQuery = parsed.data.query.toLowerCase()
 
   const [students, families] = await Promise.all([
