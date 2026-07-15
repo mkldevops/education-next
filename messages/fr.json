@@ -70,6 +70,7 @@
       "register": "Créer un compte",
       "contactAdmin": "Veuillez contacter un administrateur pour créer un compte.",
       "error": "Email ou mot de passe incorrect",
+      "serviceUnavailable": "Service indisponible, veuillez réessayer.",
       "or": "ou",
       "signInWithPasskey": "Se connecter avec une clé de sécurité",
       "passkeyError": "Authentification par clé de sécurité échouée"
@@ -206,6 +207,7 @@
           "female": "Féminin",
           "email": "Email",
           "phone": "Téléphone",
+          "phoneHint": "Format invalide. Utilisez des chiffres, espaces, +, - ou parenthèses.",
           "addressTitle": "Adresse",
           "address": "Adresse",
           "postCode": "Code postal",
@@ -552,9 +554,18 @@
         "actions": "Actions",
         "noConfig": "Aucune configuration enregistrée",
         "notConfigured": "Non configuré",
+        "globalImpact": "Impact global",
         "known": {
           "logo": "Logo",
-          "favicon": "Favicon"
+          "favicon": "Favicon",
+          "automaticPromotion": "Promotion automatique",
+          "maxStudentsPerClass": "Élèves maximum par classe",
+          "schoolName": "Nom de l'établissement"
+        },
+        "descriptions": {
+          "automaticPromotion": "Fait passer automatiquement les élèves au niveau suivant en fin d'année.",
+          "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe.",
+          "schoolName": "Nom affiché de l'établissement dans l'application."
         },
         "create": {
           "title": "Nouveau paramètre",

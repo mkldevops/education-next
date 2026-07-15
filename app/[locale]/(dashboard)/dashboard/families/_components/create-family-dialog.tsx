@@ -19,6 +19,15 @@ import { toast } from '@/lib/toast'
 import { createFamilySchema } from '@/use-cases/families/schemas'
 import { createFamilyAction } from '../../../_lib/family-actions'
 
+function RequiredMark() {
+  return (
+    <span aria-hidden className="text-red-500">
+      {' '}
+      *
+    </span>
+  )
+}
+
 export function CreateFamilyDialog({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const t = useTranslations('dashboard.pages.families.create')
 
@@ -107,7 +116,10 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
       <DialogBody>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">{t('name')}</Label>
+            <Label htmlFor="name">
+              {t('name')}
+              <RequiredMark />
+            </Label>
             <Input
               id="name"
               name="name"
@@ -152,7 +164,10 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
               <div key={key} className="space-y-3 rounded-lg border border-gray-200 p-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor={`parent-name-${key}`}>{t('firstname')}</Label>
+                    <Label htmlFor={`parent-name-${key}`}>
+                      {t('firstname')}
+                      <RequiredMark />
+                    </Label>
                     <Input
                       id={`parent-name-${key}`}
                       name="parentName"
@@ -162,7 +177,10 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`parent-lastname-${key}`}>{t('lastname')}</Label>
+                    <Label htmlFor={`parent-lastname-${key}`}>
+                      {t('lastname')}
+                      <RequiredMark />
+                    </Label>
                     <Input
                       id={`parent-lastname-${key}`}
                       name="parentLastname"
@@ -174,7 +192,10 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor={`parent-sex-${key}`}>{t('sex')}</Label>
+                    <Label htmlFor={`parent-sex-${key}`}>
+                      {t('sex')}
+                      <RequiredMark />
+                    </Label>
                     <select
                       id={`parent-sex-${key}`}
                       name="parentSex"
@@ -193,6 +214,8 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
                       name="parentPhone"
                       type="tel"
                       maxLength={20}
+                      pattern="\+?[\d\s().-]{6,20}"
+                      title={t('phoneHint')}
                       disabled={isPending}
                     />
                   </div>

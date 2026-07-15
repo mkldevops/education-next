@@ -56,10 +56,25 @@ export default async function ConfigPage({ params }: Props) {
   const configs = [...dbConfigs, ...missingBrandingConfigs].sort((a, b) =>
     a.name.localeCompare(b.name)
   )
-  const getConfigLabel = (name: string) => {
-    if (name === BRANDING_CONFIG_KEYS.logoUrl) return t('known.logo')
-    if (name === BRANDING_CONFIG_KEYS.faviconUrl) return t('known.favicon')
-    return null
+  const knownConfig: Record<
+    string,
+    { label: string; description?: string; globalImpact?: boolean }
+  > = {
+    [BRANDING_CONFIG_KEYS.logoUrl]: { label: t('known.logo') },
+    [BRANDING_CONFIG_KEYS.faviconUrl]: { label: t('known.favicon') },
+    automatic_promotion: {
+      label: t('known.automaticPromotion'),
+      description: t('descriptions.automaticPromotion'),
+      globalImpact: true,
+    },
+    max_students_per_class: {
+      label: t('known.maxStudentsPerClass'),
+      description: t('descriptions.maxStudentsPerClass'),
+    },
+    school_name: {
+      label: t('known.schoolName'),
+      description: t('descriptions.schoolName'),
+    },
   }
 
   const columns: Array<Column<(typeof configs)[0]>> = [
@@ -68,14 +83,24 @@ export default async function ConfigPage({ params }: Props) {
       header: t('name'),
       className: 'font-medium text-gray-900',
       render: (config): ReactNode => {
-        const label = getConfigLabel(config.name)
+        const known = knownConfig[config.name]
 
-        if (!label) return config.name
+        if (!known) return config.name
 
         return (
-          <div>
-            <div>{label}</div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span>{known.label}</span>
+              {known.globalImpact && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                  {t('globalImpact')}
+                </span>
+              )}
+            </div>
             <div className="text-xs font-normal text-gray-500">{config.name}</div>
+            {known.description && (
+              <div className="text-xs font-normal text-gray-400">{known.description}</div>
+            )}
           </div>
         )
       },

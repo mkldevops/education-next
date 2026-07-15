@@ -105,9 +105,12 @@ export default async function StudentDetailPage({ params }: Props) {
           { label: `${student.person.name} ${student.person.lastname}` },
         ]}
       />
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1
+            className="truncate text-2xl font-bold text-gray-900"
+            title={`${student.person.name} ${student.person.lastname}`}
+          >
             {student.person.name} {student.person.lastname}
           </h1>
           <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>

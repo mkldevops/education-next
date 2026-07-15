@@ -70,6 +70,7 @@
       "register": "Create account",
       "contactAdmin": "Please contact an administrator to create an account.",
       "error": "Invalid email or password",
+      "serviceUnavailable": "Service unavailable, please try again.",
       "or": "or",
       "signInWithPasskey": "Sign in with a passkey",
       "passkeyError": "Passkey authentication failed"
@@ -206,6 +207,7 @@
           "female": "Female",
           "email": "Email",
           "phone": "Phone",
+          "phoneHint": "Invalid format. Use digits, spaces, +, - or parentheses.",
           "addressTitle": "Address",
           "address": "Address",
           "postCode": "Postal code",
@@ -552,9 +554,18 @@
         "actions": "Actions",
         "noConfig": "No configuration registered",
         "notConfigured": "Not configured",
+        "globalImpact": "Global impact",
         "known": {
           "logo": "Logo",
-          "favicon": "Favicon"
+          "favicon": "Favicon",
+          "automaticPromotion": "Automatic promotion",
+          "maxStudentsPerClass": "Maximum students per class",
+          "schoolName": "School name"
+        },
+        "descriptions": {
+          "automaticPromotion": "Automatically moves students to the next level at the end of the year.",
+          "maxStudentsPerClass": "Maximum number of students allowed in a class.",
+          "schoolName": "Display name of the school across the application."
         },
         "create": {
           "title": "New Parameter",

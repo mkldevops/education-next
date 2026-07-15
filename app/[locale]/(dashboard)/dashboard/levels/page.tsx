@@ -55,7 +55,7 @@ export default async function LevelsPage({ params }: Props) {
       key: 'nextLevel',
       header: t('nextLevel'),
       className: 'text-gray-700',
-      render: (level) => level.nextLevel?.name || t('none'),
+      render: (level) => level.nextLevel?.name ?? <span className="text-gray-300">&mdash;</span>,
     },
     {
       key: 'classes',
