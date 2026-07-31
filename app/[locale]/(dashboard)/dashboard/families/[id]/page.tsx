@@ -8,7 +8,9 @@ import { Tabs } from '@/components/ui/tabs/tabs'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
+import { isStripeConfigured } from '@/lib/stripe'
 import { cn } from '@/lib/utils'
+import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
 import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
@@ -19,12 +21,13 @@ import { ActivityFeed } from './_components/activity-feed'
 import { ChildCard } from './_components/child-card'
 import { FinancialSummary } from './_components/financial-summary'
 import { HeroBanner } from './_components/hero-banner'
+import { OnlinePaymentButton } from './_components/online-payment-button'
 import { ParentsSection } from './_components/parents-section'
 import { PaymentHistoryTable } from './_components/payment-history-table'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
-  searchParams: Promise<{ action?: string; studentId?: string }>
+  searchParams: Promise<{ action?: string; studentId?: string; payment?: string }>
 }
 
 const getFamilyName = cache(async (id: string) =>
@@ -48,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FamilyDetailPage({ params, searchParams }: Props) {
   await connection()
   const { locale, id } = await params
-  const { action, studentId } = await searchParams
+  const { action, studentId, payment } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.familyDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -99,6 +102,13 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             },
           },
         },
+        users: {
+          include: {
+            user: {
+              select: { email: true },
+            },
+          },
+        },
         payments: {
           where: { isActive: true },
           include: {
@@ -119,6 +129,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   ])
 
   if (!family) notFound()
+
+  const familyBalance = await getFamilyBalance(family.id, selectedPeriodId)
 
   const [plans, classes] = isAdmin
     ? await Promise.all([
@@ -145,10 +157,10 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
       studentName: `${s.person.name} ${s.person.lastname}`,
     }))
   )
-  const totalDue = allEnrollments.reduce((sum, e) => sum + Number(e.totalAmount), 0)
-  const totalDiscount = allEnrollments.reduce((sum, e) => sum + Number(e.discount), 0)
-  const totalPaid = family.payments.reduce((sum, p) => sum + Number(p.amount), 0)
-  const remainingBalance = totalDue - totalPaid
+  const totalDue = familyBalance.totalAmount
+  const totalDiscount = familyBalance.totalDiscount
+  const totalPaid = familyBalance.totalPaid
+  const remainingBalance = familyBalance.remainingBalance
 
   const enrolledChildren = students.filter((s) => s.person.student.enrollments.length > 0).length
   const activeEnrollments = allEnrollments.filter((e) => e.status === 'ACTIVE').length
@@ -222,6 +234,17 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         )}
       </HeroBanner>
 
+      {payment === 'success' && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          {t('onlinePayment.returned')}
+        </div>
+      )}
+      {payment === 'cancelled' && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          {t('onlinePayment.cancelled')}
+        </div>
+      )}
+
       <Tabs
         tabs={[
           {
@@ -254,7 +277,12 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
                       {t('sections.parentsTitle')}
                     </h2>
-                    <ParentsSection persons={family.persons} />
+                    <ParentsSection
+                      persons={family.persons}
+                      familyId={family.id}
+                      isAdmin={isAdmin}
+                      linkedEmails={family.users.map(({ user }) => user.email)}
+                    />
                   </Card>
                   <Card className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -266,6 +294,15 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                       totalDiscount={totalDiscount}
                       remainingBalance={remainingBalance}
                     />
+                    {!isAdmin && (
+                      <div className="mt-5 border-t border-gray-200 pt-5">
+                        <OnlinePaymentButton
+                          amount={remainingBalance}
+                          configured={isStripeConfigured()}
+                          locale={locale}
+                        />
+                      </div>
+                    )}
                   </Card>
                 </div>
               </div>
@@ -297,6 +334,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                         student={student}
                         locale={locale}
                         familyId={family.id}
+                        isAdmin={isAdmin}
                       />
                     ))}
                   </div>

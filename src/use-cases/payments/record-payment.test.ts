@@ -151,12 +151,12 @@ describe('recordPayment', () => {
     )
   })
 
-  it('should respect discount in balance calculation', async () => {
+  it('should not subtract an enrollment discount twice', async () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
     enrollmentGatewayMock.findActiveByFamily.mockResolvedValue([
       {
         id: '550e8400-e29b-41d4-a716-446655440001',
-        totalAmount: 100,
+        totalAmount: 80,
         discount: 20,
         payments: [],
       },
@@ -170,5 +170,8 @@ describe('recordPayment', () => {
     })
 
     expect(result).toBe('OK')
+    expect(paymentGatewayMock.createInTransaction).toHaveBeenCalledWith([
+      expect.objectContaining({ amount: 80 }),
+    ])
   })
 })

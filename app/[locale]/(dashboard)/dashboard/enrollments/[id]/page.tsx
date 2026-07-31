@@ -105,13 +105,19 @@ export default async function EnrollmentDetailPage({ params }: Props) {
     enrollment.student.person.families.length > 0
       ? enrollment.student.person.families[0].family.name
       : '-'
+  const familyContext = enrollment.student.person.families[0]?.family
 
   return (
     <div className="space-y-6">
       <Breadcrumbs
         items={[
           { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
-          { label: tBreadcrumbs('enrollments'), href: '/dashboard/enrollments' },
+          familyContext
+            ? {
+                label: familyContext.name,
+                href: `/dashboard/families/${familyContext.id}`,
+              }
+            : { label: tBreadcrumbs('enrollments'), href: '/dashboard/enrollments' },
           {
             label: `${enrollment.student.person.name} ${enrollment.student.person.lastname}`,
           },

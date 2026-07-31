@@ -2,7 +2,7 @@ import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { Link } from '@/i18n/routing'
+import { Link, redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { requireFamilyScope } from '../../_lib/auth-helper'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
@@ -31,11 +31,14 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
 
   const scope = await requireFamilyScope()
 
+  if (!scope.isAdmin) {
+    redirect({ href: `/dashboard/families/${scope.familyId}`, locale })
+  }
+
   const isAdmin = scope.isAdmin
-  const whereClause = scope.isAdmin ? { isActive: true } : { isActive: true, id: scope.familyId }
 
   const families = await db.family.findMany({
-    where: whereClause,
+    where: { isActive: true },
     include: {
       persons: {
         include: {

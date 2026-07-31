@@ -81,7 +81,7 @@ function distributeRefund(
 ): DistributionResult {
   const enrollmentsWithPaid = enrollments.map((e) => ({
     ...e,
-    paid: e.totalAmount - e.discount - e.remainingBalance,
+    paid: e.totalAmount - e.remainingBalance,
   }))
 
   const totalPaid = enrollmentsWithPaid.reduce((sum, e) => sum + e.paid, 0)

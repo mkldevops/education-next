@@ -22,14 +22,27 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     getBrandingConfig(),
     db.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: {
+        role: true,
+        families: {
+          select: { familyId: true },
+          take: 1,
+        },
+      },
     }),
   ])
 
   const role: Role = dbUser?.role || 'PARENT'
   const userName = session.user.name || session.user.email || undefined
 
-  return <Sidebar role={role} logoUrl={branding.logoUrl} userName={userName} />
+  return (
+    <Sidebar
+      role={role}
+      familyId={dbUser?.families[0]?.familyId}
+      logoUrl={branding.logoUrl}
+      userName={userName}
+    />
+  )
 }
 
 export default async function DashboardLayout({ children, params }: Props) {
@@ -41,13 +54,13 @@ export default async function DashboardLayout({ children, params }: Props) {
       <Suspense fallback={<div className="hidden w-64 bg-white md:block" />}>
         <DashboardSidebarServer locale={locale} />
       </Suspense>
-      <div className="relative flex flex-1 flex-col">
+      <div className="relative flex min-w-0 flex-1 flex-col">
         <div className="sticky top-0 z-10">
           <Suspense fallback={<header className="h-16" />}>
             <DashboardHeader />
           </Suspense>
         </div>
-        <main className="flex-1 p-6">
+        <main className="min-w-0 flex-1 p-4 sm:p-6">
           <Suspense fallback={<div className="p-6">Loading...</div>}>{children}</Suspense>
         </main>
       </div>

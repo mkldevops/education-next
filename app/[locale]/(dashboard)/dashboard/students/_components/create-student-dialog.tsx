@@ -19,27 +19,19 @@ import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { createStudentAction } from '../../../_lib/student-actions'
 
-interface Family {
-  id: string
-  name: string
-}
-
 export function CreateStudentDialog({
-  families,
   familyId,
   defaultOpen = false,
   redirectTo,
   showTrigger = true,
 }: {
-  families?: Family[]
-  familyId?: string
+  familyId: string
   defaultOpen?: boolean
   redirectTo?: string
   showTrigger?: boolean
 }) {
   const t = useTranslations('dashboard.pages.students.create')
-  const routeAfterOpen =
-    redirectTo ?? (familyId ? `/dashboard/families/${familyId}` : '/dashboard/students')
+  const routeAfterOpen = redirectTo ?? `/dashboard/families/${familyId}`
 
   return (
     <Dialog initialOpen={defaultOpen}>
@@ -56,7 +48,7 @@ export function CreateStudentDialog({
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreateStudentForm families={families} familyId={familyId} />
+        <CreateStudentForm familyId={familyId} />
       </DialogContent>
     </Dialog>
   )
@@ -80,7 +72,7 @@ function DialogRouteCleanup({
   return null
 }
 
-function CreateStudentForm({ families, familyId }: { families?: Family[]; familyId?: string }) {
+function CreateStudentForm({ familyId }: { familyId: string }) {
   const t = useTranslations('dashboard.pages.students.create')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
@@ -125,27 +117,8 @@ function CreateStudentForm({ families, familyId }: { families?: Family[]; family
     <form onSubmit={handleSubmit}>
       <DialogBody>
         <div className="space-y-4">
-          {familyId ? (
-            <input type="hidden" name="familyId" value={familyId} />
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="student-family">{t('selectFamily')}</Label>
-              <select
-                id="student-family"
-                name="familyId"
-                required
-                disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
-              >
-                {families?.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-4">
+          <input type="hidden" name="familyId" value={familyId} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="student-name">{t('firstname')}</Label>
               <Input id="student-name" name="name" required maxLength={250} disabled={isPending} />
@@ -161,7 +134,7 @@ function CreateStudentForm({ families, familyId }: { families?: Family[]; family
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="student-sex">{t('sex')}</Label>
               <select
@@ -186,7 +159,7 @@ function CreateStudentForm({ families, familyId }: { families?: Family[]; family
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="student-birthplace">{t('birthplace')}</Label>
               <Input

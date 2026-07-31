@@ -1,5 +1,5 @@
 import { Card, type Column, DataTable, ProgressBar, StatusDot } from '@peaklab/ui'
-import { AlertCircle, CreditCard, GraduationCap, TrendingUp, UserPlus, Users } from 'lucide-react'
+import { AlertCircle, TrendingUp, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { connection } from 'next/server'
@@ -8,7 +8,11 @@ import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { formatCurrency } from '@/lib/decimal'
+import { isStripeConfigured } from '@/lib/stripe'
+import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { requireFamilyScope } from '../_lib/auth-helper'
+import { OnlinePaymentButton } from './families/[id]/_components/online-payment-button'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -117,6 +121,9 @@ export default async function DashboardPage({ params }: Props) {
     ])
 
   const userName = session?.user.name || 'User'
+  const parentBalance = !scope.isAdmin
+    ? await getFamilyBalance(scope.familyId, selectedPeriodId)
+    : null
 
   const enrollmentColumns: Column<(typeof recentEnrollments)[number]>[] = [
     {
@@ -166,10 +173,12 @@ export default async function DashboardPage({ params }: Props) {
     <div className="space-y-8">
       <div className="-mx-6 -mt-16 bg-gradient-to-br from-stormy-teal-900 via-yale-blue-900 to-alabaster-800 px-6 pb-20 pt-16">
         <h1 className="text-3xl font-bold text-graphite">{t('greeting', { name: userName })}</h1>
-        <p className="mt-2 text-graphite-600">{t('greetingSubtitle')}</p>
+        <p className="mt-2 text-graphite-600">
+          {t(isAdmin ? 'greetingSubtitle' : 'parentGreetingSubtitle')}
+        </p>
 
         {isAdmin && (
-          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 max-w-sm">
             <Link
               href="/dashboard/families?action=create"
               className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
@@ -179,49 +188,30 @@ export default async function DashboardPage({ params }: Props) {
                 <span className="font-medium text-gray-900">{t('quickActions.newFamily')}</span>
               </div>
             </Link>
-            <Link
-              href="/dashboard/enrollments?action=create"
-              className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
-            >
-              <div className="flex items-center gap-3">
-                <GraduationCap className="h-5 w-5 text-gray-600" />
-                <span className="font-medium text-gray-900">{t('quickActions.newEnrollment')}</span>
-              </div>
-            </Link>
-            <Link
-              href="/dashboard/payments?action=create"
-              className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
-            >
-              <div className="flex items-center gap-3">
-                <CreditCard className="h-5 w-5 text-gray-600" />
-                <span className="font-medium text-gray-900">{t('quickActions.newPayment')}</span>
-              </div>
-            </Link>
-            <Link
-              href="/dashboard/students?action=create"
-              className="block p-4 rounded-xl border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
-            >
-              <div className="flex items-center gap-3">
-                <UserPlus className="h-5 w-5 text-gray-600" />
-                <span className="font-medium text-gray-900">{t('quickActions.newStudent')}</span>
-              </div>
-            </Link>
           </div>
         )}
       </div>
 
-      <div className="-mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">{t('stats.families')}</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{familyCount}</p>
+      <div
+        className={
+          isAdmin
+            ? '-mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4'
+            : '-mt-14 grid gap-5 md:grid-cols-3'
+        }
+      >
+        {isAdmin && (
+          <Card className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">{t('stats.families')}</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">{familyCount}</p>
+              </div>
+              <div className="rounded-lg bg-teal-100 p-3">
+                <TrendingUp className="h-6 w-6 text-teal-600" />
+              </div>
             </div>
-            <div className="rounded-lg bg-teal-100 p-3">
-              <TrendingUp className="h-6 w-6 text-teal-600" />
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
         <Card className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -244,27 +234,43 @@ export default async function DashboardPage({ params }: Props) {
             </div>
           </div>
         </Card>
-        <Card className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">{t('stats.pendingPayments')}</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{pendingPaymentCount}</p>
+        {isAdmin ? (
+          <Card className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">{t('stats.pendingEnrollments')}</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">{pendingPaymentCount}</p>
+              </div>
+              <div className="rounded-lg bg-amber-100 p-3">
+                <AlertCircle className="h-6 w-6 text-amber-600" />
+              </div>
             </div>
-            <div className="rounded-lg bg-amber-100 p-3">
-              <AlertCircle className="h-6 w-6 text-amber-600" />
+          </Card>
+        ) : (
+          <Card className="rounded-xl border border-amber-200 bg-white p-5">
+            <p className="text-sm font-medium text-gray-600">{t('stats.remainingBalance')}</p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {formatCurrency(parentBalance?.remainingBalance ?? 0, locale)}
+            </p>
+            <div className="mt-4">
+              <OnlinePaymentButton
+                amount={parentBalance?.remainingBalance ?? 0}
+                configured={isStripeConfigured()}
+                locale={locale}
+              />
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
       </div>
 
       <Card className="rounded-xl border border-gray-200">
         <div className="flex items-center justify-between px-6 pt-6">
           <h2 className="text-lg font-semibold text-gray-900">{t('recentEnrollments')}</h2>
           <Link
-            href="/dashboard/enrollments"
+            href={isAdmin ? '/dashboard/enrollments' : `/dashboard/families/${scope.familyId}`}
             className="text-sm font-medium text-primary hover:text-primary-hover"
           >
-            {t('viewAll')}
+            {t(isAdmin ? 'viewAll' : 'viewFamily')}
           </Link>
         </div>
 

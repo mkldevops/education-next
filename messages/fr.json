@@ -115,6 +115,7 @@
     "title": "Tableau de bord",
     "greeting": "Bonjour, {name}",
     "greetingSubtitle": "Voici le résumé de votre école aujourd'hui.",
+    "parentGreetingSubtitle": "Retrouvez ici vos enfants, leurs inscriptions et le solde de votre famille.",
     "quickActions": {
       "newFamily": "Nouvelle famille",
       "newEnrollment": "Inscrire un élève",
@@ -123,6 +124,7 @@
     },
     "recentEnrollments": "Inscriptions récentes",
     "viewAll": "Voir tout",
+    "viewFamily": "Ouvrir ma famille",
     "table": {
       "student": "Élève",
       "plan": "Plan",
@@ -138,14 +140,17 @@
       "families": "Familles",
       "students": "Élèves",
       "enrollments": "Inscriptions",
-      "pendingPayments": "Paiements en attente"
+      "pendingPayments": "Paiements en attente",
+      "pendingEnrollments": "Inscriptions à traiter",
+      "remainingBalance": "Solde de la famille"
     },
     "breadcrumbs": {
       "dashboard": "Tableau de bord",
       "families": "Familles",
+      "myFamily": "Ma famille",
       "students": "Élèves",
       "enrollments": "Inscriptions",
-      "payments": "Paiements",
+      "payments": "Encaissements",
       "periods": "Périodes",
       "levels": "Niveaux",
       "classes": "Classes",
@@ -156,12 +161,13 @@
     "sidebar": {
       "dashboard": "Tableau de bord",
       "families": "Familles",
+      "myFamily": "Ma famille",
       "students": "Élèves",
       "periods": "Périodes",
       "levels": "Niveaux",
       "classes": "Classes",
       "enrollments": "Inscriptions",
-      "payments": "Paiements",
+      "payments": "Encaissements",
       "plans": "Plans tarifaires",
       "config": "Configuration",
       "users": "Utilisateurs",
@@ -200,6 +206,7 @@
           "cancel": "Annuler",
           "success": "Famille créée avec succès",
           "error": "Erreur lors de la création de la famille",
+          "nextStepHint": "Après la création, ajoutez les responsables et les élèves directement depuis la fiche famille.",
           "parentsTitle": "Parents",
           "addParent": "Ajouter un parent",
           "removeParent": "Retirer",
@@ -483,7 +490,7 @@
         "validationError": "Données invalides"
       },
       "payments": {
-        "title": "Paiements",
+        "title": "Encaissements",
         "family": "Famille",
         "student": "Élève",
         "amount": "Montant",
@@ -509,7 +516,7 @@
           "next": "Suivant"
         },
         "record": {
-          "title": "Saisir un paiement",
+          "title": "Enregistrer un règlement",
           "selectFamily": "Famille",
           "amount": "Montant",
           "method": "Méthode de paiement",
@@ -525,7 +532,7 @@
           "cashedAt": "Date d'encaissement",
           "cancel": "Annuler",
           "submit": "Enregistrer",
-          "success": "Paiement enregistré",
+          "success": "Règlement enregistré",
           "error": "Erreur lors de l'enregistrement"
         }
       },
@@ -617,8 +624,9 @@
         },
         "actions": {
           "new": "Nouveau",
-          "pay": "Payer",
-          "newStudent": "Nouvel élève",
+          "pay": "Enregistrer un règlement",
+          "newStudent": "Ajouter un élève",
+          "newEnrollment": "Inscrire un élève",
           "manage": "Actions",
           "edit": "Modifier",
           "delete": "Supprimer",
@@ -627,6 +635,25 @@
           "addChild": "Ajouter un enfant",
           "addEnrollment": "Nouvelle inscription",
           "addPayment": "Nouveau paiement"
+        },
+        "portalInvitation": {
+          "action": "Inviter au portail",
+          "pending": "Envoi...",
+          "success": "Invitation envoyée",
+          "active": "Accès actif",
+          "emailAlreadyUsed": "Un compte utilise déjà cette adresse email",
+          "error": "Impossible d'envoyer l'invitation"
+        },
+        "onlinePayment": {
+          "action": "Payer {amount} en ligne",
+          "pending": "Ouverture du paiement...",
+          "secure": "Paiement sécurisé par Stripe. Le solde est confirmé après validation bancaire.",
+          "unavailable": "Le paiement en ligne n'est pas encore configuré.",
+          "noBalance": "Cette famille n'a aucun solde à régler.",
+          "settled": "Votre famille est à jour.",
+          "error": "Impossible de démarrer le paiement.",
+          "returned": "Votre paiement a été transmis. L'historique sera actualisé après confirmation bancaire.",
+          "cancelled": "Le paiement a été annulé. Aucun règlement n'a été enregistré."
         },
         "alert": {
           "needsAttention": "Enfants nécessitant une attention",

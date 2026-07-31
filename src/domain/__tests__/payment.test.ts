@@ -203,7 +203,7 @@ describe('payment distribution', () => {
       expect(result).not.toHaveProperty('distribution')
     })
 
-    it('should calculate paid amount as totalAmount - discount - remainingBalance', () => {
+    it('should calculate paid amount from the already discounted total amount', () => {
       const enrollments: EnrollmentBalance[] = [
         {
           enrollmentId: 'e1',
@@ -213,7 +213,7 @@ describe('payment distribution', () => {
         },
       ]
 
-      const result = distributePayment(-71, enrollments)
+      const result = distributePayment(-81, enrollments)
 
       expect(result.result).toBe('refundExceedsPaid')
     })

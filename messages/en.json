@@ -115,6 +115,7 @@
     "title": "Dashboard",
     "greeting": "Hello, {name}",
     "greetingSubtitle": "Here is your school summary for today.",
+    "parentGreetingSubtitle": "See your children, their enrollments, and your family balance here.",
     "quickActions": {
       "newFamily": "New family",
       "newEnrollment": "Enroll a student",
@@ -123,6 +124,7 @@
     },
     "recentEnrollments": "Recent enrollments",
     "viewAll": "View all",
+    "viewFamily": "Open my family",
     "table": {
       "student": "Student",
       "plan": "Plan",
@@ -138,14 +140,17 @@
       "families": "Families",
       "students": "Students",
       "enrollments": "Enrollments",
-      "pendingPayments": "Pending payments"
+      "pendingPayments": "Pending payments",
+      "pendingEnrollments": "Enrollments to review",
+      "remainingBalance": "Family balance"
     },
     "breadcrumbs": {
       "dashboard": "Dashboard",
       "families": "Families",
+      "myFamily": "My family",
       "students": "Students",
       "enrollments": "Enrollments",
-      "payments": "Payments",
+      "payments": "Collections",
       "periods": "Periods",
       "levels": "Levels",
       "classes": "Classes",
@@ -156,12 +161,13 @@
     "sidebar": {
       "dashboard": "Dashboard",
       "families": "Families",
+      "myFamily": "My family",
       "students": "Students",
       "periods": "Periods",
       "levels": "Levels",
       "classes": "Classes",
       "enrollments": "Enrollments",
-      "payments": "Payments",
+      "payments": "Collections",
       "plans": "Pricing plans",
       "config": "Configuration",
       "users": "Users",
@@ -200,6 +206,7 @@
           "cancel": "Cancel",
           "success": "Family created successfully",
           "error": "Error creating family",
+          "nextStepHint": "After creation, add guardians and students directly from the family record.",
           "parentsTitle": "Parents",
           "addParent": "Add a parent",
           "removeParent": "Remove",
@@ -483,7 +490,7 @@
         "validationError": "Invalid data"
       },
       "payments": {
-        "title": "Payments",
+        "title": "Collections",
         "family": "Family",
         "student": "Student",
         "amount": "Amount",
@@ -509,7 +516,7 @@
           "next": "Next"
         },
         "record": {
-          "title": "Record Payment",
+          "title": "Record a collection",
           "selectFamily": "Family",
           "amount": "Amount",
           "method": "Payment Method",
@@ -525,7 +532,7 @@
           "cashedAt": "Cash Date",
           "cancel": "Cancel",
           "submit": "Record",
-          "success": "Payment recorded",
+          "success": "Collection recorded",
           "error": "Error recording payment"
         }
       },
@@ -617,8 +624,9 @@
         },
         "actions": {
           "new": "New",
-          "pay": "Pay",
-          "newStudent": "New student",
+          "pay": "Record a collection",
+          "newStudent": "Add a student",
+          "newEnrollment": "Enroll a student",
           "manage": "Actions",
           "edit": "Edit",
           "delete": "Delete",
@@ -627,6 +635,25 @@
           "addChild": "Add child",
           "addEnrollment": "New enrollment",
           "addPayment": "New payment"
+        },
+        "portalInvitation": {
+          "action": "Invite to portal",
+          "pending": "Sending...",
+          "success": "Invitation sent",
+          "active": "Access active",
+          "emailAlreadyUsed": "An account already uses this email address",
+          "error": "Unable to send the invitation"
+        },
+        "onlinePayment": {
+          "action": "Pay {amount} online",
+          "pending": "Opening payment...",
+          "secure": "Secure payment by Stripe. The balance updates after bank confirmation.",
+          "unavailable": "Online payment is not configured yet.",
+          "noBalance": "This family has no outstanding balance.",
+          "settled": "Your family is up to date.",
+          "error": "Unable to start payment.",
+          "returned": "Your payment was submitted. History will update after bank confirmation.",
+          "cancelled": "Payment was cancelled. No payment was recorded."
         },
         "alert": {
           "needsAttention": "Children Needing Attention",

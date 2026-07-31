@@ -147,11 +147,12 @@ function NavItem({
 
 type SidebarProps = {
   role: Role
+  familyId?: string
   logoUrl?: string
   userName?: string
 }
 
-export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
+export function Sidebar({ role, familyId, logoUrl, userName }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const company = useTranslations('company')
   const pathname = usePathname()
@@ -169,6 +170,21 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
   }
 
   const visibleConfigItems = configItems.filter(canViewItem)
+  const visibleGestionItems =
+    role === 'PARENT'
+      ? [
+          { href: '/dashboard', icon: LayoutGrid, key: 'dashboard' },
+          {
+            href: familyId ? `/dashboard/families/${familyId}` : '/dashboard/families',
+            icon: Users,
+            key: 'myFamily',
+          },
+        ]
+      : gestionItems
+  const visibleBottomItems =
+    role === 'PARENT'
+      ? [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }]
+      : bottomItems
 
   const handleNavClick = () => setMobileOpen(false)
 
@@ -238,7 +254,7 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
             </p>
           )}
           <div className="space-y-1">
-            {gestionItems.map((item) => (
+            {visibleGestionItems.map((item) => (
               <NavItem
                 key={item.key}
                 href={item.href}
@@ -287,7 +303,7 @@ export function Sidebar({ role, logoUrl, userName }: SidebarProps) {
             </div>
           )}
 
-          {bottomItems.map((item) => (
+          {visibleBottomItems.map((item) => (
             <NavItem
               key={item.key}
               href={item.href}

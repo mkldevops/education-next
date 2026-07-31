@@ -86,7 +86,7 @@ function RecordPaymentForm({ families }: { families: Option[] }) {
       const result = await recordPaymentAction({
         familyId: formData.get('familyId') as string,
         amount: Number(formData.get('amount')),
-        method: formData.get('method') as 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | 'STRIPE',
+        method: formData.get('method') as 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK',
         reference: (formData.get('reference') as string) || undefined,
         paidAt: new Date(formData.get('paidAt') as string),
         cashedAt: (formData.get('cashedAt') as string)
@@ -107,23 +107,27 @@ function RecordPaymentForm({ families }: { families: Option[] }) {
     <form onSubmit={handleSubmit}>
       <DialogBody>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="payment-family">{t('selectFamily')}</Label>
-            <select
-              id="payment-family"
-              name="familyId"
-              required
-              disabled={isPending}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
-            >
-              {families.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+          {families.length === 1 ? (
+            <input type="hidden" name="familyId" value={families[0].id} />
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="payment-family">{t('selectFamily')}</Label>
+              <select
+                id="payment-family"
+                name="familyId"
+                required
+                disabled={isPending}
+                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              >
+                {families.map((family) => (
+                  <option key={family.id} value={family.id}>
+                    {family.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="payment-amount">{t('amount')}</Label>
               <Input
@@ -148,7 +152,6 @@ function RecordPaymentForm({ families }: { families: Option[] }) {
                 <option value="CARD">{t('methods.CARD')}</option>
                 <option value="TRANSFER">{t('methods.TRANSFER')}</option>
                 <option value="CHECK">{t('methods.CHECK')}</option>
-                <option value="STRIPE">{t('methods.STRIPE')}</option>
               </select>
             </div>
           </div>
@@ -156,7 +159,7 @@ function RecordPaymentForm({ families }: { families: Option[] }) {
             <Label htmlFor="payment-reference">{t('reference')}</Label>
             <Input id="payment-reference" name="reference" maxLength={250} disabled={isPending} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="payment-paidAt">{t('paidAt')}</Label>
               <Input

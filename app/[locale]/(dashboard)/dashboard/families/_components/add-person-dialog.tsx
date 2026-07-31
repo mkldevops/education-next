@@ -77,7 +77,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
     <form onSubmit={handleSubmit}>
       <DialogBody>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="person-name">{t('firstname')}</Label>
               <Input id="person-name" name="name" required maxLength={250} disabled={isPending} />
@@ -93,7 +93,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="person-sex">{t('sex')}</Label>
               <select
@@ -124,7 +124,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="person-email">{t('email')}</Label>
               <Input
@@ -150,7 +150,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
             <Label htmlFor="person-address">{t('address')}</Label>
             <Input id="person-address" name="address" maxLength={250} disabled={isPending} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="person-postcode">{t('postCode')}</Label>
               <Input id="person-postcode" name="postCode" maxLength={10} disabled={isPending} />

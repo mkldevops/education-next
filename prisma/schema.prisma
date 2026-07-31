@@ -37,6 +37,18 @@ enum PaymentMethod {
   STRIPE
 }
 
+enum PaymentProvider {
+  STRIPE
+}
+
+enum PaymentTransactionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
 enum ConfigValueType {
   TEXT
   NUMBER
@@ -53,21 +65,22 @@ enum Role {
 // ─── Better Auth Models ─────────────────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   name          String?
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String   @unique
+  emailVerified Boolean  @default(false)
   image         String?
-  role          Role      @default(PARENT)
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role          Role     @default(PARENT)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   sessions            Session[]
   accounts            Account[]
   families            UserFamily[]
-  createdFamilies     Family[]        @relation("createdBy")
+  createdFamilies     Family[]             @relation("createdBy")
   createdInvitations  Invitation[]
+  paymentTransactions PaymentTransaction[] @relation("paymentInitiatedBy")
   passkeys            Passkey[]
 }
 
@@ -127,10 +140,12 @@ model Family {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  createdBy User           @relation("createdBy", fields: [createdById], references: [id])
-  users     UserFamily[]
-  persons   FamilyPerson[]
-  payments  Payment[]
+  createdBy           User                 @relation("createdBy", fields: [createdById], references: [id])
+  users               UserFamily[]
+  persons             FamilyPerson[]
+  payments            Payment[]
+  paymentTransactions PaymentTransaction[]
+  invitations         Invitation[]
 
   @@index([createdById])
 }
@@ -163,6 +178,7 @@ model Person {
   configs      Config[]
   families     FamilyPerson[]
   student      Student?
+  invitations  Invitation[]
 }
 
 model FamilyPerson {
@@ -308,23 +324,62 @@ model ClassAssignment {
 }
 
 model Payment {
-  id           String        @id @default(uuid())
-  familyId     String
-  enrollmentId String
-  amount       Decimal       @db.Decimal(10, 2)
-  method       PaymentMethod
-  reference    String?       @db.VarChar(250)
-  paidAt       DateTime
-  cashedAt     DateTime?
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                   String        @id @default(uuid())
+  familyId             String
+  enrollmentId         String
+  paymentTransactionId String?
+  amount               Decimal       @db.Decimal(10, 2)
+  method               PaymentMethod
+  reference            String?       @db.VarChar(250)
+  paidAt               DateTime
+  cashedAt             DateTime?
+  isActive             Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
-  family     Family     @relation(fields: [familyId], references: [id])
-  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+  family             Family              @relation(fields: [familyId], references: [id])
+  enrollment         Enrollment          @relation(fields: [enrollmentId], references: [id])
+  paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id])
 
   @@index([familyId])
   @@index([enrollmentId])
+  @@index([paymentTransactionId])
+}
+
+model PaymentTransaction {
+  id                String                   @id @default(uuid())
+  familyId          String
+  initiatedById     String
+  amount            Decimal                  @db.Decimal(10, 2)
+  currency          String                   @default("EUR") @db.VarChar(3)
+  provider          PaymentProvider
+  status            PaymentTransactionStatus @default(PENDING)
+  providerSessionId String?                  @unique
+  providerPaymentId String?                  @db.VarChar(250)
+  succeededAt       DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  family      Family                 @relation(fields: [familyId], references: [id])
+  initiatedBy User                   @relation("paymentInitiatedBy", fields: [initiatedById], references: [id])
+  allocations Payment[]
+  events      PaymentProviderEvent[]
+
+  @@index([familyId])
+  @@index([initiatedById])
+  @@index([status])
+}
+
+model PaymentProviderEvent {
+  id                   String   @id @default(uuid())
+  providerEventId      String   @unique
+  type                 String   @db.VarChar(100)
+  paymentTransactionId String?
+  createdAt            DateTime @default(now())
+
+  paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id])
+
+  @@index([paymentTransactionId])
 }
 
 model Plan {
@@ -346,12 +401,18 @@ model Invitation {
   expiresAt   DateTime
   usedAt      DateTime?
   createdById String
+  familyId    String?
+  personId    String?
   createdAt   DateTime  @default(now())
 
-  createdBy User @relation(fields: [createdById], references: [id])
+  createdBy User    @relation(fields: [createdById], references: [id])
+  family    Family? @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  person    Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
 
   @@index([email])
   @@index([token])
+  @@index([familyId])
+  @@index([personId])
 }
 
 model Passkey {

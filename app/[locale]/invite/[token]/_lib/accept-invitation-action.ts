@@ -28,6 +28,8 @@ export async function acceptInvitationAction(input: {
   const existing = await db.user.findUnique({ where: { email: invitation.email } })
   if (existing) return 'emailAlreadyUsed'
 
+  let createdUserId: string | undefined
+
   try {
     const res = await auth.api.signUpEmail({
       body: {
@@ -36,22 +38,44 @@ export async function acceptInvitationAction(input: {
         password,
       },
     })
+    createdUserId = res.user.id
 
-    await db.user.update({
-      where: { id: res.user.id },
-      data: {
-        role: invitation.role,
-        emailVerified: true,
-      },
-    })
+    await db.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: res.user.id },
+        data: {
+          role: invitation.role,
+          emailVerified: true,
+        },
+      })
 
-    await db.invitation.update({
-      where: { id: invitation.id },
-      data: { usedAt: new Date() },
+      if (invitation.familyId) {
+        await tx.userFamily.upsert({
+          where: {
+            userId_familyId: {
+              userId: res.user.id,
+              familyId: invitation.familyId,
+            },
+          },
+          create: {
+            userId: res.user.id,
+            familyId: invitation.familyId,
+          },
+          update: {},
+        })
+      }
+
+      await tx.invitation.update({
+        where: { id: invitation.id },
+        data: { usedAt: new Date() },
+      })
     })
 
     return 'OK'
   } catch {
+    if (createdUserId) {
+      await db.user.delete({ where: { id: createdUserId } }).catch(() => undefined)
+    }
     return 'error'
   }
 }

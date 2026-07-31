@@ -5,12 +5,10 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { requireFamilyScope } from '../../_lib/auth-helper'
-import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
 import { EnrollmentsTable } from './_components/enrollments-table'
 
 type Props = {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ action?: string; studentId?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -22,10 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function EnrollmentsPage({ params, searchParams }: Props) {
+export default async function EnrollmentsPage({ params }: Props) {
   await connection()
   const { locale } = await params
-  const { action, studentId } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -45,35 +42,6 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
           },
         },
       }
-
-  const [students, plans, classes] = isAdmin
-    ? await Promise.all([
-        db.student.findMany({
-          where: { isActive: true },
-          include: { person: true },
-          orderBy: { person: { lastname: 'asc' } },
-        }),
-        db.plan.findMany({
-          where: { isActive: true },
-          orderBy: { name: 'asc' },
-        }),
-        db.classPeriod.findMany({
-          where: { isActive: true, ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}) },
-          include: { level: true, period: true },
-          orderBy: { name: 'asc' },
-        }),
-      ])
-    : [[], [], []]
-
-  const studentOptions = students.map((s) => ({
-    id: s.id,
-    name: `${s.person.lastname} ${s.person.name}`,
-  }))
-  const planOptions = plans.map((p) => ({ id: p.id, name: p.name }))
-  const classOptions = classes.map((c) => ({
-    id: c.id,
-    name: `${c.name} (${c.level.name} — ${c.period.name})`,
-  }))
 
   const availableClasses = isAdmin
     ? await db.classPeriod.findMany({
@@ -140,18 +108,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
           { label: tBreadcrumbs('enrollments') },
         ]}
       />
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        {studentOptions.length > 0 && planOptions.length > 0 && classOptions.length > 0 && (
-          <CreateEnrollmentDialog
-            students={studentOptions}
-            plans={planOptions}
-            classes={classOptions}
-            defaultOpen={action === 'create'}
-            defaultStudentId={studentId}
-          />
-        )}
-      </div>
+      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
       <EnrollmentsTable
         enrollments={serializableEnrollments}
         isAdmin={isAdmin}

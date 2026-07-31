@@ -14,5 +14,6 @@ export async function recordPaymentAction(data: RecordPaymentInput) {
   const result = await recordPayment(data)
   if (result !== 'OK') return result
   revalidatePath('/dashboard/payments')
+  revalidatePath(`/dashboard/families/${data.familyId}`)
   return result
 }

@@ -66,7 +66,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   ])
 
   return (
-    <html lang={locale}>
+    <html lang={locale} data-scroll-behavior="smooth">
       <body className="flex min-h-screen flex-col">
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider configs={themeConfigs} />

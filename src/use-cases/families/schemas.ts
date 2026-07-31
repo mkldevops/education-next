@@ -22,7 +22,7 @@ export const createFamilySchema = z.object({
   name: z.string().min(1).max(50),
   emergencyContact: z.string().max(250).optional(),
   authorizedPickup: z.string().optional(),
-  parents: z.array(parentInputSchema).min(1),
+  parents: z.array(parentInputSchema),
   address: z.string().max(250).optional(),
   postCode: z.string().max(10).optional(),
   city: z.string().max(250).optional(),

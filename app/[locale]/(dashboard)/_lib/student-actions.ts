@@ -17,6 +17,7 @@ export async function createStudentAction(data: CreateStudentInput) {
   const result = await createStudent(data)
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/students')
+  revalidatePath(`/dashboard/families/${data.familyId}`)
   return result
 }
 

@@ -36,9 +36,10 @@ type Props = {
   student: StudentWithRelation
   locale: string
   familyId: string
+  isAdmin: boolean
 }
 
-export async function ChildCard({ student, locale, familyId }: Props) {
+export async function ChildCard({ student, locale, familyId, isAdmin }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   const { person } = student
@@ -134,7 +135,7 @@ export async function ChildCard({ student, locale, familyId }: Props) {
         >
           {t('childCard.viewProfile')}
         </Link>
-        {enrollments.length === 0 && (
+        {isAdmin && enrollments.length === 0 && (
           <EnrollButton familyId={familyId} studentId={person.student.id} />
         )}
       </div>

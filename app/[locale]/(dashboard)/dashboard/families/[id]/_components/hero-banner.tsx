@@ -42,7 +42,7 @@ export async function HeroBanner({
 
       {(showActions || children) && (
         <div className="flex items-center gap-2 self-start md:self-auto">
-          {showActions && <ActionMenu familyId={family.id} />}
+          {showActions && <ActionMenu familyId={family.id} canEnroll={studentsCount > 0} />}
           {children}
         </div>
       )}

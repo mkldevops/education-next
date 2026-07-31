@@ -1,5 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import type { FamilyPerson, Person, PhoneNumber } from '@/generated/prisma/client'
+import { AddPersonDialog } from '../../_components/add-person-dialog'
+import { InviteParentButton } from '../../_components/invite-parent-button'
 
 type PersonWithRelation = FamilyPerson & {
   person: Person & {
@@ -9,59 +11,85 @@ type PersonWithRelation = FamilyPerson & {
 
 type Props = {
   persons: PersonWithRelation[]
+  familyId: string
+  isAdmin: boolean
+  linkedEmails: string[]
 }
 
-export async function ParentsSection({ persons }: Props) {
+export async function ParentsSection({ persons, familyId, isAdmin, linkedEmails }: Props) {
   const tCommon = await getTranslations('common')
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   const parents = persons.filter((p) => ['PARENT', 'TUTOR'].includes(p.relationType))
 
-  if (parents.length === 0) {
-    return (
-      <div className="text-center py-8 text-gray-600">
-        <p className="text-sm">{tCommon('noResults')}</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-3">
-      {parents.map((parent) => (
-        <div key={parent.personId} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg flex-shrink-0">
-              {parent.person.name.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900">
-                {parent.person.name} {parent.person.lastname}
-              </p>
-              <p className="text-xs text-gray-600 mt-0.5">
-                {t(`relationType.${parent.relationType}`)}
-              </p>
-              {parent.person.phoneNumbers.length > 0 && (
-                <p className="text-xs text-gray-600 mt-1">
-                  {parent.person.phoneNumbers[0].phoneNumber}
-                </p>
-              )}
-              {parent.person.email && (
-                <p className="text-xs text-gray-600 mt-0.5 truncate">{parent.person.email}</p>
-              )}
-              {parent.person.address && (
-                <p className="text-xs text-gray-600 mt-0.5 truncate">
-                  {[
-                    parent.person.address,
-                    [parent.person.postCode, parent.person.city].filter(Boolean).join(' '),
-                  ]
-                    .filter(Boolean)
-                    .join(', ')}
-                </p>
-              )}
-            </div>
-          </div>
+    <div className="space-y-4">
+      {isAdmin && (
+        <div className="flex justify-end">
+          <AddPersonDialog familyId={familyId} />
         </div>
-      ))}
+      )}
+
+      {parents.length === 0 ? (
+        <div className="py-8 text-center text-gray-600">
+          <p className="text-sm">{tCommon('noResults')}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {parents.map((parent) => (
+            <div key={parent.personId} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-lg">
+                    {parent.person.name.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      {parent.person.name} {parent.person.lastname}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-600">
+                      {t(`relationType.${parent.relationType}`)}
+                    </p>
+                    {parent.person.phoneNumbers.length > 0 && (
+                      <p className="mt-1 text-xs text-gray-600">
+                        {parent.person.phoneNumbers[0].phoneNumber}
+                      </p>
+                    )}
+                    {parent.person.email && (
+                      <p className="mt-0.5 truncate text-xs text-gray-600">{parent.person.email}</p>
+                    )}
+                    {parent.person.address && (
+                      <p className="mt-0.5 truncate text-xs text-gray-600">
+                        {[
+                          parent.person.address,
+                          [parent.person.postCode, parent.person.city].filter(Boolean).join(' '),
+                        ]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {isAdmin &&
+                  parent.person.email &&
+                  (linkedEmails.some(
+                    (email) => email.toLowerCase() === parent.person.email?.toLowerCase()
+                  ) ? (
+                    <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
+                      {t('portalInvitation.active')}
+                    </span>
+                  ) : (
+                    <InviteParentButton
+                      familyId={familyId}
+                      personId={parent.personId}
+                      email={parent.person.email}
+                    />
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

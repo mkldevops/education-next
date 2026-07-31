@@ -72,6 +72,7 @@ export function EnrollmentActions({
   }
 
   const canAct = status === 'PENDING' || status === 'ACTIVE'
+  if (!isAdmin) return null
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -95,7 +96,7 @@ export function EnrollmentActions({
           </Button>
         </>
       )}
-      {isAdmin && canAct && (
+      {canAct && (
         <>
           <ReassignClassDialog
             enrollmentId={enrollmentId}

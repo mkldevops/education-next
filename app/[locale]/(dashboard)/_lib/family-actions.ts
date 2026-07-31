@@ -57,6 +57,7 @@ export async function addPersonToFamilyAction(data: AddPersonToFamilyInput) {
   const result = await addPersonToFamily(data)
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
+  revalidatePath(`/dashboard/families/${data.familyId}`)
   return result
 }
 

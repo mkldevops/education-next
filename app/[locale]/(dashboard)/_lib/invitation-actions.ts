@@ -1,25 +1,44 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { headers } from 'next/headers'
 import { z } from 'zod'
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { sendEmail } from '@/lib/email'
+import { requireAdmin } from './auth-helper'
 
 const inviteSchema = z.object({
   email: z.email(),
   role: z.enum(['ADMIN', 'PARENT']),
+  familyId: z.uuid().optional(),
+  personId: z.uuid().optional(),
 })
 
-export async function inviteUserAction(input: { email: string; role: string }) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) return 'unauthorized'
+export async function inviteUserAction(input: {
+  email: string
+  role: string
+  familyId?: string
+  personId?: string
+}) {
+  const user = await requireAdmin()
+  if (!user) return 'unauthorized'
 
   const parsed = inviteSchema.safeParse(input)
   if (!parsed.success) return 'invalidInput'
 
-  const { email, role } = parsed.data
+  const { email, role, familyId, personId } = parsed.data
+  if ((familyId || personId) && (role !== 'PARENT' || !familyId || !personId)) {
+    return 'invalidInput'
+  }
+
+  if (familyId && personId) {
+    const familyPerson = await db.familyPerson.findUnique({
+      where: { familyId_personId: { familyId, personId } },
+      include: { person: true },
+    })
+    if (!familyPerson || familyPerson.person.email?.toLowerCase() !== email.toLowerCase()) {
+      return 'invalidInput'
+    }
+  }
 
   const existing = await db.user.findUnique({ where: { email } })
   if (existing) return 'emailAlreadyUsed'
@@ -33,7 +52,9 @@ export async function inviteUserAction(input: { email: string; role: string }) {
       role,
       token,
       expiresAt,
-      createdById: session.user.id,
+      createdById: user.id,
+      familyId,
+      personId,
     },
   })
 
@@ -61,5 +82,6 @@ export async function inviteUserAction(input: { email: string; role: string }) {
   if (result !== 'OK') return 'emailError'
 
   revalidatePath('/dashboard/users')
+  if (familyId) revalidatePath(`/dashboard/families/${familyId}`)
   return 'OK'
 }

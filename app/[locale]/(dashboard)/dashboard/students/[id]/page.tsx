@@ -91,6 +91,7 @@ export default async function StudentDetailPage({ params }: Props) {
   const languagesAtHome = Array.isArray(student.languagesAtHome)
     ? student.languagesAtHome.join(', ')
     : '-'
+  const familyContext = student.person.families[0]?.family
 
   return (
     <div className="space-y-6">
@@ -101,7 +102,12 @@ export default async function StudentDetailPage({ params }: Props) {
             href: '/dashboard',
             icon: 'home',
           },
-          { label: tBreadcrumbs('students'), href: '/dashboard/students' },
+          familyContext
+            ? {
+                label: familyContext.name,
+                href: `/dashboard/families/${familyContext.id}`,
+              }
+            : { label: tBreadcrumbs('students'), href: '/dashboard/students' },
           { label: `${student.person.name} ${student.person.lastname}` },
         ]}
       />

@@ -1,0 +1,54 @@
+'use client'
+
+import { CreditCard } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { useTransition } from 'react'
+import { Button } from '@/components/ui/button/button'
+import { formatCurrency } from '@/lib/decimal'
+import { toast } from '@/lib/toast'
+import { createOnlinePaymentAction } from '../../../../_lib/online-payment-actions'
+
+type Props = {
+  amount: number
+  configured: boolean
+  locale: string
+}
+
+export function OnlinePaymentButton({ amount, configured, locale }: Props) {
+  const t = useTranslations('dashboard.pages.familyDetails.onlinePayment')
+  const [isPending, startTransition] = useTransition()
+
+  const startPayment = () => {
+    startTransition(async () => {
+      const result = await createOnlinePaymentAction({ locale })
+      if (typeof result === 'object' && result.result === 'OK') {
+        window.location.assign(result.url)
+        return
+      }
+
+      const key =
+        result === 'noBalance' ? 'noBalance' : result === 'notConfigured' ? 'unavailable' : 'error'
+      toast.error(t(key))
+    })
+  }
+
+  if (amount <= 0) {
+    return <p className="text-sm font-medium text-emerald-700">{t('settled')}</p>
+  }
+
+  return (
+    <div className="space-y-2">
+      <Button
+        type="button"
+        className="w-full"
+        disabled={!configured || isPending}
+        onClick={startPayment}
+      >
+        <CreditCard size={18} />
+        {isPending ? t('pending') : t('action', { amount: formatCurrency(amount, locale) })}
+      </Button>
+      {!configured && <p className="text-xs text-amber-700">{t('unavailable')}</p>}
+      <p className="text-xs text-gray-500">{t('secure')}</p>
+    </div>
+  )
+}

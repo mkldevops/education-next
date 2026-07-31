@@ -218,7 +218,7 @@ export function EnrollmentDrawer({
             </div>
 
             <div className="flex flex-wrap gap-2 border-t pt-3">
-              {enrollment.status === 'PENDING' && (
+              {isAdmin && enrollment.status === 'PENDING' && (
                 <>
                   <Button size="sm" disabled={isPending} onClick={handleActivate}>
                     {isPending ? '...' : tActions('activate')}
@@ -228,7 +228,7 @@ export function EnrollmentDrawer({
                   </Button>
                 </>
               )}
-              {enrollment.status === 'ACTIVE' && (
+              {isAdmin && enrollment.status === 'ACTIVE' && (
                 <>
                   <Button size="sm" disabled={isPending} onClick={handleComplete}>
                     {isPending ? '...' : tActions('complete')}
