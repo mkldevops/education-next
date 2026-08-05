@@ -273,6 +273,15 @@
           "cancel": "Annuler",
           "success": "Téléphone ajouté avec succès",
           "error": "Erreur lors de l'ajout"
+        },
+        "table": {
+          "search": "Rechercher...",
+          "noResults": "Aucun résultat",
+          "columns": "Colonnes",
+          "rowsPerPage": "Lignes par page",
+          "page": "Page {current} sur {total}",
+          "previous": "Précédent",
+          "next": "Suivant"
         }
       },
       "students": {
