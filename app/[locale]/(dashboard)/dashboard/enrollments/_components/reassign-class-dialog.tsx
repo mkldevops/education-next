@@ -96,8 +96,8 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
               id="reassign-class"
               name="newClassPeriodId"
               required
-              disabled={isPending}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              disabled={isPending || availableClasses.length === 0}
+              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               {availableClasses.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -105,6 +105,9 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
                 </option>
               ))}
             </select>
+            {availableClasses.length === 0 && (
+              <p className="text-xs text-amber-700">{t('noClassAvailable')}</p>
+            )}
           </div>
         </div>
       </DialogBody>
@@ -112,7 +115,7 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
         <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
           {t('cancel')}
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending || availableClasses.length === 0}>
           {isPending ? '...' : t('submit')}
         </Button>
       </DialogFooter>

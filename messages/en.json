@@ -906,7 +906,8 @@
           "cancel": "Cancel",
           "submit": "Reassign",
           "success": "Class reassigned",
-          "error": "Error reassigning class"
+          "error": "Error reassigning class",
+          "noClassAvailable": "No other class available for the selected period."
         },
         "applyDiscount": {
           "title": "Apply Discount",

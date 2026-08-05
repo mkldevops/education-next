@@ -906,7 +906,8 @@
           "cancel": "Annuler",
           "submit": "Réaffecter",
           "success": "Classe réaffectée",
-          "error": "Erreur lors de la réaffectation"
+          "error": "Erreur lors de la réaffectation",
+          "noClassAvailable": "Aucune autre classe disponible sur la période sélectionnée."
         },
         "applyDiscount": {
           "title": "Appliquer une réduction",
