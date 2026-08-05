@@ -16,6 +16,7 @@ interface Props {
   isAdmin: boolean
   availableClasses: Array<{ id: string; name: string }>
   locale: string
+  periodName: string | null
 }
 
 const STATUS_VALUES: EnrollmentStatus[] = ['PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED']
@@ -25,7 +26,13 @@ function toNumber(value: number | { toNumber?: () => number; toString: () => str
   return value.toNumber ? value.toNumber() : Number(value.toString())
 }
 
-export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, locale }: Props) {
+export function EnrollmentsTable({
+  enrollments,
+  isAdmin,
+  availableClasses,
+  locale,
+  periodName,
+}: Props) {
   const t = useTranslations('dashboard.pages.enrollments')
   const tStatus = useTranslations('status')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -125,7 +132,9 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
         data={filtered}
         columns={columns}
         labels={labels}
-        emptyMessage={t('noEnrollments')}
+        emptyMessage={
+          periodName ? t('noEnrollmentsInPeriod', { period: periodName }) : t('noEnrollments')
+        }
         onRowClick={handleRowClick}
         toolbar={
           <select

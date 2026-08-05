@@ -2,7 +2,7 @@ import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { getSelectedPeriodId } from '@/features/dashboard/period'
+import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { requireFamilyScope } from '../../_lib/auth-helper'
@@ -34,7 +34,8 @@ export default async function PaymentsPage({ params }: Props) {
     redirect({ href: `/dashboard/families/${scope.familyId}`, locale })
   }
 
-  const selectedPeriodId = await getSelectedPeriodId()
+  const selectedPeriod = await getSelectedPeriod()
+  const selectedPeriodId = selectedPeriod?.id ?? null
 
   const whereClause = {
     isActive: true,
@@ -86,7 +87,12 @@ export default async function PaymentsPage({ params }: Props) {
       />
       <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
       <Card className="rounded-xl border border-gray-200">
-        <PaymentsTable payments={paymentRows} locale={locale} isAdmin />
+        <PaymentsTable
+          payments={paymentRows}
+          locale={locale}
+          isAdmin
+          periodName={selectedPeriod?.name ?? null}
+        />
       </Card>
     </div>
   )

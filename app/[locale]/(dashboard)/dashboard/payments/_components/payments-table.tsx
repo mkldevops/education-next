@@ -24,9 +24,10 @@ interface Props {
   payments: PaymentRow[]
   locale: string
   isAdmin: boolean
+  periodName: string | null
 }
 
-export function PaymentsTable({ payments, locale, isAdmin }: Props) {
+export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) {
   const t = useTranslations('dashboard.pages.payments')
 
   const familyColumn: ColumnDef<PaymentRow> = {
@@ -113,7 +114,7 @@ export function PaymentsTable({ payments, locale, isAdmin }: Props) {
       data={payments}
       columns={columns}
       labels={labels}
-      emptyMessage={t('noPayments')}
+      emptyMessage={periodName ? t('noPaymentsInPeriod', { period: periodName }) : t('noPayments')}
       enableSearch={isAdmin}
       enableColumnVisibility={isAdmin}
       enablePagination={isAdmin}

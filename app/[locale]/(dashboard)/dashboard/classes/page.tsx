@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { getSelectedPeriodId } from '@/features/dashboard/period'
+import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { requireAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
@@ -29,7 +29,8 @@ export default async function ClassesPage({ params }: Props) {
   const user = await requireAdmin()
   if (!user) notFound()
 
-  const selectedPeriodId = await getSelectedPeriodId()
+  const selectedPeriod = await getSelectedPeriod()
+  const selectedPeriodId = selectedPeriod?.id ?? null
 
   const [levels, periods] = await Promise.all([
     db.level.findMany({
@@ -118,7 +119,11 @@ export default async function ClassesPage({ params }: Props) {
           data={classes}
           columns={columns}
           getRowKey={(item) => item.id}
-          emptyMessage={t('noClasses')}
+          emptyMessage={
+            selectedPeriod
+              ? t('noClassesInPeriod', { period: selectedPeriod.name })
+              : t('noClasses')
+          }
         />
       </Card>
     </div>

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { checkOverlap, validatePeriodDates } from '../period'
+import { checkOverlap, selectDefaultPeriod, validatePeriodDates } from '../period'
+
+function period(id: string, startAt: string, endAt: string, hasClasses = false) {
+  return { id, startAt: new Date(startAt), endAt: new Date(endAt), hasClasses }
+}
 
 describe('period domain', () => {
   describe('validatePeriodDates', () => {
@@ -200,6 +204,76 @@ describe('period domain', () => {
       const result = checkOverlap(startAt, endAt, existingPeriods)
 
       expect(result).toBe('overlappingPeriod')
+    })
+  })
+
+  describe('selectDefaultPeriod', () => {
+    const now = new Date('2026-08-05')
+
+    it('should return null when no period exists', () => {
+      expect(selectDefaultPeriod([], now)).toBeNull()
+    })
+
+    it('should return the period containing the current date', () => {
+      const current = period('current', '2025-09-01', '2026-08-31')
+      const periods = [period('next', '2026-09-01', '2027-08-31', true), current]
+
+      expect(selectDefaultPeriod(periods, now)).toBe(current)
+    })
+
+    it('should prefer the current period over a more recent one with classes', () => {
+      const current = period('current', '2025-09-01', '2026-08-31')
+      const periods = [period('next', '2026-09-01', '2027-08-31', true), current]
+
+      expect(selectDefaultPeriod(periods, now)?.id).toBe('current')
+    })
+
+    it('should include boundary dates in the current period', () => {
+      const startingToday = period('starting', '2026-08-05', '2027-06-30')
+
+      expect(selectDefaultPeriod([startingToday], now)).toBe(startingToday)
+      expect(selectDefaultPeriod([period('ending', '2025-09-01', '2026-08-05')], now)?.id).toBe(
+        'ending'
+      )
+    })
+
+    it('should fall back to the most recent period with at least one class', () => {
+      const periods = [
+        period('empty', '2026-09-01', '2027-08-31'),
+        period('withClasses', '2025-09-01', '2026-06-30', true),
+        period('older', '2024-09-01', '2025-06-30', true),
+      ]
+
+      expect(selectDefaultPeriod(periods, now)?.id).toBe('withClasses')
+    })
+
+    it('should fall back to the most recent period when none has classes', () => {
+      const periods = [
+        period('older', '2024-09-01', '2025-06-30'),
+        period('newest', '2026-09-01', '2027-08-31'),
+      ]
+
+      expect(selectDefaultPeriod(periods, now)?.id).toBe('newest')
+    })
+
+    it('should not depend on the input order', () => {
+      const periods = [
+        period('withClasses', '2025-09-01', '2026-06-30', true),
+        period('empty', '2026-09-01', '2027-08-31'),
+      ]
+
+      expect(selectDefaultPeriod(periods, now)?.id).toBe('withClasses')
+    })
+
+    it('should not mutate the given array', () => {
+      const periods = [
+        period('older', '2024-09-01', '2025-06-30'),
+        period('newest', '2026-09-01', '2027-08-31'),
+      ]
+
+      selectDefaultPeriod(periods, now)
+
+      expect(periods[0]?.id).toBe('older')
     })
   })
 })

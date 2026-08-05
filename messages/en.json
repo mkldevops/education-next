@@ -414,6 +414,7 @@
         "enrolled": "Enrolled",
         "actions": "Actions",
         "noClasses": "No classes registered",
+        "noClassesInPeriod": "No class in period {period}. Create a class or switch period.",
         "create": {
           "title": "New Class",
           "name": "Name",
@@ -449,6 +450,7 @@
         "current": "Current",
         "balanceBadge": "{amount} due",
         "noEnrollments": "No enrollments registered",
+        "noEnrollmentsInPeriod": "No enrollment in period {period}. Enroll a student or switch period.",
         "filterStatus": "Filter by status",
         "statusAll": "All statuses",
         "table": {
@@ -514,6 +516,7 @@
         "cashedAt": "Cash Date",
         "pending": "Pending",
         "noPayments": "No payments registered",
+        "noPaymentsInPeriod": "No payment in period {period}. Record a payment or switch period.",
         "summary": {
           "remaining": "Remaining balance",
           "upToDate": "Up to date",

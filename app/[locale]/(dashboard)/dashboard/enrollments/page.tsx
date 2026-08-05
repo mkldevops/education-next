@@ -2,7 +2,7 @@ import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { getSelectedPeriodId } from '@/features/dashboard/period'
+import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { requireFamilyScope } from '../../_lib/auth-helper'
 import { EnrollmentsTable } from './_components/enrollments-table'
@@ -27,7 +27,8 @@ export default async function EnrollmentsPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const selectedPeriodId = await getSelectedPeriodId()
+  const selectedPeriod = await getSelectedPeriod()
+  const selectedPeriodId = selectedPeriod?.id ?? null
 
   const scope = await requireFamilyScope()
 
@@ -114,6 +115,7 @@ export default async function EnrollmentsPage({ params }: Props) {
         isAdmin={isAdmin}
         availableClasses={availableClasses}
         locale={locale}
+        periodName={selectedPeriod?.name ?? null}
       />
     </div>
   )

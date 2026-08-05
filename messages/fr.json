@@ -414,6 +414,7 @@
         "enrolled": "Inscrits",
         "actions": "Actions",
         "noClasses": "Aucune classe enregistrée",
+        "noClassesInPeriod": "Aucune classe sur la période {period}. Créez une classe ou changez de période.",
         "create": {
           "title": "Nouvelle classe",
           "name": "Nom",
@@ -449,6 +450,7 @@
         "current": "Actuelle",
         "balanceBadge": "{amount} restant",
         "noEnrollments": "Aucune inscription enregistrée",
+        "noEnrollmentsInPeriod": "Aucune inscription sur la période {period}. Inscrivez un élève ou changez de période.",
         "filterStatus": "Filtrer par statut",
         "statusAll": "Tous les statuts",
         "table": {
@@ -514,6 +516,7 @@
         "cashedAt": "Date d'encaissement",
         "pending": "En attente",
         "noPayments": "Aucun paiement enregistré",
+        "noPaymentsInPeriod": "Aucun paiement sur la période {period}. Enregistrez un paiement ou changez de période.",
         "summary": {
           "remaining": "Solde restant",
           "upToDate": "À jour",
