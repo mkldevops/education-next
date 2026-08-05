@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { requireAdmin } from '../../_lib/auth-helper'
+import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreatePlanDialog } from './_components/create-plan-dialog'
 import { EditPlanDialog } from './_components/edit-plan-dialog'
 
@@ -15,11 +16,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: 'dashboard' })
-
-  return {
-    title: t('pages.plans.title'),
-  }
+  return restrictedPageMetadata(locale, 'dashboard.pages.plans.title', ['ADMIN', 'SUPER_ADMIN'])
 }
 
 export default async function PlansPage({ params }: Props) {

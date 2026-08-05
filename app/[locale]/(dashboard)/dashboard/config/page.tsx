@@ -8,6 +8,7 @@ import { ConfigValueTypeLabel } from '@/features/enums'
 import { BRANDING_CONFIG_DEFAULTS, BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import { db } from '@/lib/db'
 import { getSessionWithRole } from '../../_lib/auth-helper'
+import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateConfigDialog } from './_components/create-config-dialog'
 import { EditConfigDialog } from './_components/edit-config-dialog'
 
@@ -17,11 +18,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: 'dashboard' })
-
-  return {
-    title: t('pages.config.title'),
-  }
+  return restrictedPageMetadata(locale, 'dashboard.pages.config.title', ['ADMIN', 'SUPER_ADMIN'])
 }
 
 export default async function ConfigPage({ params }: Props) {

@@ -219,7 +219,6 @@
           "female": "Female",
           "email": "Email",
           "phone": "Phone",
-          "phoneHint": "Invalid format. Use digits, spaces, +, - or parentheses.",
           "addressTitle": "Address",
           "address": "Address",
           "postCode": "Postal code",

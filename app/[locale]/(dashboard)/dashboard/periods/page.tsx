@@ -5,6 +5,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { requireAdmin } from '../../_lib/auth-helper'
+import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreatePeriodDialog } from './_components/create-period-dialog'
 import { EditPeriodDialog } from './_components/edit-period-dialog'
 
@@ -14,11 +15,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: 'dashboard' })
-
-  return {
-    title: t('pages.periods.title'),
-  }
+  return restrictedPageMetadata(locale, 'dashboard.pages.periods.title', ['ADMIN', 'SUPER_ADMIN'])
 }
 
 export default async function PeriodsPage({ params }: Props) {
