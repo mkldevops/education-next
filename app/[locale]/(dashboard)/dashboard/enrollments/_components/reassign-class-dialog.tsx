@@ -27,12 +27,14 @@ interface ReassignClassDialogProps {
   enrollmentId: string
   currentClassId: string | null
   classes: Option[]
+  triggerLabel?: string
 }
 
 export function ReassignClassDialog({
   enrollmentId,
   currentClassId,
   classes,
+  triggerLabel,
 }: ReassignClassDialogProps) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.reassign')
 
@@ -40,7 +42,7 @@ export function ReassignClassDialog({
     <Dialog>
       <DialogTrigger>
         <Button variant="outline" size="sm">
-          {t('title')}
+          {triggerLabel ?? t('title')}
         </Button>
       </DialogTrigger>
       <DialogContent>

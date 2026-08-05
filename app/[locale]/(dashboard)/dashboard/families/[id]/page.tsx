@@ -178,6 +178,11 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     ? studentId
     : undefined
 
+  const classOptions = classes.map((c) => ({
+    id: c.id,
+    name: `${c.name} (${c.level.name} — ${c.period.name})`,
+  }))
+
   return (
     <div className="space-y-6">
       <Breadcrumbs
@@ -205,10 +210,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 name: `${s.person.lastname} ${s.person.name}`,
               }))}
               plans={plans.map((p) => ({ id: p.id, name: p.name }))}
-              classes={classes.map((c) => ({
-                id: c.id,
-                name: `${c.name} (${c.level.name} — ${c.period.name})`,
-              }))}
+              classes={classOptions}
               defaultOpen={action === 'addEnrollment'}
               defaultStudentId={scopedStudentId}
               redirectTo={`/dashboard/families/${family.id}`}
@@ -349,6 +351,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                         locale={locale}
                         familyId={family.id}
                         isAdmin={isAdmin}
+                        classes={classOptions}
                       />
                     ))}
                   </div>

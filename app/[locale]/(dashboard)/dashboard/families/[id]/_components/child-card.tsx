@@ -5,13 +5,16 @@ import type {
   ClassAssignment,
   ClassPeriod,
   Enrollment,
+  Level,
   Payment,
+  Period,
   Person,
   Plan,
   Student,
 } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
+import { ReassignClassDialog } from '../../../enrollments/_components/reassign-class-dialog'
 import { EnrollButton } from './enroll-button'
 
 type StudentWithRelation = {
@@ -23,7 +26,10 @@ type StudentWithRelation = {
           payments: Payment[]
           classAssignments: Array<
             ClassAssignment & {
-              classPeriod: ClassPeriod
+              classPeriod: ClassPeriod & {
+                level: Level
+                period: Period
+              }
             }
           >
         }
@@ -32,14 +38,20 @@ type StudentWithRelation = {
   }
 }
 
+type ClassOption = {
+  id: string
+  name: string
+}
+
 type Props = {
   student: StudentWithRelation
   locale: string
   familyId: string
   isAdmin: boolean
+  classes: ClassOption[]
 }
 
-export async function ChildCard({ student, locale, familyId, isAdmin }: Props) {
+export async function ChildCard({ student, locale, familyId, isAdmin, classes }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   const { person } = student
@@ -88,12 +100,32 @@ export async function ChildCard({ student, locale, familyId, isAdmin }: Props) {
             const totalPaid = enrollment.payments.reduce((sum, p) => sum + Number(p.amount), 0)
             const remaining = totalAmount - totalPaid
             const paidPercentage = totalAmount > 0 ? (totalPaid / totalAmount) * 100 : 0
+            const currentAssignment = enrollment.classAssignments[0]
+            const currentClassId = currentAssignment?.classPeriod.id ?? null
 
             return (
               <div key={enrollment.id} className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-gray-900">{enrollment.plan.name}</p>
                   <EnrollmentStatusBadge status={enrollment.status} />
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-gray-600">
+                    {currentAssignment
+                      ? `${t('childCard.class')}: ${currentAssignment.classPeriod.name} (${currentAssignment.classPeriod.level.name} — ${currentAssignment.classPeriod.period.name})`
+                      : t('childCard.noClass')}
+                  </span>
+                  {isAdmin && (
+                    <ReassignClassDialog
+                      enrollmentId={enrollment.id}
+                      currentClassId={currentClassId}
+                      classes={classes}
+                      triggerLabel={
+                        currentAssignment ? t('childCard.changeClass') : t('childCard.assignClass')
+                      }
+                    />
+                  )}
                 </div>
 
                 <div
