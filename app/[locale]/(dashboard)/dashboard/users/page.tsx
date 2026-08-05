@@ -5,6 +5,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { requireRole } from '../../_lib/auth-helper'
+import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { ActionCell } from './_components/action-cell'
 import { InviteUserDialog } from './_components/invite-user-dialog'
 
@@ -14,11 +15,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: 'dashboard' })
-
-  return {
-    title: t('pages.users.title'),
-  }
+  return restrictedPageMetadata(locale, 'dashboard.pages.users.title', ['SUPER_ADMIN'])
 }
 
 export default async function UsersPage({ params }: Props) {
