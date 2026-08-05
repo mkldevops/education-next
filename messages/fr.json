@@ -686,6 +686,7 @@
           "unavailable": "Le paiement en ligne n'est pas encore configuré.",
           "noBalance": "Cette famille n'a aucun solde à régler.",
           "settled": "Votre famille est à jour.",
+          "notPayableYet": "Le solde en cours concerne une inscription en attente de validation : rien à régler en ligne pour le moment.",
           "error": "Impossible de démarrer le paiement.",
           "returned": "Votre paiement a été transmis. L'historique sera actualisé après confirmation bancaire.",
           "cancelled": "Le paiement a été annulé. Aucun règlement n'a été enregistré."

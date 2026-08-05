@@ -686,6 +686,7 @@
           "unavailable": "Online payment is not configured yet.",
           "noBalance": "This family has no outstanding balance.",
           "settled": "Your family is up to date.",
+          "notPayableYet": "The outstanding balance relates to an enrollment awaiting approval: nothing to pay online yet.",
           "error": "Unable to start payment.",
           "returned": "Your payment was submitted. History will update after bank confirmation.",
           "cancelled": "Payment was cancelled. No payment was recorded."
