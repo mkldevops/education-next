@@ -53,7 +53,7 @@ export function DataTable<T>({
         </thead>
         <tbody>
           {data.map((item) => (
-            <tr key={getRowKey(item)} className="border-b border-gray-100 last:border-b-0">
+            <tr key={getRowKey(item)} className="relative border-b border-gray-100 last:border-b-0">
               {columns.map((col) => (
                 <td key={col.key} className={cn('px-4 py-4 text-sm', col.className)}>
                   {col.render ? col.render(item) : String(getCellValue(item, col.key) ?? '')}

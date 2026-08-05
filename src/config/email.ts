@@ -10,13 +10,16 @@ function getRequiredEnv(name: string): string {
 
 function getEmailProvider(): EmailProviderType {
   const provider = process.env.EMAIL_PROVIDER as EmailProviderType | undefined
-  if (!provider || !['resend', 'brevo'].includes(provider)) {
-    throw new Error(`Invalid EMAIL_PROVIDER: ${provider}. Must be 'resend' or 'brevo'`)
+  if (!provider || !['resend', 'brevo', 'mailpit'].includes(provider)) {
+    throw new Error(`Invalid EMAIL_PROVIDER: ${provider}. Must be 'resend', 'brevo' or 'mailpit'`)
   }
   return provider
 }
 
 function getApiKey(provider: EmailProviderType): string {
+  if (provider === 'mailpit') {
+    return process.env.MAILPIT_URL || 'http://localhost:8553'
+  }
   if (provider === 'resend') {
     return getRequiredEnv('RESEND_API_KEY')
   }

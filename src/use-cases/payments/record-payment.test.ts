@@ -54,6 +54,18 @@ describe('recordPayment', () => {
     expect(result).toBe('validationError')
   })
 
+  it('should fail validation with a cash date on a non-check payment', async () => {
+    const result = await recordPayment({
+      familyId: '550e8400-e29b-41d4-a716-446655440000',
+      amount: 100,
+      method: 'TRANSFER',
+      paidAt: new Date(),
+      cashedAt: new Date(),
+    })
+
+    expect(result).toBe('validationError')
+  })
+
   it('should fail with family not found', async () => {
     familyGatewayMock.findById.mockResolvedValue(null)
 

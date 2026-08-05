@@ -2,9 +2,9 @@
 
 import { Command } from 'cmdk'
 import { User, Users } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from '@/i18n/routing'
 import { searchStudentsAndFamilies } from '@/services/search-service'
 
 type SearchResult =
@@ -12,7 +12,7 @@ type SearchResult =
       type: 'family'
       id: string
       name: string
-      secondaryInfo: string
+      memberCount: number
     }
   | {
       type: 'student'
@@ -156,7 +156,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
                         {family.name}
                       </div>
                       <div className="text-xs text-graphite-600 truncate">
-                        {family.secondaryInfo}
+                        {t('memberCount', { count: family.memberCount })}
                       </div>
                     </div>
                   </button>

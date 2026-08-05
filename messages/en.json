@@ -142,7 +142,9 @@
       "enrollments": "Enrollments",
       "pendingPayments": "Pending payments",
       "pendingEnrollments": "Enrollments to review",
-      "remainingBalance": "Family balance"
+      "remainingBalance": "Family balance",
+      "scopeAll": "All periods",
+      "scopePeriod": "{period} period"
     },
     "breadcrumbs": {
       "dashboard": "Dashboard",
@@ -383,13 +385,25 @@
           "error": "Error creating level"
         },
         "edit": {
-          "title": "Next Level",
-          "selectNextLevel": "Select next level",
+          "title": "Edit level",
+          "name": "Name",
+          "selectNextLevel": "Next level",
+          "nextLevelHint": "A level can only follow one other level.",
           "noNext": "None (end of track)",
+          "delete": "Delete",
           "cancel": "Cancel",
           "submit": "Save",
-          "success": "Progression updated",
-          "error": "Error updating progression"
+          "success": "Level updated",
+          "deleteSuccess": "Level deleted",
+          "error": "Error updating progression",
+          "errors": {
+            "alreadyLinked": "This level already follows another level",
+            "levelInUse": "Classes use this level: remove them first",
+            "circularReference": "This progression would create a loop",
+            "notFound": "Level not found",
+            "validationError": "Check the information entered",
+            "unauthorized": "You are not allowed to edit levels"
+          }
         }
       },
       "classes": {
@@ -452,6 +466,7 @@
           "selectStudent": "Student",
           "selectPlan": "Pricing Plan",
           "selectClass": "Class",
+          "noClassInPeriod": "No class in the selected period. Create a class or switch period.",
           "discount": "Discount (€)",
           "canLeaveAlone": "Can leave alone",
           "cancel": "Cancel",
@@ -528,12 +543,31 @@
             "STRIPE": "Stripe"
           },
           "reference": "Reference",
+          "referencePlaceholders": {
+            "CASH": "Receipt no.…",
+            "CARD": "Transaction reference",
+            "TRANSFER": "Transfer reference",
+            "CHECK": "Check number",
+            "STRIPE": "Stripe reference"
+          },
+          "optional": "(optional)",
+          "remainingLabel": "Remaining balance: {amount}",
+          "payFull": "Pay the balance",
           "paidAt": "Payment Date",
           "cashedAt": "Cash Date",
+          "cashedAtHint": "Fill in once the check has been cashed",
           "cancel": "Cancel",
           "submit": "Record",
           "success": "Collection recorded",
-          "error": "Error recording payment"
+          "error": "Error recording payment",
+          "errors": {
+            "overpayment": "The amount exceeds the balance of active enrollments",
+            "noActiveEnrollments": "This family has no active enrollment to pay",
+            "refundExceedsPaid": "The refund exceeds the amount already paid",
+            "validationError": "Check the information entered",
+            "notFound": "Family not found",
+            "unauthorized": "You are not allowed to record this payment"
+          }
         }
       },
       "plans": {
@@ -625,6 +659,8 @@
         "actions": {
           "new": "New",
           "pay": "Record a collection",
+          "payUnavailable": "This family has no outstanding balance",
+          "payNoActiveEnrollment": "No active enrollment: activate one to record a payment",
           "newStudent": "Add a student",
           "newEnrollment": "Enroll a student",
           "manage": "Actions",
@@ -682,7 +718,6 @@
           "activityTitle": "Recent Activity",
           "assignmentsTitle": "Class Assignments",
           "noChildren": "No students in this family",
-          "noPayments": "No payments recorded",
           "noActivity": "No recent activity"
         },
         "childCard": {
@@ -758,7 +793,12 @@
           "reference": "Reference",
           "paidAt": "Payment Date",
           "cashedAt": "Cash Date",
+          "total": "Total",
+          "count": "{count, plural, one {# payment} other {# payments}}",
+          "notCashed": "Pending",
+          "pendingSummary": "{count, plural, one {# payment not cashed} other {# payments not cashed}} · {amount}",
           "noPayments": "No payments registered",
+          "noPaymentsHint": "Payments recorded for this family will appear here.",
           "methods": {
             "CARD": "Card",
             "TRANSFER": "Transfer",
@@ -787,6 +827,31 @@
         "healthNotes": "Health Notes",
         "family": "Family",
         "enrollments": "Enrollments",
+        "information": "Information",
+        "pay": "Record a collection",
+        "previousSchool": "Previous school",
+        "snackAuthorization": "Snack authorization",
+        "age": "{age} years old",
+        "yes": "Yes",
+        "no": "No",
+        "kpis": {
+          "activeEnrollments": "Active enrollments",
+          "totalDue": "Total due",
+          "totalPaid": "Total paid",
+          "remaining": "Remaining balance"
+        },
+        "familyPanel": {
+          "contacts": "Contacts",
+          "noContacts": "No parent or guardian recorded",
+          "none": "This student is not linked to a family"
+        },
+        "enrollmentList": {
+          "empty": "No enrollment",
+          "emptyHint": "This student's enrollments will appear here.",
+          "remaining": "{amount} remaining",
+          "settled": "Settled",
+          "registeredOn": "Registered on {date}"
+        },
         "enrollmentTable": {
           "plan": "Plan",
           "status": "Status",
@@ -1029,6 +1094,7 @@
     "noResults": "No results",
     "families": "Families",
     "students": "Students",
+    "memberCount": "{count, plural, =0 {no member} one {# member} other {# members}}",
     "shortcut": "⌘K"
   },
   "roles": {

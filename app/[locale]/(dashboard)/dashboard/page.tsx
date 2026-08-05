@@ -120,6 +120,13 @@ export default async function DashboardPage({ params }: Props) {
       }),
     ])
 
+  const selectedPeriod = selectedPeriodId
+    ? await db.period.findUnique({ where: { id: selectedPeriodId }, select: { name: true } })
+    : null
+  const periodScope = selectedPeriod
+    ? t('stats.scopePeriod', { period: selectedPeriod.name })
+    : t('stats.scopeAll')
+
   const userName = session?.user.name || 'User'
   const parentBalance = !scope.isAdmin
     ? await getFamilyBalance(scope.familyId, selectedPeriodId)
@@ -205,6 +212,7 @@ export default async function DashboardPage({ params }: Props) {
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('stats.families')}</p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">{familyCount}</p>
+                <p className="mt-1 text-xs text-gray-400">{t('stats.scopeAll')}</p>
               </div>
               <div className="rounded-lg bg-teal-100 p-3">
                 <TrendingUp className="h-6 w-6 text-teal-600" />
@@ -217,6 +225,7 @@ export default async function DashboardPage({ params }: Props) {
             <div>
               <p className="text-sm font-medium text-gray-600">{t('stats.students')}</p>
               <p className="mt-2 text-3xl font-bold text-gray-900">{studentCount}</p>
+              <p className="mt-1 text-xs text-gray-400">{t('stats.scopeAll')}</p>
             </div>
             <div className="rounded-lg bg-teal-100 p-3">
               <TrendingUp className="h-6 w-6 text-teal-600" />
@@ -228,6 +237,7 @@ export default async function DashboardPage({ params }: Props) {
             <div>
               <p className="text-sm font-medium text-gray-600">{t('stats.enrollments')}</p>
               <p className="mt-2 text-3xl font-bold text-gray-900">{enrollmentCount}</p>
+              <p className="mt-1 text-xs text-gray-400">{periodScope}</p>
             </div>
             <div className="rounded-lg bg-blue-100 p-3">
               <TrendingUp className="h-6 w-6 text-blue-600" />
@@ -240,6 +250,7 @@ export default async function DashboardPage({ params }: Props) {
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('stats.pendingEnrollments')}</p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">{pendingPaymentCount}</p>
+                <p className="mt-1 text-xs text-gray-400">{periodScope}</p>
               </div>
               <div className="rounded-lg bg-amber-100 p-3">
                 <AlertCircle className="h-6 w-6 text-amber-600" />
@@ -254,7 +265,7 @@ export default async function DashboardPage({ params }: Props) {
             </p>
             <div className="mt-4">
               <OnlinePaymentButton
-                amount={parentBalance?.remainingBalance ?? 0}
+                amount={parentBalance?.payableBalance ?? 0}
                 configured={isStripeConfigured()}
                 locale={locale}
               />

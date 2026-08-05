@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useEffect, useTransition } from 'react'
+import { useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogRouteOpener,
   DialogTitle,
   DialogTrigger,
   useDialog,
@@ -39,7 +40,7 @@ export function EditFamilyDialog({
 
   return (
     <Dialog initialOpen={defaultOpen}>
-      <DialogRouteCleanup defaultOpen={defaultOpen} redirectTo={redirectTo} />
+      <DialogRouteOpener open={defaultOpen} cleanUrl={redirectTo} />
       {showTrigger && (
         <DialogTrigger>
           <Button variant="outline" size="sm">
@@ -55,24 +56,6 @@ export function EditFamilyDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-function DialogRouteCleanup({
-  defaultOpen,
-  redirectTo,
-}: {
-  defaultOpen: boolean
-  redirectTo?: string
-}) {
-  const { setOpen } = useDialog()
-
-  useEffect(() => {
-    if (!defaultOpen) return
-    setOpen(true)
-    if (redirectTo) window.history.replaceState(null, '', redirectTo)
-  }, [defaultOpen, redirectTo, setOpen])
-
-  return null
 }
 
 function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {

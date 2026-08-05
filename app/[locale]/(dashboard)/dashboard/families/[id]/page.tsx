@@ -27,8 +27,10 @@ import { PaymentHistoryTable } from './_components/payment-history-table'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
-  searchParams: Promise<{ action?: string; studentId?: string; payment?: string }>
+  searchParams: Promise<{ action?: string; studentId?: string; payment?: string; tab?: string }>
 }
+
+const TAB_KEYS = ['overview', 'children', 'payments', 'activity'] as const
 
 const getFamilyName = cache(async (id: string) =>
   db.family.findUnique({ where: { id }, select: { name: true } }).then((f) => f?.name)
@@ -51,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FamilyDetailPage({ params, searchParams }: Props) {
   await connection()
   const { locale, id } = await params
-  const { action, studentId, payment } = await searchParams
+  const { action, studentId, payment, tab } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.familyDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -164,6 +166,14 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   const enrolledChildren = students.filter((s) => s.person.student.enrollments.length > 0).length
   const activeEnrollments = allEnrollments.filter((e) => e.status === 'ACTIVE').length
+
+  const payableBalance = allEnrollments
+    .filter((e) => e.status === 'ACTIVE')
+    .reduce(
+      (sum, e) =>
+        sum + Number(e.totalAmount) - e.payments.reduce((paid, p) => paid + Number(p.amount), 0),
+      0
+    )
   const scopedStudentId = students.some((s) => s.person.student.id === studentId)
     ? studentId
     : undefined
@@ -183,6 +193,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         membersCount={family.persons.length}
         studentsCount={students.length}
         enrollmentsCount={allEnrollments.length}
+        remainingBalance={remainingBalance}
+        payableBalance={payableBalance}
         showActions={isAdmin}
       >
         {isAdmin && (
@@ -204,6 +216,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             />
             <RecordPaymentDialog
               families={[{ id: family.id, name: family.name }]}
+              remainingAmount={payableBalance}
               defaultOpen={action === 'addPayment'}
               redirectTo={`/dashboard/families/${family.id}`}
               showTrigger={false}
@@ -246,6 +259,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
       )}
 
       <Tabs
+        defaultIndex={Math.max(0, TAB_KEYS.indexOf(tab as (typeof TAB_KEYS)[number]))}
         tabs={[
           {
             label: t('tabs.overview'),
@@ -297,7 +311,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                     {!isAdmin && (
                       <div className="mt-5 border-t border-gray-200 pt-5">
                         <OnlinePaymentButton
-                          amount={remainingBalance}
+                          amount={payableBalance}
                           configured={isStripeConfigured()}
                           locale={locale}
                         />
@@ -350,13 +364,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             label: t('tabs.payments'),
             content: (
               <div className="space-y-6">
-                {family.payments.length > 0 ? (
-                  <PaymentHistoryTable payments={family.payments} locale={locale} />
-                ) : (
-                  <p className="text-sm text-gray-500 text-center py-8">
-                    {t('sections.noPayments')}
-                  </p>
-                )}
+                <PaymentHistoryTable payments={family.payments} locale={locale} />
               </div>
             ),
           },

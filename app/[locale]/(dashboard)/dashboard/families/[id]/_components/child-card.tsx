@@ -49,7 +49,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin }: Props) {
   const age = Math.floor((Date.now() - birthday.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
 
   return (
-    <Card className="p-4 rounded-xl border overflow-hidden hover:shadow-md transition-all duration-200">
+    <Card className="flex h-full flex-col p-4 rounded-xl border overflow-hidden hover:shadow-md transition-all duration-200">
       <div className="flex items-start gap-3 mb-4">
         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-lg flex-shrink-0">
           {person.name.charAt(0)}
@@ -81,7 +81,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin }: Props) {
           </div>
         )}
 
-      <div className="space-y-2 mb-4 pb-4 border-b border-gray-200">
+      <div className="space-y-2 mt-auto mb-4 pb-4 border-b border-gray-200">
         {enrollments.length > 0 ? (
           enrollments.map((enrollment) => {
             const totalAmount = Number(enrollment.totalAmount)

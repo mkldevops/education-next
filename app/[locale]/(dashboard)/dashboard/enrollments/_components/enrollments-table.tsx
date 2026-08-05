@@ -28,8 +28,13 @@ function toNumber(value: number | { toNumber?: () => number; toString: () => str
 export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, locale }: Props) {
   const t = useTranslations('dashboard.pages.enrollments')
   const tStatus = useTranslations('status')
-  const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentDrawerData | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+
+  const selectedEnrollment = useMemo(
+    () => enrollments.find((enrollment) => enrollment.id === selectedId) ?? null,
+    [enrollments, selectedId]
+  )
   const [statusFilter, setStatusFilter] = useState<'ALL' | EnrollmentStatus>('ALL')
 
   const filtered = useMemo(
@@ -84,8 +89,7 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
     {
       id: 'class',
       header: t('class'),
-      accessorFn: (row) =>
-        row.classAssignments.length > 0 ? row.classAssignments[0].classPeriod.name : '-',
+      accessorFn: (row) => row.classAssignments.find((a) => !a.endAt)?.classPeriod.name ?? '-',
       cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
       enableSorting: true,
     },
@@ -111,7 +115,7 @@ export function EnrollmentsTable({ enrollments, isAdmin, availableClasses, local
   }
 
   const handleRowClick = (enrollment: EnrollmentDrawerData) => {
-    setSelectedEnrollment(enrollment)
+    setSelectedId(enrollment.id)
     setDrawerOpen(true)
   }
 

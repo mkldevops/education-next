@@ -2,7 +2,7 @@
 
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useTransition } from 'react'
+import { useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogRouteOpener,
   DialogTitle,
   DialogTrigger,
   useDialog,
@@ -35,7 +36,7 @@ export function CreateStudentDialog({
 
   return (
     <Dialog initialOpen={defaultOpen}>
-      <DialogRouteCleanup defaultOpen={defaultOpen} redirectTo={routeAfterOpen} />
+      <DialogRouteOpener open={defaultOpen} cleanUrl={routeAfterOpen} />
       {showTrigger && (
         <DialogTrigger>
           <Button size="sm">
@@ -52,24 +53,6 @@ export function CreateStudentDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-function DialogRouteCleanup({
-  defaultOpen,
-  redirectTo,
-}: {
-  defaultOpen: boolean
-  redirectTo: string
-}) {
-  const { setOpen } = useDialog()
-
-  useEffect(() => {
-    if (!defaultOpen) return
-    setOpen(true)
-    window.history.replaceState(null, '', redirectTo)
-  }, [defaultOpen, redirectTo, setOpen])
-
-  return null
 }
 
 function CreateStudentForm({ familyId }: { familyId: string }) {

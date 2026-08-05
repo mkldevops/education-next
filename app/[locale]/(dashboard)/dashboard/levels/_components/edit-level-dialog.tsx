@@ -13,9 +13,13 @@ import {
   DialogTrigger,
   useDialog,
 } from '@/components/ui/dialog/dialog'
-import { Label } from '@/components/ui/input/input'
+import { Input, Label } from '@/components/ui/input/input'
 import { toast } from '@/lib/toast'
-import { setNextLevelAction } from '../../../_lib/level-actions'
+import {
+  deactivateLevelAction,
+  renameLevelAction,
+  setNextLevelAction,
+} from '../../../_lib/level-actions'
 
 interface Level {
   id: string
@@ -26,9 +30,11 @@ interface EditLevelDialogProps {
   level: Level
   currentNextLevelId: string | null
   allLevels: Level[]
+  takenNextLevelIds: string[]
+  classPeriodCount: number
 }
 
-export function EditLevelDialog({ level, currentNextLevelId, allLevels }: EditLevelDialogProps) {
+export function EditLevelDialog(props: EditLevelDialogProps) {
   const t = useTranslations('dashboard.pages.levels.edit')
 
   return (
@@ -42,39 +48,61 @@ export function EditLevelDialog({ level, currentNextLevelId, allLevels }: EditLe
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <EditLevelForm
-          level={level}
-          currentNextLevelId={currentNextLevelId}
-          allLevels={allLevels}
-        />
+        <EditLevelForm {...props} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function EditLevelForm({ level, currentNextLevelId, allLevels }: EditLevelDialogProps) {
+function EditLevelForm({
+  level,
+  currentNextLevelId,
+  allLevels,
+  takenNextLevelIds,
+  classPeriodCount,
+}: EditLevelDialogProps) {
   const t = useTranslations('dashboard.pages.levels.edit')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
 
-  const otherLevels = allLevels.filter((l) => l.id !== level.id)
+  const selectableLevels = allLevels.filter(
+    (l) => l.id !== level.id && (l.id === currentNextLevelId || !takenNextLevelIds.includes(l.id))
+  )
+
+  const notify = (result: string) => {
+    if (result === 'OK') return true
+    toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+    return false
+  }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
+    const name = (formData.get('name') as string).trim()
     const nextLevelId = (formData.get('nextLevelId') as string) || null
 
     startTransition(async () => {
-      const result = await setNextLevelAction({
-        id: level.id,
-        nextLevelId,
-      })
-      if (result !== 'OK') {
-        toast.error(t('error'))
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
+      if (name !== level.name) {
+        const renamed = await renameLevelAction({ id: level.id, name })
+        if (!notify(renamed)) return
       }
+
+      if (nextLevelId !== currentNextLevelId) {
+        const linked = await setNextLevelAction({ id: level.id, nextLevelId })
+        if (!notify(linked)) return
+      }
+
+      toast.success(t('success'))
+      setOpen(false)
+    })
+  }
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      const result = await deactivateLevelAction({ id: level.id })
+      if (!notify(result)) return
+      toast.success(t('deleteSuccess'))
+      setOpen(false)
     })
   }
 
@@ -82,6 +110,17 @@ function EditLevelForm({ level, currentNextLevelId, allLevels }: EditLevelDialog
     <form onSubmit={handleSubmit}>
       <DialogBody>
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-level-name">{t('name')}</Label>
+            <Input
+              id="edit-level-name"
+              name="name"
+              defaultValue={level.name}
+              required
+              maxLength={250}
+              disabled={isPending}
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="edit-next-level">{t('selectNextLevel')}</Label>
             <select
@@ -92,22 +131,39 @@ function EditLevelForm({ level, currentNextLevelId, allLevels }: EditLevelDialog
               className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
             >
               <option value="">{t('noNext')}</option>
-              {otherLevels.map((l) => (
+              {selectableLevels.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
                 </option>
               ))}
             </select>
+            <p className="text-xs text-gray-500">{t('nextLevelHint')}</p>
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
+      <DialogFooter className="justify-between">
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={handleDelete}
+          disabled={isPending || classPeriodCount > 0}
+          title={classPeriodCount > 0 ? t('errors.levelInUse') : undefined}
+        >
+          {t('delete')}
         </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={isPending}
+          >
+            {t('cancel')}
+          </Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? '...' : t('submit')}
+          </Button>
+        </div>
       </DialogFooter>
     </form>
   )
