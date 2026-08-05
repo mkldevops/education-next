@@ -1,11 +1,21 @@
 'use client'
 
-import { cloneElement, createContext, isValidElement, useContext, useEffect, useState } from 'react'
+import {
+  cloneElement,
+  createContext,
+  isValidElement,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react'
 import { cn } from '../utils'
 
 interface DialogContextType {
   open: boolean
   setOpen: (open: boolean) => void
+  titleId: string
 }
 
 const DialogStateContext = createContext<DialogContextType | null>(null)
@@ -18,6 +28,13 @@ export function useDialog() {
   return context
 }
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+function getFocusableElements(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+}
+
 export interface DialogProps {
   children: React.ReactNode
   initialOpen?: boolean
@@ -25,9 +42,12 @@ export interface DialogProps {
 
 export function Dialog({ children, initialOpen = false }: DialogProps) {
   const [open, setOpen] = useState(initialOpen)
+  const titleId = useId()
 
   return (
-    <DialogStateContext.Provider value={{ open, setOpen }}>{children}</DialogStateContext.Provider>
+    <DialogStateContext.Provider value={{ open, setOpen, titleId }}>
+      {children}
+    </DialogStateContext.Provider>
   )
 }
 
@@ -78,11 +98,48 @@ export interface DialogContentProps {
 }
 
 export function DialogContent({ children, className }: DialogContentProps) {
-  const { open, setOpen } = useDialog()
+  const { open, setOpen, titleId } = useDialog()
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    const panel = panelRef.current
+    const [firstFocusable] = panel ? getFocusableElements(panel) : []
+    ;(firstFocusable ?? panel)?.focus()
+
+    return () => {
+      previouslyFocused?.focus()
+    }
+  }, [open])
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        setOpen(false)
+        return
+      }
+      if (e.key !== 'Tab') return
+
+      const panel = panelRef.current
+      if (!panel) return
+      const focusable = getFocusableElements(panel)
+      if (focusable.length === 0) {
+        e.preventDefault()
+        panel.focus()
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
@@ -99,7 +156,14 @@ export function DialogContent({ children, className }: DialogContentProps) {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={() => setOpen(false)}
       />
-      <div className={cn('relative z-10 w-full max-w-lg rounded-lg bg-white shadow-xl', className)}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className={cn('relative z-10 w-full max-w-lg rounded-lg bg-white shadow-xl', className)}
+      >
         {children}
       </div>
     </div>
@@ -121,8 +185,9 @@ export interface DialogTitleProps {
 }
 
 export function DialogTitle({ children, className }: DialogTitleProps) {
+  const { titleId } = useDialog()
   return (
-    <h2 className={cn('text-lg font-semibold leading-none tracking-tight', className)}>
+    <h2 id={titleId} className={cn('text-lg font-semibold leading-none tracking-tight', className)}>
       {children}
     </h2>
   )
