@@ -179,6 +179,7 @@
       "sectionGestion": "Gestion",
       "sectionConfig": "Configuration",
       "collapse": "Réduire",
+      "expand": "Développer",
       "openMenu": "Ouvrir le menu",
       "closeMenu": "Fermer le menu",
       "searchPlaceholder": "Rechercher..."

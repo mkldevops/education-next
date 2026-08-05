@@ -179,6 +179,7 @@
       "sectionGestion": "Management",
       "sectionConfig": "Configuration",
       "collapse": "Collapse",
+      "expand": "Expand",
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
       "searchPlaceholder": "Search..."
