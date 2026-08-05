@@ -19,6 +19,8 @@ import { cn } from '@/lib/utils'
 type Props = {
   familyId: string
   canEnroll: boolean
+  canRecordPayment: boolean
+  hasUnpayableBalance?: boolean
 }
 
 type FamilyAction = 'addPayment' | 'addStudent' | 'addEnrollment' | 'editFamily' | 'archiveFamily'
@@ -33,7 +35,7 @@ type FamilyActionItem = {
   title?: string
 }
 
-export function ActionMenu({ familyId, canEnroll }: Props) {
+export function ActionMenu({ familyId, canEnroll, canRecordPayment, hasUnpayableBalance }: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.actions')
   const router = useRouter()
 
@@ -50,6 +52,12 @@ export function ActionMenu({ familyId, canEnroll }: Props) {
       label: t('pay'),
       icon: CreditCard,
       action: 'addPayment',
+      disabled: !canRecordPayment,
+      title: canRecordPayment
+        ? undefined
+        : hasUnpayableBalance
+          ? t('payNoActiveEnrollment')
+          : t('payUnavailable'),
     },
     {
       key: 'newStudent',
@@ -97,8 +105,14 @@ export function ActionMenu({ familyId, canEnroll }: Props) {
   return (
     <>
       <div className="hidden items-center gap-2 md:flex">
-        {primaryActions.map(({ key, label, icon: Icon, action }) => (
-          <Button key={key} size="sm" onClick={() => action && handleAction(action)}>
+        {primaryActions.map(({ key, label, icon: Icon, action, disabled, title }) => (
+          <Button
+            key={key}
+            size="sm"
+            disabled={disabled}
+            title={title}
+            onClick={() => action && handleAction(action)}
+          >
             <Icon className="h-4 w-4" />
             {label}
           </Button>

@@ -14,7 +14,7 @@ type SearchResult =
       type: 'family'
       id: string
       name: string
-      secondaryInfo: string
+      memberCount: number
     }
   | {
       type: 'student'
@@ -124,15 +124,7 @@ export async function searchStudentsAndFamilies(
           select: {
             id: true,
             name: true,
-            users: {
-              select: {
-                user: {
-                  select: {
-                    email: true,
-                  },
-                },
-              },
-            },
+            _count: { select: { persons: true } },
           },
           take: 5,
         })
@@ -156,15 +148,7 @@ export async function searchStudentsAndFamilies(
           select: {
             id: true,
             name: true,
-            users: {
-              select: {
-                user: {
-                  select: {
-                    email: true,
-                  },
-                },
-              },
-            },
+            _count: { select: { persons: true } },
           },
           take: 5,
         }),
@@ -181,7 +165,7 @@ export async function searchStudentsAndFamilies(
       type: 'family' as const,
       id: family.id,
       name: family.name,
-      secondaryInfo: `${family.users.length} member(s)`,
+      memberCount: family._count.persons,
     })),
   ]
 

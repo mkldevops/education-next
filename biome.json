@@ -57,6 +57,7 @@
       "!**/*.css",
       "!next-env.d.ts",
       "!.claude/worktrees",
+      "!graphify-out",
       "!src/generated"
     ]
   }

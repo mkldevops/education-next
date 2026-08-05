@@ -80,7 +80,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
       render: (family) => (
         <Link
           href={`/dashboard/families/${family.id}`}
-          className="font-medium text-primary hover:text-primary-hover"
+          className="font-medium text-primary after:absolute after:inset-0 hover:text-primary-hover"
         >
           {family.name}
         </Link>

@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogRouteOpener,
   DialogTitle,
   DialogTrigger,
   useDialog,
@@ -46,6 +47,7 @@ export function CreateEnrollmentDialog({
 
   return (
     <Dialog initialOpen={defaultOpen}>
+      <DialogRouteOpener open={defaultOpen} cleanUrl={redirectTo} />
       {showTrigger && (
         <DialogTrigger>
           <Button>+ {t('title')}</Button>
@@ -157,8 +159,8 @@ function CreateEnrollmentForm({
                 id="enroll-class"
                 name="classPeriodId"
                 required
-                disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                disabled={isPending || classes.length === 0}
+                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {classes.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -166,6 +168,9 @@ function CreateEnrollmentForm({
                   </option>
                 ))}
               </select>
+              {classes.length === 0 && (
+                <p className="text-xs text-amber-700">{t('noClassInPeriod')}</p>
+              )}
             </div>
           </div>
           <div className="space-y-2">
@@ -190,7 +195,7 @@ function CreateEnrollmentForm({
         <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
           {t('cancel')}
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending || classes.length === 0}>
           {isPending ? '...' : t('submit')}
         </Button>
       </DialogFooter>

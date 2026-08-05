@@ -1,4 +1,4 @@
-export type EmailProviderType = 'resend' | 'brevo'
+export type EmailProviderType = 'resend' | 'brevo' | 'mailpit'
 
 export interface EmailMessage {
   to: string | string[]

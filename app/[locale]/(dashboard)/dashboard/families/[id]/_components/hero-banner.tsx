@@ -7,6 +7,8 @@ type Props = {
   membersCount: number
   studentsCount: number
   enrollmentsCount: number
+  remainingBalance?: number
+  payableBalance?: number
   showActions?: boolean
   children?: React.ReactNode
 }
@@ -16,6 +18,8 @@ export async function HeroBanner({
   membersCount,
   studentsCount,
   enrollmentsCount,
+  remainingBalance = 0,
+  payableBalance = 0,
   showActions,
   children,
 }: Props) {
@@ -42,7 +46,14 @@ export async function HeroBanner({
 
       {(showActions || children) && (
         <div className="flex items-center gap-2 self-start md:self-auto">
-          {showActions && <ActionMenu familyId={family.id} canEnroll={studentsCount > 0} />}
+          {showActions && (
+            <ActionMenu
+              familyId={family.id}
+              canEnroll={studentsCount > 0}
+              canRecordPayment={payableBalance > 0}
+              hasUnpayableBalance={payableBalance <= 0 && remainingBalance > 0}
+            />
+          )}
           {children}
         </div>
       )}

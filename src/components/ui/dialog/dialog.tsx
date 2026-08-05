@@ -31,6 +31,23 @@ export function Dialog({ children, initialOpen = false }: DialogProps) {
   )
 }
 
+export interface DialogRouteOpenerProps {
+  open: boolean
+  cleanUrl?: string
+}
+
+export function DialogRouteOpener({ open, cleanUrl }: DialogRouteOpenerProps) {
+  const { setOpen } = useDialog()
+
+  useEffect(() => {
+    if (!open) return
+    setOpen(true)
+    if (cleanUrl) window.history.replaceState(null, '', cleanUrl)
+  }, [open, cleanUrl, setOpen])
+
+  return null
+}
+
 export interface DialogTriggerProps {
   children: React.ReactNode
 }

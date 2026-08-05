@@ -12,6 +12,7 @@ type BalanceEnrollment = {
 
 type FamilyEnrollmentBalance = {
   enrollmentId: string
+  status: EnrollmentStatus
   totalAmount: number
   discount: number
   paidAmount: number
@@ -20,11 +21,13 @@ type FamilyEnrollmentBalance = {
 
 export type FamilyBalance = {
   enrollments: FamilyEnrollmentBalance[]
+  payableEnrollments: FamilyEnrollmentBalance[]
   totalAmount: number
   totalDiscount: number
   totalPaid: number
   remainingBalance: number
-  remainingAmountInCents: number
+  payableBalance: number
+  payableAmountInCents: number
 }
 
 export function calculateFamilyBalance(enrollments: BalanceEnrollment[]): FamilyBalance {
@@ -38,6 +41,7 @@ export function calculateFamilyBalance(enrollments: BalanceEnrollment[]): Family
 
     return {
       enrollmentId: enrollment.id,
+      status: enrollment.status,
       totalAmount,
       discount,
       paidAmount,
@@ -58,13 +62,21 @@ export function calculateFamilyBalance(enrollments: BalanceEnrollment[]): Family
     balances.reduce((sum, enrollment) => sum + enrollment.remainingBalance, 0)
   )
 
+  const unpaid = balances.filter((enrollment) => enrollment.remainingBalance > 0)
+  const payableEnrollments = unpaid.filter((enrollment) => enrollment.status === 'ACTIVE')
+  const payableBalance = roundHalfUp(
+    payableEnrollments.reduce((sum, enrollment) => sum + enrollment.remainingBalance, 0)
+  )
+
   return {
-    enrollments: balances.filter((enrollment) => enrollment.remainingBalance > 0),
+    enrollments: unpaid,
+    payableEnrollments,
     totalAmount,
     totalDiscount,
     totalPaid,
     remainingBalance,
-    remainingAmountInCents: Math.round(remainingBalance * 100),
+    payableBalance,
+    payableAmountInCents: Math.round(payableBalance * 100),
   }
 }
 

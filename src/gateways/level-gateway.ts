@@ -32,4 +32,18 @@ export const levelGateway = {
       where: { id },
       data: { nextLevelId },
     }),
+
+  findByNextLevelId: (nextLevelId: string) =>
+    db.level.findFirst({
+      where: { nextLevelId },
+      select: { id: true, name: true },
+    }),
+
+  countClassPeriods: (id: string) => db.classPeriod.count({ where: { levelId: id } }),
+
+  deactivate: (id: string) =>
+    db.$transaction([
+      db.level.updateMany({ where: { nextLevelId: id }, data: { nextLevelId: null } }),
+      db.level.update({ where: { id }, data: { isActive: false, nextLevelId: null } }),
+    ]),
 }

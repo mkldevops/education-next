@@ -14,6 +14,18 @@ class LevelGatewaySpy {
     return this.levelsList
   }
 
+  async findByNextLevelId(nextLevelId: string) {
+    return this.levelsList.find((l) => l.nextLevelId === nextLevelId) ?? null
+  }
+
+  async countClassPeriods() {
+    return 0
+  }
+
+  async deactivate() {
+    return [] as never
+  }
+
   async setNextLevel(id: string, nextLevelId: string | null) {
     this.setNextLevelCalls.push({ id, nextLevelId })
   }

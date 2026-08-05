@@ -179,7 +179,7 @@ export function RichDataTable<T>({
                 <tr
                   key={row.id}
                   className={cn(
-                    'border-b border-gray-100 hover:bg-gray-50 transition-colors',
+                    'relative border-b border-gray-100 hover:bg-gray-50 transition-colors',
                     onRowClick &&
                       'cursor-pointer focus-visible:outline-none focus-visible:bg-gray-50'
                   )}

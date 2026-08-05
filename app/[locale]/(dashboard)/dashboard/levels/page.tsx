@@ -44,6 +44,10 @@ export default async function LevelsPage({ params }: Props) {
 
   const allLevelsForSelect = levels.map((l) => ({ id: l.id, name: l.name }))
 
+  const takenNextLevelIds = levels
+    .map((l) => l.nextLevelId)
+    .filter((id): id is string => id !== null)
+
   const chains = buildPromotionChains(levels)
 
   const columns: Column<(typeof levels)[number]>[] = [
@@ -73,6 +77,8 @@ export default async function LevelsPage({ params }: Props) {
           level={{ id: level.id, name: level.name }}
           currentNextLevelId={level.nextLevelId}
           allLevels={allLevelsForSelect}
+          takenNextLevelIds={takenNextLevelIds}
+          classPeriodCount={level._count.classPeriods}
         />
       ),
     },

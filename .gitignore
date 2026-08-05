@@ -43,3 +43,8 @@ src/generated/
 
 # Codex local config
 .codex/config.toml
+
+.worktrees/
+
+# Local architecture analysis
+graphify-out/

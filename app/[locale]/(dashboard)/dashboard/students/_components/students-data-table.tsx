@@ -43,7 +43,7 @@ export function StudentsDataTable({ data, locale, isAdmin }: Props) {
       cell: ({ row }) => (
         <Link
           href={`/dashboard/students/${row.original.id}`}
-          className="text-primary hover:text-primary-hover font-medium"
+          className="font-medium text-primary after:absolute after:inset-0 hover:text-primary-hover"
         >
           {row.original.person.name} {row.original.person.lastname}
         </Link>

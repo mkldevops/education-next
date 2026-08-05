@@ -16,6 +16,9 @@ export async function setNextLevel(input: Input, levelGw = levelGateway) {
     const nextLevel = await levelGw.findById(parsed.data.nextLevelId)
     if (!nextLevel) return 'notFound' as const
 
+    const alreadyLinked = await levelGw.findByNextLevelId(parsed.data.nextLevelId)
+    if (alreadyLinked && alreadyLinked.id !== parsed.data.id) return 'alreadyLinked' as const
+
     const allLevels = await levelGw.list()
     const nextLevelMap = new Map(allLevels.map((l) => [l.id, l.nextLevelId]))
     nextLevelMap.set(parsed.data.id, parsed.data.nextLevelId)

@@ -33,8 +33,8 @@ describe('createCheckoutSession', () => {
       checkout: { sessions: { create: sessionsCreateMock } },
     })
     getFamilyBalanceMock.mockResolvedValue({
-      remainingBalance: 120,
-      remainingAmountInCents: 12000,
+      payableBalance: 120,
+      payableAmountInCents: 12000,
     })
     dbMock.paymentTransaction.create.mockResolvedValue({ id: 'transaction-1' })
     dbMock.paymentTransaction.update.mockResolvedValue({})
@@ -57,8 +57,8 @@ describe('createCheckoutSession', () => {
 
   it('does not create a checkout without an outstanding balance', async () => {
     getFamilyBalanceMock.mockResolvedValue({
-      remainingBalance: 0,
-      remainingAmountInCents: 0,
+      payableBalance: 0,
+      payableAmountInCents: 0,
     })
 
     expect(await createCheckoutSession(input)).toBe('noBalance')

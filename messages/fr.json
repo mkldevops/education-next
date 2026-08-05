@@ -142,7 +142,9 @@
       "enrollments": "Inscriptions",
       "pendingPayments": "Paiements en attente",
       "pendingEnrollments": "Inscriptions à traiter",
-      "remainingBalance": "Solde de la famille"
+      "remainingBalance": "Solde de la famille",
+      "scopeAll": "Toutes périodes",
+      "scopePeriod": "Période {period}"
     },
     "breadcrumbs": {
       "dashboard": "Tableau de bord",
@@ -383,13 +385,25 @@
           "error": "Erreur lors de la création"
         },
         "edit": {
-          "title": "Niveau suivant",
-          "selectNextLevel": "Sélectionner le niveau suivant",
+          "title": "Modifier le niveau",
+          "name": "Nom",
+          "selectNextLevel": "Niveau suivant",
+          "nextLevelHint": "Un niveau ne peut être le suivant que d'un seul autre niveau.",
           "noNext": "Aucun (fin de parcours)",
+          "delete": "Supprimer",
           "cancel": "Annuler",
           "submit": "Enregistrer",
-          "success": "Progression mise à jour",
-          "error": "Erreur lors de la mise à jour"
+          "success": "Niveau mis à jour",
+          "deleteSuccess": "Niveau supprimé",
+          "error": "Erreur lors de la mise à jour",
+          "errors": {
+            "alreadyLinked": "Ce niveau est déjà le suivant d'un autre niveau",
+            "levelInUse": "Des classes utilisent ce niveau : supprimez-les d'abord",
+            "circularReference": "Cette progression créerait une boucle",
+            "notFound": "Niveau introuvable",
+            "validationError": "Vérifiez les informations saisies",
+            "unauthorized": "Vous n'êtes pas autorisé à modifier les niveaux"
+          }
         }
       },
       "classes": {
@@ -452,6 +466,7 @@
           "selectStudent": "Élève",
           "selectPlan": "Plan tarifaire",
           "selectClass": "Classe",
+          "noClassInPeriod": "Aucune classe sur la période sélectionnée. Créez une classe ou changez de période.",
           "discount": "Réduction (€)",
           "canLeaveAlone": "Autorisé à partir seul",
           "cancel": "Annuler",
@@ -528,12 +543,31 @@
             "STRIPE": "Stripe"
           },
           "reference": "Référence",
+          "referencePlaceholders": {
+            "CASH": "Reçu n°…",
+            "CARD": "Référence de transaction",
+            "TRANSFER": "Référence du virement",
+            "CHECK": "Numéro de chèque",
+            "STRIPE": "Référence Stripe"
+          },
+          "optional": "(facultatif)",
+          "remainingLabel": "Solde restant : {amount}",
+          "payFull": "Payer le solde",
           "paidAt": "Date de paiement",
           "cashedAt": "Date d'encaissement",
+          "cashedAtHint": "À renseigner une fois le chèque encaissé",
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Règlement enregistré",
-          "error": "Erreur lors de l'enregistrement"
+          "error": "Erreur lors de l'enregistrement",
+          "errors": {
+            "overpayment": "Le montant dépasse le solde des inscriptions actives",
+            "noActiveEnrollments": "Cette famille n'a aucune inscription active à régler",
+            "refundExceedsPaid": "Le remboursement dépasse le montant déjà réglé",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Famille introuvable",
+            "unauthorized": "Vous n'êtes pas autorisé à enregistrer ce règlement"
+          }
         }
       },
       "plans": {
@@ -625,6 +659,8 @@
         "actions": {
           "new": "Nouveau",
           "pay": "Enregistrer un règlement",
+          "payUnavailable": "Cette famille n'a aucun solde à régler",
+          "payNoActiveEnrollment": "Aucune inscription active : activez une inscription pour encaisser",
           "newStudent": "Ajouter un élève",
           "newEnrollment": "Inscrire un élève",
           "manage": "Actions",
@@ -682,7 +718,6 @@
           "activityTitle": "Activité récente",
           "assignmentsTitle": "Affectations de classe",
           "noChildren": "Aucun élève dans cette famille",
-          "noPayments": "Aucun paiement enregistré",
           "noActivity": "Aucune activité récente"
         },
         "childCard": {
@@ -758,7 +793,12 @@
           "reference": "Référence",
           "paidAt": "Date de paiement",
           "cashedAt": "Date d'encaissement",
+          "total": "Total",
+          "count": "{count, plural, one {# paiement} other {# paiements}}",
+          "notCashed": "En attente",
+          "pendingSummary": "{count, plural, one {# paiement non encaissé} other {# paiements non encaissés}} · {amount}",
           "noPayments": "Aucun paiement enregistré",
+          "noPaymentsHint": "Les règlements enregistrés pour cette famille apparaîtront ici.",
           "methods": {
             "CARD": "CB",
             "TRANSFER": "Virement",
@@ -787,6 +827,31 @@
         "healthNotes": "Notes de santé",
         "family": "Famille",
         "enrollments": "Inscriptions",
+        "information": "Informations",
+        "pay": "Enregistrer un règlement",
+        "previousSchool": "École précédente",
+        "snackAuthorization": "Autorisation de goûter",
+        "age": "{age} ans",
+        "yes": "Oui",
+        "no": "Non",
+        "kpis": {
+          "activeEnrollments": "Inscriptions actives",
+          "totalDue": "Total dû",
+          "totalPaid": "Total payé",
+          "remaining": "Solde restant"
+        },
+        "familyPanel": {
+          "contacts": "Contacts",
+          "noContacts": "Aucun parent ou tuteur enregistré",
+          "none": "Cet élève n'est rattaché à aucune famille"
+        },
+        "enrollmentList": {
+          "empty": "Aucune inscription",
+          "emptyHint": "Les inscriptions de cet élève apparaîtront ici.",
+          "remaining": "{amount} restant",
+          "settled": "Soldé",
+          "registeredOn": "Inscrit le {date}"
+        },
         "enrollmentTable": {
           "plan": "Plan",
           "status": "Statut",
@@ -1029,6 +1094,7 @@
     "noResults": "Aucun résultat",
     "families": "Familles",
     "students": "Élèves",
+    "memberCount": "{count, plural, =0 {aucun membre} one {# membre} other {# membres}}",
     "shortcut": "⌘K"
   },
   "roles": {

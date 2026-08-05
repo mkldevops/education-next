@@ -39,7 +39,7 @@ export async function completeCheckoutSession(input: Input) {
   const balance = await getFamilyBalance(transaction.familyId)
   const distribution = distributePayment(
     Number(transaction.amount),
-    balance.enrollments.map((enrollment) => ({
+    balance.payableEnrollments.map((enrollment) => ({
       enrollmentId: enrollment.enrollmentId,
       totalAmount: enrollment.totalAmount,
       discount: enrollment.discount,
