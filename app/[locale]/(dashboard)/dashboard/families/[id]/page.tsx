@@ -1,4 +1,4 @@
-import { Breadcrumbs, Card } from '@peaklab/ui'
+import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
@@ -7,9 +7,6 @@ import { cache } from 'react'
 import { Tabs } from '@/components/ui/tabs/tabs'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
-import { formatCurrency } from '@/lib/decimal'
-import { isStripeConfigured } from '@/lib/stripe'
-import { cn } from '@/lib/utils'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
@@ -17,13 +14,11 @@ import { RecordPaymentDialog } from '../../payments/_components/record-payment-d
 import { CreateStudentDialog } from '../../students/_components/create-student-dialog'
 import { DeactivateFamilyButton } from '../_components/deactivate-family-button'
 import { EditFamilyDialog } from '../_components/edit-family-dialog'
-import { ActivityFeed } from './_components/activity-feed'
-import { ChildCard } from './_components/child-card'
-import { FinancialSummary } from './_components/financial-summary'
+import { ActivityTab } from './_components/activity-tab'
+import { ChildrenTab } from './_components/children-tab'
 import { HeroBanner } from './_components/hero-banner'
-import { OnlinePaymentButton } from './_components/online-payment-button'
-import { ParentsSection } from './_components/parents-section'
-import { PaymentHistoryTable } from './_components/payment-history-table'
+import { OverviewTab } from './_components/overview-tab'
+import { PaymentsTab } from './_components/payments-tab'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -266,176 +261,53 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
           {
             label: t('tabs.overview'),
             content: (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <KPICard label={t('kpis.enrolledChildren')} value={enrolledChildren} icon="👶" />
-                  <KPICard
-                    label={t('kpis.totalEnrollments')}
-                    value={allEnrollments.length}
-                    subValue={`${activeEnrollments} ${t('kpis.active')}`}
-                    icon="📚"
-                  />
-                  <KPICard
-                    label={t('kpis.totalPaid')}
-                    value={formatCurrency(totalPaid, locale)}
-                    icon="✓"
-                    color="green"
-                  />
-                  <KPICard
-                    label={t('kpis.remainingBalance')}
-                    value={formatCurrency(remainingBalance, locale)}
-                    icon="⚠"
-                    color={remainingBalance > 0 ? 'amber' : 'green'}
-                  />
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      {t('sections.parentsTitle')}
-                    </h2>
-                    <ParentsSection
-                      persons={family.persons}
-                      familyId={family.id}
-                      isAdmin={isAdmin}
-                      linkedEmails={family.users.map(({ user }) => user.email)}
-                    />
-                  </Card>
-                  <Card className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      {t('sections.financialTitle')}
-                    </h2>
-                    <FinancialSummary
-                      totalDue={totalDue}
-                      totalPaid={totalPaid}
-                      totalDiscount={totalDiscount}
-                      remainingBalance={remainingBalance}
-                    />
-                    {!isAdmin && (
-                      <div className="mt-5 border-t border-gray-200 pt-5">
-                        <OnlinePaymentButton
-                          amount={payableBalance}
-                          configured={isStripeConfigured()}
-                          locale={locale}
-                        />
-                      </div>
-                    )}
-                  </Card>
-                </div>
-              </div>
+              <OverviewTab
+                locale={locale}
+                familyId={family.id}
+                isAdmin={isAdmin}
+                persons={family.persons}
+                linkedEmails={family.users.map(({ user }) => user.email)}
+                enrolledChildren={enrolledChildren}
+                totalEnrollments={allEnrollments.length}
+                activeEnrollments={activeEnrollments}
+                totalPaid={totalPaid}
+                remainingBalance={remainingBalance}
+                totalDue={totalDue}
+                totalDiscount={totalDiscount}
+                payableBalance={payableBalance}
+              />
             ),
           },
           {
             label: t('tabs.children'),
             content: (
-              <div className="space-y-4">
-                {allEnrollments.some((e) => e.status === 'PENDING') && (
-                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-amber-900">
-                        {t('alert.needsAttention')}
-                      </h3>
-                      <p className="text-sm text-amber-800 mt-1">
-                        {t('alert.pendingCount', {
-                          count: allEnrollments.filter((e) => e.status === 'PENDING').length,
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {students.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {students.map((student) => (
-                      <ChildCard
-                        key={student.person.id}
-                        student={student}
-                        locale={locale}
-                        familyId={family.id}
-                        isAdmin={isAdmin}
-                        classes={classOptions}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 text-center py-8">
-                    {t('sections.noChildren')}
-                  </p>
-                )}
-              </div>
+              <ChildrenTab
+                students={students}
+                hasPendingEnrollments={allEnrollments.some((e) => e.status === 'PENDING')}
+                pendingCount={allEnrollments.filter((e) => e.status === 'PENDING').length}
+                locale={locale}
+                familyId={family.id}
+                isAdmin={isAdmin}
+                classes={classOptions}
+              />
             ),
           },
           {
             label: t('tabs.payments'),
-            content: (
-              <div className="space-y-6">
-                <PaymentHistoryTable payments={family.payments} locale={locale} />
-              </div>
-            ),
+            content: <PaymentsTab payments={family.payments} locale={locale} />,
           },
           {
             label: t('tabs.activity'),
             content: (
-              <div className="space-y-6">
-                {allEnrollments.length > 0 ? (
-                  <ActivityFeed
-                    enrollments={allEnrollments}
-                    payments={family.payments}
-                    locale={locale}
-                  />
-                ) : (
-                  <p className="text-sm text-gray-500 text-center py-8">
-                    {t('sections.noActivity')}
-                  </p>
-                )}
-              </div>
+              <ActivityTab
+                enrollments={allEnrollments}
+                payments={family.payments}
+                locale={locale}
+              />
             ),
           },
         ]}
       />
     </div>
-  )
-}
-
-function KPICard({
-  label,
-  value,
-  subValue,
-  icon,
-  color = 'gray',
-}: {
-  label: string
-  value: string | number
-  subValue?: string
-  icon?: string
-  color?: 'gray' | 'green' | 'amber'
-}) {
-  const bgColor = {
-    gray: 'bg-gray-50',
-    green: 'bg-green-50',
-    amber: 'bg-amber-50',
-  }[color]
-
-  const textColor = {
-    gray: 'text-gray-900',
-    green: 'text-green-900',
-    amber: 'text-amber-900',
-  }[color]
-
-  const subTextColor = {
-    gray: 'text-gray-600',
-    green: 'text-green-700',
-    amber: 'text-amber-700',
-  }[color]
-
-  return (
-    <Card className={cn('p-4 rounded-xl border', bgColor)}>
-      <div className="flex items-center gap-3">
-        <div className="text-2xl">{icon}</div>
-        <div className="flex-1">
-          <p className="text-xs font-medium text-gray-600">{label}</p>
-          <p className={cn('text-2xl font-bold', textColor)}>{value}</p>
-          {subValue && <p className={cn('text-xs', subTextColor)}>{subValue}</p>}
-        </div>
-      </div>
-    </Card>
   )
 }
