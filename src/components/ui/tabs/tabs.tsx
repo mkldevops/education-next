@@ -57,7 +57,7 @@ export function Tabs({ tabs, defaultIndex = 0 }: Props) {
               type="button"
               role="tab"
               id={`${idPrefix}-tab-${i}`}
-              aria-controls={`${idPrefix}-panel-${i}`}
+              aria-controls={`${idPrefix}-panel`}
               aria-selected={i === active}
               tabIndex={i === active ? 0 : -1}
               onClick={() => setActive(i)}
@@ -78,7 +78,7 @@ export function Tabs({ tabs, defaultIndex = 0 }: Props) {
       <div
         className="mt-6"
         role="tabpanel"
-        id={`${idPrefix}-panel-${active}`}
+        id={`${idPrefix}-panel`}
         aria-labelledby={`${idPrefix}-tab-${active}`}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: WAI-ARIA tabpanel must stay keyboard-reachable when its content has no focusable element
         tabIndex={0}

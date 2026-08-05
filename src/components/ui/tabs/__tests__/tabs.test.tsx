@@ -36,20 +36,24 @@ describe('Tabs', () => {
     expect(screen.getByText('Payments content')).toBeInTheDocument()
   })
 
-  it('moves selection with ArrowRight and wraps to the first tab', () => {
+  it('moves selection and focus with ArrowRight and wraps to the first tab', () => {
     render(<Tabs tabs={tabs} defaultIndex={2} />)
 
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Payments' }), { key: 'ArrowRight' })
 
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+    const overviewTab = screen.getByRole('tab', { name: 'Overview' })
+    expect(overviewTab).toHaveAttribute('aria-selected', 'true')
+    expect(document.activeElement).toBe(overviewTab)
   })
 
-  it('moves selection with ArrowLeft and wraps to the last tab', () => {
+  it('moves selection and focus with ArrowLeft and wraps to the last tab', () => {
     render(<Tabs tabs={tabs} />)
 
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Overview' }), { key: 'ArrowLeft' })
 
-    expect(screen.getByRole('tab', { name: 'Payments' })).toHaveAttribute('aria-selected', 'true')
+    const paymentsTab = screen.getByRole('tab', { name: 'Payments' })
+    expect(paymentsTab).toHaveAttribute('aria-selected', 'true')
+    expect(document.activeElement).toBe(paymentsTab)
   })
 
   it('jumps to the first and last tab with Home and End', () => {
@@ -70,5 +74,15 @@ describe('Tabs', () => {
 
     expect(activeTab).toHaveAttribute('aria-controls', panel.id)
     expect(panel).toHaveAttribute('aria-labelledby', activeTab.id)
+  })
+
+  it('resolves every tab aria-controls IDREF in the DOM, including non-active tabs', () => {
+    render(<Tabs tabs={tabs} defaultIndex={0} />)
+
+    for (const tab of screen.getAllByRole('tab')) {
+      const controlsId = tab.getAttribute('aria-controls')
+      expect(controlsId).toBeTruthy()
+      expect(document.getElementById(controlsId as string)).not.toBeNull()
+    }
   })
 })
