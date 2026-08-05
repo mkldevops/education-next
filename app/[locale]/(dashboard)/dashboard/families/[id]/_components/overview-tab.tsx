@@ -94,6 +94,7 @@ export async function OverviewTab({
             <div className="mt-5 border-t border-gray-200 pt-5">
               <OnlinePaymentButton
                 amount={payableBalance}
+                outstanding={remainingBalance}
                 configured={isStripeConfigured()}
                 locale={locale}
               />

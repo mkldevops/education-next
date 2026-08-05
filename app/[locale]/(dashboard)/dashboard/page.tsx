@@ -266,6 +266,7 @@ export default async function DashboardPage({ params }: Props) {
             <div className="mt-4">
               <OnlinePaymentButton
                 amount={parentBalance?.payableBalance ?? 0}
+                outstanding={parentBalance?.remainingBalance ?? 0}
                 configured={isStripeConfigured()}
                 locale={locale}
               />
