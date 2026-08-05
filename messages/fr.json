@@ -725,6 +725,9 @@
           "allergies": "Allergies",
           "languages": "Langues",
           "class": "Classe",
+          "noClass": "Aucune classe",
+          "assignClass": "Affecter une classe",
+          "changeClass": "Changer de classe",
           "enroll": "Inscrire",
           "viewProfile": "Voir le profil",
           "noAllergies": "Aucune allergie déclarée",
@@ -903,7 +906,8 @@
           "cancel": "Annuler",
           "submit": "Réaffecter",
           "success": "Classe réaffectée",
-          "error": "Erreur lors de la réaffectation"
+          "error": "Erreur lors de la réaffectation",
+          "noClassAvailable": "Aucune autre classe disponible sur la période sélectionnée."
         },
         "applyDiscount": {
           "title": "Appliquer une réduction",

@@ -725,6 +725,9 @@
           "allergies": "Allergies",
           "languages": "Languages",
           "class": "Class",
+          "noClass": "No class",
+          "assignClass": "Assign a class",
+          "changeClass": "Change class",
           "enroll": "Enroll",
           "viewProfile": "View Profile",
           "noAllergies": "No allergies declared",
@@ -903,7 +906,8 @@
           "cancel": "Cancel",
           "submit": "Reassign",
           "success": "Class reassigned",
-          "error": "Error reassigning class"
+          "error": "Error reassigning class",
+          "noClassAvailable": "No other class available for the selected period."
         },
         "applyDiscount": {
           "title": "Apply Discount",
