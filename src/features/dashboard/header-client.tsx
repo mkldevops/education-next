@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Menu, Search } from 'lucide-react'
+import { Menu, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { PeriodSelector } from '@/features/dashboard/period-selector'
@@ -67,18 +67,13 @@ export function DashboardHeaderClient({
           </kbd>
         </div>
 
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="rounded-xl p-2 transition-colors hover:bg-alabaster-900"
-        >
-          <Bell className="h-5 w-5 text-graphite-600" />
-        </button>
-
         {userInitial && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stormy-teal to-yale-blue text-xs font-semibold text-white">
+          <span
+            aria-hidden="true"
+            className="flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-full bg-gradient-to-br from-stormy-teal to-yale-blue text-xs font-semibold text-white"
+          >
             {userInitial}
-          </div>
+          </span>
         )}
       </div>
 
