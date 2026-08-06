@@ -29,12 +29,14 @@ export const createFamilySchema = z.object({
   city: z.string().max(250).optional(),
 })
 
+// Optional fields are nullish on update: `undefined` leaves the column untouched,
+// `null` clears it. Without that distinction an emptied field could never be erased.
 export const updateFamilySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(50).optional(),
-  emergencyContactName: z.string().max(250).optional(),
-  emergencyContactPhone: z.string().min(1).max(20).regex(phoneNumberFormat).optional(),
-  authorizedPickup: z.string().optional(),
+  emergencyContactName: z.string().max(250).nullish(),
+  emergencyContactPhone: z.string().min(1).max(20).regex(phoneNumberFormat).nullish(),
+  authorizedPickup: z.string().nullish(),
 })
 
 export const addPersonToFamilySchema = z.object({

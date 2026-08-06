@@ -39,9 +39,9 @@ export const familyGateway = {
     id: string,
     data: {
       name?: string
-      emergencyContactName?: string
-      emergencyContactPhone?: string
-      authorizedPickup?: string
+      emergencyContactName?: string | null
+      emergencyContactPhone?: string | null
+      authorizedPickup?: string | null
     }
   ) =>
     db.family.update({

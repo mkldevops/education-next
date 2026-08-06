@@ -70,12 +70,14 @@ function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
 
+    const clearable = (field: string) => (formData.get(field) as string)?.trim() || null
+
     const parsed = updateFamilySchema.safeParse({
       id: family.id,
       name: formData.get('name') as string,
-      emergencyContactName: (formData.get('emergencyContactName') as string) || undefined,
-      emergencyContactPhone: (formData.get('emergencyContactPhone') as string) || undefined,
-      authorizedPickup: (formData.get('authorizedPickup') as string) || undefined,
+      emergencyContactName: clearable('emergencyContactName'),
+      emergencyContactPhone: clearable('emergencyContactPhone'),
+      authorizedPickup: clearable('authorizedPickup'),
     })
     if (!parsed.success) {
       const invalidPhone = parsed.error.issues.some(

@@ -19,34 +19,31 @@ ALTER TABLE "Family" ADD COLUMN "emergencyContactPhone" VARCHAR(20);
 The back-fill in `migration.sql` never runs. Both new columns end up empty and the source data is
 gone. There is no recovery short of a database restore.
 
-## Why this is a real risk here, not a theoretical one
+## Why this was a real risk, not a theoretical one
 
-The checked-in migration history has **no baseline**: no migration creates `"User"` or `"Family"`,
-yet `20260321000000_add_passkey_table` already adds a foreign key to `"User"`. On a database whose
-`_prisma_migrations` table is empty — which is the case for the local Docker database, built with
-`db:push` — `prisma migrate deploy` replays from migration #1 and aborts before ever reaching this
-one. That failure makes `db push` the tempting fallback, which is exactly the destructive path.
+The history had **no baseline**: no migration created `"User"` or `"Family"`, yet
+`20260321000000_add_passkey_table` already added a foreign key to `"User"`. `prisma migrate deploy`
+replayed from migration #1 and aborted before ever reaching this one, which made `db push` the
+tempting fallback — exactly the destructive path.
 
-Tracked as **#203**. Until that is fixed, applying this migration requires a deliberate choice below.
+Fixed by the `0_init` baseline (#203). A fresh database now replays the whole history, this
+migration included.
 
 ## Applying it correctly — pick one
 
-**(a) Let `migrate deploy` reach this migration.** On the target database, mark the six prior
-migrations as already applied, then deploy:
+**(a) Let `migrate deploy` reach this migration.** On a database created before the baseline
+existed, mark the migrations it already reflects as applied, then deploy. Full procedure and the
+exact list in [`../0_init/README.md`](../0_init/README.md):
 
 ```bash
-prisma migrate resolve --applied 20260321000000_add_passkey_table
-prisma migrate resolve --applied 20260321100000_add_invitation_table
-prisma migrate resolve --applied 20260321110000_add_color_config_type
-prisma migrate resolve --applied 20260411000000_add_page_model
-prisma migrate resolve --applied 20260711000000_drop_page_model
-prisma migrate resolve --applied 20260731120000_family_payments_and_invitations
-
+prisma migrate status   # confirm where the database actually stands
+# prisma migrate resolve --applied <each migration up to 20260731120000>
 prisma migrate deploy
 ```
 
-`migrate resolve` only writes to `_prisma_migrations`; it does not touch table data. Verify each name
-matches a directory in `prisma/migrations/` before running it.
+`migrate resolve` only writes to `_prisma_migrations`; it does not touch table data. Never resolve
+this migration as applied on a database that still holds `Family."emergencyContact"` — that discards
+the back-fill for good.
 
 **(b) Run this migration's SQL manually**, before any schema sync, then record it as applied:
 

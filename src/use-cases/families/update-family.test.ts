@@ -198,6 +198,46 @@ describe('updateFamily', () => {
     expect(result).toBe('validationError')
   })
 
+  it('should clear the optional fields when they are passed as null', async () => {
+    familyGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      name: 'Family Name',
+    })
+
+    await updateFamily({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      emergencyContactName: null,
+      emergencyContactPhone: null,
+      authorizedPickup: null,
+    })
+
+    expect(familyGatewayMock.update).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000', {
+      name: undefined,
+      emergencyContactName: null,
+      emergencyContactPhone: null,
+      authorizedPickup: null,
+    })
+  })
+
+  it('should leave the optional fields untouched when they are omitted', async () => {
+    familyGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      name: 'Family Name',
+    })
+
+    await updateFamily({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      name: 'New Name',
+    })
+
+    expect(familyGatewayMock.update).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000', {
+      name: 'New Name',
+      emergencyContactName: undefined,
+      emergencyContactPhone: undefined,
+      authorizedPickup: undefined,
+    })
+  })
+
   it('should allow updating only emergency contact', async () => {
     familyGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
