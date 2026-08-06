@@ -25,9 +25,10 @@ interface Option {
 interface CreateClassDialogProps {
   levels: Option[]
   periods: Option[]
+  defaultCapacity?: number
 }
 
-export function CreateClassDialog({ levels, periods }: CreateClassDialogProps) {
+export function CreateClassDialog({ levels, periods, defaultCapacity }: CreateClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.create')
 
   return (
@@ -39,13 +40,13 @@ export function CreateClassDialog({ levels, periods }: CreateClassDialogProps) {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreateClassForm levels={levels} periods={periods} />
+        <CreateClassForm levels={levels} periods={periods} defaultCapacity={defaultCapacity} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function CreateClassForm({ levels, periods }: CreateClassDialogProps) {
+function CreateClassForm({ levels, periods, defaultCapacity }: CreateClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.create')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
@@ -92,6 +93,7 @@ function CreateClassForm({ levels, periods }: CreateClassDialogProps) {
               name="capacity"
               type="number"
               min={1}
+              defaultValue={defaultCapacity}
               required
               disabled={isPending}
             />

@@ -1,7 +1,7 @@
-import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
+import { BRANDING_CONFIG_KEYS, SCHOOL_NAME_CONFIG_KEY } from '@/lib/branding-config'
 import { db } from '@/lib/db'
 
-const BRANDING_CONFIG_NAMES = Object.values(BRANDING_CONFIG_KEYS)
+const BRANDING_CONFIG_NAMES = [...Object.values(BRANDING_CONFIG_KEYS), SCHOOL_NAME_CONFIG_KEY]
 
 function findConfigValue(
   configs: Array<{ name: string; value: string }>,
@@ -14,10 +14,12 @@ function findConfigValue(
 export function resolveBrandingConfig(configs: Array<{ name: string; value: string }>) {
   const logoUrl = findConfigValue(configs, BRANDING_CONFIG_KEYS.logoUrl)
   const faviconUrl = findConfigValue(configs, BRANDING_CONFIG_KEYS.faviconUrl) || logoUrl
+  const schoolName = findConfigValue(configs, SCHOOL_NAME_CONFIG_KEY)
 
   return {
     logoUrl,
     faviconUrl,
+    schoolName,
   }
 }
 

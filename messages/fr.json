@@ -614,16 +614,15 @@
         "actions": "Actions",
         "noConfig": "Aucune configuration enregistrée",
         "notConfigured": "Non configuré",
-        "globalImpact": "Impact global",
+        "booleanTrue": "Oui",
+        "booleanFalse": "Non",
         "known": {
           "logo": "Logo",
           "favicon": "Favicon",
-          "automaticPromotion": "Promotion automatique",
           "maxStudentsPerClass": "Élèves maximum par classe",
           "schoolName": "Nom de l'établissement"
         },
         "descriptions": {
-          "automaticPromotion": "Fait passer automatiquement les élèves au niveau suivant en fin d'année.",
           "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe.",
           "schoolName": "Nom affiché de l'établissement dans l'application."
         },

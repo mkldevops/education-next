@@ -32,7 +32,7 @@ export default async function ClassesPage({ params }: Props) {
   const selectedPeriod = await getSelectedPeriod()
   const selectedPeriodId = selectedPeriod?.id ?? null
 
-  const [levels, periods] = await Promise.all([
+  const [levels, periods, maxStudentsConfig] = await Promise.all([
     db.level.findMany({
       where: { isActive: true },
       select: { id: true, name: true },
@@ -43,7 +43,17 @@ export default async function ClassesPage({ params }: Props) {
       select: { id: true, name: true },
       orderBy: { startAt: 'desc' },
     }),
+    db.config.findFirst({
+      where: { name: 'max_students_per_class', isActive: true },
+      select: { value: true },
+    }),
   ])
+
+  const parsedDefaultCapacity = Number(maxStudentsConfig?.value)
+  const defaultCapacity =
+    Number.isInteger(parsedDefaultCapacity) && parsedDefaultCapacity > 0
+      ? parsedDefaultCapacity
+      : undefined
 
   const classes = await db.classPeriod.findMany({
     where: { isActive: true, ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}) },
@@ -111,7 +121,7 @@ export default async function ClassesPage({ params }: Props) {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {levels.length > 0 && periods.length > 0 && (
-          <CreateClassDialog levels={levels} periods={periods} />
+          <CreateClassDialog levels={levels} periods={periods} defaultCapacity={defaultCapacity} />
         )}
       </div>
       <Card className="rounded-xl border border-gray-200">

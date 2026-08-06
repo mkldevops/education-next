@@ -194,15 +194,17 @@ type SidebarProps = {
   role: Role
   familyId?: string
   logoUrl?: string
+  schoolName?: string
   userName?: string
 }
 
-export function Sidebar({ role, familyId, logoUrl, userName }: SidebarProps) {
+export function Sidebar({ role, familyId, logoUrl, schoolName, userName }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const company = useTranslations('company')
   const pathname = usePathname()
   const router = useRouter()
   const { expanded, toggle, mobileOpen, setMobileOpen } = useSidebarStore()
+  const displayName = schoolName || company('name')
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
@@ -268,9 +270,9 @@ export function Sidebar({ role, familyId, logoUrl, userName }: SidebarProps) {
             <Link href="/" className="flex items-center gap-2">
               {logoUrl ? (
                 // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
-                <img src={logoUrl} alt={company('name')} className="h-8 w-auto object-contain" />
+                <img src={logoUrl} alt={displayName} className="h-8 w-auto object-contain" />
               ) : (
-                <span className="text-xl font-bold text-primary">{company('name')}</span>
+                <span className="text-xl font-bold text-primary">{displayName}</span>
               )}
             </Link>
           ) : (
@@ -280,11 +282,7 @@ export function Sidebar({ role, familyId, logoUrl, userName }: SidebarProps) {
             >
               {logoUrl ? (
                 // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
-                <img
-                  src={logoUrl}
-                  alt={company('name')}
-                  className="size-8 rounded object-contain"
-                />
+                <img src={logoUrl} alt={displayName} className="size-8 rounded object-contain" />
               ) : (
                 'AN'
               )}
