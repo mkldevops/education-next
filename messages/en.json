@@ -274,6 +274,15 @@
           "cancel": "Cancel",
           "success": "Phone number added successfully",
           "error": "Error adding phone number"
+        },
+        "table": {
+          "search": "Search...",
+          "noResults": "No results",
+          "columns": "Columns",
+          "rowsPerPage": "Rows per page",
+          "page": "Page {current} of {total}",
+          "previous": "Previous",
+          "next": "Next"
         }
       },
       "students": {

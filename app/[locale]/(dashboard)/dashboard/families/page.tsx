@@ -1,11 +1,12 @@
-import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
+import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { Link, redirect } from '@/i18n/routing'
+import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { requireFamilyScope } from '../../_lib/auth-helper'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
+import { FamiliesDataTable, type FamilyRow } from './_components/families-data-table'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -39,19 +40,22 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
 
   const families = await db.family.findMany({
     where: { isActive: true },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      emergencyContact: true,
       persons: {
-        include: {
+        select: {
           person: {
-            include: {
+            select: {
               student: {
-                include: {
+                select: {
                   enrollments: {
                     where: { status: { in: ['PENDING', 'ACTIVE'] } },
+                    select: { id: true },
                   },
                 },
               },
-              phoneNumbers: true,
             },
           },
         },
@@ -60,51 +64,16 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
     orderBy: { name: 'asc' },
   })
 
-  const familiesWithCounts = families.map((family) => {
-    const students = family.persons.filter((fp) => fp.person.student).length
-    const enrollments = family.persons.reduce((sum, fp) => {
-      return sum + (fp.person.student?.enrollments.length || 0)
-    }, 0)
-
-    return {
-      ...family,
-      studentCount: students,
-      enrollmentCount: enrollments,
-    }
-  })
-
-  const columns: Column<(typeof familiesWithCounts)[number]>[] = [
-    {
-      key: 'name',
-      header: t('name'),
-      render: (family) => (
-        <Link
-          href={`/dashboard/families/${family.id}`}
-          className="font-medium text-primary after:absolute after:inset-0 hover:text-primary-hover"
-        >
-          {family.name}
-        </Link>
-      ),
-    },
-    {
-      key: 'emergencyContact',
-      header: t('emergencyContact'),
-      className: 'text-gray-700',
-      render: (family) => family.emergencyContact || '-',
-    },
-    {
-      key: 'studentCount',
-      header: t('students'),
-      className: 'text-gray-700',
-      render: (family) => family.studentCount,
-    },
-    {
-      key: 'enrollmentCount',
-      header: t('enrollments'),
-      className: 'text-gray-700',
-      render: (family) => family.enrollmentCount,
-    },
-  ]
+  const familyRows: FamilyRow[] = families.map((family) => ({
+    id: family.id,
+    name: family.name,
+    emergencyContact: family.emergencyContact,
+    studentCount: family.persons.filter((fp) => fp.person.student).length,
+    enrollmentCount: family.persons.reduce(
+      (sum, fp) => sum + (fp.person.student?.enrollments.length ?? 0),
+      0
+    ),
+  }))
 
   return (
     <div className="space-y-6">
@@ -118,13 +87,8 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {isAdmin && <CreateFamilyDialog defaultOpen={action === 'create'} />}
       </div>
-      <Card className="rounded-xl border border-gray-200">
-        <DataTable
-          data={familiesWithCounts}
-          columns={columns}
-          getRowKey={(family) => family.id}
-          emptyMessage={t('noFamilies')}
-        />
+      <Card className="rounded-xl border border-gray-200 p-4">
+        <FamiliesDataTable data={familyRows} />
       </Card>
     </div>
   )
