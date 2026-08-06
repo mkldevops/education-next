@@ -53,7 +53,8 @@ Relations: `families` (N:N via UserFamily), `createdFamilies` (1:N)
 |-------------------|--------|-------------------|
 | id                | UUID   | PK                |
 | name              | String | required, max 50  |
-| emergencyContact  | String | optional, max 250 |
+| emergencyContactName | String | optional, max 250 |
+| emergencyContactPhone | String | optional, max 20, phone format |
 | authorizedPickup  | Text   | optional          |
 | createdById       | UUID   | FK → User         |
 | isActive          | Boolean| default: true     |

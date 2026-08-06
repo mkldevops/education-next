@@ -20,6 +20,7 @@ import { randomUUID } from 'node:crypto'
  */
 import mysql from 'mysql2/promise'
 import pg from 'pg'
+import { splitEmergencyContact } from './lib/emergency-contact.mjs'
 
 // ─── Config ────────────────────────────────────────────────────────────────
 
@@ -220,13 +221,15 @@ async function main() {
     for (const f of families) {
       const id = mapId('family', f.id)
       const name = f.name || `Famille #${f.id}`
+      const emergency = splitEmergencyContact(f.person_emergency)
       await pgClient.query(
-        `INSERT INTO "Family" (id, name, "emergencyContact", "authorizedPickup", "createdById", "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        `INSERT INTO "Family" (id, name, "emergencyContactName", "emergencyContactPhone", "authorizedPickup", "createdById", "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           id,
           trunc(name, 50),
-          trunc(f.person_emergency, 250),
+          trunc(emergency.name, 250),
+          trunc(emergency.phone, 20),
           f.person_authorized,
           ADMIN_USER_ID,
           !!f.enable,

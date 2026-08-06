@@ -16,8 +16,8 @@ Toutes les actions DOIVENT vérifier l'authentification. Les actions non autoris
 
 | Action | Auth | Input | Output | Errors |
 |--------|------|-------|--------|--------|
-| `createFamily` | admin | `{ name, emergencyContact?, authorizedPickup? }` | `'OK'` | `'validationError'` |
-| `updateFamily` | admin | `{ id, name?, emergencyContact?, authorizedPickup? }` | `'OK'` | `'notFound'`, `'validationError'` |
+| `createFamily` | admin | `{ name, emergencyContactName?, emergencyContactPhone?, authorizedPickup? }` | `'OK'` | `'validationError'` |
+| `updateFamily` | admin | `{ id, name?, emergencyContactName?, emergencyContactPhone?, authorizedPickup? }` | `'OK'` | `'notFound'`, `'validationError'` |
 | `deactivateFamily` | admin | `{ id }` | `'OK'` | `'notFound'`, `'hasActiveEnrollments'` |
 | `addPersonToFamily` | admin | `{ familyId, person: PersonInput, relationType }` | `'OK'` | `'notFound'`, `'validationError'` |
 | `linkUserToFamily` | admin | `{ userId, familyId }` | `'OK'` | `'notFound'`, `'alreadyLinked'` |

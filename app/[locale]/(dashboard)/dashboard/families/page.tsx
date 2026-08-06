@@ -43,7 +43,8 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
     select: {
       id: true,
       name: true,
-      emergencyContact: true,
+      emergencyContactName: true,
+      emergencyContactPhone: true,
       persons: {
         select: {
           person: {
@@ -67,7 +68,8 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
   const familyRows: FamilyRow[] = families.map((family) => ({
     id: family.id,
     name: family.name,
-    emergencyContact: family.emergencyContact,
+    emergencyContactName: family.emergencyContactName,
+    emergencyContactPhone: family.emergencyContactPhone,
     studentCount: family.persons.filter((fp) => fp.person.student).length,
     enrollmentCount: family.persons.reduce(
       (sum, fp) => sum + (fp.person.student?.enrollments.length ?? 0),

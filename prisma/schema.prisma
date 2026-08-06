@@ -131,14 +131,15 @@ model Verification {
 // ─── Domain Models ──────────────────────────────────────────────────────────
 
 model Family {
-  id               String   @id @default(uuid())
-  name             String   @db.VarChar(50)
-  emergencyContact String?  @db.VarChar(250)
-  authorizedPickup String?  @db.Text
-  createdById      String
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  name                  String   @db.VarChar(50)
+  emergencyContactName  String?  @db.VarChar(250)
+  emergencyContactPhone String?  @db.VarChar(20)
+  authorizedPickup      String?  @db.Text
+  createdById           String
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   createdBy           User                 @relation("createdBy", fields: [createdById], references: [id])
   users               UserFamily[]

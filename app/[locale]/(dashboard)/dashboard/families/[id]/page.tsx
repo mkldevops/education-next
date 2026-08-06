@@ -221,7 +221,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               family={{
                 id: family.id,
                 name: family.name,
-                emergencyContact: family.emergencyContact,
+                emergencyContactName: family.emergencyContactName,
+                emergencyContactPhone: family.emergencyContactPhone,
                 authorizedPickup: family.authorizedPickup,
               }}
               defaultOpen={action === 'editFamily'}

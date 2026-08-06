@@ -116,15 +116,45 @@ describe('createFamily', () => {
   it('should create family with optional emergency contact', async () => {
     await createFamily({
       name: 'Garcia Family',
-      emergencyContact: 'Emergency contact info',
+      emergencyContactName: 'Marie Garcia',
+      emergencyContactPhone: '06 12 34 56 78',
       parents: [aParent],
       createdById: '550e8400-e29b-41d4-a716-446655440000',
     })
 
     expect(familyGatewayMock.createWithParents).toHaveBeenCalledWith(
       expect.objectContaining({
-        emergencyContact: 'Emergency contact info',
+        emergencyContactName: 'Marie Garcia',
+        emergencyContactPhone: '06 12 34 56 78',
       })
+    )
+  })
+
+  it('should fail validation when the emergency contact phone has an invalid format', async () => {
+    const result = await createFamily({
+      name: 'Garcia Family',
+      emergencyContactName: 'Marie Garcia',
+      emergencyContactPhone: 'Fahari',
+      parents: [aParent],
+      createdById: '550e8400-e29b-41d4-a716-446655440000',
+    })
+
+    expect(result).toBe('validationError')
+  })
+
+  it('should accept an emergency contact name without a phone', async () => {
+    await createFamily({
+      name: 'Garcia Family',
+      emergencyContactName: 'Marie Garcia',
+      parents: [aParent],
+      createdById: '550e8400-e29b-41d4-a716-446655440000',
+    })
+
+    expect(familyGatewayMock.createWithParents).toHaveBeenCalledWith(
+      expect.not.objectContaining({ emergencyContactPhone: expect.anything() })
+    )
+    expect(familyGatewayMock.createWithParents).toHaveBeenCalledWith(
+      expect.objectContaining({ emergencyContactName: 'Marie Garcia' })
     )
   })
 
@@ -199,7 +229,7 @@ describe('createFamily', () => {
   it('should return created family', async () => {
     const result = await createFamily({
       name: 'Torres Family',
-      emergencyContact: 'Contact',
+      emergencyContactName: 'Contact',
       parents: [aParent],
       createdById: '550e8400-e29b-41d4-a716-446655440000',
     })
