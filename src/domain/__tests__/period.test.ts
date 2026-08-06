@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkOverlap, selectDefaultPeriod, validatePeriodDates } from '../period'
+import { checkOverlap, isPeriodCurrent, selectDefaultPeriod, validatePeriodDates } from '../period'
 
 function period(id: string, startAt: string, endAt: string, hasClasses = false) {
   return { id, startAt: new Date(startAt), endAt: new Date(endAt), hasClasses }
@@ -204,6 +204,45 @@ describe('period domain', () => {
       const result = checkOverlap(startAt, endAt, existingPeriods)
 
       expect(result).toBe('overlappingPeriod')
+    })
+  })
+
+  describe('isPeriodCurrent', () => {
+    const now = new Date('2026-08-05')
+
+    it('returns true when now is strictly inside the range', () => {
+      expect(
+        isPeriodCurrent({ startAt: new Date('2025-09-01'), endAt: new Date('2026-08-31') }, now)
+      ).toBe(true)
+    })
+
+    it('includes the start date boundary', () => {
+      expect(isPeriodCurrent({ startAt: now, endAt: new Date('2027-06-30') }, now)).toBe(true)
+    })
+
+    it('includes the end date boundary', () => {
+      expect(isPeriodCurrent({ startAt: new Date('2025-09-01'), endAt: now }, now)).toBe(true)
+    })
+
+    it('returns false when now is before the range', () => {
+      expect(
+        isPeriodCurrent({ startAt: new Date('2026-09-01'), endAt: new Date('2027-08-31') }, now)
+      ).toBe(false)
+    })
+
+    it('returns false when now is after the range', () => {
+      expect(
+        isPeriodCurrent({ startAt: new Date('2024-09-01'), endAt: new Date('2025-08-31') }, now)
+      ).toBe(false)
+    })
+
+    it('returns false for every period when today falls between two school years', () => {
+      const periods = [
+        { startAt: new Date('2025-09-01'), endAt: new Date('2026-07-04') },
+        { startAt: new Date('2026-09-01'), endAt: new Date('2027-07-03') },
+      ]
+
+      expect(periods.some((period) => isPeriodCurrent(period, now))).toBe(false)
     })
   })
 

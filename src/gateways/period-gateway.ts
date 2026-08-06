@@ -36,4 +36,8 @@ export const periodGateway = {
     })
     return periods.length > 0
   },
+
+  countClassPeriods: (id: string) => db.classPeriod.count({ where: { periodId: id } }),
+
+  deactivate: (id: string) => db.period.update({ where: { id }, data: { isActive: false } }),
 }

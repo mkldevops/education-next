@@ -8,7 +8,7 @@ import { SearchModal } from '@/features/dashboard/search-modal'
 import { useSidebarStore } from '@/features/dashboard/sidebar-store'
 
 interface DashboardHeaderClientProps {
-  periods: { id: string; name: string }[]
+  periods: { id: string; name: string; startAt: Date; endAt: Date }[]
   selectedPeriodId: string | null
   userName: string | null
   userEmail: string | null
