@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
 import { toast } from '@/lib/toast'
-import { updatePeriodAction } from '../../../_lib/period-actions'
+import { deactivatePeriodAction, updatePeriodAction } from '../../../_lib/period-actions'
 
 interface EditPeriodDialogProps {
   period: {
@@ -24,9 +24,10 @@ interface EditPeriodDialogProps {
     startAt: Date | string
     endAt: Date | string
   }
+  classPeriodCount: number
 }
 
-export function EditPeriodDialog({ period }: EditPeriodDialogProps) {
+export function EditPeriodDialog({ period, classPeriodCount }: EditPeriodDialogProps) {
   const t = useTranslations('dashboard.pages.periods.edit')
 
   return (
@@ -40,13 +41,13 @@ export function EditPeriodDialog({ period }: EditPeriodDialogProps) {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <EditPeriodForm period={period} />
+        <EditPeriodForm period={period} classPeriodCount={classPeriodCount} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function EditPeriodForm({ period }: EditPeriodDialogProps) {
+function EditPeriodForm({ period, classPeriodCount }: EditPeriodDialogProps) {
   const t = useTranslations('dashboard.pages.periods.edit')
   const tCreate = useTranslations('dashboard.pages.periods.create')
   const { setOpen } = useDialog()
@@ -54,6 +55,12 @@ function EditPeriodForm({ period }: EditPeriodDialogProps) {
 
   const startStr = new Date(period.startAt).toISOString().split('T')[0]
   const endStr = new Date(period.endAt).toISOString().split('T')[0]
+
+  const notify = (result: string) => {
+    if (result === 'OK') return true
+    toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+    return false
+  }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -71,6 +78,15 @@ function EditPeriodForm({ period }: EditPeriodDialogProps) {
         toast.success(t('success'))
         setOpen(false)
       }
+    })
+  }
+
+  const handleArchive = () => {
+    startTransition(async () => {
+      const result = await deactivatePeriodAction({ id: period.id })
+      if (!notify(result)) return
+      toast.success(t('deleteSuccess'))
+      setOpen(false)
     })
   }
 
@@ -115,13 +131,29 @@ function EditPeriodForm({ period }: EditPeriodDialogProps) {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
+      <DialogFooter className="justify-between">
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={handleArchive}
+          disabled={isPending || classPeriodCount > 0}
+          title={classPeriodCount > 0 ? t('errors.periodInUse') : undefined}
+        >
+          {t('delete')}
         </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={isPending}
+          >
+            {t('cancel')}
+          </Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? '...' : t('submit')}
+          </Button>
+        </div>
       </DialogFooter>
     </form>
   )

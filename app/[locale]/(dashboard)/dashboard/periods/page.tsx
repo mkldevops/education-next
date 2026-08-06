@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { isPeriodCurrent } from '@/domain/period'
 import { db } from '@/lib/db'
 import { requireAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
@@ -38,10 +39,23 @@ export default async function PeriodsPage({ params }: Props) {
     orderBy: { startAt: 'desc' },
   })
 
+  const now = new Date()
+  const currentPeriodId = periods.find((period) => isPeriodCurrent(period, now))?.id ?? null
+
   const columns: Column<(typeof periods)[number]>[] = [
     {
       key: 'name',
       header: t('name'),
+      render: (period) => (
+        <span className="flex items-center gap-2">
+          {period.name}
+          {period.id === currentPeriodId && (
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+              {t('current')}
+            </span>
+          )}
+        </span>
+      ),
     },
     {
       key: 'startAt',
@@ -66,7 +80,9 @@ export default async function PeriodsPage({ params }: Props) {
       header: t('actions'),
       headerClassName: 'text-right',
       className: 'text-right',
-      render: (period) => <EditPeriodDialog period={period} />,
+      render: (period) => (
+        <EditPeriodDialog period={period} classPeriodCount={period._count.classPeriods} />
+      ),
     },
   ]
 
@@ -82,6 +98,11 @@ export default async function PeriodsPage({ params }: Props) {
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <CreatePeriodDialog />
       </div>
+      {currentPeriodId === null && (
+        <Card className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm text-amber-800">{t('betweenYears')}</p>
+        </Card>
+      )}
       <Card className="rounded-xl border border-gray-200">
         <DataTable
           data={periods}

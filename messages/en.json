@@ -356,6 +356,9 @@
         "classes": "Classes",
         "actions": "Actions",
         "noPeriods": "No periods registered",
+        "current": "Current period",
+        "betweenYears": "No period covers today's date: you are between two school years.",
+        "selectAriaLabel": "Select a period",
         "create": {
           "title": "New Period",
           "name": "Name",
@@ -372,7 +375,15 @@
           "cancel": "Cancel",
           "submit": "Save",
           "success": "Period updated",
-          "error": "Error updating period"
+          "error": "Error updating period",
+          "delete": "Archive",
+          "deleteSuccess": "Period archived",
+          "errors": {
+            "periodInUse": "Classes or enrollments use this period: it cannot be archived",
+            "notFound": "Period not found",
+            "validationError": "Check the information entered",
+            "unauthorized": "You are not allowed to edit periods"
+          }
         }
       },
       "levels": {

@@ -5,6 +5,10 @@ export function validatePeriodDates(startAt: Date, endAt: Date): 'OK' | 'invalid
   return 'OK'
 }
 
+export function isPeriodCurrent(period: { startAt: Date; endAt: Date }, now: Date): boolean {
+  return period.startAt <= now && now <= period.endAt
+}
+
 export type PeriodCandidate = {
   startAt: Date
   endAt: Date
@@ -15,7 +19,7 @@ export function selectDefaultPeriod<T extends PeriodCandidate>(periods: T[], now
   const byRecency = [...periods].sort((a, b) => b.startAt.getTime() - a.startAt.getTime())
 
   return (
-    byRecency.find((period) => period.startAt <= now && now <= period.endAt) ??
+    byRecency.find((period) => isPeriodCurrent(period, now)) ??
     byRecency.find((period) => period.hasClasses) ??
     byRecency[0] ??
     null

@@ -356,6 +356,9 @@
         "classes": "Classes",
         "actions": "Actions",
         "noPeriods": "Aucune période enregistrée",
+        "current": "Période courante",
+        "betweenYears": "Aucune période ne couvre la date du jour : vous êtes entre deux années scolaires.",
+        "selectAriaLabel": "Sélectionner une période",
         "create": {
           "title": "Nouvelle période",
           "name": "Nom",
@@ -372,7 +375,15 @@
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Période mise à jour",
-          "error": "Erreur lors de la mise à jour"
+          "error": "Erreur lors de la mise à jour",
+          "delete": "Archiver",
+          "deleteSuccess": "Période archivée",
+          "errors": {
+            "periodInUse": "Des classes ou inscriptions utilisent cette période : elle ne peut pas être archivée",
+            "notFound": "Période introuvable",
+            "validationError": "Vérifiez les informations saisies",
+            "unauthorized": "Vous n'êtes pas autorisé à modifier les périodes"
+          }
         }
       },
       "levels": {

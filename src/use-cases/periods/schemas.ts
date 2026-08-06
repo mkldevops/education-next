@@ -12,3 +12,7 @@ export const updatePeriodSchema = z.object({
   startAt: z.coerce.date().optional(),
   endAt: z.coerce.date().optional(),
 })
+
+export const deactivatePeriodSchema = z.object({
+  id: z.string().uuid(),
+})

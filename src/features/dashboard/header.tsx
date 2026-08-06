@@ -8,7 +8,7 @@ export async function DashboardHeader() {
   const [periods, selectedPeriodId, session] = await Promise.all([
     db.period.findMany({
       where: { isActive: true },
-      select: { id: true, name: true },
+      select: { id: true, name: true, startAt: true, endAt: true },
       orderBy: { startAt: 'desc' },
     }),
     getSelectedPeriodId(),
