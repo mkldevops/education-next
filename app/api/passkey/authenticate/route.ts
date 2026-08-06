@@ -1,39 +1,7 @@
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { verifyPasskeyAuthentication } from '@/actions/passkey-actions'
-import { db } from '@/lib/db'
-
-const SESSION_COOKIE = 'better-auth.session_token'
-const SESSION_TTL_DAYS = 7
-const RATE_LIMIT = 10
-const RATE_WINDOW_MS = 60 * 1000
-const MAX_TRACKED_IPS = 10_000
-
-const ipTimestamps = new Map<string, number[]>()
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const recent = (ipTimestamps.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
-  if (recent.length >= RATE_LIMIT) return true
-  recent.push(now)
-  ipTimestamps.set(ip, recent)
-  if (ipTimestamps.size > MAX_TRACKED_IPS) {
-    ipTimestamps.delete(ipTimestamps.keys().next().value!)
-  }
-  return false
-}
-
-function getClientIp(request: Request): string {
-  const xff = request.headers.get('x-forwarded-for')
-  return xff?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? 'unknown'
-}
-
-function generateToken() {
-  const array = new Uint8Array(32)
-  crypto.getRandomValues(array)
-  return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('')
-}
+import { authenticateWithPasskey } from '@/use-cases/auth/authenticate-with-passkey'
+import { getClientIp, isRateLimited } from './_lib/rate-limit'
 
 const AuthBodySchema = z.object({
   id: z.string(),
@@ -52,9 +20,7 @@ const AuthBodySchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const ip = getClientIp(request)
-
-    if (isRateLimited(ip)) {
+    if (isRateLimited(getClientIp(request))) {
       return NextResponse.json({ error: 'tooManyRequests' }, { status: 429 })
     }
 
@@ -70,41 +36,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'invalidRequest' }, { status: 400 })
     }
 
-    const body = parsed.data
-    const result = await verifyPasskeyAuthentication(body, body.challengeId)
+    const { challengeId, ...response } = parsed.data
+    const result = await authenticateWithPasskey({
+      response,
+      challengeId,
+      requestHeaders: request.headers,
+    })
 
-    if (typeof result === 'string') {
+    if (result.status !== 'OK') {
       return NextResponse.json({ error: 'authenticationFailed' }, { status: 400 })
     }
 
-    const user = await db.user.findUnique({ where: { id: result.userId } })
-    if (!user?.isActive) {
-      return NextResponse.json({ error: 'userNotFound' }, { status: 400 })
+    const success = NextResponse.json({ ok: true })
+    for (const cookie of result.sessionCookies) {
+      success.headers.append('set-cookie', cookie)
     }
 
-    const token = generateToken()
-    const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000)
-
-    await db.session.create({
-      data: {
-        token,
-        userId: user.id,
-        expiresAt,
-        ipAddress: ip !== 'unknown' ? ip : null,
-        userAgent: request.headers.get('user-agent') ?? null,
-      },
-    })
-
-    const cookieStore = await cookies()
-    cookieStore.set(SESSION_COOKIE, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: expiresAt,
-      path: '/',
-    })
-
-    return NextResponse.json({ ok: true })
+    return success
   } catch (error) {
     console.error('[passkey/authenticate] unexpected error:', error)
     return NextResponse.json({ error: 'serverError' }, { status: 500 })
