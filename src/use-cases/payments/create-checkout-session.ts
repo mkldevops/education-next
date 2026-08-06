@@ -8,14 +8,13 @@ type Input = {
   customerEmail: string
   locale: string
   appUrl: string
-  periodId?: string | null
 }
 
 export async function createCheckoutSession(input: Input) {
   const stripe = getStripeClient()
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return 'notConfigured' as const
 
-  const balance = await getFamilyBalance(input.familyId, input.periodId)
+  const balance = await getFamilyBalance(input.familyId)
   if (balance.payableAmountInCents <= 0) return 'noBalance' as const
 
   const transaction = await db.paymentTransaction.create({

@@ -127,7 +127,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   if (!family) notFound()
 
-  const familyBalance = await getFamilyBalance(family.id, selectedPeriodId)
+  const familyBalance = await getFamilyBalance(family.id)
 
   const [plans, classes] = isAdmin
     ? await Promise.all([
@@ -162,13 +162,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   const enrolledChildren = students.filter((s) => s.person.student.enrollments.length > 0).length
   const activeEnrollments = allEnrollments.filter((e) => e.status === 'ACTIVE').length
 
-  const payableBalance = allEnrollments
-    .filter((e) => e.status === 'ACTIVE')
-    .reduce(
-      (sum, e) =>
-        sum + Number(e.totalAmount) - e.payments.reduce((paid, p) => paid + Number(p.amount), 0),
-      0
-    )
+  const payableBalance = familyBalance.payableBalance
   const scopedStudentId = students.some((s) => s.person.student.id === studentId)
     ? studentId
     : undefined

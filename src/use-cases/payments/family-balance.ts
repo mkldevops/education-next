@@ -80,7 +80,7 @@ export function calculateFamilyBalance(enrollments: BalanceEnrollment[]): Family
   }
 }
 
-export async function getFamilyBalance(familyId: string, periodId?: string | null) {
+export async function getFamilyBalance(familyId: string) {
   const enrollments = await db.enrollment.findMany({
     where: {
       status: { in: ['PENDING', 'ACTIVE'] },
@@ -91,13 +91,6 @@ export async function getFamilyBalance(familyId: string, periodId?: string | nul
           },
         },
       },
-      ...(periodId
-        ? {
-            classAssignments: {
-              some: { classPeriod: { periodId } },
-            },
-          }
-        : {}),
     },
     select: {
       id: true,

@@ -128,9 +128,7 @@ export default async function DashboardPage({ params }: Props) {
     : t('stats.scopeAll')
 
   const userName = session?.user.name || 'User'
-  const parentBalance = !scope.isAdmin
-    ? await getFamilyBalance(scope.familyId, selectedPeriodId)
-    : null
+  const parentBalance = !scope.isAdmin ? await getFamilyBalance(scope.familyId) : null
 
   const enrollmentColumns: Column<(typeof recentEnrollments)[number]>[] = [
     {
@@ -263,6 +261,7 @@ export default async function DashboardPage({ params }: Props) {
             <p className="mt-2 text-3xl font-bold text-gray-900">
               {formatCurrency(parentBalance?.remainingBalance ?? 0, locale)}
             </p>
+            <p className="mt-1 text-xs text-gray-400">{t('stats.scopeAll')}</p>
             <div className="mt-4">
               <OnlinePaymentButton
                 amount={parentBalance?.payableBalance ?? 0}
