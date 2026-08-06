@@ -392,10 +392,12 @@
           "promotedCount": "{count, plural, =0 {No students promoted} one {# student promoted} other {# students promoted}}",
           "skippedCount": "{count, plural, =0 {No students skipped} one {# student skipped} other {# students skipped}}",
           "reasons": {
+            "alreadyPromoted": "{count, plural, one {# already enrolled in the destination period} other {# already enrolled in the destination period}}",
             "noClassAssignment": "{count, plural, one {# with no class assignment} other {# with no class assignment}}",
             "noNextLevel": "{count, plural, one {# with no active next level} other {# with no active next level}}",
             "noTargetClass": "{count, plural, one {# with no target class in the destination period} other {# with no target class in the destination period}}",
-            "targetClassFull": "{count, plural, one {# with a full target class} other {# with a full target class}}"
+            "targetClassFull": "{count, plural, one {# with a full target class} other {# with a full target class}}",
+            "createFailed": "Failed to promote student {studentId}"
           },
           "cancel": "Cancel",
           "back": "Back",

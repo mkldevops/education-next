@@ -37,6 +37,7 @@ interface PromotePeriodDialogProps {
 }
 
 const SKIP_REASONS: SkipReason[] = [
+  'alreadyPromoted',
   'noClassAssignment',
   'noNextLevel',
   'noTargetClass',
@@ -82,31 +83,39 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
   const handlePreview = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     startTransition(async () => {
-      const result = await previewPromoteStudentsAction({
-        sourcePeriodId: sourcePeriod.id,
-        targetPeriodId,
-      })
-      if (typeof result === 'string') {
+      try {
+        const result = await previewPromoteStudentsAction({
+          sourcePeriodId: sourcePeriod.id,
+          targetPeriodId,
+        })
+        if (typeof result === 'string') {
+          toast.error(t('error'))
+          return
+        }
+        setPreview(result)
+        setStep('preview')
+      } catch {
         toast.error(t('error'))
-        return
       }
-      setPreview(result)
-      setStep('preview')
     })
   }
 
   const handleConfirm = () => {
     startTransition(async () => {
-      const result = await promoteStudentsAction({
-        sourcePeriodId: sourcePeriod.id,
-        targetPeriodId,
-      })
-      if (typeof result === 'string') {
+      try {
+        const result = await promoteStudentsAction({
+          sourcePeriodId: sourcePeriod.id,
+          targetPeriodId,
+        })
+        if (typeof result === 'string') {
+          toast.error(t('error'))
+          return
+        }
+        setReport(result)
+        setStep('report')
+      } catch {
         toast.error(t('error'))
-        return
       }
-      setReport(result)
-      setStep('report')
     })
   }
 
@@ -195,7 +204,9 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
             {report.errors.length > 0 && (
               <ul className="space-y-1 text-sm text-red-700">
                 {report.errors.map((error) => (
-                  <li key={error}>{error}</li>
+                  <li key={error.studentId}>
+                    {t(`reasons.${error.reason}`, { studentId: error.studentId })}
+                  </li>
                 ))}
               </ul>
             )}

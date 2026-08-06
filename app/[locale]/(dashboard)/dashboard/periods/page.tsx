@@ -81,15 +81,17 @@ export default async function PeriodsPage({ params }: Props) {
       header: t('actions'),
       headerClassName: 'text-right',
       className: 'text-right',
-      render: (period) => (
-        <div className="flex justify-end gap-2">
-          <PromotePeriodDialog
-            sourcePeriod={period}
-            targetOptions={periods.filter((candidate) => candidate.id !== period.id)}
-          />
-          <EditPeriodDialog period={period} classPeriodCount={period._count.classPeriods} />
-        </div>
-      ),
+      render: (period) => {
+        const targetOptions = periods
+          .filter((candidate) => new Date(candidate.startAt) > new Date(period.startAt))
+          .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+        return (
+          <div className="flex justify-end gap-2">
+            <PromotePeriodDialog sourcePeriod={period} targetOptions={targetOptions} />
+            <EditPeriodDialog period={period} classPeriodCount={period._count.classPeriods} />
+          </div>
+        )
+      },
     },
   ]
 

@@ -5,10 +5,11 @@ const periodGatewayMock = {
 }
 const enrollmentGatewayMock = {
   findCompletedByPeriod: vi.fn(),
+  findEnrolledStudentIds: vi.fn(),
 }
 const dbMock = {
-  classPeriod: { findFirst: vi.fn() },
-  classAssignment: { count: vi.fn() },
+  classPeriod: { findMany: vi.fn() },
+  classAssignment: { groupBy: vi.fn() },
   $transaction: vi.fn(),
 }
 
@@ -29,11 +30,13 @@ const { promoteStudents, previewPromoteStudents } = await import('./promote-stud
 const sourcePeriodId = '550e8400-e29b-41d4-a716-446655440000'
 const targetPeriodId = '550e8400-e29b-41d4-a716-446655440001'
 const targetClassPeriodId = '550e8400-e29b-41d4-a716-446655440002'
+const nextLevelId = '550e8400-e29b-41d4-a716-446655440021'
+const defaultStudentId = '550e8400-e29b-41d4-a716-446655440011'
 
 function buildEnrollment(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: '550e8400-e29b-41d4-a716-446655440010',
-    studentId: '550e8400-e29b-41d4-a716-446655440011',
+    studentId: defaultStudentId,
     planId: '550e8400-e29b-41d4-a716-446655440012',
     totalAmount: 100,
     discount: 0,
@@ -43,7 +46,7 @@ function buildEnrollment(overrides: Partial<Record<string, unknown>> = {}) {
         classPeriod: {
           level: {
             id: '550e8400-e29b-41d4-a716-446655440020',
-            nextLevel: { id: '550e8400-e29b-41d4-a716-446655440021', isActive: true },
+            nextLevel: { id: nextLevelId, isActive: true },
           },
         },
       },
@@ -52,25 +55,29 @@ function buildEnrollment(overrides: Partial<Record<string, unknown>> = {}) {
   }
 }
 
+function mockTransactionSuccess() {
+  dbMock.$transaction = vi.fn(async (cb) => {
+    const tx = {
+      enrollment: {
+        create: vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440099' }),
+      },
+      classAssignment: { create: vi.fn() },
+    }
+    return cb(tx)
+  })
+}
+
 describe('promoteStudents / previewPromoteStudents', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     periodGatewayMock.findById = vi.fn().mockResolvedValue({ id: sourcePeriodId })
     enrollmentGatewayMock.findCompletedByPeriod = vi.fn().mockResolvedValue([])
-    dbMock.classPeriod.findFirst = vi
+    enrollmentGatewayMock.findEnrolledStudentIds = vi.fn().mockResolvedValue(new Set())
+    dbMock.classPeriod.findMany = vi
       .fn()
-      .mockResolvedValue({ id: targetClassPeriodId, capacity: 10 })
-    dbMock.classAssignment.count = vi.fn().mockResolvedValue(0)
-    dbMock.$transaction = vi.fn(async (cb) => {
-      const tx = {
-        classPeriod: { findFirst: dbMock.classPeriod.findFirst },
-        classAssignment: { count: dbMock.classAssignment.count, create: vi.fn() },
-        enrollment: {
-          create: vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440099' }),
-        },
-      }
-      return cb(tx)
-    })
+      .mockResolvedValue([{ id: targetClassPeriodId, levelId: nextLevelId, capacity: 10 }])
+    dbMock.classAssignment.groupBy = vi.fn().mockResolvedValue([])
+    mockTransactionSuccess()
   })
 
   describe('promoteStudents', () => {
@@ -107,6 +114,16 @@ describe('promoteStudents / previewPromoteStudents', () => {
       const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({ promoted: 1, skipped: 0, errors: [] })
+    })
+
+    it('should skip students who already have an enrollment in the target period', async () => {
+      enrollmentGatewayMock.findEnrolledStudentIds.mockResolvedValue(new Set([defaultStudentId]))
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
+
+      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+
+      expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
+      expect(dbMock.$transaction).not.toHaveBeenCalled()
     })
 
     it('should skip when there is no class assignment', async () => {
@@ -150,7 +167,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
     })
 
     it('should skip when there is no active target class period', async () => {
-      dbMock.classPeriod.findFirst.mockResolvedValue(null)
+      dbMock.classPeriod.findMany.mockResolvedValue([])
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
 
       const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
@@ -159,8 +176,12 @@ describe('promoteStudents / previewPromoteStudents', () => {
     })
 
     it('should skip when the target class period is full', async () => {
-      dbMock.classPeriod.findFirst.mockResolvedValue({ id: targetClassPeriodId, capacity: 5 })
-      dbMock.classAssignment.count.mockResolvedValue(5)
+      dbMock.classPeriod.findMany.mockResolvedValue([
+        { id: targetClassPeriodId, levelId: nextLevelId, capacity: 5 },
+      ])
+      dbMock.classAssignment.groupBy.mockResolvedValue([
+        { classPeriodId: targetClassPeriodId, _count: { _all: 5 } },
+      ])
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
 
       const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
@@ -168,24 +189,53 @@ describe('promoteStudents / previewPromoteStudents', () => {
       expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
     })
 
-    it('should record an error and count as skipped when enrollment creation fails', async () => {
+    it('should return a typed error (no raw Prisma message) and release the capacity slot on failure', async () => {
+      dbMock.classPeriod.findMany.mockResolvedValue([
+        { id: targetClassPeriodId, levelId: nextLevelId, capacity: 1 },
+      ])
+      let callCount = 0
       dbMock.$transaction = vi.fn(async (cb) => {
+        callCount++
         const tx = {
-          classPeriod: { findFirst: dbMock.classPeriod.findFirst },
-          classAssignment: { count: dbMock.classAssignment.count, create: vi.fn() },
           enrollment: {
-            create: vi.fn().mockRejectedValue(new Error('boom')),
+            create:
+              callCount === 1
+                ? vi
+                    .fn()
+                    .mockRejectedValue(
+                      new Error(
+                        "Foreign key constraint failed on the field: 'Enrollment_planId_fkey'"
+                      )
+                    )
+                : vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440099' }),
           },
+          classAssignment: { create: vi.fn() },
         }
         return cb(tx)
       })
-      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
+        buildEnrollment({ studentId: 'student-1' }),
+        buildEnrollment({ studentId: 'student-2' }),
+      ])
 
       const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
 
-      expect(result).toMatchObject({ promoted: 0, skipped: 1 })
-      expect((result as { errors: string[] }).errors).toHaveLength(1)
-      expect((result as { errors: string[] }).errors[0]).toContain('boom')
+      expect(result).toEqual({
+        promoted: 1,
+        skipped: 1,
+        errors: [{ studentId: 'student-1', reason: 'createFailed' }],
+      })
+    })
+
+    it('should run one transaction per promoted student, not one for the whole batch', async () => {
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
+        buildEnrollment({ studentId: 'student-1' }),
+        buildEnrollment({ studentId: 'student-2' }),
+      ])
+
+      await promoteStudents({ sourcePeriodId, targetPeriodId })
+
+      expect(dbMock.$transaction).toHaveBeenCalledTimes(2)
     })
   })
 
@@ -224,6 +274,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         promoted: 1,
         skipped: 0,
         skippedByReason: {
+          alreadyPromoted: 0,
           noClassAssignment: 0,
           noNextLevel: 0,
           noTargetClass: 0,
@@ -232,20 +283,24 @@ describe('promoteStudents / previewPromoteStudents', () => {
       })
     })
 
-    it('should break down skip reasons', async () => {
+    it('should break down skip reasons, including already-promoted students', async () => {
+      enrollmentGatewayMock.findEnrolledStudentIds.mockResolvedValue(new Set(['student-3']))
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
-        buildEnrollment({ classAssignments: [] }),
+        buildEnrollment({ studentId: 'student-1', classAssignments: [] }),
         buildEnrollment({
+          studentId: 'student-2',
           classAssignments: [{ classPeriod: { level: { id: 'level-1', nextLevel: null } } }],
         }),
+        buildEnrollment({ studentId: 'student-3' }),
       ])
 
       const result = await previewPromoteStudents({ sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({
         promoted: 0,
-        skipped: 2,
+        skipped: 3,
         skippedByReason: {
+          alreadyPromoted: 1,
           noClassAssignment: 1,
           noNextLevel: 1,
           noTargetClass: 0,
@@ -254,18 +309,22 @@ describe('promoteStudents / previewPromoteStudents', () => {
       })
     })
 
-    it('should agree with promoteStudents on totals for the same fixtures', async () => {
+    it('should agree with promoteStudents on totals when the target class is over capacity', async () => {
+      dbMock.classPeriod.findMany.mockResolvedValue([
+        { id: targetClassPeriodId, levelId: nextLevelId, capacity: 2 },
+      ])
       const enrollments = [
-        buildEnrollment(),
-        buildEnrollment({ id: 'enrollment-2', classAssignments: [] }),
+        buildEnrollment({ studentId: 'student-1' }),
+        buildEnrollment({ studentId: 'student-2' }),
+        buildEnrollment({ studentId: 'student-3' }),
       ]
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue(enrollments)
 
       const preview = await previewPromoteStudents({ sourcePeriodId, targetPeriodId })
       const execution = await promoteStudents({ sourcePeriodId, targetPeriodId })
 
-      expect(preview).toMatchObject({ promoted: 1, skipped: 1 })
-      expect(execution).toMatchObject({ promoted: 1, skipped: 1 })
+      expect(preview).toMatchObject({ promoted: 2, skipped: 1 })
+      expect(execution).toMatchObject({ promoted: 2, skipped: 1 })
     })
   })
 })
