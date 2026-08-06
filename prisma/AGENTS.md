@@ -29,6 +29,15 @@ Commit both the schema and migration. `pnpm build:prod` is the available command
 migrations separately. Never use `db push` for production or shared environments. The current schema,
 not historical migrations, defines active models—`Page` was removed by the July 2026 migration.
 
+`0_init` is the generated baseline: replaying `prisma/migrations/` from an empty database reproduces
+`schema.prisma` exactly. A database created with `db push` before that baseline existed must be
+adopted once with `prisma migrate resolve --applied`; the procedure and its failure modes are in
+`prisma/migrations/0_init/README.md`. Verify any replay or adoption with:
+
+```bash
+prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+```
+
 ## Soft Deletion and Relations
 
 Models with `isActive` are deactivated with updates rather than hard-deleted. Normal application reads
