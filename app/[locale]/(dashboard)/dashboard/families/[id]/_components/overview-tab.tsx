@@ -81,9 +81,10 @@ export async function OverviewTab({
           />
         </Card>
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {t('sections.financialTitle')}
-          </h2>
+          <div className="mb-4 flex items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">{t('sections.financialTitle')}</h2>
+            <span className="text-xs text-gray-400">{t('scopeAll')}</span>
+          </div>
           <FinancialSummary
             totalDue={totalDue}
             totalPaid={totalPaid}

@@ -646,6 +646,7 @@
       "familyDetails": {
         "title": "Détails de la famille",
         "subtitle": "Détails de la famille",
+        "scopeAll": "Toutes périodes",
         "emergencyContact": "Contact d'urgence",
         "authorizedPickup": "Personnes autorisées à la récupération",
         "hero": {

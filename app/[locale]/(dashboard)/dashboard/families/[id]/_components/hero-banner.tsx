@@ -41,6 +41,7 @@ export async function HeroBanner({
           <span>
             {enrollmentsCount} {t('hero.enrollments')}
           </span>
+          <span className="text-gray-400">{t('scopeAll')}</span>
         </div>
       </div>
 

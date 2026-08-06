@@ -646,6 +646,7 @@
       "familyDetails": {
         "title": "Family Details",
         "subtitle": "Family Details",
+        "scopeAll": "All periods",
         "emergencyContact": "Emergency Contact",
         "authorizedPickup": "Authorized Pickup",
         "hero": {

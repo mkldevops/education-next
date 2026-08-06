@@ -22,7 +22,6 @@ const input = {
   customerEmail: 'parent@example.com',
   locale: 'fr',
   appUrl: 'http://localhost:8550',
-  periodId: 'period-1',
 }
 
 describe('createCheckoutSession', () => {
@@ -63,6 +62,12 @@ describe('createCheckoutSession', () => {
 
     expect(await createCheckoutSession(input)).toBe('noBalance')
     expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
+  })
+
+  it('prices the checkout on the cumulated family balance', async () => {
+    await createCheckoutSession(input)
+
+    expect(getFamilyBalanceMock).toHaveBeenCalledWith('family-1')
   })
 
   it('creates a server-priced checkout tied to the local transaction', async () => {
