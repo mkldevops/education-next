@@ -5,6 +5,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
+import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
@@ -127,7 +128,12 @@ export default async function EnrollmentDetailPage({ params }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {enrollment.student.person.name} {enrollment.student.person.lastname}
+            <Link
+              href={`/dashboard/students/${enrollment.student.id}`}
+              className="hover:text-primary hover:underline"
+            >
+              {enrollment.student.person.name} {enrollment.student.person.lastname}
+            </Link>
           </h1>
           <p className="mt-1 text-sm text-gray-500">{t('subtitle')}</p>
         </div>
