@@ -1,5 +1,5 @@
 import type { z } from 'zod'
-import { calculateTotalAmount } from '@/domain/enrollment'
+import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { applyDiscountSchema } from './schemas'
 
@@ -12,7 +12,12 @@ export async function applyDiscount(input: Input) {
   const enrollment = await enrollmentGateway.findById(parsed.data.enrollmentId)
   if (!enrollment) return 'notFound' as const
 
-  const totalAmount = calculateTotalAmount(Number(enrollment.plan.amount), parsed.data.discount)
+  const planAmount = Number(enrollment.plan.amount)
+
+  const discountCheck = validateDiscount(planAmount, parsed.data.discount)
+  if (discountCheck !== 'OK') return discountCheck
+
+  const totalAmount = calculateTotalAmount(planAmount, parsed.data.discount)
 
   await enrollmentGateway.updateDiscount(
     parsed.data.enrollmentId,

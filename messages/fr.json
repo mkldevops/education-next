@@ -241,7 +241,13 @@
           "confirm": "Archiver",
           "cancel": "Annuler",
           "success": "Famille archivée",
-          "error": "Erreur lors de l'archivage"
+          "error": "Erreur lors de l'archivage",
+          "errors": {
+            "hasActiveEnrollments": "Des inscriptions en attente ou actives existent : archivez-les d'abord",
+            "notFound": "Famille introuvable",
+            "validationError": "Vérifiez les informations saisies",
+            "unauthorized": "Vous n'êtes pas autorisé à archiver cette famille"
+          }
         },
         "addPerson": {
           "title": "Ajouter un membre",
@@ -518,7 +524,15 @@
           "cancel": "Annuler",
           "submit": "Inscrire",
           "success": "Inscription créée",
-          "error": "Erreur lors de l'inscription"
+          "error": "Erreur lors de l'inscription",
+          "errors": {
+            "discountExceedsPlan": "La réduction dépasse le montant du plan",
+            "duplicateEnrollment": "Cet élève est déjà inscrit dans cette classe",
+            "classFull": "Cette classe est complète",
+            "notFound": "Élève, plan ou classe introuvable",
+            "validationError": "Vérifiez les informations saisies",
+            "unauthorized": "Vous n'êtes pas autorisé à créer une inscription"
+          }
         },
         "drawer": {
           "title": "Détail de l'inscription",
@@ -964,7 +978,13 @@
           "cancel": "Annuler",
           "submit": "Appliquer",
           "success": "Réduction appliquée",
-          "error": "Erreur lors de l'application"
+          "error": "Erreur lors de l'application",
+          "errors": {
+            "discountExceedsPlan": "La réduction dépasse le montant du plan",
+            "notFound": "Inscription introuvable",
+            "validationError": "Vérifiez le montant saisi",
+            "unauthorized": "Vous n'êtes pas autorisé à modifier cette inscription"
+          }
         }
       },
       "users": {

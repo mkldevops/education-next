@@ -47,6 +47,40 @@ describe('applyDiscount', () => {
     expect(result).toBe('notFound')
   })
 
+  it('should reject a discount above the plan amount', async () => {
+    enrollmentGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      plan: { amount: 100 },
+    })
+
+    const result = await applyDiscount({
+      enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
+      discount: 100.01,
+    })
+
+    expect(result).toBe('discountExceedsPlan')
+    expect(enrollmentGatewayMock.updateDiscount).not.toHaveBeenCalled()
+  })
+
+  it('should accept a discount equal to the plan amount', async () => {
+    enrollmentGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      plan: { amount: 100 },
+    })
+
+    const result = await applyDiscount({
+      enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
+      discount: 100,
+    })
+
+    expect(result).toBe('OK')
+    expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      '550e8400-e29b-41d4-a716-446655440000',
+      100,
+      0
+    )
+  })
+
   it('should succeed when applying discount to existing enrollment', async () => {
     enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',

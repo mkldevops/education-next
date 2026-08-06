@@ -18,6 +18,13 @@ export function validateTransition(
   return 'OK'
 }
 
+export function validateDiscount(
+  planAmount: number,
+  discount: number
+): 'OK' | 'discountExceedsPlan' {
+  return discount <= planAmount ? 'OK' : 'discountExceedsPlan'
+}
+
 export function calculateTotalAmount(planAmount: number, discount: number): number {
   return planAmount - discount
 }
