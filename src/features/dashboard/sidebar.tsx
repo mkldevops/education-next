@@ -19,7 +19,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, usePathname, useRouter } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
@@ -80,23 +80,32 @@ const bottomItems: NavItemConfig[] = [
   { href: '/dashboard/settings', icon: Settings, key: 'settings' },
 ]
 
-function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
+function Tooltip({
+  label,
+  children,
+}: {
+  label: string
+  children: (describedBy: string | undefined) => React.ReactNode
+}) {
+  const tooltipId = useId()
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
-  const handleMouseEnter = (e: React.MouseEvent) => {
+  const show = (e: React.MouseEvent | React.FocusEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
     setPos({ top: rect.top + rect.height / 2, left: rect.right + 8 })
   }
 
-  const handleMouseLeave = () => setPos(null)
+  const hide = () => setPos(null)
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: tooltip wrapper
-    <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      {children}
+    <div onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}>
+      {children(pos ? tooltipId : undefined)}
       {pos &&
         createPortal(
           <div
+            id={tooltipId}
+            role="tooltip"
             className="fixed z-50 -translate-y-1/2 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
             style={{ top: pos.top, left: pos.left }}
           >
@@ -124,10 +133,12 @@ function NavItem({
   expanded: boolean
   onClick?: () => void
 }) {
-  const link = (
+  const link = (describedBy?: string) => (
     <Link
       href={href}
       onClick={onClick}
+      aria-label={expanded ? undefined : label}
+      aria-describedby={describedBy}
       className={cn(
         'flex items-center rounded-xl transition-all duration-150',
         expanded ? 'gap-3 px-3 py-2' : 'size-11 justify-center',
@@ -142,7 +153,41 @@ function NavItem({
   )
 
   if (!expanded) return <Tooltip label={label}>{link}</Tooltip>
-  return link
+  return link()
+}
+
+function SidebarAction({
+  icon: Icon,
+  label,
+  expanded,
+  className,
+  onClick,
+}: {
+  icon: LucideIcon
+  label: string
+  expanded: boolean
+  className?: string
+  onClick: () => void
+}) {
+  const button = (describedBy?: string) => (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={expanded ? undefined : label}
+      aria-describedby={describedBy}
+      className={cn(
+        'mt-1 w-full items-center rounded-xl py-2 text-graphite-800 transition-all duration-150 hover:bg-alabaster-900 hover:text-graphite-600',
+        expanded ? 'gap-3 px-3' : 'justify-center px-2',
+        className
+      )}
+    >
+      <Icon size={18} className="shrink-0" />
+      {expanded && <span className="text-xs font-medium">{label}</span>}
+    </button>
+  )
+
+  if (!expanded) return <Tooltip label={label}>{button}</Tooltip>
+  return button()
 }
 
 type SidebarProps = {
@@ -315,43 +360,21 @@ export function Sidebar({ role, familyId, logoUrl, userName }: SidebarProps) {
             />
           ))}
 
-          <button
-            type="button"
+          <SidebarAction
+            icon={LogOut}
+            label={t('logout')}
+            expanded={expanded}
+            className="flex"
             onClick={handleSignOut}
-            className={cn(
-              'mt-1 flex w-full items-center rounded-xl py-2 text-graphite-800 transition-all duration-150 hover:bg-alabaster-900 hover:text-graphite-600',
-              expanded ? 'gap-3 px-3' : 'justify-center px-2'
-            )}
-          >
-            {expanded ? (
-              <>
-                <LogOut size={18} className="shrink-0" />
-                <span className="text-xs font-medium">{t('logout')}</span>
-              </>
-            ) : (
-              <Tooltip label={t('logout')}>
-                <LogOut size={18} />
-              </Tooltip>
-            )}
-          </button>
+          />
 
-          <button
-            type="button"
+          <SidebarAction
+            icon={expanded ? ChevronsLeft : ChevronsRight}
+            label={expanded ? t('collapse') : t('expand')}
+            expanded={expanded}
+            className="hidden md:flex"
             onClick={toggle}
-            className={cn(
-              'mt-1 hidden w-full items-center rounded-xl py-2 text-graphite-800 transition-all duration-150 hover:bg-alabaster-900 hover:text-graphite-600 md:flex',
-              expanded ? 'gap-3 px-3' : 'justify-center px-2'
-            )}
-          >
-            {expanded ? (
-              <>
-                <ChevronsLeft size={18} className="shrink-0" />
-                <span className="text-xs font-medium">{t('collapse')}</span>
-              </>
-            ) : (
-              <ChevronsRight size={18} />
-            )}
-          </button>
+          />
         </div>
       </aside>
     </>
