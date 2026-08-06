@@ -85,4 +85,26 @@ describe('Tabs', () => {
       expect(document.getElementById(controlsId as string)).not.toBeNull()
     }
   })
+
+  it('renders an optional icon without letting it leak into the tab accessible name', () => {
+    const Icon = () => (
+      <svg data-testid="tab-icon">
+        <title>Icon title</title>
+      </svg>
+    )
+    const tabsWithIcon = [{ label: 'Overview', icon: Icon, content: <div>Overview content</div> }]
+
+    render(<Tabs tabs={tabsWithIcon} />)
+
+    const tab = screen.getByRole('tab', { name: 'Overview' })
+    expect(tab).toBeInTheDocument()
+    expect(screen.getByTestId('tab-icon')).toBeInTheDocument()
+  })
+
+  it('keeps the tablist row horizontally scrollable so tabs never overflow the viewport', () => {
+    render(<Tabs tabs={tabs} />)
+
+    const tablist = screen.getByRole('tablist')
+    expect(tablist.parentElement).toHaveClass('overflow-x-auto')
+  })
 })
