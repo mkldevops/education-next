@@ -72,7 +72,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
     vi.clearAllMocks()
     periodGatewayMock.findById = vi.fn().mockResolvedValue({ id: sourcePeriodId })
     enrollmentGatewayMock.findCompletedByPeriod = vi.fn().mockResolvedValue([])
-    enrollmentGatewayMock.findEnrolledStudentIds = vi.fn().mockResolvedValue(new Set())
+    enrollmentGatewayMock.findEnrolledStudentIds = vi.fn().mockImplementation(async () => new Set())
     dbMock.classPeriod.findMany = vi
       .fn()
       .mockResolvedValue([{ id: targetClassPeriodId, levelId: nextLevelId, capacity: 10 }])
@@ -124,6 +124,24 @@ describe('promoteStudents / previewPromoteStudents', () => {
 
       expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
       expect(dbMock.$transaction).not.toHaveBeenCalled()
+    })
+
+    it('should promote a student with two source-period enrollments only once', async () => {
+      const enrollments = [
+        buildEnrollment({ id: 'enrollment-1' }),
+        buildEnrollment({ id: 'enrollment-2' }),
+      ]
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue(enrollments)
+
+      const preview = await previewPromoteStudents({ sourcePeriodId, targetPeriodId })
+      const execution = await promoteStudents({ sourcePeriodId, targetPeriodId })
+
+      expect(preview).toMatchObject({
+        promoted: 1,
+        skipped: 1,
+        skippedByReason: expect.objectContaining({ alreadyPromoted: 1 }),
+      })
+      expect(execution).toEqual({ promoted: 1, skipped: 1, errors: [] })
     })
 
     it('should skip when there is no class assignment', async () => {

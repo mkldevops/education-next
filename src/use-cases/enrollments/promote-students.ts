@@ -131,6 +131,7 @@ function resolveEligibility(
   }
 
   context.occupancyByClassPeriodId.set(targetClassPeriod.id, currentOccupancy + 1)
+  context.alreadyPromotedStudentIds.add(enrollment.studentId)
   return { outcome: 'eligible', targetClassPeriodId: targetClassPeriod.id }
 }
 
