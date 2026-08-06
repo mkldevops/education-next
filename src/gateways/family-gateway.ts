@@ -3,7 +3,8 @@ import { db } from '@/lib/db'
 export const familyGateway = {
   createWithParents: (data: {
     name: string
-    emergencyContact?: string
+    emergencyContactName?: string
+    emergencyContactPhone?: string
     authorizedPickup?: string
     createdById: string
     parents: Array<{
@@ -38,7 +39,8 @@ export const familyGateway = {
     id: string,
     data: {
       name?: string
-      emergencyContact?: string
+      emergencyContactName?: string
+      emergencyContactPhone?: string
       authorizedPickup?: string
     }
   ) =>

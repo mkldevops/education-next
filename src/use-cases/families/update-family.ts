@@ -19,7 +19,8 @@ export async function updateFamily(input: Input) {
 
   const updated = await familyGateway.update(parsed.data.id, {
     name: parsed.data.name,
-    emergencyContact: parsed.data.emergencyContact,
+    emergencyContactName: parsed.data.emergencyContactName,
+    emergencyContactPhone: parsed.data.emergencyContactPhone,
     authorizedPickup: parsed.data.authorizedPickup,
   })
 

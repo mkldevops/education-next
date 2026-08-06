@@ -65,14 +65,18 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
     const formData = new FormData(e.currentTarget)
     const rawData = {
       name: formData.get('name') as string,
-      emergencyContact: (formData.get('emergencyContact') as string) || undefined,
+      emergencyContactName: (formData.get('emergencyContactName') as string) || undefined,
+      emergencyContactPhone: (formData.get('emergencyContactPhone') as string) || undefined,
       authorizedPickup: (formData.get('authorizedPickup') as string) || undefined,
       parents: [],
     }
 
     const parsed = createFamilySchema.safeParse(rawData)
     if (!parsed.success) {
-      toast.error(t('error'))
+      const invalidPhone = parsed.error.issues.some(
+        (issue) => issue.path[0] === 'emergencyContactPhone'
+      )
+      toast.error(invalidPhone ? t('emergencyContactPhoneInvalid') : t('error'))
       return
     }
 
@@ -109,13 +113,25 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="emergencyContact">{t('emergencyContact')}</Label>
+            <Label htmlFor="emergencyContactName">{t('emergencyContactName')}</Label>
             <Input
-              id="emergencyContact"
-              name="emergencyContact"
+              id="emergencyContactName"
+              name="emergencyContactName"
               type="text"
-              placeholder={t('emergencyContactPlaceholder')}
+              placeholder={t('emergencyContactNamePlaceholder')}
               maxLength={250}
+              disabled={isPending}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="emergencyContactPhone">{t('emergencyContactPhone')}</Label>
+            <Input
+              id="emergencyContactPhone"
+              name="emergencyContactPhone"
+              type="tel"
+              placeholder={t('emergencyContactPhonePlaceholder')}
+              maxLength={20}
               disabled={isPending}
             />
           </div>

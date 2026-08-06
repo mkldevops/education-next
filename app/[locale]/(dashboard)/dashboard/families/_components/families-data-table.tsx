@@ -8,7 +8,8 @@ import { Link } from '@/i18n/routing'
 export type FamilyRow = {
   id: string
   name: string
-  emergencyContact: string | null
+  emergencyContactName: string | null
+  emergencyContactPhone: string | null
   studentCount: number
   enrollmentCount: number
 }
@@ -38,8 +39,24 @@ export function FamiliesDataTable({ data }: Props) {
     {
       id: 'emergencyContact',
       header: t('emergencyContact'),
-      accessorFn: (row) => row.emergencyContact || '-',
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      accessorFn: (row) =>
+        [row.emergencyContactName, row.emergencyContactPhone].filter(Boolean).join(' ') || '-',
+      cell: ({ row }) => (
+        <div className="flex flex-col text-gray-700">
+          {row.original.emergencyContactName && <span>{row.original.emergencyContactName}</span>}
+          {row.original.emergencyContactPhone && (
+            <a
+              href={`tel:${row.original.emergencyContactPhone.replace(/[^+\d]/g, '')}`}
+              className="relative z-10 w-fit text-primary hover:text-primary-hover hover:underline"
+            >
+              {row.original.emergencyContactPhone}
+            </a>
+          )}
+          {!row.original.emergencyContactName && !row.original.emergencyContactPhone && (
+            <span>-</span>
+          )}
+        </div>
+      ),
       enableSorting: true,
     },
     {

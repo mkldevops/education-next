@@ -16,13 +16,15 @@ import {
 } from '@/components/ui/dialog/dialog'
 import { Input, Label, Textarea } from '@/components/ui/input/input'
 import { toast } from '@/lib/toast'
+import { updateFamilySchema } from '@/use-cases/families/schemas'
 import { updateFamilyAction } from '../../../_lib/family-actions'
 
 interface EditFamilyDialogProps {
   family: {
     id: string
     name: string
-    emergencyContact: string | null
+    emergencyContactName: string | null
+    emergencyContactPhone: string | null
     authorizedPickup: string | null
   }
   defaultOpen?: boolean
@@ -68,12 +70,25 @@ function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
 
+    const parsed = updateFamilySchema.safeParse({
+      id: family.id,
+      name: formData.get('name') as string,
+      emergencyContactName: (formData.get('emergencyContactName') as string) || undefined,
+      emergencyContactPhone: (formData.get('emergencyContactPhone') as string) || undefined,
+      authorizedPickup: (formData.get('authorizedPickup') as string) || undefined,
+    })
+    if (!parsed.success) {
+      const invalidPhone = parsed.error.issues.some(
+        (issue) => issue.path[0] === 'emergencyContactPhone'
+      )
+      toast.error(invalidPhone ? tCreate('emergencyContactPhoneInvalid') : t('error'))
+      return
+    }
+
+    const { id, ...data } = parsed.data
+
     startTransition(async () => {
-      const result = await updateFamilyAction(family.id, {
-        name: formData.get('name') as string,
-        emergencyContact: (formData.get('emergencyContact') as string) || undefined,
-        authorizedPickup: (formData.get('authorizedPickup') as string) || undefined,
-      })
+      const result = await updateFamilyAction(id, data)
       if (typeof result === 'string') {
         toast.error(t('error'))
       } else {
@@ -99,12 +114,25 @@ function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-emergency">{tCreate('emergencyContact')}</Label>
+            <Label htmlFor="edit-emergency-name">{tCreate('emergencyContactName')}</Label>
             <Input
-              id="edit-emergency"
-              name="emergencyContact"
-              defaultValue={family.emergencyContact ?? ''}
+              id="edit-emergency-name"
+              name="emergencyContactName"
+              defaultValue={family.emergencyContactName ?? ''}
+              placeholder={tCreate('emergencyContactNamePlaceholder')}
               maxLength={250}
+              disabled={isPending}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-emergency-phone">{tCreate('emergencyContactPhone')}</Label>
+            <Input
+              id="edit-emergency-phone"
+              name="emergencyContactPhone"
+              type="tel"
+              defaultValue={family.emergencyContactPhone ?? ''}
+              placeholder={tCreate('emergencyContactPhonePlaceholder')}
+              maxLength={20}
               disabled={isPending}
             />
           </div>

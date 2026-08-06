@@ -20,7 +20,8 @@ const parentInputSchema = personInputSchema
 
 export const createFamilySchema = z.object({
   name: z.string().min(1).max(50),
-  emergencyContact: z.string().max(250).optional(),
+  emergencyContactName: z.string().max(250).optional(),
+  emergencyContactPhone: z.string().min(1).max(20).regex(phoneNumberFormat).optional(),
   authorizedPickup: z.string().optional(),
   parents: z.array(parentInputSchema),
   address: z.string().max(250).optional(),
@@ -31,7 +32,8 @@ export const createFamilySchema = z.object({
 export const updateFamilySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(50).optional(),
-  emergencyContact: z.string().max(250).optional(),
+  emergencyContactName: z.string().max(250).optional(),
+  emergencyContactPhone: z.string().min(1).max(20).regex(phoneNumberFormat).optional(),
   authorizedPickup: z.string().optional(),
 })
 

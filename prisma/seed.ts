@@ -64,7 +64,8 @@ async function seed() {
   const familyDupont = await prisma.family.create({
     data: {
       name: 'Dupont',
-      emergencyContact: '06 12 34 56 78',
+      emergencyContactName: 'Marie Dupont',
+      emergencyContactPhone: '06 12 34 56 78',
       authorizedPickup: 'Marie Dupont, Pierre Dupont',
       createdById: adminUser.id,
     },
@@ -73,7 +74,8 @@ async function seed() {
   const familyMartin = await prisma.family.create({
     data: {
       name: 'Martin',
-      emergencyContact: '06 98 76 54 32',
+      emergencyContactName: 'Sophie Martin',
+      emergencyContactPhone: '06 98 76 54 32',
       createdById: adminUser.id,
     },
   })

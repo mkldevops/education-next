@@ -98,15 +98,32 @@ describe('updateFamily', () => {
 
     await updateFamily({
       id: '550e8400-e29b-41d4-a716-446655440000',
-      emergencyContact: 'Emergency Contact Info',
+      emergencyContactName: 'Marie Dupont',
+      emergencyContactPhone: '+33 6 12 34 56 78',
     })
 
     expect(familyGatewayMock.update).toHaveBeenCalledWith(
       '550e8400-e29b-41d4-a716-446655440000',
       expect.objectContaining({
-        emergencyContact: 'Emergency Contact Info',
+        emergencyContactName: 'Marie Dupont',
+        emergencyContactPhone: '+33 6 12 34 56 78',
       })
     )
+  })
+
+  it('should fail when the emergency contact phone has an invalid format', async () => {
+    familyGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      name: 'Family Name',
+    })
+
+    const result = await updateFamily({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      emergencyContactName: 'Marie Dupont',
+      emergencyContactPhone: 'Fahari',
+    })
+
+    expect(result).toBe('validationError')
   })
 
   it('should update family with authorized pickup', async () => {
@@ -137,7 +154,8 @@ describe('updateFamily', () => {
     await updateFamily({
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'New Name',
-      emergencyContact: 'Contact Info',
+      emergencyContactName: 'Contact Info',
+      emergencyContactPhone: '0612345678',
       authorizedPickup: 'Jane Doe',
     })
 
@@ -145,7 +163,8 @@ describe('updateFamily', () => {
       '550e8400-e29b-41d4-a716-446655440000',
       expect.objectContaining({
         name: 'New Name',
-        emergencyContact: 'Contact Info',
+        emergencyContactName: 'Contact Info',
+        emergencyContactPhone: '0612345678',
         authorizedPickup: 'Jane Doe',
       })
     )
@@ -187,7 +206,7 @@ describe('updateFamily', () => {
 
     const result = await updateFamily({
       id: '550e8400-e29b-41d4-a716-446655440000',
-      emergencyContact: 'New Contact',
+      emergencyContactName: 'New Contact',
     })
 
     expect(result).not.toBe('validationError')
