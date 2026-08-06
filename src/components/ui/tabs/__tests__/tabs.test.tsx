@@ -85,4 +85,15 @@ describe('Tabs', () => {
       expect(document.getElementById(controlsId as string)).not.toBeNull()
     }
   })
+
+  it('renders an optional icon alongside the label without changing its accessible name', () => {
+    const Icon = () => <svg data-testid="tab-icon" />
+    const tabsWithIcon = [{ label: 'Overview', icon: Icon, content: <div>Overview content</div> }]
+
+    render(<Tabs tabs={tabsWithIcon} />)
+
+    const tab = screen.getByRole('tab', { name: 'Overview' })
+    expect(tab).toBeInTheDocument()
+    expect(screen.getByTestId('tab-icon')).toBeInTheDocument()
+  })
 })
