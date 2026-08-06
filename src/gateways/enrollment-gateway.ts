@@ -77,6 +77,20 @@ export const enrollmentGateway = {
       include: { payments: true },
     }),
 
+  findEnrolledStudentIds: async (periodId: string, studentIds: string[]) => {
+    if (studentIds.length === 0) return new Set<string>()
+
+    const enrollments = await db.enrollment.findMany({
+      where: {
+        studentId: { in: studentIds },
+        status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] },
+        classAssignments: { some: { classPeriod: { periodId } } },
+      },
+      select: { studentId: true },
+    })
+    return new Set(enrollments.map((enrollment) => enrollment.studentId))
+  },
+
   findCompletedByPeriod: async (periodId: string) => {
     const enrollments = await db.enrollment.findMany({
       where: {

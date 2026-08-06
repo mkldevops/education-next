@@ -9,6 +9,7 @@ import { requireAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreatePeriodDialog } from './_components/create-period-dialog'
 import { EditPeriodDialog } from './_components/edit-period-dialog'
+import { PromotePeriodDialog } from './_components/promote-period-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -80,9 +81,17 @@ export default async function PeriodsPage({ params }: Props) {
       header: t('actions'),
       headerClassName: 'text-right',
       className: 'text-right',
-      render: (period) => (
-        <EditPeriodDialog period={period} classPeriodCount={period._count.classPeriods} />
-      ),
+      render: (period) => {
+        const targetOptions = periods
+          .filter((candidate) => new Date(candidate.startAt) > new Date(period.startAt))
+          .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+        return (
+          <div className="flex justify-end gap-2">
+            <PromotePeriodDialog sourcePeriod={period} targetOptions={targetOptions} />
+            <EditPeriodDialog period={period} classPeriodCount={period._count.classPeriods} />
+          </div>
+        )
+      },
     },
   ]
 

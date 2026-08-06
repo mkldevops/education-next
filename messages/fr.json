@@ -387,6 +387,27 @@
             "validationError": "Vérifiez les informations saisies",
             "unauthorized": "Vous n'êtes pas autorisé à modifier les périodes"
           }
+        },
+        "promote": {
+          "trigger": "Promouvoir",
+          "title": "Promouvoir les élèves de {period}",
+          "selectTarget": "Vers la période",
+          "promotedCount": "{count, plural, =0 {Aucun élève promu} one {# élève promu} other {# élèves promus}}",
+          "skippedCount": "{count, plural, =0 {Aucun élève ignoré} one {# élève ignoré} other {# élèves ignorés}}",
+          "reasons": {
+            "alreadyPromoted": "{count, plural, one {# déjà inscrit dans la période d'arrivée} other {# déjà inscrits dans la période d'arrivée}}",
+            "noClassAssignment": "{count, plural, one {# sans affectation de classe} other {# sans affectation de classe}}",
+            "noNextLevel": "{count, plural, one {# sans niveau suivant actif} other {# sans niveau suivant actif}}",
+            "noTargetClass": "{count, plural, one {# sans classe cible dans la période d'arrivée} other {# sans classe cible dans la période d'arrivée}}",
+            "targetClassFull": "{count, plural, one {# avec classe cible pleine} other {# avec classe cible pleine}}",
+            "createFailed": "Échec de la promotion de l'élève {studentId}"
+          },
+          "cancel": "Annuler",
+          "back": "Retour",
+          "preview": "Prévisualiser",
+          "confirm": "Confirmer la promotion",
+          "close": "Fermer",
+          "error": "Erreur lors de la promotion"
         }
       },
       "levels": {
