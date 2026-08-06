@@ -16,6 +16,11 @@ async function getRole(): Promise<Role | undefined> {
   return user?.role
 }
 
+export async function notFoundTitle(locale: string): Promise<string> {
+  const t = await getTranslations({ locale })
+  return t('errorPages.404.title')
+}
+
 export async function restrictedPageMetadata(
   locale: string,
   titleKey: string,

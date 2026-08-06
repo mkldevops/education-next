@@ -181,9 +181,11 @@ export function SearchModal({ onClose }: SearchModalProps) {
                       <div className="text-sm font-medium text-graphite-900 truncate">
                         {student.name}
                       </div>
-                      <div className="text-xs text-graphite-600 truncate">
-                        {student.secondaryInfo}
-                      </div>
+                      {student.secondaryInfo && (
+                        <div className="text-xs text-graphite-600 truncate">
+                          {student.secondaryInfo}
+                        </div>
+                      )}
                     </div>
                   </button>
                 ))}

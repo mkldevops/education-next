@@ -534,7 +534,8 @@
           "remaining": "Reste à payer",
           "balanceBadge": "{amount} restant",
           "classAssignments": "Affectations de classe",
-          "payments": "Paiements"
+          "payments": "Paiements",
+          "openFullPage": "Voir la fiche complète"
         }
       },
       "promotion": {
@@ -1007,6 +1008,22 @@
             "password": "Mot de passe",
             "submit": "Créer mon compte"
           }
+        }
+      },
+      "classDetails": {
+        "title": "Détail de la classe",
+        "roster": "Élèves de la classe",
+        "student": "Élève",
+        "plan": "Plan",
+        "status": "Statut",
+        "since": "Depuis le",
+        "enrollment": "Inscription",
+        "openEnrollment": "Voir l'inscription",
+        "noStudents": "Aucun élève affecté à cette classe.",
+        "kpis": {
+          "enrolled": "Élèves affectés",
+          "capacity": "Capacité",
+          "seatsLeft": "Places restantes"
         }
       }
     }

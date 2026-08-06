@@ -101,6 +101,11 @@ export async function searchStudentsAndFamilies(
             id: true,
             name: true,
             lastname: true,
+            families: {
+              where: { family: { isActive: true } },
+              select: { family: { select: { name: true } } },
+              take: 1,
+            },
           },
         },
       },
@@ -159,7 +164,7 @@ export async function searchStudentsAndFamilies(
       type: 'student' as const,
       id: student.id,
       name: `${student.person.name} ${student.person.lastname}`,
-      secondaryInfo: `${student.person.name}`,
+      secondaryInfo: student.person.families[0]?.family.name ?? '',
     })),
     ...families.map((family) => ({
       type: 'family' as const,

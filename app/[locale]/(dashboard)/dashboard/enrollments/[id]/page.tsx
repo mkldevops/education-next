@@ -9,6 +9,7 @@ import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { notFoundTitle } from '../../../_lib/page-metadata'
 import { EnrollmentActions } from './_components/enrollment-actions'
 
 type Props = {
@@ -17,10 +18,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
-  const [{ role, familyId }, t] = await Promise.all([
-    getSessionWithRole(),
-    getTranslations({ locale, namespace: 'dashboard.pages.enrollmentDetails' }),
-  ])
+  const { role, familyId } = await getSessionWithRole()
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
   const enrollment = isAdmin
@@ -38,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: enrollment
       ? `${enrollment.student.person.name} ${enrollment.student.person.lastname}`
-      : t('title'),
+      : await notFoundTitle(locale),
   }
 }
 
@@ -223,7 +221,14 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               <tbody className="divide-y">
                 {enrollment.classAssignments.map((a) => (
                   <tr key={a.id} className="text-sm">
-                    <td className="py-3 pr-4 font-medium text-gray-900">{a.classPeriod.name}</td>
+                    <td className="py-3 pr-4 font-medium">
+                      <Link
+                        href={`/dashboard/classes/${a.classPeriod.id}`}
+                        className="text-primary hover:underline"
+                      >
+                        {a.classPeriod.name}
+                      </Link>
+                    </td>
                     <td className="py-3 pr-4 text-gray-600">{a.classPeriod.level.name}</td>
                     <td className="py-3 pr-4 text-gray-600">{a.classPeriod.period.name}</td>
                     <td className="py-3 text-gray-600">

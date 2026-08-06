@@ -9,6 +9,7 @@ import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { notFoundTitle } from '../../../_lib/page-metadata'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
 import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
 import { CreateStudentDialog } from '../../students/_components/create-student-dialog'
@@ -33,16 +34,13 @@ const getFamilyName = cache(async (id: string) =>
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
-  const [{ role, familyId }, t] = await Promise.all([
-    getSessionWithRole(),
-    getTranslations({ locale, namespace: 'dashboard.pages.familyDetails' }),
-  ])
+  const { role, familyId } = await getSessionWithRole()
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
-  if (!isAdmin && familyId !== id) return { title: t('title') }
+  if (!isAdmin && familyId !== id) return { title: await notFoundTitle(locale) }
 
   const name = await getFamilyName(id)
-  return { title: name || t('title') }
+  return { title: name || (await notFoundTitle(locale)) }
 }
 
 export default async function FamilyDetailPage({ params, searchParams }: Props) {
