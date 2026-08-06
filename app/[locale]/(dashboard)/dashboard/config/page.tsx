@@ -16,6 +16,10 @@ type Props = {
   params: Promise<{ locale: string }>
 }
 
+// automatic_promotion drives no feature (the promotion use case has no UI trigger), so it is
+// hidden from the admin page instead of exposing a setting that has no effect.
+const HIDDEN_CONFIG_NAMES = new Set(['automatic_promotion'])
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
   return restrictedPageMetadata(locale, 'dashboard.pages.config.title', ['ADMIN', 'SUPER_ADMIN'])
@@ -50,20 +54,12 @@ export default async function ConfigPage({ params }: Props) {
     createdAt: new Date(0),
     updatedAt: new Date(0),
   }))
-  const configs = [...dbConfigs, ...missingBrandingConfigs].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  )
-  const knownConfig: Record<
-    string,
-    { label: string; description?: string; globalImpact?: boolean }
-  > = {
+  const configs = [...dbConfigs, ...missingBrandingConfigs]
+    .filter((config) => !HIDDEN_CONFIG_NAMES.has(config.name))
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const knownConfig: Record<string, { label: string; description?: string }> = {
     [BRANDING_CONFIG_KEYS.logoUrl]: { label: t('known.logo') },
     [BRANDING_CONFIG_KEYS.faviconUrl]: { label: t('known.favicon') },
-    automatic_promotion: {
-      label: t('known.automaticPromotion'),
-      description: t('descriptions.automaticPromotion'),
-      globalImpact: true,
-    },
     max_students_per_class: {
       label: t('known.maxStudentsPerClass'),
       description: t('descriptions.maxStudentsPerClass'),
@@ -86,14 +82,7 @@ export default async function ConfigPage({ params }: Props) {
 
         return (
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span>{known.label}</span>
-              {known.globalImpact && (
-                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                  {t('globalImpact')}
-                </span>
-              )}
-            </div>
+            <span>{known.label}</span>
             <div className="text-xs font-normal text-gray-500">{config.name}</div>
             {known.description && (
               <div className="text-xs font-normal text-gray-400">{known.description}</div>
@@ -106,8 +95,12 @@ export default async function ConfigPage({ params }: Props) {
       key: 'value',
       header: t('value'),
       className: 'text-gray-700 break-words',
-      render: (config): ReactNode =>
-        config.value ? (
+      render: (config): ReactNode => {
+        if (config.valueType === 'BOOLEAN') {
+          return config.value === 'true' ? t('booleanTrue') : t('booleanFalse')
+        }
+
+        return config.value ? (
           <div className="flex min-w-0 items-center gap-3">
             {(config.name === BRANDING_CONFIG_KEYS.logoUrl ||
               config.name === BRANDING_CONFIG_KEYS.faviconUrl) && (
@@ -122,7 +115,8 @@ export default async function ConfigPage({ params }: Props) {
           </div>
         ) : (
           <span className="text-gray-400">{t('notConfigured')}</span>
-        ),
+        )
+      },
     },
     {
       key: 'valueType',

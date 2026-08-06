@@ -3,6 +3,8 @@ export const BRANDING_CONFIG_KEYS = {
   faviconUrl: 'favicon_url',
 } as const
 
+export const SCHOOL_NAME_CONFIG_KEY = 'school_name'
+
 export const BRANDING_CONFIG_DEFAULTS = [
   {
     name: BRANDING_CONFIG_KEYS.logoUrl,

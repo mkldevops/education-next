@@ -614,16 +614,15 @@
         "actions": "Actions",
         "noConfig": "No configuration registered",
         "notConfigured": "Not configured",
-        "globalImpact": "Global impact",
+        "booleanTrue": "Yes",
+        "booleanFalse": "No",
         "known": {
           "logo": "Logo",
           "favicon": "Favicon",
-          "automaticPromotion": "Automatic promotion",
           "maxStudentsPerClass": "Maximum students per class",
           "schoolName": "School name"
         },
         "descriptions": {
-          "automaticPromotion": "Automatically moves students to the next level at the end of the year.",
           "maxStudentsPerClass": "Maximum number of students allowed in a class.",
           "schoolName": "Display name of the school across the application."
         },

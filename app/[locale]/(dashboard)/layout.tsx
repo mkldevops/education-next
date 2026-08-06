@@ -40,6 +40,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
       role={role}
       familyId={dbUser?.families[0]?.familyId}
       logoUrl={branding.logoUrl}
+      schoolName={branding.schoolName}
       userName={userName}
     />
   )
