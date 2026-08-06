@@ -384,6 +384,25 @@
             "validationError": "Check the information entered",
             "unauthorized": "You are not allowed to edit periods"
           }
+        },
+        "promote": {
+          "trigger": "Promote",
+          "title": "Promote students from {period}",
+          "selectTarget": "To period",
+          "promotedCount": "{count, plural, =0 {No students promoted} one {# student promoted} other {# students promoted}}",
+          "skippedCount": "{count, plural, =0 {No students skipped} one {# student skipped} other {# students skipped}}",
+          "reasons": {
+            "noClassAssignment": "{count, plural, one {# with no class assignment} other {# with no class assignment}}",
+            "noNextLevel": "{count, plural, one {# with no active next level} other {# with no active next level}}",
+            "noTargetClass": "{count, plural, one {# with no target class in the destination period} other {# with no target class in the destination period}}",
+            "targetClassFull": "{count, plural, one {# with a full target class} other {# with a full target class}}"
+          },
+          "cancel": "Cancel",
+          "back": "Back",
+          "preview": "Preview",
+          "confirm": "Confirm promotion",
+          "close": "Close",
+          "error": "Error promoting students"
         }
       },
       "levels": {

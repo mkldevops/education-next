@@ -7,7 +7,7 @@ import { applyDiscount } from '@/use-cases/enrollments/apply-discount'
 import { cancelEnrollment } from '@/use-cases/enrollments/cancel-enrollment'
 import { completeEnrollment } from '@/use-cases/enrollments/complete-enrollment'
 import { createEnrollment } from '@/use-cases/enrollments/create-enrollment'
-import { promoteStudents } from '@/use-cases/enrollments/promote-students'
+import { previewPromoteStudents, promoteStudents } from '@/use-cases/enrollments/promote-students'
 import { reassignClass } from '@/use-cases/enrollments/reassign-class'
 import type {
   applyDiscountSchema,
@@ -87,4 +87,10 @@ export async function promoteStudentsAction(data: PromoteStudentsInput) {
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/enrollments')
   return result
+}
+
+export async function previewPromoteStudentsAction(data: PromoteStudentsInput) {
+  const user = await requireAdmin()
+  if (!user) return 'unauthorized' as const
+  return previewPromoteStudents(data)
 }
