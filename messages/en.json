@@ -241,7 +241,13 @@
           "confirm": "Archive",
           "cancel": "Cancel",
           "success": "Family archived",
-          "error": "Error archiving family"
+          "error": "Error archiving family",
+          "errors": {
+            "hasActiveEnrollments": "Pending or active enrollments remain: close them first",
+            "notFound": "Family not found",
+            "validationError": "Check the information you entered",
+            "unauthorized": "You are not allowed to archive this family"
+          }
         },
         "addPerson": {
           "title": "Add Member",
@@ -518,7 +524,15 @@
           "cancel": "Cancel",
           "submit": "Enroll",
           "success": "Enrollment created",
-          "error": "Error creating enrollment"
+          "error": "Error creating enrollment",
+          "errors": {
+            "discountExceedsPlan": "The discount exceeds the plan amount",
+            "duplicateEnrollment": "This student is already enrolled in this class",
+            "classFull": "This class is full",
+            "notFound": "Student, plan or class not found",
+            "validationError": "Check the information you entered",
+            "unauthorized": "You are not allowed to create an enrollment"
+          }
         },
         "drawer": {
           "title": "Enrollment Details",
@@ -964,7 +978,13 @@
           "cancel": "Cancel",
           "submit": "Apply",
           "success": "Discount applied",
-          "error": "Error applying discount"
+          "error": "Error applying discount",
+          "errors": {
+            "discountExceedsPlan": "The discount exceeds the plan amount",
+            "notFound": "Enrollment not found",
+            "validationError": "Check the amount you entered",
+            "unauthorized": "You are not allowed to change this enrollment"
+          }
         }
       },
       "users": {

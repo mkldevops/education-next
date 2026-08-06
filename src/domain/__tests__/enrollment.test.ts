@@ -4,10 +4,29 @@ import {
   calculateRemainingBalance,
   calculateTotalAmount,
   VALID_TRANSITIONS,
+  validateDiscount,
   validateTransition,
 } from '../enrollment'
 
 describe('enrollment domain', () => {
+  describe('validateDiscount', () => {
+    it('should accept a discount below the plan amount', () => {
+      expect(validateDiscount(100, 20)).toBe('OK')
+    })
+
+    it('should accept a discount equal to the plan amount', () => {
+      expect(validateDiscount(100, 100)).toBe('OK')
+    })
+
+    it('should reject a discount above the plan amount', () => {
+      expect(validateDiscount(100, 100.01)).toBe('discountExceedsPlan')
+    })
+
+    it('should reject a discount that would make the total negative', () => {
+      expect(validateDiscount(1200, 5000)).toBe('discountExceedsPlan')
+    })
+  })
+
   describe('calculateTotalAmount', () => {
     it('should calculate total amount by subtracting discount from plan amount', () => {
       const result = calculateTotalAmount(100, 20)

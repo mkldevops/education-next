@@ -12,6 +12,9 @@ export async function deactivateFamily(input: Input) {
   const family = await familyGateway.findById(parsed.data.id)
   if (!family) return 'notFound' as const
 
+  const hasActive = await familyGateway.hasActiveEnrollments(parsed.data.id)
+  if (hasActive) return 'hasActiveEnrollments' as const
+
   await familyGateway.deactivate(parsed.data.id)
 
   return 'OK' as const

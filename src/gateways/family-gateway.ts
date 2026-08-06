@@ -60,6 +60,16 @@ export const familyGateway = {
       where: { id },
     }),
 
+  hasActiveEnrollments: async (id: string) => {
+    const count = await db.enrollment.count({
+      where: {
+        status: { in: ['PENDING', 'ACTIVE'] },
+        student: { person: { families: { some: { familyId: id } } } },
+      },
+    })
+    return count > 0
+  },
+
   list: () =>
     db.family.findMany({
       where: { isActive: true },

@@ -31,6 +31,8 @@ upgrade must update `Dockerfile`, CI, and developer setup together rather than c
 - `src/features/` contains reusable feature UI, `src/actions/` contains cross-route actions, and
   `src/components/ui/` contains reusable UI primitives.
 - `prisma/` contains the schema, checked-in migrations, and destructive local seed data.
+- `docs/business-rules.md` records the rules the application enforces and where they live. Read it
+  before changing domain rules, use cases, or feature schemas, and update it in the same commit.
 - `@/*` resolves to `src/*`; `@peaklab/ui` resolves to the UI barrel.
 
 ## Development Commands
