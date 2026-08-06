@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { getSelectedPeriodId } from '@/features/dashboard/period'
+import { getSelectedPeriod } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
@@ -39,7 +39,8 @@ export default async function DashboardPage({ params }: Props) {
 
   const isAdmin = scope.isAdmin
 
-  const selectedPeriodId = await getSelectedPeriodId()
+  const selectedPeriod = await getSelectedPeriod()
+  const selectedPeriodId = selectedPeriod?.id ?? null
   const periodFilter = selectedPeriodId
     ? { classAssignments: { some: { classPeriod: { periodId: selectedPeriodId } } } }
     : {}
@@ -120,9 +121,6 @@ export default async function DashboardPage({ params }: Props) {
       }),
     ])
 
-  const selectedPeriod = selectedPeriodId
-    ? await db.period.findUnique({ where: { id: selectedPeriodId }, select: { name: true } })
-    : null
   const periodScope = selectedPeriod
     ? t('stats.scopePeriod', { period: selectedPeriod.name })
     : t('stats.scopeAll')
@@ -286,7 +284,11 @@ export default async function DashboardPage({ params }: Props) {
         </div>
 
         {recentEnrollments.length === 0 ? (
-          <p className="px-6 pb-6 pt-4 text-gray-500">{t('pages.enrollments.noEnrollments')}</p>
+          <p className="px-6 pb-6 pt-4 text-gray-500">
+            {selectedPeriod
+              ? t('pages.enrollments.noEnrollmentsInPeriod', { period: selectedPeriod.name })
+              : t('pages.enrollments.noEnrollments')}
+          </p>
         ) : (
           <div className="mt-4">
             <DataTable
