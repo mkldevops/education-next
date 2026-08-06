@@ -48,3 +48,5 @@ src/generated/
 
 # Local architecture analysis
 graphify-out/
+
+.agents/tasks
