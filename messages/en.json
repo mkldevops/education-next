@@ -534,7 +534,8 @@
           "remaining": "Remaining",
           "balanceBadge": "{amount} due",
           "classAssignments": "Class Assignments",
-          "payments": "Payments"
+          "payments": "Payments",
+          "openFullPage": "Open full page"
         }
       },
       "promotion": {
@@ -1007,6 +1008,22 @@
             "password": "Password",
             "submit": "Create my account"
           }
+        }
+      },
+      "classDetails": {
+        "title": "Class Details",
+        "roster": "Class roster",
+        "student": "Student",
+        "plan": "Plan",
+        "status": "Status",
+        "since": "Since",
+        "enrollment": "Enrollment",
+        "openEnrollment": "Open enrollment",
+        "noStudents": "No student assigned to this class.",
+        "kpis": {
+          "enrolled": "Assigned students",
+          "capacity": "Capacity",
+          "seatsLeft": "Seats left"
         }
       }
     }

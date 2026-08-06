@@ -8,6 +8,7 @@ import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { notFoundTitle } from '../../../_lib/page-metadata'
 import { DeactivateStudentButton } from '../_components/deactivate-student-button'
 import { EditStudentDialog } from '../_components/edit-student-dialog'
 import { EnrollmentList } from './_components/enrollment-list'
@@ -19,10 +20,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
-  const [{ role, familyId }, t] = await Promise.all([
-    getSessionWithRole(),
-    getTranslations({ locale, namespace: 'dashboard.pages.studentDetails' }),
-  ])
+  const { role, familyId } = await getSessionWithRole()
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
   const student = isAdmin
@@ -35,7 +33,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : null
 
   return {
-    title: student ? `${student.person.name} ${student.person.lastname}` : t('title'),
+    title: student
+      ? `${student.person.name} ${student.person.lastname}`
+      : await notFoundTitle(locale),
   }
 }
 

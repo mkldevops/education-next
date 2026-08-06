@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
+import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { requireAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
@@ -74,6 +75,14 @@ export default async function ClassesPage({ params }: Props) {
     {
       key: 'name',
       header: t('name'),
+      render: (item) => (
+        <Link
+          href={`/dashboard/classes/${item.id}`}
+          className="font-medium text-primary hover:underline"
+        >
+          {item.name}
+        </Link>
+      ),
     },
     {
       key: 'level',

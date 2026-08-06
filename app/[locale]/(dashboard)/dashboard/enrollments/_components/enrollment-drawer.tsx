@@ -16,7 +16,7 @@ import {
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
-import { useRouter } from '@/i18n/routing'
+import { Link, useRouter } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { toast } from '@/lib/toast'
 import {
@@ -352,6 +352,12 @@ export function EnrollmentDrawer({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('close')}
           </Button>
+          <Link
+            href={`/dashboard/enrollments/${enrollment.id}`}
+            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+          >
+            {t('openFullPage')}
+          </Link>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
