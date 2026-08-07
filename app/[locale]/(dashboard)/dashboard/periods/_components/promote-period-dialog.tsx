@@ -89,7 +89,7 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
           targetPeriodId,
         })
         if (typeof result === 'string') {
-          toast.error(t('error'))
+          toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
           return
         }
         setPreview(result)
@@ -108,7 +108,7 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
           targetPeriodId,
         })
         if (typeof result === 'string') {
-          toast.error(t('error'))
+          toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
           return
         }
         setReport(result)

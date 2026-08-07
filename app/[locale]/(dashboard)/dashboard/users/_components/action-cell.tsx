@@ -35,7 +35,7 @@ export function ActionCell({ user }: ActionCellProps) {
     if (result === 'OK') {
       toast.success(t('roleChanged'))
     } else {
-      toast.error(t('error'))
+      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
     }
   }
 
@@ -47,7 +47,7 @@ export function ActionCell({ user }: ActionCellProps) {
     if (result === 'OK') {
       toast.success(t('userDeactivated'))
     } else {
-      toast.error(t('error'))
+      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
     }
   }
 

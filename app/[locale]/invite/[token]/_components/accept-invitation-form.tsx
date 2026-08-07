@@ -30,14 +30,10 @@ export function AcceptInvitationForm({ token, email }: Props) {
         password: formData.get('password') as string,
       })
       if (result === 'OK') {
-        toast.success('Compte créé avec succès !')
+        toast.success(t('success'))
         router.push('/dashboard')
-      } else if (result === 'expired') {
-        toast.error("Ce lien d'invitation a expiré.")
-      } else if (result === 'alreadyUsed') {
-        toast.error('Ce lien a déjà été utilisé.')
       } else {
-        toast.error('Une erreur est survenue.')
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
       }
     })
   }
@@ -47,7 +43,7 @@ export function AcceptInvitationForm({ token, email }: Props) {
       <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="accept-email">Email</Label>
+          <Label htmlFor="accept-email">{t('email')}</Label>
           <Input
             id="accept-email"
             type="email"

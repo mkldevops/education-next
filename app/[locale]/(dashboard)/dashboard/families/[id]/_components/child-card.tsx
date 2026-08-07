@@ -15,6 +15,7 @@ import type {
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { ReassignClassDialog } from '../../../enrollments/_components/reassign-class-dialog'
+import { ActivateEnrollmentButton } from './activate-enrollment-button'
 import { EnrollButton } from './enroll-button'
 
 type StudentWithRelation = {
@@ -105,9 +106,14 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
 
             return (
               <div key={enrollment.id} className="space-y-1.5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-medium text-gray-900">{enrollment.plan.name}</p>
-                  <EnrollmentStatusBadge status={enrollment.status} />
+                  <div className="flex items-center gap-2">
+                    <EnrollmentStatusBadge status={enrollment.status} />
+                    {isAdmin && enrollment.status === 'PENDING' && (
+                      <ActivateEnrollmentButton enrollmentId={enrollment.id} />
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-2">

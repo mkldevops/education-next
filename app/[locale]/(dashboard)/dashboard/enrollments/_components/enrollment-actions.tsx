@@ -28,7 +28,7 @@ export function EnrollmentActions({ enrollmentId, status }: Props) {
         toast.success(t('activated'))
         router.refresh()
       } else {
-        toast.error(t('error'))
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
       }
     })
   }
@@ -40,7 +40,7 @@ export function EnrollmentActions({ enrollmentId, status }: Props) {
         toast.success(t('completed'))
         router.refresh()
       } else {
-        toast.error(t('error'))
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
       }
     })
   }
@@ -52,7 +52,7 @@ export function EnrollmentActions({ enrollmentId, status }: Props) {
         toast.success(t('cancelled'))
         router.refresh()
       } else {
-        toast.error(t('error'))
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
       }
     })
   }

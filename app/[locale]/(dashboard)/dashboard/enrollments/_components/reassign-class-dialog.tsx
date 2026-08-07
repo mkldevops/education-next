@@ -77,7 +77,7 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
         newClassPeriodId: formData.get('newClassPeriodId') as string,
       })
       if (result !== 'OK') {
-        toast.error(t('error'))
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
       } else {
         toast.success(t('success'))
         setOpen(false)

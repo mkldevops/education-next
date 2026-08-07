@@ -237,14 +237,25 @@ Two consequences worth knowing:
 
 Real holes, verified against the running application. Not aspirations.
 
-- **Most dialogs discard the typed business error.** The use cases return precise discriminants
-  (`classFull`, `duplicateEnrollment`, `circularReference`, `overpayment`…), but only a handful of
-  components translate them with `t.has(\`errors.${result}\`)`; the rest show a generic
-  "an error occurred". Every guard documented above is therefore invisible in most of the app.
-- **A pending enrollment cannot be activated from the family page.** That page raises the alert
-  ("1 enrollment awaiting validation") but offers no action; activation lives on the enrollments
-  screens.
 - **The disabled "record a payment" button explains itself through `title` only** — unreachable by
   keyboard, since a disabled button takes no focus, and unannounced by screen readers.
+- **`Page` is still listed in the soft-delete extension** although the model was dropped in
+  `20260711000000_drop_page_model`.
 - **Manual payment cannot target a specific enrollment.** Distribution is always proportional across
   every active enrollment of the family.
+
+## Surfacing a rule in the UI
+
+A guard the user cannot read is a guard that does not exist. Every dialog that calls an action must
+translate the discriminant it receives, not collapse it into a generic message:
+
+```tsx
+toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+```
+
+The matching `errors` block goes in **both** `messages/fr.json` and `messages/en.json`, under the
+namespace that component already uses. `t.has()` keeps the generic fallback for discriminants a
+given screen cannot produce, so a new one never renders a raw key.
+
+Do not apply this inside a `catch` block — the action's result is not in scope there, and a thrown
+error is not a business result.
