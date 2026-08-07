@@ -130,7 +130,9 @@ export function EnrollmentDrawer({
         toast.success(tActions('activated'))
         router.refresh()
       } else {
-        toast.error(tActions('error'))
+        toast.error(
+          tActions.has(`errors.${result}`) ? tActions(`errors.${result}`) : tActions('error')
+        )
       }
     })
   }
@@ -142,7 +144,9 @@ export function EnrollmentDrawer({
         toast.success(tActions('completed'))
         router.refresh()
       } else {
-        toast.error(tActions('error'))
+        toast.error(
+          tActions.has(`errors.${result}`) ? tActions(`errors.${result}`) : tActions('error')
+        )
       }
     })
   }
@@ -155,7 +159,9 @@ export function EnrollmentDrawer({
         router.refresh()
         onOpenChange(false)
       } else {
-        toast.error(tActions('error'))
+        toast.error(
+          tActions.has(`errors.${result}`) ? tActions(`errors.${result}`) : tActions('error')
+        )
       }
     })
   }

@@ -31,7 +31,7 @@ export function InviteParentButton({ familyId, personId, email }: Props) {
         return
       }
 
-      toast.error(t(result === 'emailAlreadyUsed' ? 'emailAlreadyUsed' : 'error'))
+      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
     })
   }
 

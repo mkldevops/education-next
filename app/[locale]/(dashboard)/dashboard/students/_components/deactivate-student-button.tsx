@@ -50,7 +50,7 @@ function DeactivateForm({ studentId }: { studentId: string }) {
       if (result === 'hasActiveEnrollments') {
         toast.error(t('hasEnrollments'))
       } else if (result !== 'OK') {
-        toast.error(t('error'))
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
       } else {
         toast.success(t('success'))
         setOpen(false)

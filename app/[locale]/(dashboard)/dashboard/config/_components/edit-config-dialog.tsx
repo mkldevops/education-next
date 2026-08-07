@@ -72,7 +72,7 @@ function EditConfigForm({ config }: EditConfigDialogProps) {
         valueType: config.valueType,
       })
       if (typeof result === 'string') {
-        toast.error(t('error'))
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
       } else {
         toast.success(t('success'))
         setOpen(false)

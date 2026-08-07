@@ -226,14 +226,24 @@
           "addressTitle": "Address",
           "address": "Address",
           "postCode": "Postal code",
-          "city": "City"
+          "city": "City",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Item not found"
+          }
         },
         "edit": {
           "title": "Edit Family",
           "submit": "Save",
           "cancel": "Cancel",
           "success": "Family updated successfully",
-          "error": "Error updating family"
+          "error": "Error updating family",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Family not found"
+          }
         },
         "deactivate": {
           "title": "Archive Family",
@@ -270,7 +280,12 @@
           "phone": "Phone",
           "address": "Address",
           "postCode": "Postal code",
-          "city": "City"
+          "city": "City",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Family not found"
+          }
         },
         "addPhone": {
           "title": "Add Phone Number",
@@ -282,7 +297,12 @@
           "submit": "Add",
           "cancel": "Cancel",
           "success": "Phone number added successfully",
-          "error": "Error adding phone number"
+          "error": "Error adding phone number",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Person not found"
+          }
         },
         "table": {
           "search": "Search...",
@@ -324,14 +344,24 @@
           "submit": "Create",
           "cancel": "Cancel",
           "success": "Student added successfully",
-          "error": "Error creating student"
+          "error": "Error creating student",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Family not found"
+          }
         },
         "edit": {
           "title": "Edit Student",
           "submit": "Save",
           "cancel": "Cancel",
           "success": "Student updated successfully",
-          "error": "Error updating student"
+          "error": "Error updating student",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Student not found"
+          }
         },
         "deactivate": {
           "title": "Deactivate Student",
@@ -340,7 +370,13 @@
           "confirm": "Deactivate",
           "cancel": "Cancel",
           "success": "Student deactivated",
-          "error": "Error deactivating student"
+          "error": "Error deactivating student",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Student not found",
+            "hasActiveEnrollments": "Pending or active enrollments remain: close them first"
+          }
         },
         "table": {
           "search": "Search...",
@@ -377,7 +413,14 @@
           "cancel": "Cancel",
           "submit": "Create",
           "success": "Period created",
-          "error": "Error creating period"
+          "error": "Error creating period",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Period not found",
+            "overlappingPeriod": "This period overlaps another one",
+            "invalidDates": "The end date must come after the start date"
+          }
         },
         "edit": {
           "title": "Edit Period",
@@ -413,7 +456,12 @@
           "preview": "Preview",
           "confirm": "Confirm promotion",
           "close": "Close",
-          "error": "Error promoting students"
+          "error": "Error promoting students",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Source or target period not found"
+          }
         }
       },
       "levels": {
@@ -432,7 +480,12 @@
           "cancel": "Cancel",
           "submit": "Create",
           "success": "Level created",
-          "error": "Error creating level"
+          "error": "Error creating level",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Level not found"
+          }
         },
         "edit": {
           "title": "Edit level",
@@ -476,14 +529,25 @@
           "cancel": "Cancel",
           "submit": "Create",
           "success": "Class created",
-          "error": "Error creating class"
+          "error": "Error creating class",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Level or period not found"
+          }
         },
         "edit": {
           "title": "Edit Class",
           "cancel": "Cancel",
           "submit": "Save",
           "success": "Class updated",
-          "error": "Error updating class"
+          "error": "Error updating class",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Class not found",
+            "capacityBelowEnrolled": "Capacity is below the number of students already assigned"
+          }
         }
       },
       "enrollments": {
@@ -646,14 +710,24 @@
           "cancel": "Cancel",
           "submit": "Create",
           "success": "Plan created",
-          "error": "Error creating plan"
+          "error": "Error creating plan",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Plan not found"
+          }
         },
         "edit": {
           "title": "Edit Plan",
           "cancel": "Cancel",
           "submit": "Save",
           "success": "Plan updated",
-          "error": "Error updating plan"
+          "error": "Error updating plan",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Plan not found"
+          }
         }
       },
       "config": {
@@ -691,7 +765,13 @@
           "cancel": "Cancel",
           "submit": "Create",
           "success": "Parameter created",
-          "error": "Error creating parameter"
+          "error": "Error creating parameter",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Setting not found",
+            "invalidConfigValue": "The value does not match the selected type"
+          }
         },
         "edit": {
           "title": "Edit",
@@ -702,7 +782,13 @@
           "cancel": "Cancel",
           "submit": "Save",
           "success": "Parameter updated",
-          "error": "Error updating parameter"
+          "error": "Error updating parameter",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Setting not found",
+            "invalidConfigValue": "The value does not match the selected type"
+          }
         }
       },
       "familyDetails": {
@@ -740,7 +826,15 @@
           "success": "Invitation sent",
           "active": "Access active",
           "emailAlreadyUsed": "An account already uses this email address",
-          "error": "Unable to send the invitation"
+          "error": "Unable to send the invitation",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Item not found",
+            "emailAlreadyUsed": "That email address is already in use",
+            "invalidInput": "Check the information you entered",
+            "emailError": "The invitation could not be sent"
+          }
         },
         "onlinePayment": {
           "action": "Pay {amount} online",
@@ -798,7 +892,8 @@
           "noEnrollments": "No enrollments",
           "remaining": "{amount} remaining",
           "age": "{age} years old",
-          "paymentProgress": "Payment progress for {plan}"
+          "paymentProgress": "Payment progress for {plan}",
+          "activate": "Activate"
         },
         "payments": {
           "amount": "Amount",
@@ -961,7 +1056,13 @@
           "activated": "Enrollment activated",
           "completed": "Enrollment completed",
           "cancelled": "Enrollment cancelled",
-          "error": "Error updating enrollment"
+          "error": "Error updating enrollment",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Enrollment not found",
+            "invalidStatusTransition": "That status change is not allowed from the current state"
+          }
         },
         "reassign": {
           "title": "Reassign Class",
@@ -970,7 +1071,14 @@
           "submit": "Reassign",
           "success": "Class reassigned",
           "error": "Error reassigning class",
-          "noClassAvailable": "No other class available for the selected period."
+          "noClassAvailable": "No other class available for the selected period.",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Enrollment or class not found",
+            "classFull": "This class is full",
+            "invalidStatusTransition": "Only a pending or active enrollment can change class"
+          }
         },
         "applyDiscount": {
           "title": "Apply Discount",
@@ -1026,8 +1134,30 @@
             "name": "First and last name",
             "namePlaceholder": "John Doe",
             "password": "Password",
-            "submit": "Create my account"
+            "submit": "Create my account",
+            "email": "Email",
+            "success": "Account created",
+            "error": "Something went wrong",
+            "errors": {
+              "expired": "This invitation link has expired",
+              "alreadyUsed": "This link has already been used",
+              "invalid": "This invitation link is not valid",
+              "emailAlreadyUsed": "An account already exists for this address",
+              "invalidInput": "Check the information you entered"
+            }
+          },
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the information you entered",
+            "notFound": "Item not found",
+            "emailAlreadyUsed": "That email address is already in use",
+            "invalidInput": "Check the information you entered",
+            "emailError": "The invitation could not be sent"
           }
+        },
+        "errors": {
+          "unauthorized": "You are not allowed to perform this action",
+          "validation_error": "Check the information you entered"
         }
       },
       "classDetails": {

@@ -55,7 +55,7 @@ function InviteForm() {
       } else if (result === 'emailAlreadyUsed') {
         toast.error(t('emailAlreadyUsed'))
       } else {
-        toast.error(t('error'))
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
       }
     })
   }

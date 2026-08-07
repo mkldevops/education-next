@@ -49,7 +49,7 @@ function CreateLevelForm() {
         name: formData.get('name') as string,
       })
       if (typeof result === 'string') {
-        toast.error(t('error'))
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
       } else {
         toast.success(t('success'))
         setOpen(false)

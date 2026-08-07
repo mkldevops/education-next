@@ -226,14 +226,24 @@
           "addressTitle": "Adresse",
           "address": "Adresse",
           "postCode": "Code postal",
-          "city": "Ville"
+          "city": "Ville",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Élément introuvable"
+          }
         },
         "edit": {
           "title": "Modifier la famille",
           "submit": "Enregistrer",
           "cancel": "Annuler",
           "success": "Famille modifiée avec succès",
-          "error": "Erreur lors de la modification"
+          "error": "Erreur lors de la modification",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Famille introuvable"
+          }
         },
         "deactivate": {
           "title": "Archiver la famille",
@@ -270,7 +280,12 @@
           "phone": "Téléphone",
           "address": "Adresse",
           "postCode": "Code postal",
-          "city": "Ville"
+          "city": "Ville",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Famille introuvable"
+          }
         },
         "addPhone": {
           "title": "Ajouter un téléphone",
@@ -282,7 +297,12 @@
           "submit": "Ajouter",
           "cancel": "Annuler",
           "success": "Téléphone ajouté avec succès",
-          "error": "Erreur lors de l'ajout"
+          "error": "Erreur lors de l'ajout",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Personne introuvable"
+          }
         },
         "table": {
           "search": "Rechercher...",
@@ -324,14 +344,24 @@
           "submit": "Créer",
           "cancel": "Annuler",
           "success": "Élève ajouté avec succès",
-          "error": "Erreur lors de la création"
+          "error": "Erreur lors de la création",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Famille introuvable"
+          }
         },
         "edit": {
           "title": "Modifier l'élève",
           "submit": "Enregistrer",
           "cancel": "Annuler",
           "success": "Élève modifié avec succès",
-          "error": "Erreur lors de la modification"
+          "error": "Erreur lors de la modification",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Élève introuvable"
+          }
         },
         "deactivate": {
           "title": "Désactiver l'élève",
@@ -340,7 +370,13 @@
           "confirm": "Désactiver",
           "cancel": "Annuler",
           "success": "Élève désactivé",
-          "error": "Erreur lors de la désactivation"
+          "error": "Erreur lors de la désactivation",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Élève introuvable",
+            "hasActiveEnrollments": "Des inscriptions en attente ou actives existent : clôturez-les d'abord"
+          }
         },
         "table": {
           "search": "Rechercher...",
@@ -377,7 +413,14 @@
           "cancel": "Annuler",
           "submit": "Créer",
           "success": "Période créée",
-          "error": "Erreur lors de la création"
+          "error": "Erreur lors de la création",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Période introuvable",
+            "overlappingPeriod": "Cette période en chevauche une autre",
+            "invalidDates": "La date de fin doit suivre la date de début"
+          }
         },
         "edit": {
           "title": "Modifier la période",
@@ -413,7 +456,12 @@
           "preview": "Prévisualiser",
           "confirm": "Confirmer la promotion",
           "close": "Fermer",
-          "error": "Erreur lors de la promotion"
+          "error": "Erreur lors de la promotion",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Période source ou cible introuvable"
+          }
         }
       },
       "levels": {
@@ -432,7 +480,12 @@
           "cancel": "Annuler",
           "submit": "Créer",
           "success": "Niveau créé",
-          "error": "Erreur lors de la création"
+          "error": "Erreur lors de la création",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Niveau introuvable"
+          }
         },
         "edit": {
           "title": "Modifier le niveau",
@@ -476,14 +529,25 @@
           "cancel": "Annuler",
           "submit": "Créer",
           "success": "Classe créée",
-          "error": "Erreur lors de la création"
+          "error": "Erreur lors de la création",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Niveau ou période introuvable"
+          }
         },
         "edit": {
           "title": "Modifier la classe",
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Classe mise à jour",
-          "error": "Erreur lors de la mise à jour"
+          "error": "Erreur lors de la mise à jour",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Classe introuvable",
+            "capacityBelowEnrolled": "La capacité est inférieure au nombre d'élèves déjà affectés"
+          }
         }
       },
       "enrollments": {
@@ -646,14 +710,24 @@
           "cancel": "Annuler",
           "submit": "Créer",
           "success": "Plan créé",
-          "error": "Erreur lors de la création"
+          "error": "Erreur lors de la création",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Plan introuvable"
+          }
         },
         "edit": {
           "title": "Modifier le plan",
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Plan mis à jour",
-          "error": "Erreur lors de la mise à jour"
+          "error": "Erreur lors de la mise à jour",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Plan introuvable"
+          }
         }
       },
       "config": {
@@ -691,7 +765,13 @@
           "cancel": "Annuler",
           "submit": "Créer",
           "success": "Paramètre créé",
-          "error": "Erreur lors de la création"
+          "error": "Erreur lors de la création",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Paramètre introuvable",
+            "invalidConfigValue": "La valeur ne correspond pas au type choisi"
+          }
         },
         "edit": {
           "title": "Modifier",
@@ -702,7 +782,13 @@
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Paramètre mis à jour",
-          "error": "Erreur lors de la mise à jour"
+          "error": "Erreur lors de la mise à jour",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Paramètre introuvable",
+            "invalidConfigValue": "La valeur ne correspond pas au type choisi"
+          }
         }
       },
       "familyDetails": {
@@ -740,7 +826,15 @@
           "success": "Invitation envoyée",
           "active": "Accès actif",
           "emailAlreadyUsed": "Un compte utilise déjà cette adresse email",
-          "error": "Impossible d'envoyer l'invitation"
+          "error": "Impossible d'envoyer l'invitation",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Élément introuvable",
+            "emailAlreadyUsed": "Cette adresse est déjà utilisée",
+            "invalidInput": "Vérifiez les informations saisies",
+            "emailError": "L'invitation n'a pas pu être envoyée"
+          }
         },
         "onlinePayment": {
           "action": "Payer {amount} en ligne",
@@ -798,7 +892,8 @@
           "noEnrollments": "Aucune inscription",
           "remaining": "{amount} restant",
           "age": "{age} ans",
-          "paymentProgress": "Progression du paiement pour {plan}"
+          "paymentProgress": "Progression du paiement pour {plan}",
+          "activate": "Activer"
         },
         "payments": {
           "amount": "Montant",
@@ -961,7 +1056,13 @@
           "activated": "Inscription activée",
           "completed": "Inscription terminée",
           "cancelled": "Inscription annulée",
-          "error": "Erreur lors de la mise à jour"
+          "error": "Erreur lors de la mise à jour",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Inscription introuvable",
+            "invalidStatusTransition": "Ce changement de statut n'est pas autorisé depuis l'état actuel"
+          }
         },
         "reassign": {
           "title": "Réaffecter la classe",
@@ -970,7 +1071,14 @@
           "submit": "Réaffecter",
           "success": "Classe réaffectée",
           "error": "Erreur lors de la réaffectation",
-          "noClassAvailable": "Aucune autre classe disponible sur la période sélectionnée."
+          "noClassAvailable": "Aucune autre classe disponible sur la période sélectionnée.",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Inscription ou classe introuvable",
+            "classFull": "Cette classe est complète",
+            "invalidStatusTransition": "Seule une inscription en attente ou active peut changer de classe"
+          }
         },
         "applyDiscount": {
           "title": "Appliquer une réduction",
@@ -1026,8 +1134,30 @@
             "name": "Prénom et nom",
             "namePlaceholder": "Jean Dupont",
             "password": "Mot de passe",
-            "submit": "Créer mon compte"
+            "submit": "Créer mon compte",
+            "email": "Email",
+            "success": "Compte créé",
+            "error": "Une erreur est survenue",
+            "errors": {
+              "expired": "Ce lien d'invitation a expiré",
+              "alreadyUsed": "Ce lien a déjà été utilisé",
+              "invalid": "Ce lien d'invitation n'est pas valide",
+              "emailAlreadyUsed": "Un compte existe déjà pour cette adresse",
+              "invalidInput": "Vérifiez les informations saisies"
+            }
+          },
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Élément introuvable",
+            "emailAlreadyUsed": "Cette adresse est déjà utilisée",
+            "invalidInput": "Vérifiez les informations saisies",
+            "emailError": "L'invitation n'a pas pu être envoyée"
           }
+        },
+        "errors": {
+          "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+          "validation_error": "Vérifiez les informations saisies"
         }
       },
       "classDetails": {
