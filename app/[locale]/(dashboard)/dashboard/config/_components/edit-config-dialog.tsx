@@ -15,8 +15,12 @@ import {
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
+import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import { toast } from '@/lib/toast'
 import { setConfigAction } from '../../../_lib/config-actions'
+import { ImageValueField } from './image-value-field'
+
+const IMAGE_CONFIG_NAMES: string[] = [BRANDING_CONFIG_KEYS.logoUrl, BRANDING_CONFIG_KEYS.faviconUrl]
 
 interface EditConfigDialogProps {
   config: {
@@ -87,7 +91,14 @@ function EditConfigForm({ config }: EditConfigDialogProps) {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="edit-config-value">{t('value')}</Label>
-            {config.valueType === 'BOOLEAN' ? (
+            {IMAGE_CONFIG_NAMES.includes(config.name) ? (
+              <ImageValueField
+                id="edit-config-value"
+                name="value"
+                defaultValue={config.value}
+                disabled={isPending}
+              />
+            ) : config.valueType === 'BOOLEAN' ? (
               <label className="flex items-center gap-2 text-sm">
                 <input
                   id="edit-config-value"

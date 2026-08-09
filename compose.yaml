@@ -9,6 +9,9 @@
 #   - Mailpit SMTP:    localhost:8552
 #   - Mailpit Web:     localhost:8553
 #
+# Object storage (branding images) uses the shared MinIO at S3_ENDPOINT, so there is no local
+# container for it.
+#
 # Usage: docker compose up -d
 # =============================================================================
 
