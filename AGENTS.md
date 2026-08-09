@@ -114,9 +114,12 @@ Schema changes require a reviewed migration and regenerated client. `pnpm db:pus
 prototyping only; production uses `prisma migrate deploy`. The seed deletes existing records before
 creating fixtures, so run it only against disposable local data.
 
-Docker Compose runs PostgreSQL and Mailpit, not the application. The Docker image performs Prisma
-generation and a standard Next.js build but does not deploy migrations. No Vercel or Coolify
-deployment configuration is tracked; do not infer a deployment target from ignored local files.
+Docker Compose runs PostgreSQL and Mailpit, not the application. Branding image uploads go to the
+shared MinIO at `S3_ENDPOINT` in every environment, local included; without the `S3_*` variables
+the upload degrades to `notConfigured` and a URL can still be typed by hand. The Docker image
+performs Prisma generation and a standard Next.js build but does not deploy migrations. No Vercel
+or Coolify deployment configuration is tracked; do not infer a deployment target from ignored
+local files.
 
 ## Commits and Pull Requests
 

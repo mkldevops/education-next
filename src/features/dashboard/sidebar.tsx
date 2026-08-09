@@ -25,6 +25,7 @@ import { Link, usePathname, useRouter } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 import type { Role } from '@/types/enums'
+import { toInitials } from './initials'
 import { useSidebarStore } from './sidebar-store'
 
 type NavItemConfig = {
@@ -72,7 +73,7 @@ const configItems: NavItemConfig[] = [
     href: '/dashboard/users',
     icon: Shield,
     key: 'users',
-    requiredRoles: ['SUPER_ADMIN'],
+    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
   },
 ]
 
@@ -284,7 +285,7 @@ export function Sidebar({ role, familyId, logoUrl, schoolName, userName }: Sideb
                 // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
                 <img src={logoUrl} alt={displayName} className="size-8 rounded object-contain" />
               ) : (
-                'AN'
+                toInitials(displayName)
               )}
             </Link>
           )}

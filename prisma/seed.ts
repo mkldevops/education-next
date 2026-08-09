@@ -34,6 +34,19 @@ async function seed() {
   console.log('Cleared existing data')
 
   // --- Users ---
+  const superAdminRes = await auth.api.signUpEmail({
+    body: {
+      name: 'Super Admin',
+      email: 'superadmin@school.test',
+      password: 'superadmin123',
+    },
+  })
+  const superAdminUser = await prisma.user.update({
+    where: { id: superAdminRes.user.id },
+    data: { role: 'SUPER_ADMIN', emailVerified: true },
+  })
+  console.log(`Created super admin: ${superAdminUser.email}`)
+
   const adminRes = await auth.api.signUpEmail({
     body: {
       name: 'Admin',
@@ -351,6 +364,7 @@ async function seed() {
   console.log('Created 5 config entries')
 
   console.log('\n--- Seed complete ---')
+  console.log('Super admin login: superadmin@school.test / superadmin123')
   console.log('Admin login:  admin@school.test / admin123')
   console.log('Parent login: parent@school.test / parent123')
 }

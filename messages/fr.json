@@ -789,6 +789,23 @@
             "notFound": "Paramètre introuvable",
             "invalidConfigValue": "La valeur ne correspond pas au type choisi"
           }
+        },
+        "image": {
+          "upload": "Téléverser une image",
+          "uploading": "Envoi…",
+          "uploaded": "Image téléversée",
+          "hint": "PNG, JPEG, WebP, SVG ou ICO — 1 Mo maximum",
+          "urlPlaceholder": "https://… ou téléversez un fichier",
+          "preview": "Aperçu",
+          "error": "Une erreur est survenue",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à téléverser une image",
+            "invalidInput": "Aucun fichier reçu",
+            "unsupportedType": "Format non pris en charge : utilisez PNG, JPEG, WebP, SVG ou ICO",
+            "fileTooLarge": "Fichier trop lourd : 1 Mo maximum",
+            "emptyFile": "Le fichier est vide",
+            "notConfigured": "Le stockage d'images n'est pas configuré sur ce serveur"
+          }
         }
       },
       "familyDetails": {
@@ -1153,12 +1170,40 @@
             "emailAlreadyUsed": "Cette adresse est déjà utilisée",
             "invalidInput": "Vérifiez les informations saisies",
             "emailError": "L'invitation n'a pas pu être envoyée"
-          }
+          },
+          "language": "Langue de l'invitation",
+          "family": "Famille à rattacher",
+          "noFamily": "Aucune pour le moment",
+          "familyHint": "Sans famille, le parent pourra se connecter mais ne verra aucune donnée."
         },
         "errors": {
           "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
           "validation_error": "Vérifiez les informations saisies"
-        }
+        },
+        "invitations": {
+          "title": "Invitations en attente",
+          "description": "Les invitations envoyées et non encore utilisées. Un lien expire au bout de 48 heures.",
+          "email": "Email",
+          "role": "Rôle",
+          "family": "Famille",
+          "expiresAt": "Expire le",
+          "expired": "Expirée",
+          "actions": "Actions",
+          "resend": "Renvoyer",
+          "revoke": "Révoquer",
+          "resendSuccess": "Invitation renvoyée avec un nouveau lien",
+          "revokeSuccess": "Invitation révoquée",
+          "none": "Aucune invitation en attente",
+          "error": "Une erreur est survenue",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à gérer les invitations",
+            "invalidInput": "Vérifiez les informations saisies",
+            "notFound": "Invitation introuvable",
+            "alreadyUsed": "Cette invitation a déjà été utilisée",
+            "emailError": "L'e-mail n'a pas pu être envoyé"
+          }
+        },
+        "roleManagedBySuperAdmin": "Réservé au super-administrateur"
       },
       "classDetails": {
         "title": "Détail de la classe",
@@ -1176,6 +1221,12 @@
           "seatsLeft": "Places restantes"
         }
       }
+    },
+    "unlinkedParent": {
+      "title": "Votre compte est créé",
+      "greeting": "Bienvenue, {name}",
+      "description": "Votre compte fonctionne, mais il n'est encore rattaché à aucune famille. Tant que ce lien n'est pas fait, il n'y a rien à afficher ici.",
+      "nextStep": "L'établissement doit vous rattacher à votre famille. Contactez le secrétariat si cela tarde."
     }
   },
   "settings": {
@@ -1320,5 +1371,14 @@
     "SUPER_ADMIN": "Super Administrateur",
     "ADMIN": "Administrateur",
     "PARENT": "Parent"
+  },
+  "emails": {
+    "invitation": {
+      "subject": "Invitation à rejoindre l'école",
+      "heading": "Vous avez été invité(e)",
+      "body": "Vous avez été invité(e) à créer un compte sur la plateforme de l'école.",
+      "cta": "Créer mon compte",
+      "expiry": "Ce lien expire dans 48 heures."
+    }
   }
 }
