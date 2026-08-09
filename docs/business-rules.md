@@ -31,9 +31,11 @@ Three roles: `SUPER_ADMIN`, `ADMIN`, `PARENT` (`src/types/enums.ts`).
 - `requireAdmin()` admits `ADMIN` and `SUPER_ADMIN`. `requireRole([...])` takes an explicit list.
 - `requireFamilyScope()` returns `{ isAdmin: true }` for staff, or `{ isAdmin: false, familyId }`
   for a parent. **A parent with no linked family gets `notFound()`** rather than an unscoped query.
-- Role assignment and user deactivation require `SUPER_ADMIN`
-  (`app/[locale]/(dashboard)/_lib/user-actions.ts`). An ordinary `ADMIN` cannot promote anyone,
-  and the `/dashboard/users` page is `SUPER_ADMIN` only.
+- **The `/dashboard/users` space is open to `ADMIN` and `SUPER_ADMIN`**: both read the user list and
+  manage invitations.
+- **Role assignment and user deactivation require `SUPER_ADMIN`**
+  (`app/[locale]/(dashboard)/_lib/user-actions.ts`). An ordinary `ADMIN` cannot promote anyone; the
+  page hides those controls, and the actions refuse them regardless of what the UI shows.
 - A resource outside a parent's family answers `notFound()`, never `forbidden()` — the existence of
   another family's student is not disclosed.
 
@@ -209,15 +211,51 @@ A student is **skipped**, with the reason reported, when:
   → `invalidConfigValue`. `TEXT` and `COLOR` accept anything.
 - Consumed today: `school_name` (sidebar), `max_students_per_class` (default class capacity),
   `logo_url` and `favicon_url` (`src/lib/branding-config.ts`).
+- **The sidebar falls back to the school name.** With no `logo_url`, the collapsed badge shows the
+  first letter of the first two words of `school_name` (`src/features/dashboard/initials.ts`), so a
+  renamed school is reflected immediately.
+
+## Branding images
+
+`src/use-cases/media/upload-branding-image.ts`, `src/gateways/storage-gateway.ts`.
+
+`logo_url` and `favicon_url` accept either a URL typed by hand or a file uploaded to the object
+store. Both end up as a plain string in `Config`, so an external URL keeps working.
+
+- Uploading requires an admin.
+- **Accepted types**: PNG, JPEG, WebP, SVG, ICO. Anything else → `unsupportedType`.
+- **1 MB maximum**, and an empty file is refused → `fileTooLarge` / `emptyFile`.
+- The object is stored under `branding/<uuid>.<ext>`; the caller never chooses the key, so an upload
+  cannot overwrite another one.
+- Configuration is `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, optionally
+  `S3_REGION` and `S3_FORCE_PATH_STYLE`. Path style is the default, which is what MinIO expects.
+  Without those variables the feature answers `notConfigured` rather than crashing — the rest of the
+  configuration screen keeps working, and a URL can still be typed by hand.
+- **Every environment points at the same MinIO**, local development included; there is no container
+  for it in `compose.yaml`. A logo uploaded while developing lands in the shared bucket. Keys are
+  UUID-based, so nothing is ever overwritten, but stray objects do accumulate under `branding/`.
+- **Objects are served through the application**, at `GET /api/media/branding/…`, not from a public
+  bucket. The route refuses any key outside the `branding/` prefix or containing `..`, so the bucket
+  needs no public policy and no CORS.
 
 ## Invitations
 
 `app/[locale]/(dashboard)/_lib/invitation-actions.ts`.
 
-- Issuing an invitation requires an admin. **Accepting one is intentionally public** — that is the
-  point of the link.
+- Issuing, resending and revoking an invitation require an admin. **Accepting one is intentionally
+  public** — that is the point of the link.
+- **An invitation can only grant `ADMIN` or `PARENT`.** The schema has no `SUPER_ADMIN` branch, so
+  the invitation path cannot be used to escalate. That role is granted only by an existing
+  `SUPER_ADMIN` through `changeUserRoleAction`.
 - **Valid for 48 hours** from creation.
 - An email already tied to an account → `emailAlreadyUsed`.
+- A `PARENT` invitation carrying `familyId`/`personId` must match a real `FamilyPerson` whose email
+  equals the invited address → `invalidInput`. Either both are supplied or neither.
+- **Resending mints a new token** and restarts the 48 hours; the previous link stops working.
+  Resending or revoking an already accepted invitation → `alreadyUsed`.
+- **The invitation carries its own language** (`Invitation.locale`, default `fr`), chosen when
+  sending. The email and the acceptance link use it, so a resend keeps the recipient's language
+  rather than adopting the resender's.
 
 ## Soft deletion
 
@@ -241,6 +279,10 @@ Real holes, verified against the running application. Not aspirations.
   keyboard, since a disabled button takes no focus, and unannounced by screen readers.
 - **`Page` is still listed in the soft-delete extension** although the model was dropped in
   `20260711000000_drop_page_model`.
+- **A deactivated user disappears for good.** `User` is soft-deleted by the extension, so the users
+  list can never show one, and no screen can reactivate it. The page's Active/Inactive column can
+  only ever render "Active". Reading those rows back needs the deliberate access path the soft
+  deletion section describes.
 - **Manual payment cannot target a specific enrollment.** Distribution is always proportional across
   every active enrollment of the family.
 

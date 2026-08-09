@@ -789,6 +789,23 @@
             "notFound": "Setting not found",
             "invalidConfigValue": "The value does not match the selected type"
           }
+        },
+        "image": {
+          "upload": "Upload an image",
+          "uploading": "Uploading…",
+          "uploaded": "Image uploaded",
+          "hint": "PNG, JPEG, WebP, SVG or ICO — 1 MB maximum",
+          "urlPlaceholder": "https://… or upload a file",
+          "preview": "Preview",
+          "error": "Something went wrong",
+          "errors": {
+            "unauthorized": "You are not allowed to upload an image",
+            "invalidInput": "No file received",
+            "unsupportedType": "Unsupported format: use PNG, JPEG, WebP, SVG or ICO",
+            "fileTooLarge": "File too large: 1 MB maximum",
+            "emptyFile": "The file is empty",
+            "notConfigured": "Image storage is not configured on this server"
+          }
         }
       },
       "familyDetails": {
@@ -1153,12 +1170,40 @@
             "emailAlreadyUsed": "That email address is already in use",
             "invalidInput": "Check the information you entered",
             "emailError": "The invitation could not be sent"
-          }
+          },
+          "language": "Invitation language",
+          "family": "Family to link",
+          "noFamily": "None for now",
+          "familyHint": "Without a family the parent can sign in but will see no data."
         },
         "errors": {
           "unauthorized": "You are not allowed to perform this action",
           "validation_error": "Check the information you entered"
-        }
+        },
+        "invitations": {
+          "title": "Pending invitations",
+          "description": "Invitations sent and not used yet. A link expires after 48 hours.",
+          "email": "Email",
+          "role": "Role",
+          "family": "Family",
+          "expiresAt": "Expires on",
+          "expired": "Expired",
+          "actions": "Actions",
+          "resend": "Resend",
+          "revoke": "Revoke",
+          "resendSuccess": "Invitation resent with a new link",
+          "revokeSuccess": "Invitation revoked",
+          "none": "No pending invitation",
+          "error": "Something went wrong",
+          "errors": {
+            "unauthorized": "You are not allowed to manage invitations",
+            "invalidInput": "Check the information you entered",
+            "notFound": "Invitation not found",
+            "alreadyUsed": "This invitation has already been used",
+            "emailError": "The email could not be sent"
+          }
+        },
+        "roleManagedBySuperAdmin": "Super administrator only"
       },
       "classDetails": {
         "title": "Class Details",
@@ -1176,6 +1221,12 @@
           "seatsLeft": "Seats left"
         }
       }
+    },
+    "unlinkedParent": {
+      "title": "Your account is ready",
+      "greeting": "Welcome, {name}",
+      "description": "Your account works, but it is not linked to a family yet. Until that link is made there is nothing to show here.",
+      "nextStep": "The school needs to link you to your family. Contact the office if it takes too long."
     }
   },
   "settings": {
@@ -1320,5 +1371,14 @@
     "SUPER_ADMIN": "Super Admin",
     "ADMIN": "Admin",
     "PARENT": "Parent"
+  },
+  "emails": {
+    "invitation": {
+      "subject": "Invitation to join the school",
+      "heading": "You have been invited",
+      "body": "You have been invited to create an account on the school platform.",
+      "cta": "Create my account",
+      "expiry": "This link expires in 48 hours."
+    }
   }
 }
