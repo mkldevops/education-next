@@ -21,9 +21,10 @@ import { changeUserRoleAction, deactivateUserAction } from '../../../_lib/user-a
 
 interface ActionCellProps {
   user: User
+  canManageRoles: boolean
 }
 
-export function ActionCell({ user }: ActionCellProps) {
+export function ActionCell({ user, canManageRoles }: ActionCellProps) {
   const t = useTranslations('dashboard.pages.users')
   const [isPending, setIsPending] = useState(false)
 
@@ -49,6 +50,10 @@ export function ActionCell({ user }: ActionCellProps) {
     } else {
       toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
     }
+  }
+
+  if (!canManageRoles) {
+    return <span className="text-sm text-gray-400">{t('roleManagedBySuperAdmin')}</span>
   }
 
   return (

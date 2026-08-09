@@ -1,0 +1,54 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
+import { useTransition } from 'react'
+import { Button } from '@/components/ui/button/button'
+import { useRouter } from '@/i18n/routing'
+import { toast } from '@/lib/toast'
+import { resendInvitationAction, revokeInvitationAction } from '../../../_lib/invitation-actions'
+
+type Props = {
+  invitationId: string
+}
+
+export function InvitationActionsCell({ invitationId }: Props) {
+  const t = useTranslations('dashboard.pages.users.invitations')
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+
+  const run = (
+    action: typeof resendInvitationAction,
+    successKey: 'resendSuccess' | 'revokeSuccess'
+  ) => {
+    startTransition(async () => {
+      const result = await action({ id: invitationId })
+      if (result === 'OK') {
+        toast.success(t(successKey))
+        router.refresh()
+      } else {
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+      }
+    })
+  }
+
+  return (
+    <div className="flex justify-end gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={isPending}
+        onClick={() => run(resendInvitationAction, 'resendSuccess')}
+      >
+        {t('resend')}
+      </Button>
+      <Button
+        variant="destructive"
+        size="sm"
+        disabled={isPending}
+        onClick={() => run(revokeInvitationAction, 'revokeSuccess')}
+      >
+        {t('revoke')}
+      </Button>
+    </div>
+  )
+}

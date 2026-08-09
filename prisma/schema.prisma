@@ -399,6 +399,7 @@ model Invitation {
   email       String
   role        Role      @default(PARENT)
   token       String    @unique
+  locale      String    @default("fr") @db.VarChar(5)
   expiresAt   DateTime
   usedAt      DateTime?
   createdById String

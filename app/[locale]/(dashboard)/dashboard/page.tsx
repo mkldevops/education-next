@@ -11,7 +11,8 @@ import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { isStripeConfigured } from '@/lib/stripe'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
-import { requireFamilyScope } from '../_lib/auth-helper'
+import { getSessionWithRole, requireFamilyScope } from '../_lib/auth-helper'
+import { UnlinkedParentNotice } from './_components/unlinked-parent-notice'
 import { OnlinePaymentButton } from './families/[id]/_components/online-payment-button'
 
 type Props = {
@@ -35,6 +36,12 @@ export default async function DashboardPage({ params }: Props) {
   const tStatus = await getTranslations('status')
 
   const session = await auth.api.getSession({ headers: await headers() })
+
+  const { role, familyId } = await getSessionWithRole()
+  if (role === 'PARENT' && !familyId) {
+    return <UnlinkedParentNotice userName={session?.user.name ?? null} />
+  }
+
   const scope = await requireFamilyScope()
 
   const isAdmin = scope.isAdmin
