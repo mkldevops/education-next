@@ -26,25 +26,25 @@
     "noResults": "Aucun résultat"
   },
   "errorPages": {
-    "global": {
-      "title": "Erreur critique",
-      "description": "Une erreur inattendue s'est produite. Veuillez recharger la page."
-    },
-    "500": {
-      "title": "Erreur serveur",
-      "description": "Une erreur inattendue s'est produite. Veuillez réessayer plus tard."
-    },
-    "404": {
-      "title": "Page introuvable",
-      "description": "La page que vous recherchez n'existe pas ou a été déplacée."
+    "401": {
+      "title": "Non authentifié",
+      "description": "Vous devez être connecté pour accéder à cette page."
     },
     "403": {
       "title": "Accès interdit",
       "description": "Vous n'avez pas les permissions nécessaires pour accéder à cette page."
     },
-    "401": {
-      "title": "Non authentifié",
-      "description": "Vous devez être connecté pour accéder à cette page."
+    "404": {
+      "title": "Page introuvable",
+      "description": "La page que vous recherchez n'existe pas ou a été déplacée."
+    },
+    "500": {
+      "title": "Erreur serveur",
+      "description": "Une erreur inattendue s'est produite. Veuillez réessayer plus tard."
+    },
+    "global": {
+      "title": "Erreur critique",
+      "description": "Une erreur inattendue s'est produite. Veuillez recharger la page."
     },
     "actions": {
       "retry": "Réessayer",
@@ -1129,7 +1129,6 @@
         "confirm": "Confirmer",
         "cancel": "Annuler",
         "noUsers": "Aucun utilisateur enregistré",
-        "roleChanged": "Rôle modifié avec succès",
         "userDeactivated": "Utilisateur désactivé",
         "error": "Une erreur est survenue",
         "invite": {
@@ -1178,7 +1177,20 @@
         },
         "errors": {
           "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
-          "validation_error": "Vérifiez les informations saisies"
+          "validation_error": "Vérifiez les informations saisies",
+          "validationError": "Vérifiez les informations saisies",
+          "notFound": "Utilisateur introuvable",
+          "familyNotFound": "Famille introuvable",
+          "alreadyLinked": "Cette famille est déjà rattachée",
+          "emailAlreadyUsed": "Cette adresse est déjà utilisée",
+          "cannotTargetSelf": "Vous ne pouvez pas effectuer cette action sur votre propre compte",
+          "lastSuperAdmin": "Le dernier super administrateur actif ne peut pas être rétrogradé ni archivé",
+          "alreadyActive": "Cet utilisateur est déjà actif",
+          "alreadyInactive": "Cet utilisateur est archivé",
+          "stillActive": "Archivez cet utilisateur avant de le supprimer définitivement",
+          "hasRelatedRecords": "Cet utilisateur a créé des familles, des invitations ou des paiements : il ne peut pas être supprimé",
+          "confirmationMismatch": "L'email de confirmation ne correspond pas",
+          "emailError": "L'e-mail n'a pas pu être envoyé"
         },
         "invitations": {
           "title": "Invitations en attente",
@@ -1203,7 +1215,60 @@
             "emailError": "L'e-mail n'a pas pu être envoyé"
           }
         },
-        "roleManagedBySuperAdmin": "Réservé au super-administrateur"
+        "edit": "Modifier",
+        "editTitle": "Modifier l'utilisateur",
+        "delete": "Supprimer définitivement",
+        "deleteTitle": "Supprimer l'utilisateur",
+        "deleteWarning": "Cette action est irréversible. Le compte, ses sessions, ses passkeys et ses rattachements de famille seront supprimés. Un utilisateur ayant créé des familles, des invitations ou des paiements ne peut pas être supprimé : archivez-le.",
+        "deleteConfirmationLabel": "Saisissez {email} pour confirmer",
+        "reactivate": "Réactiver",
+        "revokeSessions": "Déconnecter partout",
+        "sendPasswordReset": "Envoyer un lien de réinitialisation",
+        "linkFamily": "Rattacher une famille",
+        "unlinkFamily": "Détacher",
+        "archivedFamily": "Famille archivée",
+        "noFamily": "Aucune famille rattachée",
+        "enrollmentCount": "{count, plural, =0 {aucune inscription} one {# inscription} other {# inscriptions}}",
+        "userId": "Identifiant",
+        "createdAt": "Créé le",
+        "updatedAt": "Modifié le",
+        "emailVerified": "Email vérifié",
+        "emailNotVerified": "Email non vérifié",
+        "you": "Vous",
+        "neverConnected": "Jamais connecté",
+        "activeSessions": "Sessions actives",
+        "passkeys": "Passkeys",
+        "linkedAccounts": "Comptes liés",
+        "createdFamilies": "Familles créées",
+        "createdInvitations": "Invitations envoyées",
+        "paymentTransactions": "Paiements initiés",
+        "filterRole": "Filtrer par rôle",
+        "filterStatus": "Filtrer par statut",
+        "roleAll": "Tous les rôles",
+        "statusAll": "Tous les statuts",
+        "cannotChangeOwnRole": "Vous ne pouvez pas modifier votre propre rôle.",
+        "userUpdated": "Utilisateur mis à jour",
+        "userReactivated": "Utilisateur réactivé",
+        "userDeleted": "Utilisateur supprimé",
+        "sessionsRevoked": "Sessions révoquées",
+        "passwordResetSent": "Lien de réinitialisation envoyé",
+        "familyLinked": "Famille rattachée",
+        "familyUnlinked": "Famille détachée",
+        "sections": {
+          "identity": "Identité",
+          "families": "Famille et enfants",
+          "security": "Sessions et sécurité",
+          "activity": "Activité"
+        },
+        "table": {
+          "search": "Rechercher...",
+          "noResults": "Aucun résultat",
+          "columns": "Colonnes",
+          "rowsPerPage": "Lignes par page",
+          "page": "Page {current} sur {total}",
+          "previous": "Précédent",
+          "next": "Suivant"
+        }
       },
       "classDetails": {
         "title": "Détail de la classe",

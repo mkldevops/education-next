@@ -28,6 +28,20 @@ export async function requireAdmin(): Promise<User | null> {
   return session.user
 }
 
+export async function requireAdminActor(): Promise<{ id: string; role: Role } | null> {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) return null
+
+  const dbUser = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  })
+  if (!dbUser) return null
+  if (dbUser.role !== 'ADMIN' && dbUser.role !== 'SUPER_ADMIN') return null
+
+  return { id: session.user.id, role: dbUser.role }
+}
+
 export async function requireRole(allowedRoles: Role[]): Promise<User | null> {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return null
@@ -40,6 +54,19 @@ export async function requireRole(allowedRoles: Role[]): Promise<User | null> {
   if (!allowedRoles.includes(dbUser.role)) return null
 
   return session.user
+}
+
+export async function requireSuperAdmin(): Promise<{ id: string; role: Role } | null> {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) return null
+
+  const dbUser = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  })
+  if (!dbUser || dbUser.role !== 'SUPER_ADMIN') return null
+
+  return { id: session.user.id, role: dbUser.role }
 }
 
 export type SessionWithRole = {

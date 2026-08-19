@@ -26,25 +26,25 @@
     "noResults": "No results"
   },
   "errorPages": {
-    "global": {
-      "title": "Critical Error",
-      "description": "An unexpected error occurred. Please reload the page."
-    },
-    "500": {
-      "title": "Server Error",
-      "description": "An unexpected error occurred. Please try again later."
-    },
-    "404": {
-      "title": "Page Not Found",
-      "description": "The page you are looking for does not exist or has been moved."
+    "401": {
+      "title": "Unauthorized",
+      "description": "You must be logged in to access this page."
     },
     "403": {
       "title": "Forbidden",
       "description": "You do not have permission to access this page."
     },
-    "401": {
-      "title": "Unauthorized",
-      "description": "You must be logged in to access this page."
+    "404": {
+      "title": "Page Not Found",
+      "description": "The page you are looking for does not exist or has been moved."
+    },
+    "500": {
+      "title": "Server Error",
+      "description": "An unexpected error occurred. Please try again later."
+    },
+    "global": {
+      "title": "Critical Error",
+      "description": "An unexpected error occurred. Please reload the page."
     },
     "actions": {
       "retry": "Try Again",
@@ -1129,7 +1129,6 @@
         "confirm": "Confirm",
         "cancel": "Cancel",
         "noUsers": "No users found",
-        "roleChanged": "Role changed successfully",
         "userDeactivated": "User deactivated",
         "error": "An error occurred",
         "invite": {
@@ -1178,7 +1177,20 @@
         },
         "errors": {
           "unauthorized": "You are not allowed to perform this action",
-          "validation_error": "Check the information you entered"
+          "validation_error": "Check the information provided",
+          "validationError": "Check the information provided",
+          "notFound": "User not found",
+          "familyNotFound": "Family not found",
+          "alreadyLinked": "This family is already linked",
+          "emailAlreadyUsed": "This address is already in use",
+          "cannotTargetSelf": "You cannot perform this action on your own account",
+          "lastSuperAdmin": "The last active super administrator cannot be demoted or archived",
+          "alreadyActive": "This user is already active",
+          "alreadyInactive": "This user is archived",
+          "stillActive": "Archive this user before deleting them permanently",
+          "hasRelatedRecords": "This user created families, invitations or payments and cannot be deleted",
+          "confirmationMismatch": "The confirmation email does not match",
+          "emailError": "The email could not be sent"
         },
         "invitations": {
           "title": "Pending invitations",
@@ -1203,7 +1215,60 @@
             "emailError": "The email could not be sent"
           }
         },
-        "roleManagedBySuperAdmin": "Super administrator only"
+        "edit": "Edit",
+        "editTitle": "Edit user",
+        "delete": "Delete permanently",
+        "deleteTitle": "Delete user",
+        "deleteWarning": "This cannot be undone. The account, its sessions, passkeys and family links will be removed. A user who created families, invitations or payments cannot be deleted: archive them instead.",
+        "deleteConfirmationLabel": "Type {email} to confirm",
+        "reactivate": "Restore",
+        "revokeSessions": "Sign out everywhere",
+        "sendPasswordReset": "Send a password reset link",
+        "linkFamily": "Link a family",
+        "unlinkFamily": "Unlink",
+        "archivedFamily": "Archived family",
+        "noFamily": "No linked family",
+        "enrollmentCount": "{count, plural, =0 {no enrollment} one {# enrollment} other {# enrollments}}",
+        "userId": "Identifier",
+        "createdAt": "Created on",
+        "updatedAt": "Updated on",
+        "emailVerified": "Email verified",
+        "emailNotVerified": "Email not verified",
+        "you": "You",
+        "neverConnected": "Never signed in",
+        "activeSessions": "Active sessions",
+        "passkeys": "Passkeys",
+        "linkedAccounts": "Linked accounts",
+        "createdFamilies": "Families created",
+        "createdInvitations": "Invitations sent",
+        "paymentTransactions": "Payments initiated",
+        "filterRole": "Filter by role",
+        "filterStatus": "Filter by status",
+        "roleAll": "All roles",
+        "statusAll": "All statuses",
+        "cannotChangeOwnRole": "You cannot change your own role.",
+        "userUpdated": "User updated",
+        "userReactivated": "User restored",
+        "userDeleted": "User deleted",
+        "sessionsRevoked": "Sessions revoked",
+        "passwordResetSent": "Password reset link sent",
+        "familyLinked": "Family linked",
+        "familyUnlinked": "Family unlinked",
+        "sections": {
+          "identity": "Identity",
+          "families": "Family and children",
+          "security": "Sessions and security",
+          "activity": "Activity"
+        },
+        "table": {
+          "search": "Search...",
+          "noResults": "No results",
+          "columns": "Columns",
+          "rowsPerPage": "Rows per page",
+          "page": "Page {current} of {total}",
+          "previous": "Previous",
+          "next": "Next"
+        }
       },
       "classDetails": {
         "title": "Class Details",
