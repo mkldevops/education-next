@@ -52,7 +52,7 @@ return 'OK' as const
 ```
 
 `invitation-actions.ts` currently performs only a session check; do not copy it as the authorization
-pattern for new admin mutations. `user-actions.ts:createUserAction` also accepts every role after only
-`requireAdmin()`, so do not use it as the policy for privileged role creation. Role provisioning must
-apply an explicit policy such as `requireRole(['SUPER_ADMIN'])`. Choose guards from the operation's
+pattern for new admin mutations. Role provisioning must apply an explicit policy: `createUserAction`
+pairs `requireAdminActor()` with `canAssignRole` so an `ADMIN` can only create a `PARENT`, and every
+user mutation in `user-actions.ts` requires `requireSuperAdmin()`. Choose guards from the operation's
 actual authorization requirements.

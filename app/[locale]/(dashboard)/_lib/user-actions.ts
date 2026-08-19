@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { canAssignRole } from '@/domain/user'
 import { userGateway } from '@/gateways/user-gateway'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
@@ -12,7 +13,7 @@ import { linkUserFamily, unlinkUserFamily } from '@/use-cases/users/link-user-fa
 import { revokeUserSessions } from '@/use-cases/users/revoke-user-sessions'
 import { deactivateUser, reactivateUser } from '@/use-cases/users/set-user-active'
 import { updateUser } from '@/use-cases/users/update-user'
-import { requireAdmin, requireSuperAdmin } from './auth-helper'
+import { requireAdmin, requireAdminActor, requireSuperAdmin } from './auth-helper'
 
 const USERS_PATH = '/dashboard/users'
 
@@ -22,8 +23,9 @@ export async function createUserAction(data: {
   password: string
   role: Role
 }) {
-  const admin = await requireAdmin()
+  const admin = await requireAdminActor()
   if (!admin) return 'unauthorized' as const
+  if (!canAssignRole(admin.role, data.role)) return 'unauthorized' as const
 
   try {
     const res = await auth.api.signUpEmail({
