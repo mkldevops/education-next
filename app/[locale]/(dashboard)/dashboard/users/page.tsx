@@ -1,14 +1,15 @@
-import { Breadcrumbs, Card, type Column, DataTable, StatusBadge } from '@peaklab/ui'
+import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
+import { listUsers } from '@/use-cases/users/list-users'
 import { requireRole } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
-import { ActionCell } from './_components/action-cell'
 import { InvitationActionsCell } from './_components/invitation-actions-cell'
 import { InviteUserDialog } from './_components/invite-user-dialog'
+import { UsersTable } from './_components/users-table'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -49,76 +50,7 @@ export default async function UsersPage({ params }: Props) {
     orderBy: { createdAt: 'desc' },
   })
 
-  const users = await db.user.findMany({
-    include: {
-      families: {
-        include: {
-          family: true,
-        },
-      },
-      sessions: {
-        orderBy: { createdAt: 'desc' },
-        take: 1,
-        select: { createdAt: true },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
-
-  const columns: Column<(typeof users)[number]>[] = [
-    {
-      key: 'name',
-      header: t('name'),
-      className: 'font-medium',
-      render: (u) => u.name || '-',
-    },
-    {
-      key: 'email',
-      header: t('email'),
-      className: 'text-gray-700',
-      render: (u) => u.email,
-    },
-    {
-      key: 'role',
-      header: t('role'),
-      render: (u) => {
-        const roleColors: Record<string, 'red' | 'blue' | 'green'> = {
-          SUPER_ADMIN: 'red',
-          ADMIN: 'blue',
-          PARENT: 'green',
-        }
-        return <StatusBadge status={roleColors[u.role] as any} label={tRoles(u.role)} />
-      },
-    },
-    {
-      key: 'family',
-      header: t('family'),
-      className: 'text-gray-700',
-      render: (u) => (u.families.length > 0 ? u.families[0].family.name : '-'),
-    },
-    {
-      key: 'lastLogin',
-      header: t('lastLogin'),
-      className: 'text-gray-700',
-      render: (u) =>
-        u.sessions.length > 0 ? new Date(u.sessions[0].createdAt).toLocaleDateString(locale) : '-',
-    },
-    {
-      key: 'status',
-      header: t('status'),
-      render: (u) => (
-        <StatusBadge
-          status={(u.isActive ? 'ACTIVE' : 'PENDING') as any}
-          label={u.isActive ? t('active') : t('inactive')}
-        />
-      ),
-    },
-    {
-      key: 'actions',
-      header: t('actions'),
-      render: (u) => <ActionCell user={u} canManageRoles={canManageRoles} />,
-    },
-  ]
+  const users = await listUsers()
 
   const invitationColumns: Column<(typeof invitations)[number]>[] = [
     {
@@ -169,14 +101,13 @@ export default async function UsersPage({ params }: Props) {
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <InviteUserDialog families={families} />
       </div>
-      <Card className="rounded-xl border border-gray-200">
-        <DataTable
-          data={users}
-          columns={columns}
-          getRowKey={(u) => u.id}
-          emptyMessage={t('noUsers')}
-        />
-      </Card>
+      <UsersTable
+        users={users}
+        canManage={canManageRoles}
+        currentUserId={viewer.id}
+        families={families}
+        locale={locale}
+      />
 
       <div className="space-y-3">
         <div>

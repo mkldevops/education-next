@@ -48,7 +48,6 @@ const modelsWithIsActive = new Set([
   'Enrollment',
   'Payment',
   'Plan',
-  'Page',
 ])
 
 function hasIsActive(model: string | undefined): boolean {
@@ -58,22 +57,25 @@ function hasIsActive(model: string | undefined): boolean {
 type ExtendedClient = ReturnType<typeof createSoftDeleteExtension>
 
 const globalForPrisma = globalThis as unknown as {
+  prismaBase: PrismaClient | undefined
   prisma: ExtendedClient | undefined
 }
 
-function createClient(): ExtendedClient {
-  const connectionString = process.env.DATABASE_URL
-  if (!connectionString) {
-    throw new Error('DATABASE_URL is required')
+function getBaseClient(): PrismaClient {
+  if (!globalForPrisma.prismaBase) {
+    const connectionString = process.env.DATABASE_URL
+    if (!connectionString) {
+      throw new Error('DATABASE_URL is required')
+    }
+    const adapter = new PrismaPg({ connectionString })
+    globalForPrisma.prismaBase = new PrismaClientBase({ adapter })
   }
-  const adapter = new PrismaPg({ connectionString })
-  const base = new PrismaClientBase({ adapter })
-  return createSoftDeleteExtension(base)
+  return globalForPrisma.prismaBase
 }
 
 function getClient(): ExtendedClient {
   if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = createClient()
+    globalForPrisma.prisma = createSoftDeleteExtension(getBaseClient())
   }
   return globalForPrisma.prisma
 }
@@ -81,5 +83,15 @@ function getClient(): ExtendedClient {
 export const db = new Proxy({} as ExtendedClient, {
   get(_, prop) {
     return Reflect.get(getClient(), prop)
+  },
+})
+
+/**
+ * Bypasses the soft-delete filter. Reserved for reviewed administration paths that
+ * must read or restore archived rows, such as super-admin user management.
+ */
+export const dbArchived = new Proxy({} as PrismaClient, {
+  get(_, prop) {
+    return Reflect.get(getBaseClient(), prop)
   },
 })

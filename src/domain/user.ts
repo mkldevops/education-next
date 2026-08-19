@@ -1,0 +1,70 @@
+import type { Role } from '@/types/enums'
+
+export type UserManagementFailure =
+  | 'cannotTargetSelf'
+  | 'lastSuperAdmin'
+  | 'alreadyActive'
+  | 'alreadyInactive'
+  | 'stillActive'
+  | 'hasRelatedRecords'
+
+export type ManagedUser = {
+  id: string
+  role: Role
+  isActive: boolean
+}
+
+export type Actor = {
+  id: string
+  role: Role
+}
+
+export function canAssignRole(actorRole: Role, targetRole: Role): boolean {
+  if (actorRole === 'SUPER_ADMIN') return true
+  return targetRole === 'PARENT'
+}
+
+export function isLastActiveSuperAdmin(target: ManagedUser, activeSuperAdmins: number): boolean {
+  return target.role === 'SUPER_ADMIN' && target.isActive && activeSuperAdmins <= 1
+}
+
+export function checkRoleChange(
+  actor: Actor,
+  target: ManagedUser,
+  newRole: Role,
+  activeSuperAdmins: number
+): 'OK' | UserManagementFailure {
+  if (actor.id === target.id) return 'cannotTargetSelf'
+  if (newRole !== 'SUPER_ADMIN' && isLastActiveSuperAdmin(target, activeSuperAdmins)) {
+    return 'lastSuperAdmin'
+  }
+  return 'OK'
+}
+
+export function checkDeactivation(
+  actor: Actor,
+  target: ManagedUser,
+  activeSuperAdmins: number
+): 'OK' | UserManagementFailure {
+  if (actor.id === target.id) return 'cannotTargetSelf'
+  if (!target.isActive) return 'alreadyInactive'
+  if (isLastActiveSuperAdmin(target, activeSuperAdmins)) return 'lastSuperAdmin'
+  return 'OK'
+}
+
+export function checkReactivation(actor: Actor, target: ManagedUser): 'OK' | UserManagementFailure {
+  if (actor.id === target.id) return 'cannotTargetSelf'
+  if (target.isActive) return 'alreadyActive'
+  return 'OK'
+}
+
+export function checkDeletion(
+  actor: Actor,
+  target: ManagedUser,
+  relatedRecords: number
+): 'OK' | UserManagementFailure {
+  if (actor.id === target.id) return 'cannotTargetSelf'
+  if (target.isActive) return 'stillActive'
+  if (relatedRecords > 0) return 'hasRelatedRecords'
+  return 'OK'
+}

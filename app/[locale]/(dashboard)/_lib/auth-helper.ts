@@ -42,6 +42,19 @@ export async function requireRole(allowedRoles: Role[]): Promise<User | null> {
   return session.user
 }
 
+export async function requireSuperAdmin(): Promise<{ id: string; role: Role } | null> {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) return null
+
+  const dbUser = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  })
+  if (!dbUser || dbUser.role !== 'SUPER_ADMIN') return null
+
+  return { id: session.user.id, role: dbUser.role }
+}
+
 export type SessionWithRole = {
   userId: string
   role: Role

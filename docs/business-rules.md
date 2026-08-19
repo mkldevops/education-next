@@ -33,14 +33,40 @@ Three roles: `SUPER_ADMIN`, `ADMIN`, `PARENT` (`src/types/enums.ts`).
   for a parent. **A parent with no linked family gets `notFound()`** rather than an unscoped query.
 - **The `/dashboard/users` space is open to `ADMIN` and `SUPER_ADMIN`**: both read the user list and
   manage invitations.
-- **Role assignment and user deactivation require `SUPER_ADMIN`**
-  (`app/[locale]/(dashboard)/_lib/user-actions.ts`). An ordinary `ADMIN` cannot promote anyone; the
-  page hides those controls, and the actions refuse them regardless of what the UI shows.
+- **Every user mutation requires `SUPER_ADMIN`** — role change, profile edit, archiving,
+  restoration, permanent deletion, session revocation, password reset, family link and unlink
+  (`app/[locale]/(dashboard)/_lib/user-actions.ts`, `requireSuperAdmin()`). An ordinary `ADMIN`
+  reads the list and the detail drawer, and manages invitations; the page hides the controls it
+  cannot use, and the actions refuse them regardless of what the UI shows.
 - A resource outside a parent's family answers `notFound()`, never `forbidden()` — the existence of
   another family's student is not disclosed.
 
 `proxy.ts` protects `/dashboard`, `/settings`, `/profile` coarsely. Its matcher **excludes `/api`**,
 so every route handler and Server Action authenticates itself.
+
+## User management
+
+The `/dashboard/users` drawer is the single management surface. Its guards live in
+`src/domain/user.ts` and are applied by `src/use-cases/users/`.
+
+- **A super admin never acts on their own account** through this screen — role change, archiving,
+  restoration and deletion all answer `cannotTargetSelf`. Self-service stays in `/profile`.
+- **The last active `SUPER_ADMIN` is protected.** Demoting or archiving them answers
+  `lastSuperAdmin`, counted over active super admins only.
+- **Archiving is the reversible action.** `deactivateUser` sets `isActive: false` and deletes every
+  session in the same transaction, so the archived user is signed out immediately.
+  `reactivateUser` restores them. Archiving an already archived user answers `alreadyInactive`.
+- **Permanent deletion is a second, deliberate step.** `deleteUser` refuses an active account
+  (`stillActive`) and refuses an account still referenced by history — families created, invitations
+  sent, payment transactions initiated (`hasRelatedRecords`). The dialog also requires the target's
+  email to be typed back; a mismatch answers `confirmationMismatch`. Sessions, accounts, passkeys
+  and family links cascade with the row.
+- **Email uniqueness is checked before an update**, including against archived accounts
+  (`emailAlreadyUsed`).
+- **Passwords are never set by an administrator.** `sendPasswordResetAction` triggers the Better
+  Auth reset email; the user chooses their own password. It refuses an archived account.
+- **Assigning `SUPER_ADMIN` is reserved to a super admin** (`canAssignRole`), so the policy holds
+  even if the use case is ever reached by another caller.
 
 ## Periods
 
@@ -261,8 +287,7 @@ store. Both end up as a plain string in `Config`, so an external URL keeps worki
 
 `src/lib/db.ts` extends Prisma so that `findMany`, `findFirst`, `findUnique` and `count` force
 `isActive: true` for: `User`, `Family`, `Person`, `Student`, `PhoneNumber`, `Config`, `Level`,
-`Period`, `ClassPeriod`, `Enrollment`, `Payment`, `Plan` — and `Page`, a model dropped in
-`20260711000000_drop_page_model` and never removed from the list.
+`Period`, `ClassPeriod`, `Enrollment`, `Payment`, `Plan`.
 
 Two consequences worth knowing:
 
@@ -271,18 +296,16 @@ Two consequences worth knowing:
 2. A caller cannot ask for archived rows through those methods — the extension overrides a
    caller-supplied `isActive: false`. Reading archived data needs a deliberate, reviewed path.
 
+`src/lib/db.ts` exposes that path as **`dbArchived`**, the same connection without the filter. Its
+only consumer is `src/gateways/user-gateway.ts`, which powers super-admin user management: the list
+can show archived accounts, and `reactivateUser` can restore one.
+
 ## Known gaps
 
 Real holes, verified against the running application. Not aspirations.
 
 - **The disabled "record a payment" button explains itself through `title` only** — unreachable by
   keyboard, since a disabled button takes no focus, and unannounced by screen readers.
-- **`Page` is still listed in the soft-delete extension** although the model was dropped in
-  `20260711000000_drop_page_model`.
-- **A deactivated user disappears for good.** `User` is soft-deleted by the extension, so the users
-  list can never show one, and no screen can reactivate it. The page's Active/Inactive column can
-  only ever render "Active". Reading those rows back needs the deliberate access path the soft
-  deletion section describes.
 - **Manual payment cannot target a specific enrollment.** Distribution is always proportional across
   every active enrollment of the family.
 
