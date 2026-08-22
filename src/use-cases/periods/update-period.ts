@@ -9,21 +9,22 @@ export async function updatePeriod(input: Input, periodGw = periodGateway) {
   const parsed = updatePeriodSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const period = await periodGw.findById(parsed.data.id)
+  const { schoolId, id, ...updateData } = parsed.data
+
+  const period = await periodGw.findById(schoolId, id)
   if (!period) return 'notFound' as const
 
-  const startAt = parsed.data.startAt ?? period.startAt
-  const endAt = parsed.data.endAt ?? period.endAt
+  const startAt = updateData.startAt ?? period.startAt
+  const endAt = updateData.endAt ?? period.endAt
 
-  if (parsed.data.startAt || parsed.data.endAt) {
+  if (updateData.startAt || updateData.endAt) {
     const datesCheck = validatePeriodDates(startAt, endAt)
     if (datesCheck !== 'OK') return datesCheck
 
-    const hasOverlap = await periodGw.checkOverlap(startAt, endAt, parsed.data.id)
+    const hasOverlap = await periodGw.checkOverlap(schoolId, startAt, endAt, id)
     if (hasOverlap) return 'overlappingPeriod' as const
   }
 
-  const { id, ...updateData } = parsed.data
-  const updated = await periodGw.update(id, updateData)
+  const updated = await periodGw.update(schoolId, id, updateData)
   return updated
 }

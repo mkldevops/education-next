@@ -1,12 +1,13 @@
 import { ImageResponse } from 'next/og'
-import { getBrandingConfig } from '@/lib/branding'
+import { getBrandingConfig, resolveSessionlessSchoolId } from '@/lib/branding'
 
 export const dynamic = 'force-dynamic'
 export const size = { width: 32, height: 32 }
 export const contentType = 'image/png'
 
 export default async function Icon() {
-  const { faviconUrl } = await getBrandingConfig()
+  const schoolId = await resolveSessionlessSchoolId()
+  const { faviconUrl } = schoolId ? await getBrandingConfig(schoolId) : { faviconUrl: undefined }
 
   return new ImageResponse(
     faviconUrl ? (

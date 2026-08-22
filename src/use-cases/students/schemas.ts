@@ -12,6 +12,7 @@ const studentInputSchema = z.object({
 })
 
 export const createStudentSchema = z.object({
+  schoolId: z.string().min(1),
   familyId: z.string().uuid(),
   person: personInputSchema,
   student: studentInputSchema,
@@ -19,6 +20,7 @@ export const createStudentSchema = z.object({
 
 export const updateStudentSchema = z
   .object({
+    schoolId: z.string().min(1),
     id: z.string().uuid(),
   })
   .merge(studentInputSchema.partial())

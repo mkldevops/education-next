@@ -1,5 +1,5 @@
 import { paymentGateway } from '@/gateways/payment-gateway'
 
-export async function listPayments() {
-  return paymentGateway.list()
+export async function listPayments(schoolId: string) {
+  return paymentGateway.list(schoolId)
 }

@@ -8,8 +8,9 @@ type Input = z.infer<typeof applyDiscountSchema>
 export async function applyDiscount(input: Input) {
   const parsed = applyDiscountSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  const { schoolId } = parsed.data
 
-  const enrollment = await enrollmentGateway.findById(parsed.data.enrollmentId)
+  const enrollment = await enrollmentGateway.findById(schoolId, parsed.data.enrollmentId)
   if (!enrollment) return 'notFound' as const
 
   const planAmount = Number(enrollment.plan.amount)
@@ -20,6 +21,7 @@ export async function applyDiscount(input: Input) {
   const totalAmount = calculateTotalAmount(planAmount, parsed.data.discount)
 
   await enrollmentGateway.updateDiscount(
+    schoolId,
     parsed.data.enrollmentId,
     parsed.data.discount,
     totalAmount

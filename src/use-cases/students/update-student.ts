@@ -9,7 +9,7 @@ export async function updateStudent(input: Input, studentGw = studentGateway) {
   const parsed = updateStudentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const student = await studentGw.findById(parsed.data.id)
+  const student = await studentGw.findById(parsed.data.schoolId, parsed.data.id)
   if (!student) return 'notFound' as const
 
   if (parsed.data.birthday) {
@@ -17,8 +17,8 @@ export async function updateStudent(input: Input, studentGw = studentGateway) {
     if (birthdayCheck !== 'OK') return birthdayCheck
   }
 
-  const { id, ...updateData } = parsed.data
-  const updated = await studentGw.update(id, updateData)
+  const { schoolId, id, ...updateData } = parsed.data
+  const updated = await studentGw.update(schoolId, id, updateData)
 
   return updated
 }

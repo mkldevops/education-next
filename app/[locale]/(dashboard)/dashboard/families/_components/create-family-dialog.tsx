@@ -71,7 +71,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
       parents: [],
     }
 
-    const parsed = createFamilySchema.safeParse(rawData)
+    const parsed = createFamilySchema.omit({ schoolId: true }).safeParse(rawData)
     if (!parsed.success) {
       const invalidPhone = parsed.error.issues.some(
         (issue) => issue.path[0] === 'emergencyContactPhone'

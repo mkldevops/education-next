@@ -24,7 +24,7 @@ import { createPortal } from 'react-dom'
 import { Link, usePathname, useRouter } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
-import type { Role } from '@/types/enums'
+import type { SchoolRole } from '@/types/enums'
 import { toInitials } from './initials'
 import { useSidebarStore } from './sidebar-store'
 
@@ -32,7 +32,7 @@ type NavItemConfig = {
   href: string
   icon: LucideIcon
   key: string
-  requiredRoles?: Role[]
+  requiredRoles?: SchoolRole[]
 }
 
 const gestionItems: NavItemConfig[] = [
@@ -48,32 +48,32 @@ const configItems: NavItemConfig[] = [
     href: '/dashboard/periods',
     icon: CalendarDays,
     key: 'periods',
-    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+    requiredRoles: ['ADMIN'],
   },
   {
     href: '/dashboard/levels',
     icon: Layers,
     key: 'levels',
-    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+    requiredRoles: ['ADMIN'],
   },
   {
     href: '/dashboard/classes',
     icon: BookOpen,
     key: 'classes',
-    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+    requiredRoles: ['ADMIN'],
   },
-  { href: '/dashboard/plans', icon: Wallet, key: 'plans', requiredRoles: ['ADMIN', 'SUPER_ADMIN'] },
+  { href: '/dashboard/plans', icon: Wallet, key: 'plans', requiredRoles: ['ADMIN'] },
   {
     href: '/dashboard/config',
     icon: Wrench,
     key: 'config',
-    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+    requiredRoles: ['ADMIN'],
   },
   {
     href: '/dashboard/users',
     icon: Shield,
     key: 'users',
-    requiredRoles: ['ADMIN', 'SUPER_ADMIN'],
+    requiredRoles: ['ADMIN'],
   },
 ]
 
@@ -192,14 +192,22 @@ function SidebarAction({
 }
 
 type SidebarProps = {
-  role: Role
+  role: SchoolRole | null
+  isSuperAdmin: boolean
   familyId?: string
   logoUrl?: string
   schoolName?: string
   userName?: string
 }
 
-export function Sidebar({ role, familyId, logoUrl, schoolName, userName }: SidebarProps) {
+export function Sidebar({
+  role,
+  isSuperAdmin,
+  familyId,
+  logoUrl,
+  schoolName,
+  userName,
+}: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const company = useTranslations('company')
   const pathname = usePathname()
@@ -214,7 +222,8 @@ export function Sidebar({ role, familyId, logoUrl, schoolName, userName }: Sideb
 
   const canViewItem = (item: NavItemConfig) => {
     if (!item.requiredRoles) return true
-    return item.requiredRoles.includes(role)
+    if (isSuperAdmin) return true
+    return role !== null && item.requiredRoles.includes(role)
   }
 
   const visibleConfigItems = configItems.filter(canViewItem)

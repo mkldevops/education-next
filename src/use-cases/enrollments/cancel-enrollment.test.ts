@@ -18,6 +18,8 @@ vi.mock('@/gateways/class-assignment-gateway', () => ({
 
 const { cancelEnrollment } = await import('./cancel-enrollment')
 
+const schoolId = '550e8400-e29b-41d4-a716-446655440099'
+
 describe('cancelEnrollment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -28,6 +30,7 @@ describe('cancelEnrollment', () => {
 
   it('should fail validation with invalid input', async () => {
     const result = await cancelEnrollment({
+      schoolId,
       id: 'invalid-uuid',
     })
 
@@ -38,6 +41,7 @@ describe('cancelEnrollment', () => {
     enrollmentGatewayMock.findById.mockResolvedValue(null)
 
     const result = await cancelEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -51,6 +55,7 @@ describe('cancelEnrollment', () => {
     })
 
     const result = await cancelEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -64,6 +69,7 @@ describe('cancelEnrollment', () => {
     })
 
     const result = await cancelEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -77,6 +83,7 @@ describe('cancelEnrollment', () => {
     })
 
     const result = await cancelEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -90,6 +97,7 @@ describe('cancelEnrollment', () => {
     })
 
     const result = await cancelEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -103,10 +111,12 @@ describe('cancelEnrollment', () => {
     })
 
     await cancelEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
     expect(classAssignmentGatewayMock.closeCurrent).toHaveBeenCalledWith(
+      schoolId,
       '550e8400-e29b-41d4-a716-446655440000'
     )
   })
@@ -118,10 +128,12 @@ describe('cancelEnrollment', () => {
     })
 
     await cancelEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
     expect(enrollmentGatewayMock.updateStatus).toHaveBeenCalledWith(
+      schoolId,
       '550e8400-e29b-41d4-a716-446655440000',
       'CANCELLED'
     )

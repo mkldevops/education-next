@@ -8,6 +8,7 @@ export async function createPlan(input: Input, planGw = planGateway) {
   const parsed = createPlanSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const plan = await planGw.create(parsed.data)
+  const { schoolId, ...data } = parsed.data
+  const plan = await planGw.create(schoolId, data)
   return plan
 }

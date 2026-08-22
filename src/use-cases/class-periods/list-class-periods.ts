@@ -1,5 +1,5 @@
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 
-export async function listClassPeriods() {
-  return classPeriodGateway.list()
+export async function listClassPeriods(schoolId: string) {
+  return classPeriodGateway.list(schoolId)
 }

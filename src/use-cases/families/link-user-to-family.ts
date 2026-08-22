@@ -8,10 +8,10 @@ export async function linkUserToFamily(input: Input) {
   const parsed = linkUserToFamilySchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const family = await familyGateway.findById(parsed.data.familyId)
+  const family = await familyGateway.findById(parsed.data.schoolId, parsed.data.familyId)
   if (!family) return 'notFound' as const
 
-  await familyGateway.linkUser(parsed.data.userId, parsed.data.familyId)
+  await familyGateway.linkUser(parsed.data.schoolId, parsed.data.userId, parsed.data.familyId)
 
   return 'OK' as const
 }

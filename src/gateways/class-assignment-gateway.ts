@@ -1,21 +1,23 @@
 import { db } from '@/lib/db'
 
 export const classAssignmentGateway = {
-  create: (data: { enrollmentId: string; classPeriodId: string }) =>
-    db.classAssignment.create({ data }),
+  create: (schoolId: string, data: { enrollmentId: string; classPeriodId: string }) =>
+    db.classAssignment.create({ data: { ...data, schoolId } }),
 
-  closeCurrent: (enrollmentId: string) =>
+  closeCurrent: (schoolId: string, enrollmentId: string) =>
     db.classAssignment.updateMany({
       where: {
+        schoolId,
         enrollmentId,
         endAt: null,
       },
       data: { endAt: new Date() },
     }),
 
-  findCurrent: (enrollmentId: string) =>
+  findCurrent: (schoolId: string, enrollmentId: string) =>
     db.classAssignment.findFirst({
       where: {
+        schoolId,
         enrollmentId,
         endAt: null,
       },

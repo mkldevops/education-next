@@ -9,9 +9,10 @@ import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
+import { getSchoolContext } from '@/lib/school-context'
 import { isStripeConfigured } from '@/lib/stripe'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
-import { getSessionWithRole, requireFamilyScope } from '../_lib/auth-helper'
+import { requireSchoolScope } from '../_lib/auth-helper'
 import { UnlinkedParentNotice } from './_components/unlinked-parent-notice'
 import { OnlinePaymentButton } from './families/[id]/_components/online-payment-button'
 
@@ -37,12 +38,12 @@ export default async function DashboardPage({ params }: Props) {
 
   const session = await auth.api.getSession({ headers: await headers() })
 
-  const { role, familyId } = await getSessionWithRole()
-  if (role === 'PARENT' && !familyId) {
+  const context = await getSchoolContext()
+  if (context?.role === 'PARENT' && !context.familyId) {
     return <UnlinkedParentNotice userName={session?.user.name ?? null} />
   }
 
-  const scope = await requireFamilyScope()
+  const scope = await requireSchoolScope()
 
   const isAdmin = scope.isAdmin
 
@@ -56,12 +57,14 @@ export default async function DashboardPage({ params }: Props) {
     await Promise.all([
       db.family.count({
         where: {
+          schoolId: scope.schoolId,
           isActive: true,
           ...(scope.isAdmin ? {} : { id: scope.familyId }),
         },
       }),
       db.student.count({
         where: {
+          schoolId: scope.schoolId,
           isActive: true,
           person: {
             families: {
@@ -72,6 +75,7 @@ export default async function DashboardPage({ params }: Props) {
       }),
       db.enrollment.count({
         where: {
+          schoolId: scope.schoolId,
           status: { in: ['PENDING', 'ACTIVE'] },
           isActive: true,
           ...periodFilter,
@@ -86,6 +90,7 @@ export default async function DashboardPage({ params }: Props) {
       }),
       db.enrollment.count({
         where: {
+          schoolId: scope.schoolId,
           status: 'PENDING',
           isActive: true,
           ...periodFilter,
@@ -100,6 +105,7 @@ export default async function DashboardPage({ params }: Props) {
       }),
       db.enrollment.findMany({
         where: {
+          schoolId: scope.schoolId,
           isActive: true,
           ...periodFilter,
           ...(scope.isAdmin
@@ -133,7 +139,9 @@ export default async function DashboardPage({ params }: Props) {
     : t('stats.scopeAll')
 
   const userName = session?.user.name || 'User'
-  const parentBalance = !scope.isAdmin ? await getFamilyBalance(scope.familyId) : null
+  const parentBalance = !scope.isAdmin
+    ? await getFamilyBalance(scope.schoolId, scope.familyId)
+    : null
 
   const enrollmentColumns: Column<(typeof recentEnrollments)[number]>[] = [
     {

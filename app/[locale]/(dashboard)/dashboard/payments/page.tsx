@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
-import { requireFamilyScope } from '../../_lib/auth-helper'
+import { requireSchoolScope } from '../../_lib/auth-helper'
 import { PaymentsTable } from './_components/payments-table'
 
 type Props = {
@@ -28,7 +28,7 @@ export default async function PaymentsPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.payments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const scope = await requireFamilyScope()
+  const scope = await requireSchoolScope()
 
   if (!scope.isAdmin) {
     redirect({ href: `/dashboard/families/${scope.familyId}`, locale })
@@ -38,6 +38,7 @@ export default async function PaymentsPage({ params }: Props) {
   const selectedPeriodId = selectedPeriod?.id ?? null
 
   const whereClause = {
+    schoolId: scope.schoolId,
     isActive: true,
     ...(selectedPeriodId
       ? {

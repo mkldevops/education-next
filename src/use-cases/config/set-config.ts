@@ -23,6 +23,7 @@ export async function setConfig(input: Input, configGw = configGateway) {
     return 'invalidConfigValue' as const
   }
 
-  const config = await configGw.set(parsed.data)
+  const { schoolId, ...data } = parsed.data
+  const config = await configGw.set(schoolId, data)
   return config
 }

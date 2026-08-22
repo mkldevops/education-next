@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import type { levelGateway } from '@/gateways/level-gateway'
 import { createLevel } from './create-level'
 
 class LevelGatewaySpy {
+  createdSchoolId: string | null = null
   createdData: unknown = null
   levelToReturn: unknown = null
 
-  async create(data: unknown) {
+  async create(schoolId: string, data: unknown) {
+    this.createdSchoolId = schoolId
     this.createdData = data
-    return (this.levelToReturn || { id: 'level-123', ...(data as object) }) as unknown as any
+    return (this.levelToReturn ?? { id: 'level-123', ...(data as object) }) as { id: string }
   }
 
   async update() {
@@ -27,6 +30,12 @@ class LevelGatewaySpy {
   }
 }
 
+function asGateway(gateway: LevelGatewaySpy) {
+  return gateway as unknown as typeof levelGateway
+}
+
+const schoolId = 'school-1'
+
 describe('createLevel', () => {
   let gateway: LevelGatewaySpy
 
@@ -36,10 +45,10 @@ describe('createLevel', () => {
 
   it('fails validation when name is empty', async () => {
     // GIVEN
-    const input = { name: '' }
+    const input = { schoolId, name: '' }
 
     // WHEN
-    const result = await createLevel(input, gateway as unknown as any)
+    const result = await createLevel(input, asGateway(gateway))
 
     // THEN
     expect(result).toBe('validationError')
@@ -47,10 +56,10 @@ describe('createLevel', () => {
 
   it('fails validation when name exceeds max length', async () => {
     // GIVEN
-    const input = { name: 'a'.repeat(251) }
+    const input = { schoolId, name: 'a'.repeat(251) }
 
     // WHEN
-    const result = await createLevel(input, gateway as unknown as any)
+    const result = await createLevel(input, asGateway(gateway))
 
     // THEN
     expect(result).toBe('validationError')
@@ -58,10 +67,10 @@ describe('createLevel', () => {
 
   it('creates level with valid name', async () => {
     // GIVEN
-    const input = { name: 'Grade 1' }
+    const input = { schoolId, name: 'Grade 1' }
 
     // WHEN
-    const result = await createLevel(input, gateway as unknown as any)
+    const result = await createLevel(input, asGateway(gateway))
 
     // THEN
     expect(result).toHaveProperty('id', 'level-123')
@@ -69,10 +78,10 @@ describe('createLevel', () => {
 
   it('calls gateway with correct data', async () => {
     // GIVEN
-    const input = { name: 'Grade 2' }
+    const input = { schoolId, name: 'Grade 2' }
 
     // WHEN
-    await createLevel(input, gateway as unknown as any)
+    await createLevel(input, asGateway(gateway))
 
     // THEN
     expect(gateway.createdData).toMatchObject({ name: 'Grade 2' })

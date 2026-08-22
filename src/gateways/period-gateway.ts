@@ -1,9 +1,11 @@
 import { db } from '@/lib/db'
 
 export const periodGateway = {
-  create: (data: { name: string; startAt: Date; endAt: Date }) => db.period.create({ data }),
+  create: (schoolId: string, data: { name: string; startAt: Date; endAt: Date }) =>
+    db.period.create({ data: { ...data, schoolId } }),
 
   update: (
+    schoolId: string,
     id: string,
     data: {
       name?: string
@@ -12,24 +14,25 @@ export const periodGateway = {
     }
   ) =>
     db.period.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data,
     }),
 
-  findById: (id: string) =>
+  findById: (schoolId: string, id: string) =>
     db.period.findUnique({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
     }),
 
-  list: () =>
+  list: (schoolId: string) =>
     db.period.findMany({
-      where: { isActive: true },
+      where: { schoolId, isActive: true },
       orderBy: { startAt: 'desc' },
     }),
 
-  checkOverlap: async (startAt: Date, endAt: Date, excludeId?: string) => {
+  checkOverlap: async (schoolId: string, startAt: Date, endAt: Date, excludeId?: string) => {
     const periods = await db.period.findMany({
       where: {
+        schoolId,
         ...(excludeId ? { id: { not: excludeId } } : {}),
         OR: [{ startAt: { lte: endAt }, endAt: { gte: startAt } }],
       },
@@ -37,7 +40,12 @@ export const periodGateway = {
     return periods.length > 0
   },
 
-  countClassPeriods: (id: string) => db.classPeriod.count({ where: { periodId: id } }),
+  countClassPeriods: (schoolId: string, id: string) =>
+    db.classPeriod.count({ where: { schoolId, periodId: id } }),
 
-  deactivate: (id: string) => db.period.update({ where: { id }, data: { isActive: false } }),
+  deactivate: (schoolId: string, id: string) =>
+    db.period.update({
+      where: { id_schoolId: { id, schoolId } },
+      data: { isActive: false },
+    }),
 }

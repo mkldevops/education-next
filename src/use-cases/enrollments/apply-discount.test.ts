@@ -11,6 +11,8 @@ vi.mock('@/gateways/enrollment-gateway', () => ({
 
 const { applyDiscount } = await import('./apply-discount')
 
+const schoolId = '550e8400-e29b-41d4-a716-446655440099'
+
 describe('applyDiscount', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -20,6 +22,7 @@ describe('applyDiscount', () => {
 
   it('should fail validation with invalid input', async () => {
     const result = await applyDiscount({
+      schoolId,
       enrollmentId: 'invalid-uuid',
       discount: 10,
     })
@@ -29,6 +32,7 @@ describe('applyDiscount', () => {
 
   it('should fail validation with negative discount', async () => {
     const result = await applyDiscount({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: -10,
     })
@@ -40,6 +44,7 @@ describe('applyDiscount', () => {
     enrollmentGatewayMock.findById.mockResolvedValue(null)
 
     const result = await applyDiscount({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 10,
     })
@@ -54,6 +59,7 @@ describe('applyDiscount', () => {
     })
 
     const result = await applyDiscount({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 100.01,
     })
@@ -69,12 +75,14 @@ describe('applyDiscount', () => {
     })
 
     const result = await applyDiscount({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 100,
     })
 
     expect(result).toBe('OK')
     expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      schoolId,
       '550e8400-e29b-41d4-a716-446655440000',
       100,
       0
@@ -88,6 +96,7 @@ describe('applyDiscount', () => {
     })
 
     const result = await applyDiscount({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 10,
     })
@@ -102,11 +111,13 @@ describe('applyDiscount', () => {
     })
 
     await applyDiscount({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 10,
     })
 
     expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      schoolId,
       '550e8400-e29b-41d4-a716-446655440000',
       10,
       90
@@ -120,11 +131,13 @@ describe('applyDiscount', () => {
     })
 
     await applyDiscount({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 25,
     })
 
     expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      schoolId,
       '550e8400-e29b-41d4-a716-446655440000',
       25,
       75
@@ -138,12 +151,14 @@ describe('applyDiscount', () => {
     })
 
     const result = await applyDiscount({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 0,
     })
 
     expect(result).toBe('OK')
     expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      schoolId,
       '550e8400-e29b-41d4-a716-446655440000',
       0,
       100
@@ -157,12 +172,14 @@ describe('applyDiscount', () => {
     })
 
     const result = await applyDiscount({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 100,
     })
 
     expect(result).toBe('OK')
     expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      schoolId,
       '550e8400-e29b-41d4-a716-446655440000',
       100,
       0

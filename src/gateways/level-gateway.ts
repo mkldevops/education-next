@@ -1,49 +1,60 @@
 import { db } from '@/lib/db'
 
 export const levelGateway = {
-  create: (data: { name: string; nextLevelId?: string }) => db.level.create({ data }),
+  create: (schoolId: string, data: { name: string; nextLevelId?: string }) =>
+    db.level.create({ data: { ...data, schoolId } }),
 
   update: (
+    schoolId: string,
     id: string,
     data: {
       name?: string
     }
   ) =>
     db.level.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data,
     }),
 
-  findById: (id: string) =>
+  findById: (schoolId: string, id: string) =>
     db.level.findUnique({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       include: { nextLevel: true },
     }),
 
-  list: () =>
+  list: (schoolId: string) =>
     db.level.findMany({
-      where: { isActive: true },
+      where: { schoolId, isActive: true },
       include: { nextLevel: true },
       orderBy: { name: 'asc' },
     }),
 
-  setNextLevel: (id: string, nextLevelId: string | null) =>
+  setNextLevel: (schoolId: string, id: string, nextLevelId: string | null) =>
     db.level.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data: { nextLevelId },
     }),
 
-  findByNextLevelId: (nextLevelId: string) =>
+  findByNextLevelId: (schoolId: string, nextLevelId: string) =>
     db.level.findFirst({
-      where: { nextLevelId },
+      where: { schoolId, nextLevelId },
       select: { id: true, name: true },
     }),
 
-  countClassPeriods: (id: string) => db.classPeriod.count({ where: { levelId: id } }),
+  countClassPeriods: (schoolId: string, id: string) =>
+    db.classPeriod.count({ where: { schoolId, levelId: id } }),
 
-  deactivate: (id: string) =>
+  // `nextLevelId` porte une FK composite (nextLevelId, schoolId) en onDelete: Restrict :
+  // un SetNull automatique n'est plus possible, il faut vider les pointeurs explicitement.
+  deactivate: (schoolId: string, id: string) =>
     db.$transaction([
-      db.level.updateMany({ where: { nextLevelId: id }, data: { nextLevelId: null } }),
-      db.level.update({ where: { id }, data: { isActive: false, nextLevelId: null } }),
+      db.level.updateMany({
+        where: { schoolId, nextLevelId: id },
+        data: { nextLevelId: null },
+      }),
+      db.level.update({
+        where: { id_schoolId: { id, schoolId } },
+        data: { isActive: false, nextLevelId: null },
+      }),
     ]),
 }

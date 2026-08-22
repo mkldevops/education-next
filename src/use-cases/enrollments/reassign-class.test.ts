@@ -26,6 +26,8 @@ vi.mock('@/gateways/class-assignment-gateway', () => ({
 
 const { reassignClass } = await import('./reassign-class')
 
+const schoolId = '550e8400-e29b-41d4-a716-446655440099'
+
 describe('reassignClass', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -38,6 +40,7 @@ describe('reassignClass', () => {
 
   it('should fail validation with invalid input', async () => {
     const result = await reassignClass({
+      schoolId,
       enrollmentId: 'invalid-uuid',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440000',
     })
@@ -49,6 +52,7 @@ describe('reassignClass', () => {
     enrollmentGatewayMock.findById.mockResolvedValue(null)
 
     const result = await reassignClass({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })
@@ -63,6 +67,7 @@ describe('reassignClass', () => {
     })
 
     const result = await reassignClass({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })
@@ -77,6 +82,7 @@ describe('reassignClass', () => {
     })
 
     const result = await reassignClass({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })
@@ -92,6 +98,7 @@ describe('reassignClass', () => {
     classPeriodGatewayMock.findById.mockResolvedValue(null)
 
     const result = await reassignClass({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })
@@ -111,6 +118,7 @@ describe('reassignClass', () => {
     classPeriodGatewayMock.countEnrolled.mockResolvedValue(10)
 
     const result = await reassignClass({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })
@@ -130,6 +138,7 @@ describe('reassignClass', () => {
     classPeriodGatewayMock.countEnrolled.mockResolvedValue(5)
 
     const result = await reassignClass({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })
@@ -149,6 +158,7 @@ describe('reassignClass', () => {
     classPeriodGatewayMock.countEnrolled.mockResolvedValue(5)
 
     const result = await reassignClass({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })
@@ -168,11 +178,13 @@ describe('reassignClass', () => {
     classPeriodGatewayMock.countEnrolled.mockResolvedValue(5)
 
     await reassignClass({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })
 
     expect(classAssignmentGatewayMock.closeCurrent).toHaveBeenCalledWith(
+      schoolId,
       '550e8400-e29b-41d4-a716-446655440000'
     )
   })
@@ -189,11 +201,12 @@ describe('reassignClass', () => {
     classPeriodGatewayMock.countEnrolled.mockResolvedValue(5)
 
     await reassignClass({
+      schoolId,
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       newClassPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })
 
-    expect(classAssignmentGatewayMock.create).toHaveBeenCalledWith({
+    expect(classAssignmentGatewayMock.create).toHaveBeenCalledWith(schoolId, {
       enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440001',
     })

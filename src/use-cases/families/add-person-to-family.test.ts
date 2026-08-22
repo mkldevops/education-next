@@ -28,6 +28,7 @@ describe('addPersonToFamily', () => {
 
   it('should fail validation with invalid input', async () => {
     const result = await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: 'invalid-uuid',
       person: {
         name: 'John',
@@ -42,6 +43,7 @@ describe('addPersonToFamily', () => {
 
   it('should fail validation when person name is empty', async () => {
     const result = await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       person: {
         name: '',
@@ -58,6 +60,7 @@ describe('addPersonToFamily', () => {
     familyGatewayMock.findById.mockResolvedValue(null)
 
     const result = await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       person: {
         name: 'John',
@@ -74,6 +77,7 @@ describe('addPersonToFamily', () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 
     const result = await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       person: {
         name: 'John',
@@ -90,6 +94,7 @@ describe('addPersonToFamily', () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 
     await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       person: {
         name: 'John',
@@ -101,6 +106,7 @@ describe('addPersonToFamily', () => {
     })
 
     expect(personGatewayMock.createWithFamily).toHaveBeenCalledWith(
+      'school-1',
       '550e8400-e29b-41d4-a716-446655440000',
       'PARENT',
       expect.objectContaining({
@@ -117,6 +123,7 @@ describe('addPersonToFamily', () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 
     await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       person: {
         name: 'Jane',
@@ -130,6 +137,7 @@ describe('addPersonToFamily', () => {
     })
 
     expect(personGatewayMock.createWithFamily).toHaveBeenCalledWith(
+      'school-1',
       '550e8400-e29b-41d4-a716-446655440000',
       'TUTOR',
       expect.objectContaining({
@@ -145,6 +153,7 @@ describe('addPersonToFamily', () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 
     await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       person: {
         name: 'Jane',
@@ -157,6 +166,7 @@ describe('addPersonToFamily', () => {
 
     expect(personGatewayMock.createWithFamily).toHaveBeenCalledWith(
       expect.anything(),
+      expect.anything(),
       'PARENT',
       expect.anything(),
       '0612345678'
@@ -167,6 +177,7 @@ describe('addPersonToFamily', () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 
     const result = await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       person: {
         name: 'Maria',
@@ -179,6 +190,7 @@ describe('addPersonToFamily', () => {
     expect(result).toHaveProperty('id')
     expect(personGatewayMock.createWithFamily).toHaveBeenCalledWith(
       expect.anything(),
+      expect.anything(),
       'GRANDPARENT',
       expect.anything(),
       undefined
@@ -189,6 +201,7 @@ describe('addPersonToFamily', () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 
     const result = await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       person: {
         name: 'Tom',
@@ -205,6 +218,7 @@ describe('addPersonToFamily', () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 
     const result = await addPersonToFamily({
+      schoolId: 'school-1',
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       person: {
         name: 'Alice',

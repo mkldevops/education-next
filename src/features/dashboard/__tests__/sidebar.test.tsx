@@ -19,11 +19,12 @@ vi.mock('@/lib/auth-client', () => ({
   signOut: vi.fn(),
 }))
 
-import type { Role } from '@/types/enums'
+import type { SchoolRole } from '@/types/enums'
 import { Sidebar } from '../sidebar'
 import { useSidebarStore } from '../sidebar-store'
 
-const renderSidebar = (role: Role) => render(<Sidebar {...{ role }} />)
+const renderSidebar = (role: SchoolRole | null, isSuperAdmin = false) =>
+  render(<Sidebar role={role} isSuperAdmin={isSuperAdmin} />)
 
 const collapse = () => useSidebarStore.setState({ expanded: false, mobileOpen: false })
 const expand = () => useSidebarStore.setState({ expanded: true, mobileOpen: false })
@@ -34,7 +35,7 @@ describe('Sidebar accessibility', () => {
   })
 
   it('gives every collapsed navigation link an accessible name', () => {
-    renderSidebar('SUPER_ADMIN')
+    renderSidebar(null, true)
 
     const links = screen.getAllByRole('link')
     expect(links.length).toBeGreaterThan(0)

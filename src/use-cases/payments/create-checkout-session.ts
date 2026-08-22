@@ -3,6 +3,7 @@ import { getStripeClient } from '@/lib/stripe'
 import { getFamilyBalance } from './family-balance'
 
 type Input = {
+  schoolId: string
   familyId: string
   initiatedById: string
   customerEmail: string
@@ -14,11 +15,12 @@ export async function createCheckoutSession(input: Input) {
   const stripe = getStripeClient()
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return 'notConfigured' as const
 
-  const balance = await getFamilyBalance(input.familyId)
+  const balance = await getFamilyBalance(input.schoolId, input.familyId)
   if (balance.payableAmountInCents <= 0) return 'noBalance' as const
 
   const transaction = await db.paymentTransaction.create({
     data: {
+      schoolId: input.schoolId,
       familyId: input.familyId,
       initiatedById: input.initiatedById,
       amount: balance.payableBalance,
@@ -59,21 +61,21 @@ export async function createCheckoutSession(input: Input) {
 
     if (!session.url) {
       await db.paymentTransaction.update({
-        where: { id: transaction.id },
+        where: { id_schoolId: { id: transaction.id, schoolId: input.schoolId } },
         data: { status: 'FAILED' },
       })
       return 'providerError' as const
     }
 
     await db.paymentTransaction.update({
-      where: { id: transaction.id },
+      where: { id_schoolId: { id: transaction.id, schoolId: input.schoolId } },
       data: { providerSessionId: session.id },
     })
 
     return { result: 'OK' as const, url: session.url }
   } catch {
     await db.paymentTransaction.update({
-      where: { id: transaction.id },
+      where: { id_schoolId: { id: transaction.id, schoolId: input.schoolId } },
       data: { status: 'FAILED' },
     })
     return 'providerError' as const

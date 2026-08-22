@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { setRequestLocale } from 'next-intl/server'
-import { db } from '@/lib/db'
+import { findInvitationByToken } from '@/lib/db-unscoped'
 import { AcceptInvitationForm } from './_components/accept-invitation-form'
 
 type Props = {
@@ -18,9 +18,7 @@ export default async function InvitePage({ params }: Props) {
   const { locale, token } = await params
   setRequestLocale(locale)
 
-  const invitation = await db.invitation.findUnique({
-    where: { token },
-  })
+  const invitation = await findInvitationByToken(token)
 
   if (!invitation) notFound()
 

@@ -6,7 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
-import { requireAdmin } from '../../../_lib/auth-helper'
+import { requireSchoolAdmin } from '../../../_lib/auth-helper'
 import { notFoundTitle } from '../../../_lib/page-metadata'
 import { EditClassDialog } from '../_components/edit-class-dialog'
 
@@ -18,10 +18,12 @@ const ROSTER_STATUSES = ['PENDING', 'ACTIVE', 'COMPLETED'] as const
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, id } = await params
-  const user = await requireAdmin()
-  if (!user) return { title: await notFoundTitle(locale) }
+  const { schoolId } = await requireSchoolAdmin()
 
-  const classPeriod = await db.classPeriod.findUnique({ where: { id }, select: { name: true } })
+  const classPeriod = await db.classPeriod.findUnique({
+    where: { id_schoolId: { id, schoolId } },
+    select: { name: true },
+  })
   return { title: classPeriod?.name ?? (await notFoundTitle(locale)) }
 }
 
@@ -32,11 +34,10 @@ export default async function ClassDetailPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.classDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const user = await requireAdmin()
-  if (!user) notFound()
+  const { schoolId } = await requireSchoolAdmin()
 
   const classPeriod = await db.classPeriod.findUnique({
-    where: { id },
+    where: { id_schoolId: { id, schoolId } },
     include: {
       level: true,
       period: true,

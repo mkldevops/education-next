@@ -8,13 +8,14 @@ type Input = z.infer<typeof enrollmentIdSchema>
 export async function completeEnrollment(input: Input) {
   const parsed = enrollmentIdSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  const { schoolId } = parsed.data
 
-  const enrollment = await enrollmentGateway.findById(parsed.data.id)
+  const enrollment = await enrollmentGateway.findById(schoolId, parsed.data.id)
   if (!enrollment) return 'notFound' as const
 
   const transitionCheck = validateTransition(enrollment.status, 'COMPLETED')
   if (transitionCheck !== 'OK') return transitionCheck
 
-  await enrollmentGateway.updateStatus(parsed.data.id, 'COMPLETED')
+  await enrollmentGateway.updateStatus(schoolId, parsed.data.id, 'COMPLETED')
   return 'OK' as const
 }

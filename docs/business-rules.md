@@ -11,35 +11,103 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 
 | Term | Model | Meaning |
 |---|---|---|
+| School | `School` | A school. The tenant: every business row belongs to exactly one. |
+| Membership | `SchoolMember` | A user's role inside one school. A user may hold several. |
 | Family | `Family` | The billing unit. Owns people, and every payment is attached to one. |
 | Person | `Person` | A human. A parent, a tutor, or the person record behind a student. |
 | Student | `Student` | The `Person` who attends. One `Person` maps to at most one `Student`. |
 | Period | `Period` | A school year. Dated, and the scope of most dashboard reads. |
-| Level | `Level` | A grade (CP, CE1…). Levels chain through `nextLevelId`. |
+| Level | `Level` | A grade (CP, CE1…). Levels chain through `nextLevelId`, within one school. |
 | Class | `ClassPeriod` | One level taught during one period, with a capacity. |
 | Assignment | `ClassAssignment` | A student's seat in a class, `endAt: null` while it holds. |
 | Enrollment | `Enrollment` | A student registered on a plan. Carries the money. |
-| Plan | `Plan` | A price list entry (Mi-temps, Temps plein…). |
+| Plan | `Plan` | A price list entry (Mi-temps, Temps plein…), priced per school. |
 | Payment | `Payment` | Money received, always attached to one enrollment. |
+
+## Multi-school
+
+Every business row belongs to exactly one `School`. Sixteen models carry `schoolId NOT NULL`:
+`Family`, `UserFamily`, `Person`, `FamilyPerson`, `Student`, `PhoneNumber`, `Config`, `Level`,
+`Period`, `ClassPeriod`, `Enrollment`, `ClassAssignment`, `Payment`, `PaymentTransaction`, `Plan`,
+`Invitation`.
+
+`PaymentProviderEvent` is the one business model left unscoped, deliberately: its
+`paymentTransactionId` is nullable, so an unmatched provider event has no derivable school. It is a
+platform-level log. `User`, `Session`, `Account`, `Verification`, `Passkey` and `SchoolMember` are
+platform models by nature.
+
+**A family belongs to one school.** A parent whose children attend two schools of the network has
+one account with two memberships, and two separate family records that never see each other.
+
+Isolation rests on three layers. None is sufficient alone.
+
+1. **Schema — composite foreign keys.** Every edge between two scoped models references
+   `(fk, schoolId) → Parent(id, schoolId)`, backed by `@@unique([id, schoolId])` on nine parents. A
+   cross-school write is a PostgreSQL constraint violation, not a silent bug. This is also what
+   protects **nested writes**, which the runtime guard cannot see.
+   Consequence to remember: `onDelete: SetNull` is impossible on such a key — PostgreSQL would null
+   `schoolId` too, which is `NOT NULL`. Those relations use `Restrict`, and the nullable id is
+   cleared explicitly by the use-case instead.
+2. **Types — `schoolId` is a required parameter.** Every tenant gateway takes it first, so
+   `pnpm type-check` enumerates forgotten callers. This covers every write, since the column has no
+   default. It does **not** cover reads performed directly by Server Components, which is why the
+   third layer exists.
+3. **Runtime — a fail-closed guard.** `src/lib/tenant-guard.ts` inspects the root of every Prisma
+   query and reports an unscoped one. It never injects anything: in `throw` mode the query is
+   rejected, in `warn` mode it is logged with its stack. Mode comes from `TENANT_GUARD_MODE`.
+   A `where` satisfies it through `schoolId`, through `schoolId: { in: [...] }`, or through any
+   generated compound selector containing it (`id_schoolId`, `schoolId_name`…). Reassigning a row's
+   school is refused, including through the `school` relation.
+
+`SchoolMember` sits outside the guard by construction — the context must read memberships by
+`userId` before any school is known. All access goes through `src/gateways/school-member-gateway.ts`,
+which is the single read *and* write boundary for that model.
+
+Three named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
+school: the invitation read by its unique token (public flow), the Stripe webhook finding its
+transaction by `providerSessionId` (signed request, no session), and the seed and data scripts,
+which create the schools themselves.
+
+The guard's `warn` journal is the working list of reads still to scope. It is expected to be
+non-empty until that work is finished, and empty before the mode is switched to `throw`.
 
 ## Roles and scope
 
-Three roles: `SUPER_ADMIN`, `ADMIN`, `PARENT` (`src/types/enums.ts`).
+Roles are **per school**. `SchoolRole` is `ADMIN` or `PARENT` (`src/types/enums.ts`), carried by a
+`SchoolMember` row. Platform level is a separate flag, `User.isSuperAdmin`. There is no longer a
+global `User.role`, and `SUPER_ADMIN` is not expressible as a school role — the invalid state is
+unrepresentable in the database as well as in the types.
 
-- Every dashboard read resolves the role from the **database**, never from the session payload —
-  `getSessionWithRole()` in `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
-- `requireAdmin()` admits `ADMIN` and `SUPER_ADMIN`. `requireRole([...])` takes an explicit list.
-- `requireFamilyScope()` returns `{ isAdmin: true }` for staff, or `{ isAdmin: false, familyId }`
-  for a parent. **A parent with no linked family gets `notFound()`** rather than an unscoped query.
-- **The `/dashboard/users` space is open to `ADMIN` and `SUPER_ADMIN`**: both read the user list and
-  manage invitations.
-- **Every user mutation requires `SUPER_ADMIN`** — role change, profile edit, archiving,
-  restoration, permanent deletion, session revocation, password reset, family link and unlink
-  (`app/[locale]/(dashboard)/_lib/user-actions.ts`, `requireSuperAdmin()`). An ordinary `ADMIN`
-  reads the list and the detail drawer, and manages invitations; the page hides the controls it
-  cannot use, and the actions refuse them regardless of what the UI shows.
+- The active school of a request is resolved by `getSchoolContext()`
+  (`src/lib/school-context.ts`) and **revalidated against the database on every request**. Better
+  Auth caches its session payload for five minutes (`src/lib/auth.ts`), so reading the role or the
+  membership from the session would delay a revocation by that much.
+- The active school comes from the `active_school` cookie. **The cookie is untrusted input**: it is
+  only honoured if the user holds a matching `SchoolMember`, or is a super-admin, and the school is
+  active. Otherwise the context falls back deterministically to the oldest eligible school.
+- `requireSchoolAdmin()` admits a school `ADMIN` or any super-admin. `requirePlatformAdmin()` admits
+  only a super-admin. `requireSchoolScope()` returns `{ isAdmin: true }` for staff, or
+  `{ isAdmin: false, familyId }` for a parent — **a parent with no linked family gets `notFound()`**
+  rather than an unscoped query. All three live in
+  `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
+- A super-admin holds **no** `SchoolMember`. Its context branch carries `role: null`, so the code
+  never invents a school role for it.
+- **`/dashboard/users` lists memberships, not accounts.** Its root query is `SchoolMember` scoped to
+  the active school; `User` has no `schoolId` and could not be filtered.
+- **Removing a member or demoting them cannot leave a school without an administrator.** The check
+  and the mutation share one `Serializable` transaction in
+  `src/gateways/school-member-gateway.ts` → `lastAdmin`. Deactivating a platform account refuses
+  self-deactivation and refuses to remove the last active super-admin → `selfDeactivation`,
+  `lastSuperAdmin` (`app/[locale]/(dashboard)/_lib/user-actions.ts`).
+- **Platform account mutations require a super-admin** — granting or revoking platform level,
+  profile edit, archiving, restoration, permanent deletion, session revocation, password reset,
+  family link and unlink (`app/[locale]/(dashboard)/_lib/user-actions.ts`, `requirePlatformAdmin()`).
+  A school `ADMIN` manages memberships and invitations for its own school; the page hides the
+  controls it cannot use, and the actions refuse them regardless of what the UI shows.
 - A resource outside a parent's family answers `notFound()`, never `forbidden()` — the existence of
-  another family's student is not disclosed.
+  another family's student is not disclosed. The same holds across schools.
+- **There is no public sign-up.** `/register` was removed: a self-created account would hold no
+  membership and be locked out of every school. Invitations are the only way in.
 
 `proxy.ts` protects `/dashboard`, `/settings`, `/profile` coarsely. Its matcher **excludes `/api`**,
 so every route handler and Server Action authenticates itself.
@@ -231,15 +299,18 @@ A student is **skipped**, with the reason reported, when:
 
 ## Configuration
 
-`src/use-cases/config/set-config.ts`. Values are stored as strings with a declared type.
+`src/use-cases/config/set-config.ts`. Values are stored as strings with a declared type, **scoped to
+one school**.
 
 - `NUMBER` must parse as a number, `BOOLEAN` must be exactly `'true'` or `'false'`, otherwise
   → `invalidConfigValue`. `TEXT` and `COLOR` accept anything.
-- Consumed today: `school_name` (sidebar), `max_students_per_class` (default class capacity),
-  `logo_url` and `favicon_url` (`src/lib/branding-config.ts`).
-- **The sidebar falls back to the school name.** With no `logo_url`, the collapsed badge shows the
-  first letter of the first two words of `school_name` (`src/features/dashboard/initials.ts`), so a
-  renamed school is reflected immediately.
+- `@@unique([schoolId, name])` is a **partial** index, restricted to `isActive: true`. An archived
+  entry therefore never reserves its name, and `configGateway.get` is deterministic.
+- Consumed today: `max_students_per_class` (default class capacity), `logo_url` and `favicon_url`
+  (`src/lib/branding-config.ts`).
+- **The school name is no longer a `Config` entry.** It lives on `School.name`, the single source of
+  truth; keeping the old `school_name` key would have let two screens edit two different names. The
+  migration copies it over and deletes the key.
 
 ## Branding images
 
@@ -251,8 +322,8 @@ store. Both end up as a plain string in `Config`, so an external URL keeps worki
 - Uploading requires an admin.
 - **Accepted types**: PNG, JPEG, WebP, SVG, ICO. Anything else → `unsupportedType`.
 - **1 MB maximum**, and an empty file is refused → `fileTooLarge` / `emptyFile`.
-- The object is stored under `branding/<uuid>.<ext>`; the caller never chooses the key, so an upload
-  cannot overwrite another one.
+- The object is stored under `branding/<schoolId>/<uuid>.<ext>`; the caller never chooses the key,
+  so an upload cannot overwrite another one, and one school cannot reach another's assets.
 - Configuration is `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, optionally
   `S3_REGION` and `S3_FORCE_PATH_STYLE`. Path style is the default, which is what MinIO expects.
   Without those variables the feature answers `notConfigured` rather than crashing — the rest of the
@@ -261,8 +332,8 @@ store. Both end up as a plain string in `Config`, so an external URL keeps worki
   for it in `compose.yaml`. A logo uploaded while developing lands in the shared bucket. Keys are
   UUID-based, so nothing is ever overwritten, but stray objects do accumulate under `branding/`.
 - **Objects are served through the application**, at `GET /api/media/branding/…`, not from a public
-  bucket. The route refuses any key outside the `branding/` prefix or containing `..`, so the bucket
-  needs no public policy and no CORS.
+  bucket. The route accepts only a `branding/<school>/<object>` shape and refuses any key containing
+  `..`, so the bucket needs no public policy and no CORS.
 
 ## Invitations
 
@@ -270,11 +341,14 @@ store. Both end up as a plain string in `Config`, so an external URL keeps worki
 
 - Issuing, resending and revoking an invitation require an admin. **Accepting one is intentionally
   public** — that is the point of the link.
-- **An invitation can only grant `ADMIN` or `PARENT`.** The schema has no `SUPER_ADMIN` branch, so
-  the invitation path cannot be used to escalate. That role is granted only by an existing
-  `SUPER_ADMIN` through `changeUserRoleAction`.
+- **An invitation can only grant `ADMIN` or `PARENT`** — now guaranteed by the `SchoolRole` type
+  itself rather than by a validation branch. Platform level is not grantable by invitation.
+- **An invitation carries its school** (`Invitation.schoolId`, taken from the issuer's active
+  school). Accepting it creates the `SchoolMember` first, then the `UserFamily` — that order is
+  imposed by the composite foreign key `UserFamily → SchoolMember`.
 - **Valid for 48 hours** from creation.
-- An email already tied to an account → `emailAlreadyUsed`.
+- An email already tied to an account → `emailAlreadyUsed`. Inviting an existing account into a
+  second school is therefore not yet possible; it is tracked separately.
 - A `PARENT` invitation carrying `familyId`/`personId` must match a real `FamilyPerson` whose email
   equals the invited address → `invalidInput`. Either both are supplied or neither.
 - **Resending mints a new token** and restarts the 48 hours; the previous link stops working.
@@ -288,6 +362,11 @@ store. Both end up as a plain string in `Config`, so an external URL keeps worki
 `src/lib/db.ts` extends Prisma so that `findMany`, `findFirst`, `findUnique` and `count` force
 `isActive: true` for: `User`, `Family`, `Person`, `Student`, `PhoneNumber`, `Config`, `Level`,
 `Period`, `ClassPeriod`, `Enrollment`, `Payment`, `Plan`.
+
+`School` is deliberately **absent** from that list even though it has `isActive`: forcing the filter
+would stop an administrator from finding a deactivated school, hence from reactivating it. Where the
+filter is wanted — active-school resolution, school switching, the school selector — it is written
+explicitly.
 
 Two consequences worth knowing:
 

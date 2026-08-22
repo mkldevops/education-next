@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
-import { requireFamilyScope } from '../../_lib/auth-helper'
+import { requireSchoolScope } from '../../_lib/auth-helper'
 import { StudentsDataTable } from './_components/students-data-table'
 
 type Props = {
@@ -26,13 +26,14 @@ export default async function StudentsPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.students')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const scope = await requireFamilyScope()
+  const scope = await requireSchoolScope()
 
   const isAdmin = scope.isAdmin
   const whereFamilies = scope.isAdmin ? undefined : { some: { familyId: scope.familyId } }
 
   const students = await db.student.findMany({
     where: {
+      schoolId: scope.schoolId,
       isActive: true,
       ...(whereFamilies && { person: { families: whereFamilies } }),
     },

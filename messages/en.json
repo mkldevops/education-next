@@ -743,12 +743,10 @@
         "known": {
           "logo": "Logo",
           "favicon": "Favicon",
-          "maxStudentsPerClass": "Maximum students per class",
-          "schoolName": "School name"
+          "maxStudentsPerClass": "Maximum students per class"
         },
         "descriptions": {
-          "maxStudentsPerClass": "Maximum number of students allowed in a class.",
-          "schoolName": "Display name of the school across the application."
+          "maxStudentsPerClass": "Maximum number of students allowed in a class."
         },
         "create": {
           "title": "New Parameter",
@@ -1177,20 +1175,22 @@
         },
         "errors": {
           "unauthorized": "You are not allowed to perform this action",
-          "validation_error": "Check the information provided",
+          "validation_error": "Check the information you entered",
           "validationError": "Check the information provided",
           "notFound": "User not found",
           "familyNotFound": "Family not found",
           "alreadyLinked": "This family is already linked",
           "emailAlreadyUsed": "This address is already in use",
           "cannotTargetSelf": "You cannot perform this action on your own account",
-          "lastSuperAdmin": "The last active super administrator cannot be demoted or archived",
+          "lastSuperAdmin": "Cannot do this: this account is the last active super administrator",
           "alreadyActive": "This user is already active",
           "alreadyInactive": "This user is archived",
           "stillActive": "Archive this user before deleting them permanently",
           "hasRelatedRecords": "This user created families, invitations or payments and cannot be deleted",
           "confirmationMismatch": "The confirmation email does not match",
-          "emailError": "The email could not be sent"
+          "emailError": "The email could not be sent",
+          "lastAdmin": "Cannot do this: this member is the school’s last administrator",
+          "selfDeactivation": "You cannot deactivate your own account"
         },
         "invitations": {
           "title": "Pending invitations",
@@ -1269,6 +1269,9 @@
           "previous": "Previous",
           "next": "Next"
         }
+        ,
+        "removeMember": "Remove",
+        "memberRemoved": "Member removed from the school"
       },
       "classDetails": {
         "title": "Class Details",

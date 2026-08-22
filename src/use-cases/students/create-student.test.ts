@@ -3,14 +3,14 @@ import { createStudent } from './create-student'
 
 class FamilyGatewaySpy {
   familyToReturn: { id: string } | null = null
-  addPersonCalls: Array<{ familyId: string; personId: string }> = []
+  addPersonCalls: Array<{ schoolId: string; familyId: string; personId: string }> = []
 
   async findById() {
     return this.familyToReturn
   }
 
-  async addPerson(familyId: string, personId: string) {
-    this.addPersonCalls.push({ familyId, personId })
+  async addPerson(schoolId: string, familyId: string, personId: string) {
+    this.addPersonCalls.push({ schoolId, familyId, personId })
   }
 
   async create() {
@@ -38,7 +38,7 @@ class PersonGatewaySpy {
   personToReturn: { id: string } | null = null
   createdData: unknown = null
 
-  async create(data: unknown) {
+  async create(_schoolId: string, data: unknown) {
     this.createdData = data
     return this.personToReturn || { id: 'person-123' }
   }
@@ -60,7 +60,7 @@ class StudentGatewaySpy {
   createdData: unknown = null
   studentToReturn: unknown = null
 
-  async create(data: unknown) {
+  async create(_schoolId: string, data: unknown) {
     this.createdData = data
     return (this.studentToReturn || { id: 'student-123' }) as unknown as any
   }
@@ -107,6 +107,7 @@ describe('createStudent', () => {
   it('fails validation when input is invalid', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       familyId: 'invalid-uuid',
       person: { name: '', lastname: '', sex: 'MALE' as const },
       student: { birthday: new Date(), languagesAtHome: [], snackAuthorization: false },
@@ -128,6 +129,7 @@ describe('createStudent', () => {
     // GIVEN
     familyGateway.familyToReturn = null
     const input = {
+      schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174001',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
       student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
@@ -148,6 +150,7 @@ describe('createStudent', () => {
   it('fails when birthday is in the future', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
       student: { birthday: new Date('2050-01-01'), languagesAtHome: [], snackAuthorization: false },
@@ -168,6 +171,7 @@ describe('createStudent', () => {
   it('creates student with valid inputs', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
       student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
@@ -188,6 +192,7 @@ describe('createStudent', () => {
   it('creates person with provided data', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: {
         name: 'Jane',
@@ -218,6 +223,7 @@ describe('createStudent', () => {
   it('creates student with optional fields', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
       student: {
@@ -250,6 +256,7 @@ describe('createStudent', () => {
   it('adds created person to family', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
       student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
@@ -267,6 +274,7 @@ describe('createStudent', () => {
     expect(familyGateway.addPersonCalls).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          schoolId: 'school-1',
           familyId: '123e4567-e89b-12d3-a456-426614174000',
           personId: 'person-123',
         }),

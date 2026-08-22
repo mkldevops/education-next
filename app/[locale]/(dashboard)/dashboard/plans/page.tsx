@@ -1,11 +1,10 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
-import { requireAdmin } from '../../_lib/auth-helper'
+import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreatePlanDialog } from './_components/create-plan-dialog'
 import { EditPlanDialog } from './_components/edit-plan-dialog'
@@ -16,7 +15,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.plans.title', ['ADMIN', 'SUPER_ADMIN'])
+  return restrictedPageMetadata(locale, 'dashboard.pages.plans.title')
 }
 
 export default async function PlansPage({ params }: Props) {
@@ -26,11 +25,10 @@ export default async function PlansPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.plans')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const user = await requireAdmin()
-  if (!user) notFound()
+  const { schoolId } = await requireSchoolAdmin()
 
   const plans = await db.plan.findMany({
-    where: { isActive: true },
+    where: { schoolId, isActive: true },
     include: {
       _count: {
         select: { enrollments: true },

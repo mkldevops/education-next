@@ -16,19 +16,18 @@ import type {
   promoteStudentsSchema,
   reassignClassSchema,
 } from '@/use-cases/enrollments/schemas'
-import { requireAdmin } from './auth-helper'
+import { requireSchoolAdmin } from './auth-helper'
 
-type CreateEnrollmentInput = z.infer<typeof createEnrollmentSchema>
-type ActivateEnrollmentInput = z.infer<typeof enrollmentIdSchema>
-type CompleteEnrollmentInput = z.infer<typeof enrollmentIdSchema>
-type ReassignClassInput = z.infer<typeof reassignClassSchema>
-type ApplyDiscountInput = z.infer<typeof applyDiscountSchema>
-type PromoteStudentsInput = z.infer<typeof promoteStudentsSchema>
+type CreateEnrollmentInput = Omit<z.infer<typeof createEnrollmentSchema>, 'schoolId'>
+type ActivateEnrollmentInput = Omit<z.infer<typeof enrollmentIdSchema>, 'schoolId'>
+type CompleteEnrollmentInput = Omit<z.infer<typeof enrollmentIdSchema>, 'schoolId'>
+type ReassignClassInput = Omit<z.infer<typeof reassignClassSchema>, 'schoolId'>
+type ApplyDiscountInput = Omit<z.infer<typeof applyDiscountSchema>, 'schoolId'>
+type PromoteStudentsInput = Omit<z.infer<typeof promoteStudentsSchema>, 'schoolId'>
 
 export async function createEnrollmentAction(data: CreateEnrollmentInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await createEnrollment(data)
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await createEnrollment({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/enrollments')
   revalidatePath('/dashboard/families', 'layout')
@@ -36,61 +35,54 @@ export async function createEnrollmentAction(data: CreateEnrollmentInput) {
 }
 
 export async function activateEnrollmentAction(data: ActivateEnrollmentInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await activateEnrollment(data)
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await activateEnrollment({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
   return 'OK' as const
 }
 
 export async function completeEnrollmentAction(data: CompleteEnrollmentInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await completeEnrollment(data)
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await completeEnrollment({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
   return 'OK' as const
 }
 
 export async function cancelEnrollmentAction(enrollmentId: string) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await cancelEnrollment({ id: enrollmentId })
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await cancelEnrollment({ schoolId, id: enrollmentId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
   return 'OK' as const
 }
 
 export async function reassignClassAction(data: ReassignClassInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await reassignClass(data)
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await reassignClass({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
   return 'OK' as const
 }
 
 export async function applyDiscountAction(data: ApplyDiscountInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await applyDiscount(data)
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await applyDiscount({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
   return 'OK' as const
 }
 
 export async function promoteStudentsAction(data: PromoteStudentsInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await promoteStudents(data)
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await promoteStudents({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/enrollments')
   return result
 }
 
 export async function previewPromoteStudentsAction(data: PromoteStudentsInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  return previewPromoteStudents(data)
+  const { schoolId } = await requireSchoolAdmin()
+  return previewPromoteStudents({ ...data, schoolId })
 }

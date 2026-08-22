@@ -8,7 +8,7 @@ import { Tabs } from '@/components/ui/tabs/tabs'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
-import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { requireSchoolScope } from '../../../_lib/auth-helper'
 import { notFoundTitle } from '../../../_lib/page-metadata'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
 import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
@@ -28,18 +28,19 @@ type Props = {
 
 const TAB_KEYS = ['overview', 'children', 'payments', 'activity'] as const
 
-const getFamilyName = cache(async (id: string) =>
-  db.family.findUnique({ where: { id }, select: { name: true } }).then((f) => f?.name)
+const getFamilyName = cache(async (id: string, schoolId: string) =>
+  db.family
+    .findUnique({ where: { id_schoolId: { id, schoolId } }, select: { name: true } })
+    .then((f) => f?.name)
 )
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
-  const { role, familyId } = await getSessionWithRole()
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const scope = await requireSchoolScope()
 
-  if (!isAdmin && familyId !== id) return { title: await notFoundTitle(locale) }
+  if (!scope.isAdmin && scope.familyId !== id) return { title: await notFoundTitle(locale) }
 
-  const name = await getFamilyName(id)
+  const name = await getFamilyName(id, scope.schoolId)
   return { title: name || (await notFoundTitle(locale)) }
 }
 
@@ -51,14 +52,14 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   const t = await getTranslations('dashboard.pages.familyDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { role, familyId } = await getSessionWithRole()
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const scope = await requireSchoolScope()
+  const isAdmin = scope.isAdmin
 
-  if (!isAdmin && familyId !== id) notFound()
+  if (!isAdmin && scope.familyId !== id) notFound()
 
   const [family, selectedPeriodId] = await Promise.all([
     db.family.findUnique({
-      where: { id },
+      where: { id_schoolId: { id, schoolId: scope.schoolId } },
       include: {
         persons: {
           where: { person: { isActive: true } },
@@ -125,13 +126,20 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   if (!family) notFound()
 
-  const familyBalance = await getFamilyBalance(family.id)
+  const familyBalance = await getFamilyBalance(scope.schoolId, family.id)
 
   const [plans, classes] = isAdmin
     ? await Promise.all([
-        db.plan.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
+        db.plan.findMany({
+          where: { schoolId: scope.schoolId, isActive: true },
+          orderBy: { name: 'asc' },
+        }),
         db.classPeriod.findMany({
-          where: { isActive: true, ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}) },
+          where: {
+            schoolId: scope.schoolId,
+            isActive: true,
+            ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
+          },
           include: { level: true, period: true },
           orderBy: { name: 'asc' },
         }),

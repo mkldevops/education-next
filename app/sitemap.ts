@@ -4,7 +4,7 @@ import { routing } from '@/i18n/routing'
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-  const publicPages = ['/login', '/register', '/forgot-password']
+  const publicPages = ['/login', '/forgot-password']
 
   const entries: MetadataRoute.Sitemap = []
 

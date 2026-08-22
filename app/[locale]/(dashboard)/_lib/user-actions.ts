@@ -2,67 +2,79 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { canAssignRole } from '@/domain/user'
+import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { userGateway } from '@/gateways/user-gateway'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import type { Role } from '@/types/enums'
-import { changeUserRole } from '@/use-cases/users/change-user-role'
+import type { SchoolRole } from '@/types/enums'
+import { changePlatformLevel } from '@/use-cases/users/change-platform-level'
 import { deleteUser } from '@/use-cases/users/delete-user'
 import { linkUserFamily, unlinkUserFamily } from '@/use-cases/users/link-user-family'
 import { revokeUserSessions } from '@/use-cases/users/revoke-user-sessions'
 import { deactivateUser, reactivateUser } from '@/use-cases/users/set-user-active'
 import { updateUser } from '@/use-cases/users/update-user'
-import { requireAdmin, requireAdminActor, requireSuperAdmin } from './auth-helper'
+import { requirePlatformAdmin, requireSchoolAdmin } from './auth-helper'
 
 const USERS_PATH = '/dashboard/users'
+
+const CreateUserSchema = z.object({
+  name: z.string().min(1),
+  email: z.email(),
+  password: z.string().min(8),
+  role: z.enum(['ADMIN', 'PARENT']),
+})
 
 export async function createUserAction(data: {
   name: string
   email: string
   password: string
-  role: Role
+  role: SchoolRole
 }) {
-  const admin = await requireAdminActor()
-  if (!admin) return 'unauthorized' as const
-  if (!canAssignRole(admin.role, data.role)) return 'unauthorized' as const
+  const { schoolId } = await requireSchoolAdmin()
+
+  const parsed = CreateUserSchema.safeParse(data)
+  if (!parsed.success) return 'validation_error' as const
 
   try {
     const res = await auth.api.signUpEmail({
       body: {
-        name: data.name,
-        email: data.email,
-        password: data.password,
+        name: parsed.data.name,
+        email: parsed.data.email,
+        password: parsed.data.password,
       },
     })
 
     await db.user.update({
       where: { id: res.user.id },
-      data: {
-        role: data.role,
-        emailVerified: true,
-      },
+      data: { emailVerified: true },
     })
+    await schoolMemberGateway.createMembership(res.user.id, schoolId, parsed.data.role)
 
-    revalidatePath('/dashboard')
-    return { id: res.user.id, email: data.email }
+    revalidatePath('/dashboard/users')
+    return { id: res.user.id, email: parsed.data.email }
   } catch {
     return 'error' as const
   }
 }
 
 export async function getUserDetailAction(id: string) {
-  const admin = await requireAdmin()
-  if (!admin) return null
+  await requireSchoolAdmin()
 
   return userGateway.findDetail(id)
 }
 
-export async function changeUserRoleAction(input: unknown) {
-  const actor = await requireSuperAdmin()
-  if (!actor) return 'unauthorized' as const
+/**
+ * Accorde ou retire le niveau plateforme (`User.isSuperAdmin`). Les rôles d'école ne
+ * passent pas par ici : ils vivent sur `SchoolMember` et se changent avec
+ * `changeSchoolMemberRoleAction`.
+ */
+export async function changePlatformLevelAction(input: unknown) {
+  const { userId } = await requirePlatformAdmin()
 
-  const result = await changeUserRole(actor, input as { id: string; role: Role })
+  const result = await changePlatformLevel(
+    { id: userId },
+    input as { id: string; isSuperAdmin: boolean }
+  )
   if (result !== 'OK') return result
 
   revalidatePath(USERS_PATH)
@@ -70,8 +82,7 @@ export async function changeUserRoleAction(input: unknown) {
 }
 
 export async function updateUserAction(input: unknown) {
-  const actor = await requireSuperAdmin()
-  if (!actor) return 'unauthorized' as const
+  await requirePlatformAdmin()
 
   const result = await updateUser(
     input as { id: string; name?: string | null; email?: string; emailVerified?: boolean }
@@ -83,10 +94,9 @@ export async function updateUserAction(input: unknown) {
 }
 
 export async function deactivateUserAction(input: unknown) {
-  const actor = await requireSuperAdmin()
-  if (!actor) return 'unauthorized' as const
+  const { userId } = await requirePlatformAdmin()
 
-  const result = await deactivateUser(actor, input as { id: string })
+  const result = await deactivateUser({ id: userId }, input as { id: string })
   if (result !== 'OK') return result
 
   revalidatePath(USERS_PATH)
@@ -94,10 +104,9 @@ export async function deactivateUserAction(input: unknown) {
 }
 
 export async function reactivateUserAction(input: unknown) {
-  const actor = await requireSuperAdmin()
-  if (!actor) return 'unauthorized' as const
+  const { userId } = await requirePlatformAdmin()
 
-  const result = await reactivateUser(actor, input as { id: string })
+  const result = await reactivateUser({ id: userId }, input as { id: string })
   if (result !== 'OK') return result
 
   revalidatePath(USERS_PATH)
@@ -107,8 +116,7 @@ export async function reactivateUserAction(input: unknown) {
 const deleteUserSchema = z.object({ id: z.cuid(), confirmation: z.string().min(1) })
 
 export async function deleteUserAction(input: unknown) {
-  const actor = await requireSuperAdmin()
-  if (!actor) return 'unauthorized' as const
+  const { userId } = await requirePlatformAdmin()
 
   const parsed = deleteUserSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
@@ -119,7 +127,7 @@ export async function deleteUserAction(input: unknown) {
     return 'confirmationMismatch' as const
   }
 
-  const result = await deleteUser(actor, { id: parsed.data.id })
+  const result = await deleteUser({ id: userId }, { id: parsed.data.id })
   if (result !== 'OK') return result
 
   revalidatePath(USERS_PATH)
@@ -127,8 +135,7 @@ export async function deleteUserAction(input: unknown) {
 }
 
 export async function revokeUserSessionsAction(input: unknown) {
-  const actor = await requireSuperAdmin()
-  if (!actor) return 'unauthorized' as const
+  await requirePlatformAdmin()
 
   const result = await revokeUserSessions(input as { id: string })
   if (typeof result === 'string') return result
@@ -140,8 +147,7 @@ export async function revokeUserSessionsAction(input: unknown) {
 const passwordResetSchema = z.object({ id: z.cuid() })
 
 export async function sendPasswordResetAction(input: unknown) {
-  const actor = await requireSuperAdmin()
-  if (!actor) return 'unauthorized' as const
+  await requirePlatformAdmin()
 
   const parsed = passwordResetSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
@@ -160,11 +166,15 @@ export async function sendPasswordResetAction(input: unknown) {
   }
 }
 
+/**
+ * Rattache une famille à un compte. La famille appartient à l'école active : le
+ * `schoolId` vient du garde, jamais du client, et la clé étrangère composite de
+ * `UserFamily` refuse une famille d'une autre école.
+ */
 export async function linkUserFamilyAction(input: unknown) {
-  const actor = await requireSuperAdmin()
-  if (!actor) return 'unauthorized' as const
+  const { schoolId } = await requireSchoolAdmin()
 
-  const result = await linkUserFamily(input as { id: string; familyId: string })
+  const result = await linkUserFamily(schoolId, input as { id: string; familyId: string })
   if (result !== 'OK') return result
 
   revalidatePath(USERS_PATH)
@@ -172,12 +182,65 @@ export async function linkUserFamilyAction(input: unknown) {
 }
 
 export async function unlinkUserFamilyAction(input: unknown) {
-  const actor = await requireSuperAdmin()
-  if (!actor) return 'unauthorized' as const
+  await requireSchoolAdmin()
 
   const result = await unlinkUserFamily(input as { id: string; familyId: string })
   if (result !== 'OK') return result
 
   revalidatePath(USERS_PATH)
   return 'OK' as const
+}
+
+const MemberIdSchema = z.object({ userId: z.string().min(1) })
+
+/**
+ * Retire une appartenance d'école. Réservé à un administrateur d'école : contrairement
+ * à `deactivateUserAction`, ceci ne touche pas le compte plateforme.
+ *
+ * L'invariant anti-verrouillage — ne jamais retirer le dernier `ADMIN` d'une école —
+ * est appliqué DANS la transaction du gateway. Le vérifier ici, avant l'appel,
+ * laisserait deux retraits concurrents passer tous les deux.
+ */
+export async function removeSchoolMemberAction(userId: string) {
+  const { schoolId } = await requireSchoolAdmin()
+
+  const parsed = MemberIdSchema.safeParse({ userId })
+  if (!parsed.success) return 'validation_error' as const
+
+  try {
+    return await schoolMemberGateway.removeMembership(parsed.data.userId, schoolId)
+  } catch {
+    return 'error' as const
+  } finally {
+    revalidatePath(USERS_PATH)
+  }
+}
+
+const ChangeMemberRoleSchema = z.object({
+  userId: z.string().min(1),
+  role: z.enum(['ADMIN', 'PARENT']),
+})
+
+/**
+ * L'invariant anti-verrouillage vit dans la transaction du gateway, pour la même
+ * raison qu'au-dessus : une rétrogradation concurrente ne doit pas pouvoir vider
+ * l'école de tout administrateur.
+ */
+export async function changeSchoolMemberRoleAction(userId: string, role: SchoolRole) {
+  const { schoolId } = await requireSchoolAdmin()
+
+  const parsed = ChangeMemberRoleSchema.safeParse({ userId, role })
+  if (!parsed.success) return 'validation_error' as const
+
+  try {
+    return await schoolMemberGateway.changeMembershipRole(
+      parsed.data.userId,
+      schoolId,
+      parsed.data.role
+    )
+  } catch {
+    return 'error' as const
+  } finally {
+    revalidatePath(USERS_PATH)
+  }
 }

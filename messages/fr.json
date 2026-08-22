@@ -743,12 +743,10 @@
         "known": {
           "logo": "Logo",
           "favicon": "Favicon",
-          "maxStudentsPerClass": "Élèves maximum par classe",
-          "schoolName": "Nom de l'établissement"
+          "maxStudentsPerClass": "Élèves maximum par classe"
         },
         "descriptions": {
-          "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe.",
-          "schoolName": "Nom affiché de l'établissement dans l'application."
+          "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe."
         },
         "create": {
           "title": "Nouveau paramètre",
@@ -1184,13 +1182,15 @@
           "alreadyLinked": "Cette famille est déjà rattachée",
           "emailAlreadyUsed": "Cette adresse est déjà utilisée",
           "cannotTargetSelf": "Vous ne pouvez pas effectuer cette action sur votre propre compte",
-          "lastSuperAdmin": "Le dernier super administrateur actif ne peut pas être rétrogradé ni archivé",
+          "lastSuperAdmin": "Impossible : ce compte est le dernier super-administrateur actif",
           "alreadyActive": "Cet utilisateur est déjà actif",
           "alreadyInactive": "Cet utilisateur est archivé",
           "stillActive": "Archivez cet utilisateur avant de le supprimer définitivement",
           "hasRelatedRecords": "Cet utilisateur a créé des familles, des invitations ou des paiements : il ne peut pas être supprimé",
           "confirmationMismatch": "L'email de confirmation ne correspond pas",
-          "emailError": "L'e-mail n'a pas pu être envoyé"
+          "emailError": "L'e-mail n'a pas pu être envoyé",
+          "lastAdmin": "Impossible : ce membre est le dernier administrateur de l’école",
+          "selfDeactivation": "Vous ne pouvez pas désactiver votre propre compte"
         },
         "invitations": {
           "title": "Invitations en attente",
@@ -1269,6 +1269,9 @@
           "previous": "Précédent",
           "next": "Suivant"
         }
+        ,
+        "removeMember": "Retirer",
+        "memberRemoved": "Membre retiré de l’école"
       },
       "classDetails": {
         "title": "Détail de la classe",

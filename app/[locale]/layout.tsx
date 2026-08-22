@@ -7,8 +7,8 @@ import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
+import { resolveSessionlessSchoolId } from '@/lib/branding'
 import { db } from '@/lib/db'
-import '@/styles/globals.css'
 
 type Props = {
   children: React.ReactNode
@@ -52,17 +52,27 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   setRequestLocale(locale)
 
+  const schoolId = await resolveSessionlessSchoolId()
+
   const [messages, themeConfigs] = await Promise.all([
     getMessages(),
-    db.config.findMany({
-      where: {
-        name: {
-          in: ['theme_primary', 'theme_primary_hover', 'theme_primary_light', 'theme_background'],
-        },
-        isActive: true,
-      },
-      select: { name: true, value: true },
-    }),
+    schoolId
+      ? db.config.findMany({
+          where: {
+            schoolId,
+            name: {
+              in: [
+                'theme_primary',
+                'theme_primary_hover',
+                'theme_primary_light',
+                'theme_background',
+              ],
+            },
+            isActive: true,
+          },
+          select: { name: true, value: true },
+        })
+      : Promise.resolve([]),
   ])
 
   return (

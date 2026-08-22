@@ -11,6 +11,8 @@ vi.mock('@/gateways/enrollment-gateway', () => ({
 
 const { activateEnrollment } = await import('./activate-enrollment')
 
+const schoolId = '550e8400-e29b-41d4-a716-446655440099'
+
 describe('activateEnrollment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -20,6 +22,7 @@ describe('activateEnrollment', () => {
 
   it('should fail validation with invalid input', async () => {
     const result = await activateEnrollment({
+      schoolId,
       id: 'invalid-uuid',
     })
 
@@ -30,6 +33,7 @@ describe('activateEnrollment', () => {
     enrollmentGatewayMock.findById.mockResolvedValue(null)
 
     const result = await activateEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -43,6 +47,7 @@ describe('activateEnrollment', () => {
     })
 
     const result = await activateEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -56,6 +61,7 @@ describe('activateEnrollment', () => {
     })
 
     const result = await activateEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -69,6 +75,7 @@ describe('activateEnrollment', () => {
     })
 
     const result = await activateEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -82,10 +89,12 @@ describe('activateEnrollment', () => {
     })
 
     await activateEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
     expect(enrollmentGatewayMock.updateStatus).toHaveBeenCalledWith(
+      schoolId,
       '550e8400-e29b-41d4-a716-446655440000',
       'ACTIVE'
     )
@@ -98,6 +107,7 @@ describe('activateEnrollment', () => {
     })
 
     const result = await activateEnrollment({
+      schoolId,
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 

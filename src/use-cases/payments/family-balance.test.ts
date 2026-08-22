@@ -114,17 +114,20 @@ describe('calculateFamilyBalance', () => {
 })
 
 describe('getFamilyBalance', () => {
+  const schoolId = 'school-1'
+
   beforeEach(() => {
     vi.clearAllMocks()
     dbMock.enrollment.findMany.mockResolvedValue([])
   })
 
   it('reads every period of the family without a class assignment filter', async () => {
-    await getFamilyBalance('family-1')
+    await getFamilyBalance(schoolId, 'family-1')
 
     const where = dbMock.enrollment.findMany.mock.calls[0][0].where
 
     expect(where).toEqual({
+      schoolId,
       status: { in: ['PENDING', 'ACTIVE'] },
       student: {
         person: {
@@ -155,7 +158,7 @@ describe('getFamilyBalance', () => {
       },
     ])
 
-    const balance = await getFamilyBalance('family-1')
+    const balance = await getFamilyBalance(schoolId, 'family-1')
 
     expect(balance.totalAmount).toBe(1400)
     expect(balance.totalPaid).toBe(1200)
@@ -181,7 +184,7 @@ describe('getFamilyBalance', () => {
       },
     ])
 
-    const balance = await getFamilyBalance('family-1')
+    const balance = await getFamilyBalance(schoolId, 'family-1')
 
     expect(balance.remainingBalance).toBe(900)
     expect(balance.payableBalance).toBe(100)

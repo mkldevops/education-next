@@ -9,12 +9,14 @@ export async function createPeriod(input: Input, periodGw = periodGateway) {
   const parsed = createPeriodSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const datesCheck = validatePeriodDates(parsed.data.startAt, parsed.data.endAt)
+  const { schoolId, ...data } = parsed.data
+
+  const datesCheck = validatePeriodDates(data.startAt, data.endAt)
   if (datesCheck !== 'OK') return datesCheck
 
-  const hasOverlap = await periodGw.checkOverlap(parsed.data.startAt, parsed.data.endAt)
+  const hasOverlap = await periodGw.checkOverlap(schoolId, data.startAt, data.endAt)
   if (hasOverlap) return 'overlappingPeriod' as const
 
-  const period = await periodGw.create(parsed.data)
+  const period = await periodGw.create(schoolId, data)
   return period
 }

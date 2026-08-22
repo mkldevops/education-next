@@ -11,11 +11,12 @@ type Input = z.infer<typeof recordPaymentSchema>
 export async function recordPayment(input: Input) {
   const parsed = recordPaymentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  const { schoolId } = parsed.data
 
-  const family = await familyGateway.findById(parsed.data.familyId)
+  const family = await familyGateway.findById(schoolId, parsed.data.familyId)
   if (!family) return 'notFound' as const
 
-  const enrollments = await enrollmentGateway.findActiveByFamily(parsed.data.familyId)
+  const enrollments = await enrollmentGateway.findActiveByFamily(schoolId, parsed.data.familyId)
 
   const balances: EnrollmentBalance[] = enrollments.map((e) => {
     const totalPaid = e.payments.reduce((sum, p) => sum + Number(p.amount), 0)
@@ -31,6 +32,7 @@ export async function recordPayment(input: Input) {
   if (distribution.result !== 'OK') return distribution.result
 
   await paymentGateway.createInTransaction(
+    schoolId,
     distribution.distribution.map((item) => ({
       familyId: parsed.data.familyId,
       enrollmentId: item.enrollmentId,

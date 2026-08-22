@@ -9,7 +9,7 @@ export async function updateFamily(input: Input) {
   const parsed = updateFamilySchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const family = await familyGateway.findById(parsed.data.id)
+  const family = await familyGateway.findById(parsed.data.schoolId, parsed.data.id)
   if (!family) return 'notFound' as const
 
   if (parsed.data.name) {
@@ -17,7 +17,7 @@ export async function updateFamily(input: Input) {
     if (nameCheck !== 'OK') return nameCheck
   }
 
-  const updated = await familyGateway.update(parsed.data.id, {
+  const updated = await familyGateway.update(parsed.data.schoolId, parsed.data.id, {
     name: parsed.data.name,
     emergencyContactName: parsed.data.emergencyContactName,
     emergencyContactPhone: parsed.data.emergencyContactPhone,

@@ -16,7 +16,9 @@ vi.mock('./family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
 
 const { createCheckoutSession } = await import('./create-checkout-session')
 
+const schoolId = 'school-1'
 const input = {
+  schoolId,
   familyId: 'family-1',
   initiatedById: 'user-1',
   customerEmail: 'parent@example.com',
@@ -67,7 +69,7 @@ describe('createCheckoutSession', () => {
   it('prices the checkout on the cumulated family balance', async () => {
     await createCheckoutSession(input)
 
-    expect(getFamilyBalanceMock).toHaveBeenCalledWith('family-1')
+    expect(getFamilyBalanceMock).toHaveBeenCalledWith(schoolId, 'family-1')
   })
 
   it('creates a server-priced checkout tied to the local transaction', async () => {
@@ -76,6 +78,12 @@ describe('createCheckoutSession', () => {
     expect(result).toEqual({
       result: 'OK',
       url: 'https://checkout.stripe.test/session',
+    })
+    expect(dbMock.paymentTransaction.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        schoolId,
+        familyId: 'family-1',
+      }),
     })
     expect(sessionsCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -98,7 +106,7 @@ describe('createCheckoutSession', () => {
       { idempotencyKey: 'transaction-1' }
     )
     expect(dbMock.paymentTransaction.update).toHaveBeenCalledWith({
-      where: { id: 'transaction-1' },
+      where: { id_schoolId: { id: 'transaction-1', schoolId } },
       data: { providerSessionId: 'cs_test_1' },
     })
   })
@@ -108,7 +116,7 @@ describe('createCheckoutSession', () => {
 
     expect(await createCheckoutSession(input)).toBe('providerError')
     expect(dbMock.paymentTransaction.update).toHaveBeenCalledWith({
-      where: { id: 'transaction-1' },
+      where: { id_schoolId: { id: 'transaction-1', schoolId } },
       data: { status: 'FAILED' },
     })
   })

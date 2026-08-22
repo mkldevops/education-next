@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -56,10 +57,60 @@ enum ConfigValueType {
   COLOR
 }
 
-enum Role {
-  SUPER_ADMIN
+// Rôle porté par une appartenance à une école. SUPER_ADMIN n'en fait pas partie :
+// c'est un niveau plateforme, matérialisé par User.isSuperAdmin.
+enum SchoolRole {
   ADMIN
   PARENT
+}
+
+// ─── Tenant ─────────────────────────────────────────────────────────────────
+
+model School {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(250)
+  slug      String   @unique @db.VarChar(80)
+  address   String?  @db.VarChar(250)
+  postCode  String?  @db.VarChar(10)
+  city      String?  @db.VarChar(250)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members             SchoolMember[]
+  families            Family[]
+  userFamilies        UserFamily[]
+  persons             Person[]
+  familyPersons       FamilyPerson[]
+  students            Student[]
+  phoneNumbers        PhoneNumber[]
+  configs             Config[]
+  levels              Level[]
+  periods             Period[]
+  classPeriods        ClassPeriod[]
+  enrollments         Enrollment[]
+  classAssignments    ClassAssignment[]
+  payments            Payment[]
+  paymentTransactions PaymentTransaction[]
+  plans               Plan[]
+  invitations         Invitation[]
+}
+
+// Hors garde tenant par construction : le contexte doit lire les appartenances
+// par userId avant de connaître une école. Accès via school-member-gateway.
+model SchoolMember {
+  userId    String
+  schoolId  String
+  role      SchoolRole
+  createdAt DateTime   @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school       School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userFamilies UserFamily[]
+
+  @@id([userId, schoolId])
+  @@unique([userId, schoolId])
+  @@index([schoolId, role])
 }
 
 // ─── Better Auth Models ─────────────────────────────────────────────────────
@@ -70,7 +121,7 @@ model User {
   email         String   @unique
   emailVerified Boolean  @default(false)
   image         String?
-  role          Role     @default(PARENT)
+  isSuperAdmin  Boolean  @default(false)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -82,6 +133,7 @@ model User {
   createdInvitations  Invitation[]
   paymentTransactions PaymentTransaction[] @relation("paymentInitiatedBy")
   passkeys            Passkey[]
+  schoolMemberships   SchoolMember[]
 }
 
 model Session {
@@ -132,6 +184,7 @@ model Verification {
 
 model Family {
   id                    String   @id @default(uuid())
+  schoolId              String
   name                  String   @db.VarChar(50)
   emergencyContactName  String?  @db.VarChar(250)
   emergencyContactPhone String?  @db.VarChar(20)
@@ -141,6 +194,7 @@ model Family {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
+  school              School               @relation(fields: [schoolId], references: [id])
   createdBy           User                 @relation("createdBy", fields: [createdById], references: [id])
   users               UserFamily[]
   persons             FamilyPerson[]
@@ -148,22 +202,29 @@ model Family {
   paymentTransactions PaymentTransaction[]
   invitations         Invitation[]
 
+  @@unique([id, schoolId])
   @@index([createdById])
+  @@index([schoolId])
 }
 
 model UserFamily {
   userId   String
   familyId String
+  schoolId String
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school School       @relation(fields: [schoolId], references: [id])
+  family Family       @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  member SchoolMember @relation(fields: [userId, schoolId], references: [userId, schoolId], onDelete: Cascade)
 
   @@id([userId, familyId])
   @@index([familyId])
+  @@index([schoolId])
 }
 
 model Person {
   id        String   @id @default(uuid())
+  schoolId  String
   name      String   @db.VarChar(250)
   lastname  String   @db.VarChar(250)
   sex       Sex
@@ -175,28 +236,35 @@ model Person {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  school       School         @relation(fields: [schoolId], references: [id])
   phoneNumbers PhoneNumber[]
-  configs      Config[]
   families     FamilyPerson[]
   student      Student?
   invitations  Invitation[]
+
+  @@unique([id, schoolId])
+  @@index([schoolId])
 }
 
 model FamilyPerson {
   familyId     String
   personId     String
+  schoolId     String
   relationType RelationType
 
-  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id])
+  family Family @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  person Person @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Cascade)
 
   @@id([familyId, personId])
   @@index([personId])
+  @@index([schoolId])
 }
 
 model Student {
   id                 String   @id @default(uuid())
-  personId           String   @unique
+  schoolId           String
+  personId           String
   birthday           DateTime
   birthplace         String?  @db.VarChar(250)
   previousSchool     String?  @db.VarChar(250)
@@ -208,12 +276,18 @@ model Student {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  person      Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  school      School       @relation(fields: [schoolId], references: [id])
+  person      Person       @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Cascade)
   enrollments Enrollment[]
+
+  @@unique([id, schoolId])
+  @@unique([personId, schoolId])
+  @@index([schoolId])
 }
 
 model PhoneNumber {
   id          String   @id @default(uuid())
+  schoolId    String
   personId    String
   phoneNumber String   @db.VarChar(20)
   channels    Json     @default("[]")
@@ -221,42 +295,53 @@ model PhoneNumber {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id])
+  person Person @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Cascade)
 
   @@index([personId])
+  @@index([schoolId])
 }
 
 model Config {
   id        String          @id @default(uuid())
+  schoolId  String
   name      String          @db.VarChar(250)
   value     String          @db.Text
   valueType ConfigValueType
-  personId  String?
   isActive  Boolean         @default(true)
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
-  person Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+  school School @relation(fields: [schoolId], references: [id])
 
-  @@index([personId])
+  @@unique([schoolId, name], where: { isActive: true })
   @@index([name])
+  @@index([schoolId])
 }
 
 model Level {
   id          String   @id @default(uuid())
+  schoolId    String
   name        String   @db.VarChar(250)
-  nextLevelId String?  @unique
+  nextLevelId String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  nextLevel     Level?        @relation("levelProgression", fields: [nextLevelId], references: [id], onDelete: SetNull)
+  school        School        @relation(fields: [schoolId], references: [id])
+  nextLevel     Level?        @relation("levelProgression", fields: [nextLevelId, schoolId], references: [id, schoolId], onDelete: Restrict)
   previousLevel Level?        @relation("levelProgression")
   classPeriods  ClassPeriod[]
+
+  @@unique([id, schoolId])
+  @@unique([nextLevelId, schoolId])
+  @@unique([schoolId, name], where: { isActive: true })
+  @@index([schoolId])
 }
 
 model Period {
   id        String   @id @default(uuid())
+  schoolId  String
   name      String   @db.VarChar(50)
   startAt   DateTime
   endAt     DateTime
@@ -264,11 +349,17 @@ model Period {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  school       School        @relation(fields: [schoolId], references: [id])
   classPeriods ClassPeriod[]
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, name], where: { isActive: true })
+  @@index([schoolId])
 }
 
 model ClassPeriod {
   id        String   @id @default(uuid())
+  schoolId  String
   name      String   @db.VarChar(250)
   capacity  Int
   levelId   String
@@ -277,16 +368,20 @@ model ClassPeriod {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  level            Level             @relation(fields: [levelId], references: [id])
-  period           Period            @relation(fields: [periodId], references: [id])
+  school           School            @relation(fields: [schoolId], references: [id])
+  level            Level             @relation(fields: [levelId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  period           Period            @relation(fields: [periodId, schoolId], references: [id, schoolId], onDelete: Restrict)
   classAssignments ClassAssignment[]
 
+  @@unique([id, schoolId])
   @@index([levelId])
   @@index([periodId])
+  @@index([schoolId])
 }
 
 model Enrollment {
   id            String           @id @default(uuid())
+  schoolId      String
   studentId     String
   planId        String
   status        EnrollmentStatus @default(PENDING)
@@ -298,18 +393,22 @@ model Enrollment {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
-  student          Student           @relation(fields: [studentId], references: [id])
-  plan             Plan              @relation(fields: [planId], references: [id])
+  school           School            @relation(fields: [schoolId], references: [id])
+  student          Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  plan             Plan              @relation(fields: [planId, schoolId], references: [id, schoolId], onDelete: Restrict)
   classAssignments ClassAssignment[]
   payments         Payment[]
 
+  @@unique([id, schoolId])
   @@index([studentId])
   @@index([planId])
   @@index([status])
+  @@index([schoolId])
 }
 
 model ClassAssignment {
   id            String    @id @default(uuid())
+  schoolId      String
   enrollmentId  String
   classPeriodId String
   startAt       DateTime  @default(now())
@@ -317,15 +416,18 @@ model ClassAssignment {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  enrollment  Enrollment  @relation(fields: [enrollmentId], references: [id])
-  classPeriod ClassPeriod @relation(fields: [classPeriodId], references: [id])
+  school      School      @relation(fields: [schoolId], references: [id])
+  enrollment  Enrollment  @relation(fields: [enrollmentId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  classPeriod ClassPeriod @relation(fields: [classPeriodId, schoolId], references: [id, schoolId], onDelete: Restrict)
 
   @@index([enrollmentId])
   @@index([classPeriodId])
+  @@index([schoolId])
 }
 
 model Payment {
   id                   String        @id @default(uuid())
+  schoolId             String
   familyId             String
   enrollmentId         String
   paymentTransactionId String?
@@ -338,17 +440,20 @@ model Payment {
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
-  family             Family              @relation(fields: [familyId], references: [id])
-  enrollment         Enrollment          @relation(fields: [enrollmentId], references: [id])
-  paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id])
+  school             School              @relation(fields: [schoolId], references: [id])
+  family             Family              @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  enrollment         Enrollment          @relation(fields: [enrollmentId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId, schoolId], references: [id, schoolId], onDelete: Restrict)
 
   @@index([familyId])
   @@index([enrollmentId])
   @@index([paymentTransactionId])
+  @@index([schoolId])
 }
 
 model PaymentTransaction {
   id                String                   @id @default(uuid())
+  schoolId          String
   familyId          String
   initiatedById     String
   amount            Decimal                  @db.Decimal(10, 2)
@@ -361,16 +466,22 @@ model PaymentTransaction {
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @updatedAt
 
-  family      Family                 @relation(fields: [familyId], references: [id])
+  school      School                 @relation(fields: [schoolId], references: [id])
+  family      Family                 @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
   initiatedBy User                   @relation("paymentInitiatedBy", fields: [initiatedById], references: [id])
   allocations Payment[]
   events      PaymentProviderEvent[]
 
+  @@unique([id, schoolId])
   @@index([familyId])
   @@index([initiatedById])
   @@index([status])
+  @@index([schoolId])
 }
 
+// Non scopé volontairement : paymentTransactionId est nullable, un événement
+// fournisseur orphelin n'a aucune école dérivable. Journal plateforme, écrit
+// uniquement dans le chemin d'exception Stripe.
 model PaymentProviderEvent {
   id                   String   @id @default(uuid())
   providerEventId      String   @unique
@@ -385,36 +496,45 @@ model PaymentProviderEvent {
 
 model Plan {
   id        String   @id @default(uuid())
+  schoolId  String
   name      String   @db.VarChar(50)
   amount    Decimal  @db.Decimal(10, 2)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  school      School       @relation(fields: [schoolId], references: [id])
   enrollments Enrollment[]
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, name], where: { isActive: true })
+  @@index([schoolId])
 }
 
 model Invitation {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
+  schoolId    String
   email       String
-  role        Role      @default(PARENT)
-  token       String    @unique
-  locale      String    @default("fr") @db.VarChar(5)
+  role        SchoolRole @default(PARENT)
+  token       String     @unique
+  locale      String     @default("fr") @db.VarChar(5)
   expiresAt   DateTime
   usedAt      DateTime?
   createdById String
   familyId    String?
   personId    String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime   @default(now())
 
+  school    School  @relation(fields: [schoolId], references: [id])
   createdBy User    @relation(fields: [createdById], references: [id])
-  family    Family? @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  person    Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+  family    Family? @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  person    Person? @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Restrict)
 
   @@index([email])
   @@index([token])
   @@index([familyId])
   @@index([personId])
+  @@index([schoolId])
 }
 
 model Passkey {

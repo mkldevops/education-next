@@ -22,6 +22,7 @@ describe('deactivateFamily', () => {
 
   it('should fail validation with invalid input', async () => {
     const result = await deactivateFamily({
+      schoolId: 'school-1',
       id: 'invalid-uuid',
     })
 
@@ -32,6 +33,7 @@ describe('deactivateFamily', () => {
     familyGatewayMock.findById.mockResolvedValue(null)
 
     const result = await deactivateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -46,6 +48,7 @@ describe('deactivateFamily', () => {
     familyGatewayMock.hasActiveEnrollments.mockResolvedValue(true)
 
     const result = await deactivateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -60,6 +63,7 @@ describe('deactivateFamily', () => {
     })
 
     const result = await deactivateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
@@ -73,10 +77,12 @@ describe('deactivateFamily', () => {
     })
 
     await deactivateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
     })
 
     expect(familyGatewayMock.deactivate).toHaveBeenCalledWith(
+      'school-1',
       '550e8400-e29b-41d4-a716-446655440000'
     )
   })
