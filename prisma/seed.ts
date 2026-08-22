@@ -61,6 +61,13 @@ type SchoolFixture = {
   childFirstName: string
   createdById: string
   fullTimeAmount: number
+  /**
+   * Thème et capacité **distincts** d'une école à l'autre : sans valeurs
+   * différentes, l'isolation du branding et du thème serait invérifiable — deux
+   * écoles identiques rendent le même écran, qu'elles soient scopées ou non.
+   */
+  themePrimary: string
+  maxStudentsPerClass: number
 }
 
 /** Référentiel et dossiers d'une école. Chaque écriture porte son `schoolId`. */
@@ -200,10 +207,18 @@ async function seedSchoolContent(fixture: SchoolFixture) {
   })
 
   // `school_name` a disparu : le nom de l'école vit sur `School.name`.
+  // Le thème et la capacité diffèrent d'une école à l'autre, sinon les deux
+  // rendraient le même écran et l'isolation ne serait pas observable.
   await prisma.config.createMany({
     data: [
       { schoolId, name: 'automatic_promotion', value: 'false', valueType: 'BOOLEAN' },
-      { schoolId, name: 'max_students_per_class', value: '25', valueType: 'NUMBER' },
+      {
+        schoolId,
+        name: 'max_students_per_class',
+        value: String(fixture.maxStudentsPerClass),
+        valueType: 'NUMBER',
+      },
+      { schoolId, name: 'theme_primary', value: fixture.themePrimary, valueType: 'COLOR' },
       { schoolId, name: 'logo_url', value: '', valueType: 'TEXT' },
       { schoolId, name: 'favicon_url', value: '', valueType: 'TEXT' },
     ],
@@ -246,6 +261,8 @@ async function seed() {
     childFirstName: 'Lucas',
     createdById: adminId,
     fullTimeAmount: 1200,
+    themePrimary: '#3c6e71',
+    maxStudentsPerClass: 25,
   })
 
   const horizonContent = await seedSchoolContent({
@@ -256,6 +273,8 @@ async function seed() {
     childFirstName: 'Léo',
     createdById: adminId,
     fullTimeAmount: 980,
+    themePrimary: '#8c3b6e',
+    maxStudentsPerClass: 18,
   })
 
   // Parent d'une seule école : ne doit jamais voir l'autre.

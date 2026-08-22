@@ -7,7 +7,7 @@ import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
-import { resolveSessionlessSchoolId } from '@/lib/branding'
+import { resolveBrandingSchoolId } from '@/lib/branding'
 import { db } from '@/lib/db'
 
 type Props = {
@@ -52,7 +52,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   setRequestLocale(locale)
 
-  const schoolId = await resolveSessionlessSchoolId()
+  const schoolId = await resolveBrandingSchoolId()
 
   const [messages, themeConfigs] = await Promise.all([
     getMessages(),

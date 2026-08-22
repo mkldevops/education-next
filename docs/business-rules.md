@@ -149,17 +149,28 @@ Owner: `src/domain/period.ts`, `src/use-cases/periods/`.
   at least one class; else the most recent period; else none. Sorted by `startAt` descending.
 - **A period holding classes cannot be archived** → `periodInUse`. Archiving is a soft delete
   (`isActive: false`).
+- **Overlap is checked within one school.** `checkOverlap` is a pure function; the rows it compares
+  come from `periodGateway.checkOverlap(schoolId, …)`, so two schools may hold the same school year.
+- **The selected period is validated for existence *and* membership.** `selected_period` is a cookie
+  and survives a school switch, so `getSelectedPeriod(schoolId)` constrains both queries by
+  `schoolId` (`src/features/dashboard/period.ts`). A cookie naming another school's period is
+  treated as absent and the default selection applies — otherwise a period of school A would filter
+  school B's data. `schoolId` is a required parameter, not derived inside, so the type-checker
+  enumerates every caller.
 
 ## Levels
 
 Owner: `src/domain/level.ts`, `src/use-cases/levels/`.
 
-- `nextLevelId` chains levels into a progression. It is a **unique** column: two levels cannot share
-  the same successor.
+- `nextLevelId` chains levels into a progression. Its unique constraint is the composite
+  `(nextLevelId, schoolId)`: two levels of one school cannot share a successor, and the chain cannot
+  cross a school boundary.
 - **No cycles.** Walking the chain from the candidate successor must never return to the level being
   edited, and a level cannot point at itself → `circularReference`. The walk also stops on a
   repeated node, so a pre-existing cycle elsewhere cannot hang the check.
 - **A level holding classes cannot be archived** → `levelInUse`.
+- **The cycle walk only sees one school's levels.** `checkCircularReference` is pure; its map is
+  built from `levelGateway.list(schoolId)` in `src/use-cases/levels/set-next-level.ts`.
 
 ## Classes
 
@@ -306,8 +317,15 @@ one school**.
   → `invalidConfigValue`. `TEXT` and `COLOR` accept anything.
 - `@@unique([schoolId, name])` is a **partial** index, restricted to `isActive: true`. An archived
   entry therefore never reserves its name, and `configGateway.get` is deterministic.
+- **A partial unique cannot be used as a write selector.** Prisma emits the `schoolId_name` selector
+  without the index predicate, so an archived homonym makes two rows match and the query fails with
+  *Expected zero or one element, got 2* — verified against PostgreSQL 18. `configGateway.set`
+  resolves the active row with `findFirst`, then updates it by **primary key**, keeping `schoolId` in
+  the filter for the tenant guard. The other partial uniques (`Level`, `Period`, `Plan`) are never
+  written through: those gateways address rows by `id_schoolId`, which is a total unique.
 - Consumed today: `max_students_per_class` (default class capacity), `logo_url` and `favicon_url`
-  (`src/lib/branding-config.ts`).
+  (`src/lib/branding-config.ts`), and `theme_primary`, `theme_primary_hover`, `theme_primary_light`,
+  `theme_background` (`src/components/theme-provider.tsx`).
 - **The school name is no longer a `Config` entry.** It lives on `School.name`, the single source of
   truth; keeping the old `school_name` key would have let two screens edit two different names. The
   migration copies it over and deletes the key.
@@ -334,6 +352,19 @@ store. Both end up as a plain string in `Config`, so an external URL keeps worki
 - **Objects are served through the application**, at `GET /api/media/branding/…`, not from a public
   bucket. The route accepts only a `branding/<school>/<object>` shape and refuses any key containing
   `..`, so the bucket needs no public policy and no CORS.
+
+### Which school's branding is rendered
+
+`resolveBrandingSchoolId()` (`src/lib/branding.ts`) is the single answer, and **the session context
+wins over the cookie**. The two disagree whenever the cookie is stale, names a deactivated school, or
+its membership was revoked: `getSchoolContext()` then falls back to the first membership, so a
+cookie-only resolution would paint school A's dashboard with the default theme. The theme follows the
+school actually on screen.
+
+The cookie remains the fallback, for surfaces that may be requested without a session — `app/icon.tsx`
+and `app/manifest.ts`. With neither signal, the platform default applies. The theme itself is read in
+`app/[locale]/layout.tsx`, **above** the dashboard, which is why a cookie is needed at all: a column
+on `Session` would be unreadable there.
 
 ## Invitations
 

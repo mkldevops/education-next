@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { getBrandingConfig, resolveSessionlessSchoolId } from '@/lib/branding'
+import { getBrandingConfig, resolveBrandingSchoolId } from '@/lib/branding'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +16,7 @@ function getIconType(src: string) {
 }
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  const schoolId = await resolveSessionlessSchoolId()
+  const schoolId = await resolveBrandingSchoolId()
   const { faviconUrl } = schoolId ? await getBrandingConfig(schoolId) : { faviconUrl: undefined }
   const faviconType = faviconUrl ? getIconType(faviconUrl) : undefined
   const configuredFavicon: NonNullable<MetadataRoute.Manifest['icons']> = faviconUrl

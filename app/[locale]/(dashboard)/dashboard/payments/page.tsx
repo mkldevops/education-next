@@ -34,7 +34,7 @@ export default async function PaymentsPage({ params }: Props) {
     redirect({ href: `/dashboard/families/${scope.familyId}`, locale })
   }
 
-  const selectedPeriod = await getSelectedPeriod()
+  const selectedPeriod = await getSelectedPeriod(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
   const whereClause = {

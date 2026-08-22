@@ -28,7 +28,7 @@ export default async function ClassesPage({ params }: Props) {
 
   const { schoolId } = await requireSchoolAdmin()
 
-  const selectedPeriod = await getSelectedPeriod()
+  const selectedPeriod = await getSelectedPeriod(schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
   const [levels, periods, maxStudentsConfig] = await Promise.all([

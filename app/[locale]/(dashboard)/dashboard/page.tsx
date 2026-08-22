@@ -47,7 +47,7 @@ export default async function DashboardPage({ params }: Props) {
 
   const isAdmin = scope.isAdmin
 
-  const selectedPeriod = await getSelectedPeriod()
+  const selectedPeriod = await getSelectedPeriod(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
   const periodFilter = selectedPeriodId
     ? { classAssignments: { some: { classPeriod: { periodId: selectedPeriodId } } } }

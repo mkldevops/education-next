@@ -27,10 +27,10 @@ export default async function EnrollmentsPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const selectedPeriod = await getSelectedPeriod()
-  const selectedPeriodId = selectedPeriod?.id ?? null
-
   const scope = await requireSchoolScope()
+
+  const selectedPeriod = await getSelectedPeriod(scope.schoolId)
+  const selectedPeriodId = selectedPeriod?.id ?? null
 
   const isAdmin = scope.isAdmin
 

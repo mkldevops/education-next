@@ -121,7 +121,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         },
       },
     }),
-    getSelectedPeriodId(),
+    getSelectedPeriodId(scope.schoolId),
   ])
 
   if (!family) notFound()
