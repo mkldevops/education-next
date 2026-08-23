@@ -104,6 +104,19 @@ unrepresentable in the database as well as in the types.
   family link and unlink (`app/[locale]/(dashboard)/_lib/user-actions.ts`, `requirePlatformAdmin()`).
   A school `ADMIN` manages memberships and invitations for its own school; the page hides the
   controls it cannot use, and the actions refuse them regardless of what the UI shows.
+- **The user drawer is scoped to the active school.** `userGateway.findDetail(id, schoolId)` filters
+  the nested families, invitations and activity counters. Without that filter a school `ADMIN`
+  reading a parent shared with another school saw that school's family and children by name — the
+  tenant guard cannot catch it, because it only inspects the root of a query. `Session`, `Account`
+  and `Passkey` stay global: they belong to no school.
+- **Creating a school user does not need a role-escalation check.** The removed `canAssignRole`
+  existed to stop a school `ADMIN` from minting a *global* `ADMIN`. With the role carried by
+  `SchoolMember`, an admin naming another admin only ever affects its own school, and the
+  anti-lockout invariant covers the rest.
+- **`User.id` comes from Better Auth, not from Prisma.** The `@default(cuid())` in the schema never
+  fires, and real ids are 32 alphanumeric characters that `z.cuid()` rejects — every account
+  mutation answered `validationError`. User ids validate as `z.string().min(1)`, the convention
+  already used for `Invitation.id`. Business models keep `z.uuid()`: Prisma does generate those.
 - A resource outside a parent's family answers `notFound()`, never `forbidden()` — the existence of
   another family's student is not disclosed. The same holds across schools.
 - **There is no public sign-up.** `/register` was removed: a self-created account would hold no
@@ -406,9 +419,18 @@ Two consequences worth knowing:
 2. A caller cannot ask for archived rows through those methods — the extension overrides a
    caller-supplied `isActive: false`. Reading archived data needs a deliberate, reviewed path.
 
-`src/lib/db.ts` exposes that path as **`dbArchived`**, the same connection without the filter. Its
-only consumer is `src/gateways/user-gateway.ts`, which powers super-admin user management: the list
-can show archived accounts, and `reactivateUser` can restore one.
+`src/lib/db.ts` exposes that path as **`dbArchived`**: the same connection without the soft-delete
+filter, but **still carrying the tenant guard**. Dropping both at once would have made a whole
+administration surface invisible to the guard. Its only consumer is `src/gateways/user-gateway.ts`,
+which powers super-admin user management: the list can show archived accounts, and `reactivateUser`
+can restore one.
+
+Counting what blocks a permanent account deletion is a separate case and does **not** go through
+`dbArchived`. The question — has this account created anything, anywhere on the platform? — has no
+school, and it must see archived rows: an archived family still constrains the foreign key, so
+ignoring it would report "deletable" and then fail on the constraint. It is therefore a named
+exception, `countRowsBlockingUserDeletion` in `src/lib/db-unscoped.ts`, on a connection with neither
+the guard nor the filter.
 
 ## Known gaps
 
@@ -418,6 +440,11 @@ Real holes, verified against the running application. Not aspirations.
   keyboard, since a disabled button takes no focus, and unannounced by screen readers.
 - **Manual payment cannot target a specific enrollment.** Distribution is always proportional across
   every active enrollment of the family.
+- **`RichDataTable` ignores changes to its `data` prop** (issue #217). Its internal state — search,
+  sort, column visibility — works; a new array from the parent does not re-render the rows.
+  `/dashboard/users` works around it with a `key` that remounts the table when a filter changes, at
+  the cost of losing the search and sort on each change. The four other tables pass a constant list,
+  so they are exposed only once a parent-driven filter is added to them.
 
 ## Surfacing a rule in the UI
 

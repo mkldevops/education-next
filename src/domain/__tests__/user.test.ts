@@ -1,70 +1,56 @@
 import { describe, expect, it } from 'vitest'
 import {
   type Actor,
-  canAssignRole,
   checkDeactivation,
   checkDeletion,
+  checkPlatformLevelChange,
   checkReactivation,
-  checkRoleChange,
   isLastActiveSuperAdmin,
   type ManagedUser,
 } from '../user'
 
-const superAdmin: Actor = { id: 'actor-1', role: 'SUPER_ADMIN' }
+const superAdmin: Actor = { id: 'actor-1' }
 
 function target(overrides: Partial<ManagedUser> = {}): ManagedUser {
-  return { id: 'target-1', role: 'PARENT', isActive: true, ...overrides }
+  return { id: 'target-1', isSuperAdmin: false, isActive: true, ...overrides }
 }
 
 describe('user domain', () => {
-  describe('canAssignRole', () => {
-    it('lets a super admin assign any role', () => {
-      expect(canAssignRole('SUPER_ADMIN', 'SUPER_ADMIN')).toBe(true)
-      expect(canAssignRole('SUPER_ADMIN', 'PARENT')).toBe(true)
-    })
-
-    it('never lets an admin create a super admin', () => {
-      expect(canAssignRole('ADMIN', 'SUPER_ADMIN')).toBe(false)
-      expect(canAssignRole('ADMIN', 'ADMIN')).toBe(false)
-      expect(canAssignRole('ADMIN', 'PARENT')).toBe(true)
-    })
-  })
-
   describe('isLastActiveSuperAdmin', () => {
     it('is true for the only active super admin', () => {
-      expect(isLastActiveSuperAdmin(target({ role: 'SUPER_ADMIN' }), 1)).toBe(true)
+      expect(isLastActiveSuperAdmin(target({ isSuperAdmin: true }), 1)).toBe(true)
     })
 
     it('is false when another active super admin remains', () => {
-      expect(isLastActiveSuperAdmin(target({ role: 'SUPER_ADMIN' }), 2)).toBe(false)
+      expect(isLastActiveSuperAdmin(target({ isSuperAdmin: true }), 2)).toBe(false)
     })
 
     it('is false for an inactive super admin', () => {
-      expect(isLastActiveSuperAdmin(target({ role: 'SUPER_ADMIN', isActive: false }), 1)).toBe(
-        false
-      )
+      expect(isLastActiveSuperAdmin(target({ isSuperAdmin: true, isActive: false }), 1)).toBe(false)
     })
   })
 
-  describe('checkRoleChange', () => {
+  describe('checkPlatformLevelChange', () => {
     it('rejects acting on yourself', () => {
-      expect(checkRoleChange(superAdmin, target({ id: superAdmin.id }), 'PARENT', 3)).toBe(
+      expect(checkPlatformLevelChange(superAdmin, target({ id: superAdmin.id }), false, 3)).toBe(
         'cannotTargetSelf'
       )
     })
 
-    it('rejects demoting the last super admin', () => {
-      expect(checkRoleChange(superAdmin, target({ role: 'SUPER_ADMIN' }), 'ADMIN', 1)).toBe(
+    it('rejects removing the platform level from the last super admin', () => {
+      expect(checkPlatformLevelChange(superAdmin, target({ isSuperAdmin: true }), false, 1)).toBe(
         'lastSuperAdmin'
       )
     })
 
-    it('allows demoting a super admin when another one remains', () => {
-      expect(checkRoleChange(superAdmin, target({ role: 'SUPER_ADMIN' }), 'ADMIN', 2)).toBe('OK')
+    it('allows removing the platform level when another super admin remains', () => {
+      expect(checkPlatformLevelChange(superAdmin, target({ isSuperAdmin: true }), false, 2)).toBe(
+        'OK'
+      )
     })
 
-    it('allows promoting a parent', () => {
-      expect(checkRoleChange(superAdmin, target(), 'ADMIN', 1)).toBe('OK')
+    it('allows granting the platform level', () => {
+      expect(checkPlatformLevelChange(superAdmin, target(), true, 1)).toBe('OK')
     })
   })
 
@@ -80,7 +66,7 @@ describe('user domain', () => {
     })
 
     it('rejects archiving the last super admin', () => {
-      expect(checkDeactivation(superAdmin, target({ role: 'SUPER_ADMIN' }), 1)).toBe(
+      expect(checkDeactivation(superAdmin, target({ isSuperAdmin: true }), 1)).toBe(
         'lastSuperAdmin'
       )
     })

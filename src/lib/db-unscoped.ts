@@ -8,15 +8,18 @@
  *     porte l'autorisation, et l'école est LUE depuis l'invitation ;
  *  2. le webhook Stripe — authentifié par signature, retrouve sa transaction par
  *     `providerSessionId` unique ;
- *  3. le seed et la migration legacy — ils créent les écoles elles-mêmes.
+ *  3. le décompte des références d'un compte avant sa suppression définitive — la
+ *     question est plateforme, donc sans école, et doit voir les lignes archivées ;
+ *  4. le seed et la migration legacy — ils créent les écoles elles-mêmes.
  *
  * Aucun autre appelant ne doit importer ce module.
  */
 import type { Invitation, PaymentTransaction, PrismaClient } from '@/generated/prisma/client'
-import { createUnguardedClient } from '@/lib/db'
+import { createUnguardedArchivedClient, createUnguardedClient } from '@/lib/db'
 
 const globalForUnscoped = globalThis as unknown as {
   prismaUnscoped: PrismaClient | undefined
+  prismaUnscopedArchived: PrismaClient | undefined
 }
 
 function client(): PrismaClient {
@@ -24,6 +27,13 @@ function client(): PrismaClient {
     globalForUnscoped.prismaUnscoped = createUnguardedClient()
   }
   return globalForUnscoped.prismaUnscoped
+}
+
+function archivedClient(): PrismaClient {
+  if (!globalForUnscoped.prismaUnscopedArchived) {
+    globalForUnscoped.prismaUnscopedArchived = createUnguardedArchivedClient()
+  }
+  return globalForUnscoped.prismaUnscopedArchived
 }
 
 /**
@@ -42,7 +52,25 @@ export async function findPaymentTransactionByProviderSessionId(
 }
 
 /**
- * Exception 3 — seed et scripts de données uniquement. Ces programmes créent les
+ * Exception 3 — un compte plateforme n'appartient à aucune école : demander s'il a
+ * créé quoi que ce soit est une question globale, et un `schoolId` la rendrait fausse.
+ *
+ * Le décompte ignore délibérément le soft-delete : une famille archivée contraint
+ * toujours la clé étrangère, donc la compter est la seule façon de prédire si la
+ * suppression passera.
+ */
+export async function countRowsBlockingUserDeletion(userId: string): Promise<number> {
+  const db = archivedClient()
+  const [createdFamilies, createdInvitations, paymentTransactions] = await Promise.all([
+    db.family.count({ where: { createdById: userId } }),
+    db.invitation.count({ where: { createdById: userId } }),
+    db.paymentTransaction.count({ where: { initiatedById: userId } }),
+  ])
+  return createdFamilies + createdInvitations + paymentTransactions
+}
+
+/**
+ * Exception 4 — seed et scripts de données uniquement. Ces programmes créent les
  * écoles et purgent des tables entières, deux opérations qu'aucun scope ne peut
  * décrire. Ne jamais importer depuis `app/**` ni `src/**`.
  */

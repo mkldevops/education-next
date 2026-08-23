@@ -1,5 +1,4 @@
 import { db, dbArchived } from '@/lib/db'
-import type { Role } from '@/types/enums'
 
 const listSelect = {
   id: true,
@@ -7,7 +6,7 @@ const listSelect = {
   email: true,
   emailVerified: true,
   image: true,
-  role: true,
+  isSuperAdmin: true,
   isActive: true,
   createdAt: true,
   updatedAt: true,
@@ -23,7 +22,7 @@ export const userGateway = {
   findManaged: (id: string) =>
     dbArchived.user.findUnique({
       where: { id },
-      select: { id: true, role: true, isActive: true, email: true },
+      select: { id: true, isSuperAdmin: true, isActive: true, email: true },
     }),
 
   findByEmail: (email: string) =>
@@ -33,26 +32,18 @@ export const userGateway = {
     }),
 
   countActiveSuperAdmins: () =>
-    dbArchived.user.count({ where: { role: 'SUPER_ADMIN', isActive: true } }),
+    dbArchived.user.count({ where: { isSuperAdmin: true, isActive: true } }),
 
-  listAll: () =>
-    dbArchived.user.findMany({
-      select: {
-        ...listSelect,
-        families: {
-          select: { family: { select: { id: true, name: true, isActive: true } } },
-        },
-        sessions: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: { createdAt: true },
-        },
-        _count: { select: { sessions: true, passkeys: true, accounts: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    }),
-
-  findDetail: (id: string) =>
+  /**
+   * `schoolId` est requis, et il n'est pas décoratif : sans lui, tout administrateur
+   * d'école lisait par les relations imbriquées les familles, les enfants et les
+   * invitations des **autres** écoles d'un compte partagé. La garde tenant ne peut pas
+   * l'attraper — elle n'inspecte que la racine des requêtes.
+   *
+   * `accounts`, `sessions` et `passkeys` restent globaux : ce sont des modèles
+   * plateforme, ils n'appartiennent à aucune école.
+   */
+  findDetail: (id: string, schoolId: string) =>
     dbArchived.user.findUnique({
       where: { id },
       select: {
@@ -83,6 +74,7 @@ export const userGateway = {
           orderBy: { createdAt: 'desc' },
         },
         families: {
+          where: { schoolId },
           select: {
             family: {
               select: {
@@ -113,6 +105,7 @@ export const userGateway = {
           },
         },
         createdInvitations: {
+          where: { schoolId },
           select: { id: true, email: true, role: true, createdAt: true, usedAt: true },
           orderBy: { createdAt: 'desc' },
           take: 10,
@@ -122,28 +115,19 @@ export const userGateway = {
             sessions: true,
             passkeys: true,
             accounts: true,
-            createdFamilies: true,
-            createdInvitations: true,
-            paymentTransactions: true,
+            createdFamilies: { where: { schoolId } },
+            createdInvitations: { where: { schoolId } },
+            paymentTransactions: { where: { schoolId } },
           },
         },
       },
     }),
 
-  countBlockingRelations: async (id: string) => {
-    const [createdFamilies, createdInvitations, paymentTransactions] = await Promise.all([
-      dbArchived.family.count({ where: { createdById: id } }),
-      dbArchived.invitation.count({ where: { createdById: id } }),
-      dbArchived.paymentTransaction.count({ where: { initiatedById: id } }),
-    ])
-    return createdFamilies + createdInvitations + paymentTransactions
-  },
-
   update: (id: string, data: { name?: string | null; email?: string; emailVerified?: boolean }) =>
     dbArchived.user.update({ where: { id }, data, select: listSelect }),
 
-  changeRole: (id: string, role: Role) =>
-    dbArchived.user.update({ where: { id }, data: { role }, select: listSelect }),
+  setPlatformLevel: (id: string, isSuperAdmin: boolean) =>
+    dbArchived.user.update({ where: { id }, data: { isSuperAdmin }, select: listSelect }),
 
   setActive: (id: string, isActive: boolean) =>
     dbArchived.$transaction(async (tx) => {
@@ -162,15 +146,17 @@ export const userGateway = {
 
   delete: (id: string) => dbArchived.user.delete({ where: { id } }),
 
-  linkFamily: (userId: string, familyId: string) =>
-    dbArchived.userFamily.create({ data: { userId, familyId } }),
+  linkFamily: (userId: string, familyId: string, schoolId: string) =>
+    dbArchived.userFamily.create({ data: { userId, familyId, schoolId } }),
 
-  unlinkFamily: (userId: string, familyId: string) =>
-    dbArchived.userFamily.delete({ where: { userId_familyId: { userId, familyId } } }),
+  unlinkFamily: (userId: string, familyId: string, schoolId: string) =>
+    dbArchived.userFamily.deleteMany({
+      where: { userId, familyId, schoolId },
+    }),
 
-  hasFamilyLink: (userId: string, familyId: string) =>
-    dbArchived.userFamily.findUnique({
-      where: { userId_familyId: { userId, familyId } },
+  hasFamilyLink: (userId: string, familyId: string, schoolId: string) =>
+    dbArchived.userFamily.findFirst({
+      where: { userId, familyId, schoolId },
       select: { userId: true },
     }),
 }

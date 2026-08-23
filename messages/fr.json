@@ -1115,6 +1115,7 @@
         "name": "Nom",
         "email": "Email",
         "role": "Rôle",
+        "superAdmin": "Super-administrateur plateforme",
         "family": "Famille",
         "lastLogin": "Dernière connexion",
         "status": "Statut",
@@ -1244,10 +1245,12 @@
         "paymentTransactions": "Paiements initiés",
         "filterRole": "Filtrer par rôle",
         "filterStatus": "Filtrer par statut",
-        "roleAll": "Tous les rôles",
+        "schoolRoleAll": "Tous les rôles de l'école",
         "statusAll": "Tous les statuts",
-        "cannotChangeOwnRole": "Vous ne pouvez pas modifier votre propre rôle.",
+        "cannotChangeOwnPlatformLevel": "Vous ne pouvez pas modifier votre propre niveau plateforme.",
         "userUpdated": "Utilisateur mis à jour",
+        "memberRoleUpdated": "Rôle du membre mis à jour",
+        "platformLevelUpdated": "Niveau plateforme mis à jour",
         "userReactivated": "Utilisateur réactivé",
         "userDeleted": "Utilisateur supprimé",
         "sessionsRevoked": "Sessions révoquées",
@@ -1258,7 +1261,9 @@
           "identity": "Identité",
           "families": "Famille et enfants",
           "security": "Sessions et sécurité",
-          "activity": "Activité"
+          "activity": "Activité",
+          "schoolActions": "Actions de l'école",
+          "platformActions": "Actions plateforme"
         },
         "table": {
           "search": "Rechercher...",
@@ -1268,9 +1273,9 @@
           "page": "Page {current} sur {total}",
           "previous": "Précédent",
           "next": "Suivant"
-        }
-        ,
+        },
         "removeMember": "Retirer",
+        "removeMemberWarning": "Ce membre perdra l'accès aux données de cette école. Son compte plateforme ne sera pas supprimé.",
         "memberRemoved": "Membre retiré de l’école"
       },
       "classDetails": {

@@ -82,6 +82,16 @@ export function createUnguardedClient(): PrismaClient {
 }
 
 /**
+ * Ni garde tenant, ni soft-delete. Réservé aux exceptions nommées de
+ * `src/lib/db-unscoped.ts` qui doivent voir les lignes archivées : compter les
+ * références avant une suppression définitive en fait partie — une famille archivée
+ * contraint toujours la clé étrangère.
+ */
+export function createUnguardedArchivedClient(): PrismaClient {
+  return createRawClient()
+}
+
+/**
  * Garde tenant. Appliqué par-dessus le soft-delete quand il y en a un : il observe
  * donc les arguments tels que l'application les a écrits. Portée exacte dans
  * `src/lib/tenant-guard.ts` — racine des requêtes uniquement, les écritures
@@ -110,7 +120,9 @@ const globalForPrisma = globalThis as unknown as {
 
 function getClient(): PrismaClient {
   if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = asPrismaClient(withTenantGuard(withSoftDelete(createRawClient())))
+    globalForPrisma.prisma = asPrismaClient(
+      withTenantGuard(asPrismaClient(withSoftDelete(createRawClient())))
+    )
   }
   return globalForPrisma.prisma
 }

@@ -42,7 +42,17 @@ export const schoolMemberGateway = {
         role: true,
         createdAt: true,
         user: {
-          select: { id: true, name: true, email: true, isActive: true, isSuperAdmin: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            emailVerified: true,
+            image: true,
+            isSuperAdmin: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
+          },
         },
       },
       orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],

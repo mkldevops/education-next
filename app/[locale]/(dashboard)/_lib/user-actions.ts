@@ -58,9 +58,9 @@ export async function createUserAction(data: {
 }
 
 export async function getUserDetailAction(id: string) {
-  await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolAdmin()
 
-  return userGateway.findDetail(id)
+  return userGateway.findDetail(id, schoolId)
 }
 
 /**
@@ -113,7 +113,8 @@ export async function reactivateUserAction(input: unknown) {
   return 'OK' as const
 }
 
-const deleteUserSchema = z.object({ id: z.cuid(), confirmation: z.string().min(1) })
+// `id` vient de Better Auth : voir la note de `src/use-cases/users/schemas.ts`.
+const deleteUserSchema = z.object({ id: z.string().min(1), confirmation: z.string().min(1) })
 
 export async function deleteUserAction(input: unknown) {
   const { userId } = await requirePlatformAdmin()
@@ -144,7 +145,7 @@ export async function revokeUserSessionsAction(input: unknown) {
   return 'OK' as const
 }
 
-const passwordResetSchema = z.object({ id: z.cuid() })
+const passwordResetSchema = z.object({ id: z.string().min(1) })
 
 export async function sendPasswordResetAction(input: unknown) {
   await requirePlatformAdmin()
@@ -182,9 +183,9 @@ export async function linkUserFamilyAction(input: unknown) {
 }
 
 export async function unlinkUserFamilyAction(input: unknown) {
-  await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolAdmin()
 
-  const result = await unlinkUserFamily(input as { id: string; familyId: string })
+  const result = await unlinkUserFamily(schoolId, input as { id: string; familyId: string })
   if (result !== 'OK') return result
 
   revalidatePath(USERS_PATH)

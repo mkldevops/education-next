@@ -17,18 +17,14 @@ import { useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
-import type { Role } from '@/types/enums'
-import { changeUserRoleAction, updateUserAction } from '../../../_lib/user-actions'
-import type { UserRow } from './users-table'
-
-const ROLES: Role[] = ['SUPER_ADMIN', 'ADMIN', 'PARENT']
+import { updateUserAction } from '../../../_lib/user-actions'
+import type { MemberRow } from './users-table'
 
 interface Props {
-  user: UserRow
-  isSelf: boolean
+  user: MemberRow['user']
 }
 
-export function EditUserDialog({ user, isSelf }: Props) {
+export function EditUserDialog({ user }: Props) {
   const t = useTranslations('dashboard.pages.users')
 
   return (
@@ -42,22 +38,20 @@ export function EditUserDialog({ user, isSelf }: Props) {
         <DialogHeader>
           <DialogTitle>{t('editTitle')}</DialogTitle>
         </DialogHeader>
-        <EditUserForm user={user} isSelf={isSelf} />
+        <EditUserForm user={user} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function EditUserForm({ user, isSelf }: Props) {
+function EditUserForm({ user }: Props) {
   const t = useTranslations('dashboard.pages.users')
-  const tRoles = useTranslations('roles')
   const router = useRouter()
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const [name, setName] = useState(user.name ?? '')
   const [email, setEmail] = useState(user.email)
   const [emailVerified, setEmailVerified] = useState(user.emailVerified)
-  const [role, setRole] = useState<Role>(user.role)
 
   const fail = (result: string) => {
     toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
@@ -75,15 +69,6 @@ function EditUserForm({ user, isSelf }: Props) {
       if (updated !== 'OK') {
         fail(updated)
         return
-      }
-
-      if (role !== user.role) {
-        const roleResult = await changeUserRoleAction({ id: user.id, role })
-        if (roleResult !== 'OK') {
-          fail(roleResult)
-          router.refresh()
-          return
-        }
       }
 
       toast.success(t('userUpdated'))
@@ -117,23 +102,6 @@ function EditUserForm({ user, isSelf }: Props) {
               required
               maxLength={250}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-role">{t('newRole')}</Label>
-            <select
-              id="user-role"
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-              disabled={isPending || isSelf}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
-            >
-              {ROLES.map((value) => (
-                <option key={value} value={value}>
-                  {tRoles(value)}
-                </option>
-              ))}
-            </select>
-            {isSelf && <p className="text-xs text-gray-500">{t('cannotChangeOwnRole')}</p>}
           </div>
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input

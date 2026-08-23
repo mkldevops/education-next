@@ -1115,6 +1115,7 @@
         "name": "Name",
         "email": "Email",
         "role": "Role",
+        "superAdmin": "Platform super administrator",
         "family": "Family",
         "lastLogin": "Last Login",
         "status": "Status",
@@ -1244,10 +1245,12 @@
         "paymentTransactions": "Payments initiated",
         "filterRole": "Filter by role",
         "filterStatus": "Filter by status",
-        "roleAll": "All roles",
+        "schoolRoleAll": "All school roles",
         "statusAll": "All statuses",
-        "cannotChangeOwnRole": "You cannot change your own role.",
+        "cannotChangeOwnPlatformLevel": "You cannot change your own platform level.",
         "userUpdated": "User updated",
+        "memberRoleUpdated": "Member role updated",
+        "platformLevelUpdated": "Platform level updated",
         "userReactivated": "User restored",
         "userDeleted": "User deleted",
         "sessionsRevoked": "Sessions revoked",
@@ -1258,7 +1261,9 @@
           "identity": "Identity",
           "families": "Family and children",
           "security": "Sessions and security",
-          "activity": "Activity"
+          "activity": "Activity",
+          "schoolActions": "School actions",
+          "platformActions": "Platform actions"
         },
         "table": {
           "search": "Search...",
@@ -1268,9 +1273,9 @@
           "page": "Page {current} of {total}",
           "previous": "Previous",
           "next": "Next"
-        }
-        ,
+        },
         "removeMember": "Remove",
+        "removeMemberWarning": "This member will lose access to this school's data. Their platform account will not be deleted.",
         "memberRemoved": "Member removed from the school"
       },
       "classDetails": {

@@ -2,24 +2,35 @@
 
 import {
   Button,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
   Drawer,
   DrawerBody,
   DrawerClose,
   DrawerContent,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  Label,
   StatusBadge,
+  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
-import type { Role } from '@/types/enums'
+import type { SchoolRole } from '@/types/enums'
 import {
+  changePlatformLevelAction,
+  changeSchoolMemberRoleAction,
   deactivateUserAction,
   getUserDetailAction,
   reactivateUserAction,
+  removeSchoolMemberAction,
   revokeUserSessionsAction,
   sendPasswordResetAction,
   unlinkUserFamilyAction,
@@ -27,31 +38,30 @@ import {
 import { DeleteUserDialog } from './delete-user-dialog'
 import { EditUserDialog } from './edit-user-dialog'
 import { LinkFamilyDialog } from './link-family-dialog'
-import type { UserRow } from './users-table'
+import type { MemberRow } from './users-table'
 
 type UserDetail = NonNullable<Awaited<ReturnType<typeof getUserDetailAction>>>
 
 interface Props {
-  user: UserRow | null
+  member: MemberRow | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  canManage: boolean
+  canManagePlatform: boolean
   isSelf: boolean
   families: Array<{ id: string; name: string }>
   locale: string
 }
 
-const ROLE_COLORS: Record<Role, 'red' | 'blue' | 'green'> = {
-  SUPER_ADMIN: 'red',
+const ROLE_COLORS: Record<SchoolRole, 'blue' | 'green'> = {
   ADMIN: 'blue',
   PARENT: 'green',
 }
 
 export function UserDrawer({
-  user,
+  member,
   open,
   onOpenChange,
-  canManage,
+  canManagePlatform,
   isSelf,
   families,
   locale,
@@ -63,7 +73,7 @@ export function UserDrawer({
   const [loading, setLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  const userId = user?.id ?? null
+  const userId = member?.userId ?? null
 
   useEffect(() => {
     if (!open || !userId) {
@@ -84,8 +94,9 @@ export function UserDrawer({
     }
   }, [open, userId])
 
-  if (!user) return null
+  if (!member) return null
 
+  const user = member.user
   const formatDate = (value: Date | string) =>
     new Date(value).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -106,7 +117,7 @@ export function UserDrawer({
     })
   }
 
-  const canDelete = canManage && !isSelf && !user.isActive
+  const canDelete = canManagePlatform && !isSelf && !user.isActive
   const activeSessions =
     detail?.sessions.filter((session) => new Date(session.expiresAt) > new Date()) ?? []
 
@@ -123,7 +134,8 @@ export function UserDrawer({
 
         <DrawerBody className="space-y-6">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={ROLE_COLORS[user.role]} label={tRoles(user.role)} />
+            <StatusBadge status={ROLE_COLORS[member.role]} label={tRoles(member.role)} />
+            {user.isSuperAdmin && <StatusBadge status="red" label={t('superAdmin')} />}
             <StatusBadge
               status={user.isActive ? 'green' : 'gray'}
               label={user.isActive ? t('active') : t('inactive')}
@@ -143,6 +155,16 @@ export function UserDrawer({
             <Field label={t('updatedAt')} value={formatDate(user.updatedAt)} />
           </Section>
 
+          <Section title={t('sections.schoolActions')}>
+            <div className="flex flex-wrap gap-2">
+              <ChangeSchoolMemberRoleDialog userId={member.userId} role={member.role} />
+              <RemoveSchoolMemberDialog
+                userId={member.userId}
+                onRemoved={() => onOpenChange(false)}
+              />
+            </div>
+          </Section>
+
           <Section title={t('sections.families')}>
             {detail && detail.families.length === 0 && (
               <p className="text-sm text-gray-500">{t('noFamily')}</p>
@@ -156,7 +178,7 @@ export function UserDrawer({
                       <StatusBadge status="gray" label={t('archivedFamily')} className="mt-1" />
                     )}
                   </div>
-                  {canManage && (
+                  {canManagePlatform && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -188,14 +210,6 @@ export function UserDrawer({
                 </ul>
               </div>
             ))}
-            {canManage && (
-              <LinkFamilyDialog
-                userId={user.id}
-                families={families.filter(
-                  (family) => !detail?.families.some((link) => link.family.id === family.id)
-                )}
-              />
-            )}
           </Section>
 
           <Section title={t('sections.security')}>
@@ -240,9 +254,7 @@ export function UserDrawer({
           <Section title={t('sections.activity')}>
             <Field
               label={t('lastLogin')}
-              value={
-                user.sessions[0] ? formatDate(user.sessions[0].createdAt) : t('neverConnected')
-              }
+              value={member.lastLoginAt ? formatDate(member.lastLoginAt) : t('neverConnected')}
             />
             <Field
               label={t('createdFamilies')}
@@ -270,58 +282,234 @@ export function UserDrawer({
               </ul>
             )}
           </Section>
-        </DrawerBody>
 
-        {canManage && (
-          <DrawerFooter className="flex-wrap">
-            <EditUserDialog user={user} isSelf={isSelf} />
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={isPending || !user.isActive}
-              onClick={() =>
-                run(() => sendPasswordResetAction({ id: user.id }), 'passwordResetSent')
-              }
-            >
-              {t('sendPasswordReset')}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={isPending || activeSessions.length === 0}
-              onClick={() =>
-                run(() => revokeUserSessionsAction({ id: user.id }), 'sessionsRevoked')
-              }
-            >
-              {t('revokeSessions')}
-            </Button>
-            {user.isActive ? (
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={isPending || isSelf}
-                onClick={() => run(() => deactivateUserAction({ id: user.id }), 'userDeactivated')}
-              >
-                {t('deactivate')}
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isPending || isSelf}
-                onClick={() => run(() => reactivateUserAction({ id: user.id }), 'userReactivated')}
-              >
-                {t('reactivate')}
-              </Button>
-            )}
-            {canDelete && <DeleteUserDialog user={user} onDeleted={() => onOpenChange(false)} />}
-          </DrawerFooter>
-        )}
+          {canManagePlatform && (
+            <Section title={t('sections.platformActions')}>
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={user.isSuperAdmin}
+                    onChange={(event) =>
+                      run(
+                        () =>
+                          changePlatformLevelAction({
+                            id: user.id,
+                            isSuperAdmin: event.target.checked,
+                          }),
+                        'platformLevelUpdated'
+                      )
+                    }
+                    disabled={isPending || isSelf}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  {t('superAdmin')}
+                </label>
+                {isSelf && (
+                  <p className="text-xs text-gray-500">{t('cannotChangeOwnPlatformLevel')}</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <EditUserDialog user={user} />
+                  <LinkFamilyDialog
+                    userId={member.userId}
+                    families={families.filter(
+                      (family) => !detail?.families.some((link) => link.family.id === family.id)
+                    )}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending || !user.isActive}
+                    onClick={() =>
+                      run(() => sendPasswordResetAction({ id: user.id }), 'passwordResetSent')
+                    }
+                  >
+                    {t('sendPasswordReset')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending || activeSessions.length === 0}
+                    onClick={() =>
+                      run(() => revokeUserSessionsAction({ id: user.id }), 'sessionsRevoked')
+                    }
+                  >
+                    {t('revokeSessions')}
+                  </Button>
+                  {user.isActive ? (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={isPending || isSelf}
+                      onClick={() =>
+                        run(() => deactivateUserAction({ id: user.id }), 'userDeactivated')
+                      }
+                    >
+                      {t('deactivate')}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isPending || isSelf}
+                      onClick={() =>
+                        run(() => reactivateUserAction({ id: user.id }), 'userReactivated')
+                      }
+                    >
+                      {t('reactivate')}
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <DeleteUserDialog user={user} onDeleted={() => onOpenChange(false)} />
+                  )}
+                </div>
+              </div>
+            </Section>
+          )}
+        </DrawerBody>
       </DrawerContent>
     </Drawer>
   )
 }
 
+function ChangeSchoolMemberRoleDialog({ userId, role }: { userId: string; role: SchoolRole }) {
+  const t = useTranslations('dashboard.pages.users')
+
+  return (
+    <Dialog>
+      <DialogTrigger>
+        <Button variant="outline" size="sm">
+          {t('changeRole')}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('changeRole')}</DialogTitle>
+        </DialogHeader>
+        <ChangeSchoolMemberRoleForm userId={userId} role={role} />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ChangeSchoolMemberRoleForm({ userId, role }: { userId: string; role: SchoolRole }) {
+  const t = useTranslations('dashboard.pages.users')
+  const tRoles = useTranslations('roles')
+  const router = useRouter()
+  const { setOpen } = useDialog()
+  const [isPending, startTransition] = useTransition()
+  const [selectedRole, setSelectedRole] = useState(role)
+
+  useEffect(() => {
+    setSelectedRole(role)
+  }, [role])
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    startTransition(async () => {
+      const result = await changeSchoolMemberRoleAction(userId, selectedRole)
+      if (result === 'OK') {
+        toast.success(t('memberRoleUpdated'))
+        router.refresh()
+        setOpen(false)
+        return
+      }
+      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <DialogBody>
+        <div className="space-y-2">
+          <Label htmlFor="school-member-role">{t('newRole')}</Label>
+          <select
+            id="school-member-role"
+            value={selectedRole}
+            onChange={(event) => setSelectedRole(event.target.value as SchoolRole)}
+            disabled={isPending}
+            className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+          >
+            <option value="ADMIN">{tRoles('ADMIN')}</option>
+            <option value="PARENT">{tRoles('PARENT')}</option>
+          </select>
+        </div>
+      </DialogBody>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+          {t('cancel')}
+        </Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? '...' : t('confirm')}
+        </Button>
+      </DialogFooter>
+    </form>
+  )
+}
+
+function RemoveSchoolMemberDialog({
+  userId,
+  onRemoved,
+}: {
+  userId: string
+  onRemoved: () => void
+}) {
+  const t = useTranslations('dashboard.pages.users')
+
+  return (
+    <Dialog>
+      <DialogTrigger>
+        <Button variant="destructive" size="sm">
+          {t('removeMember')}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('removeMember')}</DialogTitle>
+        </DialogHeader>
+        <RemoveSchoolMemberForm userId={userId} onRemoved={onRemoved} />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function RemoveSchoolMemberForm({ userId, onRemoved }: { userId: string; onRemoved: () => void }) {
+  const t = useTranslations('dashboard.pages.users')
+  const router = useRouter()
+  const { setOpen } = useDialog()
+  const [isPending, startTransition] = useTransition()
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    startTransition(async () => {
+      const result = await removeSchoolMemberAction(userId)
+      if (result === 'OK') {
+        toast.success(t('memberRemoved'))
+        router.refresh()
+        setOpen(false)
+        onRemoved()
+        return
+      }
+      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <DialogBody>
+        <p className="text-sm text-gray-600">{t('removeMemberWarning')}</p>
+      </DialogBody>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+          {t('cancel')}
+        </Button>
+        <Button type="submit" variant="destructive" disabled={isPending}>
+          {isPending ? '...' : t('confirm')}
+        </Button>
+      </DialogFooter>
+    </form>
+  )
+}
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-2">
