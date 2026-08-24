@@ -77,7 +77,7 @@ export default async function PlansPage({ params }: Props) {
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <CreatePlanDialog />
       </div>
-      <Card className="rounded-xl border border-gray-200">
+      <Card className="rounded border border-gray-200">
         <DataTable
           data={plans}
           columns={columns}

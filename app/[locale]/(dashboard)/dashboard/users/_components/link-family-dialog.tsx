@@ -15,7 +15,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { linkUserFamilyAction } from '../../../_lib/user-actions'
 
 interface Props {
@@ -62,7 +62,7 @@ function LinkFamilyForm({ userId, families }: Props) {
         setOpen(false)
         return
       }
-      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+      toastActionError(t, result)
     })
   }
 
@@ -76,7 +76,7 @@ function LinkFamilyForm({ userId, families }: Props) {
             value={familyId}
             onChange={(e) => setFamilyId(e.target.value)}
             disabled={isPending}
-            className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+            className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
           >
             {families.map((family) => (
               <option key={family.id} value={family.id}>

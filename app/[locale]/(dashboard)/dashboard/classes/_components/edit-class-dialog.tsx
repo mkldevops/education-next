@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { updateClassPeriodAction } from '../../../_lib/class-period-actions'
 
 interface EditClassDialogProps {
@@ -61,7 +61,7 @@ function EditClassForm({ classItem }: EditClassDialogProps) {
         capacity: Number(formData.get('capacity')),
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

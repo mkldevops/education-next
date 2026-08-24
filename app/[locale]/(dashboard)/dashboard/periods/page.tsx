@@ -106,11 +106,11 @@ export default async function PeriodsPage({ params }: Props) {
         <CreatePeriodDialog />
       </div>
       {currentPeriodId === null && (
-        <Card className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <Card className="rounded border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm text-amber-800">{t('betweenYears')}</p>
         </Card>
       )}
-      <Card className="rounded-xl border border-gray-200">
+      <Card className="rounded border border-gray-200">
         <DataTable
           data={periods}
           columns={columns}

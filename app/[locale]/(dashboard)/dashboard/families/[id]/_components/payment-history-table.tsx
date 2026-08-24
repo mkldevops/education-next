@@ -69,7 +69,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
           </p>
         </div>
         {pending.length > 0 && (
-          <p className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20">
+          <p className="rounded bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20">
             {t('pendingSummary', {
               count: pending.length,
               amount: formatCurrency(pendingTotal, locale),
@@ -78,7 +78,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
         )}
       </header>
 
-      <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white md:block">
+      <div className="hidden overflow-hidden rounded border border-gray-200 bg-white md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50/70">
@@ -160,7 +160,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
 
       <ul className="space-y-3 md:hidden">
         {payments.map((payment) => (
-          <li key={payment.id} className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+          <li key={payment.id} className="rounded border border-gray-200 bg-white p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate font-medium text-gray-900">

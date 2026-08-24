@@ -15,7 +15,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Label } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import type {
   PromotionPreview,
   PromotionResult,
@@ -89,7 +89,7 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
           targetPeriodId,
         })
         if (typeof result === 'string') {
-          toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+          toastActionError(t, result)
           return
         }
         setPreview(result)
@@ -108,7 +108,7 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
           targetPeriodId,
         })
         if (typeof result === 'string') {
-          toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+          toastActionError(t, result)
           return
         }
         setReport(result)
@@ -135,7 +135,7 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
                 disabled={isPending}
                 value={targetPeriodId}
                 onChange={(e) => setTargetPeriodId(e.target.value)}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
               >
                 {targetOptions.map((period) => (
                   <option key={period.id} value={period.id}>

@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { createEnrollmentAction } from '../../../_lib/enrollment-actions'
 
 interface Option {
@@ -103,7 +103,7 @@ function CreateEnrollmentForm({
         canLeaveAlone: formData.get('canLeaveAlone') === 'on',
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)
@@ -126,7 +126,7 @@ function CreateEnrollmentForm({
                 name="studentId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
               >
                 {students.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -144,7 +144,7 @@ function CreateEnrollmentForm({
                 name="planId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
               >
                 {plans.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -160,7 +160,7 @@ function CreateEnrollmentForm({
                 name="classPeriodId"
                 required
                 disabled={isPending || classes.length === 0}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {classes.map((c) => (
                   <option key={c.id} value={c.id}>

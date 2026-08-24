@@ -162,7 +162,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={cn('relative z-10 w-full max-w-lg rounded-lg bg-white shadow-xl', className)}
+        className={cn('relative z-10 w-full max-w-lg rounded bg-white shadow-xl', className)}
       >
         {children}
       </div>

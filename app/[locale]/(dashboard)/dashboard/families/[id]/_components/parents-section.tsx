@@ -37,7 +37,7 @@ export async function ParentsSection({ persons, familyId, isAdmin, linkedEmails 
       ) : (
         <div className="space-y-3">
           {parents.map((parent) => (
-            <div key={parent.personId} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div key={parent.personId} className="rounded border border-gray-200 bg-gray-50 p-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
                 <div className="flex min-w-0 flex-1 items-start gap-3">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-lg">

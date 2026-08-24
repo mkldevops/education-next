@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button/button'
 import { Card } from '@/components/ui/card'
 import { Input, Label } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { acceptInvitationAction } from '../_lib/accept-invitation-action'
 
 interface Props {
@@ -33,7 +33,7 @@ export function AcceptInvitationForm({ token, email }: Props) {
         toast.success(t('success'))
         router.push('/dashboard')
       } else {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       }
     })
   }

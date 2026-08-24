@@ -65,7 +65,7 @@ export function SessionsSection({ sessions }: Props) {
       <p className="mt-1 text-sm text-gray-500">{t('sessions.description')}</p>
 
       {error && (
-        <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+        <div className="mt-4 rounded bg-red-50 p-3 text-sm text-red-600">
           {t(`errors.${error}`)}
         </div>
       )}
@@ -78,7 +78,7 @@ export function SessionsSection({ sessions }: Props) {
           return (
             <div
               key={session.id}
-              className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
+              className="flex items-center justify-between rounded border border-gray-200 p-4"
             >
               <div className="flex items-center gap-3">
                 {isMobile ? (

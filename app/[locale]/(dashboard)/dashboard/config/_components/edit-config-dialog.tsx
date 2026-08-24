@@ -16,7 +16,7 @@ import {
 import { Input, Label } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { setConfigAction } from '../../../_lib/config-actions'
 import { ImageValueField } from './image-value-field'
 
@@ -76,7 +76,7 @@ function EditConfigForm({ config }: EditConfigDialogProps) {
         valueType: config.valueType,
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

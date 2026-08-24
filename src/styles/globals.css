@@ -57,8 +57,8 @@
   --color-yale-blue-900: #cadde9;
 
   --color-primary: var(--theme-primary, #3c6e71);
-  --color-primary-hover: var(--theme-primary-hover, #30595b);
-  --color-primary-light: var(--theme-primary-light, #d3e7e8);
+  --color-primary-hover: var(--theme-primary-hover, color-mix(in oklab, var(--color-primary) 82%, black));
+  --color-primary-light: var(--theme-primary-light, color-mix(in oklab, var(--color-primary) 16%, white));
 
   --color-secondary: var(--theme-secondary, #284b63);
   --color-secondary-hover: var(--theme-secondary-hover, #203c4e);
@@ -76,8 +76,6 @@
 
 :root {
   --theme-primary: #3c6e71;
-  --theme-primary-hover: #30595b;
-  --theme-primary-light: #d3e7e8;
   --theme-secondary: #284b63;
   --theme-secondary-hover: #203c4e;
   --theme-accent: #539a9e;

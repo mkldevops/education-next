@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog/dialog'
 import { Input, Label, Textarea } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { createFamilySchema } from '@/use-cases/families/schemas'
 import { createFamilyAction } from '../../../_lib/family-actions'
 
@@ -83,7 +83,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
     startTransition(async () => {
       const result = await createFamilyAction(parsed.data)
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)
@@ -146,7 +146,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
             />
           </div>
 
-          <p className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900">
+          <p className="rounded border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900">
             {t('nextStepHint')}
           </p>
         </div>

@@ -55,7 +55,7 @@ export async function EnrollmentList({ enrollments, locale }: Props) {
           <li key={enrollment.id}>
             <Link
               href={`/dashboard/enrollments/${enrollment.id}`}
-              className="group block rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-primary/40 hover:bg-gray-50/70"
+              className="group block rounded border border-gray-200 bg-white p-4 transition-colors hover:border-primary/40 hover:bg-gray-50/70"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

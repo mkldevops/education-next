@@ -1,4 +1,4 @@
-import { Card } from '@peaklab/ui'
+import { buttonVariants, Card } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import type {
@@ -62,9 +62,9 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
   const age = Math.floor((Date.now() - birthday.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
 
   return (
-    <Card className="flex h-full flex-col p-4 rounded-xl border overflow-hidden hover:shadow-md transition-all duration-200">
+    <Card className="flex h-full flex-col p-4 rounded border overflow-hidden hover:shadow-md transition-all duration-200">
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-lg flex-shrink-0">
+        <div className="w-12 h-12 rounded-full bg-primary-light text-primary flex items-center justify-center text-lg flex-shrink-0">
           {person.name.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
@@ -78,7 +78,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
       </div>
 
       {person.student.allergies && (
-        <div className="mb-3 p-2 bg-red-50 rounded-lg border border-red-200">
+        <div className="mb-3 p-2 bg-red-50 rounded border border-red-200">
           <p className="text-xs font-medium text-red-900">{t('childCard.allergies')}</p>
           <p className="text-xs text-red-800 mt-0.5">{person.student.allergies}</p>
         </div>
@@ -86,9 +86,9 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
 
       {Array.isArray(person.student.languagesAtHome) &&
         person.student.languagesAtHome.length > 0 && (
-          <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-xs font-medium text-blue-900">{t('childCard.languages')}</p>
-            <p className="text-xs text-blue-800 mt-0.5">
+          <div className="mb-3 p-2 bg-primary-light/50 rounded border border-primary/20">
+            <p className="text-xs font-medium text-primary">{t('childCard.languages')}</p>
+            <p className="text-xs text-graphite-600 mt-0.5">
               {person.student.languagesAtHome.join(', ')}
             </p>
           </div>
@@ -143,7 +143,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
                   className="w-full bg-gray-200 rounded-full h-2 overflow-hidden"
                 >
                   <div
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-primary to-primary/70 h-full rounded-full transition-all duration-300"
                     style={{ width: `${Math.min(paidPercentage, 100)}%` }}
                   />
                 </div>
@@ -169,7 +169,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
       <div className="flex gap-2">
         <Link
           href={`/dashboard/students/${person.student.id}`}
-          className="flex-1 px-3 py-2 text-xs font-medium text-center rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors"
+          className={buttonVariants({ variant: 'secondary', size: 'sm', className: 'flex-1' })}
         >
           {t('childCard.viewProfile')}
         </Link>

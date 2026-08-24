@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog/dialog'
 import { Label } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { reassignClassAction } from '../../../_lib/enrollment-actions'
 
 interface Option {
@@ -77,7 +77,7 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
         newClassPeriodId: formData.get('newClassPeriodId') as string,
       })
       if (result !== 'OK') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)
@@ -97,7 +97,7 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
               name="newClassPeriodId"
               required
               disabled={isPending || availableClasses.length === 0}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               {availableClasses.map((c) => (
                 <option key={c.id} value={c.id}>

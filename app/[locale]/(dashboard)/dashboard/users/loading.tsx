@@ -10,7 +10,7 @@ export default function UsersLoading() {
         ]}
       />
       <h1 className="text-2xl font-bold text-gray-900">Utilisateurs</h1>
-      <Card className="rounded-xl border border-gray-200">
+      <Card className="rounded border border-gray-200">
         <div className="space-y-3 p-6">
           {Array.from({ length: 5 }, (_, i) => i).map((i) => (
             <div key={`loading-${i}`} className="flex gap-4">

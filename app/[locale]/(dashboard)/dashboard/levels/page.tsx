@@ -93,7 +93,7 @@ export default async function LevelsPage({ params }: Props) {
       </div>
 
       {chains.length > 0 && (
-        <Card className="rounded-xl border border-gray-200 p-4">
+        <Card className="rounded border border-gray-200 p-4">
           <p className="mb-2 text-sm font-medium text-gray-500">{t('promotionChain')}</p>
           <div className="flex flex-wrap gap-2">
             {chains.map((chain) => (
@@ -110,7 +110,7 @@ export default async function LevelsPage({ params }: Props) {
         </Card>
       )}
 
-      <Card className="rounded-xl border border-gray-200">
+      <Card className="rounded border border-gray-200">
         <DataTable
           data={levels}
           columns={columns}

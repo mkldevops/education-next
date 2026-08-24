@@ -31,7 +31,7 @@ export async function HeroBanner({
         <h1 className="truncate text-2xl font-bold text-gray-900" title={family.name}>
           {family.name}
         </h1>
-        <div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
           <span>
             {membersCount} {t('hero.members')}
           </span>
@@ -46,7 +46,7 @@ export async function HeroBanner({
       </div>
 
       {(showActions || children) && (
-        <div className="flex items-center gap-2 self-start md:self-auto">
+        <div className="flex shrink-0 items-center gap-2 self-start md:self-auto">
           {showActions && (
             <ActionMenu
               familyId={family.id}

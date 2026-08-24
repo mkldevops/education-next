@@ -4,7 +4,7 @@ import { MailPlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { inviteUserAction } from '../../../_lib/invitation-actions'
 
 type Props = {
@@ -31,7 +31,7 @@ export function InviteParentButton({ familyId, personId, email }: Props) {
         return
       }
 
-      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+      toastActionError(t, result)
     })
   }
 

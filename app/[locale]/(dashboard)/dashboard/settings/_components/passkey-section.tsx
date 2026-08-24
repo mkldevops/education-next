@@ -102,9 +102,9 @@ export function PasskeySection() {
         </div>
       </div>
 
-      {error && <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
+      {error && <div className="mt-4 rounded bg-red-50 p-3 text-sm text-red-600">{error}</div>}
       {success && (
-        <div className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-600">{success}</div>
+        <div className="mt-4 rounded bg-green-50 p-3 text-sm text-green-600">{success}</div>
       )}
 
       {passkeys.length > 0 && (
@@ -113,7 +113,7 @@ export function PasskeySection() {
           {passkeys.map((pk) => (
             <div
               key={pk.id}
-              className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
+              className="flex items-center justify-between rounded border border-gray-200 px-4 py-3"
             >
               <div>
                 <p className="text-sm font-medium text-gray-900">{pk.name}</p>

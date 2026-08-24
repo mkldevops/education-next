@@ -56,15 +56,13 @@ export function PasswordSection() {
 
       <form ref={formRef} onSubmit={handleSubmit} className="mt-6 max-w-md space-y-4">
         {success && (
-          <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600">
+          <div className="rounded bg-green-50 p-3 text-sm text-green-600">
             {t('security.success')}
           </div>
         )}
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-            {t(`errors.${error}`)}
-          </div>
+          <div className="rounded bg-red-50 p-3 text-sm text-red-600">{t(`errors.${error}`)}</div>
         )}
 
         <div>

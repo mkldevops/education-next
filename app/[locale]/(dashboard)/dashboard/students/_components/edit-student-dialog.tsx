@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label, Textarea } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { updateStudentAction } from '../../../_lib/student-actions'
 
 interface EditStudentDialogProps {
@@ -78,7 +78,7 @@ function EditStudentForm({ student }: EditStudentDialogProps) {
         snackAuthorization: formData.get('snackAuthorization') === 'on',
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

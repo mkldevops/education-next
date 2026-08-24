@@ -135,7 +135,7 @@ export default async function ClassesPage({ params }: Props) {
           <CreateClassDialog levels={levels} periods={periods} defaultCapacity={defaultCapacity} />
         )}
       </div>
-      <Card className="rounded-xl border border-gray-200">
+      <Card className="rounded border border-gray-200">
         <DataTable
           data={classes}
           columns={columns}

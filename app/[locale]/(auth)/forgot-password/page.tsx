@@ -37,13 +37,13 @@ export default function ForgotPasswordPage() {
     return (
       <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md">
-          <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
+          <div className="overflow-hidden rounded bg-white shadow-lg">
             <div className="bg-[var(--color-primary)] px-8 py-6 text-center">
               <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
               <p className="mt-1 text-sm text-white/80">{t('subtitle')}</p>
             </div>
             <div className="px-8 py-8 text-center">
-              <div className="rounded-lg bg-green-50 p-6">
+              <div className="rounded bg-green-50 p-6">
                 <h2 className="text-lg font-medium text-green-800">{t('successTitle')}</h2>
                 <p className="mt-2 text-sm text-green-600">{t('successMessage')}</p>
               </div>
@@ -63,16 +63,14 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
-        <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
+        <div className="overflow-hidden rounded bg-white shadow-lg">
           <div className="bg-[var(--color-primary)] px-8 py-6 text-center">
             <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
             <p className="mt-1 text-sm text-white/80">{t('subtitle')}</p>
           </div>
           <div className="px-8 py-8">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>
-              )}
+              {error && <div className="rounded bg-red-50 p-4 text-sm text-red-600">{error}</div>}
 
               <div>
                 <Label htmlFor="email">{t('email')}</Label>

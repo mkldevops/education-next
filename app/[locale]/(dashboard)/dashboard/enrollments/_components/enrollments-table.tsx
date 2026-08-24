@@ -1,11 +1,12 @@
 'use client'
 
-import { BalanceBadge, RichDataTable, type RichDataTableLabels } from '@peaklab/ui'
+import { BalanceBadge, RichDataTable } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
 import { useMemo, useState } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge } from '@/features/enums'
+import { useTableLabels } from '@/features/tables'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { formatCurrency } from '@/lib/decimal'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
@@ -111,15 +112,7 @@ export function EnrollmentsTable({
     },
   ]
 
-  const labels: RichDataTableLabels = {
-    search: t('table.search'),
-    noResults: t('table.noResults'),
-    columns: t('table.columns'),
-    rowsPerPage: t('table.rowsPerPage'),
-    previous: t('table.previous'),
-    next: t('table.next'),
-    page: (current, total) => t('table.page', { current, total }),
-  }
+  const labels = useTableLabels()
 
   const handleRowClick = (enrollment: EnrollmentDrawerData) => {
     setSelectedId(enrollment.id)
@@ -140,7 +133,7 @@ export function EnrollmentsTable({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'ALL' | EnrollmentStatus)}
-            className="border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
+            className="border border-gray-200 rounded px-3 py-2 text-sm bg-white"
             aria-label={t('filterStatus')}
           >
             <option value="ALL">{t('statusAll')}</option>

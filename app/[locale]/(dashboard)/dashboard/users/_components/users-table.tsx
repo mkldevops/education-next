@@ -1,9 +1,10 @@
 'use client'
 
-import { RichDataTable, type RichDataTableLabels, StatusBadge } from '@peaklab/ui'
+import { RichDataTable, StatusBadge } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
 import { useMemo, useState } from 'react'
+import { useTableLabels } from '@/features/tables'
 import type { SchoolRole } from '@/types/enums'
 import { UserDrawer } from './user-drawer'
 
@@ -130,15 +131,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
     },
   ]
 
-  const labels: RichDataTableLabels = {
-    search: t('table.search'),
-    noResults: t('table.noResults'),
-    columns: t('table.columns'),
-    rowsPerPage: t('table.rowsPerPage'),
-    previous: t('table.previous'),
-    next: t('table.next'),
-    page: (current, total) => t('table.page', { current, total }),
-  }
+  const labels = useTableLabels()
 
   return (
     <>
@@ -164,7 +157,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as 'ALL' | SchoolRole)}
-              className="border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
+              className="border border-gray-200 rounded px-3 py-2 text-sm bg-white"
               aria-label={t('filterRole')}
             >
               <option value="ALL">{t('schoolRoleAll')}</option>
@@ -177,7 +170,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'ARCHIVED')}
-              className="border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
+              className="border border-gray-200 rounded px-3 py-2 text-sm bg-white"
               aria-label={t('filterStatus')}
             >
               <option value="ACTIVE">{t('active')}</option>

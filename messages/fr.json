@@ -23,7 +23,16 @@
     "next": "Suivant",
     "previous": "Précédent",
     "search": "Rechercher",
-    "noResults": "Aucun résultat"
+    "noResults": "Aucun résultat",
+    "table": {
+      "search": "Rechercher...",
+      "noResults": "Aucun résultat",
+      "columns": "Colonnes",
+      "rowsPerPage": "Lignes par page",
+      "page": "Page {current} sur {total}",
+      "previous": "Précédent",
+      "next": "Suivant"
+    }
   },
   "errorPages": {
     "401": {
@@ -182,7 +191,8 @@
       "expand": "Développer",
       "openMenu": "Ouvrir le menu",
       "closeMenu": "Fermer le menu",
-      "searchPlaceholder": "Rechercher..."
+      "searchPlaceholder": "Rechercher...",
+      "account": "Mon compte"
     },
     "pages": {
       "families": {
@@ -303,15 +313,6 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Personne introuvable"
           }
-        },
-        "table": {
-          "search": "Rechercher...",
-          "noResults": "Aucun résultat",
-          "columns": "Colonnes",
-          "rowsPerPage": "Lignes par page",
-          "page": "Page {current} sur {total}",
-          "previous": "Précédent",
-          "next": "Suivant"
         }
       },
       "students": {
@@ -376,20 +377,6 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Élève introuvable",
             "hasActiveEnrollments": "Des inscriptions en attente ou actives existent : clôturez-les d'abord"
-          }
-        },
-        "table": {
-          "search": "Rechercher...",
-          "noResults": "Aucun résultat",
-          "columns": "Colonnes",
-          "rowsPerPage": "Lignes par page",
-          "page": "Page {current} sur {total}",
-          "previous": "Précédent",
-          "next": "Suivant",
-          "sort": {
-            "asc": "Croissant",
-            "desc": "Décroissant",
-            "none": "Aucun tri"
           }
         }
       },
@@ -568,15 +555,6 @@
         "noEnrollmentsInPeriod": "Aucune inscription sur la période {period}. Inscrivez un élève ou changez de période.",
         "filterStatus": "Filtrer par statut",
         "statusAll": "Tous les statuts",
-        "table": {
-          "search": "Rechercher...",
-          "noResults": "Aucun résultat",
-          "columns": "Colonnes",
-          "rowsPerPage": "Lignes par page",
-          "page": "Page {current} sur {total}",
-          "previous": "Précédent",
-          "next": "Suivant"
-        },
         "create": {
           "title": "Nouvelle inscription",
           "selectStudent": "Élève",
@@ -646,15 +624,6 @@
           "upToDate": "À jour",
           "outstanding": "Paiement en attente",
           "viewFamily": "Voir le détail de ma famille"
-        },
-        "table": {
-          "search": "Rechercher...",
-          "noResults": "Aucun résultat",
-          "columns": "Colonnes",
-          "rowsPerPage": "Lignes par page",
-          "page": "Page {current} sur {total}",
-          "previous": "Précédent",
-          "next": "Suivant"
         },
         "record": {
           "title": "Enregistrer un règlement",
@@ -1264,15 +1233,6 @@
           "activity": "Activité",
           "schoolActions": "Actions de l'école",
           "platformActions": "Actions plateforme"
-        },
-        "table": {
-          "search": "Rechercher...",
-          "noResults": "Aucun résultat",
-          "columns": "Colonnes",
-          "rowsPerPage": "Lignes par page",
-          "page": "Page {current} sur {total}",
-          "previous": "Précédent",
-          "next": "Suivant"
         },
         "removeMember": "Retirer",
         "removeMemberWarning": "Ce membre perdra l'accès aux données de cette école. Son compte plateforme ne sera pas supprimé.",

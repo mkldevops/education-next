@@ -23,7 +23,16 @@
     "next": "Next",
     "previous": "Previous",
     "search": "Search",
-    "noResults": "No results"
+    "noResults": "No results",
+    "table": {
+      "search": "Search...",
+      "noResults": "No results",
+      "columns": "Columns",
+      "rowsPerPage": "Rows per page",
+      "page": "Page {current} of {total}",
+      "previous": "Previous",
+      "next": "Next"
+    }
   },
   "errorPages": {
     "401": {
@@ -182,7 +191,8 @@
       "expand": "Expand",
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
-      "searchPlaceholder": "Search..."
+      "searchPlaceholder": "Search...",
+      "account": "My account"
     },
     "pages": {
       "families": {
@@ -303,15 +313,6 @@
             "validationError": "Check the information you entered",
             "notFound": "Person not found"
           }
-        },
-        "table": {
-          "search": "Search...",
-          "noResults": "No results",
-          "columns": "Columns",
-          "rowsPerPage": "Rows per page",
-          "page": "Page {current} of {total}",
-          "previous": "Previous",
-          "next": "Next"
         }
       },
       "students": {
@@ -376,20 +377,6 @@
             "validationError": "Check the information you entered",
             "notFound": "Student not found",
             "hasActiveEnrollments": "Pending or active enrollments remain: close them first"
-          }
-        },
-        "table": {
-          "search": "Search...",
-          "noResults": "No results",
-          "columns": "Columns",
-          "rowsPerPage": "Rows per page",
-          "page": "Page {current} of {total}",
-          "previous": "Previous",
-          "next": "Next",
-          "sort": {
-            "asc": "Ascending",
-            "desc": "Descending",
-            "none": "No sort"
           }
         }
       },
@@ -568,15 +555,6 @@
         "noEnrollmentsInPeriod": "No enrollment in period {period}. Enroll a student or switch period.",
         "filterStatus": "Filter by status",
         "statusAll": "All statuses",
-        "table": {
-          "search": "Search...",
-          "noResults": "No results",
-          "columns": "Columns",
-          "rowsPerPage": "Rows per page",
-          "page": "Page {current} of {total}",
-          "previous": "Previous",
-          "next": "Next"
-        },
         "create": {
           "title": "New Enrollment",
           "selectStudent": "Student",
@@ -646,15 +624,6 @@
           "upToDate": "Up to date",
           "outstanding": "Payment outstanding",
           "viewFamily": "View my family details"
-        },
-        "table": {
-          "search": "Search...",
-          "noResults": "No results",
-          "columns": "Columns",
-          "rowsPerPage": "Rows per page",
-          "page": "Page {current} of {total}",
-          "previous": "Previous",
-          "next": "Next"
         },
         "record": {
           "title": "Record a collection",
@@ -1264,15 +1233,6 @@
           "activity": "Activity",
           "schoolActions": "School actions",
           "platformActions": "Platform actions"
-        },
-        "table": {
-          "search": "Search...",
-          "noResults": "No results",
-          "columns": "Columns",
-          "rowsPerPage": "Rows per page",
-          "page": "Page {current} of {total}",
-          "previous": "Previous",
-          "next": "Next"
         },
         "removeMember": "Remove",
         "removeMemberWarning": "This member will lose access to this school's data. Their platform account will not be deleted.",

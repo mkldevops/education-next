@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { createClassPeriodAction } from '../../../_lib/class-period-actions'
 
 interface Option {
@@ -63,7 +63,7 @@ function CreateClassForm({ levels, periods, defaultCapacity }: CreateClassDialog
         periodId: formData.get('periodId') as string,
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)
@@ -106,7 +106,7 @@ function CreateClassForm({ levels, periods, defaultCapacity }: CreateClassDialog
                 name="levelId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
               >
                 {levels.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -122,7 +122,7 @@ function CreateClassForm({ levels, periods, defaultCapacity }: CreateClassDialog
                 name="periodId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
               >
                 {periods.map((p) => (
                   <option key={p.id} value={p.id}>

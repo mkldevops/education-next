@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { createPeriodAction } from '../../../_lib/period-actions'
 
 export function CreatePeriodDialog() {
@@ -51,7 +51,7 @@ function CreatePeriodForm() {
         endAt: new Date(formData.get('endAt') as string),
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

@@ -19,7 +19,7 @@ import {
 import { Input, Label } from '@/components/ui/input/input'
 import { cn } from '@/components/ui/utils'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { recordPaymentAction } from '../../../_lib/payment-actions'
 
 interface Option {
@@ -102,7 +102,7 @@ function RecordPaymentForm({
             : undefined,
       })
       if (result !== 'OK') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)
@@ -125,7 +125,7 @@ function RecordPaymentForm({
                 name="familyId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
               >
                 {families.map((family) => (
                   <option key={family.id} value={family.id}>
@@ -167,14 +167,16 @@ function RecordPaymentForm({
                     }),
                   })}
                 </span>
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="sm"
                   onClick={() => setAmount(String(remainingAmount))}
                   disabled={isPending}
-                  className="font-medium text-primary underline-offset-2 hover:underline"
+                  className="h-auto px-0"
                 >
                   {t('payFull')}
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -186,7 +188,7 @@ function RecordPaymentForm({
                 <label
                   key={value}
                   className={cn(
-                    'flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border p-3 text-xs font-medium transition-colors',
+                    'flex cursor-pointer flex-col items-center gap-1.5 rounded border p-3 text-xs font-medium transition-colors',
                     method === value
                       ? 'border-primary bg-primary/5 text-primary'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'

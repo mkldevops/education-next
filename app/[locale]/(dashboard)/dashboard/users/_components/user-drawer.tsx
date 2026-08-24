@@ -22,7 +22,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import type { SchoolRole } from '@/types/enums'
 import {
   changePlatformLevelAction,
@@ -112,7 +112,7 @@ export function UserDrawer({
           setDetail(refreshed)
         }
       } else {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       }
     })
   }
@@ -170,7 +170,7 @@ export function UserDrawer({
               <p className="text-sm text-gray-500">{t('noFamily')}</p>
             )}
             {detail?.families.map(({ family }) => (
-              <div key={family.id} className="rounded-lg border border-gray-200 p-3">
+              <div key={family.id} className="rounded border border-gray-200 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{family.name}</p>
@@ -229,7 +229,7 @@ export function UserDrawer({
             {activeSessions.length > 0 && (
               <ul className="space-y-2">
                 {activeSessions.slice(0, 5).map((session) => (
-                  <li key={session.id} className="rounded-lg bg-gray-50 p-2 text-xs text-gray-600">
+                  <li key={session.id} className="rounded bg-gray-50 p-2 text-xs text-gray-600">
                     <p className="font-medium text-gray-800">{session.ipAddress || '-'}</p>
                     <p className="truncate">{session.userAgent || '-'}</p>
                     <p className="text-gray-400">
@@ -414,7 +414,7 @@ function ChangeSchoolMemberRoleForm({ userId, role }: { userId: string; role: Sc
         setOpen(false)
         return
       }
-      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+      toastActionError(t, result)
     })
   }
 
@@ -428,7 +428,7 @@ function ChangeSchoolMemberRoleForm({ userId, role }: { userId: string; role: Sc
             value={selectedRole}
             onChange={(event) => setSelectedRole(event.target.value as SchoolRole)}
             disabled={isPending}
-            className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+            className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
           >
             <option value="ADMIN">{tRoles('ADMIN')}</option>
             <option value="PARENT">{tRoles('PARENT')}</option>
@@ -490,7 +490,7 @@ function RemoveSchoolMemberForm({ userId, onRemoved }: { userId: string; onRemov
         onRemoved()
         return
       }
-      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+      toastActionError(t, result)
     })
   }
 

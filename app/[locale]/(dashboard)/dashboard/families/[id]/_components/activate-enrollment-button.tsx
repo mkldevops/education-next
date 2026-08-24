@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
@@ -31,13 +32,14 @@ export function ActivateEnrollmentButton({ enrollmentId }: Props) {
   }
 
   return (
-    <button
+    <Button
       type="button"
+      size="sm"
       onClick={handleClick}
       disabled={isPending}
-      className="shrink-0 rounded-md bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-900 transition-colors hover:bg-emerald-200 disabled:opacity-60"
+      className="h-auto shrink-0 bg-emerald-100 px-2 py-1 text-emerald-900 hover:bg-emerald-200"
     >
       {isPending ? '...' : t('activate')}
-    </button>
+    </Button>
   )
 }

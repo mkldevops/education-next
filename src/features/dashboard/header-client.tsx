@@ -10,21 +10,12 @@ import { useSidebarStore } from '@/features/dashboard/sidebar-store'
 interface DashboardHeaderClientProps {
   periods: { id: string; name: string; startAt: Date; endAt: Date }[]
   selectedPeriodId: string | null
-  userName: string | null
-  userEmail: string | null
 }
 
-export function DashboardHeaderClient({
-  periods,
-  selectedPeriodId,
-  userName,
-  userEmail,
-}: DashboardHeaderClientProps) {
+export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHeaderClientProps) {
   const t = useTranslations('dashboard.sidebar')
   const [searchOpen, setSearchOpen] = useState(false)
   const { toggleMobile } = useSidebarStore()
-
-  const userInitial = userName?.charAt(0).toUpperCase() || userEmail?.charAt(0).toUpperCase()
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,7 +36,7 @@ export function DashboardHeaderClient({
           type="button"
           onClick={toggleMobile}
           aria-label={t('openMenu')}
-          className="rounded-xl p-2 text-graphite-700 transition-colors hover:bg-alabaster-900 md:hidden"
+          className="rounded p-2 text-graphite-700 transition-colors hover:bg-alabaster-900 md:hidden"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -58,7 +49,7 @@ export function DashboardHeaderClient({
           <input
             type="text"
             placeholder={t('searchPlaceholder')}
-            className="w-64 cursor-pointer rounded-xl border border-alabaster-700 bg-white py-2 pl-9 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-64 cursor-pointer rounded border border-alabaster-700 bg-white py-2 pl-9 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
             onClick={() => setSearchOpen(true)}
             readOnly
           />
@@ -66,15 +57,6 @@ export function DashboardHeaderClient({
             ⌘K
           </kbd>
         </div>
-
-        {userInitial && (
-          <span
-            aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-full bg-gradient-to-br from-stormy-teal to-yale-blue text-xs font-semibold text-white"
-          >
-            {userInitial}
-          </span>
-        )}
       </div>
 
       {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}

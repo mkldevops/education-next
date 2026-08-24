@@ -92,13 +92,13 @@ export function AccountSection({ email, linkedProviders }: Props) {
         <p className="mt-1 text-sm text-gray-500">{t('connectedAccounts.description')}</p>
 
         {error && (error === 'linkFailed' || error === 'unlinkFailed') && (
-          <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="mt-3 rounded bg-red-50 p-3 text-sm text-red-600">
             {t(`errors.${error}`)}
           </div>
         )}
 
         <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between rounded border border-gray-200 p-4">
             <div className="flex items-center gap-3">
               <svg className="h-5 w-5" viewBox="0 0 24 24" role="img" aria-label="Google">
                 <path
@@ -174,7 +174,7 @@ export function AccountSection({ email, linkedProviders }: Props) {
         <p className="mt-1 text-sm text-gray-500">{t('danger.description')}</p>
 
         {error && (
-          <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="mt-4 rounded bg-red-50 p-3 text-sm text-red-600">
             {t(`errors.${error}`)}
           </div>
         )}

@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { deactivateStudentAction } from '../../../_lib/student-actions'
 
 export function DeactivateStudentButton({ studentId }: { studentId: string }) {
@@ -50,7 +50,7 @@ function DeactivateForm({ studentId }: { studentId: string }) {
       if (result === 'hasActiveEnrollments') {
         toast.error(t('hasEnrollments'))
       } else if (result !== 'OK') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

@@ -16,7 +16,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { deleteUserAction } from '../../../_lib/user-actions'
 import type { MemberRow } from './users-table'
 
@@ -63,7 +63,7 @@ function DeleteUserForm({ user, onDeleted }: Props) {
         onDeleted()
         return
       }
-      toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+      toastActionError(t, result)
     })
   }
 

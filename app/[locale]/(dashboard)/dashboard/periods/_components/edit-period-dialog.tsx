@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { deactivatePeriodAction, updatePeriodAction } from '../../../_lib/period-actions'
 
 interface EditPeriodDialogProps {
@@ -58,7 +58,7 @@ function EditPeriodForm({ period, classPeriodCount }: EditPeriodDialogProps) {
 
   const notify = (result: string) => {
     if (result === 'OK') return true
-    toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+    toastActionError(t, result)
     return false
   }
 
@@ -73,7 +73,7 @@ function EditPeriodForm({ period, classPeriodCount }: EditPeriodDialogProps) {
         endAt: new Date(formData.get('endAt') as string),
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

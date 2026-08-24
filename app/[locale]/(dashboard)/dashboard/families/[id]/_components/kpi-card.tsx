@@ -21,7 +21,7 @@ export function KPICard({ label, value, subValue, icon, color = 'gray' }: Props)
   const { bg, text, subText } = KPI_COLOR_STYLES[color]
 
   return (
-    <Card className={cn('p-4 rounded-xl border', bg)}>
+    <Card className={cn('p-4 rounded border', bg)}>
       <div className="flex items-center gap-3">
         <div className="text-2xl">{icon}</div>
         <div className="flex-1">

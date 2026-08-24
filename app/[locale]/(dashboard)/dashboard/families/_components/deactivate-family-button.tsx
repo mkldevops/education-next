@@ -15,7 +15,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { deactivateFamilyAction } from '../../../_lib/family-actions'
 
 type DeactivateFamilyDialogProps = {
@@ -72,7 +72,7 @@ function DeactivateForm({ familyId }: { familyId: string }) {
     startTransition(async () => {
       const result = await deactivateFamilyAction(familyId)
       if (result !== 'OK') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)
