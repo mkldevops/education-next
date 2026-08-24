@@ -44,11 +44,29 @@ describe('Sidebar accessibility', () => {
     }
   })
 
-  it('gives the collapsed logout and expand buttons an accessible name', () => {
+  it('exposes logout and expand through the collapsed user menu', () => {
     renderSidebar('ADMIN')
 
-    expect(screen.getByRole('button', { name: 'logout' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'expand' })).toBeInTheDocument()
+    const trigger = screen.getByRole('button', { name: 'account' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    fireEvent.click(trigger)
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('menuitem', { name: 'logout' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'expand' })).toBeInTheDocument()
+  })
+
+  it('closes the user menu on Escape', () => {
+    renderSidebar('ADMIN')
+
+    const trigger = screen.getByRole('button', { name: 'account' })
+    fireEvent.click(trigger)
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 
   it('shows the tooltip on keyboard focus and links it with aria-describedby', () => {
@@ -91,7 +109,8 @@ describe('Sidebar accessibility', () => {
     const link = screen.getByRole('link', { name: 'families' })
     expect(link).not.toHaveAttribute('aria-label')
     expect(link).toHaveTextContent('families')
-    expect(screen.getByRole('button', { name: 'collapse' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /account/ }))
+    expect(screen.getByRole('menuitem', { name: 'collapse' })).toBeInTheDocument()
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
   })
 })
