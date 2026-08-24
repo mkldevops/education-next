@@ -62,7 +62,7 @@ export async function ChildrenTab({
   return (
     <div className="space-y-4">
       {hasPendingEnrollments && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
+        <div className="rounded bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
           <div className="flex-1">
             <h3 className="text-sm font-medium text-amber-900">{t('alert.needsAttention')}</h3>
             <p className="text-sm text-amber-800 mt-1">

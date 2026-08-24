@@ -16,7 +16,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { updateUserAction } from '../../../_lib/user-actions'
 import type { MemberRow } from './users-table'
 
@@ -54,7 +54,7 @@ function EditUserForm({ user }: Props) {
   const [emailVerified, setEmailVerified] = useState(user.emailVerified)
 
   const fail = (result: string) => {
-    toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+    toastActionError(t, result)
   }
 
   const handleSubmit = (e: React.FormEvent) => {

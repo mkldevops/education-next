@@ -1,4 +1,4 @@
-import { Breadcrumbs, Card } from '@peaklab/ui'
+import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -71,9 +71,7 @@ export default async function StudentsPage({ params }: Props) {
         ]}
       />
       <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-      <Card className="rounded-xl border border-gray-200 p-4">
-        <StudentsDataTable data={students} locale={locale} isAdmin={isAdmin} />
-      </Card>
+      <StudentsDataTable data={students} locale={locale} isAdmin={isAdmin} />
     </div>
   )
 }

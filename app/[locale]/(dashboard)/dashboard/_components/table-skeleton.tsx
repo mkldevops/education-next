@@ -2,10 +2,10 @@ export function TableSkeleton({ columns = 4, rows = 5 }: { columns?: number; row
   return (
     <div className="animate-pulse">
       <div className="mb-6 flex items-center justify-between">
-        <div className="h-8 w-40 rounded-lg bg-gray-200" />
-        <div className="h-10 w-36 rounded-lg bg-gray-200" />
+        <div className="h-8 w-40 rounded bg-gray-200" />
+        <div className="h-10 w-36 rounded bg-gray-200" />
       </div>
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded border border-gray-200 bg-white">
         <div className="border-b bg-gray-50 px-4 py-3 flex gap-4">
           {Array.from({ length: columns }).map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton

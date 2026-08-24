@@ -142,7 +142,7 @@ export default async function UsersPage({ params }: Props) {
           <h2 className="text-base font-semibold text-gray-900">{tInvitations('title')}</h2>
           <p className="mt-1 text-sm text-gray-600">{tInvitations('description')}</p>
         </div>
-        <Card className="rounded-xl border border-gray-200">
+        <Card className="rounded border border-gray-200">
           <DataTable
             data={invitations}
             columns={invitationColumns}

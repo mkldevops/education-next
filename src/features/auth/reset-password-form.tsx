@@ -19,7 +19,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   if (!token) {
     return (
       <div className="space-y-4">
-        <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{t('invalidToken')}</div>
+        <div className="rounded bg-red-50 p-4 text-sm text-red-600">{t('invalidToken')}</div>
         <Link
           href="/login"
           className="block text-center text-sm text-primary hover:text-primary-hover"
@@ -33,7 +33,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   if (isSuccess) {
     return (
       <div className="space-y-4">
-        <div className="rounded-lg bg-green-50 p-4 text-sm text-green-700">{t('success')}</div>
+        <div className="rounded bg-green-50 p-4 text-sm text-green-700">{t('success')}</div>
         <Link
           href="/login"
           className="block text-center text-sm text-primary hover:text-primary-hover"
@@ -77,7 +77,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {error && <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>}
+      {error && <div className="rounded bg-red-50 p-4 text-sm text-red-600">{error}</div>}
 
       <div>
         <Label htmlFor="password">{t('password')}</Label>

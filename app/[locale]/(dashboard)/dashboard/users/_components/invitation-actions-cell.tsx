@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { resendInvitationAction, revokeInvitationAction } from '../../../_lib/invitation-actions'
 
 type Props = {
@@ -26,7 +26,7 @@ export function InvitationActionsCell({ invitationId }: Props) {
         toast.success(t(successKey))
         router.refresh()
       } else {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       }
     })
   }

@@ -65,15 +65,13 @@ export function ProfileSection({ user }: Props) {
 
         <form onSubmit={handleSubmit} className="mt-6 max-w-md space-y-4">
           {success && (
-            <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600">
+            <div className="rounded bg-green-50 p-3 text-sm text-green-600">
               {t('profile.success')}
             </div>
           )}
 
           {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              {t(`errors.${error}`)}
-            </div>
+            <div className="rounded bg-red-50 p-3 text-sm text-red-600">{t(`errors.${error}`)}</div>
           )}
 
           <div>
@@ -99,20 +97,21 @@ export function ProfileSection({ user }: Props) {
 
         <div className="mt-4 flex gap-3">
           {locales.map((loc) => (
-            <button
+            <Button
               key={loc.value}
               type="button"
+              variant="outline"
               onClick={() => handleLocaleChange(loc.value)}
               className={cn(
-                'flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors',
+                'h-auto px-4 py-3',
                 locale === loc.value
                   ? 'border-primary bg-primary/5 text-primary'
-                  : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                  : 'text-gray-600 hover:border-gray-300'
               )}
             >
               <span className="text-lg">{loc.flag}</span>
               {loc.label}
-            </button>
+            </Button>
           ))}
         </div>
       </Card>

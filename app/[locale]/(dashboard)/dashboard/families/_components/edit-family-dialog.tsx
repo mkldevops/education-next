@@ -15,7 +15,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label, Textarea } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { updateFamilySchema } from '@/use-cases/families/schemas'
 import { updateFamilyAction } from '../../../_lib/family-actions'
 
@@ -92,7 +92,7 @@ function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
     startTransition(async () => {
       const result = await updateFamilyAction(id, data)
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

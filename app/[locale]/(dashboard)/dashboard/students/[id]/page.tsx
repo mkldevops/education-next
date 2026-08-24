@@ -225,7 +225,7 @@ export default async function StudentDetailPage({ params }: Props) {
       {(student.allergies || student.healthNotes) && (
         <div className="grid gap-3 md:grid-cols-2">
           {student.allergies && (
-            <div className="flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+            <div className="flex gap-3 rounded border border-red-200 bg-red-50 p-4">
               <TriangleAlert className="h-5 w-5 shrink-0 text-red-500" />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-red-900">{t('allergies')}</p>
@@ -234,7 +234,7 @@ export default async function StudentDetailPage({ params }: Props) {
             </div>
           )}
           {student.healthNotes && (
-            <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex gap-3 rounded border border-amber-200 bg-amber-50 p-4">
               <HeartPulse className="h-5 w-5 shrink-0 text-amber-500" />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-amber-900">{t('healthNotes')}</p>

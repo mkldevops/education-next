@@ -33,16 +33,16 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={cn('overflow-x-auto', className)}>
+    <div className={cn('overflow-x-auto rounded', className)}>
       <table className="w-full min-w-[600px]">
-        <thead>
-          <tr className="border-b border-gray-200">
+        <thead className="bg-gradient-to-br from-primary to-primary/70">
+          <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
                 scope="col"
                 className={cn(
-                  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400',
+                  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/90',
                   col.headerClassName
                 )}
               >

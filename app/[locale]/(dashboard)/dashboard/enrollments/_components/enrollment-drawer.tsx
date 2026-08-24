@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { BalanceBadge } from '@/components/ui/balance-badge'
-import { Button } from '@/components/ui/button/button'
+import { Button, buttonVariants } from '@/components/ui/button/button'
 import {
   Drawer,
   DrawerBody,
@@ -194,7 +194,7 @@ export function EnrollmentDrawer({
         </DrawerHeader>
 
         <DrawerBody className="space-y-6">
-          <div className="space-y-4 rounded-lg border border-gray-200 p-4">
+          <div className="space-y-4 rounded border border-gray-200 p-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <p className="text-sm font-medium text-gray-500">{t('plan')}</p>
@@ -259,7 +259,7 @@ export function EnrollmentDrawer({
 
           <div>
             <h3 className="mb-3 text-base font-semibold text-gray-900">{t('pricing')}</h3>
-            <div className="space-y-2 rounded-lg border border-gray-200 p-4">
+            <div className="space-y-2 rounded border border-gray-200 p-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">{t('totalAmount')}</span>
                 <span className="font-medium text-gray-900">
@@ -292,7 +292,7 @@ export function EnrollmentDrawer({
               <h3 className="mb-3 text-base font-semibold text-gray-900">
                 {t('classAssignments')}
               </h3>
-              <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <div className="overflow-x-auto rounded border border-gray-200">
                 <table className="w-full min-w-[400px]">
                   <thead>
                     <tr className="border-b bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-400">
@@ -322,7 +322,7 @@ export function EnrollmentDrawer({
           {enrollment.payments.length > 0 && (
             <div>
               <h3 className="mb-3 text-base font-semibold text-gray-900">{t('payments')}</h3>
-              <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <div className="overflow-x-auto rounded border border-gray-200">
                 <table className="w-full min-w-[400px]">
                   <thead>
                     <tr className="border-b bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-400">
@@ -358,10 +358,7 @@ export function EnrollmentDrawer({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('close')}
           </Button>
-          <Link
-            href={`/dashboard/enrollments/${enrollment.id}`}
-            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
-          >
+          <Link href={`/dashboard/enrollments/${enrollment.id}`} className={buttonVariants()}>
             {t('openFullPage')}
           </Link>
         </DrawerFooter>

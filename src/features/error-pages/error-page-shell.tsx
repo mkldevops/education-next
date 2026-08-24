@@ -74,7 +74,7 @@ export function ErrorPageShell({
       className={cn(
         'relative isolate flex items-center overflow-hidden bg-gradient-to-br px-4 py-16 sm:px-6 lg:px-8',
         tone.background,
-        minHeight === 'screen' ? 'min-h-screen' : 'min-h-[calc(100vh-9rem)] rounded-xl'
+        minHeight === 'screen' ? 'min-h-screen' : 'min-h-[calc(100vh-9rem)] rounded'
       )}
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(53,53,53,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(53,53,53,0.08)_1px,transparent_1px)] bg-[size:42px_42px] opacity-60" />
@@ -85,7 +85,7 @@ export function ErrorPageShell({
           <div className="flex items-center gap-4">
             <span
               className={cn(
-                'flex size-14 items-center justify-center rounded-2xl border font-mono text-lg font-semibold shadow-sm',
+                'flex size-14 items-center justify-center rounded border font-mono text-lg font-semibold shadow-sm',
                 tone.accent
               )}
             >
@@ -130,7 +130,7 @@ export function ErrorPageShell({
               <div
                 key={cell}
                 className={cn(
-                  'rounded-md border border-white/80 bg-white/70 shadow-sm',
+                  'rounded border border-white/80 bg-white/70 shadow-sm',
                   index === 5 || index === 10 ? tone.text : 'text-alabaster-600'
                 )}
               >

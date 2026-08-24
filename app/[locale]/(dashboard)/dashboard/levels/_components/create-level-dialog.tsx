@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { createLevelAction } from '../../../_lib/level-actions'
 
 export function CreateLevelDialog() {
@@ -49,7 +49,7 @@ function CreateLevelForm() {
         name: formData.get('name') as string,
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

@@ -71,7 +71,7 @@ export function LoginForm() {
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
-        {error && <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>}
+        {error && <div className="rounded bg-red-50 p-4 text-sm text-red-600">{error}</div>}
 
         <div>
           <Label htmlFor="email">{t('email')}</Label>

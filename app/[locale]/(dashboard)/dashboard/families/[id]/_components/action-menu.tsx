@@ -110,11 +110,13 @@ export function ActionMenu({ familyId, canEnroll, canRecordPayment, hasUnpayable
             key={key}
             size="sm"
             disabled={disabled}
-            title={title}
+            title={title ?? label}
+            aria-label={label}
+            className="px-2 lg:px-3"
             onClick={() => action && handleAction(action)}
           >
             <Icon className="h-4 w-4" />
-            {label}
+            <span className="hidden lg:inline">{label}</span>
           </Button>
         ))}
         <ActionDropdown ariaLabel={t('manage')} items={managementActions} onSelect={handleAction} />
@@ -211,7 +213,7 @@ function ActionDropdown({
         <div
           ref={menuRef}
           role="menu"
-          className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+          className="absolute right-0 top-full z-20 mt-1 w-56 rounded border border-gray-200 bg-white py-1 shadow-lg"
         >
           {items.map(({ key, label, icon: Icon, action, danger, disabled, title }) => (
             <button

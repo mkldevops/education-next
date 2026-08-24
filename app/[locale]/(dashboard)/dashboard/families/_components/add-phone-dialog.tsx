@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { addPhoneAction } from '../../../_lib/family-actions'
 
 export function AddPhoneDialog({ personId }: { personId: string }) {
@@ -51,7 +51,7 @@ function AddPhoneForm({ personId }: { personId: string }) {
         channels,
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

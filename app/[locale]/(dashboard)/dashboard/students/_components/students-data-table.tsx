@@ -1,8 +1,9 @@
 'use client'
 
-import { RichDataTable, type RichDataTableLabels } from '@peaklab/ui'
+import { RichDataTable } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
+import { useTableLabels } from '@/features/tables'
 import type { Family, FamilyPerson, Person, Student } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 
@@ -70,15 +71,7 @@ export function StudentsDataTable({ data, locale, isAdmin }: Props) {
     },
   ]
 
-  const labels: RichDataTableLabels = {
-    search: t('table.search'),
-    noResults: t('table.noResults'),
-    columns: t('table.columns'),
-    rowsPerPage: t('table.rowsPerPage'),
-    previous: t('table.previous'),
-    next: t('table.next'),
-    page: (current, total) => t('table.page', { current, total }),
-  }
+  const labels = useTableLabels()
 
   return (
     <RichDataTable

@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { addPersonToFamilyAction } from '../../../_lib/family-actions'
 
 export function AddPersonDialog({ familyId }: { familyId: string }) {
@@ -65,7 +65,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
         phoneNumber: (formData.get('phoneNumber') as string) || undefined,
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)
@@ -101,7 +101,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
                 name="sex"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
               >
                 <option value="MALE">{t('male')}</option>
                 <option value="FEMALE">{t('female')}</option>
@@ -114,7 +114,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
                 name="relationType"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
               >
                 <option value="PARENT">{t('parent')}</option>
                 <option value="TUTOR">{t('tutor')}</option>

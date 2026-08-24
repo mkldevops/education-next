@@ -14,7 +14,7 @@ import {
   useDialog,
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import {
   deactivateLevelAction,
   renameLevelAction,
@@ -71,7 +71,7 @@ function EditLevelForm({
 
   const notify = (result: string) => {
     if (result === 'OK') return true
-    toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+    toastActionError(t, result)
     return false
   }
 
@@ -128,7 +128,7 @@ function EditLevelForm({
               name="nextLevelId"
               defaultValue={currentNextLevelId ?? ''}
               disabled={isPending}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
             >
               <option value="">{t('noNext')}</option>
               {selectableLevels.map((l) => (

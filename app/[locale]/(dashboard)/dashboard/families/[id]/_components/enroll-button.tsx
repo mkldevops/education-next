@@ -1,3 +1,4 @@
+import { buttonVariants } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 
@@ -13,7 +14,7 @@ export async function EnrollButton({ familyId, studentId }: Props) {
   return (
     <Link
       href={`/dashboard/families/${familyId}?${query}`}
-      className="flex-1 px-3 py-2 text-xs font-medium text-center rounded-lg bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors"
+      className={buttonVariants({ size: 'sm', className: 'flex-1' })}
     >
       {t('childCard.enroll')}
     </Link>

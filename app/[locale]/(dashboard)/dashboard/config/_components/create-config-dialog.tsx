@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { setConfigAction } from '../../../_lib/config-actions'
 
 export function CreateConfigDialog() {
@@ -61,7 +61,7 @@ function CreateConfigForm() {
         valueType,
       })
       if (typeof result === 'string') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)
@@ -87,7 +87,7 @@ function CreateConfigForm() {
                 setValueType(e.target.value as 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'COLOR')
               }
               disabled={isPending}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
             >
               <option value="TEXT">{t('types.TEXT')}</option>
               <option value="NUMBER">{t('types.NUMBER')}</option>

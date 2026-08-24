@@ -133,7 +133,7 @@ export default async function ClassDetailPage({ params }: Props) {
             <p className="text-sm text-gray-500">{t('noStudents')}</p>
           </Card>
         ) : (
-          <Card className="overflow-hidden rounded-xl border border-gray-200">
+          <Card className="overflow-hidden rounded border border-gray-200">
             <table className="w-full text-left">
               <thead className="bg-gray-50">
                 <tr className="text-xs font-medium uppercase tracking-wide text-gray-500">

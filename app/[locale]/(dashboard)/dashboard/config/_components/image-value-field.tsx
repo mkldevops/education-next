@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl'
 import { useRef, useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import { Input } from '@/components/ui/input/input'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { uploadBrandingImageAction } from '../../../_lib/media-actions'
 
 type Props = {
@@ -30,7 +30,7 @@ export function ImageValueField({ id, name, defaultValue, disabled }: Props) {
         setValue(result.url)
         toast.success(t('uploaded'))
       } else {
-        toast.error(t.has(`errors.${result.result}`) ? t(`errors.${result.result}`) : t('error'))
+        toastActionError(t, result.result)
       }
       if (fileInputRef.current) fileInputRef.current.value = ''
     })

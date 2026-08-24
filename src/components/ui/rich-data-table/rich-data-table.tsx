@@ -108,7 +108,7 @@ export function RichDataTable<T>({
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
               {columnVisibilityOpen && (
-                <div className="absolute right-0 top-full mt-1 z-10 bg-white border border-gray-200 rounded-md shadow-md p-2 min-w-[140px]">
+                <div className="absolute right-0 top-full mt-1 z-10 bg-white border border-gray-200 rounded shadow-md p-2 min-w-[140px]">
                   {table.getAllColumns().map((col) => (
                     <label
                       key={col.id}
@@ -129,28 +129,28 @@ export function RichDataTable<T>({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-md border border-gray-200">
+      <div className="overflow-x-auto rounded border border-gray-200 bg-white">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gradient-to-br from-primary to-primary/70">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left font-medium text-gray-600 select-none"
+                    className="px-4 py-3 text-left font-medium text-white/90 select-none"
                   >
                     {header.isPlaceholder ? null : (
                       <button
                         type="button"
                         className={cn(
                           'flex items-center gap-1',
-                          header.column.getCanSort() && 'cursor-pointer hover:text-gray-900'
+                          header.column.getCanSort() && 'cursor-pointer hover:text-white'
                         )}
                         onClick={header.column.getToggleSortingHandler()}
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {header.column.getCanSort() && (
-                          <span className="text-gray-400">
+                          <span className="text-white/60">
                             {header.column.getIsSorted() === 'asc' ? (
                               <ChevronUp className="h-3 w-3" />
                             ) : header.column.getIsSorted() === 'desc' ? (

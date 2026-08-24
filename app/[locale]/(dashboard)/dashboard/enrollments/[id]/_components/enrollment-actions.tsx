@@ -5,7 +5,7 @@ import { useTransition } from 'react'
 import { Button } from '@/components/ui/button/button'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import {
   activateEnrollmentAction,
   cancelEnrollmentAction,
@@ -42,7 +42,7 @@ export function EnrollmentActions({
         toast.success(t('activated'))
         router.refresh()
       } else {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       }
     })
   }
@@ -54,7 +54,7 @@ export function EnrollmentActions({
         toast.success(t('completed'))
         router.refresh()
       } else {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       }
     })
   }
@@ -66,7 +66,7 @@ export function EnrollmentActions({
         toast.success(t('cancelled'))
         router.refresh()
       } else {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       }
     })
   }

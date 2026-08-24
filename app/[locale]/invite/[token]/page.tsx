@@ -25,7 +25,7 @@ export default async function InvitePage({ params }: Props) {
   if (invitation.usedAt) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="max-w-md rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+        <div className="max-w-md rounded border border-red-200 bg-red-50 p-8 text-center">
           <h1 className="text-lg font-semibold text-red-800">Lien déjà utilisé</h1>
           <p className="mt-2 text-sm text-red-600">Ce lien d'invitation a déjà été utilisé.</p>
         </div>
@@ -36,7 +36,7 @@ export default async function InvitePage({ params }: Props) {
   if (invitation.expiresAt < new Date()) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="max-w-md rounded-xl border border-orange-200 bg-orange-50 p-8 text-center">
+        <div className="max-w-md rounded border border-orange-200 bg-orange-50 p-8 text-center">
           <h1 className="text-lg font-semibold text-orange-800">Lien expiré</h1>
           <p className="mt-2 text-sm text-orange-600">Ce lien d'invitation a expiré.</p>
         </div>

@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { applyDiscountAction } from '../../../_lib/enrollment-actions'
 
 interface ApplyDiscountDialogProps {
@@ -59,7 +59,7 @@ function DiscountForm({ enrollmentId, currentDiscount }: ApplyDiscountDialogProp
         discount: Number(formData.get('discount')),
       })
       if (result !== 'OK') {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       } else {
         toast.success(t('success'))
         setOpen(false)

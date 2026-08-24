@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog/dialog'
 import { Input, Label } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { inviteUserAction } from '../../../_lib/invitation-actions'
 
 type Family = { id: string; name: string }
@@ -65,7 +65,7 @@ function InviteForm({ families }: { families: Family[] }) {
       } else if (result === 'emailAlreadyUsed') {
         toast.error(t('emailAlreadyUsed'))
       } else {
-        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
+        toastActionError(t, result)
       }
     })
   }
@@ -94,7 +94,7 @@ function InviteForm({ families }: { families: Family[] }) {
               value={role}
               onChange={(e) => setRole(e.target.value)}
               disabled={isPending}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
             >
               <option value="PARENT">{tRoles('PARENT')}</option>
               <option value="ADMIN">{tRoles('ADMIN')}</option>
@@ -108,7 +108,7 @@ function InviteForm({ families }: { families: Family[] }) {
                 name="familyId"
                 defaultValue=""
                 disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
               >
                 <option value="">{t('noFamily')}</option>
                 {families.map((family) => (
@@ -127,7 +127,7 @@ function InviteForm({ families }: { families: Family[] }) {
               name="locale"
               defaultValue={locale}
               disabled={isPending}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
             >
               <option value="fr">Français</option>
               <option value="en">English</option>

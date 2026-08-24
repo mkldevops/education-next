@@ -106,7 +106,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
     >
       <div
         role="document"
-        className="w-full max-w-2xl mx-4 bg-white rounded-lg shadow-lg"
+        className="w-full max-w-2xl mx-4 bg-white rounded shadow-lg"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           e.stopPropagation()
