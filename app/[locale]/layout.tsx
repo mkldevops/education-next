@@ -9,6 +9,7 @@ import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
 import { resolveBrandingSchoolId } from '@/lib/branding'
 import { db } from '@/lib/db'
+import '@/styles/globals.css'
 
 type Props = {
   children: React.ReactNode

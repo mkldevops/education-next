@@ -87,7 +87,7 @@ export default async function PaymentsPage({ params }: Props) {
         ]}
       />
       <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-      <Card className="rounded-xl border border-gray-200">
+      <Card className="rounded-xl border border-gray-200 p-4">
         <PaymentsTable
           payments={paymentRows}
           locale={locale}
