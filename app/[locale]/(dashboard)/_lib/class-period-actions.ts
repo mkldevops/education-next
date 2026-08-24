@@ -13,9 +13,12 @@ import { requireSchoolAdmin } from './auth-helper'
 type CreateClassPeriodInput = z.infer<typeof createClassPeriodSchema>
 type UpdateClassPeriodInput = z.infer<typeof updateClassPeriodSchema>
 
+// `schoolId` et `id` sont posés APRÈS le spread : une Server Action est un endpoint
+// HTTP, donc `data` est un payload arbitraire et l'`Omit` du type ne contraint que
+// la compilation. Dans l'autre ordre, le client écrasait l'école du garde.
 export async function createClassPeriodAction(data: Omit<CreateClassPeriodInput, 'schoolId'>) {
   const { schoolId } = await requireSchoolAdmin()
-  const result = await createClassPeriod({ schoolId, ...data })
+  const result = await createClassPeriod({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/classes')
   return result
@@ -26,7 +29,7 @@ export async function updateClassPeriodAction(
   data: Omit<UpdateClassPeriodInput, 'id' | 'schoolId'>
 ) {
   const { schoolId } = await requireSchoolAdmin()
-  const result = await updateClassPeriod({ schoolId, id, ...data })
+  const result = await updateClassPeriod({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/classes')
   return result

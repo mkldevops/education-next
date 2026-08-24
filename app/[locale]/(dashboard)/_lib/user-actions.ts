@@ -57,8 +57,22 @@ export async function createUserAction(data: {
   }
 }
 
+/**
+ * Détail d'un membre de l'école active.
+ *
+ * L'appartenance est vérifiée avant la lecture, et ce n'est pas redondant avec le
+ * garde : une Server Action est un endpoint HTTP appelable directement, donc `id`
+ * est une entrée non fiable. Sans cette vérification, un administrateur d'école
+ * connaissant un `User.id` d'une autre école lisait son email, les adresses IP de
+ * ses sessions et le nom de ses passkeys — `Session`, `Account` et `Passkey` sont
+ * des modèles plateforme, que ni le garde tenant ni le filtre de `findDetail`
+ * ne peuvent scoper.
+ */
 export async function getUserDetailAction(id: string) {
   const { schoolId } = await requireSchoolAdmin()
+
+  const membership = await schoolMemberGateway.findMembership(id, schoolId)
+  if (!membership) return null
 
   return userGateway.findDetail(id, schoolId)
 }

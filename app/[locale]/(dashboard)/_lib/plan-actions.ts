@@ -12,7 +12,7 @@ type UpdatePlanInput = z.infer<typeof updatePlanSchema>
 
 export async function createPlanAction(data: Omit<CreatePlanInput, 'schoolId'>) {
   const { schoolId } = await requireSchoolAdmin()
-  const result = await createPlan({ schoolId, ...data })
+  const result = await createPlan({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/plans')
   return result
@@ -20,7 +20,7 @@ export async function createPlanAction(data: Omit<CreatePlanInput, 'schoolId'>) 
 
 export async function updatePlanAction(id: string, data: Omit<UpdatePlanInput, 'id' | 'schoolId'>) {
   const { schoolId } = await requireSchoolAdmin()
-  const result = await updatePlan({ schoolId, id, ...data })
+  const result = await updatePlan({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/plans')
   return result
