@@ -67,7 +67,7 @@ export async function OverviewTab({
         <KPICard
           label={t('kpis.remainingBalance')}
           value={formatCurrency(remainingBalance, locale)}
-          icon={TriangleAlert}
+          icon={remainingBalance > 0 ? TriangleAlert : CircleCheck}
           color={remainingBalance > 0 ? 'amber' : 'green'}
         />
       </div>

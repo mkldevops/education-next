@@ -4,16 +4,11 @@ export default function DashboardLoading() {
       <div className="-mx-6 -mt-16 bg-gradient-to-br from-primary-light via-primary-light/50 to-alabaster-800 px-6 pb-20 pt-16">
         <div className="h-9 w-64 rounded bg-primary/20" />
         <div className="mt-2 h-5 w-80 rounded bg-primary/10" />
-        <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {['qa-1', 'qa-2', 'qa-3', 'qa-4'].map((key) => (
-            <div
-              key={key}
-              className="flex items-center gap-3 rounded border border-white/60 bg-white/80 p-4"
-            >
-              <div className="h-5 w-5 rounded bg-gray-200" />
-              <div className="h-5 w-32 rounded bg-gray-200" />
-            </div>
-          ))}
+        <div className="mt-6 max-w-sm">
+          <div className="flex items-center gap-3 rounded border border-white/60 bg-white/80 p-4">
+            <div className="h-5 w-5 rounded bg-gray-200" />
+            <div className="h-5 w-32 rounded bg-gray-200" />
+          </div>
         </div>
       </div>
 

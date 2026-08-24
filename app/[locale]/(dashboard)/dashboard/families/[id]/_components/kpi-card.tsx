@@ -6,10 +6,11 @@ type KPIColor = 'gray' | 'green' | 'amber'
 
 const KPI_COLOR_STYLES: Record<
   KPIColor,
-  { bg: string; text: string; subText: string; iconBg: string; iconText: string }
+  { bg: string; border: string; text: string; subText: string; iconBg: string; iconText: string }
 > = {
   gray: {
     bg: 'bg-gray-50',
+    border: 'border-gray-200',
     text: 'text-gray-900',
     subText: 'text-gray-600',
     iconBg: 'bg-primary-light',
@@ -17,6 +18,7 @@ const KPI_COLOR_STYLES: Record<
   },
   green: {
     bg: 'bg-green-50',
+    border: 'border-green-200',
     text: 'text-green-900',
     subText: 'text-green-700',
     iconBg: 'bg-green-100',
@@ -24,6 +26,7 @@ const KPI_COLOR_STYLES: Record<
   },
   amber: {
     bg: 'bg-amber-50',
+    border: 'border-amber-200',
     text: 'text-amber-900',
     subText: 'text-amber-700',
     iconBg: 'bg-amber-100',
@@ -40,10 +43,10 @@ type Props = {
 }
 
 export function KPICard({ label, value, subValue, icon: Icon, color = 'gray' }: Props) {
-  const { bg, text, subText, iconBg, iconText } = KPI_COLOR_STYLES[color]
+  const { bg, border, text, subText, iconBg, iconText } = KPI_COLOR_STYLES[color]
 
   return (
-    <Card className={cn('p-4 rounded border', bg)}>
+    <Card className={cn('p-4', bg, border)}>
       <div className="flex items-center gap-3">
         {Icon && (
           <div className={cn('shrink-0 rounded p-2.5', iconBg)}>

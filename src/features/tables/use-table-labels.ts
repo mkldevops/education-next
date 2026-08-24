@@ -1,7 +1,7 @@
 'use client'
 
+import type { RichDataTableLabels } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import type { RichDataTableLabels } from '@/components/ui/rich-data-table/rich-data-table'
 
 export function useTableLabels(): RichDataTableLabels {
   const t = useTranslations('common.table')

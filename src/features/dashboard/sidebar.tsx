@@ -20,7 +20,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, usePathname, useRouter } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
@@ -176,16 +176,44 @@ function UserMenu({
   const t = useTranslations('dashboard.sidebar')
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const label = userName ?? t('account')
+
+  const close = useCallback((restoreFocus = true) => {
+    setOpen(false)
+    if (restoreFocus) triggerRef.current?.focus()
+  }, [])
 
   useEffect(() => {
     if (!open) return
 
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target as Node)) close(false)
     }
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        close()
+        return
+      }
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+
+      e.preventDefault()
+      const focusable = Array.from(
+        menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
+      )
+      if (focusable.length === 0) return
+
+      const current = focusable.indexOf(document.activeElement as HTMLElement)
+      const next =
+        e.key === 'ArrowDown'
+          ? current < focusable.length - 1
+            ? current + 1
+            : 0
+          : current > 0
+            ? current - 1
+            : focusable.length - 1
+      focusable[next].focus()
     }
 
     document.addEventListener('mousedown', handleClick)
@@ -194,6 +222,11 @@ function UserMenu({
       document.removeEventListener('mousedown', handleClick)
       document.removeEventListener('keydown', handleKeyDown)
     }
+  }, [open, close])
+
+  useEffect(() => {
+    if (!open) return
+    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
   }, [open])
 
   const itemClass =
@@ -202,6 +235,7 @@ function UserMenu({
   return (
     <div ref={ref} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(!open)}
         aria-haspopup="menu"
@@ -212,7 +246,10 @@ function UserMenu({
           expanded ? 'gap-3 px-3 py-2' : 'justify-center p-2'
         )}
       >
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-xs font-bold text-white">
+        <span
+          aria-hidden
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-xs font-bold text-white"
+        >
           {toInitials(label)}
         </span>
         {expanded && (
@@ -225,6 +262,7 @@ function UserMenu({
 
       {open && (
         <div
+          ref={menuRef}
           role="menu"
           className={cn(
             'absolute z-40 rounded border border-alabaster-700 bg-white p-1 shadow-lg',
@@ -238,7 +276,7 @@ function UserMenu({
               role="menuitem"
               className={itemClass}
               onClick={() => {
-                setOpen(false)
+                close(false)
                 onNavigate()
               }}
             >
@@ -252,7 +290,7 @@ function UserMenu({
             role="menuitem"
             className={itemClass}
             onClick={() => {
-              setOpen(false)
+              close(false)
               onSignOut()
             }}
           >
@@ -265,7 +303,7 @@ function UserMenu({
             role="menuitem"
             className={cn(itemClass, 'hidden md:flex')}
             onClick={() => {
-              setOpen(false)
+              close(false)
               onToggle()
             }}
           >
