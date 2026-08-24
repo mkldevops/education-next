@@ -1,5 +1,6 @@
 import { distributePayment } from '@/domain/payment'
 import { db } from '@/lib/db'
+import { findPaymentTransactionByProviderSessionId } from '@/lib/db-unscoped'
 import { getFamilyBalance } from './family-balance'
 
 type CheckoutSession = {
@@ -24,9 +25,9 @@ export async function completeCheckoutSession(input: Input) {
 
   if (input.session.payment_status !== 'paid') return 'notPaid' as const
 
-  const transaction = await db.paymentTransaction.findUnique({
-    where: { providerSessionId: input.session.id },
-  })
+  // Exception nommée : le webhook Stripe n'a ni session ni cookie, la transaction est
+  // retrouvée par son identifiant de session fournisseur, hors du garde tenant.
+  const transaction = await findPaymentTransactionByProviderSessionId(input.session.id)
   if (!transaction) return 'notFound' as const
   if (transaction.status === 'SUCCEEDED') return 'duplicate' as const
 
@@ -36,7 +37,7 @@ export async function completeCheckoutSession(input: Input) {
     return 'currencyMismatch' as const
   }
 
-  const balance = await getFamilyBalance(transaction.familyId)
+  const balance = await getFamilyBalance(transaction.schoolId, transaction.familyId)
   const distribution = distributePayment(
     Number(transaction.amount),
     balance.payableEnrollments.map((enrollment) => ({
@@ -65,6 +66,7 @@ export async function completeCheckoutSession(input: Input) {
       })
       await tx.payment.createMany({
         data: distribution.distribution.map((allocation) => ({
+          schoolId: transaction.schoolId,
           familyId: transaction.familyId,
           enrollmentId: allocation.enrollmentId,
           paymentTransactionId: transaction.id,
@@ -76,7 +78,7 @@ export async function completeCheckoutSession(input: Input) {
         })),
       })
       await tx.paymentTransaction.update({
-        where: { id: transaction.id },
+        where: { id_schoolId: { id: transaction.id, schoolId: transaction.schoolId } },
         data: {
           status: 'SUCCEEDED',
           providerPaymentId,
@@ -93,10 +95,5 @@ export async function completeCheckoutSession(input: Input) {
 }
 
 function isUniqueConstraintError(error: unknown) {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: string }).code === 'P2002'
-  )
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002'
 }

@@ -39,6 +39,8 @@ vi.mock('@/lib/db', () => ({
 
 const { createEnrollment } = await import('./create-enrollment')
 
+const schoolId = '550e8400-e29b-41d4-a716-446655440099'
+
 describe('createEnrollment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -60,6 +62,7 @@ describe('createEnrollment', () => {
 
   it('should fail validation with invalid input', async () => {
     const result = await createEnrollment({
+      schoolId,
       studentId: 'invalid-uuid',
       planId: '550e8400-e29b-41d4-a716-446655440000',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440000',
@@ -74,6 +77,7 @@ describe('createEnrollment', () => {
     studentGatewayMock.findById.mockResolvedValue(null)
 
     const result = await createEnrollment({
+      schoolId,
       studentId: '550e8400-e29b-41d4-a716-446655440000',
       planId: '550e8400-e29b-41d4-a716-446655440001',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
@@ -89,6 +93,7 @@ describe('createEnrollment', () => {
     planGatewayMock.findById.mockResolvedValue(null)
 
     const result = await createEnrollment({
+      schoolId,
       studentId: '550e8400-e29b-41d4-a716-446655440000',
       planId: '550e8400-e29b-41d4-a716-446655440001',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
@@ -108,6 +113,7 @@ describe('createEnrollment', () => {
     classPeriodGatewayMock.findById.mockResolvedValue(null)
 
     const result = await createEnrollment({
+      schoolId,
       studentId: '550e8400-e29b-41d4-a716-446655440000',
       planId: '550e8400-e29b-41d4-a716-446655440001',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
@@ -131,6 +137,7 @@ describe('createEnrollment', () => {
     enrollmentGatewayMock.findDuplicate.mockResolvedValue(true)
 
     const result = await createEnrollment({
+      schoolId,
       studentId: '550e8400-e29b-41d4-a716-446655440000',
       planId: '550e8400-e29b-41d4-a716-446655440001',
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',

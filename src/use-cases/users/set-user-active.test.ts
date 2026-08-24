@@ -12,7 +12,7 @@ vi.mock('@/gateways/user-gateway', () => ({
 
 const { deactivateUser, reactivateUser } = await import('./set-user-active')
 
-const actor = { id: 'cm0actor00000000000000000', role: 'SUPER_ADMIN' as const }
+const actor = { id: 'cm0actor00000000000000000' }
 const targetId = 'cm0target0000000000000000'
 
 describe('deactivateUser', () => {
@@ -21,8 +21,8 @@ describe('deactivateUser', () => {
     userGatewayMock.countActiveSuperAdmins.mockResolvedValue(2)
   })
 
-  it('rejects an invalid id', async () => {
-    expect(await deactivateUser(actor, { id: 'nope' })).toBe('validationError')
+  it('rejects an empty id', async () => {
+    expect(await deactivateUser(actor, { id: '' })).toBe('validationError')
   })
 
   it('returns notFound for an unknown user', async () => {
@@ -31,14 +31,18 @@ describe('deactivateUser', () => {
   })
 
   it('refuses an already archived user', async () => {
-    userGatewayMock.findManaged.mockResolvedValue({ id: targetId, role: 'PARENT', isActive: false })
+    userGatewayMock.findManaged.mockResolvedValue({
+      id: targetId,
+      isSuperAdmin: false,
+      isActive: false,
+    })
     expect(await deactivateUser(actor, { id: targetId })).toBe('alreadyInactive')
   })
 
   it('refuses to archive the last super admin', async () => {
     userGatewayMock.findManaged.mockResolvedValue({
       id: targetId,
-      role: 'SUPER_ADMIN',
+      isSuperAdmin: true,
       isActive: true,
     })
     userGatewayMock.countActiveSuperAdmins.mockResolvedValue(1)
@@ -47,7 +51,11 @@ describe('deactivateUser', () => {
   })
 
   it('archives the user', async () => {
-    userGatewayMock.findManaged.mockResolvedValue({ id: targetId, role: 'PARENT', isActive: true })
+    userGatewayMock.findManaged.mockResolvedValue({
+      id: targetId,
+      isSuperAdmin: false,
+      isActive: true,
+    })
     expect(await deactivateUser(actor, { id: targetId })).toBe('OK')
     expect(userGatewayMock.setActive).toHaveBeenCalledWith(targetId, false)
   })
@@ -59,12 +67,20 @@ describe('reactivateUser', () => {
   })
 
   it('refuses an already active user', async () => {
-    userGatewayMock.findManaged.mockResolvedValue({ id: targetId, role: 'PARENT', isActive: true })
+    userGatewayMock.findManaged.mockResolvedValue({
+      id: targetId,
+      isSuperAdmin: false,
+      isActive: true,
+    })
     expect(await reactivateUser(actor, { id: targetId })).toBe('alreadyActive')
   })
 
   it('restores an archived user', async () => {
-    userGatewayMock.findManaged.mockResolvedValue({ id: targetId, role: 'PARENT', isActive: false })
+    userGatewayMock.findManaged.mockResolvedValue({
+      id: targetId,
+      isSuperAdmin: false,
+      isActive: false,
+    })
     expect(await reactivateUser(actor, { id: targetId })).toBe('OK')
     expect(userGatewayMock.setActive).toHaveBeenCalledWith(targetId, true)
   })

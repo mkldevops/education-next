@@ -4,12 +4,7 @@ const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
 })
 
-export const {
-  signIn,
-  signUp,
-  signOut,
-  linkSocial,
-  unlinkAccount,
-  resetPassword,
-  requestPasswordReset,
-} = authClient
+// `signUp` a disparu avec le flux `/register` : l'invitation est désormais le seul
+// chemin de création de compte, et elle passe par `auth.api.signUpEmail` côté serveur.
+export const { signIn, signOut, linkSocial, unlinkAccount, resetPassword, requestPasswordReset } =
+  authClient

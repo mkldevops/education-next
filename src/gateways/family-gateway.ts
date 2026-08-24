@@ -1,30 +1,34 @@
 import { db } from '@/lib/db'
 
 export const familyGateway = {
-  createWithParents: (data: {
-    name: string
-    emergencyContactName?: string
-    emergencyContactPhone?: string
-    authorizedPickup?: string
-    createdById: string
-    parents: Array<{
+  createWithParents: (
+    schoolId: string,
+    data: {
       name: string
-      lastname: string
-      sex: 'MALE' | 'FEMALE'
-      email?: string
-      address?: string
-      postCode?: string
-      city?: string
-      phoneNumber?: string
-    }>
-  }) =>
+      emergencyContactName?: string
+      emergencyContactPhone?: string
+      authorizedPickup?: string
+      createdById: string
+      parents: Array<{
+        name: string
+        lastname: string
+        sex: 'MALE' | 'FEMALE'
+        email?: string
+        address?: string
+        postCode?: string
+        city?: string
+        phoneNumber?: string
+      }>
+    }
+  ) =>
     db.$transaction(async (tx) => {
       const { parents, ...familyData } = data
-      const family = await tx.family.create({ data: familyData })
+      const family = await tx.family.create({ data: { ...familyData, schoolId } })
       for (const { phoneNumber, ...person } of parents) {
         await tx.person.create({
           data: {
             ...person,
+            schoolId,
             families: {
               create: { familyId: family.id, relationType: 'PARENT' },
             },
@@ -36,6 +40,7 @@ export const familyGateway = {
     }),
 
   update: (
+    schoolId: string,
     id: string,
     data: {
       name?: string
@@ -45,24 +50,25 @@ export const familyGateway = {
     }
   ) =>
     db.family.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data,
     }),
 
-  deactivate: (id: string) =>
+  deactivate: (schoolId: string, id: string) =>
     db.family.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data: { isActive: false },
     }),
 
-  findById: (id: string) =>
+  findById: (schoolId: string, id: string) =>
     db.family.findUnique({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
     }),
 
-  hasActiveEnrollments: async (id: string) => {
+  hasActiveEnrollments: async (schoolId: string, id: string) => {
     const count = await db.enrollment.count({
       where: {
+        schoolId,
         status: { in: ['PENDING', 'ACTIVE'] },
         student: { person: { families: { some: { familyId: id } } } },
       },
@@ -70,28 +76,31 @@ export const familyGateway = {
     return count > 0
   },
 
-  list: () =>
+  list: (schoolId: string) =>
     db.family.findMany({
-      where: { isActive: true },
+      where: { schoolId, isActive: true },
       orderBy: { name: 'asc' },
     }),
 
   addPerson: (
+    schoolId: string,
     familyId: string,
     personId: string,
     relationType: 'PARENT' | 'TUTOR' | 'GRANDPARENT' | 'SIBLING' | 'OTHER'
   ) =>
     db.familyPerson.create({
       data: {
+        schoolId,
         familyId,
         personId,
         relationType,
       },
     }),
 
-  linkUser: (userId: string, familyId: string) =>
+  linkUser: (schoolId: string, userId: string, familyId: string) =>
     db.userFamily.create({
       data: {
+        schoolId,
         userId,
         familyId,
       },

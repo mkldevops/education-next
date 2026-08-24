@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 export const recordPaymentSchema = z
   .object({
+    schoolId: z.string().min(1),
     familyId: z.string().uuid(),
     amount: z.number().refine((n) => n !== 0, { message: 'Amount must not be zero' }),
     method: z.enum(['CASH', 'CARD', 'TRANSFER', 'CHECK']),

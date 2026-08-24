@@ -27,6 +27,7 @@ vi.mock('@/lib/db', () => ({
 
 const { promoteStudents, previewPromoteStudents } = await import('./promote-students')
 
+const schoolId = '550e8400-e29b-41d4-a716-446655440099'
 const sourcePeriodId = '550e8400-e29b-41d4-a716-446655440000'
 const targetPeriodId = '550e8400-e29b-41d4-a716-446655440001'
 const targetClassPeriodId = '550e8400-e29b-41d4-a716-446655440002'
@@ -83,6 +84,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
   describe('promoteStudents', () => {
     it('should fail validation with invalid input', async () => {
       const result = await promoteStudents({
+        schoolId,
         sourcePeriodId: 'invalid-uuid',
         targetPeriodId,
       })
@@ -93,7 +95,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
     it('should fail when source period not found', async () => {
       periodGatewayMock.findById.mockResolvedValueOnce(null)
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toBe('notFound')
     })
@@ -103,7 +105,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         .mockResolvedValueOnce({ id: sourcePeriodId })
         .mockResolvedValueOnce(null)
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toBe('notFound')
     })
@@ -111,7 +113,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
     it('should promote an eligible enrollment', async () => {
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({ promoted: 1, skipped: 0, errors: [] })
     })
@@ -120,7 +122,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
       enrollmentGatewayMock.findEnrolledStudentIds.mockResolvedValue(new Set([defaultStudentId]))
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
       expect(dbMock.$transaction).not.toHaveBeenCalled()
@@ -133,8 +135,8 @@ describe('promoteStudents / previewPromoteStudents', () => {
       ]
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue(enrollments)
 
-      const preview = await previewPromoteStudents({ sourcePeriodId, targetPeriodId })
-      const execution = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const preview = await previewPromoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+      const execution = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(preview).toMatchObject({
         promoted: 1,
@@ -149,7 +151,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         buildEnrollment({ classAssignments: [] }),
       ])
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
     })
@@ -161,7 +163,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         }),
       ])
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
     })
@@ -179,7 +181,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         }),
       ])
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
     })
@@ -188,7 +190,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
       dbMock.classPeriod.findMany.mockResolvedValue([])
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
     })
@@ -202,7 +204,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
       ])
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
     })
@@ -236,7 +238,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         buildEnrollment({ studentId: 'student-2' }),
       ])
 
-      const result = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({
         promoted: 1,
@@ -251,7 +253,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         buildEnrollment({ studentId: 'student-2' }),
       ])
 
-      await promoteStudents({ sourcePeriodId, targetPeriodId })
+      await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(dbMock.$transaction).toHaveBeenCalledTimes(2)
     })
@@ -260,6 +262,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
   describe('previewPromoteStudents', () => {
     it('should fail validation with invalid input', async () => {
       const result = await previewPromoteStudents({
+        schoolId,
         sourcePeriodId: 'invalid-uuid',
         targetPeriodId,
       })
@@ -270,7 +273,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
     it('should fail when source period not found', async () => {
       periodGatewayMock.findById.mockResolvedValueOnce(null)
 
-      const result = await previewPromoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await previewPromoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toBe('notFound')
     })
@@ -278,7 +281,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
     it('should not open a transaction or create any record', async () => {
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
 
-      await previewPromoteStudents({ sourcePeriodId, targetPeriodId })
+      await previewPromoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(dbMock.$transaction).not.toHaveBeenCalled()
     })
@@ -286,7 +289,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
     it('should count an eligible enrollment as promoted', async () => {
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
 
-      const result = await previewPromoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await previewPromoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({
         promoted: 1,
@@ -312,7 +315,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         buildEnrollment({ studentId: 'student-3' }),
       ])
 
-      const result = await previewPromoteStudents({ sourcePeriodId, targetPeriodId })
+      const result = await previewPromoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({
         promoted: 0,
@@ -338,8 +341,8 @@ describe('promoteStudents / previewPromoteStudents', () => {
       ]
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue(enrollments)
 
-      const preview = await previewPromoteStudents({ sourcePeriodId, targetPeriodId })
-      const execution = await promoteStudents({ sourcePeriodId, targetPeriodId })
+      const preview = await previewPromoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+      const execution = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(preview).toMatchObject({ promoted: 2, skipped: 1 })
       expect(execution).toMatchObject({ promoted: 2, skipped: 1 })

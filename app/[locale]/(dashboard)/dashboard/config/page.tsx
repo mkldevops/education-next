@@ -1,13 +1,12 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { ReactNode } from 'react'
 import { ConfigValueTypeLabel } from '@/features/enums'
 import { BRANDING_CONFIG_DEFAULTS, BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import { db } from '@/lib/db'
-import { getSessionWithRole } from '../../_lib/auth-helper'
+import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateConfigDialog } from './_components/create-config-dialog'
 import { EditConfigDialog } from './_components/edit-config-dialog'
@@ -22,7 +21,7 @@ const HIDDEN_CONFIG_NAMES = new Set(['automatic_promotion'])
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.config.title', ['ADMIN', 'SUPER_ADMIN'])
+  return restrictedPageMetadata(locale, 'dashboard.pages.config.title')
 }
 
 export default async function ConfigPage({ params }: Props) {
@@ -30,16 +29,13 @@ export default async function ConfigPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
 
-  const { role } = await getSessionWithRole()
-
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
-  if (!isAdmin) notFound()
+  const { schoolId } = await requireSchoolAdmin()
 
   const t = await getTranslations('dashboard.pages.config')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const dbConfigs = await db.config.findMany({
-    where: { isActive: true },
+    where: { schoolId, isActive: true },
     orderBy: { name: 'asc' },
   })
 
@@ -49,7 +45,7 @@ export default async function ConfigPage({ params }: Props) {
   ).map((config) => ({
     ...config,
     id: `default-${config.name}`,
-    personId: null,
+    schoolId,
     isActive: true,
     createdAt: new Date(0),
     updatedAt: new Date(0),
@@ -63,10 +59,6 @@ export default async function ConfigPage({ params }: Props) {
     max_students_per_class: {
       label: t('known.maxStudentsPerClass'),
       description: t('descriptions.maxStudentsPerClass'),
-    },
-    school_name: {
-      label: t('known.schoolName'),
-      description: t('descriptions.schoolName'),
     },
   }
 

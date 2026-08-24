@@ -24,6 +24,8 @@ vi.mock('@/gateways/payment-gateway', () => ({
 
 const { recordPayment } = await import('./record-payment')
 
+const schoolId = '550e8400-e29b-41d4-a716-446655440099'
+
 describe('recordPayment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -34,6 +36,7 @@ describe('recordPayment', () => {
 
   it('should fail validation with invalid input', async () => {
     const result = await recordPayment({
+      schoolId,
       familyId: 'invalid-uuid',
       amount: 100,
       method: 'CASH',
@@ -45,6 +48,7 @@ describe('recordPayment', () => {
 
   it('should fail validation with zero amount', async () => {
     const result = await recordPayment({
+      schoolId,
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       amount: 0,
       method: 'CASH',
@@ -56,6 +60,7 @@ describe('recordPayment', () => {
 
   it('should fail validation with a cash date on a non-check payment', async () => {
     const result = await recordPayment({
+      schoolId,
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       amount: 100,
       method: 'TRANSFER',
@@ -70,6 +75,7 @@ describe('recordPayment', () => {
     familyGatewayMock.findById.mockResolvedValue(null)
 
     const result = await recordPayment({
+      schoolId,
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       amount: 100,
       method: 'CASH',
@@ -84,6 +90,7 @@ describe('recordPayment', () => {
     enrollmentGatewayMock.findActiveByFamily.mockResolvedValue([])
 
     const result = await recordPayment({
+      schoolId,
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       amount: 100,
       method: 'CASH',
@@ -105,6 +112,7 @@ describe('recordPayment', () => {
     ])
 
     const result = await recordPayment({
+      schoolId,
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       amount: 150,
       method: 'CASH',
@@ -126,6 +134,7 @@ describe('recordPayment', () => {
     ])
 
     const result = await recordPayment({
+      schoolId,
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       amount: 50,
       method: 'CASH',
@@ -148,6 +157,7 @@ describe('recordPayment', () => {
     ])
 
     await recordPayment({
+      schoolId,
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       amount: 50,
       method: 'CARD',
@@ -155,6 +165,7 @@ describe('recordPayment', () => {
     })
 
     expect(paymentGatewayMock.createInTransaction).toHaveBeenCalledWith(
+      schoolId,
       expect.arrayContaining([
         expect.objectContaining({
           method: 'CARD',
@@ -175,6 +186,7 @@ describe('recordPayment', () => {
     ])
 
     const result = await recordPayment({
+      schoolId,
       familyId: '550e8400-e29b-41d4-a716-446655440000',
       amount: 80,
       method: 'CASH',
@@ -182,7 +194,7 @@ describe('recordPayment', () => {
     })
 
     expect(result).toBe('OK')
-    expect(paymentGatewayMock.createInTransaction).toHaveBeenCalledWith([
+    expect(paymentGatewayMock.createInTransaction).toHaveBeenCalledWith(schoolId, [
       expect.objectContaining({ amount: 80 }),
     ])
   })

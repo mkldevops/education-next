@@ -1,10 +1,9 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
-import { requireAdmin } from '../../_lib/auth-helper'
+import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateLevelDialog } from './_components/create-level-dialog'
 import { EditLevelDialog } from './_components/edit-level-dialog'
@@ -15,7 +14,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.levels.title', ['ADMIN', 'SUPER_ADMIN'])
+  return restrictedPageMetadata(locale, 'dashboard.pages.levels.title')
 }
 
 export default async function LevelsPage({ params }: Props) {
@@ -25,11 +24,10 @@ export default async function LevelsPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.levels')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const user = await requireAdmin()
-  if (!user) notFound()
+  const { schoolId } = await requireSchoolAdmin()
 
   const levels = await db.level.findMany({
-    where: { isActive: true },
+    where: { schoolId, isActive: true },
     include: {
       nextLevel: true,
       _count: {

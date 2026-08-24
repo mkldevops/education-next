@@ -1,9 +1,8 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { z } from 'zod'
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { getSchoolContext } from '@/lib/school-context'
 
 const searchSchema = z.object({
   query: z.string().min(1).max(250),
@@ -29,25 +28,12 @@ export async function searchStudentsAndFamilies(
   const parsed = searchSchema.safeParse({ query })
   if (!parsed.success) return 'validationError' as const
 
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) return 'unauthorized' as const
+  const context = await getSchoolContext()
+  if (!context) return 'unauthorized' as const
 
-  const dbUser = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { role: true },
-  })
-  if (!dbUser) return 'unauthorized' as const
-
-  const isAdmin = dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN'
-
-  let familyId: string | undefined
-  if (dbUser.role === 'PARENT') {
-    const userFamily = await db.userFamily.findFirst({
-      where: { userId: session.user.id },
-      select: { familyId: true },
-    })
-    familyId = userFamily?.familyId
-  }
+  const { schoolId } = context
+  const isAdmin = context.isSuperAdmin || context.role === 'ADMIN'
+  const familyId = context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined
 
   if (!isAdmin && !familyId) return []
 
@@ -56,6 +42,7 @@ export async function searchStudentsAndFamilies(
   const [students, families] = await Promise.all([
     db.student.findMany({
       where: {
+        schoolId,
         AND: [
           {
             OR: [
@@ -114,6 +101,7 @@ export async function searchStudentsAndFamilies(
     isAdmin
       ? db.family.findMany({
           where: {
+            schoolId,
             AND: [
               {
                 name: {
@@ -135,6 +123,7 @@ export async function searchStudentsAndFamilies(
         })
       : db.family.findMany({
           where: {
+            schoolId,
             AND: [
               {
                 name: {

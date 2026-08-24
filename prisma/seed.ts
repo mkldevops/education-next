@@ -1,18 +1,27 @@
-import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '@/generated/prisma/client'
 import { auth } from '../src/lib/auth'
+import { unscopedDbForDataScripts } from '../src/lib/db-unscoped'
 
-const connectionString = process.env.DATABASE_URL
-if (!connectionString) {
-  throw new Error('DATABASE_URL is required')
-}
-const adapter = new PrismaPg({ connectionString })
-const prisma = new PrismaClient({ adapter })
+/**
+ * Seed à DEUX écoles.
+ *
+ * Deux, pas une : c'est la seule façon de rendre une fuite cross-école observable.
+ * Un seed mono-école ferait passer les tests d'isolation par accident.
+ *
+ * Passe par `unscopedDbForDataScripts` — le seed crée les écoles elles-mêmes et purge
+ * des tables entières, deux opérations qu'aucun scope ne peut décrire.
+ */
+const prisma = unscopedDbForDataScripts()
 
-async function seed() {
-  console.log('Seeding database...')
-
+/**
+ * Ordre imposé par les clés étrangères. `PaymentProviderEvent`, `PaymentTransaction`
+ * et `Invitation` étaient absents de l'ancienne purge : ils retiennent des références
+ * vers `Family` et `User`, et bloquaient donc la suppression des écoles.
+ */
+async function purge() {
+  await prisma.paymentProviderEvent.deleteMany()
   await prisma.payment.deleteMany()
+  await prisma.paymentTransaction.deleteMany()
+  await prisma.invitation.deleteMany()
   await prisma.classAssignment.deleteMany()
   await prisma.enrollment.deleteMany()
   await prisma.plan.deleteMany()
@@ -26,353 +35,323 @@ async function seed() {
   await prisma.person.deleteMany()
   await prisma.userFamily.deleteMany()
   await prisma.family.deleteMany()
+  await prisma.schoolMember.deleteMany()
+  await prisma.passkey.deleteMany()
   await prisma.session.deleteMany()
   await prisma.account.deleteMany()
   await prisma.verification.deleteMany()
   await prisma.user.deleteMany()
+  await prisma.school.deleteMany()
+}
 
-  console.log('Cleared existing data')
+async function createUser(name: string, email: string, password: string) {
+  const created = await auth.api.signUpEmail({ body: { name, email, password } })
+  await prisma.user.update({
+    where: { id: created.user.id },
+    data: { emailVerified: true },
+  })
+  return created.user.id
+}
 
-  // --- Users ---
-  const superAdminRes = await auth.api.signUpEmail({
-    body: {
-      name: 'Super Admin',
-      email: 'superadmin@school.test',
-      password: 'superadmin123',
-    },
-  })
-  const superAdminUser = await prisma.user.update({
-    where: { id: superAdminRes.user.id },
-    data: { role: 'SUPER_ADMIN', emailVerified: true },
-  })
-  console.log(`Created super admin: ${superAdminUser.email}`)
+type SchoolFixture = {
+  schoolId: string
+  familyName: string
+  parentFirstName: string
+  parentLastName: string
+  childFirstName: string
+  createdById: string
+  fullTimeAmount: number
+  /**
+   * Thème et capacité **distincts** d'une école à l'autre : sans valeurs
+   * différentes, l'isolation du branding et du thème serait invérifiable — deux
+   * écoles identiques rendent le même écran, qu'elles soient scopées ou non.
+   */
+  themePrimary: string
+  maxStudentsPerClass: number
+}
 
-  const adminRes = await auth.api.signUpEmail({
-    body: {
-      name: 'Admin',
-      email: 'admin@school.test',
-      password: 'admin123',
-    },
-  })
-  const adminUser = await prisma.user.update({
-    where: { id: adminRes.user.id },
-    data: { role: 'ADMIN', emailVerified: true },
-  })
-  console.log(`Created admin: ${adminUser.email}`)
+/** Référentiel et dossiers d'une école. Chaque écriture porte son `schoolId`. */
+async function seedSchoolContent(fixture: SchoolFixture) {
+  const { schoolId, createdById } = fixture
 
-  const parentRes = await auth.api.signUpEmail({
-    body: {
-      name: 'Marie Dupont',
-      email: 'parent@school.test',
-      password: 'parent123',
-    },
-  })
-  const parentUser = await prisma.user.update({
-    where: { id: parentRes.user.id },
-    data: { role: 'PARENT', emailVerified: true },
-  })
-  console.log(`Created parent: ${parentUser.email}`)
+  const levelNames = ['CP', 'CE1', 'CE2', 'CM1', 'CM2']
+  const levels = []
+  for (const name of levelNames) {
+    levels.push(await prisma.level.create({ data: { schoolId, name } }))
+  }
+  // Chaîne de progression, intra-école : la FK composite l'impose désormais.
+  for (let index = 0; index < levels.length - 1; index += 1) {
+    await prisma.level.update({
+      where: { id_schoolId: { id: levels[index].id, schoolId } },
+      data: { nextLevelId: levels[index + 1].id },
+    })
+  }
 
-  // --- Families ---
-  const familyDupont = await prisma.family.create({
+  const currentPeriod = await prisma.period.create({
     data: {
-      name: 'Dupont',
-      emergencyContactName: 'Marie Dupont',
-      emergencyContactPhone: '06 12 34 56 78',
-      authorizedPickup: 'Marie Dupont, Pierre Dupont',
-      createdById: adminUser.id,
-    },
-  })
-
-  const familyMartin = await prisma.family.create({
-    data: {
-      name: 'Martin',
-      emergencyContactName: 'Sophie Martin',
-      emergencyContactPhone: '06 98 76 54 32',
-      createdById: adminUser.id,
-    },
-  })
-  console.log('Created 2 families')
-
-  // Link parent user to Dupont family
-  await prisma.userFamily.create({
-    data: { userId: parentUser.id, familyId: familyDupont.id },
-  })
-
-  // --- Persons ---
-  const mariePerson = await prisma.person.create({
-    data: {
-      name: 'Marie',
-      lastname: 'Dupont',
-      sex: 'FEMALE',
-      email: 'marie.dupont@email.com',
-      address: '12 rue des Lilas',
-      postCode: '75001',
-      city: 'Paris',
-    },
-  })
-
-  const pierrePerson = await prisma.person.create({
-    data: {
-      name: 'Pierre',
-      lastname: 'Dupont',
-      sex: 'MALE',
-      email: 'pierre.dupont@email.com',
-    },
-  })
-
-  const lucasPerson = await prisma.person.create({
-    data: {
-      name: 'Lucas',
-      lastname: 'Dupont',
-      sex: 'MALE',
-    },
-  })
-
-  const emmaPerson = await prisma.person.create({
-    data: {
-      name: 'Emma',
-      lastname: 'Dupont',
-      sex: 'FEMALE',
-    },
-  })
-
-  const sophieMartin = await prisma.person.create({
-    data: {
-      name: 'Sophie',
-      lastname: 'Martin',
-      sex: 'FEMALE',
-      email: 'sophie.martin@email.com',
-    },
-  })
-
-  const leoPerson = await prisma.person.create({
-    data: {
-      name: 'Leo',
-      lastname: 'Martin',
-      sex: 'MALE',
-    },
-  })
-  console.log('Created 6 persons')
-
-  // --- FamilyPerson links ---
-  await prisma.familyPerson.createMany({
-    data: [
-      { familyId: familyDupont.id, personId: mariePerson.id, relationType: 'PARENT' },
-      { familyId: familyDupont.id, personId: pierrePerson.id, relationType: 'PARENT' },
-      { familyId: familyDupont.id, personId: lucasPerson.id, relationType: 'OTHER' },
-      { familyId: familyDupont.id, personId: emmaPerson.id, relationType: 'OTHER' },
-      { familyId: familyMartin.id, personId: sophieMartin.id, relationType: 'PARENT' },
-      { familyId: familyMartin.id, personId: leoPerson.id, relationType: 'OTHER' },
-    ],
-  })
-
-  // --- Phone numbers ---
-  await prisma.phoneNumber.createMany({
-    data: [
-      {
-        personId: mariePerson.id,
-        phoneNumber: '06 12 34 56 78',
-        channels: JSON.stringify(['sms', 'whatsapp', 'call']),
-      },
-      {
-        personId: pierrePerson.id,
-        phoneNumber: '06 11 22 33 44',
-        channels: JSON.stringify(['call']),
-      },
-      {
-        personId: sophieMartin.id,
-        phoneNumber: '06 98 76 54 32',
-        channels: JSON.stringify(['sms', 'call']),
-      },
-    ],
-  })
-
-  // --- Students ---
-  const lucasStudent = await prisma.student.create({
-    data: {
-      personId: lucasPerson.id,
-      birthday: new Date('2017-03-15'),
-      birthplace: 'Paris',
-      languagesAtHome: JSON.stringify(['français', 'anglais']),
-      snackAuthorization: true,
-    },
-  })
-
-  const emmaStudent = await prisma.student.create({
-    data: {
-      personId: emmaPerson.id,
-      birthday: new Date('2019-08-22'),
-      birthplace: 'Paris',
-      languagesAtHome: JSON.stringify(['français']),
-      snackAuthorization: true,
-      allergies: 'Arachides',
-    },
-  })
-
-  const leoStudent = await prisma.student.create({
-    data: {
-      personId: leoPerson.id,
-      birthday: new Date('2018-01-10'),
-      birthplace: 'Lyon',
-      languagesAtHome: JSON.stringify(['français', 'arabe']),
-    },
-  })
-  console.log('Created 3 students')
-
-  // --- Levels ---
-  const cp = await prisma.level.create({ data: { name: 'CP' } })
-  const ce1 = await prisma.level.create({ data: { name: 'CE1' } })
-  const ce2 = await prisma.level.create({ data: { name: 'CE2' } })
-  const cm1 = await prisma.level.create({ data: { name: 'CM1' } })
-  const cm2 = await prisma.level.create({ data: { name: 'CM2' } })
-
-  // Set level progression chain
-  await prisma.level.update({ where: { id: cp.id }, data: { nextLevelId: ce1.id } })
-  await prisma.level.update({ where: { id: ce1.id }, data: { nextLevelId: ce2.id } })
-  await prisma.level.update({ where: { id: ce2.id }, data: { nextLevelId: cm1.id } })
-  await prisma.level.update({ where: { id: cm1.id }, data: { nextLevelId: cm2.id } })
-  console.log('Created 5 levels (CP → CE1 → CE2 → CM1 → CM2)')
-
-  // --- Periods ---
-  const period2025 = await prisma.period.create({
-    data: {
+      schoolId,
       name: '2025-2026',
       startAt: new Date('2025-09-01'),
       endAt: new Date('2026-07-04'),
     },
   })
-
-  const _period2026 = await prisma.period.create({
+  const nextPeriod = await prisma.period.create({
     data: {
+      schoolId,
       name: '2026-2027',
       startAt: new Date('2026-09-01'),
       endAt: new Date('2027-07-03'),
     },
   })
-  console.log('Created 2 periods')
 
-  // --- ClassPeriods ---
-  const cpClass = await prisma.classPeriod.create({
-    data: { name: 'CP-A', capacity: 25, levelId: cp.id, periodId: period2025.id },
-  })
-
-  const ce1Class = await prisma.classPeriod.create({
-    data: { name: 'CE1-A', capacity: 25, levelId: ce1.id, periodId: period2025.id },
-  })
-
-  const _ce2Class = await prisma.classPeriod.create({
-    data: { name: 'CE2-A', capacity: 20, levelId: ce2.id, periodId: period2025.id },
-  })
-  console.log('Created 3 class-periods')
-
-  // --- Plans ---
-  const planFull = await prisma.plan.create({
-    data: { name: 'Temps plein', amount: 1200 },
-  })
-
-  const planHalf = await prisma.plan.create({
-    data: { name: 'Mi-temps', amount: 700 },
-  })
-  console.log('Created 2 plans')
-
-  // --- Enrollments ---
-  const enrollLucas = await prisma.enrollment.create({
+  const classCp = await prisma.classPeriod.create({
     data: {
-      studentId: lucasStudent.id,
-      planId: planFull.id,
+      schoolId,
+      name: 'CP-A',
+      capacity: 25,
+      levelId: levels[0].id,
+      periodId: currentPeriod.id,
+    },
+  })
+  await prisma.classPeriod.create({
+    data: {
+      schoolId,
+      name: 'CE1-A',
+      capacity: 25,
+      levelId: levels[1].id,
+      periodId: currentPeriod.id,
+    },
+  })
+  await prisma.classPeriod.create({
+    data: { schoolId, name: 'CP-A', capacity: 25, levelId: levels[0].id, periodId: nextPeriod.id },
+  })
+
+  const fullTime = await prisma.plan.create({
+    data: { schoolId, name: 'Temps plein', amount: fixture.fullTimeAmount },
+  })
+  await prisma.plan.create({
+    data: { schoolId, name: 'Mi-temps', amount: fixture.fullTimeAmount / 2 },
+  })
+
+  const family = await prisma.family.create({
+    data: {
+      schoolId,
+      name: fixture.familyName,
+      emergencyContactName: `${fixture.parentFirstName} ${fixture.parentLastName}`,
+      emergencyContactPhone: '06 12 34 56 78',
+      createdById,
+    },
+  })
+
+  const parentPerson = await prisma.person.create({
+    data: {
+      schoolId,
+      name: fixture.parentFirstName,
+      lastname: fixture.parentLastName,
+      sex: 'FEMALE',
+      email: `${fixture.parentFirstName.toLowerCase()}@${fixture.familyName.toLowerCase()}.test`,
+      // Pas de `schoolId` ici : il appartient à la FK composite vers `Person`, donc
+      // Prisma le dérive du parent et refuse qu'on le fournisse.
+      families: { create: { familyId: family.id, relationType: 'PARENT' } },
+      phoneNumbers: { create: { phoneNumber: '06 12 34 56 78', channels: [] } },
+    },
+  })
+
+  const childPerson = await prisma.person.create({
+    data: {
+      schoolId,
+      name: fixture.childFirstName,
+      lastname: fixture.parentLastName,
+      sex: 'MALE',
+      families: { create: { familyId: family.id, relationType: 'OTHER' } },
+    },
+  })
+
+  const student = await prisma.student.create({
+    data: {
+      schoolId,
+      personId: childPerson.id,
+      birthday: new Date('2018-04-12'),
+      birthplace: 'Paris',
+      languagesAtHome: ['fr'],
+      snackAuthorization: true,
+    },
+  })
+
+  const enrollment = await prisma.enrollment.create({
+    data: {
+      schoolId,
+      studentId: student.id,
+      planId: fullTime.id,
       status: 'ACTIVE',
-      totalAmount: 1200,
+      totalAmount: fixture.fullTimeAmount,
       discount: 0,
     },
   })
 
-  const enrollEmma = await prisma.enrollment.create({
+  await prisma.classAssignment.create({
+    data: { schoolId, enrollmentId: enrollment.id, classPeriodId: classCp.id },
+  })
+
+  await prisma.payment.create({
     data: {
-      studentId: emmaStudent.id,
-      planId: planFull.id,
-      status: 'PENDING',
-      totalAmount: 1080,
-      discount: 120,
+      schoolId,
+      familyId: family.id,
+      enrollmentId: enrollment.id,
+      amount: fixture.fullTimeAmount / 4,
+      method: 'TRANSFER',
+      reference: 'Acompte',
+      paidAt: new Date(),
+      cashedAt: new Date(),
     },
   })
 
-  const enrollLeo = await prisma.enrollment.create({
-    data: {
-      studentId: leoStudent.id,
-      planId: planHalf.id,
-      status: 'ACTIVE',
-      totalAmount: 700,
-      discount: 0,
-    },
-  })
-  console.log('Created 3 enrollments')
-
-  // --- Class Assignments ---
-  await prisma.classAssignment.createMany({
-    data: [
-      { enrollmentId: enrollLucas.id, classPeriodId: ce1Class.id },
-      { enrollmentId: enrollEmma.id, classPeriodId: cpClass.id },
-      { enrollmentId: enrollLeo.id, classPeriodId: ce1Class.id },
-    ],
-  })
-  console.log('Created 3 class assignments')
-
-  // --- Payments ---
-  await prisma.payment.createMany({
-    data: [
-      {
-        familyId: familyDupont.id,
-        enrollmentId: enrollLucas.id,
-        amount: 400,
-        method: 'TRANSFER',
-        reference: 'VIR-2025-001',
-        paidAt: new Date('2025-09-15'),
-        cashedAt: new Date('2025-09-16'),
-      },
-      {
-        familyId: familyDupont.id,
-        enrollmentId: enrollLucas.id,
-        amount: 400,
-        method: 'TRANSFER',
-        reference: 'VIR-2025-002',
-        paidAt: new Date('2025-12-15'),
-        cashedAt: new Date('2025-12-16'),
-      },
-      {
-        familyId: familyMartin.id,
-        enrollmentId: enrollLeo.id,
-        amount: 350,
-        method: 'CHECK',
-        reference: 'CHQ-2025-001',
-        paidAt: new Date('2025-09-10'),
-      },
-    ],
-  })
-  console.log('Created 3 payments')
-
-  // --- Config ---
+  // `school_name` a disparu : le nom de l'école vit sur `School.name`.
+  // Le thème et la capacité diffèrent d'une école à l'autre, sinon les deux
+  // rendraient le même écran et l'isolation ne serait pas observable.
   await prisma.config.createMany({
     data: [
-      { name: 'automatic_promotion', value: 'false', valueType: 'BOOLEAN' },
-      { name: 'school_name', value: 'École Al-Nour', valueType: 'TEXT' },
-      { name: 'logo_url', value: '', valueType: 'TEXT' },
-      { name: 'favicon_url', value: '', valueType: 'TEXT' },
-      { name: 'max_students_per_class', value: '25', valueType: 'NUMBER' },
+      { schoolId, name: 'automatic_promotion', value: 'false', valueType: 'BOOLEAN' },
+      {
+        schoolId,
+        name: 'max_students_per_class',
+        value: String(fixture.maxStudentsPerClass),
+        valueType: 'NUMBER',
+      },
+      { schoolId, name: 'theme_primary', value: fixture.themePrimary, valueType: 'COLOR' },
+      { schoolId, name: 'logo_url', value: '', valueType: 'TEXT' },
+      { schoolId, name: 'favicon_url', value: '', valueType: 'TEXT' },
     ],
   })
-  console.log('Created 5 config entries')
 
-  console.log('\n--- Seed complete ---')
-  console.log('Super admin login: superadmin@school.test / superadmin123')
-  console.log('Admin login:  admin@school.test / admin123')
-  console.log('Parent login: parent@school.test / parent123')
+  return { familyId: family.id, parentPersonId: parentPerson.id }
+}
+
+async function seed() {
+  console.log('Seeding database...')
+  await purge()
+  console.log('Cleared existing data')
+
+  const alNour = await prisma.school.create({
+    data: { name: 'École Al-Nour', slug: 'al-nour', city: 'Paris' },
+  })
+  const horizon = await prisma.school.create({
+    data: { name: 'École Horizon', slug: 'horizon', city: 'Paris' },
+  })
+  console.log(`Created 2 schools: ${alNour.name}, ${horizon.name}`)
+
+  // Aucune appartenance : ce compte exerce la branche super-admin du contexte d'école.
+  const superAdminId = await createUser('Super Admin', 'superadmin@school.test', 'superadmin123')
+  await prisma.user.update({ where: { id: superAdminId }, data: { isSuperAdmin: true } })
+
+  // Membre des DEUX écoles : c'est ce compte qui permet de tester la bascule.
+  const adminId = await createUser('Admin Réseau', 'admin@school.test', 'admin123')
+  await prisma.schoolMember.createMany({
+    data: [
+      { userId: adminId, schoolId: alNour.id, role: 'ADMIN' },
+      { userId: adminId, schoolId: horizon.id, role: 'ADMIN' },
+    ],
+  })
+
+  const alNourContent = await seedSchoolContent({
+    schoolId: alNour.id,
+    familyName: 'Dupont',
+    parentFirstName: 'Marie',
+    parentLastName: 'Dupont',
+    childFirstName: 'Lucas',
+    createdById: adminId,
+    fullTimeAmount: 1200,
+    themePrimary: '#3c6e71',
+    maxStudentsPerClass: 25,
+  })
+
+  const horizonContent = await seedSchoolContent({
+    schoolId: horizon.id,
+    familyName: 'Martin',
+    parentFirstName: 'Sophie',
+    parentLastName: 'Martin',
+    childFirstName: 'Léo',
+    createdById: adminId,
+    fullTimeAmount: 980,
+    themePrimary: '#8c3b6e',
+    maxStudentsPerClass: 18,
+  })
+
+  // Parent d'une seule école : ne doit jamais voir l'autre.
+  const parentAlNourId = await createUser('Marie Dupont', 'parent@school.test', 'parent123')
+  await prisma.schoolMember.create({
+    data: { userId: parentAlNourId, schoolId: alNour.id, role: 'PARENT' },
+  })
+  await prisma.userFamily.create({
+    data: { userId: parentAlNourId, schoolId: alNour.id, familyId: alNourContent.familyId },
+  })
+
+  const parentHorizonId = await createUser(
+    'Sophie Martin',
+    'parent.horizon@school.test',
+    'parent123'
+  )
+  await prisma.schoolMember.create({
+    data: { userId: parentHorizonId, schoolId: horizon.id, role: 'PARENT' },
+  })
+  await prisma.userFamily.create({
+    data: { userId: parentHorizonId, schoolId: horizon.id, familyId: horizonContent.familyId },
+  })
+
+  // Cas d'usage central de la feature : un compte unique, deux écoles, deux dossiers
+  // familiaux distincts qui ne se voient pas.
+  const parentBothId = await createUser('Karim Benali', 'parent.both@school.test', 'parent123')
+  for (const [schoolId, familyLabel, childName] of [
+    [alNour.id, 'Benali', 'Adam'],
+    [horizon.id, 'Benali', 'Yasmine'],
+  ] as const) {
+    await prisma.schoolMember.create({
+      data: { userId: parentBothId, schoolId, role: 'PARENT' },
+    })
+
+    const family = await prisma.family.create({
+      data: {
+        schoolId,
+        name: familyLabel,
+        emergencyContactName: 'Karim Benali',
+        emergencyContactPhone: '06 55 44 33 22',
+        createdById: adminId,
+      },
+    })
+    await prisma.userFamily.create({
+      data: { userId: parentBothId, schoolId, familyId: family.id },
+    })
+
+    const child = await prisma.person.create({
+      data: {
+        schoolId,
+        name: childName,
+        lastname: familyLabel,
+        sex: 'MALE',
+        families: { create: { familyId: family.id, relationType: 'OTHER' } },
+      },
+    })
+    await prisma.student.create({
+      data: {
+        schoolId,
+        personId: child.id,
+        birthday: new Date('2019-09-20'),
+        languagesAtHome: ['fr', 'ar'],
+      },
+    })
+  }
+
+  console.log('Seed complete')
+  console.log('  superadmin@school.test / superadmin123  (plateforme, aucune école)')
+  console.log('  admin@school.test / admin123            (ADMIN des deux écoles)')
+  console.log('  parent@school.test / parent123          (Al-Nour)')
+  console.log('  parent.horizon@school.test / parent123  (Horizon)')
+  console.log('  parent.both@school.test / parent123     (les deux, deux dossiers)')
 }
 
 seed()
-  .catch((e) => {
-    // biome-ignore lint/suspicious/noConsole: seed error output
-    console.error('Seed failed:', e)
+  .catch((error) => {
+    console.log('Seed failed:', error)
     process.exit(1)
   })
   .finally(() => prisma.$disconnect())

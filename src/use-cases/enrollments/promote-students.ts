@@ -1,14 +1,12 @@
 import type { z } from 'zod'
 import { checkCapacity } from '@/domain/class-period'
+import type { CompletedEnrollment } from '@/gateways/enrollment-gateway'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { periodGateway } from '@/gateways/period-gateway'
 import { db } from '@/lib/db'
 import { promoteStudentsSchema } from './schemas'
 
 type Input = z.infer<typeof promoteStudentsSchema>
-type CompletedEnrollment = Awaited<
-  ReturnType<typeof enrollmentGateway.findCompletedByPeriod>
->[number]
 
 export type SkipReason =
   | 'alreadyPromoted'
@@ -54,11 +52,13 @@ type Eligibility =
 // promoteStudents mutate identically as they walk the same enrollment list, so their totals
 // cannot drift from each other.
 async function buildEligibilityContext(
+  schoolId: string,
   enrollments: CompletedEnrollment[],
   targetPeriodId: string
 ): Promise<EligibilityContext> {
   const studentIds = enrollments.map((enrollment) => enrollment.studentId)
   const alreadyPromotedStudentIds = await enrollmentGateway.findEnrolledStudentIds(
+    schoolId,
     targetPeriodId,
     studentIds
   )
@@ -76,7 +76,12 @@ async function buildEligibilityContext(
     nextLevelIds.length === 0
       ? []
       : await db.classPeriod.findMany({
-          where: { levelId: { in: nextLevelIds }, periodId: targetPeriodId, isActive: true },
+          where: {
+            schoolId,
+            levelId: { in: nextLevelIds },
+            periodId: targetPeriodId,
+            isActive: true,
+          },
           select: { id: true, levelId: true, capacity: true },
         })
 
@@ -94,6 +99,7 @@ async function buildEligibilityContext(
       : await db.classAssignment.groupBy({
           by: ['classPeriodId'],
           where: {
+            schoolId,
             classPeriodId: { in: classPeriodIds },
             endAt: null,
             enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
@@ -138,15 +144,19 @@ function resolveEligibility(
 export async function previewPromoteStudents(input: Input) {
   const parsed = promoteStudentsSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  const { schoolId } = parsed.data
 
-  const sourcePeriod = await periodGateway.findById(parsed.data.sourcePeriodId)
+  const sourcePeriod = await periodGateway.findById(schoolId, parsed.data.sourcePeriodId)
   if (!sourcePeriod) return 'notFound' as const
 
-  const targetPeriod = await periodGateway.findById(parsed.data.targetPeriodId)
+  const targetPeriod = await periodGateway.findById(schoolId, parsed.data.targetPeriodId)
   if (!targetPeriod) return 'notFound' as const
 
-  const enrollments = await enrollmentGateway.findCompletedByPeriod(parsed.data.sourcePeriodId)
-  const context = await buildEligibilityContext(enrollments, parsed.data.targetPeriodId)
+  const enrollments = await enrollmentGateway.findCompletedByPeriod(
+    schoolId,
+    parsed.data.sourcePeriodId
+  )
+  const context = await buildEligibilityContext(schoolId, enrollments, parsed.data.targetPeriodId)
 
   let promoted = 0
   const skippedByReason: Record<SkipReason, number> = {
@@ -174,15 +184,19 @@ export async function previewPromoteStudents(input: Input) {
 export async function promoteStudents(input: Input) {
   const parsed = promoteStudentsSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  const { schoolId } = parsed.data
 
-  const sourcePeriod = await periodGateway.findById(parsed.data.sourcePeriodId)
+  const sourcePeriod = await periodGateway.findById(schoolId, parsed.data.sourcePeriodId)
   if (!sourcePeriod) return 'notFound' as const
 
-  const targetPeriod = await periodGateway.findById(parsed.data.targetPeriodId)
+  const targetPeriod = await periodGateway.findById(schoolId, parsed.data.targetPeriodId)
   if (!targetPeriod) return 'notFound' as const
 
-  const enrollments = await enrollmentGateway.findCompletedByPeriod(parsed.data.sourcePeriodId)
-  const context = await buildEligibilityContext(enrollments, parsed.data.targetPeriodId)
+  const enrollments = await enrollmentGateway.findCompletedByPeriod(
+    schoolId,
+    parsed.data.sourcePeriodId
+  )
+  const context = await buildEligibilityContext(schoolId, enrollments, parsed.data.targetPeriodId)
 
   let promoted = 0
   let skipped = 0
@@ -205,6 +219,7 @@ export async function promoteStudents(input: Input) {
         async (tx) => {
           const newEnrollment = await tx.enrollment.create({
             data: {
+              schoolId,
               studentId: enrollment.studentId,
               planId: enrollment.planId,
               totalAmount: enrollment.totalAmount,
@@ -216,6 +231,7 @@ export async function promoteStudents(input: Input) {
 
           await tx.classAssignment.create({
             data: {
+              schoolId,
               enrollmentId: newEnrollment.id,
               classPeriodId: eligibility.targetClassPeriodId,
               startAt: new Date(),

@@ -1,112 +1,65 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
 import { localizedHref } from '@/i18n/localized-href'
-import type { User } from '@/lib/auth'
-import { auth } from '@/lib/auth'
-import { db } from '@/lib/db'
-import type { Role } from '@/types/enums'
+import { getSchoolContext } from '@/lib/school-context'
 
-async function getLoginHref() {
+async function redirectToLogin(): Promise<never> {
   const locale = await getLocale()
-  return localizedHref(locale, '/login')
+  redirect(localizedHref(locale, '/login'))
 }
 
-export async function requireAdmin(): Promise<User | null> {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) return null
+/**
+ * Portée d'administration sur l'école active. Un `isSuperAdmin` la couvre sans
+ * posséder de ligne `SchoolMember`.
+ */
+export async function requireSchoolAdmin(): Promise<{ schoolId: string; userId: string }> {
+  const context = await getSchoolContext()
+  if (!context) return redirectToLogin()
+  if (!context.isSuperAdmin && context.role !== 'ADMIN') notFound()
 
-  const dbUser = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { role: true },
-  })
-  if (!dbUser) return null
-  if (dbUser.role !== 'ADMIN' && dbUser.role !== 'SUPER_ADMIN') return null
-
-  return session.user
+  return { schoolId: context.schoolId, userId: context.userId }
 }
 
-export async function requireAdminActor(): Promise<{ id: string; role: Role } | null> {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) return null
+export type SchoolScope =
+  | { schoolId: string; userId: string; isAdmin: true }
+  | { schoolId: string; userId: string; isAdmin: false; familyId: string }
 
-  const dbUser = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { role: true },
-  })
-  if (!dbUser) return null
-  if (dbUser.role !== 'ADMIN' && dbUser.role !== 'SUPER_ADMIN') return null
+/**
+ * Portée de lecture métier.
+ *
+ * `familyId` est ici une chaîne, pas `string | null` : ses appelants l'injectent dans
+ * des filtres Prisma sur une colonne non nullable. Un parent sans famille est donc
+ * arrêté ici. Les surfaces qui doivent l'accueillir — l'écran « parent non rattaché »
+ * — appellent `getSchoolContext()` directement.
+ */
+export async function requireSchoolScope(): Promise<SchoolScope> {
+  const context = await getSchoolContext()
+  if (!context) return redirectToLogin()
 
-  return { id: session.user.id, role: dbUser.role }
-}
-
-export async function requireRole(allowedRoles: Role[]): Promise<User | null> {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) return null
-
-  const dbUser = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { role: true },
-  })
-  if (!dbUser) return null
-  if (!allowedRoles.includes(dbUser.role)) return null
-
-  return session.user
-}
-
-export async function requireSuperAdmin(): Promise<{ id: string; role: Role } | null> {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) return null
-
-  const dbUser = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { role: true },
-  })
-  if (!dbUser || dbUser.role !== 'SUPER_ADMIN') return null
-
-  return { id: session.user.id, role: dbUser.role }
-}
-
-export type SessionWithRole = {
-  userId: string
-  role: Role
-  familyId?: string
-}
-
-export async function getSessionWithRole(): Promise<SessionWithRole> {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) redirect(await getLoginHref())
-
-  const dbUser = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { role: true },
-  })
-  if (!dbUser) redirect(await getLoginHref())
-
-  let familyId: string | undefined
-
-  if (dbUser.role === 'PARENT') {
-    const userFamily = await db.userFamily.findFirst({
-      where: { userId: session.user.id },
-      select: { familyId: true },
-    })
-    familyId = userFamily?.familyId
+  if (context.isSuperAdmin) {
+    return { schoolId: context.schoolId, userId: context.userId, isAdmin: true }
   }
+  if (context.role === 'ADMIN') {
+    return { schoolId: context.schoolId, userId: context.userId, isAdmin: true }
+  }
+
+  if (!context.familyId) notFound()
 
   return {
-    userId: session.user.id,
-    role: dbUser.role,
-    familyId,
+    schoolId: context.schoolId,
+    userId: context.userId,
+    isAdmin: false,
+    familyId: context.familyId,
   }
 }
 
-export type FamilyScope = { isAdmin: true } | { isAdmin: false; familyId: string }
+/** Portée plateforme : gestion des écoles et des comptes, hors de toute école. */
+export async function requirePlatformAdmin(): Promise<{ userId: string }> {
+  const context = await getSchoolContext()
+  if (!context) return redirectToLogin()
+  if (!context.isSuperAdmin) notFound()
 
-export async function requireFamilyScope(): Promise<FamilyScope> {
-  const { role, familyId } = await getSessionWithRole()
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return { isAdmin: true }
-  if (!familyId) notFound()
-  return { isAdmin: false, familyId }
+  return { userId: context.userId }
 }

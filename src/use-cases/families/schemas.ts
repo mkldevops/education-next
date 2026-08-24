@@ -19,6 +19,7 @@ const parentInputSchema = personInputSchema
   })
 
 export const createFamilySchema = z.object({
+  schoolId: z.string().min(1),
   name: z.string().min(1).max(50),
   emergencyContactName: z.string().max(250).optional(),
   emergencyContactPhone: z.string().min(1).max(20).regex(phoneNumberFormat).optional(),
@@ -32,6 +33,7 @@ export const createFamilySchema = z.object({
 // Optional fields are nullish on update: `undefined` leaves the column untouched,
 // `null` clears it. Without that distinction an emptied field could never be erased.
 export const updateFamilySchema = z.object({
+  schoolId: z.string().min(1),
   id: z.string().uuid(),
   name: z.string().min(1).max(50).optional(),
   emergencyContactName: z.string().max(250).nullish(),
@@ -40,6 +42,7 @@ export const updateFamilySchema = z.object({
 })
 
 export const addPersonToFamilySchema = z.object({
+  schoolId: z.string().min(1),
   familyId: z.string().uuid(),
   person: personInputSchema,
   relationType: z.enum(['PARENT', 'TUTOR', 'GRANDPARENT', 'SIBLING', 'OTHER']),
@@ -52,6 +55,7 @@ export const phoneNumberSchema = z.object({
 })
 
 export const linkUserToFamilySchema = z.object({
+  schoolId: z.string().min(1),
   userId: z.string(),
   familyId: z.string().uuid(),
 })

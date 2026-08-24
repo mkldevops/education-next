@@ -9,28 +9,32 @@ export async function setNextLevel(input: Input, levelGw = levelGateway) {
   const parsed = setNextLevelSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const level = await levelGw.findById(parsed.data.id)
+  const { schoolId, id, nextLevelId } = parsed.data
+
+  const level = await levelGw.findById(schoolId, id)
   if (!level) return 'notFound' as const
 
-  if (parsed.data.nextLevelId !== null) {
-    const nextLevel = await levelGw.findById(parsed.data.nextLevelId)
+  if (nextLevelId !== null) {
+    // `findById` est scopé par école : un niveau d'une autre école ne peut donc
+    // jamais être résolu ici, même si la contrainte de la base l'interdit déjà.
+    const nextLevel = await levelGw.findById(schoolId, nextLevelId)
     if (!nextLevel) return 'notFound' as const
 
-    const alreadyLinked = await levelGw.findByNextLevelId(parsed.data.nextLevelId)
-    if (alreadyLinked && alreadyLinked.id !== parsed.data.id) return 'alreadyLinked' as const
+    const alreadyLinked = await levelGw.findByNextLevelId(schoolId, nextLevelId)
+    if (alreadyLinked && alreadyLinked.id !== id) return 'alreadyLinked' as const
 
-    const allLevels = await levelGw.list()
+    const allLevels = await levelGw.list(schoolId)
     const nextLevelMap = new Map(allLevels.map((l) => [l.id, l.nextLevelId]))
-    nextLevelMap.set(parsed.data.id, parsed.data.nextLevelId)
+    nextLevelMap.set(id, nextLevelId)
 
     const circularCheck = checkCircularReference(
-      parsed.data.id,
-      parsed.data.nextLevelId,
-      (id) => nextLevelMap.get(id) ?? null
+      id,
+      nextLevelId,
+      (levelId) => nextLevelMap.get(levelId) ?? null
     )
     if (circularCheck !== 'OK') return circularCheck
   }
 
-  await levelGw.setNextLevel(parsed.data.id, parsed.data.nextLevelId)
+  await levelGw.setNextLevel(schoolId, id, nextLevelId)
   return 'OK' as const
 }

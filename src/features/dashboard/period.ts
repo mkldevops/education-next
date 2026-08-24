@@ -8,20 +8,28 @@ export type SelectedPeriod = {
   name: string
 }
 
-export async function getSelectedPeriod(): Promise<SelectedPeriod | null> {
+/**
+ * Période sélectionnée pour une école.
+ *
+ * `schoolId` est requis et non déduit du cookie : la valeur de `selected_period`
+ * survit à une bascule d'école, donc l'existence de la période ne suffit pas — il
+ * faut vérifier son **appartenance**, sinon une période de l'école A filtrerait
+ * les données de l'école B. Un cookie pointant ailleurs est traité comme absent.
+ */
+export async function getSelectedPeriod(schoolId: string): Promise<SelectedPeriod | null> {
   const raw = (await cookies()).get('selected_period')?.value
   const parsed = z.uuid().safeParse(raw)
 
   if (parsed.success) {
     const period = await db.period.findFirst({
-      where: { id: parsed.data, isActive: true },
+      where: { id: parsed.data, schoolId, isActive: true },
       select: { id: true, name: true },
     })
     if (period) return period
   }
 
   const periods = await db.period.findMany({
-    where: { isActive: true },
+    where: { schoolId, isActive: true },
     orderBy: { startAt: 'desc' },
     select: {
       id: true,
@@ -44,6 +52,6 @@ export async function getSelectedPeriod(): Promise<SelectedPeriod | null> {
   return selected ? { id: selected.id, name: selected.name } : null
 }
 
-export async function getSelectedPeriodId(): Promise<string | null> {
-  return (await getSelectedPeriod())?.id ?? null
+export async function getSelectedPeriodId(schoolId: string): Promise<string | null> {
+  return (await getSelectedPeriod(schoolId))?.id ?? null
 }

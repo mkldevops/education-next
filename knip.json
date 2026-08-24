@@ -23,7 +23,8 @@
     "src/types/email.ts",
     "src/use-cases/index.ts",
     "src/use-cases/commands/delete-profile.ts",
-    "src/use-cases/commands/update-profile.ts"
+    "src/use-cases/commands/update-profile.ts",
+    "src/actions/school-actions.ts"
   ],
   "ignoreDependencies": [
     "tailwindcss",

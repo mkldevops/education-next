@@ -10,34 +10,31 @@ import type {
   updatePeriodSchema,
 } from '@/use-cases/periods/schemas'
 import { updatePeriod } from '@/use-cases/periods/update-period'
-import { requireAdmin } from './auth-helper'
+import { requireSchoolAdmin } from './auth-helper'
 
-type CreatePeriodInput = z.infer<typeof createPeriodSchema>
-type UpdatePeriodInput = z.infer<typeof updatePeriodSchema>
-type DeactivatePeriodInput = z.infer<typeof deactivatePeriodSchema>
+type CreatePeriodInput = Omit<z.infer<typeof createPeriodSchema>, 'schoolId'>
+type UpdatePeriodInput = Omit<z.infer<typeof updatePeriodSchema>, 'schoolId'>
+type DeactivatePeriodInput = Omit<z.infer<typeof deactivatePeriodSchema>, 'schoolId'>
 
 export async function createPeriodAction(data: CreatePeriodInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await createPeriod(data)
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await createPeriod({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/periods')
   return result
 }
 
 export async function updatePeriodAction(id: string, data: Omit<UpdatePeriodInput, 'id'>) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await updatePeriod({ id, ...data })
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await updatePeriod({ id, ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/periods')
   return result
 }
 
 export async function deactivatePeriodAction(data: DeactivatePeriodInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await deactivatePeriod(data)
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await deactivatePeriod({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/periods')
   return 'OK' as const

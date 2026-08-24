@@ -1,49 +1,71 @@
-import type { EnrollmentStatus } from '@/generated/prisma/client'
+import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
-export const enrollmentGateway = {
-  create: (data: {
-    studentId: string
-    planId: string
-    totalAmount: number
-    discount?: number
-    canLeaveAlone?: boolean
-  }) => db.enrollment.create({ data }),
+/** Forme retournée par `findCompletedByPeriod`, consommée par `promote-students`. */
+export type CompletedEnrollment = Prisma.EnrollmentGetPayload<{
+  include: {
+    student: true
+    classAssignments: {
+      include: {
+        classPeriod: {
+          include: {
+            level: {
+              include: { nextLevel: true }
+            }
+          }
+        }
+      }
+    }
+  }
+}>
 
-  findById: (id: string) =>
+export const enrollmentGateway = {
+  create: (
+    schoolId: string,
+    data: {
+      studentId: string
+      planId: string
+      totalAmount: number
+      discount?: number
+      canLeaveAlone?: boolean
+    }
+  ) => db.enrollment.create({ data: { ...data, schoolId } }),
+
+  findById: (schoolId: string, id: string) =>
     db.enrollment.findUnique({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       include: { student: true, plan: true },
     }),
 
-  updateStatus: (id: string, status: EnrollmentStatus) =>
+  updateStatus: (schoolId: string, id: string, status: EnrollmentStatus) =>
     db.enrollment.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data: { status },
     }),
 
-  list: () =>
+  list: (schoolId: string) =>
     db.enrollment.findMany({
-      where: { isActive: true },
+      where: { schoolId, isActive: true },
       include: { student: { include: { person: true } }, plan: true },
       orderBy: { registeredAt: 'desc' },
     }),
 
-  findByStudent: (studentId: string) =>
+  findByStudent: (schoolId: string, studentId: string) =>
     db.enrollment.findMany({
-      where: { studentId },
+      where: { schoolId, studentId },
       include: { plan: true },
     }),
 
-  findDuplicate: async (studentId: string, classPeriodId: string) => {
+  findDuplicate: async (schoolId: string, studentId: string, classPeriodId: string) => {
     const classPeriod = await db.classPeriod.findUnique({
-      where: { id: classPeriodId },
+      where: { id_schoolId: { id: classPeriodId, schoolId } },
       select: { periodId: true },
     })
     if (!classPeriod) return false
 
     const existing = await db.enrollment.findFirst({
       where: {
+        schoolId,
         studentId,
         status: { in: ['PENDING', 'ACTIVE'] },
         classAssignments: {
@@ -56,15 +78,16 @@ export const enrollmentGateway = {
     return existing !== null
   },
 
-  updateDiscount: (id: string, discount: number, totalAmount: number) =>
+  updateDiscount: (schoolId: string, id: string, discount: number, totalAmount: number) =>
     db.enrollment.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data: { discount, totalAmount },
     }),
 
-  findActiveByFamily: (familyId: string) =>
+  findActiveByFamily: (schoolId: string, familyId: string) =>
     db.enrollment.findMany({
       where: {
+        schoolId,
         status: 'ACTIVE',
         student: {
           person: {
@@ -77,11 +100,12 @@ export const enrollmentGateway = {
       include: { payments: true },
     }),
 
-  findEnrolledStudentIds: async (periodId: string, studentIds: string[]) => {
+  findEnrolledStudentIds: async (schoolId: string, periodId: string, studentIds: string[]) => {
     if (studentIds.length === 0) return new Set<string>()
 
     const enrollments = await db.enrollment.findMany({
       where: {
+        schoolId,
         studentId: { in: studentIds },
         status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] },
         classAssignments: { some: { classPeriod: { periodId } } },
@@ -91,9 +115,13 @@ export const enrollmentGateway = {
     return new Set(enrollments.map((enrollment) => enrollment.studentId))
   },
 
-  findCompletedByPeriod: async (periodId: string) => {
+  findCompletedByPeriod: async (
+    schoolId: string,
+    periodId: string
+  ): Promise<CompletedEnrollment[]> => {
     const enrollments = await db.enrollment.findMany({
       where: {
+        schoolId,
         status: { in: ['ACTIVE', 'COMPLETED'] },
         classAssignments: {
           some: {

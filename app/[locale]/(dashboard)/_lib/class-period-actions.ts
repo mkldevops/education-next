@@ -8,15 +8,17 @@ import type {
   updateClassPeriodSchema,
 } from '@/use-cases/class-periods/schemas'
 import { updateClassPeriod } from '@/use-cases/class-periods/update-class-period'
-import { requireAdmin } from './auth-helper'
+import { requireSchoolAdmin } from './auth-helper'
 
 type CreateClassPeriodInput = z.infer<typeof createClassPeriodSchema>
 type UpdateClassPeriodInput = z.infer<typeof updateClassPeriodSchema>
 
-export async function createClassPeriodAction(data: CreateClassPeriodInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await createClassPeriod(data)
+// `schoolId` et `id` sont posés APRÈS le spread : une Server Action est un endpoint
+// HTTP, donc `data` est un payload arbitraire et l'`Omit` du type ne contraint que
+// la compilation. Dans l'autre ordre, le client écrasait l'école du garde.
+export async function createClassPeriodAction(data: Omit<CreateClassPeriodInput, 'schoolId'>) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await createClassPeriod({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/classes')
   return result
@@ -24,11 +26,10 @@ export async function createClassPeriodAction(data: CreateClassPeriodInput) {
 
 export async function updateClassPeriodAction(
   id: string,
-  data: Omit<UpdateClassPeriodInput, 'id'>
+  data: Omit<UpdateClassPeriodInput, 'id' | 'schoolId'>
 ) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await updateClassPeriod({ id, ...data })
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await updateClassPeriod({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/classes')
   return result

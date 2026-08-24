@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { getConfig } from './get-config'
 
+const SCHOOL_ID = 'school-1'
+
 class ConfigGatewaySpy {
   configByNameMap: Record<string, { id: string; name: string; value: string; valueType: string }> =
     {}
 
-  async get(name: string) {
+  async get(_schoolId: string, name: string) {
     return this.configByNameMap[name] || null
   }
 
@@ -42,7 +44,7 @@ describe('getConfig', () => {
 
   it('fails validation when name is empty', async () => {
     // GIVEN
-    const input = { name: '' }
+    const input = { schoolId: SCHOOL_ID, name: '' }
 
     // WHEN
     const result = await getConfig(input, gateway as unknown as any)
@@ -53,7 +55,7 @@ describe('getConfig', () => {
 
   it('fails validation when name exceeds max length', async () => {
     // GIVEN
-    const input = { name: 'a'.repeat(251) }
+    const input = { schoolId: SCHOOL_ID, name: 'a'.repeat(251) }
 
     // WHEN
     const result = await getConfig(input, gateway as unknown as any)
@@ -64,7 +66,7 @@ describe('getConfig', () => {
 
   it('fails when config not found', async () => {
     // GIVEN
-    const input = { name: 'nonexistent.config' }
+    const input = { schoolId: SCHOOL_ID, name: 'nonexistent.config' }
 
     // WHEN
     const result = await getConfig(input, gateway as unknown as any)
@@ -75,7 +77,7 @@ describe('getConfig', () => {
 
   it('retrieves text config', async () => {
     // GIVEN
-    const input = { name: 'app.timezone' }
+    const input = { schoolId: SCHOOL_ID, name: 'app.timezone' }
 
     // WHEN
     const result = await getConfig(input, gateway as unknown as any)
@@ -90,7 +92,7 @@ describe('getConfig', () => {
 
   it('retrieves number config', async () => {
     // GIVEN
-    const input = { name: 'enrollment.max-capacity' }
+    const input = { schoolId: SCHOOL_ID, name: 'enrollment.max-capacity' }
 
     // WHEN
     const result = await getConfig(input, gateway as unknown as any)
@@ -105,7 +107,7 @@ describe('getConfig', () => {
 
   it('retrieves boolean config', async () => {
     // GIVEN
-    const input = { name: 'debug-mode' }
+    const input = { schoolId: SCHOOL_ID, name: 'debug-mode' }
 
     // WHEN
     const result = await getConfig(input, gateway as unknown as any)

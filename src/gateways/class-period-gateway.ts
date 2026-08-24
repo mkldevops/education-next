@@ -1,10 +1,13 @@
 import { db } from '@/lib/db'
 
 export const classPeriodGateway = {
-  create: (data: { name: string; capacity: number; levelId: string; periodId: string }) =>
-    db.classPeriod.create({ data }),
+  create: (
+    schoolId: string,
+    data: { name: string; capacity: number; levelId: string; periodId: string }
+  ) => db.classPeriod.create({ data: { ...data, schoolId } }),
 
   update: (
+    schoolId: string,
     id: string,
     data: {
       name?: string
@@ -12,26 +15,27 @@ export const classPeriodGateway = {
     }
   ) =>
     db.classPeriod.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data,
     }),
 
-  findById: (id: string) =>
+  findById: (schoolId: string, id: string) =>
     db.classPeriod.findUnique({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       include: { level: true, period: true },
     }),
 
-  list: () =>
+  list: (schoolId: string) =>
     db.classPeriod.findMany({
-      where: { isActive: true },
+      where: { schoolId, isActive: true },
       include: { level: true, period: true },
       orderBy: { name: 'asc' },
     }),
 
-  countEnrolled: async (id: string) => {
+  countEnrolled: async (schoolId: string, id: string) => {
     const count = await db.classAssignment.count({
       where: {
+        schoolId,
         classPeriodId: id,
         endAt: null,
         enrollment: {
@@ -42,9 +46,10 @@ export const classPeriodGateway = {
     return count
   },
 
-  findByLevelAndPeriod: (levelId: string, periodId: string) =>
+  findByLevelAndPeriod: (schoolId: string, levelId: string, periodId: string) =>
     db.classPeriod.findFirst({
       where: {
+        schoolId,
         levelId,
         periodId,
         isActive: true,

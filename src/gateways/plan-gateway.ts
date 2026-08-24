@@ -1,9 +1,11 @@
 import { db } from '@/lib/db'
 
 export const planGateway = {
-  create: (data: { name: string; amount: number }) => db.plan.create({ data }),
+  create: (schoolId: string, data: { name: string; amount: number }) =>
+    db.plan.create({ data: { ...data, schoolId } }),
 
   update: (
+    schoolId: string,
     id: string,
     data: {
       name?: string
@@ -11,18 +13,18 @@ export const planGateway = {
     }
   ) =>
     db.plan.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data,
     }),
 
-  findById: (id: string) =>
+  findById: (schoolId: string, id: string) =>
     db.plan.findUnique({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
     }),
 
-  list: () =>
+  list: (schoolId: string) =>
     db.plan.findMany({
-      where: { isActive: true },
+      where: { schoolId, isActive: true },
       orderBy: { name: 'asc' },
     }),
 }

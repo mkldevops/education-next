@@ -20,6 +20,7 @@ describe('updateFamily', () => {
 
   it('should fail validation with invalid input', async () => {
     const result = await updateFamily({
+      schoolId: 'school-1',
       id: 'invalid-uuid',
       name: 'New Name',
     })
@@ -29,6 +30,7 @@ describe('updateFamily', () => {
 
   it('should fail validation when name is empty string', async () => {
     const result = await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: '',
     })
@@ -39,6 +41,7 @@ describe('updateFamily', () => {
   it('should fail validation when name exceeds max length', async () => {
     const longName = 'a'.repeat(51)
     const result = await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: longName,
     })
@@ -50,6 +53,7 @@ describe('updateFamily', () => {
     familyGatewayMock.findById.mockResolvedValue(null)
 
     const result = await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'New Name',
     })
@@ -64,6 +68,7 @@ describe('updateFamily', () => {
     })
 
     const result = await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'New Name',
     })
@@ -78,11 +83,13 @@ describe('updateFamily', () => {
     })
 
     await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'Updated Name',
     })
 
     expect(familyGatewayMock.update).toHaveBeenCalledWith(
+      'school-1',
       '550e8400-e29b-41d4-a716-446655440000',
       expect.objectContaining({
         name: 'Updated Name',
@@ -97,12 +104,14 @@ describe('updateFamily', () => {
     })
 
     await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       emergencyContactName: 'Marie Dupont',
       emergencyContactPhone: '+33 6 12 34 56 78',
     })
 
     expect(familyGatewayMock.update).toHaveBeenCalledWith(
+      'school-1',
       '550e8400-e29b-41d4-a716-446655440000',
       expect.objectContaining({
         emergencyContactName: 'Marie Dupont',
@@ -118,6 +127,7 @@ describe('updateFamily', () => {
     })
 
     const result = await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       emergencyContactName: 'Marie Dupont',
       emergencyContactPhone: 'Fahari',
@@ -133,11 +143,13 @@ describe('updateFamily', () => {
     })
 
     await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       authorizedPickup: 'John Doe',
     })
 
     expect(familyGatewayMock.update).toHaveBeenCalledWith(
+      'school-1',
       '550e8400-e29b-41d4-a716-446655440000',
       expect.objectContaining({
         authorizedPickup: 'John Doe',
@@ -152,6 +164,7 @@ describe('updateFamily', () => {
     })
 
     await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'New Name',
       emergencyContactName: 'Contact Info',
@@ -160,6 +173,7 @@ describe('updateFamily', () => {
     })
 
     expect(familyGatewayMock.update).toHaveBeenCalledWith(
+      'school-1',
       '550e8400-e29b-41d4-a716-446655440000',
       expect.objectContaining({
         name: 'New Name',
@@ -177,6 +191,7 @@ describe('updateFamily', () => {
     })
 
     const result = await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'New Name',
     })
@@ -191,6 +206,7 @@ describe('updateFamily', () => {
     })
 
     const result = await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: '   ',
     })
@@ -205,18 +221,23 @@ describe('updateFamily', () => {
     })
 
     await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       emergencyContactName: null,
       emergencyContactPhone: null,
       authorizedPickup: null,
     })
 
-    expect(familyGatewayMock.update).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000', {
-      name: undefined,
-      emergencyContactName: null,
-      emergencyContactPhone: null,
-      authorizedPickup: null,
-    })
+    expect(familyGatewayMock.update).toHaveBeenCalledWith(
+      'school-1',
+      '550e8400-e29b-41d4-a716-446655440000',
+      {
+        name: undefined,
+        emergencyContactName: null,
+        emergencyContactPhone: null,
+        authorizedPickup: null,
+      }
+    )
   })
 
   it('should leave the optional fields untouched when they are omitted', async () => {
@@ -226,16 +247,21 @@ describe('updateFamily', () => {
     })
 
     await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'New Name',
     })
 
-    expect(familyGatewayMock.update).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000', {
-      name: 'New Name',
-      emergencyContactName: undefined,
-      emergencyContactPhone: undefined,
-      authorizedPickup: undefined,
-    })
+    expect(familyGatewayMock.update).toHaveBeenCalledWith(
+      'school-1',
+      '550e8400-e29b-41d4-a716-446655440000',
+      {
+        name: 'New Name',
+        emergencyContactName: undefined,
+        emergencyContactPhone: undefined,
+        authorizedPickup: undefined,
+      }
+    )
   })
 
   it('should allow updating only emergency contact', async () => {
@@ -245,6 +271,7 @@ describe('updateFamily', () => {
     })
 
     const result = await updateFamily({
+      schoolId: 'school-1',
       id: '550e8400-e29b-41d4-a716-446655440000',
       emergencyContactName: 'New Contact',
     })

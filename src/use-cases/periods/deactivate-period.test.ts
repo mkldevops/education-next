@@ -6,7 +6,7 @@ class PeriodGatewaySpy {
   classPeriodCount = 0
   deactivateCalls: string[] = []
 
-  async findById(id: string) {
+  async findById(_schoolId: string, id: string) {
     return this.periodsByIdMap[id] || null
   }
 
@@ -14,11 +14,13 @@ class PeriodGatewaySpy {
     return this.classPeriodCount
   }
 
-  async deactivate(id: string) {
+  async deactivate(_schoolId: string, id: string) {
     this.deactivateCalls.push(id)
     return {} as never
   }
 }
+
+const schoolId = 'school-1'
 
 const periodId = '123e4567-e89b-12d3-a456-426614174001'
 
@@ -31,24 +33,29 @@ describe('deactivatePeriod', () => {
   })
 
   it('rejects an invalid id', async () => {
-    expect(await deactivatePeriod({ id: 'nope' }, gateway as never)).toBe('validationError')
+    expect(await deactivatePeriod({ schoolId, id: 'nope' }, gateway as never)).toBe(
+      'validationError'
+    )
   })
 
   it('fails when the period does not exist', async () => {
     expect(
-      await deactivatePeriod({ id: '123e4567-e89b-12d3-a456-426614174099' }, gateway as never)
+      await deactivatePeriod(
+        { schoolId, id: '123e4567-e89b-12d3-a456-426614174099' },
+        gateway as never
+      )
     ).toBe('notFound')
   })
 
   it('refuses to deactivate a period still used by classes', async () => {
     gateway.classPeriodCount = 2
 
-    expect(await deactivatePeriod({ id: periodId }, gateway as never)).toBe('periodInUse')
+    expect(await deactivatePeriod({ schoolId, id: periodId }, gateway as never)).toBe('periodInUse')
     expect(gateway.deactivateCalls).toEqual([])
   })
 
   it('deactivates an unused period', async () => {
-    expect(await deactivatePeriod({ id: periodId }, gateway as never)).toBe('OK')
+    expect(await deactivatePeriod({ schoolId, id: periodId }, gateway as never)).toBe('OK')
     expect(gateway.deactivateCalls).toEqual([periodId])
   })
 })

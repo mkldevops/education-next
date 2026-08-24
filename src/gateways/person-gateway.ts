@@ -2,17 +2,21 @@ import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
 export const personGateway = {
-  create: (data: {
-    name: string
-    lastname: string
-    sex: 'MALE' | 'FEMALE'
-    email?: string
-    address?: string
-    postCode?: string
-    city?: string
-  }) => db.person.create({ data }),
+  create: (
+    schoolId: string,
+    data: {
+      name: string
+      lastname: string
+      sex: 'MALE' | 'FEMALE'
+      email?: string
+      address?: string
+      postCode?: string
+      city?: string
+    }
+  ) => db.person.create({ data: { ...data, schoolId } }),
 
   createWithFamily: (
+    schoolId: string,
     familyId: string,
     relationType: 'PARENT' | 'TUTOR' | 'GRANDPARENT' | 'SIBLING' | 'OTHER',
     data: {
@@ -29,23 +33,25 @@ export const personGateway = {
     db.person.create({
       data: {
         ...data,
+        schoolId,
         families: { create: { familyId, relationType } },
         ...(phoneNumber ? { phoneNumbers: { create: { phoneNumber, channels: [] } } } : {}),
       },
     }),
 
-  update: (id: string, data: Prisma.PersonUpdateInput) =>
+  update: (schoolId: string, id: string, data: Prisma.PersonUpdateInput) =>
     db.person.update({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
       data,
     }),
 
-  findById: (id: string) =>
+  findById: (schoolId: string, id: string) =>
     db.person.findUnique({
-      where: { id },
+      where: { id_schoolId: { id, schoolId } },
     }),
 
   addPhone: (
+    schoolId: string,
     personId: string,
     data: {
       phoneNumber: string
@@ -54,6 +60,7 @@ export const personGateway = {
   ) =>
     db.phoneNumber.create({
       data: {
+        schoolId,
         personId,
         ...data,
       },

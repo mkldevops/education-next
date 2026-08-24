@@ -1,12 +1,11 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
-import { requireAdmin } from '../../_lib/auth-helper'
+import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateClassDialog } from './_components/create-class-dialog'
 import { EditClassDialog } from './_components/edit-class-dialog'
@@ -17,7 +16,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.classes.title', ['ADMIN', 'SUPER_ADMIN'])
+  return restrictedPageMetadata(locale, 'dashboard.pages.classes.title')
 }
 
 export default async function ClassesPage({ params }: Props) {
@@ -27,25 +26,24 @@ export default async function ClassesPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.classes')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const user = await requireAdmin()
-  if (!user) notFound()
+  const { schoolId } = await requireSchoolAdmin()
 
-  const selectedPeriod = await getSelectedPeriod()
+  const selectedPeriod = await getSelectedPeriod(schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
   const [levels, periods, maxStudentsConfig] = await Promise.all([
     db.level.findMany({
-      where: { isActive: true },
+      where: { schoolId, isActive: true },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     }),
     db.period.findMany({
-      where: { isActive: true },
+      where: { schoolId, isActive: true },
       select: { id: true, name: true },
       orderBy: { startAt: 'desc' },
     }),
     db.config.findFirst({
-      where: { name: 'max_students_per_class', isActive: true },
+      where: { schoolId, name: 'max_students_per_class', isActive: true },
       select: { value: true },
     }),
   ])
@@ -57,7 +55,11 @@ export default async function ClassesPage({ params }: Props) {
       : undefined
 
   const classes = await db.classPeriod.findMany({
-    where: { isActive: true, ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}) },
+    where: {
+      schoolId,
+      isActive: true,
+      ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
+    },
     include: {
       level: true,
       period: true,

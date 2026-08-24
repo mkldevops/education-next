@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { requireAdmin } from './auth-helper'
+import { requireSchoolAdmin } from './auth-helper'
 import { resolveInvitationLocale, sendInvitationEmail } from './invitation-email'
 
 const inviteSchema = z.object({
@@ -26,8 +26,7 @@ export async function inviteUserAction(input: {
   personId?: string
   locale?: string
 }) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized'
+  const { schoolId, userId } = await requireSchoolAdmin()
 
   const parsed = inviteSchema.safeParse(input)
   if (!parsed.success) return 'invalidInput'
@@ -38,7 +37,7 @@ export async function inviteUserAction(input: {
 
   if (familyId && personId) {
     const familyPerson = await db.familyPerson.findUnique({
-      where: { familyId_personId: { familyId, personId } },
+      where: { familyId_personId: { familyId, personId }, schoolId },
       include: { person: true },
     })
     if (!familyPerson || familyPerson.person.email?.toLowerCase() !== email.toLowerCase()) {
@@ -54,12 +53,13 @@ export async function inviteUserAction(input: {
 
   await db.invitation.create({
     data: {
+      schoolId,
       email,
       role,
       token,
       locale,
       expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
-      createdById: user.id,
+      createdById: userId,
       familyId,
       personId,
     },
@@ -74,19 +74,20 @@ export async function inviteUserAction(input: {
 }
 
 export async function resendInvitationAction(input: { id: string }) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized'
+  const { schoolId } = await requireSchoolAdmin()
 
   const parsed = invitationIdSchema.safeParse(input)
   if (!parsed.success) return 'invalidInput'
 
-  const invitation = await db.invitation.findUnique({ where: { id: parsed.data.id } })
+  const invitation = await db.invitation.findUnique({
+    where: { id: parsed.data.id, schoolId },
+  })
   if (!invitation) return 'notFound'
   if (invitation.usedAt) return 'alreadyUsed'
 
   const token = crypto.randomUUID()
   await db.invitation.update({
-    where: { id: invitation.id },
+    where: { id: invitation.id, schoolId },
     data: { token, expiresAt: new Date(Date.now() + INVITATION_TTL_MS) },
   })
 
@@ -102,17 +103,18 @@ export async function resendInvitationAction(input: { id: string }) {
 }
 
 export async function revokeInvitationAction(input: { id: string }) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized'
+  const { schoolId } = await requireSchoolAdmin()
 
   const parsed = invitationIdSchema.safeParse(input)
   if (!parsed.success) return 'invalidInput'
 
-  const invitation = await db.invitation.findUnique({ where: { id: parsed.data.id } })
+  const invitation = await db.invitation.findUnique({
+    where: { id: parsed.data.id, schoolId },
+  })
   if (!invitation) return 'notFound'
   if (invitation.usedAt) return 'alreadyUsed'
 
-  await db.invitation.delete({ where: { id: invitation.id } })
+  await db.invitation.delete({ where: { id: invitation.id, schoolId } })
 
   revalidatePath('/dashboard/users')
   return 'OK'

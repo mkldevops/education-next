@@ -9,16 +9,17 @@ export async function updateClassPeriod(input: Input, classPeriodGw = classPerio
   const parsed = updateClassPeriodSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const classPeriod = await classPeriodGw.findById(parsed.data.id)
+  const { schoolId, id, ...updateData } = parsed.data
+
+  const classPeriod = await classPeriodGw.findById(schoolId, id)
   if (!classPeriod) return 'notFound' as const
 
-  if (parsed.data.capacity !== undefined) {
-    const enrolled = await classPeriodGw.countEnrolled(parsed.data.id)
-    const capacityCheck = validateCapacityUpdate(parsed.data.capacity, enrolled)
+  if (updateData.capacity !== undefined) {
+    const enrolled = await classPeriodGw.countEnrolled(schoolId, id)
+    const capacityCheck = validateCapacityUpdate(updateData.capacity, enrolled)
     if (capacityCheck !== 'OK') return capacityCheck
   }
 
-  const { id, ...updateData } = parsed.data
-  const updated = await classPeriodGw.update(id, updateData)
+  const updated = await classPeriodGw.update(schoolId, id, updateData)
   return updated
 }

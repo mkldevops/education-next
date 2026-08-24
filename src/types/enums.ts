@@ -1,1 +1,1 @@
-export { Role } from '@/generated/prisma/client'
+export { SchoolRole } from '@/generated/prisma/client'

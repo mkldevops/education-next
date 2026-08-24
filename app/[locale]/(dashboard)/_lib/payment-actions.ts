@@ -4,14 +4,13 @@ import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
 import { recordPayment } from '@/use-cases/payments/record-payment'
 import type { recordPaymentSchema } from '@/use-cases/payments/schemas'
-import { requireAdmin } from './auth-helper'
+import { requireSchoolAdmin } from './auth-helper'
 
-type RecordPaymentInput = z.infer<typeof recordPaymentSchema>
+type RecordPaymentInput = Omit<z.infer<typeof recordPaymentSchema>, 'schoolId'>
 
 export async function recordPaymentAction(data: RecordPaymentInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await recordPayment(data)
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await recordPayment({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/payments')
   revalidatePath(`/dashboard/families/${data.familyId}`)

@@ -13,17 +13,19 @@ type Input = z.infer<typeof createEnrollmentSchema>
 export async function createEnrollment(input: Input) {
   const parsed = createEnrollmentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  const { schoolId } = parsed.data
 
-  const student = await studentGateway.findById(parsed.data.studentId)
+  const student = await studentGateway.findById(schoolId, parsed.data.studentId)
   if (!student) return 'notFound' as const
 
-  const plan = await planGateway.findById(parsed.data.planId)
+  const plan = await planGateway.findById(schoolId, parsed.data.planId)
   if (!plan) return 'notFound' as const
 
-  const classPeriod = await classPeriodGateway.findById(parsed.data.classPeriodId)
+  const classPeriod = await classPeriodGateway.findById(schoolId, parsed.data.classPeriodId)
   if (!classPeriod) return 'notFound' as const
 
   const isDuplicate = await enrollmentGateway.findDuplicate(
+    schoolId,
     parsed.data.studentId,
     parsed.data.classPeriodId
   )
@@ -40,6 +42,7 @@ export async function createEnrollment(input: Input) {
   const result = await db.$transaction(async (tx) => {
     const enrolledCount = await tx.classAssignment.count({
       where: {
+        schoolId,
         classPeriodId: parsed.data.classPeriodId,
         endAt: null,
         enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
@@ -51,6 +54,7 @@ export async function createEnrollment(input: Input) {
 
     const enrollment = await tx.enrollment.create({
       data: {
+        schoolId,
         studentId: parsed.data.studentId,
         planId: parsed.data.planId,
         totalAmount,
@@ -61,6 +65,7 @@ export async function createEnrollment(input: Input) {
 
     await tx.classAssignment.create({
       data: {
+        schoolId,
         enrollmentId: enrollment.id,
         classPeriodId: parsed.data.classPeriodId,
         startAt: new Date(),

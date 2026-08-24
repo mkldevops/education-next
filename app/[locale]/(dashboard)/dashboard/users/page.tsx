@@ -1,11 +1,10 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { db } from '@/lib/db'
-import { listUsers } from '@/use-cases/users/list-users'
-import { requireRole } from '../../_lib/auth-helper'
+import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { InvitationActionsCell } from './_components/invitation-actions-cell'
 import { InviteUserDialog } from './_components/invite-user-dialog'
@@ -17,7 +16,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.users.title', ['ADMIN', 'SUPER_ADMIN'])
+  return restrictedPageMetadata(locale, 'dashboard.pages.users.title')
 }
 
 export default async function UsersPage({ params }: Props) {
@@ -27,30 +26,59 @@ export default async function UsersPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.users')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
   const tRoles = await getTranslations('roles')
-
-  const viewer = await requireRole(['ADMIN', 'SUPER_ADMIN'])
-  if (!viewer) notFound()
-
-  const viewerRecord = await db.user.findUnique({
-    where: { id: viewer.id },
-    select: { role: true },
-  })
-  const canManageRoles = viewerRecord?.role === 'SUPER_ADMIN'
-
   const tInvitations = await getTranslations('dashboard.pages.users.invitations')
-  const families = await db.family.findMany({
-    where: { isActive: true },
-    select: { id: true, name: true },
-    orderBy: { name: 'asc' },
-  })
 
-  const invitations = await db.invitation.findMany({
-    where: { usedAt: null },
-    include: { family: { select: { name: true } } },
-    orderBy: { createdAt: 'desc' },
-  })
+  const { schoolId, userId: viewerId } = await requireSchoolAdmin()
 
-  const users = await listUsers()
+  const viewer = await db.user.findUnique({
+    where: { id: viewerId },
+    select: { isSuperAdmin: true },
+  })
+  const canManagePlatform = viewer?.isSuperAdmin ?? false
+
+  const [families, invitations, members, familyLinks] = await Promise.all([
+    db.family.findMany({
+      where: { schoolId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    db.invitation.findMany({
+      where: { schoolId, usedAt: null },
+      include: { family: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+    schoolMemberGateway.listSchoolMembers(schoolId),
+    db.userFamily.findMany({
+      where: { schoolId },
+      select: { userId: true, family: { select: { id: true, name: true } } },
+    }),
+  ])
+
+  const familyByUserId: Partial<Record<string, { id: string; name: string }>> = {}
+  for (const link of familyLinks) {
+    if (link.userId in familyByUserId) continue
+    familyByUserId[link.userId] = link.family
+  }
+
+  const memberIds = members.map((member) => member.userId)
+  const lastSessions = memberIds.length
+    ? await db.session.findMany({
+        where: { userId: { in: memberIds } },
+        orderBy: { createdAt: 'desc' },
+        select: { userId: true, createdAt: true },
+      })
+    : []
+  const lastLoginByUserId: Partial<Record<string, Date>> = {}
+  for (const session of lastSessions) {
+    if (session.userId in lastLoginByUserId) continue
+    lastLoginByUserId[session.userId] = session.createdAt
+  }
+
+  const rows = members.map((member) => ({
+    ...member,
+    family: familyByUserId[member.userId] ?? null,
+    lastLoginAt: lastLoginByUserId[member.userId] ?? null,
+  }))
 
   const invitationColumns: Column<(typeof invitations)[number]>[] = [
     {
@@ -102,9 +130,9 @@ export default async function UsersPage({ params }: Props) {
         <InviteUserDialog families={families} />
       </div>
       <UsersTable
-        users={users}
-        canManage={canManageRoles}
-        currentUserId={viewer.id}
+        members={rows}
+        canManagePlatform={canManagePlatform}
+        currentUserId={viewerId}
         families={families}
         locale={locale}
       />

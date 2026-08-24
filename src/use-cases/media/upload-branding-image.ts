@@ -16,7 +16,7 @@ export type UploadBrandingImageResult =
   | { result: 'notConfigured' | 'unsupportedType' | 'fileTooLarge' | 'emptyFile' }
 
 export async function uploadBrandingImage(
-  input: { contentType: string; bytes: Uint8Array; id: string },
+  input: { schoolId: string; contentType: string; bytes: Uint8Array; id: string },
   storage = storageGateway
 ): Promise<UploadBrandingImageResult> {
   const extension = ALLOWED_BRANDING_IMAGE_TYPES[input.contentType]
@@ -25,7 +25,7 @@ export async function uploadBrandingImage(
   if (input.bytes.byteLength === 0) return { result: 'emptyFile' }
   if (input.bytes.byteLength > MAX_BRANDING_IMAGE_BYTES) return { result: 'fileTooLarge' }
 
-  const key = `branding/${input.id}.${extension}`
+  const key = `branding/${input.schoolId}/${input.id}.${extension}`
 
   const stored = await storage.put({
     key,

@@ -15,12 +15,14 @@ export async function createClassPeriod(
   const parsed = createClassPeriodSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const level = await levelGw.findById(parsed.data.levelId)
-  if (!level) return 'notFound' as const
+  const { schoolId, ...data } = parsed.data
 
-  const period = await periodGw.findById(parsed.data.periodId)
-  if (!period) return 'notFound' as const
+  const level = await levelGw.findById(schoolId, data.levelId)
+  if (!level) return 'levelNotFound' as const
 
-  const classPeriod = await classPeriodGw.create(parsed.data)
+  const period = await periodGw.findById(schoolId, data.periodId)
+  if (!period) return 'periodNotFound' as const
+
+  const classPeriod = await classPeriodGw.create(schoolId, data)
   return classPeriod
 }

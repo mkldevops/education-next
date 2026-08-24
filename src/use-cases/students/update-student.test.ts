@@ -5,6 +5,7 @@ type Gateway = Parameters<typeof updateStudent>[1]
 
 class StudentGatewaySpy {
   studentToReturn: { id: string; person: Record<string, unknown> } | null = null
+  updatedSchoolId: string | null = null
   updatedId: string | null = null
   updatedData: unknown = null
 
@@ -12,7 +13,8 @@ class StudentGatewaySpy {
     return this.studentToReturn
   }
 
-  async update(id: string, data: unknown) {
+  async update(schoolId: string, id: string, data: unknown) {
+    this.updatedSchoolId = schoolId
     this.updatedId = id
     this.updatedData = data
     const existing = this.studentToReturn || {}
@@ -50,7 +52,7 @@ describe('updateStudent', () => {
 
   it('fails validation when input is invalid', async () => {
     // GIVEN
-    const input = { id: 'invalid-uuid' }
+    const input = { schoolId: 'school-1', id: 'invalid-uuid' }
 
     // WHEN
     const result = await updateStudent(input, gateway as unknown as Gateway)
@@ -62,7 +64,7 @@ describe('updateStudent', () => {
   it('fails when student not found', async () => {
     // GIVEN
     gateway.studentToReturn = null
-    const input = { id: '123e4567-e89b-12d3-a456-426614174000' }
+    const input = { schoolId: 'school-1', id: '123e4567-e89b-12d3-a456-426614174000' }
 
     // WHEN
     const result = await updateStudent(input, gateway as unknown as Gateway)
@@ -74,6 +76,7 @@ describe('updateStudent', () => {
   it('fails when birthday is in the future', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       id: '123e4567-e89b-12d3-a456-426614174000',
       birthday: new Date('2050-01-01'),
     }
@@ -88,6 +91,7 @@ describe('updateStudent', () => {
   it('updates student with valid birthday', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       id: '123e4567-e89b-12d3-a456-426614174000',
       birthday: new Date('2010-01-01'),
     }
@@ -102,6 +106,7 @@ describe('updateStudent', () => {
   it('updates student without birthday', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       id: '123e4567-e89b-12d3-a456-426614174000',
       allergies: 'peanuts',
     }
@@ -116,6 +121,7 @@ describe('updateStudent', () => {
   it('calls update with correct data', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       id: '123e4567-e89b-12d3-a456-426614174000',
       birthplace: 'Paris',
       allergies: 'shellfish',
@@ -125,6 +131,7 @@ describe('updateStudent', () => {
     await updateStudent(input, gateway as unknown as Gateway)
 
     // THEN
+    expect(gateway.updatedSchoolId).toBe(input.schoolId)
     expect(gateway.updatedId).toBe(input.id)
     expect(gateway.updatedData).toMatchObject({
       birthplace: 'Paris',
@@ -135,6 +142,7 @@ describe('updateStudent', () => {
   it('excludes id from update data', async () => {
     // GIVEN
     const input = {
+      schoolId: 'school-1',
       id: '123e4567-e89b-12d3-a456-426614174000',
       healthNotes: 'Asthmatic',
     }
@@ -144,5 +152,6 @@ describe('updateStudent', () => {
 
     // THEN
     expect(gateway.updatedData).not.toHaveProperty('id')
+    expect(gateway.updatedData).not.toHaveProperty('schoolId')
   })
 })

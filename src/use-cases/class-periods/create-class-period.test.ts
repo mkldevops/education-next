@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createClassPeriod } from './create-class-period'
 
+const schoolId = '00000000-0000-0000-0000-000000000001'
+
 class LevelGatewaySpy {
   levelToReturn: { id: string } | null = null
 
@@ -50,10 +52,12 @@ class PeriodGatewaySpy {
 }
 
 class ClassPeriodGatewaySpy {
+  createdSchoolId: string | null = null
   createdData: unknown = null
   classPeriodToReturn: unknown = null
 
-  async create(data: unknown) {
+  async create(createSchoolId: string, data: unknown) {
+    this.createdSchoolId = createSchoolId
     this.createdData = data
     return (this.classPeriodToReturn || {
       id: 'class-period-123',
@@ -98,6 +102,7 @@ describe('createClassPeriod', () => {
   it('fails validation when input is invalid', async () => {
     // GIVEN
     const input = {
+      schoolId,
       name: '',
       capacity: 0,
       levelId: 'invalid-uuid',
@@ -120,6 +125,7 @@ describe('createClassPeriod', () => {
     // GIVEN
     levelGateway.levelToReturn = null
     const input = {
+      schoolId,
       name: 'Class A',
       capacity: 30,
       levelId: '123e4567-e89b-12d3-a456-426614174000',
@@ -135,13 +141,14 @@ describe('createClassPeriod', () => {
     )
 
     // THEN
-    expect(result).toBe('notFound')
+    expect(result).toBe('levelNotFound')
   })
 
   it('fails when period not found', async () => {
     // GIVEN
     periodGateway.periodToReturn = null
     const input = {
+      schoolId,
       name: 'Class A',
       capacity: 30,
       levelId: '123e4567-e89b-12d3-a456-426614174000',
@@ -157,12 +164,13 @@ describe('createClassPeriod', () => {
     )
 
     // THEN
-    expect(result).toBe('notFound')
+    expect(result).toBe('periodNotFound')
   })
 
   it('creates class period with valid data', async () => {
     // GIVEN
     const input = {
+      schoolId,
       name: 'Class A',
       capacity: 30,
       levelId: '123e4567-e89b-12d3-a456-426614174000',
@@ -181,9 +189,10 @@ describe('createClassPeriod', () => {
     expect(result).toHaveProperty('id', 'class-period-123')
   })
 
-  it('calls gateway with correct data', async () => {
+  it('calls gateway with correct schoolId and data', async () => {
     // GIVEN
     const input = {
+      schoolId,
       name: 'Class B',
       capacity: 25,
       levelId: '123e4567-e89b-12d3-a456-426614174000',
@@ -199,6 +208,7 @@ describe('createClassPeriod', () => {
     )
 
     // THEN
+    expect(classPeriodGateway.createdSchoolId).toBe(schoolId)
     expect(classPeriodGateway.createdData).toMatchObject({
       name: 'Class B',
       capacity: 25,

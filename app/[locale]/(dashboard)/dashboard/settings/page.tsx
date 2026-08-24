@@ -4,7 +4,6 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { getSessionWithRole } from '../../_lib/auth-helper'
 import { SettingsTabs } from './_components/settings-tabs'
 
 type Props = {
@@ -25,8 +24,8 @@ export default async function SettingsPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
 
-  await getSessionWithRole()
-
+  // Page à portée utilisateur, pas école : la session suffit, et `/dashboard` est
+  // déjà protégé par `proxy.ts`.
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return null
 

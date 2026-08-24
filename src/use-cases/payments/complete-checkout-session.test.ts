@@ -7,18 +7,22 @@ const txMock = {
 }
 const dbMock = {
   paymentProviderEvent: { findUnique: vi.fn() },
-  paymentTransaction: { findUnique: vi.fn() },
   $transaction: vi.fn(),
 }
+const findPaymentTransactionByProviderSessionIdMock = vi.fn()
 const getFamilyBalanceMock = vi.fn()
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
+vi.mock('@/lib/db-unscoped', () => ({
+  findPaymentTransactionByProviderSessionId: findPaymentTransactionByProviderSessionIdMock,
+}))
 vi.mock('./family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
 
 const { completeCheckoutSession } = await import('./complete-checkout-session')
 
 const transaction = {
   id: 'transaction-1',
+  schoolId: 'school-1',
   familyId: 'family-1',
   amount: 100,
   currency: 'EUR',
@@ -40,7 +44,7 @@ describe('completeCheckoutSession', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     dbMock.paymentProviderEvent.findUnique.mockResolvedValue(null)
-    dbMock.paymentTransaction.findUnique.mockResolvedValue(transaction)
+    findPaymentTransactionByProviderSessionIdMock.mockResolvedValue(transaction)
     getFamilyBalanceMock.mockResolvedValue({
       payableEnrollments: [
         {
@@ -63,6 +67,8 @@ describe('completeCheckoutSession', () => {
   it('creates allocations and marks the transaction succeeded atomically', async () => {
     expect(await completeCheckoutSession(input)).toBe('OK')
 
+    expect(findPaymentTransactionByProviderSessionIdMock).toHaveBeenCalledWith('cs_1')
+    expect(getFamilyBalanceMock).toHaveBeenCalledWith('school-1', 'family-1')
     expect(txMock.paymentProviderEvent.create).toHaveBeenCalledWith({
       data: {
         providerEventId: 'evt_1',
@@ -73,6 +79,7 @@ describe('completeCheckoutSession', () => {
     expect(txMock.payment.createMany).toHaveBeenCalledWith({
       data: [
         expect.objectContaining({
+          schoolId: 'school-1',
           enrollmentId: 'enrollment-1',
           familyId: 'family-1',
           paymentTransactionId: 'transaction-1',
@@ -80,6 +87,7 @@ describe('completeCheckoutSession', () => {
           method: 'STRIPE',
         }),
         expect.objectContaining({
+          schoolId: 'school-1',
           enrollmentId: 'enrollment-2',
           familyId: 'family-1',
           paymentTransactionId: 'transaction-1',
@@ -89,7 +97,7 @@ describe('completeCheckoutSession', () => {
       ],
     })
     expect(txMock.paymentTransaction.update).toHaveBeenCalledWith({
-      where: { id: 'transaction-1' },
+      where: { id_schoolId: { id: 'transaction-1', schoolId: 'school-1' } },
       data: expect.objectContaining({
         status: 'SUCCEEDED',
         providerPaymentId: 'pi_1',

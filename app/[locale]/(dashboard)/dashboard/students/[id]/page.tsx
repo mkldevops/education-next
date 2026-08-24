@@ -7,7 +7,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
-import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { requireSchoolScope } from '../../../_lib/auth-helper'
 import { notFoundTitle } from '../../../_lib/page-metadata'
 import { DeactivateStudentButton } from '../_components/deactivate-student-button'
 import { EditStudentDialog } from '../_components/edit-student-dialog'
@@ -20,17 +20,21 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
-  const { role, familyId } = await getSessionWithRole()
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const scope = await requireSchoolScope()
 
-  const student = isAdmin
-    ? await db.student.findUnique({ where: { id }, include: { person: true } })
-    : familyId
-      ? await db.student.findFirst({
-          where: { id, person: { families: { some: { familyId } } } },
-          include: { person: true },
-        })
-      : null
+  const student = scope.isAdmin
+    ? await db.student.findUnique({
+        where: { id_schoolId: { id, schoolId: scope.schoolId } },
+        include: { person: true },
+      })
+    : await db.student.findFirst({
+        where: {
+          id,
+          schoolId: scope.schoolId,
+          person: { families: { some: { familyId: scope.familyId } } },
+        },
+        include: { person: true },
+      })
 
   return {
     title: student
@@ -46,12 +50,12 @@ export default async function StudentDetailPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.studentDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { role, familyId } = await getSessionWithRole()
+  const scope = await requireSchoolScope()
 
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const isAdmin = scope.isAdmin
 
   const student = await db.student.findUnique({
-    where: { id },
+    where: { id_schoolId: { id, schoolId: scope.schoolId } },
     include: {
       person: {
         include: {
@@ -93,7 +97,7 @@ export default async function StudentDetailPage({ params }: Props) {
   if (!student) notFound()
 
   if (!isAdmin) {
-    const studentFamily = student.person.families.some((fp) => fp.familyId === familyId)
+    const studentFamily = student.person.families.some((fp) => fp.familyId === scope.familyId)
     if (!studentFamily) notFound()
   }
 

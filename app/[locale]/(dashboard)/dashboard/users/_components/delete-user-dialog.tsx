@@ -18,10 +18,10 @@ import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { deleteUserAction } from '../../../_lib/user-actions'
-import type { UserRow } from './users-table'
+import type { MemberRow } from './users-table'
 
 interface Props {
-  user: UserRow
+  user: MemberRow['user']
   onDeleted: () => void
 }
 

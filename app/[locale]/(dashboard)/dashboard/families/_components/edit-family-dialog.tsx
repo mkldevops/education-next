@@ -72,7 +72,7 @@ function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
 
     const clearable = (field: string) => (formData.get(field) as string)?.trim() || null
 
-    const parsed = updateFamilySchema.safeParse({
+    const parsed = updateFamilySchema.omit({ schoolId: true }).safeParse({
       id: family.id,
       name: formData.get('name') as string,
       emergencyContactName: clearable('emergencyContactName'),

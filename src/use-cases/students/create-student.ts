@@ -16,19 +16,19 @@ export async function createStudent(
   const parsed = createStudentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const family = await familyGw.findById(parsed.data.familyId)
+  const family = await familyGw.findById(parsed.data.schoolId, parsed.data.familyId)
   if (!family) return 'notFound' as const
 
   const birthdayCheck = validateStudentBirthday(parsed.data.student.birthday)
   if (birthdayCheck !== 'OK') return birthdayCheck
 
-  const person = await personGw.create(parsed.data.person)
-  const student = await studentGw.create({
+  const person = await personGw.create(parsed.data.schoolId, parsed.data.person)
+  const student = await studentGw.create(parsed.data.schoolId, {
     personId: person.id,
     ...parsed.data.student,
   })
 
-  await familyGw.addPerson(parsed.data.familyId, person.id, 'OTHER')
+  await familyGw.addPerson(parsed.data.schoolId, parsed.data.familyId, person.id, 'OTHER')
 
   return student
 }

@@ -15,7 +15,7 @@ import type {
 } from '@/use-cases/families/schemas'
 import { phoneNumberSchema } from '@/use-cases/families/schemas'
 import { updateFamily } from '@/use-cases/families/update-family'
-import { requireAdmin } from './auth-helper'
+import { requireSchoolAdmin } from './auth-helper'
 
 type CreateFamilyInput = z.infer<typeof createFamilySchema>
 type UpdateFamilyInput = z.infer<typeof updateFamilySchema>
@@ -23,48 +23,46 @@ type AddPersonToFamilyInput = z.infer<typeof addPersonToFamilySchema>
 type LinkUserToFamilyInput = z.infer<typeof linkUserToFamilySchema>
 
 export async function createFamilyAction(
-  data: Omit<CreateFamilyInput, 'createdById'> & { name: string }
+  data: Omit<CreateFamilyInput, 'schoolId' | 'createdById'> & { name: string }
 ) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await createFamily({ ...data, createdById: user.id })
+  const { schoolId, userId } = await requireSchoolAdmin()
+  const result = await createFamily({ ...data, schoolId, createdById: userId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
   return result
 }
 
-export async function updateFamilyAction(id: string, data: Omit<UpdateFamilyInput, 'id'>) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await updateFamily({ id, ...data })
+export async function updateFamilyAction(
+  id: string,
+  data: Omit<UpdateFamilyInput, 'schoolId' | 'id'>
+) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await updateFamily({ schoolId, id, ...data })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
   return result
 }
 
 export async function deactivateFamilyAction(id: string) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await deactivateFamily({ id })
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await deactivateFamily({ schoolId, id })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/families')
   return 'OK' as const
 }
 
-export async function addPersonToFamilyAction(data: AddPersonToFamilyInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await addPersonToFamily(data)
+export async function addPersonToFamilyAction(data: Omit<AddPersonToFamilyInput, 'schoolId'>) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await addPersonToFamily({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
   revalidatePath(`/dashboard/families/${data.familyId}`)
   return result
 }
 
-export async function linkUserToFamilyAction(data: LinkUserToFamilyInput) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
-  const result = await linkUserToFamily(data)
+export async function linkUserToFamilyAction(data: Omit<LinkUserToFamilyInput, 'schoolId'>) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await linkUserToFamily({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/families')
   return 'OK' as const
@@ -74,11 +72,10 @@ export async function addPhoneAction(
   personId: string,
   data: { phoneNumber: string; channels: string[] }
 ) {
-  const user = await requireAdmin()
-  if (!user) return 'unauthorized' as const
+  const { schoolId } = await requireSchoolAdmin()
   const parsed = phoneNumberSchema.safeParse(data)
   if (!parsed.success) return 'validationError' as const
-  const phone = await personGateway.addPhone(personId, {
+  const phone = await personGateway.addPhone(schoolId, personId, {
     phoneNumber: parsed.data.phoneNumber,
     channels: parsed.data.channels,
   })

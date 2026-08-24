@@ -80,9 +80,10 @@ export function calculateFamilyBalance(enrollments: BalanceEnrollment[]): Family
   }
 }
 
-export async function getFamilyBalance(familyId: string) {
+export async function getFamilyBalance(schoolId: string, familyId: string) {
   const enrollments = await db.enrollment.findMany({
     where: {
+      schoolId,
       status: { in: ['PENDING', 'ACTIVE'] },
       student: {
         person: {

@@ -8,7 +8,7 @@ import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
-import { getSessionWithRole } from '../../../_lib/auth-helper'
+import { requireSchoolScope } from '../../../_lib/auth-helper'
 import { notFoundTitle } from '../../../_lib/page-metadata'
 import { EnrollmentActions } from './_components/enrollment-actions'
 
@@ -18,20 +18,21 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
-  const { role, familyId } = await getSessionWithRole()
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const scope = await requireSchoolScope()
 
-  const enrollment = isAdmin
+  const enrollment = scope.isAdmin
     ? await db.enrollment.findUnique({
-        where: { id },
+        where: { id_schoolId: { id, schoolId: scope.schoolId } },
         include: { student: { include: { person: true } } },
       })
-    : familyId
-      ? await db.enrollment.findFirst({
-          where: { id, student: { person: { families: { some: { familyId } } } } },
-          include: { student: { include: { person: true } } },
-        })
-      : null
+    : await db.enrollment.findFirst({
+        where: {
+          id,
+          schoolId: scope.schoolId,
+          student: { person: { families: { some: { familyId: scope.familyId } } } },
+        },
+        include: { student: { include: { person: true } } },
+      })
 
   return {
     title: enrollment
@@ -47,12 +48,12 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.enrollmentDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { role, familyId } = await getSessionWithRole()
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const scope = await requireSchoolScope()
+  const isAdmin = scope.isAdmin
 
   const [enrollment, availableClasses] = await Promise.all([
     db.enrollment.findUnique({
-      where: { id, isActive: true },
+      where: { id_schoolId: { id, schoolId: scope.schoolId }, isActive: true },
       include: {
         student: {
           include: {
@@ -79,7 +80,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
     }),
     isAdmin
       ? db.classPeriod.findMany({
-          where: { isActive: true },
+          where: { schoolId: scope.schoolId, isActive: true },
           select: { id: true, name: true },
           orderBy: { name: 'asc' },
         })
@@ -90,7 +91,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
   if (!isAdmin) {
     const belongsToFamily = enrollment.student.person.families.some(
-      (fp) => fp.familyId === familyId
+      (fp) => fp.familyId === scope.familyId
     )
     if (!belongsToFamily) notFound()
   }

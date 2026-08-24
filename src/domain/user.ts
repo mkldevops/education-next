@@ -1,5 +1,3 @@
-import type { Role } from '@/types/enums'
-
 export type UserManagementFailure =
   | 'cannotTargetSelf'
   | 'lastSuperAdmin'
@@ -10,32 +8,26 @@ export type UserManagementFailure =
 
 export type ManagedUser = {
   id: string
-  role: Role
+  isSuperAdmin: boolean
   isActive: boolean
 }
 
 export type Actor = {
   id: string
-  role: Role
-}
-
-export function canAssignRole(actorRole: Role, targetRole: Role): boolean {
-  if (actorRole === 'SUPER_ADMIN') return true
-  return targetRole === 'PARENT'
 }
 
 export function isLastActiveSuperAdmin(target: ManagedUser, activeSuperAdmins: number): boolean {
-  return target.role === 'SUPER_ADMIN' && target.isActive && activeSuperAdmins <= 1
+  return target.isSuperAdmin && target.isActive && activeSuperAdmins <= 1
 }
 
-export function checkRoleChange(
+export function checkPlatformLevelChange(
   actor: Actor,
   target: ManagedUser,
-  newRole: Role,
+  nextIsSuperAdmin: boolean,
   activeSuperAdmins: number
 ): 'OK' | UserManagementFailure {
   if (actor.id === target.id) return 'cannotTargetSelf'
-  if (newRole !== 'SUPER_ADMIN' && isLastActiveSuperAdmin(target, activeSuperAdmins)) {
+  if (!nextIsSuperAdmin && isLastActiveSuperAdmin(target, activeSuperAdmins)) {
     return 'lastSuperAdmin'
   }
   return 'OK'

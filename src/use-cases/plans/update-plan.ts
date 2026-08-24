@@ -8,7 +8,7 @@ export async function updatePlan(input: Input, planGw = planGateway) {
   const parsed = updatePlanSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const { id, ...data } = parsed.data
-  const plan = await planGw.update(id, data)
+  const { schoolId, id, ...data } = parsed.data
+  const plan = await planGw.update(schoolId, id, data)
   return plan
 }

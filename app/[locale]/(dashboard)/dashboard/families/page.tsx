@@ -4,7 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
-import { requireFamilyScope } from '../../_lib/auth-helper'
+import { requireSchoolScope } from '../../_lib/auth-helper'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
 import { FamiliesDataTable, type FamilyRow } from './_components/families-data-table'
 
@@ -30,7 +30,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.families')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const scope = await requireFamilyScope()
+  const scope = await requireSchoolScope()
 
   if (!scope.isAdmin) {
     redirect({ href: `/dashboard/families/${scope.familyId}`, locale })
@@ -39,7 +39,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
   const isAdmin = scope.isAdmin
 
   const families = await db.family.findMany({
-    where: { isActive: true },
+    where: { schoolId: scope.schoolId, isActive: true },
     select: {
       id: true,
       name: true,

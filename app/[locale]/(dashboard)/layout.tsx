@@ -6,8 +6,7 @@ import { DashboardHeader, Sidebar } from '@/features/dashboard'
 import { localizedHref } from '@/i18n/localized-href'
 import { auth } from '@/lib/auth'
 import { getBrandingConfig } from '@/lib/branding'
-import { db } from '@/lib/db'
-import type { Role } from '@/types/enums'
+import { getSchoolContext } from '@/lib/school-context'
 
 type Props = {
   children: React.ReactNode
@@ -15,30 +14,21 @@ type Props = {
 }
 
 async function DashboardSidebarServer({ locale }: { locale: string }) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user?.id) redirect(localizedHref(locale, '/login'))
+  const context = await getSchoolContext()
+  if (!context) redirect(localizedHref(locale, '/login'))
 
-  const [branding, dbUser] = await Promise.all([
-    getBrandingConfig(),
-    db.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        role: true,
-        families: {
-          select: { familyId: true },
-          take: 1,
-        },
-      },
-    }),
+  const [branding, session] = await Promise.all([
+    getBrandingConfig(context.schoolId),
+    auth.api.getSession({ headers: await headers() }),
   ])
 
-  const role: Role = dbUser?.role || 'PARENT'
-  const userName = session.user.name || session.user.email || undefined
+  const userName = session?.user.name || session?.user.email || undefined
 
   return (
     <Sidebar
-      role={role}
-      familyId={dbUser?.families[0]?.familyId}
+      role={context.role}
+      isSuperAdmin={context.isSuperAdmin}
+      familyId={context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined}
       logoUrl={branding.logoUrl}
       schoolName={branding.schoolName}
       userName={userName}

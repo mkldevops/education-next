@@ -4,7 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
-import { requireFamilyScope } from '../../_lib/auth-helper'
+import { requireSchoolScope } from '../../_lib/auth-helper'
 import { EnrollmentsTable } from './_components/enrollments-table'
 
 type Props = {
@@ -27,10 +27,10 @@ export default async function EnrollmentsPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const selectedPeriod = await getSelectedPeriod()
-  const selectedPeriodId = selectedPeriod?.id ?? null
+  const scope = await requireSchoolScope()
 
-  const scope = await requireFamilyScope()
+  const selectedPeriod = await getSelectedPeriod(scope.schoolId)
+  const selectedPeriodId = selectedPeriod?.id ?? null
 
   const isAdmin = scope.isAdmin
 
@@ -46,7 +46,11 @@ export default async function EnrollmentsPage({ params }: Props) {
 
   const availableClasses = isAdmin
     ? await db.classPeriod.findMany({
-        where: { isActive: true, ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}) },
+        where: {
+          schoolId: scope.schoolId,
+          isActive: true,
+          ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
+        },
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
       })
@@ -54,6 +58,7 @@ export default async function EnrollmentsPage({ params }: Props) {
 
   const enrollments = await db.enrollment.findMany({
     where: {
+      schoolId: scope.schoolId,
       isActive: true,
       student: whereStudent,
       ...(selectedPeriodId
