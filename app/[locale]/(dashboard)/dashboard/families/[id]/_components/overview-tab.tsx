@@ -1,4 +1,5 @@
 import { Card } from '@peaklab/ui'
+import { BookOpen, CircleCheck, TriangleAlert, Users } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import type { FamilyPerson, Person, PhoneNumber } from '@/generated/prisma/client'
 import { formatCurrency } from '@/lib/decimal'
@@ -50,23 +51,23 @@ export async function OverviewTab({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label={t('kpis.enrolledChildren')} value={enrolledChildren} icon="👶" />
+        <KPICard label={t('kpis.enrolledChildren')} value={enrolledChildren} icon={Users} />
         <KPICard
           label={t('kpis.totalEnrollments')}
           value={totalEnrollments}
           subValue={`${activeEnrollments} ${t('kpis.active')}`}
-          icon="📚"
+          icon={BookOpen}
         />
         <KPICard
           label={t('kpis.totalPaid')}
           value={formatCurrency(totalPaid, locale)}
-          icon="✓"
+          icon={CircleCheck}
           color="green"
         />
         <KPICard
           label={t('kpis.remainingBalance')}
           value={formatCurrency(remainingBalance, locale)}
-          icon="⚠"
+          icon={TriangleAlert}
           color={remainingBalance > 0 ? 'amber' : 'green'}
         />
       </div>
