@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatAmount, formatCurrency, roundHalfUp } from '../decimal'
+import { formatAmount, formatCurrency, roundHalfUp, toNumber } from '../decimal'
 
 describe('decimal utilities', () => {
   describe('roundHalfUp', () => {
@@ -188,5 +188,19 @@ describe('decimal utilities', () => {
     it('should format negative amounts', () => {
       expect(formatCurrency(-400, 'fr')).toBe(expected(-400, 'fr'))
     })
+  })
+})
+
+describe('toNumber', () => {
+  it('returns a plain number unchanged', () => {
+    expect(toNumber(12.34)).toBe(12.34)
+  })
+
+  it('prefers toNumber() when the value exposes one', () => {
+    expect(toNumber({ toNumber: () => 7.5, toString: () => 'ignored' })).toBe(7.5)
+  })
+
+  it('falls back to the string form when toNumber() is absent', () => {
+    expect(toNumber({ toString: () => '19.99' })).toBe(19.99)
   })
 })

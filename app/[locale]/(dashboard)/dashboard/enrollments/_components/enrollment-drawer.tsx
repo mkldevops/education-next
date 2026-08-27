@@ -19,8 +19,8 @@ import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
 import { Link, useRouter } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
-import { formatCurrency } from '@/lib/decimal'
-import { toast } from '@/lib/toast'
+import { type DecimalLike, formatCurrency, toNumber } from '@/lib/decimal'
+import { toast, toastActionError } from '@/lib/toast'
 import {
   activateEnrollmentAction,
   cancelEnrollmentAction,
@@ -43,7 +43,7 @@ interface ClassAssignment {
 
 interface Payment {
   id: string
-  amount: number | { toNumber?: () => number; toString: () => string }
+  amount: DecimalLike
   method: PaymentMethod
   reference: string | null
   paidAt: Date
@@ -53,8 +53,8 @@ interface Payment {
 export interface EnrollmentDrawerData {
   id: string
   status: EnrollmentStatus
-  totalAmount: number | { toNumber?: () => number; toString: () => string }
-  discount: number | { toNumber?: () => number; toString: () => string }
+  totalAmount: DecimalLike
+  discount: DecimalLike
   registeredAt: Date
   student: {
     person: {
@@ -86,6 +86,7 @@ export function EnrollmentDrawer({
   locale,
 }: Props) {
   const t = useTranslations('dashboard.pages.enrollments.drawer')
+  const tDetails = useTranslations('dashboard.pages.enrollmentDetails')
   const tActions = useTranslations('dashboard.pages.enrollmentDetails.actions')
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -97,76 +98,32 @@ export function EnrollmentDrawer({
       ? enrollment.student.person.families[0].family.name
       : '-'
 
-  const totalPaid = enrollment.payments.reduce((sum, p) => {
-    const amount =
-      typeof p.amount === 'number'
-        ? p.amount
-        : p.amount.toNumber
-          ? p.amount.toNumber()
-          : Number(p.amount.toString())
-    return sum + amount
-  }, 0)
-
-  const totalAmountNum =
-    typeof enrollment.totalAmount === 'number'
-      ? enrollment.totalAmount
-      : enrollment.totalAmount.toNumber
-        ? enrollment.totalAmount.toNumber()
-        : Number(enrollment.totalAmount.toString())
-
-  const discountNum =
-    typeof enrollment.discount === 'number'
-      ? enrollment.discount
-      : enrollment.discount.toNumber
-        ? enrollment.discount.toNumber()
-        : Number(enrollment.discount.toString())
+  const totalPaid = enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
+  const totalAmountNum = toNumber(enrollment.totalAmount)
+  const discountNum = toNumber(enrollment.discount)
 
   const remaining = calculateRemainingBalance(totalAmountNum, totalPaid)
 
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
 
-  const handleActivate = () => {
+  const run = (action: () => Promise<string>, successKey: string, closeAfter = false) => {
     startTransition(async () => {
-      const result = await activateEnrollmentAction({ id: enrollment.id })
-      if (result === 'OK') {
-        toast.success(tActions('activated'))
-        router.refresh()
-      } else {
-        toast.error(
-          tActions.has(`errors.${result}`) ? tActions(`errors.${result}`) : tActions('error')
-        )
+      const result = await action()
+      if (result !== 'OK') {
+        toastActionError(tActions, result)
+        return
       }
+      toast.success(tActions(successKey))
+      router.refresh()
+      if (closeAfter) onOpenChange(false)
     })
   }
 
-  const handleComplete = () => {
-    startTransition(async () => {
-      const result = await completeEnrollmentAction({ id: enrollment.id })
-      if (result === 'OK') {
-        toast.success(tActions('completed'))
-        router.refresh()
-      } else {
-        toast.error(
-          tActions.has(`errors.${result}`) ? tActions(`errors.${result}`) : tActions('error')
-        )
-      }
-    })
-  }
-
-  const handleCancel = () => {
-    startTransition(async () => {
-      const result = await cancelEnrollmentAction(enrollment.id)
-      if (result === 'OK') {
-        toast.success(tActions('cancelled'))
-        router.refresh()
-        onOpenChange(false)
-      } else {
-        toast.error(
-          tActions.has(`errors.${result}`) ? tActions(`errors.${result}`) : tActions('error')
-        )
-      }
-    })
-  }
+  const handleActivate = () =>
+    run(() => activateEnrollmentAction({ id: enrollment.id }), 'activated')
+  const handleComplete = () =>
+    run(() => completeEnrollmentAction({ id: enrollment.id }), 'completed')
+  const handleCancel = () => run(() => cancelEnrollmentAction(enrollment.id), 'cancelled', true)
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -281,10 +238,18 @@ export function EnrollmentDrawer({
                 <table className="w-full min-w-[400px]">
                   <thead>
                     <tr className="border-b bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-400">
-                      <th className="px-3 py-2 text-left">Classe</th>
-                      <th className="px-3 py-2 text-left">Niveau</th>
-                      <th className="px-3 py-2 text-left">Période</th>
-                      <th className="px-3 py-2 text-left">Début</th>
+                      <th className="px-3 py-2 text-left">
+                        {tDetails('classAssignmentTable.class')}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {tDetails('classAssignmentTable.level')}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {tDetails('classAssignmentTable.period')}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {tDetails('classAssignmentTable.startDate')}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -309,10 +274,10 @@ export function EnrollmentDrawer({
                 <table className="w-full min-w-[400px]">
                   <thead>
                     <tr className="border-b bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-400">
-                      <th className="px-3 py-2 text-left">Montant</th>
-                      <th className="px-3 py-2 text-left">Méthode</th>
-                      <th className="px-3 py-2 text-left">Référence</th>
-                      <th className="px-3 py-2 text-left">Date</th>
+                      <th className="px-3 py-2 text-left">{tDetails('paymentTable.amount')}</th>
+                      <th className="px-3 py-2 text-left">{tDetails('paymentTable.method')}</th>
+                      <th className="px-3 py-2 text-left">{tDetails('paymentTable.reference')}</th>
+                      <th className="px-3 py-2 text-left">{tDetails('paymentTable.paidAt')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">

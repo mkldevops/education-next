@@ -8,7 +8,7 @@ import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import { useTableLabels } from '@/features/tables'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
-import { formatCurrency } from '@/lib/decimal'
+import { formatCurrency, toNumber } from '@/lib/decimal'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
 import { EnrollmentDrawer } from './enrollment-drawer'
 
@@ -21,11 +21,6 @@ interface Props {
 }
 
 const STATUS_VALUES: EnrollmentStatus[] = ['PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED']
-
-function toNumber(value: number | { toNumber?: () => number; toString: () => string }): number {
-  if (typeof value === 'number') return value
-  return value.toNumber ? value.toNumber() : Number(value.toString())
-}
 
 export function EnrollmentsTable({
   enrollments,

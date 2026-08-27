@@ -8,7 +8,7 @@ import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
-import { formatCurrency } from '@/lib/decimal'
+import { formatCurrency, toNumber } from '@/lib/decimal'
 import { requireSchoolScope } from '../../../_lib/auth-helper'
 import { notFoundTitle } from '../../../_lib/page-metadata'
 import { EnrollmentActions } from './_components/enrollment-actions'
@@ -99,7 +99,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
   const totalAmount = Number(enrollment.totalAmount)
   const discount = Number(enrollment.discount)
-  const totalPaid = enrollment.payments.reduce((sum, p) => sum + Number(p.amount), 0)
+  const totalPaid = enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
   const remaining = calculateRemainingBalance(totalAmount, totalPaid)
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
   const familyName =
