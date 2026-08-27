@@ -3,18 +3,18 @@
 import { useId, useRef, useState } from 'react'
 import { cn } from '../utils'
 
-type Tab = {
+export type Tab = {
   label: string
   icon?: React.ComponentType<{ size?: number }>
   content: React.ReactNode
 }
 
-type Props = {
+export type TabsProps = {
   tabs: Tab[]
   defaultIndex?: number
 }
 
-export function Tabs({ tabs, defaultIndex = 0 }: Props) {
+export function Tabs({ tabs, defaultIndex = 0 }: TabsProps) {
   const [active, setActive] = useState(defaultIndex)
   const idPrefix = useId()
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])

@@ -1,8 +1,8 @@
 'use client'
 
+import { Button } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { resendInvitationAction, revokeInvitationAction } from '../../../_lib/invitation-actions'

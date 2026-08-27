@@ -1,9 +1,7 @@
 'use client'
 
-import { useLocale, useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import {
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
@@ -11,9 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Input,
+  Label,
   useDialog,
-} from '@/components/ui/dialog/dialog'
-import { Input, Label } from '@/components/ui/input/input'
+} from '@peaklab/ui'
+import { useLocale, useTranslations } from 'next-intl'
+import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { inviteUserAction } from '../../../_lib/invitation-actions'

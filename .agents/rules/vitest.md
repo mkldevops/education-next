@@ -23,12 +23,13 @@ already used by the directory instead of imposing one mocking pattern on the who
 
 ## Current Configuration
 
-Vitest runs with globals and `jsdom`; `@` resolves to `src`. Domain and utility tests commonly live in
-`__tests__/`, while use-case tests are adjacent as `*.test.ts`.
+Vitest runs with globals and `jsdom`. `@` resolves to `src` and `@peaklab/ui` resolves to
+`src/components/ui`; every tsconfig path alias needs a matching entry in `vitest.config.ts`. Domain and
+utility tests commonly live in `__tests__/`, while use-case tests are adjacent as `*.test.ts`.
 
-`src/test/setup.ts` exists but `vitest.config.ts` does not currently register `setupFiles`. Do not
-assume jest-dom matchers or automatic RTL cleanup are active. If a new component test depends on that
-setup, wire it explicitly and verify the full suite in the same change.
+`vitest.config.ts` registers `setupFiles: ['./src/test/setup.ts']`, which imports
+`@testing-library/jest-dom/vitest` and runs RTL `cleanup()` in `afterEach`. Jest-dom matchers and
+automatic cleanup are therefore available in every test; do not re-register them per file.
 
 ## Use-Case Tests
 

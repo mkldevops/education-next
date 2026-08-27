@@ -1,10 +1,9 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { BalanceBadge } from '@/components/ui/balance-badge'
-import { Button, buttonVariants } from '@/components/ui/button/button'
 import {
+  BalanceBadge,
+  Button,
+  buttonVariants,
   Drawer,
   DrawerBody,
   DrawerClose,
@@ -12,7 +11,9 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-} from '@/components/ui/drawer'
+} from '@peaklab/ui'
+import { useTranslations } from 'next-intl'
+import { useTransition } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
@@ -173,24 +174,7 @@ export function EnrollmentDrawer({
           <DrawerTitle>
             {enrollment.student.person.name} {enrollment.student.person.lastname}
           </DrawerTitle>
-          <DrawerClose className="text-gray-400 hover:text-gray-600">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-            <span className="sr-only">{t('close')}</span>
-          </DrawerClose>
+          <DrawerClose label={t('close')} />
         </DrawerHeader>
 
         <DrawerBody className="space-y-6">

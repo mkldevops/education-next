@@ -9,6 +9,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@peaklab/ui': path.resolve(__dirname, './src/components/ui'),
       '@': path.resolve(__dirname, './src'),
     },
   },

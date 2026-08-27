@@ -1236,7 +1236,8 @@
         },
         "removeMember": "Retirer",
         "removeMemberWarning": "Ce membre perdra l'accès aux données de cette école. Son compte plateforme ne sera pas supprimé.",
-        "memberRemoved": "Membre retiré de l’école"
+        "memberRemoved": "Membre retiré de l’école",
+        "close": "Fermer"
       },
       "classDetails": {
         "title": "Détail de la classe",

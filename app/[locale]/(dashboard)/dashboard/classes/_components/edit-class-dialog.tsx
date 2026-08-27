@@ -1,20 +1,18 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import {
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  useDialog,
-} from '@/components/ui/dialog/dialog'
-import { Input, Label } from '@/components/ui/input/input'
-import { toast, toastActionError } from '@/lib/toast'
+  Input,
+  Label,
+} from '@peaklab/ui'
+import { useTranslations } from 'next-intl'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { updateClassPeriodAction } from '../../../_lib/class-period-actions'
 
 interface EditClassDialogProps {
@@ -48,26 +46,14 @@ export function EditClassDialog({ classItem }: EditClassDialogProps) {
 function EditClassForm({ classItem }: EditClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.edit')
   const tCreate = useTranslations('dashboard.pages.classes.create')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await updateClassPeriodAction(classItem.id, {
-        name: formData.get('name') as string,
-        capacity: Number(formData.get('capacity')),
-      })
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-      }
+  const handleSubmit = onSubmit((formData) =>
+    updateClassPeriodAction(classItem.id, {
+      name: formData.get('name') as string,
+      capacity: Number(formData.get('capacity')),
     })
-  }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -98,14 +84,7 @@ function EditClassForm({ classItem }: EditClassDialogProps) {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

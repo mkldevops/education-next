@@ -19,18 +19,9 @@
     "src/lib/email.ts",
     "src/lib/theme.ts",
     "src/shared/index.ts",
-    "src/test/setup.ts",
     "src/types/email.ts",
     "src/use-cases/index.ts",
-    "src/use-cases/commands/delete-profile.ts",
-    "src/use-cases/commands/update-profile.ts",
     "src/actions/school-actions.ts"
   ],
-  "ignoreDependencies": [
-    "tailwindcss",
-    "motion",
-    "resend",
-    "@testing-library/jest-dom",
-    "@testing-library/react"
-  ]
+  "ignoreDependencies": ["tailwindcss"]
 }

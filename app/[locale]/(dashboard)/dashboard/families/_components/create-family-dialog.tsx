@@ -1,21 +1,24 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
-import { useEffect, useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import {
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Input,
+  Label,
+  Textarea,
   useDialog,
-} from '@/components/ui/dialog/dialog'
-import { Input, Label, Textarea } from '@/components/ui/input/input'
+} from '@peaklab/ui'
+import { Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { useEffect } from 'react'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
+import { toast } from '@/lib/toast'
 import { createFamilySchema } from '@/use-cases/families/schemas'
 import { createFamilyAction } from '../../../_lib/family-actions'
 
@@ -34,7 +37,10 @@ export function CreateFamilyDialog({ defaultOpen = false }: { defaultOpen?: bool
   return (
     <Dialog initialOpen={defaultOpen}>
       <DialogTrigger>
-        <Button>+ {t('title')}</Button>
+        <Button>
+          <Plus className="h-4 w-4" />
+          {t('title')}
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -49,7 +55,7 @@ export function CreateFamilyDialog({ defaultOpen = false }: { defaultOpen?: bool
 function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const t = useTranslations('dashboard.pages.families.create')
   const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, run } = useDialogForm(t)
   const router = useRouter()
 
   useEffect(() => {
@@ -80,15 +86,8 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
       return
     }
 
-    startTransition(async () => {
-      const result = await createFamilyAction(parsed.data)
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-        router.push(`/dashboard/families/${result.id}`)
-      }
+    run(() => createFamilyAction(parsed.data), {
+      onSuccess: (family) => router.push(`/dashboard/families/${family.id}`),
     })
   }
 
@@ -152,14 +151,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
         </div>
       </DialogBody>
 
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { X } from 'lucide-react'
 import {
   cloneElement,
   createContext,
@@ -170,15 +171,21 @@ export function DrawerFooter({ children, className }: DrawerFooterProps) {
 }
 
 export interface DrawerCloseProps {
-  children: React.ReactNode
+  children?: React.ReactNode
   className?: string
+  label?: string
 }
 
-export function DrawerClose({ children, className }: DrawerCloseProps) {
+export function DrawerClose({ children, className, label }: DrawerCloseProps) {
   const { setOpen } = useDrawer()
   return (
-    <button onClick={() => setOpen(false)} type="button" className={cn('', className)}>
-      {children}
+    <button
+      onClick={() => setOpen(false)}
+      type="button"
+      aria-label={label}
+      className={cn('text-gray-400 transition-colors hover:text-gray-600', className)}
+    >
+      {children ?? <X className="h-5 w-5" aria-hidden="true" />}
     </button>
   )
 }

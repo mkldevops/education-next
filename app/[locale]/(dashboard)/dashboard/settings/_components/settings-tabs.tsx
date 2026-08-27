@@ -1,8 +1,8 @@
 'use client'
 
+import { Tabs } from '@peaklab/ui'
 import { KeyRound, Monitor, Shield, User } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { Tabs } from '@/components/ui/tabs/tabs'
 import { AccountSection } from './account-section'
 import { PasskeySection } from './passkey-section'
 import { PasswordSection } from './password-section'

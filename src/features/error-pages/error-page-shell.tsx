@@ -1,7 +1,7 @@
+import { Button, buttonVariants } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
 import { ArrowLeft, Home, LayoutDashboard, LogIn, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
-import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 type ErrorTone = 'danger' | 'warning' | 'muted'

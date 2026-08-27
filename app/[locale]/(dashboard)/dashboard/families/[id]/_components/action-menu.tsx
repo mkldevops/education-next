@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@peaklab/ui'
+import { Button, useMenu } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
 import {
   Archive,
@@ -12,7 +12,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { cn } from '@/lib/utils'
 
@@ -138,74 +138,19 @@ function ActionDropdown({
   items: FamilyActionItem[]
   onSelect: (action: FamilyAction) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  const close = useCallback(() => {
-    setOpen(false)
-    const trigger = ref.current?.querySelector<HTMLButtonElement>('button[aria-haspopup]')
-    trigger?.focus()
-  }, [])
-
-  useEffect(() => {
-    if (!open) return
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) close()
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [open, close])
-
-  useEffect(() => {
-    if (!open) return
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        close()
-        return
-      }
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        e.preventDefault()
-        const items = Array.from(
-          menuRef.current?.querySelectorAll<HTMLButtonElement>(
-            '[role="menuitem"]:not(:disabled)'
-          ) ?? []
-        )
-        if (items.length === 0) return
-        const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
-        const next =
-          e.key === 'ArrowDown'
-            ? currentIndex < items.length - 1
-              ? currentIndex + 1
-              : 0
-            : currentIndex > 0
-              ? currentIndex - 1
-              : items.length - 1
-        items[next].focus()
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, close])
-
-  useEffect(() => {
-    if (!open) return
-    const firstItem = menuRef.current?.querySelector<HTMLButtonElement>(
-      '[role="menuitem"]:not(:disabled)'
-    )
-    firstItem?.focus()
-  }, [open])
+  const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={containerRef} className="relative">
       <Button
+        ref={triggerRef}
         size="sm"
         variant="outline"
         className="w-8 px-0"
         aria-label={ariaLabel}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={toggle}
       >
         <MoreHorizontal className="h-4 w-4" />
       </Button>

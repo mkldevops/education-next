@@ -1,23 +1,22 @@
 'use client'
 
-import { Plus } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import {
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogRouteOpener,
   DialogTitle,
   DialogTrigger,
-  useDialog,
-} from '@/components/ui/dialog/dialog'
-import { Input, Label, Textarea } from '@/components/ui/input/input'
+  Input,
+  Label,
+  Textarea,
+} from '@peaklab/ui'
+import { Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
 import { createStudentAction } from '../../../_lib/student-actions'
 
 export function CreateStudentDialog({
@@ -57,16 +56,12 @@ export function CreateStudentDialog({
 
 function CreateStudentForm({ familyId }: { familyId: string }) {
   const t = useTranslations('dashboard.pages.students.create')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await createStudentAction({
+  const handleSubmit = onSubmit(
+    (formData) =>
+      createStudentAction({
         familyId: formData.get('familyId') as string,
         person: {
           name: formData.get('name') as string,
@@ -85,16 +80,13 @@ function CreateStudentForm({ familyId }: { familyId: string }) {
               .filter(Boolean) ?? [],
           snackAuthorization: formData.get('snackAuthorization') === 'on',
         },
-      })
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
+      }),
+    {
+      onSuccess: () => {
         if (familyId) router.push(`/dashboard/families/${familyId}`)
-      }
-    })
-  }
+      },
+    }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -176,14 +168,7 @@ function CreateStudentForm({ familyId }: { familyId: string }) {
           </label>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

@@ -1,10 +1,8 @@
 'use client'
 
+import { Button, Card, Input, Label } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
-import { Card } from '@/components/ui/card'
-import { Input, Label } from '@/components/ui/input/input'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { acceptInvitationAction } from '../_lib/accept-invitation-action'
