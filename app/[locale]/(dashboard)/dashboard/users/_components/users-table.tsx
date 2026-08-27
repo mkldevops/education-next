@@ -5,6 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
 import { useMemo, useState } from 'react'
 import { useTableLabels } from '@/features/tables'
+import { formatDate } from '@/lib/date'
 import type { SchoolRole } from '@/types/enums'
 import { UserDrawer } from './user-drawer'
 
@@ -105,9 +106,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
       accessorFn: (row) => row.lastLoginAt?.getTime() ?? 0,
       cell: ({ row }) => (
         <span className="text-gray-700">
-          {row.original.lastLoginAt
-            ? new Date(row.original.lastLoginAt).toLocaleDateString(locale)
-            : '-'}
+          {row.original.lastLoginAt ? formatDate(row.original.lastLoginAt, locale) : '-'}
         </span>
       ),
       enableSorting: true,

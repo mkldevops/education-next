@@ -5,6 +5,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import { Link } from '@/i18n/routing'
+import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { requireSchoolAdmin } from '../../../_lib/auth-helper'
 import { notFoundTitle } from '../../../_lib/page-metadata'
@@ -159,9 +160,7 @@ export default async function ClassDetailPage({ params }: Props) {
                     <td className="px-4 py-3">
                       <EnrollmentStatusBadge status={row.status} />
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {new Date(row.startAt).toLocaleDateString(locale)}
-                    </td>
+                    <td className="px-4 py-3 text-gray-600">{formatDate(row.startAt, locale)}</td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/dashboard/enrollments/${row.enrollmentId}`}

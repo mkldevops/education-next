@@ -7,6 +7,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
+import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolContext } from '@/lib/school-context'
@@ -183,7 +184,7 @@ export default async function DashboardPage({ params }: Props) {
       key: 'date',
       header: t('table.date'),
       className: 'text-gray-600',
-      render: (item) => new Date(item.registeredAt).toLocaleDateString(locale),
+      render: (item) => formatDate(item.registeredAt, locale),
     },
   ]
 

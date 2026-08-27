@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
+import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
@@ -106,7 +107,7 @@ export default async function UsersPage({ params }: Props) {
       render: (invitation) =>
         invitation.expiresAt < new Date()
           ? tInvitations('expired')
-          : new Date(invitation.expiresAt).toLocaleDateString(locale),
+          : formatDate(invitation.expiresAt, locale),
     },
     {
       key: 'actions',

@@ -3,9 +3,10 @@
 import { Button, Card } from '@peaklab/ui'
 import { Monitor, Smartphone, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { revokeSessionAction } from '@/actions'
+import { formatDate } from '@/lib/date'
 
 type SessionData = {
   id: string
@@ -38,6 +39,7 @@ function parseUserAgent(ua: string | null): { device: string; browser: string } 
 
 export function SessionsSection({ sessions }: Props) {
   const t = useTranslations('settings')
+  const locale = useLocale()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -99,7 +101,7 @@ export function SessionsSection({ sessions }: Props) {
                   </div>
                   <p className="text-xs text-gray-500">
                     {session.ipAddress || t('sessions.unknownIp')} —{' '}
-                    {new Date(session.createdAt).toLocaleDateString()}
+                    {formatDate(session.createdAt, locale)}
                   </p>
                 </div>
               </div>

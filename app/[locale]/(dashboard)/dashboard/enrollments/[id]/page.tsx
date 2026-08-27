@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { Link } from '@/i18n/routing'
+import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { requireSchoolScope } from '../../../_lib/auth-helper'
@@ -171,7 +172,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
             <div>
               <p className="text-sm font-medium text-gray-500">{t('registered')}</p>
               <p className="mt-1 text-sm text-gray-900">
-                {new Date(enrollment.registeredAt).toLocaleDateString(locale)}
+                {formatDate(enrollment.registeredAt, locale)}
               </p>
             </div>
           </div>
@@ -232,9 +233,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                     </td>
                     <td className="py-3 pr-4 text-gray-600">{a.classPeriod.level.name}</td>
                     <td className="py-3 pr-4 text-gray-600">{a.classPeriod.period.name}</td>
-                    <td className="py-3 text-gray-600">
-                      {new Date(a.startAt).toLocaleDateString(locale)}
-                    </td>
+                    <td className="py-3 text-gray-600">{formatDate(a.startAt, locale)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -269,11 +268,9 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                       <PaymentMethodLabel method={p.method} />
                     </td>
                     <td className="py-3 pr-4 text-gray-600">{p.reference ?? '-'}</td>
-                    <td className="py-3 pr-4 text-gray-600">
-                      {new Date(p.paidAt).toLocaleDateString(locale)}
-                    </td>
+                    <td className="py-3 pr-4 text-gray-600">{formatDate(p.paidAt, locale)}</td>
                     <td className="py-3 text-gray-600">
-                      {p.cashedAt ? new Date(p.cashedAt).toLocaleDateString(locale) : '-'}
+                      {p.cashedAt ? formatDate(p.cashedAt, locale) : '-'}
                     </td>
                   </tr>
                 ))}

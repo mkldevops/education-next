@@ -13,6 +13,7 @@ import type {
   Student,
 } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
+import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { ReassignClassDialog } from '../../../enrollments/_components/reassign-class-dialog'
 import { ActivateEnrollmentButton } from './activate-enrollment-button'
@@ -72,7 +73,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
             {person.name} {person.lastname}
           </h3>
           <p className="text-xs text-gray-600 mt-0.5">
-            {t('childCard.age', { age })} • {birthday.toLocaleDateString(locale)}
+            {t('childCard.age', { age })} • {formatDate(birthday, locale)}
           </p>
         </div>
       </div>

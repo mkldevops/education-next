@@ -18,6 +18,7 @@ import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
 import { Link, useRouter } from '@/i18n/routing'
+import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { toast } from '@/lib/toast'
 import {
@@ -202,7 +203,7 @@ export function EnrollmentDrawer({
               <div>
                 <p className="text-sm font-medium text-gray-500">{t('registeredAt')}</p>
                 <p className="mt-1 text-sm text-gray-900">
-                  {new Date(enrollment.registeredAt).toLocaleDateString(locale)}
+                  {formatDate(enrollment.registeredAt, locale)}
                 </p>
               </div>
             </div>
@@ -292,9 +293,7 @@ export function EnrollmentDrawer({
                         <td className="px-3 py-2">{a.classPeriod.name}</td>
                         <td className="px-3 py-2 text-gray-600">{a.classPeriod.level.name}</td>
                         <td className="px-3 py-2 text-gray-600">{a.classPeriod.period.name}</td>
-                        <td className="px-3 py-2 text-gray-600">
-                          {new Date(a.startAt).toLocaleDateString(locale)}
-                        </td>
+                        <td className="px-3 py-2 text-gray-600">{formatDate(a.startAt, locale)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -326,9 +325,7 @@ export function EnrollmentDrawer({
                           <PaymentMethodLabel method={p.method} />
                         </td>
                         <td className="px-3 py-2 text-gray-600">{p.reference ?? '-'}</td>
-                        <td className="px-3 py-2 text-gray-600">
-                          {new Date(p.paidAt).toLocaleDateString(locale)}
-                        </td>
+                        <td className="px-3 py-2 text-gray-600">{formatDate(p.paidAt, locale)}</td>
                       </tr>
                     ))}
                   </tbody>

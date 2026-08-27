@@ -12,6 +12,7 @@ import type {
   Plan,
 } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
+import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 
 type EnrollmentWithRelation = Enrollment & {
@@ -103,11 +104,7 @@ export async function EnrollmentList({ enrollments, locale }: Props) {
               <p className="mt-3 flex items-center gap-1.5 border-t border-gray-100 pt-3 text-xs text-gray-500">
                 <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
                 {t('enrollmentList.registeredOn', {
-                  date: new Date(enrollment.registeredAt).toLocaleDateString(locale, {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                  }),
+                  date: formatDateLong(enrollment.registeredAt, locale),
                 })}
               </p>
             </Link>
