@@ -16,7 +16,8 @@ export function isRateLimited(ip: string): boolean {
   recent.push(now)
   ipTimestamps.set(ip, recent)
   if (ipTimestamps.size > MAX_TRACKED_IPS) {
-    ipTimestamps.delete(ipTimestamps.keys().next().value!)
+    const oldest = ipTimestamps.keys().next().value
+    if (oldest !== undefined) ipTimestamps.delete(oldest)
   }
   return false
 }

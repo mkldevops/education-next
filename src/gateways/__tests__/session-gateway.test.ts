@@ -63,9 +63,9 @@ describe('sessionGateway.createForUser', () => {
     const cookieName = context.authCookies.sessionToken.name
 
     const sessionCookie = cookies.find((cookie) => cookie.startsWith(`${cookieName}=`))
-    expect(sessionCookie).toBeDefined()
+    if (!sessionCookie) throw new Error(`cookie ${cookieName} absent de la réponse`)
 
-    const value = decodeURIComponent(sessionCookie!.split(';')[0].split('=')[1])
+    const value = decodeURIComponent(sessionCookie.split(';')[0].split('=')[1])
     const signature = value.slice(value.lastIndexOf('.') + 1)
 
     expect(value.lastIndexOf('.')).toBeGreaterThan(0)
