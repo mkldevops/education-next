@@ -1,0 +1,39 @@
+import { describe, expect, it } from 'vitest'
+import { resolveNavItems } from '../sidebar-items'
+
+const keys = (items: { key: string }[]) => items.map((item) => item.key)
+
+describe('resolveNavItems', () => {
+  it('hides admin-only configuration from a caller without a school role', () => {
+    const items = resolveNavItems({ role: null, isSuperAdmin: false })
+
+    expect(items.config).toEqual([])
+    expect(keys(items.gestion)).toContain('payments')
+  })
+
+  it('exposes configuration to an admin of the school', () => {
+    const items = resolveNavItems({ role: 'ADMIN', isSuperAdmin: false })
+
+    expect(keys(items.config)).toEqual(['periods', 'levels', 'classes', 'plans', 'config', 'users'])
+  })
+
+  it('exposes configuration to a super admin without a school role', () => {
+    const items = resolveNavItems({ role: null, isSuperAdmin: true })
+
+    expect(keys(items.config)).toHaveLength(6)
+  })
+
+  it('points a parent at their own family and drops the management pages', () => {
+    const items = resolveNavItems({ role: 'PARENT', isSuperAdmin: false, familyId: 'family-1' })
+
+    expect(keys(items.gestion)).toEqual(['dashboard', 'myFamily'])
+    expect(items.gestion[1].href).toBe('/dashboard/families/family-1')
+    expect(keys(items.bottom)).toEqual(['profile'])
+  })
+
+  it('falls back to the families list when a parent has no linked family', () => {
+    const items = resolveNavItems({ role: 'PARENT', isSuperAdmin: false })
+
+    expect(items.gestion[1].href).toBe('/dashboard/families')
+  })
+})
