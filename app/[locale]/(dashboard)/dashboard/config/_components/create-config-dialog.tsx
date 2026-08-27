@@ -5,19 +5,17 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
   Input,
   Label,
-  useDialog,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
 import { setConfigAction } from '../../../_lib/config-actions'
 
 export function CreateConfigDialog() {
@@ -43,37 +41,27 @@ export function CreateConfigDialog() {
 
 function CreateConfigForm() {
   const t = useTranslations('dashboard.pages.config.create')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
   const [valueType, setValueType] = useState<'TEXT' | 'NUMBER' | 'BOOLEAN' | 'COLOR'>('TEXT')
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+  const handleSubmit = onSubmit(
+    (formData) => {
+      const value =
+        valueType === 'BOOLEAN'
+          ? formData.get('value')
+            ? 'true'
+            : 'false'
+          : (formData.get('value') as string)
 
-    let value: string
-    if (valueType === 'BOOLEAN') {
-      value = formData.get('value') ? 'true' : 'false'
-    } else {
-      value = formData.get('value') as string
-    }
-
-    startTransition(async () => {
-      const result = await setConfigAction({
+      return setConfigAction({
         name: formData.get('name') as string,
         value,
         valueType,
       })
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-        router.refresh()
-      }
-    })
-  }
+    },
+    { onSuccess: () => router.refresh() }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -136,14 +124,7 @@ function CreateConfigForm() {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

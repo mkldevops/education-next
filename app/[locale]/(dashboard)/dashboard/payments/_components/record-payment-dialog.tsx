@@ -6,21 +6,19 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogRouteOpener,
   DialogTitle,
   DialogTrigger,
   Input,
   Label,
-  useDialog,
 } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
 import { ArrowLeftRight, Banknote, CreditCard, FileCheck, Plus } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
 import { recordPaymentAction } from '../../../_lib/payment-actions'
 
 interface Option {
@@ -83,18 +81,14 @@ function RecordPaymentForm({
 }) {
   const t = useTranslations('dashboard.pages.payments.record')
   const format = useFormatter()
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
   const [method, setMethod] = useState<Method>('CASH')
   const [amount, setAmount] = useState('')
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await recordPaymentAction({
+  const handleSubmit = onSubmit(
+    (formData) =>
+      recordPaymentAction({
         familyId: formData.get('familyId') as string,
         amount: Number(formData.get('amount')),
         method,
@@ -104,16 +98,9 @@ function RecordPaymentForm({
           method === 'CHECK' && formData.get('cashedAt')
             ? new Date(formData.get('cashedAt') as string)
             : undefined,
-      })
-      if (result !== 'OK') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-        router.refresh()
-      }
-    })
-  }
+      }),
+    { onSuccess: () => router.refresh() }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -252,14 +239,7 @@ function RecordPaymentForm({
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

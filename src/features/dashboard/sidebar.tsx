@@ -1,5 +1,6 @@
 'use client'
 
+import { useMenu } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
 import {
   BookOpen,
@@ -20,7 +21,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, usePathname, useRouter } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
@@ -174,70 +175,18 @@ function UserMenu({
   onToggle: () => void
 }) {
   const t = useTranslations('dashboard.sidebar')
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
   const label = userName ?? t('account')
-
-  const close = useCallback((restoreFocus = true) => {
-    setOpen(false)
-    if (restoreFocus) triggerRef.current?.focus()
-  }, [])
-
-  useEffect(() => {
-    if (!open) return
-
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) close(false)
-    }
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        close()
-        return
-      }
-      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
-
-      e.preventDefault()
-      const focusable = Array.from(
-        menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
-      )
-      if (focusable.length === 0) return
-
-      const current = focusable.indexOf(document.activeElement as HTMLElement)
-      const next =
-        e.key === 'ArrowDown'
-          ? current < focusable.length - 1
-            ? current + 1
-            : 0
-          : current > 0
-            ? current - 1
-            : focusable.length - 1
-      focusable[next].focus()
-    }
-
-    document.addEventListener('mousedown', handleClick)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open, close])
-
-  useEffect(() => {
-    if (!open) return
-    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
-  }, [open])
 
   const itemClass =
     'flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm text-graphite-800 transition-colors hover:bg-alabaster-900 hover:text-graphite-600'
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={containerRef} className="relative">
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={expanded ? undefined : label}

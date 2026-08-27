@@ -5,18 +5,15 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
   Input,
   Label,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
 import { applyDiscountAction } from '../../../_lib/enrollment-actions'
 
 interface ApplyDiscountDialogProps {
@@ -46,28 +43,17 @@ export function ApplyDiscountDialog({ enrollmentId, currentDiscount }: ApplyDisc
 
 function DiscountForm({ enrollmentId, currentDiscount }: ApplyDiscountDialogProps) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.applyDiscount')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await applyDiscountAction({
+  const handleSubmit = onSubmit(
+    (formData) =>
+      applyDiscountAction({
         enrollmentId,
         discount: Number(formData.get('discount')),
-      })
-      if (result !== 'OK') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-        router.refresh()
-      }
-    })
-  }
+      }),
+    { onSuccess: () => router.refresh() }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -88,14 +74,7 @@ function DiscountForm({ enrollmentId, currentDiscount }: ApplyDiscountDialogProp
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

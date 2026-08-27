@@ -5,19 +5,16 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
   Input,
   Label,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
-import { toast, toastActionError } from '@/lib/toast'
 import { setConfigAction } from '../../../_lib/config-actions'
 import { ImageValueField } from './image-value-field'
 
@@ -55,36 +52,26 @@ export function EditConfigDialog({ config }: EditConfigDialogProps) {
 
 function EditConfigForm({ config }: EditConfigDialogProps) {
   const t = useTranslations('dashboard.pages.config.edit')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+  const handleSubmit = onSubmit(
+    (formData) => {
+      const value =
+        config.valueType === 'BOOLEAN'
+          ? formData.get('value')
+            ? 'true'
+            : 'false'
+          : (formData.get('value') as string)
 
-    let value: string
-    if (config.valueType === 'BOOLEAN') {
-      value = formData.get('value') ? 'true' : 'false'
-    } else {
-      value = formData.get('value') as string
-    }
-
-    startTransition(async () => {
-      const result = await setConfigAction({
+      return setConfigAction({
         name: config.name,
         value,
         valueType: config.valueType,
       })
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-        router.refresh()
-      }
-    })
-  }
+    },
+    { onSuccess: () => router.refresh() }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -154,14 +141,7 @@ function EditConfigForm({ config }: EditConfigDialogProps) {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

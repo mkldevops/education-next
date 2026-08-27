@@ -5,18 +5,15 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
   Input,
   Label,
-  useDialog,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { toast, toastActionError } from '@/lib/toast'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { createPeriodAction } from '../../../_lib/period-actions'
 
 export function CreatePeriodDialog() {
@@ -42,27 +39,15 @@ export function CreatePeriodDialog() {
 
 function CreatePeriodForm() {
   const t = useTranslations('dashboard.pages.periods.create')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await createPeriodAction({
-        name: formData.get('name') as string,
-        startAt: new Date(formData.get('startAt') as string),
-        endAt: new Date(formData.get('endAt') as string),
-      })
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-      }
+  const handleSubmit = onSubmit((formData) =>
+    createPeriodAction({
+      name: formData.get('name') as string,
+      startAt: new Date(formData.get('startAt') as string),
+      endAt: new Date(formData.get('endAt') as string),
     })
-  }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -91,14 +76,7 @@ function CreatePeriodForm() {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

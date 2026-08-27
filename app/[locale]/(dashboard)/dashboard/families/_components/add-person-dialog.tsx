@@ -5,18 +5,15 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
   Input,
   Label,
-  useDialog,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { toast, toastActionError } from '@/lib/toast'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { addPersonToFamilyAction } from '../../../_lib/family-actions'
 
 export function AddPersonDialog({ familyId }: { familyId: string }) {
@@ -42,41 +39,29 @@ export function AddPersonDialog({ familyId }: { familyId: string }) {
 
 function AddPersonForm({ familyId }: { familyId: string }) {
   const t = useTranslations('dashboard.pages.families.addPerson')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await addPersonToFamilyAction({
-        familyId,
-        person: {
-          name: formData.get('name') as string,
-          lastname: formData.get('lastname') as string,
-          sex: formData.get('sex') as 'MALE' | 'FEMALE',
-          email: (formData.get('email') as string) || undefined,
-          address: (formData.get('address') as string) || undefined,
-          postCode: (formData.get('postCode') as string) || undefined,
-          city: (formData.get('city') as string) || undefined,
-        },
-        relationType: formData.get('relationType') as
-          | 'PARENT'
-          | 'TUTOR'
-          | 'GRANDPARENT'
-          | 'SIBLING'
-          | 'OTHER',
-        phoneNumber: (formData.get('phoneNumber') as string) || undefined,
-      })
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-      }
+  const handleSubmit = onSubmit((formData) =>
+    addPersonToFamilyAction({
+      familyId,
+      person: {
+        name: formData.get('name') as string,
+        lastname: formData.get('lastname') as string,
+        sex: formData.get('sex') as 'MALE' | 'FEMALE',
+        email: (formData.get('email') as string) || undefined,
+        address: (formData.get('address') as string) || undefined,
+        postCode: (formData.get('postCode') as string) || undefined,
+        city: (formData.get('city') as string) || undefined,
+      },
+      relationType: formData.get('relationType') as
+        | 'PARENT'
+        | 'TUTOR'
+        | 'GRANDPARENT'
+        | 'SIBLING'
+        | 'OTHER',
+      phoneNumber: (formData.get('phoneNumber') as string) || undefined,
     })
-  }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -167,14 +152,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

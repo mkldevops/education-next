@@ -5,18 +5,15 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
   Input,
   Label,
-  useDialog,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { toast, toastActionError } from '@/lib/toast'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { createPlanAction } from '../../../_lib/plan-actions'
 
 export function CreatePlanDialog() {
@@ -42,26 +39,14 @@ export function CreatePlanDialog() {
 
 function CreatePlanForm() {
   const t = useTranslations('dashboard.pages.plans.create')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await createPlanAction({
-        name: formData.get('name') as string,
-        amount: Number(formData.get('amount')),
-      })
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-      }
+  const handleSubmit = onSubmit((formData) =>
+    createPlanAction({
+      name: formData.get('name') as string,
+      amount: Number(formData.get('amount')),
     })
-  }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -85,14 +70,7 @@ function CreatePlanForm() {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

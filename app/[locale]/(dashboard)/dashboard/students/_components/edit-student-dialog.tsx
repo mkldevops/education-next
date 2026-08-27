@@ -5,18 +5,15 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
   Input,
   Label,
   Textarea,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { toast, toastActionError } from '@/lib/toast'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { updateStudentAction } from '../../../_lib/student-actions'
 
 interface EditStudentDialogProps {
@@ -54,39 +51,27 @@ export function EditStudentDialog({ student }: EditStudentDialogProps) {
 function EditStudentForm({ student }: EditStudentDialogProps) {
   const t = useTranslations('dashboard.pages.students.edit')
   const tCreate = useTranslations('dashboard.pages.students.create')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
 
   const birthdayStr = new Date(student.birthday).toISOString().split('T')[0]
   const languages = Array.isArray(student.languagesAtHome)
     ? (student.languagesAtHome as string[]).join(', ')
     : ''
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await updateStudentAction(student.id, {
-        birthday: new Date(formData.get('birthday') as string),
-        birthplace: (formData.get('birthplace') as string) || undefined,
-        allergies: (formData.get('allergies') as string) || undefined,
-        healthNotes: (formData.get('healthNotes') as string) || undefined,
-        languagesAtHome:
-          (formData.get('languagesAtHome') as string)
-            ?.split(',')
-            .map((l) => l.trim())
-            .filter(Boolean) ?? [],
-        snackAuthorization: formData.get('snackAuthorization') === 'on',
-      })
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-      }
+  const handleSubmit = onSubmit((formData) =>
+    updateStudentAction(student.id, {
+      birthday: new Date(formData.get('birthday') as string),
+      birthplace: (formData.get('birthplace') as string) || undefined,
+      allergies: (formData.get('allergies') as string) || undefined,
+      healthNotes: (formData.get('healthNotes') as string) || undefined,
+      languagesAtHome:
+        (formData.get('languagesAtHome') as string)
+          ?.split(',')
+          .map((l) => l.trim())
+          .filter(Boolean) ?? [],
+      snackAuthorization: formData.get('snackAuthorization') === 'on',
     })
-  }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -156,14 +141,7 @@ function EditStudentForm({ student }: EditStudentDialogProps) {
           </label>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }
