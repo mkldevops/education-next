@@ -1,11 +1,8 @@
 'use client'
 
-import type { LucideIcon } from 'lucide-react'
-import { ArrowLeftRight, Banknote, CreditCard, FileCheck } from 'lucide-react'
-import { useFormatter, useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import {
+  Button,
+  cn,
   Dialog,
   DialogBody,
   DialogContent,
@@ -14,10 +11,14 @@ import {
   DialogRouteOpener,
   DialogTitle,
   DialogTrigger,
+  Input,
+  Label,
   useDialog,
-} from '@/components/ui/dialog/dialog'
-import { Input, Label } from '@/components/ui/input/input'
-import { cn } from '@/components/ui/utils'
+} from '@peaklab/ui'
+import type { LucideIcon } from 'lucide-react'
+import { ArrowLeftRight, Banknote, CreditCard, FileCheck, Plus } from 'lucide-react'
+import { useFormatter, useTranslations } from 'next-intl'
+import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { recordPaymentAction } from '../../../_lib/payment-actions'
@@ -56,7 +57,10 @@ export function RecordPaymentDialog({
       <DialogRouteOpener open={defaultOpen} cleanUrl={redirectTo} />
       {showTrigger && (
         <DialogTrigger>
-          <Button>+ {t('title')}</Button>
+          <Button>
+            <Plus className="h-4 w-4" />
+            {t('title')}
+          </Button>
         </DialogTrigger>
       )}
       <DialogContent>

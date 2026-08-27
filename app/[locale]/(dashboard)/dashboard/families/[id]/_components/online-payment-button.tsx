@@ -1,9 +1,9 @@
 'use client'
 
+import { Button } from '@peaklab/ui'
 import { CreditCard } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import { formatCurrency } from '@/lib/decimal'
 import { toast } from '@/lib/toast'
 import { createOnlinePaymentAction } from '../../../../_lib/online-payment-actions'

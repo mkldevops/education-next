@@ -1,9 +1,7 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import {
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
@@ -11,9 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Input,
+  Label,
   useDialog,
-} from '@/components/ui/dialog/dialog'
-import { Input, Label } from '@/components/ui/input/input'
+} from '@peaklab/ui'
+import { Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { useTransition } from 'react'
 import { toast, toastActionError } from '@/lib/toast'
 import { addPhoneAction } from '../../../_lib/family-actions'
 
@@ -23,7 +25,10 @@ export function AddPhoneDialog({ personId }: { personId: string }) {
   return (
     <Dialog>
       <DialogTrigger>
-        <Button size="sm">+ {t('title')}</Button>
+        <Button size="sm">
+          <Plus className="h-4 w-4" />
+          {t('title')}
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

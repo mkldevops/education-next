@@ -35,9 +35,16 @@ export interface ButtonProps
   children: ReactNode
 }
 
-export function Button({ className, variant, size, children, ...props }: ButtonProps) {
+export function Button({
+  className,
+  variant,
+  size,
+  children,
+  type = 'button',
+  ...props
+}: ButtonProps) {
   return (
-    <button className={cn(buttonVariants({ variant, size, className }))} {...props}>
+    <button type={type} className={cn(buttonVariants({ variant, size, className }))} {...props}>
       {children}
     </button>
   )

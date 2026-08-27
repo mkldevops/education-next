@@ -129,7 +129,7 @@ export function UserDrawer({
             <DrawerTitle>{user.name || user.email}</DrawerTitle>
             <p className="mt-1 truncate text-sm text-gray-500">{user.email}</p>
           </div>
-          <DrawerClose className="text-gray-400 hover:text-gray-600">✕</DrawerClose>
+          <DrawerClose label={t('close')} />
         </DrawerHeader>
 
         <DrawerBody className="space-y-6">

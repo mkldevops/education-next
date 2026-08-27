@@ -1236,7 +1236,8 @@
         },
         "removeMember": "Remove",
         "removeMemberWarning": "This member will lose access to this school's data. Their platform account will not be deleted.",
-        "memberRemoved": "Member removed from the school"
+        "memberRemoved": "Member removed from the school",
+        "close": "Close"
       },
       "classDetails": {
         "title": "Class Details",

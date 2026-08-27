@@ -86,4 +86,6 @@ export {
 } from './rich-data-table'
 // Status Badge
 export { StatusBadge, type StatusBadgeProps, statusBadgeVariants } from './status-badge'
+// Tabs
+export { type Tab, Tabs, type TabsProps } from './tabs'
 export { cn } from './utils'

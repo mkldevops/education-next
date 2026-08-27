@@ -1,9 +1,7 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
-import { useEffect, useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import {
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
@@ -12,9 +10,13 @@ import {
   DialogRouteOpener,
   DialogTitle,
   DialogTrigger,
+  Input,
+  Label,
   useDialog,
-} from '@/components/ui/dialog/dialog'
-import { Input, Label } from '@/components/ui/input/input'
+} from '@peaklab/ui'
+import { Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { useEffect, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { createEnrollmentAction } from '../../../_lib/enrollment-actions'
@@ -50,7 +52,10 @@ export function CreateEnrollmentDialog({
       <DialogRouteOpener open={defaultOpen} cleanUrl={redirectTo} />
       {showTrigger && (
         <DialogTrigger>
-          <Button>+ {t('title')}</Button>
+          <Button>
+            <Plus className="h-4 w-4" />
+            {t('title')}
+          </Button>
         </DialogTrigger>
       )}
       <DialogContent>

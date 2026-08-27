@@ -1,9 +1,7 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import {
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
@@ -11,9 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Input,
+  Label,
   useDialog,
-} from '@/components/ui/dialog/dialog'
-import { Input, Label } from '@/components/ui/input/input'
+} from '@peaklab/ui'
+import { Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { setConfigAction } from '../../../_lib/config-actions'
@@ -24,7 +26,10 @@ export function CreateConfigDialog() {
   return (
     <Dialog>
       <DialogTrigger>
-        <Button>+ {t('title')}</Button>
+        <Button>
+          <Plus className="h-4 w-4" />
+          {t('title')}
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

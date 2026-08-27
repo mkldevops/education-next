@@ -1,9 +1,7 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
 import {
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
@@ -11,9 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Input,
+  Label,
+  Textarea,
   useDialog,
-} from '@/components/ui/dialog/dialog'
-import { Input, Label, Textarea } from '@/components/ui/input/input'
+} from '@peaklab/ui'
+import { useTranslations } from 'next-intl'
+import { useTransition } from 'react'
 import { toast, toastActionError } from '@/lib/toast'
 import { updateStudentAction } from '../../../_lib/student-actions'
 

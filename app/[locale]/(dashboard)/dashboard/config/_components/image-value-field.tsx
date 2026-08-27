@@ -1,9 +1,8 @@
 'use client'
 
+import { Button, Input } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useRef, useState, useTransition } from 'react'
-import { Button } from '@/components/ui/button/button'
-import { Input } from '@/components/ui/input/input'
 import { toast, toastActionError } from '@/lib/toast'
 import { uploadBrandingImageAction } from '../../../_lib/media-actions'
 
