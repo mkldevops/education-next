@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createStudent } from './create-student'
 
+type FamilyGw = Parameters<typeof createStudent>[1]
+type PersonGw = Parameters<typeof createStudent>[2]
+type StudentGw = Parameters<typeof createStudent>[3]
+
 class FamilyGatewaySpy {
   familyToReturn: { id: string } | null = null
   addPersonCalls: Array<{ schoolId: string; familyId: string; personId: string }> = []
@@ -62,7 +66,7 @@ class StudentGatewaySpy {
 
   async create(_schoolId: string, data: unknown) {
     this.createdData = data
-    return (this.studentToReturn || { id: 'student-123' }) as unknown as any
+    return (this.studentToReturn || { id: 'student-123' }) as never
   }
 
   async update() {
@@ -115,10 +119,10 @@ describe('createStudent', () => {
 
     // WHEN
     const result = await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as never,
+      familyGateway as unknown as FamilyGw,
+      personGateway as unknown as PersonGw,
+      studentGateway as unknown as StudentGw
     )
 
     // THEN
@@ -137,10 +141,10 @@ describe('createStudent', () => {
 
     // WHEN
     const result = await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as never,
+      familyGateway as unknown as FamilyGw,
+      personGateway as unknown as PersonGw,
+      studentGateway as unknown as StudentGw
     )
 
     // THEN
@@ -158,10 +162,10 @@ describe('createStudent', () => {
 
     // WHEN
     const result = await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as never,
+      familyGateway as unknown as FamilyGw,
+      personGateway as unknown as PersonGw,
+      studentGateway as unknown as StudentGw
     )
 
     // THEN
@@ -179,10 +183,10 @@ describe('createStudent', () => {
 
     // WHEN
     const result = await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as never,
+      familyGateway as unknown as FamilyGw,
+      personGateway as unknown as PersonGw,
+      studentGateway as unknown as StudentGw
     )
 
     // THEN
@@ -205,10 +209,10 @@ describe('createStudent', () => {
 
     // WHEN
     await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as never,
+      familyGateway as unknown as FamilyGw,
+      personGateway as unknown as PersonGw,
+      studentGateway as unknown as StudentGw
     )
 
     // THEN
@@ -237,10 +241,10 @@ describe('createStudent', () => {
 
     // WHEN
     await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as never,
+      familyGateway as unknown as FamilyGw,
+      personGateway as unknown as PersonGw,
+      studentGateway as unknown as StudentGw
     )
 
     // THEN
@@ -264,10 +268,10 @@ describe('createStudent', () => {
 
     // WHEN
     await createStudent(
-      input as unknown as any,
-      familyGateway as unknown as any,
-      personGateway as unknown as any,
-      studentGateway as unknown as any
+      input as never,
+      familyGateway as unknown as FamilyGw,
+      personGateway as unknown as PersonGw,
+      studentGateway as unknown as StudentGw
     )
 
     // THEN

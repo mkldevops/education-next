@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { updatePlan } from './update-plan'
 
+type PlanGw = Parameters<typeof updatePlan>[1]
+
 const schoolId = '00000000-0000-0000-0000-000000000001'
 
 class PlanGatewaySpy {
@@ -13,7 +15,7 @@ class PlanGatewaySpy {
     this.updatedSchoolId = updateSchoolId
     this.updatedId = id
     this.updatedData = data
-    return { id, amount: 100, ...(data as object) } as unknown as any
+    return { id, amount: 100, ...(data as object) } as never
   }
 
   async create() {
@@ -41,7 +43,7 @@ describe('updatePlan', () => {
     const input = { schoolId, id: 'invalid-uuid', name: 'Updated Plan' }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -52,7 +54,7 @@ describe('updatePlan', () => {
     const input = { schoolId, id: '123e4567-e89b-12d3-a456-426614174000', name: '' }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -63,7 +65,7 @@ describe('updatePlan', () => {
     const input = { schoolId, id: '123e4567-e89b-12d3-a456-426614174000', amount: 0 }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -78,7 +80,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toHaveProperty('id', '123e4567-e89b-12d3-a456-426614174000')
@@ -93,7 +95,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toHaveProperty('id', '123e4567-e89b-12d3-a456-426614174000')
@@ -109,7 +111,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as any)
+    const result = await updatePlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toHaveProperty('id', '123e4567-e89b-12d3-a456-426614174000')
@@ -124,7 +126,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    await updatePlan(input, gateway as unknown as any)
+    await updatePlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(gateway.updatedData).not.toHaveProperty('id')
@@ -141,7 +143,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    await updatePlan(input, gateway as unknown as any)
+    await updatePlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(gateway.updatedSchoolId).toBe(schoolId)

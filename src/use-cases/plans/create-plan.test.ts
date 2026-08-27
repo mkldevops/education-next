@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPlan } from './create-plan'
 
+type PlanGw = Parameters<typeof createPlan>[1]
+
 const schoolId = '00000000-0000-0000-0000-000000000001'
 
 class PlanGatewaySpy {
@@ -11,7 +13,7 @@ class PlanGatewaySpy {
   async create(createSchoolId: string, data: unknown) {
     this.createdSchoolId = createSchoolId
     this.createdData = data
-    return (this.planToReturn || { id: 'plan-123', ...(data as object) }) as unknown as any
+    return (this.planToReturn || { id: 'plan-123', ...(data as object) }) as never
   }
 
   async update() {
@@ -39,7 +41,7 @@ describe('createPlan', () => {
     const input = { schoolId, name: '', amount: 100 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown as any)
+    const result = await createPlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -50,7 +52,7 @@ describe('createPlan', () => {
     const input = { schoolId, name: 'a'.repeat(51), amount: 100 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown as any)
+    const result = await createPlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -61,7 +63,7 @@ describe('createPlan', () => {
     const input = { schoolId, name: 'Basic Plan', amount: 0 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown as any)
+    const result = await createPlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -72,7 +74,7 @@ describe('createPlan', () => {
     const input = { schoolId, name: 'Basic Plan', amount: -50 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown as any)
+    const result = await createPlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -83,7 +85,7 @@ describe('createPlan', () => {
     const input = { schoolId, name: 'Basic Plan', amount: 99.99 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown as any)
+    const result = await createPlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toHaveProperty('id', 'plan-123')
@@ -94,7 +96,7 @@ describe('createPlan', () => {
     const input = { schoolId, name: 'Premium Plan', amount: 199.99 }
 
     // WHEN
-    await createPlan(input, gateway as unknown as any)
+    await createPlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(gateway.createdSchoolId).toBe(schoolId)
@@ -109,7 +111,7 @@ describe('createPlan', () => {
     const input = { schoolId, name: 'Minimal Plan', amount: 0.01 }
 
     // WHEN
-    const result = await createPlan(input, gateway as unknown as any)
+    const result = await createPlan(input, gateway as unknown as PlanGw)
 
     // THEN
     expect(result).toHaveProperty('id', 'plan-123')

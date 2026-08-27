@@ -68,7 +68,7 @@ describe('createEnrollment', () => {
       classPeriodId: '550e8400-e29b-41d4-a716-446655440000',
       discount: 0,
       canLeaveAlone: false,
-    } as unknown as any)
+    })
 
     expect(result).toBe('validationError')
   })
@@ -83,7 +83,7 @@ describe('createEnrollment', () => {
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
       discount: 0,
       canLeaveAlone: false,
-    } as unknown as any)
+    })
 
     expect(result).toBe('notFound')
   })
@@ -99,7 +99,7 @@ describe('createEnrollment', () => {
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
       discount: 0,
       canLeaveAlone: false,
-    } as unknown as any)
+    })
 
     expect(result).toBe('notFound')
   })
@@ -119,7 +119,7 @@ describe('createEnrollment', () => {
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
       discount: 0,
       canLeaveAlone: false,
-    } as unknown as any)
+    })
 
     expect(result).toBe('notFound')
   })
@@ -143,7 +143,7 @@ describe('createEnrollment', () => {
       classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
       discount: 0,
       canLeaveAlone: false,
-    } as unknown as any)
+    })
 
     expect(result).toBe('duplicateEnrollment')
   })
