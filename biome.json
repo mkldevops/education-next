@@ -23,7 +23,7 @@
         "noConsole": {
           "level": "warn",
           "options": {
-            "allow": ["log"]
+            "allow": ["warn", "error"]
           }
         }
       },
@@ -60,5 +60,17 @@
       "!graphify-out",
       "!src/generated"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["prisma/seed.ts", "scripts/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ]
 }

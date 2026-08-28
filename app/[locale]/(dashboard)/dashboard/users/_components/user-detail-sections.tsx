@@ -3,13 +3,11 @@
 import { Button, StatusBadge } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import type { ReactNode } from 'react'
+import { formatDateTime } from '@/lib/date'
 import type { UserDetail } from './use-user-detail'
 import type { MemberRow } from './users-table'
 
 type SessionRow = UserDetail['sessions'][number]
-
-export const formatDateTime = (value: Date | string, locale: string) =>
-  new Date(value).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (

@@ -2,6 +2,7 @@ import { EmptyState } from '@peaklab/ui'
 import { Receipt } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import type { Enrollment, Payment, PaymentMethod, Plan, Student } from '@/generated/prisma/client'
+import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 
@@ -38,14 +39,6 @@ function MethodBadge({ method, label }: { method: PaymentMethod; label: string }
       {label}
     </span>
   )
-}
-
-function formatDate(value: Date, locale: string) {
-  return new Date(value).toLocaleDateString(locale, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
 }
 
 export async function PaymentHistoryTable({ payments, locale }: Props) {
@@ -126,12 +119,12 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
                   )}
                 </td>
                 <td className="px-4 py-3 tabular-nums text-gray-600">
-                  {formatDate(payment.paidAt, locale)}
+                  {formatDateLong(payment.paidAt, locale)}
                 </td>
                 <td className="px-4 py-3">
                   {payment.cashedAt ? (
                     <span className="tabular-nums text-gray-600">
-                      {formatDate(payment.cashedAt, locale)}
+                      {formatDateLong(payment.cashedAt, locale)}
                     </span>
                   ) : payment.method === 'CHECK' ? (
                     <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
@@ -184,7 +177,9 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
             <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
               <div className="flex gap-1.5">
                 <dt className="text-gray-500">{t('paidAt')}</dt>
-                <dd className="tabular-nums text-gray-700">{formatDate(payment.paidAt, locale)}</dd>
+                <dd className="tabular-nums text-gray-700">
+                  {formatDateLong(payment.paidAt, locale)}
+                </dd>
               </div>
               {(payment.cashedAt || payment.method === 'CHECK') && (
                 <div className="flex gap-1.5">
@@ -195,7 +190,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
                       payment.cashedAt ? 'text-gray-700' : 'text-amber-700'
                     )}
                   >
-                    {payment.cashedAt ? formatDate(payment.cashedAt, locale) : t('notCashed')}
+                    {payment.cashedAt ? formatDateLong(payment.cashedAt, locale) : t('notCashed')}
                   </dd>
                 </div>
               )}

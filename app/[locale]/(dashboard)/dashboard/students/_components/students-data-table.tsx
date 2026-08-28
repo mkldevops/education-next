@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { useTableLabels } from '@/features/tables'
 import type { Family, FamilyPerson, Person, Student } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
+import { formatDate } from '@/lib/date'
 
 type StudentRow = Student & {
   person: Person & {
@@ -54,7 +55,7 @@ export function StudentsDataTable({ data, locale, isAdmin }: Props) {
     {
       id: 'birthday',
       header: t('birthday'),
-      accessorFn: (row) => new Date(row.birthday).toLocaleDateString(locale),
+      accessorFn: (row) => formatDate(row.birthday, locale),
       cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
       enableSorting: true,
     },

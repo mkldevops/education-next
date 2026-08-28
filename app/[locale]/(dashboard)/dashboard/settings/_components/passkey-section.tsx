@@ -1,9 +1,10 @@
 'use client'
 
+import { Button, Card, Input, Label } from '@peaklab/ui'
 import { startRegistration } from '@simplewebauthn/browser'
 import { KeyRound, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import {
   deletePasskey,
@@ -11,7 +12,7 @@ import {
   getUserPasskeys,
   verifyPasskeyRegistration,
 } from '@/actions'
-import { Button, Card, Input, Label } from '@/components/ui'
+import { formatDate } from '@/lib/date'
 
 type Passkey = {
   id: string
@@ -22,6 +23,7 @@ type Passkey = {
 
 export function PasskeySection() {
   const t = useTranslations('settings.passkey')
+  const locale = useLocale()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [passkeys, setPasskeys] = useState<Passkey[]>([])
@@ -118,7 +120,7 @@ export function PasskeySection() {
               <div>
                 <p className="text-sm font-medium text-gray-900">{pk.name}</p>
                 <p className="text-xs text-gray-500">
-                  {pk.deviceType} — {new Date(pk.createdAt).toLocaleDateString()}
+                  {pk.deviceType} — {formatDate(pk.createdAt, locale)}
                 </p>
               </div>
               <Button

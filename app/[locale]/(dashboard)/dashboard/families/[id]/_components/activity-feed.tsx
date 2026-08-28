@@ -8,6 +8,7 @@ import type {
   Plan,
   Student,
 } from '@/generated/prisma/client'
+import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 
 type EnrollmentWithRelation = Enrollment & {
@@ -112,7 +113,7 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
             {activity.student && (
               <p className="text-xs font-medium text-gray-700 mt-0.5">{activity.student}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">{activity.date.toLocaleDateString(locale)}</p>
+            <p className="text-xs text-gray-500 mt-1">{formatDate(activity.date, locale)}</p>
           </div>
         </div>
       ))}

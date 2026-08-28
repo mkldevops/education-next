@@ -7,6 +7,7 @@ import { PaymentMethodLabel } from '@/features/enums'
 import { useTableLabels } from '@/features/tables'
 import type { PaymentMethod } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
+import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 
 export interface PaymentRow {
@@ -87,14 +88,14 @@ export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) 
     {
       id: 'paidAt',
       header: t('paidAt'),
-      accessorFn: (row) => new Date(row.paidAt).toLocaleDateString(locale),
+      accessorFn: (row) => formatDate(row.paidAt, locale),
       cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
       enableSorting: true,
     },
     {
       id: 'cashedAt',
       header: t('cashedAt'),
-      accessorFn: (row) => (row.cashedAt ? new Date(row.cashedAt).toLocaleDateString(locale) : '-'),
+      accessorFn: (row) => (row.cashedAt ? formatDate(row.cashedAt, locale) : '-'),
       cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
       enableSorting: true,
     },

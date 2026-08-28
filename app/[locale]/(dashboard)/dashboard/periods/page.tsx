@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { isPeriodCurrent } from '@/domain/period'
+import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
@@ -60,13 +61,13 @@ export default async function PeriodsPage({ params }: Props) {
       key: 'startAt',
       header: t('startDate'),
       className: 'text-gray-700',
-      render: (period) => new Date(period.startAt).toLocaleDateString(locale),
+      render: (period) => formatDate(period.startAt, locale),
     },
     {
       key: 'endAt',
       header: t('endDate'),
       className: 'text-gray-700',
-      render: (period) => new Date(period.endAt).toLocaleDateString(locale),
+      render: (period) => formatDate(period.endAt, locale),
     },
     {
       key: 'classes',

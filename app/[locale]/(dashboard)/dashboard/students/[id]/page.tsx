@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
+import { formatDateLong } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { requireSchoolScope } from '../../../_lib/auth-helper'
@@ -181,11 +182,7 @@ export default async function StudentDetailPage({ params }: Props) {
             <p className="mt-1 text-sm text-gray-600">
               {t('age', { age })}
               <span className="mx-2 text-gray-300">·</span>
-              {birthday.toLocaleDateString(locale, {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-              })}
+              {formatDateLong(birthday, locale)}
               {student.birthplace && (
                 <>
                   <span className="mx-2 text-gray-300">·</span>

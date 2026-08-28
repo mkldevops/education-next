@@ -27,7 +27,7 @@ export class PrismaProfileGateway implements ProfileGateway {
 
   async findByUserId(userId: string): Promise<Profile | null> {
     const data = await this.#prisma.user.findUnique({ where: { id: userId } })
-    if (!data || !data.name) return null
+    if (!data?.name) return null
     return this.#toDomain({
       id: data.id,
       name: data.name,

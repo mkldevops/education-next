@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createClassPeriod } from './create-class-period'
 
+type ClassPeriodGw = Parameters<typeof createClassPeriod>[1]
+type LevelGw = Parameters<typeof createClassPeriod>[2]
+type PeriodGw = Parameters<typeof createClassPeriod>[3]
+
 const schoolId = '00000000-0000-0000-0000-000000000001'
 
 class LevelGatewaySpy {
@@ -62,7 +66,7 @@ class ClassPeriodGatewaySpy {
     return (this.classPeriodToReturn || {
       id: 'class-period-123',
       ...(data as object),
-    }) as unknown as any
+    }) as never
   }
 
   async update() {
@@ -112,9 +116,9 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown as ClassPeriodGw,
+      levelGateway as unknown as LevelGw,
+      periodGateway as unknown as PeriodGw
     )
 
     // THEN
@@ -135,9 +139,9 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown as ClassPeriodGw,
+      levelGateway as unknown as LevelGw,
+      periodGateway as unknown as PeriodGw
     )
 
     // THEN
@@ -158,9 +162,9 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown as ClassPeriodGw,
+      levelGateway as unknown as LevelGw,
+      periodGateway as unknown as PeriodGw
     )
 
     // THEN
@@ -180,9 +184,9 @@ describe('createClassPeriod', () => {
     // WHEN
     const result = await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown as ClassPeriodGw,
+      levelGateway as unknown as LevelGw,
+      periodGateway as unknown as PeriodGw
     )
 
     // THEN
@@ -202,9 +206,9 @@ describe('createClassPeriod', () => {
     // WHEN
     await createClassPeriod(
       input,
-      classPeriodGateway as unknown as any,
-      levelGateway as unknown as any,
-      periodGateway as unknown as any
+      classPeriodGateway as unknown as ClassPeriodGw,
+      levelGateway as unknown as LevelGw,
+      periodGateway as unknown as PeriodGw
     )
 
     // THEN

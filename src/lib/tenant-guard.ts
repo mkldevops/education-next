@@ -222,5 +222,5 @@ export function reportTenantViolation(violation: TenantViolation, mode: TenantGu
   if (mode === 'throw') throw new TenantScopeError(message)
 
   // La pile nomme l'appelant restant à scoper : c'est ce qui rend le journal exploitable.
-  console.log(message, new Error('tenant-guard').stack)
+  console.warn(message, new Error('tenant-guard').stack)
 }

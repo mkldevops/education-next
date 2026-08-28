@@ -4,7 +4,7 @@ import { Button } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
-import { toast } from '@/lib/toast'
+import { toast, toastActionError } from '@/lib/toast'
 import { activateEnrollmentAction } from '../../../../_lib/enrollment-actions'
 
 type Props = {
@@ -20,14 +20,12 @@ export function ActivateEnrollmentButton({ enrollmentId }: Props) {
   const handleClick = () => {
     startTransition(async () => {
       const result = await activateEnrollmentAction({ id: enrollmentId })
-      if (result === 'OK') {
-        toast.success(tActions('activated'))
-        router.refresh()
-      } else {
-        toast.error(
-          tActions.has(`errors.${result}`) ? tActions(`errors.${result}`) : tActions('error')
-        )
+      if (result !== 'OK') {
+        toastActionError(tActions, result)
+        return
       }
+      toast.success(tActions('activated'))
+      router.refresh()
     })
   }
 

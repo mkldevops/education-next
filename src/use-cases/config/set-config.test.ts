@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setConfig } from './set-config'
 
+type ConfigGw = Parameters<typeof setConfig>[1]
+
 const SCHOOL_ID = 'school-1'
 
 class ConfigGatewaySpy {
@@ -9,7 +11,7 @@ class ConfigGatewaySpy {
 
   async set(_schoolId: string, data: unknown) {
     this.setData = data
-    return (this.configToReturn || { id: 'config-123', ...(data as object) }) as unknown as any
+    return (this.configToReturn || { id: 'config-123', ...(data as object) }) as never
   }
 
   async get() {
@@ -33,7 +35,7 @@ describe('setConfig', () => {
     const input = { schoolId: SCHOOL_ID, name: '', value: 'test', valueType: 'TEXT' as const }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown as any)
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -45,11 +47,11 @@ describe('setConfig', () => {
       schoolId: SCHOOL_ID,
       name: 'test.config',
       value: 'test',
-      valueType: 'INVALID' as unknown as any,
+      valueType: 'INVALID' as never,
     }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown as any)
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -65,7 +67,7 @@ describe('setConfig', () => {
     }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown as any)
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toBe('invalidConfigValue')
@@ -81,7 +83,7 @@ describe('setConfig', () => {
     }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown as any)
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toBe('invalidConfigValue')
@@ -97,7 +99,7 @@ describe('setConfig', () => {
     }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown as any)
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toHaveProperty('name', 'app.name')
@@ -113,7 +115,7 @@ describe('setConfig', () => {
     }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown as any)
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toHaveProperty('name', 'max.users')
@@ -129,7 +131,7 @@ describe('setConfig', () => {
     }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown as any)
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toHaveProperty('name', 'app.pi')
@@ -145,7 +147,7 @@ describe('setConfig', () => {
     }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown as any)
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toHaveProperty('name', 'enable.notifications')
@@ -161,7 +163,7 @@ describe('setConfig', () => {
     }
 
     // WHEN
-    const result = await setConfig(input, gateway as unknown as any)
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toHaveProperty('name', 'enable.notifications')
@@ -177,7 +179,7 @@ describe('setConfig', () => {
     }
 
     // WHEN
-    await setConfig(input, gateway as unknown as any)
+    await setConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(gateway.setData).toMatchObject({

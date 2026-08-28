@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { getConfig } from './get-config'
 
+type ConfigGw = Parameters<typeof getConfig>[1]
+
 const SCHOOL_ID = 'school-1'
 
 class ConfigGatewaySpy {
@@ -47,7 +49,7 @@ describe('getConfig', () => {
     const input = { schoolId: SCHOOL_ID, name: '' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -58,7 +60,7 @@ describe('getConfig', () => {
     const input = { schoolId: SCHOOL_ID, name: 'a'.repeat(251) }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toBe('validationError')
@@ -69,7 +71,7 @@ describe('getConfig', () => {
     const input = { schoolId: SCHOOL_ID, name: 'nonexistent.config' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toBe('notFound')
@@ -80,7 +82,7 @@ describe('getConfig', () => {
     const input = { schoolId: SCHOOL_ID, name: 'app.timezone' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toMatchObject({
@@ -95,7 +97,7 @@ describe('getConfig', () => {
     const input = { schoolId: SCHOOL_ID, name: 'enrollment.max-capacity' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toMatchObject({
@@ -110,7 +112,7 @@ describe('getConfig', () => {
     const input = { schoolId: SCHOOL_ID, name: 'debug-mode' }
 
     // WHEN
-    const result = await getConfig(input, gateway as unknown as any)
+    const result = await getConfig(input, gateway as unknown as ConfigGw)
 
     // THEN
     expect(result).toMatchObject({
