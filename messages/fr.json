@@ -297,6 +297,34 @@
             "notFound": "Famille introuvable"
           }
         },
+        "editPerson": {
+          "title": "Modifier",
+          "firstname": "Prénom",
+          "lastname": "Nom",
+          "sex": "Sexe",
+          "male": "Masculin",
+          "female": "Féminin",
+          "email": "Email",
+          "relationType": "Type de relation",
+          "parent": "Parent",
+          "tutor": "Tuteur",
+          "grandparent": "Grand-parent",
+          "sibling": "Frère/Sœur",
+          "other": "Autre",
+          "phone": "Téléphone",
+          "address": "Adresse",
+          "postCode": "Code postal",
+          "city": "Ville",
+          "submit": "Enregistrer",
+          "cancel": "Annuler",
+          "success": "Membre mis à jour",
+          "error": "Erreur lors de la mise à jour",
+          "errors": {
+            "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Membre introuvable"
+          }
+        },
         "addPhone": {
           "title": "Ajouter un téléphone",
           "phoneNumber": "Numéro de téléphone",

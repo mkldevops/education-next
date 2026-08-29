@@ -45,6 +45,65 @@ export const personGateway = {
       data,
     }),
 
+  updateWithFamily: (
+    schoolId: string,
+    familyId: string,
+    personId: string,
+    data: {
+      person: {
+        name?: string
+        lastname?: string
+        sex?: 'MALE' | 'FEMALE'
+        email?: string | null
+        address?: string | null
+        postCode?: string | null
+        city?: string | null
+      }
+      relationType?: 'PARENT' | 'TUTOR' | 'GRANDPARENT' | 'SIBLING' | 'OTHER'
+      phoneNumber?: string | null
+    }
+  ) =>
+    db.$transaction(async (tx) => {
+      const person = await tx.person.update({
+        where: { id_schoolId: { id: personId, schoolId } },
+        data: data.person,
+      })
+
+      if (data.relationType) {
+        await tx.familyPerson.updateMany({
+          where: { schoolId, familyId, personId },
+          data: { relationType: data.relationType },
+        })
+      }
+
+      if (data.phoneNumber !== undefined) {
+        const current = await tx.phoneNumber.findFirst({
+          where: { schoolId, personId, isActive: true },
+          orderBy: { createdAt: 'asc' },
+        })
+
+        if (data.phoneNumber === null) {
+          if (current) {
+            await tx.phoneNumber.updateMany({
+              where: { id: current.id, schoolId },
+              data: { isActive: false },
+            })
+          }
+        } else if (current) {
+          await tx.phoneNumber.updateMany({
+            where: { id: current.id, schoolId },
+            data: { phoneNumber: data.phoneNumber },
+          })
+        } else {
+          await tx.phoneNumber.create({
+            data: { schoolId, personId, phoneNumber: data.phoneNumber, channels: [] },
+          })
+        }
+      }
+
+      return person
+    }),
+
   findById: (schoolId: string, id: string) =>
     db.person.findUnique({
       where: { id_schoolId: { id, schoolId } },

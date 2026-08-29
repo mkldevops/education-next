@@ -14,17 +14,19 @@ export function SidebarBrand({
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center py-4',
-        expanded ? 'h-16 border-b border-alabaster-700 px-6' : 'justify-center'
+        'flex shrink-0 items-center justify-center py-4',
+        expanded && 'min-h-16 border-b border-alabaster-700 px-4'
       )}
     >
       {expanded ? (
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex w-full items-center justify-center gap-2">
           {logoUrl ? (
             // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
             <img src={logoUrl} alt={displayName} className="h-8 w-auto object-contain" />
           ) : (
-            <span className="text-xl font-bold text-primary">{displayName}</span>
+            <span className="text-balance text-center text-lg font-bold leading-snug text-primary">
+              {displayName}
+            </span>
           )}
         </Link>
       ) : (

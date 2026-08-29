@@ -350,6 +350,10 @@ A student is **skipped**, with the reason reported, when:
   numbers alike.
 - **Update semantics**: on `updateFamilySchema`, optional fields are `nullish` — `undefined` leaves
   the column untouched, `null` clears it. A field emptied in a form must send `null`, not be omitted.
+- **Updating a family member** (`src/use-cases/families/update-family-person.ts`) requires the person
+  to already be linked to the family → `notFound` otherwise. Person fields, relation type and the
+  primary phone number are written in one transaction; `phoneNumber: null` deactivates that number
+  instead of deleting it, and the first active number is the one edited.
 - **A student's birthday must be in the past** → `validationError` (`src/domain/student.ts`).
 - **A student carrying a `PENDING` or `ACTIVE` enrollment cannot be archived**
   → `hasActiveEnrollments`.

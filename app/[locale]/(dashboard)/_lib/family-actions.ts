@@ -11,16 +11,19 @@ import type {
   addPersonToFamilySchema,
   createFamilySchema,
   linkUserToFamilySchema,
+  updateFamilyPersonSchema,
   updateFamilySchema,
 } from '@/use-cases/families/schemas'
 import { phoneNumberSchema } from '@/use-cases/families/schemas'
 import { updateFamily } from '@/use-cases/families/update-family'
+import { updateFamilyPerson } from '@/use-cases/families/update-family-person'
 import { requireSchoolAdmin } from './auth-helper'
 
 type CreateFamilyInput = z.infer<typeof createFamilySchema>
 type UpdateFamilyInput = z.infer<typeof updateFamilySchema>
 type AddPersonToFamilyInput = z.infer<typeof addPersonToFamilySchema>
 type LinkUserToFamilyInput = z.infer<typeof linkUserToFamilySchema>
+type UpdateFamilyPersonInput = z.infer<typeof updateFamilyPersonSchema>
 
 export async function createFamilyAction(
   data: Omit<CreateFamilyInput, 'schoolId' | 'createdById'> & { name: string }
@@ -57,6 +60,16 @@ export async function addPersonToFamilyAction(data: Omit<AddPersonToFamilyInput,
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
   revalidatePath(`/dashboard/families/${data.familyId}`)
+  return result
+}
+
+export async function updateFamilyPersonAction(data: Omit<UpdateFamilyPersonInput, 'schoolId'>) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await updateFamilyPerson({ ...data, schoolId })
+  if (typeof result === 'string') return result
+  revalidatePath('/dashboard/families')
+  revalidatePath(`/dashboard/families/${data.familyId}`)
+  revalidatePath('/dashboard/students', 'layout')
   return result
 }
 

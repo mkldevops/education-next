@@ -1,5 +1,6 @@
 'use client'
 
+import type { ButtonProps } from '@peaklab/ui'
 import {
   Button,
   Dialog,
@@ -34,6 +35,7 @@ interface CreateEnrollmentDialogProps {
   defaultStudentId?: string
   redirectTo?: string
   showTrigger?: boolean
+  triggerSize?: ButtonProps['size']
 }
 
 export function CreateEnrollmentDialog({
@@ -44,6 +46,7 @@ export function CreateEnrollmentDialog({
   defaultStudentId,
   redirectTo,
   showTrigger = true,
+  triggerSize,
 }: CreateEnrollmentDialogProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
 
@@ -52,7 +55,7 @@ export function CreateEnrollmentDialog({
       <DialogRouteOpener open={defaultOpen} cleanUrl={redirectTo} />
       {showTrigger && (
         <DialogTrigger>
-          <Button>
+          <Button size={triggerSize}>
             <Plus className="h-4 w-4" />
             {t('title')}
           </Button>

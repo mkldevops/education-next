@@ -97,6 +97,11 @@ export const familyGateway = {
       },
     }),
 
+  findPerson: (schoolId: string, familyId: string, personId: string) =>
+    db.familyPerson.findFirst({
+      where: { schoolId, familyId, personId },
+    }),
+
   linkUser: (schoolId: string, userId: string, familyId: string) =>
     db.userFamily.create({
       data: {
