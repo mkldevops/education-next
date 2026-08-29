@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { LoginForm } from '@/features/auth'
+import { redirect } from '@/i18n/routing'
+import { auth } from '@/lib/auth'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -21,6 +24,12 @@ export default async function LoginPage({ params }: Props) {
   await connection()
   const { locale } = await params
   setRequestLocale(locale)
+
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (session) {
+    redirect({ href: '/dashboard', locale })
+  }
+
   const t = await getTranslations('auth.login')
 
   return (
