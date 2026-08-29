@@ -49,6 +49,21 @@ export const addPersonToFamilySchema = z.object({
   phoneNumber: z.string().min(1).max(20).optional(),
 })
 
+export const updateFamilyPersonSchema = z.object({
+  schoolId: z.string().min(1),
+  familyId: z.string().uuid(),
+  personId: z.string().uuid(),
+  name: z.string().min(1).max(250).optional(),
+  lastname: z.string().min(1).max(250).optional(),
+  sex: z.enum(['MALE', 'FEMALE']).optional(),
+  relationType: z.enum(['PARENT', 'TUTOR', 'GRANDPARENT', 'SIBLING', 'OTHER']).optional(),
+  email: z.email().max(250).nullish(),
+  address: z.string().max(250).nullish(),
+  postCode: z.string().max(10).nullish(),
+  city: z.string().max(250).nullish(),
+  phoneNumber: z.string().min(1).max(20).regex(phoneNumberFormat).nullish(),
+})
+
 export const phoneNumberSchema = z.object({
   phoneNumber: z.string().min(1).max(20).regex(phoneNumberFormat),
   channels: z.array(z.enum(['sms', 'whatsapp', 'call'])).default([]),

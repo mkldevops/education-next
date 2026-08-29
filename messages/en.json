@@ -297,6 +297,34 @@
             "notFound": "Family not found"
           }
         },
+        "editPerson": {
+          "title": "Edit",
+          "firstname": "First name",
+          "lastname": "Last name",
+          "sex": "Gender",
+          "male": "Male",
+          "female": "Female",
+          "email": "Email",
+          "relationType": "Relation type",
+          "parent": "Parent",
+          "tutor": "Tutor",
+          "grandparent": "Grandparent",
+          "sibling": "Sibling",
+          "other": "Other",
+          "phone": "Phone",
+          "address": "Address",
+          "postCode": "Post code",
+          "city": "City",
+          "submit": "Save",
+          "cancel": "Cancel",
+          "success": "Member updated",
+          "error": "Update failed",
+          "errors": {
+            "unauthorized": "You are not allowed to perform this action",
+            "validationError": "Check the submitted information",
+            "notFound": "Member not found"
+          }
+        },
         "addPhone": {
           "title": "Add Phone Number",
           "phoneNumber": "Phone Number",

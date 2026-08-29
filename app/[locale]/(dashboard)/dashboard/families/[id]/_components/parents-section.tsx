@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import type { FamilyPerson, Person, PhoneNumber } from '@/generated/prisma/client'
 import { AddPersonDialog } from '../../_components/add-person-dialog'
+import { EditPersonDialog } from '../../_components/edit-person-dialog'
 import { InviteParentButton } from '../../_components/invite-parent-button'
 
 type PersonWithRelation = FamilyPerson & {
@@ -70,21 +71,39 @@ export async function ParentsSection({ persons, familyId, isAdmin, linkedEmails 
                     )}
                   </div>
                 </div>
-                {isAdmin &&
-                  parent.person.email &&
-                  (linkedEmails.some(
-                    (email) => email.toLowerCase() === parent.person.email?.toLowerCase()
-                  ) ? (
-                    <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
-                      {t('portalInvitation.active')}
-                    </span>
-                  ) : (
-                    <InviteParentButton
+                {isAdmin && (
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    <EditPersonDialog
                       familyId={familyId}
-                      personId={parent.personId}
-                      email={parent.person.email}
+                      person={{
+                        id: parent.personId,
+                        name: parent.person.name,
+                        lastname: parent.person.lastname,
+                        sex: parent.person.sex,
+                        email: parent.person.email,
+                        address: parent.person.address,
+                        postCode: parent.person.postCode,
+                        city: parent.person.city,
+                        relationType: parent.relationType,
+                        phoneNumber: parent.person.phoneNumbers[0]?.phoneNumber ?? null,
+                      }}
                     />
-                  ))}
+                    {parent.person.email &&
+                      (linkedEmails.some(
+                        (email) => email.toLowerCase() === parent.person.email?.toLowerCase()
+                      ) ? (
+                        <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
+                          {t('portalInvitation.active')}
+                        </span>
+                      ) : (
+                        <InviteParentButton
+                          familyId={familyId}
+                          personId={parent.personId}
+                          email={parent.person.email}
+                        />
+                      ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
