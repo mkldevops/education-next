@@ -70,8 +70,8 @@ export const personGateway = {
       })
 
       if (data.relationType) {
-        await tx.familyPerson.update({
-          where: { familyId_personId: { familyId, personId } },
+        await tx.familyPerson.updateMany({
+          where: { schoolId, familyId, personId },
           data: { relationType: data.relationType },
         })
       }
@@ -84,11 +84,14 @@ export const personGateway = {
 
         if (data.phoneNumber === null) {
           if (current) {
-            await tx.phoneNumber.update({ where: { id: current.id }, data: { isActive: false } })
+            await tx.phoneNumber.updateMany({
+              where: { id: current.id, schoolId },
+              data: { isActive: false },
+            })
           }
         } else if (current) {
-          await tx.phoneNumber.update({
-            where: { id: current.id },
+          await tx.phoneNumber.updateMany({
+            where: { id: current.id, schoolId },
             data: { phoneNumber: data.phoneNumber },
           })
         } else {

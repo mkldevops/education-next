@@ -1,10 +1,9 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { ForgotPasswordForm } from '@/features/auth'
 import { redirect } from '@/i18n/routing'
-import { auth } from '@/lib/auth'
+import { getSchoolContext } from '@/lib/school-context'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -25,8 +24,8 @@ export default async function ForgotPasswordPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
 
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (session) {
+  const context = await getSchoolContext()
+  if (context) {
     redirect({ href: '/dashboard', locale })
   }
 

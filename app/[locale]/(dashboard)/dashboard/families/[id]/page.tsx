@@ -80,6 +80,7 @@ const resolveFamily = cache((id: string) =>
                   },
                   phoneNumbers: {
                     where: { isActive: true },
+                    orderBy: { createdAt: 'asc' },
                   },
                 },
               },
