@@ -1263,6 +1263,14 @@
       "nextStep": "L'établissement doit vous rattacher à votre famille. Contactez le secrétariat si cela tarde."
     }
   },
+  "schools": {
+    "deepLink": {
+      "title": "Cette page appartient à une autre école",
+      "description": "La ressource demandée se trouve dans {schoolName}, à laquelle vous avez accès. Basculez sur cette école pour l'ouvrir.",
+      "switchTo": "Basculer sur {schoolName}",
+      "error": "La bascule a échoué. Réessayez ou vérifiez que vous avez toujours accès à cette école."
+    }
+  },
   "settings": {
     "title": "Paramètres",
     "tabs": {

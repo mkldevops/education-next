@@ -20,8 +20,7 @@
     "src/lib/theme.ts",
     "src/shared/index.ts",
     "src/types/email.ts",
-    "src/use-cases/index.ts",
-    "src/actions/school-actions.ts"
+    "src/use-cases/index.ts"
   ],
   "ignoreDependencies": ["tailwindcss"]
 }

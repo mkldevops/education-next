@@ -4,12 +4,16 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { cache } from 'react'
 import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
-import { requireSchoolScope } from '../../../_lib/auth-helper'
-import { notFoundTitle } from '../../../_lib/page-metadata'
+import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
+import { requireSchoolSession } from '../../../_lib/auth-helper'
+import { adminOrLinkedTo, resolveDeepLink } from '../../../_lib/deep-link'
+import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { DeactivateStudentButton } from '../_components/deactivate-student-button'
 import { EditStudentDialog } from '../_components/edit-student-dialog'
 import { EnrollmentList } from './_components/enrollment-list'
@@ -19,29 +23,76 @@ type Props = {
   params: Promise<{ locale: string; id: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id, locale } = await params
-  const scope = await requireSchoolScope()
-
-  const student = scope.isAdmin
-    ? await db.student.findUnique({
-        where: { id_schoolId: { id, schoolId: scope.schoolId } },
-        include: { person: true },
-      })
-    : await db.student.findFirst({
+/**
+ * Résolveur unique de la page ET de `generateMetadata`.
+ *
+ * Le rattachement parent passe par `UserFamily` plutôt que par le `familyId` de l'école
+ * active : c'est la seule forme qui reste vraie quand la ressource vit dans une autre
+ * école autorisée.
+ */
+const resolveStudent = cache((id: string) =>
+  resolveDeepLink({
+    requireAdmin: false,
+    find: (access) =>
+      db.student.findFirst({
         where: {
           id,
-          schoolId: scope.schoolId,
-          person: { families: { some: { familyId: scope.familyId } } },
+          schoolId: { in: access.schoolIds },
+          ...adminOrLinkedTo(access, {
+            person: {
+              families: { some: { family: { users: { some: { userId: access.userId } } } } },
+            },
+          }),
         },
-        include: { person: true },
-      })
+        include: {
+          person: {
+            include: {
+              families: {
+                include: {
+                  family: {
+                    include: {
+                      persons: {
+                        include: { person: { include: { phoneNumbers: true } } },
+                      },
+                    },
+                  },
+                },
+              },
+              phoneNumbers: true,
+            },
+          },
+          enrollments: {
+            where: { isActive: true },
+            include: {
+              plan: true,
+              classAssignments: {
+                include: {
+                  classPeriod: {
+                    include: {
+                      period: true,
+                      level: true,
+                    },
+                  },
+                },
+              },
+              payments: { where: { isActive: true } },
+            },
+            orderBy: { registeredAt: 'desc' as const },
+          },
+        },
+      }),
+  })
+)
 
-  return {
-    title: student
-      ? `${student.person.name} ${student.person.lastname}`
-      : await notFoundTitle(locale),
-  }
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id, locale } = await params
+  await requireSchoolSession()
+
+  return deepLinkTitle(
+    locale,
+    await resolveStudent(id),
+    (student) => `${student.person.name} ${student.person.lastname}`
+  )
 }
 
 export default async function StudentDetailPage({ params }: Props) {
@@ -51,56 +102,17 @@ export default async function StudentDetailPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.studentDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const scope = await requireSchoolScope()
+  const context = await requireSchoolSession()
+  const resolution = await resolveStudent(id)
 
-  const isAdmin = scope.isAdmin
+  if (resolution.status === 'notFound') notFound()
+  if (resolution.status === 'otherSchool')
+    return (
+      <SchoolSwitchPrompt schoolId={resolution.school.id} schoolName={resolution.school.name} />
+    )
 
-  const student = await db.student.findUnique({
-    where: { id_schoolId: { id, schoolId: scope.schoolId } },
-    include: {
-      person: {
-        include: {
-          families: {
-            include: {
-              family: {
-                include: {
-                  persons: {
-                    include: { person: { include: { phoneNumbers: true } } },
-                  },
-                },
-              },
-            },
-          },
-          phoneNumbers: true,
-        },
-      },
-      enrollments: {
-        where: { isActive: true },
-        include: {
-          plan: true,
-          classAssignments: {
-            include: {
-              classPeriod: {
-                include: {
-                  period: true,
-                  level: true,
-                },
-              },
-            },
-          },
-          payments: { where: { isActive: true } },
-        },
-        orderBy: { registeredAt: 'desc' },
-      },
-    },
-  })
-
-  if (!student) notFound()
-
-  if (!isAdmin) {
-    const studentFamily = student.person.families.some((fp) => fp.familyId === scope.familyId)
-    if (!studentFamily) notFound()
-  }
+  const student = resolution.resource
+  const isAdmin = isActiveSchoolAdmin(context)
 
   const fullName = `${student.person.name} ${student.person.lastname}`
   const family = student.person.families[0]?.family ?? null
