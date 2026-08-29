@@ -4,6 +4,7 @@ import { Button, Card, Input, Label } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
+import { signIn } from '@/lib/auth-client'
 import { toast, toastActionError } from '@/lib/toast'
 import { acceptInvitationAction } from '../_lib/accept-invitation-action'
 
@@ -22,12 +23,19 @@ export function AcceptInvitationForm({ token, email }: Props) {
     const formData = new FormData(e.currentTarget)
 
     startTransition(async () => {
+      const password = formData.get('password') as string
       const result = await acceptInvitationAction({
         token,
         name: formData.get('name') as string,
-        password: formData.get('password') as string,
+        password,
       })
       if (result === 'OK') {
+        const { error } = await signIn.email({ email, password })
+        if (error) {
+          toast.error(t('errors.signInFailed'))
+          return
+        }
+
         toast.success(t('success'))
         router.push('/dashboard')
       } else {

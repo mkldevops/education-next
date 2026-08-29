@@ -1127,7 +1127,8 @@
               "alreadyUsed": "This link has already been used",
               "invalid": "This invitation link is not valid",
               "emailAlreadyUsed": "An account already exists for this address",
-              "invalidInput": "Check the information you entered"
+              "invalidInput": "Check the information you entered",
+              "signInFailed": "Account created, but automatic sign-in failed. Sign in with this password."
             }
           },
           "errors": {
