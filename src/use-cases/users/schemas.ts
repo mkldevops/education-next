@@ -15,7 +15,12 @@ export const userIdSchema = z.object({ id: userId })
 export const updateUserSchema = z.object({
   id: userId,
   name: z.string().min(1).max(250).nullish(),
-  email: z.email().max(250).optional(),
+  /**
+   * `User.email` n'est écrit qu'en minuscules : l'index unique de Postgres est sensible
+   * à la casse, et deux comptes ne différant que par la casse s'y logeraient sans que le
+   * garde d'unicité de `updateUser` les voie.
+   */
+  email: z.email().max(250).toLowerCase().optional(),
   emailVerified: z.boolean().optional(),
 })
 

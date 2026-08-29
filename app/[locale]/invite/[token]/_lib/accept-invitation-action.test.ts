@@ -61,6 +61,15 @@ describe('acceptInvitationAction', () => {
     expect(linkInvitedUserMock).toHaveBeenCalledWith(dbMock, expect.anything(), 'user-2')
   })
 
+  it('creates the account in lower case for a mixed-case invitation', async () => {
+    findInvitationByTokenMock.mockResolvedValue(invitation('Newcomer@School.TEST'))
+
+    expect(await acceptInvitationAction(INPUT)).toBe('OK')
+    expect(signUpEmailMock).toHaveBeenCalledWith({
+      body: { name: INPUT.name, email: 'newcomer@school.test', password: INPUT.password },
+    })
+  })
+
   it('deletes the account it just created when the link is refused', async () => {
     findInvitationByTokenMock.mockResolvedValue(invitation('newcomer@school.test'))
     linkInvitedUserMock.mockResolvedValue('alreadyUsed')

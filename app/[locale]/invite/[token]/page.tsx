@@ -5,10 +5,10 @@ import { connection } from 'next/server'
 import { setRequestLocale } from 'next-intl/server'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { auth } from '@/lib/auth'
-import { db } from '@/lib/db'
 import { findInvitationByToken } from '@/lib/db-unscoped'
 import { AcceptInvitationForm } from './_components/accept-invitation-form'
 import { JoinSchoolForm } from './_components/join-school-form'
+import { findAccountByEmail } from './_lib/invited-email'
 
 type Props = {
   params: Promise<{ locale: string; token: string }>
@@ -52,10 +52,7 @@ export default async function InvitePage({ params }: Props) {
   // Le détenteur du jeton connaît déjà l'adresse invitée : lui dire lequel des deux
   // parcours s'applique ne lui apprend rien qu'il ignore.
   const [existing, school, session] = await Promise.all([
-    db.user.findUnique({
-      where: { email: invitation.email.toLowerCase() },
-      select: { id: true },
-    }),
+    findAccountByEmail(invitation.email),
     schoolGateway.findActiveById(invitation.schoolId),
     auth.api.getSession({ headers: await headers() }),
   ])

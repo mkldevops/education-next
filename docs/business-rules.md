@@ -220,6 +220,14 @@ The `/dashboard/users` drawer is the single management surface. Its guards live 
   and family links cascade with the row.
 - **Email uniqueness is checked before an update**, including against archived accounts
   (`emailAlreadyUsed`).
+- **`User.email` is only ever written in lower case.** Every writer normalizes at its own boundary:
+  `updateUserSchema.email` and `CreateUserSchema.email`, which never reach Better Auth in the update
+  case, and `normalizeEmail(invitation.email)` on the account created by invitation acceptance. The
+  rule is not cosmetic — `User.email @unique` is case sensitive in Postgres, so two accounts
+  differing only by case fit under the index, and the `emailAlreadyUsed` guard of `updateUser`, an
+  exact `findUnique`, would not see the collision. Normalizing every writer closes that: the guard's
+  needle comes from `parsed.data`, hence already lowered, and nothing new can be written in mixed
+  case. Editing a row written before the rule rewrites it in lower case as a side effect.
 - **Passwords are never set by an administrator.** `sendPasswordResetAction` triggers the Better
   Auth reset email; the user chooses their own password. It refuses an archived account.
 - **Assigning `SUPER_ADMIN` is reserved to a super admin** (`canAssignRole`), so the policy holds
@@ -487,11 +495,13 @@ email — interpolate `{schoolName}` instead of naming one school in the source 
   imposed by the composite foreign key `UserFamily → SchoolMember`.
 - **Valid for 48 hours** from creation.
 - **The invited address is stored in lower case.** `inviteSchema.email` normalizes at the only
-  place `Invitation.email` is written, because Better Auth writes `User.email` in lower case: a
-  mixed-case invitation would otherwise find no account and silently offer the sign-up form to
-  someone who already has one. The two reads that look an account up from an invitation lower the
-  needle rather than switching to an insensitive search, which would drop the unique index — and
-  they must, since invitations written before this rule can still carry a mixed case.
+  place `Invitation.email` is written: a mixed-case invitation would otherwise find no account and
+  silently offer the sign-up form to someone who already has one. The two reads that look an account
+  up from an invitation share `findAccountByEmail`
+  (`app/[locale]/invite/[token]/_lib/invited-email.ts`), which lowers the needle rather than
+  switching to an insensitive search — `findUnique` takes no `mode`, and an `ILIKE` would not use
+  the unique index. Lowering the needle is required, not belt-and-braces: an invitation written
+  before this rule can still carry a mixed case.
 - **An existing account can be invited into a second school.** Issuing refuses only when the invitee
   already holds a `SchoolMember` of the target school → `alreadyMember`. `emailAlreadyUsed` survives
   on the account-creating path alone, where it still prevents a second account for one address.
@@ -555,6 +565,11 @@ Real holes, verified against the running application. Not aspirations.
   keyboard, since a disabled button takes no focus, and unannounced by screen readers.
 - **Manual payment cannot target a specific enrollment.** Distribution is always proportional across
   every active enrollment of the family.
+- **A `User.email` or `Invitation.email` row written before the normalization rule keeps its mixed
+  case.** Every read lowers its needle, so such a row stays invisible to the account lookups and to
+  the uniqueness guard, and a case-variant duplicate created earlier still coexists under the unique
+  index. Seeing them would take a case-insensitive scan, which gives up the index, or a data
+  migration; neither was in the scope of #215. New rows cannot reach that state.
 - **`RichDataTable` ignores changes to its `data` prop** (issue #217). Its internal state — search,
   sort, column visibility — works; a new array from the parent does not re-render the rows.
   `/dashboard/users` works around it with a `key` that remounts the table when a filter changes, at

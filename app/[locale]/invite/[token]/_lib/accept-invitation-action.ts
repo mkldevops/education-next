@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { findInvitationByToken } from '@/lib/db-unscoped'
+import { findAccountByEmail, normalizeEmail } from './invited-email'
 import { linkInvitedUser } from './link-invited-user'
 
 const acceptSchema = z.object({
@@ -34,12 +35,7 @@ export async function acceptInvitationAction(input: {
   if (invitation.usedAt) return 'alreadyUsed'
   if (invitation.expiresAt < new Date()) return 'expired'
 
-  // Minuscules côté aiguille, pas de recherche insensible à la casse : `User.email`
-  // est déjà normalisé, et l'index unique reste utilisé. Une invitation antérieure à
-  // la normalisation à l'émission peut encore porter une casse mixte.
-  const existing = await db.user.findUnique({
-    where: { email: invitation.email.toLowerCase() },
-  })
+  const existing = await findAccountByEmail(invitation.email)
   if (existing) return 'emailAlreadyUsed'
 
   let createdUserId: string | undefined
@@ -48,7 +44,7 @@ export async function acceptInvitationAction(input: {
     const res = await auth.api.signUpEmail({
       body: {
         name,
-        email: invitation.email,
+        email: normalizeEmail(invitation.email),
         password,
       },
     })
