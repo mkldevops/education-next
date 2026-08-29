@@ -7,6 +7,7 @@ import { useState, useTransition } from 'react'
 import { deleteProfileAction } from '@/actions'
 import { useRouter as useI18nRouter } from '@/i18n/routing'
 import { linkSocial, signOut, unlinkAccount } from '@/lib/auth-client'
+import { toast } from '@/lib/toast'
 
 type Props = {
   email: string
@@ -69,7 +70,11 @@ export function AccountSection({ email, linkedProviders }: Props) {
 
   const handleLogout = () => {
     startTransition(async () => {
-      await signOut()
+      const { error: signOutError } = await signOut()
+      if (signOutError) {
+        toast.error(t('errors.logoutFailed'))
+        return
+      }
       i18nRouter.push('/')
     })
   }

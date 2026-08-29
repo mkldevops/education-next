@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import type { AuthorizedSchool } from '@/domain/school-scope'
 import { usePathname, useRouter } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
+import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import type { SchoolRole } from '@/types/enums'
 import { SchoolSwitcher } from './school-switcher'
@@ -51,7 +52,11 @@ export function Sidebar({
   const handleNavClick = () => setMobileOpen(false)
 
   const handleSignOut = async () => {
-    await signOut()
+    const { error } = await signOut()
+    if (error) {
+      toast.error(t('logoutError'))
+      return
+    }
     setMobileOpen(false)
     router.replace('/')
   }

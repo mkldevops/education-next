@@ -1,5 +1,3 @@
-'use server'
-
 import { notFound, redirect } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
 import { localizedHref } from '@/i18n/localized-href'
