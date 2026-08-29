@@ -1127,7 +1127,8 @@
               "alreadyUsed": "Ce lien a déjà été utilisé",
               "invalid": "Ce lien d'invitation n'est pas valide",
               "emailAlreadyUsed": "Un compte existe déjà pour cette adresse",
-              "invalidInput": "Vérifiez les informations saisies"
+              "invalidInput": "Vérifiez les informations saisies",
+              "signInFailed": "Compte créé, mais la connexion automatique a échoué. Connectez-vous avec ce mot de passe."
             }
           },
           "errors": {
