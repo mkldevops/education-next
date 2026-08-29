@@ -134,15 +134,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
 
   return (
     <>
-      {/*
-        `key` force le remontage quand un filtre du parent change. `RichDataTable`
-        réagit à son état interne — la recherche fonctionne — mais pas à un nouveau
-        tableau `data` : mesuré props `data` à 1 ligne pour 2 lignes rendues. Le
-        défaut est dans le composant partagé, suivi séparément ; sans ce remontage,
-        les deux sélecteurs ci-dessous n'auraient aucun effet.
-      */}
       <RichDataTable
-        key={`${roleFilter}-${statusFilter}`}
         data={filtered}
         columns={columns}
         labels={labels}
