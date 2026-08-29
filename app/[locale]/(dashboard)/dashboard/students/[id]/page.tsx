@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { cache } from 'react'
+import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
 import { db } from '@/lib/db'
@@ -14,6 +15,7 @@ import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
+import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
 import { DeactivateStudentButton } from '../_components/deactivate-student-button'
 import { EditStudentDialog } from '../_components/edit-student-dialog'
 import { EnrollmentList } from './_components/enrollment-list'
@@ -113,6 +115,26 @@ export default async function StudentDetailPage({ params }: Props) {
 
   const student = resolution.resource
   const isAdmin = isActiveSchoolAdmin(context)
+
+  const selectedPeriodId = isAdmin ? await getSelectedPeriodId(student.schoolId) : null
+
+  const [plans, classes] = isAdmin
+    ? await Promise.all([
+        db.plan.findMany({
+          where: { schoolId: student.schoolId, isActive: true },
+          orderBy: { name: 'asc' },
+        }),
+        db.classPeriod.findMany({
+          where: {
+            schoolId: student.schoolId,
+            isActive: true,
+            ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
+          },
+          include: { level: true, period: true },
+          orderBy: { name: 'asc' },
+        }),
+      ])
+    : [[], []]
 
   const fullName = `${student.person.name} ${student.person.lastname}`
   const family = student.person.families[0]?.family ?? null
@@ -275,7 +297,22 @@ export default async function StudentDetailPage({ params }: Props) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <h2 className="text-base font-semibold text-gray-900">{t('enrollments')}</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-gray-900">{t('enrollments')}</h2>
+            {isAdmin && (
+              <CreateEnrollmentDialog
+                students={[{ id: student.id, name: fullName }]}
+                plans={plans.map((p) => ({ id: p.id, name: p.name }))}
+                classes={classes.map((c) => ({
+                  id: c.id,
+                  name: `${c.name} (${c.level.name} — ${c.period.name})`,
+                }))}
+                defaultStudentId={student.id}
+                redirectTo={`/dashboard/students/${student.id}`}
+                triggerSize="sm"
+              />
+            )}
+          </div>
           <EnrollmentList enrollments={student.enrollments} locale={locale} />
         </div>
 
