@@ -3,12 +3,15 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { cache } from 'react'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
-import { requireSchoolAdmin } from '../../../_lib/auth-helper'
-import { notFoundTitle } from '../../../_lib/page-metadata'
+import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
+import { requireSchoolSession } from '../../../_lib/auth-helper'
+import { resolveDeepLink } from '../../../_lib/deep-link'
+import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { EditClassDialog } from '../_components/edit-class-dialog'
 
 type Props = {
@@ -17,15 +20,42 @@ type Props = {
 
 const ROSTER_STATUSES = ['PENDING', 'ACTIVE', 'COMPLETED'] as const
 
+/**
+ * Résolveur unique de la page ET de `generateMetadata`.
+ *
+ * `requireAdmin` restreint la recherche aux écoles réellement administrées : un parent
+ * d'une autre école ne doit pas se voir proposer la bascule vers une classe.
+ */
+const resolveClass = cache((id: string) =>
+  resolveDeepLink({
+    requireAdmin: true,
+    find: (access) =>
+      db.classPeriod.findFirst({
+        where: { id, schoolId: { in: access.schoolIds } },
+        include: {
+          level: true,
+          period: true,
+          classAssignments: {
+            where: { endAt: null, enrollment: { status: { in: [...ROSTER_STATUSES] } } },
+            include: {
+              enrollment: {
+                include: {
+                  plan: { select: { name: true } },
+                  student: { include: { person: true } },
+                },
+              },
+            },
+          },
+        },
+      }),
+  })
+)
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, id } = await params
-  const { schoolId } = await requireSchoolAdmin()
+  await requireSchoolSession()
 
-  const classPeriod = await db.classPeriod.findUnique({
-    where: { id_schoolId: { id, schoolId } },
-    select: { name: true },
-  })
-  return { title: classPeriod?.name ?? (await notFoundTitle(locale)) }
+  return deepLinkTitle(locale, await resolveClass(id), (classPeriod) => classPeriod.name)
 }
 
 export default async function ClassDetailPage({ params }: Props) {
@@ -35,28 +65,16 @@ export default async function ClassDetailPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.classDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { schoolId } = await requireSchoolAdmin()
+  await requireSchoolSession()
+  const resolution = await resolveClass(id)
 
-  const classPeriod = await db.classPeriod.findUnique({
-    where: { id_schoolId: { id, schoolId } },
-    include: {
-      level: true,
-      period: true,
-      classAssignments: {
-        where: { endAt: null, enrollment: { status: { in: [...ROSTER_STATUSES] } } },
-        include: {
-          enrollment: {
-            include: {
-              plan: { select: { name: true } },
-              student: { include: { person: true } },
-            },
-          },
-        },
-      },
-    },
-  })
+  if (resolution.status === 'notFound') notFound()
+  if (resolution.status === 'otherSchool')
+    return (
+      <SchoolSwitchPrompt schoolId={resolution.school.id} schoolName={resolution.school.name} />
+    )
 
-  if (!classPeriod) notFound()
+  const classPeriod = resolution.resource
 
   const roster = classPeriod.classAssignments
     .map((assignment) => ({

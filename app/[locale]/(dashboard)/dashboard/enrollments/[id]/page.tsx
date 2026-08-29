@@ -3,43 +3,78 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { cache } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency, toNumber } from '@/lib/decimal'
-import { requireSchoolScope } from '../../../_lib/auth-helper'
-import { notFoundTitle } from '../../../_lib/page-metadata'
+import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
+import { requireSchoolSession } from '../../../_lib/auth-helper'
+import { adminOrLinkedTo, resolveDeepLink } from '../../../_lib/deep-link'
+import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { EnrollmentActions } from './_components/enrollment-actions'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id, locale } = await params
-  const scope = await requireSchoolScope()
-
-  const enrollment = scope.isAdmin
-    ? await db.enrollment.findUnique({
-        where: { id_schoolId: { id, schoolId: scope.schoolId } },
-        include: { student: { include: { person: true } } },
-      })
-    : await db.enrollment.findFirst({
+/** Résolveur unique de la page ET de `generateMetadata`. */
+const resolveEnrollment = cache((id: string) =>
+  resolveDeepLink({
+    requireAdmin: false,
+    find: (access) =>
+      db.enrollment.findFirst({
         where: {
           id,
-          schoolId: scope.schoolId,
-          student: { person: { families: { some: { familyId: scope.familyId } } } },
+          isActive: true,
+          schoolId: { in: access.schoolIds },
+          ...adminOrLinkedTo(access, {
+            student: {
+              person: {
+                families: { some: { family: { users: { some: { userId: access.userId } } } } },
+              },
+            },
+          }),
         },
-        include: { student: { include: { person: true } } },
-      })
+        include: {
+          student: {
+            include: {
+              person: {
+                include: {
+                  families: { include: { family: true } },
+                },
+              },
+            },
+          },
+          plan: true,
+          classAssignments: {
+            include: {
+              classPeriod: {
+                include: { level: true, period: true },
+              },
+            },
+            orderBy: { startAt: 'asc' as const },
+          },
+          payments: {
+            orderBy: { paidAt: 'desc' as const },
+          },
+        },
+      }),
+  })
+)
 
-  return {
-    title: enrollment
-      ? `${enrollment.student.person.name} ${enrollment.student.person.lastname}`
-      : await notFoundTitle(locale),
-  }
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id, locale } = await params
+  await requireSchoolSession()
+
+  return deepLinkTitle(
+    locale,
+    await resolveEnrollment(id),
+    (enrollment) => `${enrollment.student.person.name} ${enrollment.student.person.lastname}`
+  )
 }
 
 export default async function EnrollmentDetailPage({ params }: Props) {
@@ -49,53 +84,25 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.enrollmentDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const scope = await requireSchoolScope()
-  const isAdmin = scope.isAdmin
+  const context = await requireSchoolSession()
+  const resolution = await resolveEnrollment(id)
 
-  const [enrollment, availableClasses] = await Promise.all([
-    db.enrollment.findUnique({
-      where: { id_schoolId: { id, schoolId: scope.schoolId }, isActive: true },
-      include: {
-        student: {
-          include: {
-            person: {
-              include: {
-                families: { include: { family: true } },
-              },
-            },
-          },
-        },
-        plan: true,
-        classAssignments: {
-          include: {
-            classPeriod: {
-              include: { level: true, period: true },
-            },
-          },
-          orderBy: { startAt: 'asc' },
-        },
-        payments: {
-          orderBy: { paidAt: 'desc' },
-        },
-      },
-    }),
-    isAdmin
-      ? db.classPeriod.findMany({
-          where: { schoolId: scope.schoolId, isActive: true },
-          select: { id: true, name: true },
-          orderBy: { name: 'asc' },
-        })
-      : [],
-  ])
-
-  if (!enrollment) notFound()
-
-  if (!isAdmin) {
-    const belongsToFamily = enrollment.student.person.families.some(
-      (fp) => fp.familyId === scope.familyId
+  if (resolution.status === 'notFound') notFound()
+  if (resolution.status === 'otherSchool')
+    return (
+      <SchoolSwitchPrompt schoolId={resolution.school.id} schoolName={resolution.school.name} />
     )
-    if (!belongsToFamily) notFound()
-  }
+
+  const enrollment = resolution.resource
+  const isAdmin = isActiveSchoolAdmin(context)
+
+  const availableClasses = isAdmin
+    ? await db.classPeriod.findMany({
+        where: { schoolId: enrollment.schoolId, isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+    : []
 
   const totalAmount = Number(enrollment.totalAmount)
   const discount = Number(enrollment.discount)

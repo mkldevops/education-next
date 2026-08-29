@@ -1263,6 +1263,14 @@
       "nextStep": "The school needs to link you to your family. Contact the office if it takes too long."
     }
   },
+  "schools": {
+    "deepLink": {
+      "title": "This page belongs to another school",
+      "description": "The requested resource lives in {schoolName}, which you have access to. Switch to that school to open it.",
+      "switchTo": "Switch to {schoolName}",
+      "error": "The switch failed. Try again, or check that you still have access to that school."
+    }
+  },
   "settings": {
     "title": "Settings",
     "tabs": {

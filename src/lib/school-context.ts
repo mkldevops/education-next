@@ -1,5 +1,6 @@
 import { cookies, headers } from 'next/headers'
 import { cache } from 'react'
+import type { AuthorizedSchool } from '@/domain/school-scope'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { auth } from '@/lib/auth'
@@ -28,6 +29,13 @@ export type SchoolContext =
       familyId: string | null
     }
 
+/**
+ * Mémoïsé pour la durée d'un rendu : la résolution du contexte et celle des écoles
+ * autorisées interrogent la même liste d'appartenances, et une page de détail les
+ * demande toutes les deux.
+ */
+const listMemberships = cache((userId: string) => schoolMemberGateway.listAuthorizedSchools(userId))
+
 async function resolveSchoolContext(): Promise<SchoolContext | null> {
   const session = await auth.api.getSession({ headers: await headers() })
   const userId = session?.user?.id
@@ -53,7 +61,7 @@ async function resolveSchoolContext(): Promise<SchoolContext | null> {
     return { userId, schoolId: school.id, isSuperAdmin: true, role: null }
   }
 
-  const memberships = await schoolMemberGateway.listAuthorizedSchools(userId)
+  const memberships = await listMemberships(userId)
   if (memberships.length === 0) return null
 
   const membership =
@@ -87,3 +95,36 @@ async function resolveSchoolContext(): Promise<SchoolContext | null> {
  * dès la requête HTTP suivante.
  */
 export const getSchoolContext = cache(resolveSchoolContext)
+
+async function resolveAuthorizedSchools(): Promise<AuthorizedSchool[]> {
+  const context = await getSchoolContext()
+  if (!context) return []
+
+  if (context.isSuperAdmin) {
+    const schools = await schoolGateway.listActive()
+    return schools.map((school) => ({ ...school, isAdmin: true }))
+  }
+
+  const memberships = await listMemberships(context.userId)
+  return memberships.map(({ school, role }) => ({
+    id: school.id,
+    name: school.name,
+    slug: school.slug,
+    isAdmin: role === 'ADMIN',
+  }))
+}
+
+/**
+ * Écoles ouvertes à l'utilisateur courant, avec sa capacité sur chacune.
+ *
+ * Un super-admin n'a aucune appartenance : ses écoles sont toutes les écoles actives,
+ * sans quoi il ne pourrait pas résoudre un lien profond vers une école qu'il vient de
+ * créer. Un membre ordinaire ne voit que ses appartenances, et `isAdmin` est par école
+ * — être administrateur de l'une n'administre pas l'autre.
+ */
+export const getAuthorizedSchools = cache(resolveAuthorizedSchools)
+
+/** Capacité d'administration sur l'école active du contexte. */
+export function isActiveSchoolAdmin(context: SchoolContext): boolean {
+  return context.isSuperAdmin || context.role === 'ADMIN'
+}

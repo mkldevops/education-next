@@ -88,7 +88,9 @@ unrepresentable in the database as well as in the types.
 - `requireSchoolAdmin()` admits a school `ADMIN` or any super-admin. `requirePlatformAdmin()` admits
   only a super-admin. `requireSchoolScope()` returns `{ isAdmin: true }` for staff, or
   `{ isAdmin: false, familyId }` for a parent — **a parent with no linked family gets `notFound()`**
-  rather than an unscoped query. All three live in
+  rather than an unscoped query. `requireSchoolSession()` establishes the session without demanding
+  any capability, and is what the detail pages use: their authorization is carried by the deep-link
+  query itself, which must look past the active school. All four live in
   `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
 - A super-admin holds **no** `SchoolMember`. Its context branch carries `role: null`, so the code
   never invents a school role for it.
@@ -119,6 +121,39 @@ unrepresentable in the database as well as in the types.
   already used for `Invitation.id`. Business models keep `z.uuid()`: Prisma does generate those.
 - A resource outside a parent's family answers `notFound()`, never `forbidden()` — the existence of
   another family's student is not disclosed. The same holds across schools.
+
+### Deep links
+
+The active school lives in a cookie, so a shared URL does not carry its school. Opening
+`/dashboard/students/<id>` for a resource of another school must therefore not answer `notFound()`
+when the reader legitimately holds that school.
+
+The four detail pages — students, families, enrollments, classes — resolve through
+`resolveDeepLink()` (`app/[locale]/(dashboard)/_lib/deep-link.ts`) and the pure classification in
+`src/domain/school-scope.ts`:
+
+1. the authorized schools come from `getAuthorizedSchools()` — the user's memberships, or every
+   active school for a super-admin;
+2. **one single query** carries them at its root, `where: { id, schoolId: { in: [...] } }`. There is
+   no lookup by `id` alone at any point, so an unscoped read cannot exist to be checked afterwards;
+3. a hit in the active school renders the page;
+4. a hit in another **authorized** school renders the switch offer (`SchoolSwitchPrompt`), which
+   calls `switchSchoolAction` and re-renders;
+5. anything else is `notFound()` — never `forbidden()`, and never a switch offer, since offering one
+   would disclose that the resource exists.
+
+`generateMetadata` calls the **same** `React.cache()`-wrapped resolver as the page. The two used to
+issue two differently shaped queries; they now share one, and the title of a resource the reader
+cannot open is the 404 title.
+
+Capability is per school. A user who is `ADMIN` of A and `PARENT` of B must not read B's whole
+roster, so `adminOrLinkedTo()` nests `OR: [{ schoolId: { in: adminSchoolIds } }, <linked to viewer>]`
+**under** the root `schoolId`. The root keeps the tenant guard satisfied — it does not traverse `OR`
+— and the capability clause narrows what the reader may open in the schools they do not administer.
+Classes resolve with `requireAdmin: true`: a parent is never offered a switch toward a class.
+
+`src/lib/__tests__/school-isolation.test.ts` pins this against a real database, one case per
+tenant-scoped resource. Written with `db` mocked they would only test the mock.
 - **There is no public sign-up.** `/register` was removed: a self-created account would hold no
   membership and be locked out of every school. Invitations are the only way in.
 
