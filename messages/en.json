@@ -64,8 +64,9 @@
     }
   },
   "metadata": {
-    "title": "École Al-Nour — School Management",
-    "description": "Enrollment management and school tracking platform"
+    "title": "{schoolName} — School Management",
+    "description": "Enrollment management and school tracking platform",
+    "platformTitle": "School Management"
   },
   "auth": {
     "login": {
@@ -123,7 +124,7 @@
   "dashboard": {
     "title": "Dashboard",
     "greeting": "Hello, {name}",
-    "greetingSubtitle": "Here is your school summary for today.",
+    "greetingSubtitle": "Here is the {schoolName} summary for today.",
     "parentGreetingSubtitle": "See your children, their enrollments, and your family balance here.",
     "quickActions": {
       "newFamily": "New family",
@@ -143,7 +144,7 @@
     },
     "welcome": {
       "title": "Welcome!",
-      "description": "Here is an overview of your school."
+      "description": "Here is an overview of {schoolName}."
     },
     "stats": {
       "families": "Families",
@@ -167,7 +168,8 @@
       "classes": "Classes",
       "plans": "Pricing Plans",
       "config": "Configuration",
-      "users": "Users"
+      "users": "Users",
+      "schools": "Schools"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -192,7 +194,8 @@
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
       "searchPlaceholder": "Search...",
-      "account": "My account"
+      "account": "My account",
+      "schools": "Schools"
     },
     "pages": {
       "families": {
@@ -1137,7 +1140,6 @@
           "cancel": "Cancel",
           "success": "Invitation sent to {email}",
           "error": "Failed to send invitation",
-          "emailAlreadyUsed": "An account already exists with this email",
           "expired": "This invitation link has expired",
           "alreadyUsed": "This link has already been used",
           "invalid": "Invalid link",
@@ -1156,7 +1158,8 @@
               "invalid": "This invitation link is not valid",
               "emailAlreadyUsed": "An account already exists for this address",
               "invalidInput": "Check the information you entered",
-              "signInFailed": "Account created, but automatic sign-in failed. Sign in with this password."
+              "signInFailed": "Account created, but automatic sign-in failed. Sign in with this password.",
+              "alreadyMember": "That account already belongs to this school"
             }
           },
           "errors": {
@@ -1165,7 +1168,8 @@
             "notFound": "Item not found",
             "emailAlreadyUsed": "That email address is already in use",
             "invalidInput": "Check the information you entered",
-            "emailError": "The invitation could not be sent"
+            "emailError": "The invitation could not be sent",
+            "alreadyMember": "That account already belongs to this school"
           },
           "language": "Invitation language",
           "family": "Family to link",
@@ -1289,7 +1293,7 @@
       "title": "Your account is ready",
       "greeting": "Welcome, {name}",
       "description": "Your account works, but it is not linked to a family yet. Until that link is made there is nothing to show here.",
-      "nextStep": "The school needs to link you to your family. Contact the office if it takes too long."
+      "nextStep": "{schoolName} needs to link you to your family. Contact the office if it takes too long."
     }
   },
   "schools": {
@@ -1298,6 +1302,85 @@
       "description": "The requested resource lives in {schoolName}, which you have access to. Switch to that school to open it.",
       "switchTo": "Switch to {schoolName}",
       "error": "The switch failed. Try again, or check that you still have access to that school."
+    },
+    "switcher": {
+      "label": "Switch school",
+      "error": "The switch failed. Try again, or check that you still have access to that school."
+    },
+    "join": {
+      "title": "Join {schoolName}",
+      "description": "An account already exists for {email}. No new account will be created: this invitation only links that account to the school.",
+      "submit": "Join {schoolName}",
+      "success": "You joined {schoolName}",
+      "signIn": "Sign in",
+      "signInRequired": "Sign in with {email} to accept this invitation.",
+      "wrongAccount": "You are signed in as {signedInAs}. This invitation is for {email}: sign in with that address.",
+      "error": "Something went wrong",
+      "errors": {
+        "unauthenticated": "Sign in to accept this invitation",
+        "emailMismatch": "This invitation is for a different email address",
+        "alreadyMember": "That account already belongs to this school",
+        "alreadyUsed": "This link has already been used",
+        "expired": "This invitation link has expired",
+        "invalid": "This invitation link is not valid",
+        "invalidInput": "Check the information you entered"
+      }
+    },
+    "admin": {
+      "title": "Schools",
+      "name": "School",
+      "city": "City",
+      "members": "Members",
+      "families": "Families",
+      "status": "Status",
+      "actions": "Actions",
+      "active": "Active",
+      "inactive": "Deactivated",
+      "noSchools": "No school yet",
+      "fields": {
+        "name": "Name",
+        "slug": "Identifier",
+        "slugHint": "Lowercase letters, digits and dashes only. It cannot be reused by another school, even a deactivated one.",
+        "address": "Address",
+        "postCode": "Post code",
+        "city": "City"
+      },
+      "create": {
+        "title": "Create a school",
+        "submit": "Create",
+        "cancel": "Cancel",
+        "success": "School created",
+        "error": "Something went wrong",
+        "errors": {
+          "validationError": "Check the information you entered",
+          "slugAlreadyUsed": "That identifier is already taken by a school, active or deactivated"
+        }
+      },
+      "edit": {
+        "title": "Edit",
+        "submit": "Save",
+        "cancel": "Cancel",
+        "success": "School updated",
+        "deactivate": "Deactivate",
+        "reactivate": "Reactivate",
+        "deactivateSuccess": "School deactivated",
+        "reactivateSuccess": "School reactivated",
+        "error": "Something went wrong",
+        "blockers": {
+          "title": "This school cannot be deactivated yet:",
+          "enrollments": "{count} pending or active enrollment(s)",
+          "transactions": "{count} pending online payment(s)",
+          "invitations": "{count} unused invitation(s)"
+        },
+        "errors": {
+          "validationError": "Check the information you entered",
+          "notFound": "School not found",
+          "slugAlreadyUsed": "That identifier is already taken by a school, active or deactivated",
+          "alreadyActive": "That school is already active",
+          "alreadyInactive": "That school is already deactivated",
+          "lastActiveSchool": "This is the last active school: deactivating it would make the dashboard and this page unreachable."
+        }
+      }
     }
   },
   "settings": {
@@ -1445,10 +1528,10 @@
   },
   "emails": {
     "invitation": {
-      "subject": "Invitation to join the school",
-      "heading": "You have been invited",
-      "body": "You have been invited to create an account on the school platform.",
-      "cta": "Create my account",
+      "subject": "Invitation to join {schoolName}",
+      "heading": "You have been invited to join {schoolName}",
+      "body": "You have been invited to join {schoolName} on the platform.",
+      "cta": "Open my invitation",
       "expiry": "This link expires in 48 hours."
     }
   }

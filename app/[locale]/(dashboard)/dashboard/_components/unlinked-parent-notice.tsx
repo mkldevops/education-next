@@ -4,9 +4,10 @@ import { getTranslations } from 'next-intl/server'
 
 type Props = {
   userName: string | null
+  schoolName: string
 }
 
-export async function UnlinkedParentNotice({ userName }: Props) {
+export async function UnlinkedParentNotice({ userName, schoolName }: Props) {
   const t = await getTranslations('dashboard.unlinkedParent')
 
   return (
@@ -18,7 +19,7 @@ export async function UnlinkedParentNotice({ userName }: Props) {
         {userName ? t('greeting', { name: userName }) : t('title')}
       </h1>
       <p className="mt-2 text-sm text-gray-600">{t('description')}</p>
-      <p className="mt-4 text-sm text-gray-500">{t('nextStep')}</p>
+      <p className="mt-4 text-sm text-gray-500">{t('nextStep', { schoolName })}</p>
     </Card>
   )
 }

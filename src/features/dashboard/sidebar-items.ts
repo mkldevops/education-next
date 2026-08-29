@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   BookOpen,
+  Building2,
   CalendarDays,
   ClipboardList,
   CreditCard,
@@ -20,6 +21,8 @@ export type NavItemConfig = {
   icon: LucideIcon
   key: string
   requiredRoles?: SchoolRole[]
+  /** Surface plateforme : réservée à `isSuperAdmin`, qu'aucun rôle d'école ne couvre. */
+  platformOnly?: true
 }
 
 const gestionItems: NavItemConfig[] = [
@@ -37,6 +40,7 @@ const configItems: NavItemConfig[] = [
   { href: '/dashboard/plans', icon: Wallet, key: 'plans', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/config', icon: Wrench, key: 'config', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/users', icon: Shield, key: 'users', requiredRoles: ['ADMIN'] },
+  { href: '/dashboard/schools', icon: Building2, key: 'schools', platformOnly: true },
 ]
 
 const bottomItems: NavItemConfig[] = [
@@ -57,6 +61,9 @@ export type VisibleNavItems = {
 
 export function resolveNavItems({ role, isSuperAdmin, familyId }: NavScope): VisibleNavItems {
   const canView = (item: NavItemConfig) => {
+    // Contrôlé avant `requiredRoles` : un `ADMIN` d'école ne doit jamais hériter d'une
+    // surface plateforme au motif qu'elle n'exige aucun rôle d'école.
+    if (item.platformOnly) return isSuperAdmin
     if (!item.requiredRoles) return true
     if (isSuperAdmin) return true
     return role !== null && item.requiredRoles.includes(role)

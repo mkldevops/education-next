@@ -19,7 +19,9 @@ const USERS_PATH = '/dashboard/users'
 
 const CreateUserSchema = z.object({
   name: z.string().min(1),
-  email: z.email(),
+  // Même normalisation que `updateUserSchema` : deux schémas divergents rouvriraient
+  // le trou de casse par l'autre porte.
+  email: z.email().toLowerCase(),
   password: z.string().min(8),
   role: z.enum(['ADMIN', 'PARENT']),
 })

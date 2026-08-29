@@ -71,6 +71,47 @@ which create the schools themselves.
 The guard's `warn` journal is the working list of reads still to scope. It is expected to be
 non-empty until that work is finished, and empty before the mode is switched to `throw`.
 
+### Administering schools
+
+`/dashboard/schools` is a **platform** surface. The page and the four actions
+(`app/[locale]/(dashboard)/_lib/school-admin-actions.ts`) open on `requirePlatformAdmin()`, and the
+sidebar entry is gated by the same flag rather than by a school role — `platformOnly` is checked
+**before** `requiredRoles` in `src/features/dashboard/sidebar-items.ts`, so a school `ADMIN` cannot
+inherit a platform page on the grounds that it demands no school role.
+
+Its reads go through `schoolGateway.listAll()` and `findById()`, which carry **no** `isActive`
+filter: a deactivated school must stay visible to be reactivable. Every other read of `School` —
+context resolution, switcher, branding — writes the filter explicitly.
+
+Deactivation is refused in two cases. The verdict is pure
+(`classifySchoolDeactivation`, `src/domain/school-deactivation.ts`), the enforcement belongs to
+`schoolGateway.deactivate()`:
+
+1. **Never the last active school.** With none left, `getSchoolContext()` answers nothing for
+   everyone, `/dashboard/schools` included, so the platform could no longer be reactivated from its
+   own UI. Checked first, because it is the only irreversible refusal → `lastActiveSchool`.
+2. **Not while the school is in use** — `PENDING` or `ACTIVE` enrollments, `PENDING` transactions,
+   unused invitations. The three counts come back together so the dialog enumerates what blocks
+   instead of asking the administrator to guess → `schoolInUse`.
+
+Both run in one transaction opened by
+`SELECT "id" FROM "School" WHERE "isActive" = true ORDER BY "id" FOR UPDATE`. Two concurrent
+deactivations would otherwise each see the other school still active and leave the platform with
+none. The counts are taken under that same lock, so nothing can appear between the check and the
+write. Reactivation carries no such condition.
+
+### The school switcher
+
+`src/features/dashboard/school-switcher.tsx` occupies the head of the sidebar, where the school name
+and logo used to sit. The list comes from `getAuthorizedSchools()` — the user's active memberships,
+or every active school for a super-admin — loaded by `app/[locale]/(dashboard)/layout.tsx` in
+parallel with the branding. Deactivated schools are excluded at the source, so none can be offered.
+
+A user who holds a single school sees a **static brand, not a menu**: a menu of one choice is not a
+choice. Selecting another school calls `switchSchoolAction`, which rewrites the `active_school`
+cookie, then `router.refresh()` replays the dashboard in the new school. The action re-checks the
+membership; the cookie is never trusted on the way back in.
+
 ## Roles and scope
 
 Roles are **per school**. `SchoolRole` is `ADMIN` or `PARENT` (`src/types/enums.ts`), carried by a
@@ -179,6 +220,14 @@ The `/dashboard/users` drawer is the single management surface. Its guards live 
   and family links cascade with the row.
 - **Email uniqueness is checked before an update**, including against archived accounts
   (`emailAlreadyUsed`).
+- **`User.email` is only ever written in lower case.** Every writer normalizes at its own boundary:
+  `updateUserSchema.email` and `CreateUserSchema.email`, which never reach Better Auth in the update
+  case, and `normalizeEmail(invitation.email)` on the account created by invitation acceptance. The
+  rule is not cosmetic — `User.email @unique` is case sensitive in Postgres, so two accounts
+  differing only by case fit under the index, and the `emailAlreadyUsed` guard of `updateUser`, an
+  exact `findUnique`, would not see the collision. Normalizing every writer closes that: the guard's
+  needle comes from `parsed.data`, hence already lowered, and nothing new can be written in mixed
+  case. Editing a row written before the rule rewrites it in lower case as a side effect.
 - **Passwords are never set by an administrator.** `sendPasswordResetAction` triggers the Better
   Auth reset email; the user chooses their own password. It refuses an archived account.
 - **Assigning `SUPER_ADMIN` is reserved to a super admin** (`canAssignRole`), so the policy holds
@@ -418,20 +467,56 @@ and `app/manifest.ts`. With neither signal, the platform default applies. The th
 `app/[locale]/layout.tsx`, **above** the dashboard, which is why a cookie is needed at all: a column
 on `Session` would be unreadable there.
 
+### The `company` namespace is the operator, not a tenant
+
+`company` in `messages/*.json` describes the entity that **runs the platform** — legal name, SIRET,
+registered address, host. It is not a school, and a displayed school identity is never sourced from
+it. The rule matters because a single-school deployment made the two look interchangeable: the
+sidebar fell back to `company.name` when the branding read returned nothing, which under several
+schools would have labelled school B with a name belonging to no tenant at all.
+
+Displayed identity therefore comes from `School.name` alone. Where none is resolved, the fallback is
+the neutral platform title `metadata.platformTitle`, not an operator name: the document title in
+`app/[locale]/layout.tsx`, and the sidebar head in `src/features/dashboard/sidebar.tsx`. Strings that
+address the reader inside a school — greeting, welcome card, unlinked-parent notice, invitation
+email — interpolate `{schoolName}` instead of naming one school in the source text.
+
 ## Invitations
 
 `app/[locale]/(dashboard)/_lib/invitation-actions.ts`.
 
 - Issuing, resending and revoking an invitation require an admin. **Accepting one is intentionally
-  public** — that is the point of the link.
+  public** — that is the point of the link — but only on the path that creates the account. When the
+  invited address already has one, acceptance requires a session (see below).
 - **An invitation can only grant `ADMIN` or `PARENT`** — now guaranteed by the `SchoolRole` type
   itself rather than by a validation branch. Platform level is not grantable by invitation.
 - **An invitation carries its school** (`Invitation.schoolId`, taken from the issuer's active
   school). Accepting it creates the `SchoolMember` first, then the `UserFamily` — that order is
   imposed by the composite foreign key `UserFamily → SchoolMember`.
 - **Valid for 48 hours** from creation.
-- An email already tied to an account → `emailAlreadyUsed`. Inviting an existing account into a
-  second school is therefore not yet possible; it is tracked separately.
+- **The invited address is stored in lower case.** `inviteSchema.email` normalizes at the only
+  place `Invitation.email` is written: a mixed-case invitation would otherwise find no account and
+  silently offer the sign-up form to someone who already has one. The two reads that look an account
+  up from an invitation share `findAccountByEmail`
+  (`app/[locale]/invite/[token]/_lib/invited-email.ts`), which lowers the needle rather than
+  switching to an insensitive search — `findUnique` takes no `mode`, and an `ILIKE` would not use
+  the unique index. Lowering the needle is required, not belt-and-braces: an invitation written
+  before this rule can still carry a mixed case.
+- **An existing account can be invited into a second school.** Issuing refuses only when the invitee
+  already holds a `SchoolMember` of the target school → `alreadyMember`. `emailAlreadyUsed` survives
+  on the account-creating path alone, where it still prevents a second account for one address.
+- **Acceptance by an existing account demands a session whose email matches the invitation.**
+  `joinSchoolAction` (`app/[locale]/invite/[token]/_lib/join-school-action.ts`) answers
+  `unauthenticated` without a session and `emailMismatch` when the signed-in address differs — an
+  invitation link is not a login, and it must not hand someone else's account a new membership. That
+  path creates **no account**: one transaction writes the `SchoolMember` and, for a `PARENT`
+  invitation carrying a family, the `UserFamily`. An unknown email still goes through sign-up.
+- **The token is consumed before the membership is written.** `linkInvitedUser()` closes the
+  invitation with an `updateMany` guarded by `usedAt: null`; that single conditional write is the
+  only serialization point, so a link replayed twice grants one membership and answers
+  `alreadyUsed`. A caller already a member of the target school is refused before it → `alreadyMember`.
+- **The invitation email names the school it grants**, since the same message now reaches accounts
+  that already exist elsewhere on the platform.
 - A `PARENT` invitation carrying `familyId`/`personId` must match a real `FamilyPerson` whose email
   equals the invited address → `invalidInput`. Either both are supplied or neither.
 - **Resending mints a new token** and restarts the 48 hours; the previous link stops working.
@@ -449,7 +534,8 @@ on `Session` would be unreadable there.
 `School` is deliberately **absent** from that list even though it has `isActive`: forcing the filter
 would stop an administrator from finding a deactivated school, hence from reactivating it. Where the
 filter is wanted — active-school resolution, school switching, the school selector — it is written
-explicitly.
+explicitly, and where it must not apply — `schoolGateway.listAll()`, `findById()`, both reserved to
+`/dashboard/schools` — its absence is deliberate.
 
 Two consequences worth knowing:
 
@@ -479,6 +565,11 @@ Real holes, verified against the running application. Not aspirations.
   keyboard, since a disabled button takes no focus, and unannounced by screen readers.
 - **Manual payment cannot target a specific enrollment.** Distribution is always proportional across
   every active enrollment of the family.
+- **A `User.email` or `Invitation.email` row written before the normalization rule keeps its mixed
+  case.** Every read lowers its needle, so such a row stays invisible to the account lookups and to
+  the uniqueness guard, and a case-variant duplicate created earlier still coexists under the unique
+  index. Seeing them would take a case-insensitive scan, which gives up the index, or a data
+  migration; neither was in the scope of #215. New rows cannot reach that state.
 - **`RichDataTable` ignores changes to its `data` prop** (issue #217). Its internal state — search,
   sort, column visibility — works; a new array from the parent does not re-render the rows.
   `/dashboard/users` works around it with a `key` that remounts the table when a filter changes, at

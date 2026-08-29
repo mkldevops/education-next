@@ -3,12 +3,17 @@
 import { revalidatePath } from 'next/cache'
 import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
+import { schoolGateway } from '@/gateways/school-gateway'
+import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { db } from '@/lib/db'
 import { requireSchoolAdmin } from './auth-helper'
 import { resolveInvitationLocale, sendInvitationEmail } from './invitation-email'
 
 const inviteSchema = z.object({
-  email: z.email(),
+  // Better Auth n'écrit `User.email` qu'en minuscules. Normaliser ici, à la seule
+  // écriture d'`Invitation.email`, évite qu'une casse saisie par l'admin rende le
+  // compte invisible à toutes les lectures en aval.
+  email: z.email().toLowerCase(),
   role: z.enum(['ADMIN', 'PARENT']),
   familyId: z.uuid().optional(),
   personId: z.uuid().optional(),
@@ -45,8 +50,18 @@ export async function inviteUserAction(input: {
     }
   }
 
-  const existing = await db.user.findUnique({ where: { email } })
-  if (existing) return 'emailAlreadyUsed'
+  // Une adresse déjà connue n'est plus un refus : un compte peut appartenir à
+  // plusieurs écoles. Seule l'appartenance à l'école visée l'est, sinon l'invitation
+  // ne rattacherait rien. L'acceptation par un compte existant est gardée par
+  // `joinSchoolAction`, qui exige une session à la même adresse.
+  const existing = await db.user.findUnique({ where: { email }, select: { id: true } })
+  if (existing) {
+    const membership = await schoolMemberGateway.findMembership(existing.id, schoolId)
+    if (membership) return 'alreadyMember'
+  }
+
+  const school = await schoolGateway.findActiveById(schoolId)
+  if (!school) return 'notFound'
 
   const locale = resolveInvitationLocale(parsed.data.locale ?? (await getLocale()))
   const token = crypto.randomUUID()
@@ -65,7 +80,7 @@ export async function inviteUserAction(input: {
     },
   })
 
-  const sent = await sendInvitationEmail({ to: email, token, locale })
+  const sent = await sendInvitationEmail({ to: email, token, locale, schoolName: school.name })
   if (sent !== 'OK') return 'emailError'
 
   revalidatePath('/dashboard/users')
@@ -85,6 +100,9 @@ export async function resendInvitationAction(input: { id: string }) {
   if (!invitation) return 'notFound'
   if (invitation.usedAt) return 'alreadyUsed'
 
+  const school = await schoolGateway.findActiveById(schoolId)
+  if (!school) return 'notFound'
+
   const token = crypto.randomUUID()
   await db.invitation.update({
     where: { id: invitation.id, schoolId },
@@ -95,6 +113,7 @@ export async function resendInvitationAction(input: { id: string }) {
     to: invitation.email,
     token,
     locale: invitation.locale,
+    schoolName: school.name,
   })
   if (sent !== 'OK') return 'emailError'
 

@@ -10,20 +10,22 @@ export async function sendInvitationEmail(input: {
   to: string
   token: string
   locale: string
+  schoolName: string
 }): Promise<'OK' | 'emailError'> {
   const locale = resolveInvitationLocale(input.locale)
   const t = await getTranslations({ locale, namespace: 'emails.invitation' })
+  const schoolName = input.schoolName
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:8550'
   const inviteUrl = `${appUrl}/${locale}/invite/${input.token}`
 
   const result = await sendEmail({
     to: input.to,
-    subject: t('subject'),
+    subject: t('subject', { schoolName }),
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>${t('heading')}</h2>
-        <p>${t('body')}</p>
+        <h2>${t('heading', { schoolName })}</h2>
+        <p>${t('body', { schoolName })}</p>
         <p>
           <a href="${inviteUrl}" style="display: inline-block; background: #3c6e71; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none;">
             ${t('cta')}
@@ -32,7 +34,7 @@ export async function sendInvitationEmail(input: {
         <p style="color: #666; font-size: 14px;">${t('expiry')}</p>
       </div>
     `,
-    text: `${t('body')} ${inviteUrl} — ${t('expiry')}`,
+    text: `${t('body', { schoolName })} ${inviteUrl} — ${t('expiry')}`,
   })
 
   return result === 'OK' ? 'OK' : 'emailError'

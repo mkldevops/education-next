@@ -63,8 +63,6 @@ function InviteForm({ families }: { families: Family[] }) {
         toast.success(t('success', { email: formData.get('email') as string }))
         setOpen(false)
         router.refresh()
-      } else if (result === 'emailAlreadyUsed') {
-        toast.error(t('emailAlreadyUsed'))
       } else {
         toastActionError(t, result)
       }

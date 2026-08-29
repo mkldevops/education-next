@@ -1,0 +1,52 @@
+import type { Invitation, Prisma } from '@/generated/prisma/client'
+
+export type LinkInvitedUserResult = 'OK' | 'alreadyMember' | 'alreadyUsed'
+
+/**
+ * Rattachement d'un compte à l'école de l'invitation, dans une transaction ouverte
+ * par l'appelant.
+ *
+ * Partagé par les deux acceptations — création de compte et compte existant — pour
+ * qu'un seul endroit décide de l'ordre des écritures et de la fermeture du jeton.
+ *
+ * La fermeture vient AVANT les rattachements et porte `usedAt: null` dans son propre
+ * `where` : c'est le seul point de sérialisation de deux acceptations concurrentes.
+ * Fermer après coup laisserait la seconde créer son appartenance avant de découvrir
+ * que le jeton était déjà consommé.
+ */
+export async function linkInvitedUser(
+  tx: Prisma.TransactionClient,
+  invitation: Invitation,
+  userId: string
+): Promise<LinkInvitedUserResult> {
+  const membership = await tx.schoolMember.findUnique({
+    where: { userId_schoolId: { userId, schoolId: invitation.schoolId } },
+    select: { userId: true },
+  })
+  if (membership) return 'alreadyMember'
+
+  const closed = await tx.invitation.updateMany({
+    where: { id: invitation.id, schoolId: invitation.schoolId, usedAt: null },
+    data: { usedAt: new Date() },
+  })
+  if (closed.count !== 1) return 'alreadyUsed'
+
+  // Le `SchoolMember` doit exister avant le `UserFamily` : sa clé étrangère
+  // composite `(userId, schoolId) -> SchoolMember` bloquerait sinon l'insertion.
+  await tx.schoolMember.create({
+    data: { userId, schoolId: invitation.schoolId, role: invitation.role },
+  })
+
+  if (invitation.familyId) {
+    await tx.userFamily.upsert({
+      where: {
+        userId_familyId: { userId, familyId: invitation.familyId },
+        schoolId: invitation.schoolId,
+      },
+      create: { userId, familyId: invitation.familyId, schoolId: invitation.schoolId },
+      update: {},
+    })
+  }
+
+  return 'OK'
+}

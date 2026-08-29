@@ -16,6 +16,15 @@ export async function restrictedPageMetadata(locale: string, titleKey: string): 
   }
 }
 
+/** Pendant plateforme : le titre ne fuite que pour un `isSuperAdmin`. */
+export async function platformPageMetadata(locale: string, titleKey: string): Promise<Metadata> {
+  const [t, context] = await Promise.all([getTranslations({ locale }), getSchoolContext()])
+
+  return {
+    title: context?.isSuperAdmin ? t(titleKey) : t('errorPages.404.title'),
+  }
+}
+
 /**
  * Titre d'une page de détail à partir du **même** résolveur que la page.
  *
