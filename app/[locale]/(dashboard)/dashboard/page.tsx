@@ -5,6 +5,7 @@ import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
+import { schoolGateway } from '@/gateways/school-gateway'
 import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { formatDate } from '@/lib/date'
@@ -41,10 +42,15 @@ export default async function DashboardPage({ params }: Props) {
 
   const context = await getSchoolContext()
   if (context?.role === 'PARENT' && !context.familyId) {
-    return <UnlinkedParentNotice userName={session?.user.name ?? null} />
+    const school = await schoolGateway.findActiveById(context.schoolId)
+    return (
+      <UnlinkedParentNotice userName={session?.user.name ?? null} schoolName={school?.name ?? ''} />
+    )
   }
 
   const scope = await requireSchoolScope()
+  const activeSchool = await schoolGateway.findActiveById(scope.schoolId)
+  const schoolName = activeSchool?.name ?? ''
 
   const isAdmin = scope.isAdmin
 
@@ -193,7 +199,7 @@ export default async function DashboardPage({ params }: Props) {
       <div className="-mx-6 -mt-16 bg-gradient-to-br from-primary-light via-primary-light/50 to-alabaster-800 px-6 pb-20 pt-16">
         <h1 className="text-3xl font-bold text-graphite">{t('greeting', { name: userName })}</h1>
         <p className="mt-2 text-graphite-600">
-          {t(isAdmin ? 'greetingSubtitle' : 'parentGreetingSubtitle')}
+          {t(isAdmin ? 'greetingSubtitle' : 'parentGreetingSubtitle', { schoolName })}
         </p>
 
         {isAdmin && (

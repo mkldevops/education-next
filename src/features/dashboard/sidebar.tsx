@@ -1,11 +1,12 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import type { AuthorizedSchool } from '@/domain/school-scope'
 import { usePathname, useRouter } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 import type { SchoolRole } from '@/types/enums'
-import { SidebarBrand } from './sidebar-brand'
+import { SchoolSwitcher } from './school-switcher'
 import { resolveNavItems } from './sidebar-items'
 import { NavItem } from './sidebar-nav-item'
 import { useSidebarStore } from './sidebar-store'
@@ -18,6 +19,8 @@ type SidebarProps = {
   logoUrl?: string
   schoolName?: string
   userName?: string
+  schools?: AuthorizedSchool[]
+  activeSchoolId?: string
 }
 
 export function Sidebar({
@@ -27,13 +30,17 @@ export function Sidebar({
   logoUrl,
   schoolName,
   userName,
+  schools = [],
+  activeSchoolId,
 }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
-  const company = useTranslations('company')
+  const platform = useTranslations('metadata')
   const pathname = usePathname()
   const router = useRouter()
   const { expanded, toggle, mobileOpen, setMobileOpen } = useSidebarStore()
-  const displayName = schoolName || company('name')
+  // Repli sur l'identité plateforme, jamais sur `company` : ce namespace décrit
+  // l'exploitant de la plateforme, pas une école affichée.
+  const displayName = schoolName || platform('platformTitle')
   const items = resolveNavItems({ role, isSuperAdmin, familyId })
 
   const isActive = (href: string) => {
@@ -81,7 +88,13 @@ export function Sidebar({
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >
-        <SidebarBrand displayName={displayName} logoUrl={logoUrl} expanded={expanded} />
+        <SchoolSwitcher
+          schools={schools}
+          activeSchoolId={activeSchoolId}
+          displayName={displayName}
+          logoUrl={logoUrl}
+          expanded={expanded}
+        />
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {expanded && (

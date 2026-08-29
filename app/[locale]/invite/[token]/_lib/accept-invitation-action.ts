@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { findInvitationByToken } from '@/lib/db-unscoped'
+import { linkInvitedUser } from './link-invited-user'
 
 const acceptSchema = z.object({
   token: z.string().min(1),
@@ -11,6 +12,13 @@ const acceptSchema = z.object({
   password: z.string().min(8),
 })
 
+/**
+ * Acceptation par création de compte.
+ *
+ * Le garde `emailAlreadyUsed` reste ici, et seulement ici : ce chemin crée un compte,
+ * donc une adresse déjà prise n'est pas une invitation à en fabriquer un second. Un
+ * compte existant passe par `joinSchoolAction`, qui exige une session.
+ */
 export async function acceptInvitationAction(input: {
   token: string
   name: string
@@ -41,42 +49,22 @@ export async function acceptInvitationAction(input: {
     })
     createdUserId = res.user.id
 
-    await db.$transaction(async (tx) => {
-      // Le `SchoolMember` doit exister avant le `UserFamily` : sa clé étrangère
-      // composite `(userId, schoolId) -> SchoolMember` bloquerait sinon l'insertion.
-      await tx.schoolMember.create({
-        data: {
-          userId: res.user.id,
-          schoolId: invitation.schoolId,
-          role: invitation.role,
-        },
-      })
+    const outcome = await db.$transaction(async (tx) => {
+      const linked = await linkInvitedUser(tx, invitation, res.user.id)
+      if (linked !== 'OK') return linked
 
       await tx.user.update({
         where: { id: res.user.id },
         data: { emailVerified: true },
       })
 
-      if (invitation.familyId) {
-        await tx.userFamily.upsert({
-          where: {
-            userId_familyId: { userId: res.user.id, familyId: invitation.familyId },
-            schoolId: invitation.schoolId,
-          },
-          create: {
-            userId: res.user.id,
-            familyId: invitation.familyId,
-            schoolId: invitation.schoolId,
-          },
-          update: {},
-        })
-      }
-
-      await tx.invitation.update({
-        where: { id: invitation.id, schoolId: invitation.schoolId },
-        data: { usedAt: new Date() },
-      })
+      return 'OK' as const
     })
+
+    if (outcome !== 'OK') {
+      await db.user.delete({ where: { id: res.user.id } }).catch(() => undefined)
+      return outcome
+    }
 
     return 'OK'
   } catch {

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next-intl', () => ({
@@ -12,19 +12,47 @@ vi.mock('@/i18n/routing', () => ({
     </a>
   ),
   usePathname: () => '/dashboard',
-  useRouter: () => ({ replace: vi.fn() }),
+  useRouter: () => router,
+}))
+
+vi.mock('@/actions/school-actions', () => ({
+  switchSchoolAction: (schoolId: string) => switchSchoolAction(schoolId),
 }))
 
 vi.mock('@/lib/auth-client', () => ({
   signOut: vi.fn(),
 }))
 
+import type { AuthorizedSchool } from '@/domain/school-scope'
 import type { SchoolRole } from '@/types/enums'
 import { Sidebar } from '../sidebar'
 import { useSidebarStore } from '../sidebar-store'
 
 const renderSidebar = (role: SchoolRole | null, isSuperAdmin = false) =>
   render(<Sidebar role={role} isSuperAdmin={isSuperAdmin} />)
+
+const school = (id: string, name: string): AuthorizedSchool => ({
+  id,
+  name,
+  slug: name.toLowerCase(),
+  isAdmin: true,
+})
+
+const ADMIN: SchoolRole = 'ADMIN'
+
+const renderSwitcher = (schools: AuthorizedSchool[]) =>
+  render(
+    <Sidebar
+      role={ADMIN}
+      isSuperAdmin={false}
+      schoolName="Al-Nour"
+      schools={schools}
+      activeSchoolId="school-a"
+    />
+  )
+
+const router = { replace: vi.fn(), refresh: vi.fn() }
+const switchSchoolAction = vi.fn(async (_schoolId: string) => 'OK' as const)
 
 const collapse = () => useSidebarStore.setState({ expanded: false, mobileOpen: false })
 const expand = () => useSidebarStore.setState({ expanded: true, mobileOpen: false })
@@ -112,5 +140,64 @@ describe('Sidebar accessibility', () => {
     fireEvent.click(screen.getByRole('button', { name: /account/ }))
     expect(screen.getByRole('menuitem', { name: 'collapse' })).toBeInTheDocument()
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+  })
+})
+
+describe('Sidebar school switcher', () => {
+  beforeEach(() => {
+    expand()
+    router.refresh.mockClear()
+    switchSchoolAction.mockClear()
+    switchSchoolAction.mockResolvedValue('OK' as const)
+  })
+
+  it('renders a static brand when the caller belongs to a single school', () => {
+    renderSwitcher([school('school-a', 'Al-Nour')])
+
+    expect(screen.queryByRole('button', { name: /Al-Nour/ })).not.toBeInTheDocument()
+    expect(screen.getByText('Al-Nour')).toBeInTheDocument()
+  })
+
+  it('lists every authorized school behind the switcher trigger', () => {
+    renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
+
+    const trigger = screen.getByRole('button', { name: /Al-Nour/ })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    fireEvent.click(trigger)
+
+    expect(screen.getByRole('menuitem', { name: /Al-Nour/ })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /Horizon/ })).toBeInTheDocument()
+  })
+
+  it('switches the active school and replays the layout', async () => {
+    renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
+
+    fireEvent.click(screen.getByRole('button', { name: /Al-Nour/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Horizon/ }))
+
+    await waitFor(() => expect(switchSchoolAction).toHaveBeenCalledWith('school-b'))
+    await waitFor(() => expect(router.refresh).toHaveBeenCalled())
+  })
+
+  it('keeps the current school when the switch is refused', async () => {
+    switchSchoolAction.mockResolvedValue('notFound' as never)
+
+    renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
+
+    fireEvent.click(screen.getByRole('button', { name: /Al-Nour/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Horizon/ }))
+
+    await waitFor(() => expect(switchSchoolAction).toHaveBeenCalledWith('school-b'))
+    expect(router.refresh).not.toHaveBeenCalled()
+  })
+
+  it('exposes school administration to a super admin only', () => {
+    renderSidebar(null, true)
+    expect(screen.getByRole('link', { name: 'schools' })).toBeInTheDocument()
+
+    cleanup()
+    renderSidebar('ADMIN')
+    expect(screen.queryByRole('link', { name: 'schools' })).not.toBeInTheDocument()
   })
 })

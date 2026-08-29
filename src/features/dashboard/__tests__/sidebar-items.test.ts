@@ -11,16 +11,24 @@ describe('resolveNavItems', () => {
     expect(keys(items.gestion)).toContain('payments')
   })
 
-  it('exposes configuration to an admin of the school', () => {
+  it('exposes configuration to an admin of the school, minus the platform pages', () => {
     const items = resolveNavItems({ role: 'ADMIN', isSuperAdmin: false })
 
     expect(keys(items.config)).toEqual(['periods', 'levels', 'classes', 'plans', 'config', 'users'])
+    expect(keys(items.config)).not.toContain('schools')
   })
 
-  it('exposes configuration to a super admin without a school role', () => {
+  it('exposes school administration to a super admin only', () => {
     const items = resolveNavItems({ role: null, isSuperAdmin: true })
 
-    expect(keys(items.config)).toHaveLength(6)
+    expect(keys(items.config)).toContain('schools')
+    expect(items.config.find((item) => item.key === 'schools')?.href).toBe('/dashboard/schools')
+  })
+
+  it('hides school administration from a parent who is not a super admin', () => {
+    const items = resolveNavItems({ role: 'PARENT', isSuperAdmin: false, familyId: 'family-1' })
+
+    expect(keys(items.config)).not.toContain('schools')
   })
 
   it('points a parent at their own family and drops the management pages', () => {

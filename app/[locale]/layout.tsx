@@ -2,12 +2,12 @@ import type { Metadata, Viewport } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { NextIntlClientProvider } from 'next-intl'
-import { getMessages, setRequestLocale } from 'next-intl/server'
+import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
-import { resolveBrandingSchoolId } from '@/lib/branding'
+import { getBrandingConfig, resolveBrandingSchoolId } from '@/lib/branding'
 import { db } from '@/lib/db'
 import '@/styles/globals.css'
 
@@ -30,7 +30,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
+  // Le titre par défaut suit l'école affichée. Il ne retombe jamais sur `company`,
+  // qui décrit l'exploitant de la plateforme et non un locataire.
+  const t = await getTranslations({ locale, namespace: 'metadata' })
+  const schoolId = await resolveBrandingSchoolId()
+  const schoolName = schoolId ? (await getBrandingConfig(schoolId)).schoolName : undefined
+
   return {
+    title: schoolName ? t('title', { schoolName }) : t('platformTitle'),
+    description: t('description'),
     metadataBase: new URL(baseUrl),
     alternates: {
       canonical: `/${locale}`,
