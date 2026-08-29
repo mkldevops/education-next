@@ -1,3 +1,5 @@
+// React Compiler auto-memoization breaks useReactTable's imperative table.setOptions()
+// call, silently freezing rendered rows against the data prop. Keep this directive first.
 'use no memo'
 'use client'
 

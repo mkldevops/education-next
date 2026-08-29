@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { ColumnDef } from '@tanstack/react-table'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
@@ -65,5 +67,15 @@ describe('RichDataTable', () => {
       />
     )
     expect(screen.getAllByRole('row')).toHaveLength(6)
+  })
+
+  it('keeps the "use no memo" directive ahead of every other statement', () => {
+    const source = readFileSync(join(__dirname, '../rich-data-table.tsx'), 'utf-8')
+    const firstStatement = source
+      .split('\n')
+      .find((line) => line.trim() !== '' && !line.trim().startsWith('//'))
+      ?.trim()
+
+    expect(firstStatement).toBe("'use no memo'")
   })
 })
