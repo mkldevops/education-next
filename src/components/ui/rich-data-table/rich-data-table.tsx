@@ -1,3 +1,6 @@
+// React Compiler auto-memoization breaks useReactTable's imperative table.setOptions()
+// call, silently freezing rendered rows against the data prop. Keep this directive first.
+'use no memo'
 'use client'
 
 import {
@@ -62,14 +65,18 @@ export function RichDataTable<T>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: enablePagination ? initialPageSize : Math.max(data.length, 1),
+    pageSize: initialPageSize,
   })
   const [columnVisibilityOpen, setColumnVisibilityOpen] = useState(false)
+
+  const effectivePagination = enablePagination
+    ? pagination
+    : { pageIndex: 0, pageSize: Math.max(data.length, 1) }
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, globalFilter, columnVisibility, pagination },
+    state: { sorting, globalFilter, columnVisibility, pagination: effectivePagination },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
