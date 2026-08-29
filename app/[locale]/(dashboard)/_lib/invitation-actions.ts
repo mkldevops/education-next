@@ -10,7 +10,10 @@ import { requireSchoolAdmin } from './auth-helper'
 import { resolveInvitationLocale, sendInvitationEmail } from './invitation-email'
 
 const inviteSchema = z.object({
-  email: z.email(),
+  // Better Auth n'écrit `User.email` qu'en minuscules. Normaliser ici, à la seule
+  // écriture d'`Invitation.email`, évite qu'une casse saisie par l'admin rende le
+  // compte invisible à toutes les lectures en aval.
+  email: z.email().toLowerCase(),
   role: z.enum(['ADMIN', 'PARENT']),
   familyId: z.uuid().optional(),
   personId: z.uuid().optional(),

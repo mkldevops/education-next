@@ -35,6 +35,7 @@ beforeEach(() => {
   requireSchoolAdminMock.mockResolvedValue({ schoolId: 'school-b', userId: 'admin-1' })
   findActiveByIdMock.mockResolvedValue({ id: 'school-b', name: 'Horizon', slug: 'horizon' })
   dbMock.user.findUnique.mockResolvedValue(null)
+  dbMock.invitation.create.mockResolvedValue({ id: 'invitation-1' })
   findMembershipMock.mockResolvedValue(null)
   sendInvitationEmailMock.mockResolvedValue('OK')
 })
@@ -66,6 +67,30 @@ describe('inviteUserAction', () => {
 
     expect(sendInvitationEmailMock).toHaveBeenCalledWith(
       expect.objectContaining({ to: INPUT.email, schoolName: 'Horizon' })
+    )
+  })
+
+  it('normalizes the address, so a mixed-case invite still sees the existing account', async () => {
+    // Better Auth écrit `User.email` en minuscules : sans normalisation à l'entrée, la
+    // recherche du compte échoue et l'appartenance n'est jamais consultée.
+    dbMock.user.findUnique.mockImplementation(async ({ where }: { where: { email: string } }) =>
+      where.email === 'parent@school.test' ? { id: 'user-1' } : null
+    )
+    findMembershipMock.mockResolvedValue({ userId: 'user-1', schoolId: 'school-b' })
+
+    expect(await inviteUserAction({ email: 'Parent@School.TEST', role: 'PARENT' })).toBe(
+      'alreadyMember'
+    )
+  })
+
+  it('stores the invited address in lower case', async () => {
+    await inviteUserAction({ email: 'Parent@School.TEST', role: 'PARENT' })
+
+    expect(dbMock.invitation.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ email: 'parent@school.test' }) })
+    )
+    expect(sendInvitationEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'parent@school.test' })
     )
   })
 

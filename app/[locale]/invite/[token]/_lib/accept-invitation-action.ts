@@ -34,7 +34,12 @@ export async function acceptInvitationAction(input: {
   if (invitation.usedAt) return 'alreadyUsed'
   if (invitation.expiresAt < new Date()) return 'expired'
 
-  const existing = await db.user.findUnique({ where: { email: invitation.email } })
+  // Minuscules côté aiguille, pas de recherche insensible à la casse : `User.email`
+  // est déjà normalisé, et l'index unique reste utilisé. Une invitation antérieure à
+  // la normalisation à l'émission peut encore porter une casse mixte.
+  const existing = await db.user.findUnique({
+    where: { email: invitation.email.toLowerCase() },
+  })
   if (existing) return 'emailAlreadyUsed'
 
   let createdUserId: string | undefined

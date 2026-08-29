@@ -52,7 +52,10 @@ export default async function InvitePage({ params }: Props) {
   // Le détenteur du jeton connaît déjà l'adresse invitée : lui dire lequel des deux
   // parcours s'applique ne lui apprend rien qu'il ignore.
   const [existing, school, session] = await Promise.all([
-    db.user.findUnique({ where: { email: invitation.email }, select: { id: true } }),
+    db.user.findUnique({
+      where: { email: invitation.email.toLowerCase() },
+      select: { id: true },
+    }),
     schoolGateway.findActiveById(invitation.schoolId),
     auth.api.getSession({ headers: await headers() }),
   ])

@@ -486,6 +486,12 @@ email — interpolate `{schoolName}` instead of naming one school in the source 
   school). Accepting it creates the `SchoolMember` first, then the `UserFamily` — that order is
   imposed by the composite foreign key `UserFamily → SchoolMember`.
 - **Valid for 48 hours** from creation.
+- **The invited address is stored in lower case.** `inviteSchema.email` normalizes at the only
+  place `Invitation.email` is written, because Better Auth writes `User.email` in lower case: a
+  mixed-case invitation would otherwise find no account and silently offer the sign-up form to
+  someone who already has one. The two reads that look an account up from an invitation lower the
+  needle rather than switching to an insensitive search, which would drop the unique index — and
+  they must, since invitations written before this rule can still carry a mixed case.
 - **An existing account can be invited into a second school.** Issuing refuses only when the invitee
   already holds a `SchoolMember` of the target school → `alreadyMember`. `emailAlreadyUsed` survives
   on the account-creating path alone, where it still prevents a second account for one address.
