@@ -30,48 +30,71 @@ const basePayment: Omit<PaymentRow, 'id' | 'paidAt' | 'cashedAt'> = {
   reference: null,
 }
 
-// These two dates format (fr-FR) to strings that sort in the OPPOSITE order of their
-// chronological order: '01/12/2025' < '02/01/2024' lexicographically, but 2024-01-02
-// happened first. This is what previously made the column sort by text, not by date.
-const earlierPayment: PaymentRow = {
+// Three dates whose fr-FR formatted (DD/MM/YYYY) lexicographic order ('A', 'C', 'B') is a
+// genuine permutation of their chronological order ('A', 'B', 'C') — not just its exact
+// reverse. With only two rows, ascending and descending are always mirror images of each
+// other under ANY comparator, so a sort that merely reverses direction (e.g. because the
+// accessor's value type flips the table's default click direction, string columns sort
+// ascending first, number columns sort descending first) can accidentally render the same
+// row order for both a lexicographic and a chronological accessor. A third row that lands in
+// a different relative position breaks that coincidence.
+const rowA: PaymentRow = {
   ...basePayment,
-  id: 'payment-earlier',
-  paidAt: new Date('2024-01-02T00:00:00Z'),
-  cashedAt: null,
-}
+  id: 'payment-a',
+  paidAt: new Date('2023-03-05T00:00:00Z'),
+  cashedAt: new Date('2023-03-05T00:00:00Z'),
+} // '05/03/2023'
+const rowB: PaymentRow = {
+  ...basePayment,
+  id: 'payment-b',
+  paidAt: new Date('2024-11-20T00:00:00Z'),
+  cashedAt: new Date('2024-11-20T00:00:00Z'),
+} // '20/11/2024'
+const rowC: PaymentRow = {
+  ...basePayment,
+  id: 'payment-c',
+  paidAt: new Date('2025-01-10T00:00:00Z'),
+  cashedAt: new Date('2025-01-10T00:00:00Z'),
+} // '10/01/2025'
 
-const laterPayment: PaymentRow = {
-  ...basePayment,
-  id: 'payment-later',
-  paidAt: new Date('2025-12-01T00:00:00Z'),
-  cashedAt: null,
+// Columns (isAdmin=false): student, amount, method, reference, paidAt, cashedAt.
+const CELL_INDEX = { paidAt: 4, cashedAt: 5 } as const
+
+const readColumn = (cellIndex: number) =>
+  screen
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => within(row).getAllByRole('cell')[cellIndex].textContent)
+
+const expectChronologicalToggle = (columnId: 'paidAt' | 'cashedAt') => {
+  const sortButton = screen.getByRole('button', { name: columnId })
+  const ascending = ['05/03/2023', '20/11/2024', '10/01/2025']
+  const descending = [...ascending].reverse()
+
+  fireEvent.click(sortButton)
+  const firstClick = readColumn(CELL_INDEX[columnId])
+  expect([ascending, descending]).toContainEqual(firstClick)
+
+  fireEvent.click(sortButton)
+  const secondClick = readColumn(CELL_INDEX[columnId])
+  expect([ascending, descending]).toContainEqual(secondClick)
+  expect(secondClick).not.toEqual(firstClick)
 }
 
 describe('PaymentsTable', () => {
   it('sorts the paidAt column chronologically, not lexicographically', () => {
     render(
-      <PaymentsTable
-        payments={[laterPayment, earlierPayment]}
-        locale="fr"
-        isAdmin={false}
-        periodName={null}
-      />
+      <PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" isAdmin={false} periodName={null} />
     )
 
-    const sortButton = screen.getByRole('button', { name: 'paidAt' })
-    // Columns (isAdmin=false): student, amount, method, reference, paidAt, cashedAt.
-    const readDates = () =>
-      screen
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) => within(row).getAllByRole('cell')[4].textContent)
+    expectChronologicalToggle('paidAt')
+  })
 
-    // Numeric/date columns sort descending on the first click: most recent date first.
-    fireEvent.click(sortButton)
-    expect(readDates()).toEqual(['01/12/2025', '02/01/2024'])
+  it('sorts the cashedAt column chronologically, not lexicographically', () => {
+    render(
+      <PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" isAdmin={false} periodName={null} />
+    )
 
-    // Second click reverses to ascending: earliest date first.
-    fireEvent.click(sortButton)
-    expect(readDates()).toEqual(['02/01/2024', '01/12/2025'])
+    expectChronologicalToggle('cashedAt')
   })
 })

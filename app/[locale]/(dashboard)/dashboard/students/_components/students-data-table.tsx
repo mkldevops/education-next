@@ -8,7 +8,7 @@ import type { Family, FamilyPerson, Person, Student } from '@/generated/prisma/c
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 
-type StudentRow = Student & {
+export type StudentRow = Student & {
   person: Person & {
     families: (FamilyPerson & { family: Family })[]
   }
