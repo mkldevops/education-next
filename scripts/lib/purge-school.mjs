@@ -42,14 +42,6 @@ const DELETE_PROVIDER_EVENTS = `
 `
 
 /**
- * `Level.nextLevelId` is `ON DELETE RESTRICT` on `(nextLevelId, schoolId)`, yet the
- * chain needs no unhooking: PostgreSQL checks referential integrity at the end of the
- * statement, and the chain is intra-school since the composite includes `schoolId`. A
- * single scoped `DELETE` therefore removes both ends at once. The fixture chains two
- * levels to lock that down.
- */
-
-/**
  * Runs the purge on the given `pg` client. The transaction belongs to the caller: a
  * failure part-way through must roll the whole cleanup back.
  */
@@ -60,6 +52,10 @@ export async function purgeSchool(client, schoolId) {
 
   await client.query(DELETE_PROVIDER_EVENTS, [schoolId])
 
+  // `Level.nextLevelId` is `ON DELETE RESTRICT` on `(nextLevelId, schoolId)`, yet the
+  // chain needs no unhooking: PostgreSQL checks referential integrity at the end of the
+  // statement, and the chain is intra-school since the composite includes `schoolId`, so
+  // one scoped `DELETE` removes both ends at once.
   for (const table of SCHOOL_PURGE_TABLES) {
     await client.query(`DELETE FROM "${table}" WHERE "schoolId" = $1`, [schoolId])
   }
