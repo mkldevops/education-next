@@ -214,21 +214,21 @@ describe('reportTenantViolation', () => {
 })
 
 describe('tenantGuardMode', () => {
-  it('vaut warn par défaut et accepte les trois modes', () => {
+  it('vaut throw par défaut et accepte les trois modes', () => {
     const previous = process.env.TENANT_GUARD_MODE
 
     process.env.TENANT_GUARD_MODE = undefined
     delete process.env.TENANT_GUARD_MODE
-    expect(tenantGuardMode()).toBe('warn')
-
-    process.env.TENANT_GUARD_MODE = 'throw'
     expect(tenantGuardMode()).toBe('throw')
+
+    process.env.TENANT_GUARD_MODE = 'warn'
+    expect(tenantGuardMode()).toBe('warn')
 
     process.env.TENANT_GUARD_MODE = 'off'
     expect(tenantGuardMode()).toBe('off')
 
     process.env.TENANT_GUARD_MODE = 'nonsense'
-    expect(tenantGuardMode()).toBe('warn')
+    expect(tenantGuardMode()).toBe('throw')
 
     if (previous === undefined) {
       delete process.env.TENANT_GUARD_MODE

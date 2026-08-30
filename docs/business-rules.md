@@ -54,7 +54,10 @@ Isolation rests on three layers. None is sufficient alone.
    third layer exists.
 3. **Runtime — a fail-closed guard.** `src/lib/tenant-guard.ts` inspects the root of every Prisma
    query and reports an unscoped one. It never injects anything: in `throw` mode the query is
-   rejected, in `warn` mode it is logged with its stack. Mode comes from `TENANT_GUARD_MODE`.
+   rejected, in `warn` mode it is logged with its stack. The mode is `throw` everywhere —
+   development, test, CI and production all read the same fallback in `tenantGuardMode()`, since
+   `TENANT_GUARD_MODE` is set in no configuration of the repository. Setting it to `warn` or `off`
+   is a diagnostic step, never a way to run.
    A `where` satisfies it through `schoolId`, through `schoolId: { in: [...] }`, or through any
    generated compound selector containing it (`id_schoolId`, `schoolId_name`…). Reassigning a row's
    school is refused, including through the `school` relation.
@@ -68,8 +71,25 @@ school: the invitation read by its unique token (public flow), the Stripe webhoo
 transaction by `providerSessionId` (signed request, no session), and the seed and data scripts,
 which create the schools themselves.
 
-The guard's `warn` journal is the working list of reads still to scope. It is expected to be
-non-empty until that work is finished, and empty before the mode is switched to `throw`.
+The `warn` journal was the working list of reads to scope. It is empty, which is what allowed the
+switch to `throw`. `app/[locale]/(dashboard)/__tests__/render-reads.test.tsx` keeps it that way: it
+drives every dashboard page, `generateMetadata` and layout read through its own loader against the
+real database, under `throw`, and asserts the journal stays empty. A read added without a `schoolId`
+filter fails there.
+
+### Importing a legacy database
+
+`scripts/migrate-legacy.mjs` imports the single-school legacy MySQL database into one school of the
+target database. `--school-id` is **required**: it is inserted on every row, and it restricts the
+cleanup phase.
+
+That restriction is the point. The cleanup used to delete thirteen whole tables, so running the
+import against a database holding several schools destroyed all of them — irrecoverably, since the
+cleanup commits before the first insertion. `scripts/lib/purge-school.mjs` now deletes only rows
+carrying the target `schoolId`, in the purge order of `prisma/seed.ts`, starting with the
+`PaymentProviderEvent` rows joined to that school's `PaymentTransaction` since that model carries no
+school of its own. `Config` stays out: the script re-imports no configuration, so purging it would
+wipe the school's theme and logos with nothing to put back.
 
 ### Administering schools
 
