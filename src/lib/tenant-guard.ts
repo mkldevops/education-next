@@ -2,9 +2,9 @@
  * Garde tenant fail-closed.
  *
  * N'injecte rien : détecte une requête racine non scopée sur un modèle appartenant
- * à une école et la signale. En mode `throw` elle est rejetée, en mode `warn` elle
- * est journalisée avec sa pile d'appel — ce journal est la checklist des lectures
- * restant à scoper.
+ * à une école et la rejette. `warn`, qui journalise la violation avec sa pile
+ * d'appel au lieu de la rejeter, a servi à dresser la liste des lectures à scoper ;
+ * il ne reste qu'un outil de diagnostic.
  *
  * Portée volontairement limitée à la RACINE des requêtes. Les écritures imbriquées
  * ne sont pas visibles depuis une extension Prisma ; leur cohérence est garantie
@@ -209,10 +209,16 @@ export class TenantScopeError extends Error {
   }
 }
 
+/**
+ * `throw` par défaut, et ce repli est le seul réglage que développement, test,
+ * intégration continue et production lisent : `TENANT_GUARD_MODE` n'est posé dans
+ * aucune configuration du dépôt. `warn` et `off` restent disponibles pour un
+ * diagnostic ponctuel, jamais comme mode de fonctionnement.
+ */
 export function tenantGuardMode(): TenantGuardMode {
   const mode = process.env.TENANT_GUARD_MODE
   if (mode === 'off' || mode === 'throw' || mode === 'warn') return mode
-  return 'warn'
+  return 'throw'
 }
 
 export function reportTenantViolation(violation: TenantViolation, mode: TenantGuardMode): void {

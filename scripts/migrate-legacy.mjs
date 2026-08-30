@@ -10,17 +10,28 @@ import { randomUUID } from 'node:crypto'
  *      export MYSQL_PASSWORD=...
  *      export POSTGRES_PASSWORD=...
  *      export ADMIN_USER_ID=...
- *   3. Run:
- *      node scripts/migrate-legacy.mjs
+ *   3. Run, targeting one existing school:
+ *      node scripts/migrate-legacy.mjs --school-id <uuid>
  *
  * Tables migrated: family, person, student, period, package, class_school,
  *                  class_period, package_student_period, class_period_student,
  *                  payment_package_student
  * Skipped: operation*, account*, document, user, etc.
+ *
+ * The legacy database holds one school. The target database holds several, so the
+ * import is confined to `--school-id`: every row is inserted with it, and the
+ * cleanup phase only deletes rows carrying it.
+ *
+ * That cleanup is destructive beyond what this script re-imports. See the header of
+ * `scripts/lib/purge-school.mjs`: `UserFamily`, `Invitation`, `PaymentTransaction` and
+ * `PaymentProviderEvent` are purged and never written back. Target a school whose
+ * business data is expendable.
  */
 import mysql from 'mysql2/promise'
 import pg from 'pg'
 import { splitEmergencyContact } from './lib/emergency-contact.mjs'
+import { purgeSchool } from './lib/purge-school.mjs'
+import { parseSchoolId } from './lib/school-arg.mjs'
 
 // ─── Config ────────────────────────────────────────────────────────────────
 
@@ -52,6 +63,8 @@ const PG_URL =
   )}@${PG_HOST}:${PG_PORT}/${process.env.POSTGRES_DATABASE || 'app'}`
 
 const ADMIN_USER_ID = requireEnv('ADMIN_USER_ID')
+
+const SCHOOL_ID = parseSchoolId(process.argv.slice(2))
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -106,6 +119,8 @@ function log(msg) {
 // ─── Main ──────────────────────────────────────────────────────────────────
 
 async function main() {
+  log(`Target school: ${SCHOOL_ID}`)
+
   log('Connecting to MySQL (legacy)...')
   const my = await mysql.createConnection(MYSQL_CONFIG)
 
@@ -114,6 +129,16 @@ async function main() {
   await pgClient.connect()
 
   try {
+    // ── Phase 0: Target school ───────────────────────────────────────────
+
+    // Checked before the cleanup: a non-existent id would purge zero row then fail on
+    // the first insertion, leaving the impression of an import.
+    const school = await pgClient.query('SELECT name FROM "School" WHERE id = $1', [SCHOOL_ID])
+    if (school.rowCount === 0) {
+      throw new Error(`No school with id ${SCHOOL_ID} in the target database`)
+    }
+    log(`School found: ${school.rows[0].name}`)
+
     // ── Phase 1: Fetch legacy data ───────────────────────────────────────
 
     log('Fetching legacy data...')
@@ -143,26 +168,9 @@ async function main() {
 
     // ── Phase 2: Clean new DB ────────────────────────────────────────────
 
-    log('Cleaning new database (domain data only)...')
+    log('Cleaning target school data (domain data only)...')
     await pgClient.query('BEGIN')
-    const tables = [
-      'Payment',
-      'ClassAssignment',
-      'Enrollment',
-      'ClassPeriod',
-      'Student',
-      'PhoneNumber',
-      'FamilyPerson',
-      'UserFamily',
-      'Family',
-      'Person',
-      'Plan',
-      'Period',
-      'Level',
-    ]
-    for (const t of tables) {
-      await pgClient.query(`DELETE FROM "${t}"`)
-    }
+    await purgeSchool(pgClient, SCHOOL_ID)
     await pgClient.query('COMMIT')
     log('Cleaned.')
 
@@ -175,10 +183,11 @@ async function main() {
     for (const p of periods) {
       const id = mapId('period', p.id)
       await pgClient.query(
-        `INSERT INTO "Period" (id, name, "startAt", "endAt", "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        `INSERT INTO "Period" (id, "schoolId", name, "startAt", "endAt", "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
           id,
+          SCHOOL_ID,
           trunc(p.name, 50),
           ts(p.begin),
           ts(p.end),
@@ -194,9 +203,9 @@ async function main() {
     for (const p of packages) {
       const id = mapId('plan', p.id)
       await pgClient.query(
-        `INSERT INTO "Plan" (id, name, amount, "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [id, trunc(p.name, 50), p.price, !!p.enable, ts(p.created_at), ts(p.updated_at)]
+        `INSERT INTO "Plan" (id, "schoolId", name, amount, "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [id, SCHOOL_ID, trunc(p.name, 50), p.price, !!p.enable, ts(p.created_at), ts(p.updated_at)]
       )
     }
 
@@ -205,9 +214,9 @@ async function main() {
     for (const cs of classSchools) {
       const id = mapId('level', cs.id)
       await pgClient.query(
-        `INSERT INTO "Level" (id, name, "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5)`,
-        [id, trunc(cs.name, 250), !!cs.enable, ts(cs.created_at), ts(cs.updated_at)]
+        `INSERT INTO "Level" (id, "schoolId", name, "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [id, SCHOOL_ID, trunc(cs.name, 250), !!cs.enable, ts(cs.created_at), ts(cs.updated_at)]
       )
     }
 
@@ -223,10 +232,11 @@ async function main() {
       const name = f.name || `Famille #${f.id}`
       const emergency = splitEmergencyContact(f.person_emergency)
       await pgClient.query(
-        `INSERT INTO "Family" (id, name, "emergencyContactName", "emergencyContactPhone", "authorizedPickup", "createdById", "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        `INSERT INTO "Family" (id, "schoolId", name, "emergencyContactName", "emergencyContactPhone", "authorizedPickup", "createdById", "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
           id,
+          SCHOOL_ID,
           trunc(name, 50),
           trunc(emergency.name, 250),
           trunc(emergency.phone, 20),
@@ -247,10 +257,11 @@ async function main() {
     for (const p of persons) {
       const id = mapId('person', p.id)
       await pgClient.query(
-        `INSERT INTO "Person" (id, name, lastname, sex, email, address, "postCode", city, "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4::"Sex", $5, $6, $7, $8, $9, $10, $11)`,
+        `INSERT INTO "Person" (id, "schoolId", name, lastname, sex, email, address, "postCode", city, "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5::"Sex", $6, $7, $8, $9, $10, $11, $12)`,
         [
           id,
+          SCHOOL_ID,
           trunc(p.forname || 'Inconnu', 250),
           trunc(p.name || 'Inconnu', 250),
           mapSex(p.gender),
@@ -265,9 +276,18 @@ async function main() {
       )
       if (p.phone) {
         await pgClient.query(
-          `INSERT INTO "PhoneNumber" (id, "personId", "phoneNumber", channels, "isActive", "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [randomUUID(), id, trunc(p.phone, 20), '[]', true, ts(p.created_at), ts(p.updated_at)]
+          `INSERT INTO "PhoneNumber" (id, "schoolId", "personId", "phoneNumber", channels, "isActive", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            randomUUID(),
+            SCHOOL_ID,
+            id,
+            trunc(p.phone, 20),
+            '[]',
+            true,
+            ts(p.created_at),
+            ts(p.updated_at),
+          ]
         )
       }
     }
@@ -293,9 +313,9 @@ async function main() {
         if (fpInserted.has(key)) continue
         fpInserted.add(key)
         await pgClient.query(
-          `INSERT INTO "FamilyPerson" ("familyId", "personId", "relationType")
-           VALUES ($1, $2, $3::"RelationType")`,
-          [familyId, personId, link.relationType]
+          `INSERT INTO "FamilyPerson" ("schoolId", "familyId", "personId", "relationType")
+           VALUES ($1, $2, $3, $4::"RelationType")`,
+          [SCHOOL_ID, familyId, personId, link.relationType]
         )
       }
     }
@@ -313,10 +333,11 @@ async function main() {
       const person = personById.get(s.person_id)
       const birthday = person?.birthday || new Date('2010-01-01')
       await pgClient.query(
-        `INSERT INTO "Student" (id, "personId", birthday, birthplace, "previousSchool", "healthNotes", "languagesAtHome", "snackAuthorization", "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        `INSERT INTO "Student" (id, "schoolId", "personId", birthday, birthplace, "previousSchool", "healthNotes", "languagesAtHome", "snackAuthorization", "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
         [
           id,
+          SCHOOL_ID,
           personId,
           ts(birthday),
           trunc(person?.birthplace, 250),
@@ -341,10 +362,11 @@ async function main() {
       const levelId = mapId('level', cp.class_school_id)
       const periodId = mapId('period', cp.period_id)
       await pgClient.query(
-        `INSERT INTO "ClassPeriod" (id, name, capacity, "levelId", "periodId", "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        `INSERT INTO "ClassPeriod" (id, "schoolId", name, capacity, "levelId", "periodId", "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           id,
+          SCHOOL_ID,
           trunc(`Class ${cp.id}`, 250),
           30,
           levelId,
@@ -372,10 +394,11 @@ async function main() {
       const totalAmount = e.amount ?? 0
       const discount = e.discount ?? 0
       await pgClient.query(
-        `INSERT INTO "Enrollment" (id, "studentId", "planId", status, "totalAmount", discount, "registeredAt", "canLeaveAlone", "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4::"EnrollmentStatus", $5, $6, $7, $8, $9, $10, $11)`,
+        `INSERT INTO "Enrollment" (id, "schoolId", "studentId", "planId", status, "totalAmount", discount, "registeredAt", "canLeaveAlone", "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5::"EnrollmentStatus", $6, $7, $8, $9, $10, $11, $12)`,
         [
           id,
+          SCHOOL_ID,
           studentId,
           planId,
           status,
@@ -420,10 +443,11 @@ async function main() {
       const classPeriodId = mapId('classPeriod', cs.class_period_id)
 
       await pgClient.query(
-        `INSERT INTO "ClassAssignment" (id, "enrollmentId", "classPeriodId", "startAt", "endAt", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        `INSERT INTO "ClassAssignment" (id, "schoolId", "enrollmentId", "classPeriodId", "startAt", "endAt", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
           randomUUID(),
+          SCHOOL_ID,
           enrollmentId,
           classPeriodId,
           ts(cs.begin),
@@ -476,10 +500,11 @@ async function main() {
       const amount = p.amount ?? 0
 
       await pgClient.query(
-        `INSERT INTO "Payment" (id, "familyId", "enrollmentId", amount, method, "paidAt", "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5::"PaymentMethod", $6, $7, $8, $9)`,
+        `INSERT INTO "Payment" (id, "schoolId", "familyId", "enrollmentId", amount, method, "paidAt", "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6::"PaymentMethod", $7, $8, $9, $10)`,
         [
           randomUUID(),
+          SCHOOL_ID,
           familyId,
           enrollmentId,
           amount,
@@ -501,20 +526,25 @@ async function main() {
 
     log('')
     log('=== Migration complete ===')
-    const counts = await pgClient.query(`
-      SELECT 'Family' AS tbl, COUNT(*)::int AS n FROM "Family"
-      UNION ALL SELECT 'Person', COUNT(*)::int FROM "Person"
-      UNION ALL SELECT 'PhoneNumber', COUNT(*)::int FROM "PhoneNumber"
-      UNION ALL SELECT 'FamilyPerson', COUNT(*)::int FROM "FamilyPerson"
-      UNION ALL SELECT 'Student', COUNT(*)::int FROM "Student"
-      UNION ALL SELECT 'Period', COUNT(*)::int FROM "Period"
-      UNION ALL SELECT 'Plan', COUNT(*)::int FROM "Plan"
-      UNION ALL SELECT 'Level', COUNT(*)::int FROM "Level"
-      UNION ALL SELECT 'ClassPeriod', COUNT(*)::int FROM "ClassPeriod"
-      UNION ALL SELECT 'Enrollment', COUNT(*)::int FROM "Enrollment"
-      UNION ALL SELECT 'ClassAssignment', COUNT(*)::int FROM "ClassAssignment"
-      UNION ALL SELECT 'Payment', COUNT(*)::int FROM "Payment"
-    `)
+    // Counted on the target school: a global total would mix in the other schools'
+    // rows and hide a partial import.
+    const counts = await pgClient.query(
+      `
+      SELECT 'Family' AS tbl, COUNT(*)::int AS n FROM "Family" WHERE "schoolId" = $1
+      UNION ALL SELECT 'Person', COUNT(*)::int FROM "Person" WHERE "schoolId" = $1
+      UNION ALL SELECT 'PhoneNumber', COUNT(*)::int FROM "PhoneNumber" WHERE "schoolId" = $1
+      UNION ALL SELECT 'FamilyPerson', COUNT(*)::int FROM "FamilyPerson" WHERE "schoolId" = $1
+      UNION ALL SELECT 'Student', COUNT(*)::int FROM "Student" WHERE "schoolId" = $1
+      UNION ALL SELECT 'Period', COUNT(*)::int FROM "Period" WHERE "schoolId" = $1
+      UNION ALL SELECT 'Plan', COUNT(*)::int FROM "Plan" WHERE "schoolId" = $1
+      UNION ALL SELECT 'Level', COUNT(*)::int FROM "Level" WHERE "schoolId" = $1
+      UNION ALL SELECT 'ClassPeriod', COUNT(*)::int FROM "ClassPeriod" WHERE "schoolId" = $1
+      UNION ALL SELECT 'Enrollment', COUNT(*)::int FROM "Enrollment" WHERE "schoolId" = $1
+      UNION ALL SELECT 'ClassAssignment', COUNT(*)::int FROM "ClassAssignment" WHERE "schoolId" = $1
+      UNION ALL SELECT 'Payment', COUNT(*)::int FROM "Payment" WHERE "schoolId" = $1
+    `,
+      [SCHOOL_ID]
+    )
     for (const row of counts.rows) {
       log(`  ${row.tbl.padEnd(20)} ${row.n}`)
     }
@@ -528,6 +558,7 @@ async function main() {
   }
 }
 
-main().catch((_err) => {
+main().catch((err) => {
+  console.error(`[migrate-legacy] ${err instanceof Error ? err.message : String(err)}`)
   process.exit(1)
 })
