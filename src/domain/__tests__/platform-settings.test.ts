@@ -19,6 +19,14 @@ describe('readsAsEnabled', () => {
     expect(readsAsEnabled('')).toBe(true)
     expect(readsAsEnabled('nope')).toBe(true)
   })
+
+  it('honours a refusal written in another casing or spelling', () => {
+    expect(readsAsEnabled('FALSE')).toBe(false)
+    expect(readsAsEnabled(' false ')).toBe(false)
+    expect(readsAsEnabled('0')).toBe(false)
+    expect(readsAsEnabled('Off')).toBe(false)
+    expect(readsAsEnabled('no')).toBe(false)
+  })
 })
 
 describe('SCHOOL_SWITCH_SETTING', () => {

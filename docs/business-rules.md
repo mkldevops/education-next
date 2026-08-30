@@ -150,10 +150,17 @@ The switch can be closed platform-wide by the `school_switch_enabled` `PlatformS
 seeds nothing, so an existing installation keeps its switcher — and so does any unexpected value: an
 unreadable setting must not silently remove a working feature (`src/domain/platform-settings.ts`).
 
-Two consequences follow from where the flag is applied. `switchSchoolAction` refuses with
-`switchDisabled` **before** looking the target school up, so a caller denied the switch cannot learn
-whether that school exists; hiding the menu alone would leave the action callable and the flag
-decorative. And **a super-admin is never blocked**: the flag governs the school-to-school move of
+The flag constrains **both** ways of changing school, because a cookie is an input and not a
+decision. `switchSchoolAction` refuses with `switchDisabled` **before** looking the target school up,
+so a caller denied the switch cannot learn whether that school exists. And `getSchoolContext()`
+ignores `active_school` for an ordinary member while the flag is off, falling back to their first
+membership — guarding only the action would leave the switch reachable by hand-editing the cookie,
+since `httpOnly` blocks `document.cookie` but neither the devtools Application panel nor `curl`. That
+second read is where the cookie is already validated, so the flag is one more constraint on which
+school it may select rather than a mechanism bolted alongside; it is consulted only when the cookie
+would actually change the retained school.
+
+**A super-admin is never blocked** on either path: the flag governs the school-to-school move of
 ordinary members, not platform administration.
 
 The flag changes nothing else. `getAuthorizedSchools()` is untouched, so deep-link resolution still

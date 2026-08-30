@@ -1,10 +1,10 @@
 // @vitest-environment node
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { SCHOOL_SWITCH_SETTING } from '@/domain/platform-settings'
 import type { PrismaClient } from '@/generated/prisma/client'
 import { createUnguardedArchivedClient, db } from '@/lib/db'
 import { TenantScopeError } from '@/lib/tenant-guard'
+import { getPlatformSetting } from '@/use-cases/platform-settings/get-platform-setting'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 
 /**
@@ -533,31 +533,23 @@ describe.skipIf(!databaseUrl)('isolation inter-écoles sur base réelle', () => 
     })
 
     it("vaut activé tant qu'aucune ligne n'existe, puis suit la ligne écrite", async () => {
-      const stored = await raw.platformSetting.findUnique({
-        where: { name: SCHOOL_SWITCH_SETTING },
-      })
+      const name = `switch_probe_${Date.now().toString(36)}`
+      // Le vrai `school_switch_enabled` n'est jamais supprimé : la base est partagée, et
+      // un `finally` ne survit pas à un plantage du processus. La couture de lecture
+      // laisse éprouver le même code sur une ligne jetable.
+      const reading = () => getPlatformSetting({ name })
 
       try {
         await inThrowMode(async () => {
-          await raw.platformSetting.deleteMany({ where: { name: SCHOOL_SWITCH_SETTING } })
-          await expect(isSchoolSwitchEnabled()).resolves.toBe(true)
+          await expect(isSchoolSwitchEnabled(reading)).resolves.toBe(true)
 
           await db.platformSetting.create({
-            data: { name: SCHOOL_SWITCH_SETTING, value: 'false', valueType: 'BOOLEAN' },
+            data: { name, value: 'false', valueType: 'BOOLEAN' },
           })
-          await expect(isSchoolSwitchEnabled()).resolves.toBe(false)
+          await expect(isSchoolSwitchEnabled(reading)).resolves.toBe(false)
         })
       } finally {
-        await raw.platformSetting.deleteMany({ where: { name: SCHOOL_SWITCH_SETTING } })
-        if (stored) {
-          await raw.platformSetting.create({
-            data: {
-              name: stored.name,
-              value: stored.value,
-              valueType: stored.valueType,
-            },
-          })
-        }
+        await raw.platformSetting.deleteMany({ where: { name } })
       }
     })
   })

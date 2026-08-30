@@ -5,6 +5,7 @@ import { schoolGateway } from '@/gateways/school-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 
 export const ACTIVE_SCHOOL_COOKIE = 'active_school'
 
@@ -36,6 +37,28 @@ export type SchoolContext =
  */
 const listMemberships = cache((userId: string) => schoolMemberGateway.listAuthorizedSchools(userId))
 
+type Membership = Awaited<ReturnType<typeof listMemberships>>[number]
+
+/**
+ * Appartenance retenue parmi celles de l'utilisateur.
+ *
+ * Le drapeau plateforme contraint aussi la LECTURE du cookie. Le refuser dans la seule
+ * action laisserait la bascule accessible en éditant `active_school` à la main :
+ * `httpOnly` interdit `document.cookie`, pas le panneau Application ni `curl`. Le
+ * réglage n'est lu que lorsque le cookie changerait réellement l'école retenue, pour ne
+ * pas ajouter une lecture aux requêtes qui n'en tirent rien.
+ */
+async function selectMembership(
+  memberships: Membership[],
+  requestedSchoolId: string | undefined
+): Promise<Membership> {
+  const fallback = memberships[0]
+  const requested = memberships.find((candidate) => candidate.schoolId === requestedSchoolId)
+  if (!requested || requested === fallback) return fallback
+
+  return (await isSchoolSwitchEnabled()) ? requested : fallback
+}
+
 async function resolveSchoolContext(): Promise<SchoolContext | null> {
   const session = await auth.api.getSession({ headers: await headers() })
   const userId = session?.user?.id
@@ -64,8 +87,7 @@ async function resolveSchoolContext(): Promise<SchoolContext | null> {
   const memberships = await listMemberships(userId)
   if (memberships.length === 0) return null
 
-  const membership =
-    memberships.find((candidate) => candidate.schoolId === requestedSchoolId) ?? memberships[0]
+  const membership = await selectMembership(memberships, requestedSchoolId)
 
   if (membership.role === 'ADMIN') {
     return { userId, schoolId: membership.schoolId, isSuperAdmin: false, role: 'ADMIN' }
