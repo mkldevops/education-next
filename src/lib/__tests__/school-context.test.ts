@@ -8,6 +8,7 @@ const dbMock = {
 const authMock = { api: { getSession: vi.fn() } }
 const schoolGatewayMock = { findActiveById: vi.fn(), listActive: vi.fn() }
 const schoolMemberGatewayMock = { listAuthorizedSchools: vi.fn() }
+const isSchoolSwitchEnabledMock = vi.fn()
 
 vi.mock('next/headers', () => ({
   cookies: async () => cookieStore,
@@ -18,6 +19,9 @@ vi.mock('@/lib/auth', () => ({ auth: authMock }))
 vi.mock('@/gateways/school-gateway', () => ({ schoolGateway: schoolGatewayMock }))
 vi.mock('@/gateways/school-member-gateway', () => ({
   schoolMemberGateway: schoolMemberGatewayMock,
+}))
+vi.mock('@/use-cases/platform-settings/is-school-switch-enabled', () => ({
+  isSchoolSwitchEnabled: isSchoolSwitchEnabledMock,
 }))
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, sa factory est lazy.
@@ -44,6 +48,7 @@ beforeEach(() => {
   dbMock.userFamily.findFirst.mockResolvedValue(null)
   schoolGatewayMock.listActive.mockResolvedValue([AL_NOUR, HORIZON])
   schoolMemberGatewayMock.listAuthorizedSchools.mockResolvedValue([])
+  isSchoolSwitchEnabledMock.mockResolvedValue(true)
 })
 
 describe('getSchoolContext', () => {
@@ -123,6 +128,46 @@ describe('getSchoolContext', () => {
       expect.objectContaining({ where: { userId: 'user-3', schoolId: HORIZON.id } })
     )
     expect(context).toMatchObject({ schoolId: HORIZON.id, familyId: 'family-horizon' })
+  })
+
+  it('ignores the cookie for an ordinary member when the platform switch is off', async () => {
+    signedInAs('user-3', false)
+    isSchoolSwitchEnabledMock.mockResolvedValue(false)
+    cookieStore.get.mockReturnValue({ value: HORIZON.id })
+    schoolMemberGatewayMock.listAuthorizedSchools.mockResolvedValue([
+      membership(AL_NOUR, 'PARENT'),
+      membership(HORIZON, 'PARENT'),
+    ])
+
+    const context = await getSchoolContext()
+
+    expect(context?.schoolId).toBe(AL_NOUR.id)
+    expect(dbMock.userFamily.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 'user-3', schoolId: AL_NOUR.id } })
+    )
+  })
+
+  it('still honours the cookie of a super admin when the platform switch is off', async () => {
+    signedInAs('user-1', true)
+    isSchoolSwitchEnabledMock.mockResolvedValue(false)
+    cookieStore.get.mockReturnValue({ value: HORIZON.id })
+    schoolGatewayMock.findActiveById.mockResolvedValue(HORIZON)
+
+    const context = await getSchoolContext()
+
+    expect(context?.schoolId).toBe(HORIZON.id)
+    expect(isSchoolSwitchEnabledMock).not.toHaveBeenCalled()
+  })
+
+  it('does not read the platform setting when the cookie changes nothing', async () => {
+    signedInAs('user-2', false)
+    schoolMemberGatewayMock.listAuthorizedSchools.mockResolvedValue([
+      membership(AL_NOUR, 'ADMIN'),
+      membership(HORIZON, 'ADMIN'),
+    ])
+
+    expect(await getSchoolContext()).toMatchObject({ schoolId: AL_NOUR.id })
+    expect(isSchoolSwitchEnabledMock).not.toHaveBeenCalled()
   })
 
   it('rejects a signed-in account that no longer exists', async () => {

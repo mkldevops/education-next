@@ -33,7 +33,7 @@ import { Sidebar } from '../sidebar'
 import { useSidebarStore } from '../sidebar-store'
 
 const renderSidebar = (role: SchoolRole | null, isSuperAdmin = false) =>
-  render(<Sidebar role={role} isSuperAdmin={isSuperAdmin} />)
+  render(<Sidebar role={role} isSuperAdmin={isSuperAdmin} canSwitchSchool />)
 
 const school = (id: string, name: string): AuthorizedSchool => ({
   id,
@@ -44,7 +44,7 @@ const school = (id: string, name: string): AuthorizedSchool => ({
 
 const ADMIN: SchoolRole = 'ADMIN'
 
-const renderSwitcher = (schools: AuthorizedSchool[]) =>
+const renderSwitcher = (schools: AuthorizedSchool[], canSwitchSchool = true) =>
   render(
     <Sidebar
       role={ADMIN}
@@ -52,6 +52,7 @@ const renderSwitcher = (schools: AuthorizedSchool[]) =>
       schoolName="Al-Nour"
       schools={schools}
       activeSchoolId="school-a"
+      canSwitchSchool={canSwitchSchool}
     />
   )
 
@@ -159,6 +160,13 @@ describe('Sidebar school switcher', () => {
 
   it('renders a static brand when the caller belongs to a single school', () => {
     renderSwitcher([school('school-a', 'Al-Nour')])
+
+    expect(screen.queryByRole('button', { name: /Al-Nour/ })).not.toBeInTheDocument()
+    expect(screen.getByText('Al-Nour')).toBeInTheDocument()
+  })
+
+  it('falls back to the static brand when the platform flag is off', () => {
+    renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')], false)
 
     expect(screen.queryByRole('button', { name: /Al-Nour/ })).not.toBeInTheDocument()
     expect(screen.getByText('Al-Nour')).toBeInTheDocument()

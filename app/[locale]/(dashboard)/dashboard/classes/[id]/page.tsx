@@ -12,6 +12,7 @@ import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { resolveDeepLink } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
+import { canSwitchSchool } from '../../../_lib/school-switch'
 import { EditClassDialog } from '../_components/edit-class-dialog'
 
 type Props = {
@@ -71,7 +72,11 @@ export default async function ClassDetailPage({ params }: Props) {
   if (resolution.status === 'notFound') notFound()
   if (resolution.status === 'otherSchool')
     return (
-      <SchoolSwitchPrompt schoolId={resolution.school.id} schoolName={resolution.school.name} />
+      <SchoolSwitchPrompt
+        schoolId={resolution.school.id}
+        schoolName={resolution.school.name}
+        canSwitch={await canSwitchSchool()}
+      />
     )
 
   const classPeriod = resolution.resource

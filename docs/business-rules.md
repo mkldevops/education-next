@@ -33,8 +33,13 @@ Every business row belongs to exactly one `School`. Sixteen models carry `school
 
 `PaymentProviderEvent` is the one business model left unscoped, deliberately: its
 `paymentTransactionId` is nullable, so an unmatched provider event has no derivable school. It is a
-platform-level log. `User`, `Session`, `Account`, `Verification`, `Passkey` and `SchoolMember` are
-platform models by nature.
+platform-level log. `User`, `Session`, `Account`, `Verification`, `Passkey`, `SchoolMember` and
+`PlatformSetting` are platform models by nature.
+
+`PlatformSetting` is the instance-wide settings table, and is deliberately **not** a `Config` row:
+`Config` carries a mandatory `schoolId` and belongs to the tenant guard, so a platform-level read
+would raise `TenantScopeError`. It carries no `isActive` either — a platform setting has no
+archival path, and a total `@unique(name)` would let an archived homonym block its recreation.
 
 **A family belongs to one school.** A parent whose children attend two schools of the network has
 one account with two memberships, and two separate family records that never see each other.
@@ -139,6 +144,28 @@ A user who holds a single school sees a **static brand, not a menu**: a menu of 
 choice. Selecting another school calls `switchSchoolAction`, which rewrites the `active_school`
 cookie, then `router.refresh()` replays the dashboard in the new school. The action re-checks the
 membership; the cookie is never trusted on the way back in.
+
+The switch can be closed platform-wide by the `school_switch_enabled` `PlatformSetting`, written from
+`/dashboard/schools` by a super-admin only. **Absence of the row reads as enabled** — the migration
+seeds nothing, so an existing installation keeps its switcher — and so does any unexpected value: an
+unreadable setting must not silently remove a working feature (`src/domain/platform-settings.ts`).
+
+The flag constrains **both** ways of changing school, because a cookie is an input and not a
+decision. `switchSchoolAction` refuses with `switchDisabled` **before** looking the target school up,
+so a caller denied the switch cannot learn whether that school exists. And `getSchoolContext()`
+ignores `active_school` for an ordinary member while the flag is off, falling back to their first
+membership — guarding only the action would leave the switch reachable by hand-editing the cookie,
+since `httpOnly` blocks `document.cookie` but neither the devtools Application panel nor `curl`. That
+second read is where the cookie is already validated, so the flag is one more constraint on which
+school it may select rather than a mechanism bolted alongside; it is consulted only when the cookie
+would actually change the retained school.
+
+**A super-admin is never blocked** on either path: the flag governs the school-to-school move of
+ordinary members, not platform administration.
+
+The flag changes nothing else. `getAuthorizedSchools()` is untouched, so deep-link resolution still
+names the other school; `_components/school-switch-prompt.tsx` keeps the screen and drops the button,
+because hiding the resolution would leave the user in front of an unexplainable `notFound()`.
 
 ## Roles and scope
 

@@ -102,6 +102,7 @@ const { ACTIVE_SCHOOL_COOKIE, getAuthorizedSchools, getSchoolContext } = await i
 const { getBrandingConfig, resolveBrandingSchoolId } = await import('@/lib/branding')
 const { DashboardHeader } = await import('@/features/dashboard/header')
 const { getSelectedPeriod } = await import('@/features/dashboard/period')
+const { canSwitchSchool } = await import('../_lib/school-switch')
 
 type Fixture = Awaited<ReturnType<typeof seedSchool>>
 
@@ -333,6 +334,7 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
       await resolveBrandingSchoolId()
       await getBrandingConfig(a.school.id)
       await getAuthorizedSchools()
+      expect(await canSwitchSchool()).toBe(true)
       await getSelectedPeriod(a.school.id)
       await DashboardHeader()
     })
@@ -346,6 +348,7 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
       await resolveBrandingSchoolId()
       await getBrandingConfig(a.school.id)
       await getAuthorizedSchools()
+      expect(await canSwitchSchool()).toBe(true)
       await DashboardHeader()
     })
 
@@ -358,6 +361,7 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
 
       await resolveBrandingSchoolId()
       await getAuthorizedSchools()
+      expect(await canSwitchSchool()).toBe(true)
       await DashboardHeader()
     })
 

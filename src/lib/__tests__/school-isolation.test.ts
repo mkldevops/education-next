@@ -4,6 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '@/generated/prisma/client'
 import { createUnguardedArchivedClient, db } from '@/lib/db'
 import { TenantScopeError } from '@/lib/tenant-guard'
+import { getPlatformSetting } from '@/use-cases/platform-settings/get-platform-setting'
+import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 
 /**
  * Isolation inter-écoles, sur une vraie base.
@@ -491,6 +493,63 @@ describe.skipIf(!databaseUrl)('isolation inter-écoles sur base réelle', () => 
         ).resolves.not.toBeNull()
       } finally {
         process.env.TENANT_GUARD_MODE = previous
+      }
+    })
+  })
+
+  /**
+   * `PlatformSetting` doit échapper au garde **par construction**, pas par convention :
+   * il ne porte aucun `schoolId`, donc aucune requête ne peut le scoper. Le vérifier
+   * par un grep de `TENANT_SCOPED_MODELS` ne prouverait rien de l'extension réelle ;
+   * ces tests l'interrogent en mode `throw`, sur la vraie base.
+   */
+  describe('réglage plateforme', () => {
+    const inThrowMode = async (assertions: () => Promise<void>) => {
+      const previous = process.env.TENANT_GUARD_MODE
+      process.env.TENANT_GUARD_MODE = 'throw'
+      try {
+        await assertions()
+      } finally {
+        process.env.TENANT_GUARD_MODE = previous
+      }
+    }
+
+    it("se lit et s'écrit sans école, garde en `throw`", async () => {
+      const name = `guard_probe_${Date.now().toString(36)}`
+
+      await inThrowMode(async () => {
+        await expect(db.platformSetting.findUnique({ where: { name } })).resolves.toBeNull()
+        await expect(
+          db.platformSetting.upsert({
+            where: { name },
+            create: { name, value: 'true', valueType: 'BOOLEAN' },
+            update: { value: 'true' },
+          })
+        ).resolves.toMatchObject({ name, value: 'true' })
+        await expect(db.platformSetting.findMany({ where: { name } })).resolves.toHaveLength(1)
+      })
+
+      await raw.platformSetting.deleteMany({ where: { name } })
+    })
+
+    it("vaut activé tant qu'aucune ligne n'existe, puis suit la ligne écrite", async () => {
+      const name = `switch_probe_${Date.now().toString(36)}`
+      // Le vrai `school_switch_enabled` n'est jamais supprimé : la base est partagée, et
+      // un `finally` ne survit pas à un plantage du processus. La couture de lecture
+      // laisse éprouver le même code sur une ligne jetable.
+      const reading = () => getPlatformSetting({ name })
+
+      try {
+        await inThrowMode(async () => {
+          await expect(isSchoolSwitchEnabled(reading)).resolves.toBe(true)
+
+          await db.platformSetting.create({
+            data: { name, value: 'false', valueType: 'BOOLEAN' },
+          })
+          await expect(isSchoolSwitchEnabled(reading)).resolves.toBe(false)
+        })
+      } finally {
+        await raw.platformSetting.deleteMany({ where: { name } })
       }
     })
   })

@@ -1272,7 +1272,8 @@
       "title": "This page belongs to another school",
       "description": "The requested resource lives in {schoolName}, which you have access to. Switch to that school to open it.",
       "switchTo": "Switch to {schoolName}",
-      "error": "The switch failed. Try again, or check that you still have access to that school."
+      "error": "The switch failed. Try again, or check that you still have access to that school.",
+      "switchDisabled": "School switching is turned off on this platform. Ask a platform administrator to open access to this school."
     },
     "switcher": {
       "label": "Switch school",
@@ -1351,6 +1352,13 @@
           "alreadyInactive": "That school is already deactivated",
           "lastActiveSchool": "This is the last active school: deactivating it would make the dashboard and this page unreachable."
         }
+      },
+      "platformSwitch": {
+        "title": "School switching",
+        "description": "Lets members change school from the sidebar. A super-admin keeps the switch even when the setting is off.",
+        "enabled": "Switching allowed",
+        "disabled": "Switching turned off",
+        "error": "The setting could not be saved, try again"
       }
     }
   },

@@ -319,6 +319,20 @@ model Config {
   @@index([schoolId])
 }
 
+// Réglage de la plateforme entière, sans école. Volontairement distinct de `Config` :
+// celui-ci porte un `schoolId` obligatoire et appartient au garde tenant, donc une
+// lecture racine plateforme y lèverait `TenantScopeError`. Pas de `isActive` non plus —
+// un réglage plateforme n'a pas de parcours d'archivage, et un `@unique` total sur
+// `name` bloquerait la recréation d'un réglage archivé homonyme.
+model PlatformSetting {
+  id        String          @id @default(uuid())
+  name      String          @unique @db.VarChar(250)
+  value     String          @db.Text
+  valueType ConfigValueType
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
 model Level {
   id          String   @id @default(uuid())
   schoolId    String
