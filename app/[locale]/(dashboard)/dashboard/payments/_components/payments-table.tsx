@@ -88,15 +88,21 @@ export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) 
     {
       id: 'paidAt',
       header: t('paidAt'),
-      accessorFn: (row) => formatDate(row.paidAt, locale),
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      accessorFn: (row) => row.paidAt.getTime(),
+      cell: ({ row }) => (
+        <span className="text-gray-700">{formatDate(row.original.paidAt, locale)}</span>
+      ),
       enableSorting: true,
     },
     {
       id: 'cashedAt',
       header: t('cashedAt'),
-      accessorFn: (row) => (row.cashedAt ? formatDate(row.cashedAt, locale) : '-'),
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      accessorFn: (row) => row.cashedAt?.getTime() ?? 0,
+      cell: ({ row }) => (
+        <span className="text-gray-700">
+          {row.original.cashedAt ? formatDate(row.original.cashedAt, locale) : '-'}
+        </span>
+      ),
       enableSorting: true,
     },
   ]

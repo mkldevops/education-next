@@ -8,7 +8,7 @@ import type { Family, FamilyPerson, Person, Student } from '@/generated/prisma/c
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 
-type StudentRow = Student & {
+export type StudentRow = Student & {
   person: Person & {
     families: (FamilyPerson & { family: Family })[]
   }
@@ -55,8 +55,10 @@ export function StudentsDataTable({ data, locale, isAdmin }: Props) {
     {
       id: 'birthday',
       header: t('birthday'),
-      accessorFn: (row) => formatDate(row.birthday, locale),
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      accessorFn: (row) => row.birthday.getTime(),
+      cell: ({ row }) => (
+        <span className="text-gray-700">{formatDate(row.original.birthday, locale)}</span>
+      ),
       enableSorting: true,
     },
     ...(isAdmin ? [familyColumn] : []),
