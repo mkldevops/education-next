@@ -20,7 +20,11 @@ vi.mock('@/actions/school-actions', () => ({
 }))
 
 vi.mock('@/lib/auth-client', () => ({
-  signOut: vi.fn(),
+  signOut: () => signOut(),
+}))
+
+vi.mock('@/lib/toast', () => ({
+  toast: { error: (message: string) => toastError(message) },
 }))
 
 import type { AuthorizedSchool } from '@/domain/school-scope'
@@ -53,6 +57,8 @@ const renderSwitcher = (schools: AuthorizedSchool[]) =>
 
 const router = { replace: vi.fn(), refresh: vi.fn() }
 const switchSchoolAction = vi.fn(async (_schoolId: string) => 'OK' as const)
+const signOut = vi.fn(async () => ({ error: null }))
+const toastError = vi.fn()
 
 const collapse = () => useSidebarStore.setState({ expanded: false, mobileOpen: false })
 const expand = () => useSidebarStore.setState({ expanded: true, mobileOpen: false })
@@ -199,5 +205,37 @@ describe('Sidebar school switcher', () => {
     cleanup()
     renderSidebar('ADMIN')
     expect(screen.queryByRole('link', { name: 'schools' })).not.toBeInTheDocument()
+  })
+})
+
+describe('Sidebar sign out', () => {
+  beforeEach(() => {
+    expand()
+    router.replace.mockClear()
+    signOut.mockClear()
+    toastError.mockClear()
+    signOut.mockResolvedValue({ error: null })
+  })
+
+  const clickLogout = () => {
+    renderSidebar('ADMIN')
+    fireEvent.click(screen.getByRole('button', { name: /account/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'logout' }))
+  }
+
+  it('leaves the dashboard once the session is closed', async () => {
+    clickLogout()
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'))
+    expect(toastError).not.toHaveBeenCalled()
+  })
+
+  it('keeps the user in place and reports a failed sign out', async () => {
+    signOut.mockResolvedValue({ error: { message: 'network' } } as never)
+
+    clickLogout()
+
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith('logoutError'))
+    expect(router.replace).not.toHaveBeenCalled()
   })
 })

@@ -187,6 +187,7 @@
       "profile": "Profile",
       "settings": "Settings",
       "logout": "Logout",
+      "logoutError": "Could not sign you out, please try again",
       "sectionGestion": "Management",
       "sectionConfig": "Configuration",
       "collapse": "Collapse",
@@ -241,7 +242,6 @@
           "postCode": "Postal code",
           "city": "City",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Item not found"
           }
@@ -253,7 +253,6 @@
           "success": "Family updated successfully",
           "error": "Error updating family",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Family not found"
           }
@@ -268,8 +267,7 @@
           "errors": {
             "hasActiveEnrollments": "Pending or active enrollments remain: close them first",
             "notFound": "Family not found",
-            "validationError": "Check the information you entered",
-            "unauthorized": "You are not allowed to archive this family"
+            "validationError": "Check the information you entered"
           }
         },
         "addPerson": {
@@ -295,7 +293,6 @@
           "postCode": "Postal code",
           "city": "City",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Family not found"
           }
@@ -323,7 +320,6 @@
           "success": "Member updated",
           "error": "Update failed",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the submitted information",
             "notFound": "Member not found"
           }
@@ -340,7 +336,6 @@
           "success": "Phone number added successfully",
           "error": "Error adding phone number",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Person not found"
           }
@@ -378,7 +373,6 @@
           "success": "Student added successfully",
           "error": "Error creating student",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Family not found"
           }
@@ -390,7 +384,6 @@
           "success": "Student updated successfully",
           "error": "Error updating student",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Student not found"
           }
@@ -404,7 +397,6 @@
           "success": "Student deactivated",
           "error": "Error deactivating student",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Student not found",
             "hasActiveEnrollments": "Pending or active enrollments remain: close them first"
@@ -433,7 +425,6 @@
           "success": "Period created",
           "error": "Error creating period",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Period not found",
             "overlappingPeriod": "This period overlaps another one",
@@ -451,8 +442,7 @@
           "errors": {
             "periodInUse": "Classes or enrollments use this period: it cannot be archived",
             "notFound": "Period not found",
-            "validationError": "Check the information entered",
-            "unauthorized": "You are not allowed to edit periods"
+            "validationError": "Check the information entered"
           }
         },
         "promote": {
@@ -476,7 +466,6 @@
           "close": "Close",
           "error": "Error promoting students",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Source or target period not found"
           }
@@ -500,7 +489,6 @@
           "success": "Level created",
           "error": "Error creating level",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Level not found"
           }
@@ -522,8 +510,7 @@
             "levelInUse": "Classes use this level: remove them first",
             "circularReference": "This progression would create a loop",
             "notFound": "Level not found",
-            "validationError": "Check the information entered",
-            "unauthorized": "You are not allowed to edit levels"
+            "validationError": "Check the information entered"
           }
         }
       },
@@ -549,7 +536,6 @@
           "success": "Class created",
           "error": "Error creating class",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Level or period not found"
           }
@@ -561,7 +547,6 @@
           "success": "Class updated",
           "error": "Error updating class",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Class not found",
             "capacityBelowEnrolled": "Capacity is below the number of students already assigned"
@@ -603,8 +588,7 @@
             "duplicateEnrollment": "This student is already enrolled in this class",
             "classFull": "This class is full",
             "notFound": "Student, plan or class not found",
-            "validationError": "Check the information you entered",
-            "unauthorized": "You are not allowed to create an enrollment"
+            "validationError": "Check the information you entered"
           }
         },
         "drawer": {
@@ -691,8 +675,7 @@
             "noActiveEnrollments": "This family has no active enrollment to pay",
             "refundExceedsPaid": "The refund exceeds the amount already paid",
             "validationError": "Check the information entered",
-            "notFound": "Family not found",
-            "unauthorized": "You are not allowed to record this payment"
+            "notFound": "Family not found"
           }
         }
       },
@@ -712,7 +695,6 @@
           "success": "Plan created",
           "error": "Error creating plan",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Plan not found"
           }
@@ -724,7 +706,6 @@
           "success": "Plan updated",
           "error": "Error updating plan",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Plan not found"
           }
@@ -765,7 +746,6 @@
           "success": "Parameter created",
           "error": "Error creating parameter",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Setting not found",
             "invalidConfigValue": "The value does not match the selected type"
@@ -782,7 +762,6 @@
           "success": "Parameter updated",
           "error": "Error updating parameter",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Setting not found",
             "invalidConfigValue": "The value does not match the selected type"
@@ -797,7 +776,6 @@
           "preview": "Preview",
           "error": "Something went wrong",
           "errors": {
-            "unauthorized": "You are not allowed to upload an image",
             "invalidInput": "No file received",
             "unsupportedType": "Unsupported format: use PNG, JPEG, WebP, SVG or ICO",
             "fileTooLarge": "File too large: 1 MB maximum",
@@ -843,7 +821,6 @@
           "emailAlreadyUsed": "An account already uses this email address",
           "error": "Unable to send the invitation",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Item not found",
             "emailAlreadyUsed": "That email address is already in use",
@@ -1073,7 +1050,6 @@
           "cancelled": "Enrollment cancelled",
           "error": "Error updating enrollment",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Enrollment not found",
             "invalidStatusTransition": "That status change is not allowed from the current state"
@@ -1088,7 +1064,6 @@
           "error": "Error reassigning class",
           "noClassAvailable": "No other class available for the selected period.",
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Enrollment or class not found",
             "classFull": "This class is full",
@@ -1105,8 +1080,7 @@
           "errors": {
             "discountExceedsPlan": "The discount exceeds the plan amount",
             "notFound": "Enrollment not found",
-            "validationError": "Check the amount you entered",
-            "unauthorized": "You are not allowed to change this enrollment"
+            "validationError": "Check the amount you entered"
           }
         }
       },
@@ -1163,7 +1137,6 @@
             }
           },
           "errors": {
-            "unauthorized": "You are not allowed to perform this action",
             "validationError": "Check the information you entered",
             "notFound": "Item not found",
             "emailAlreadyUsed": "That email address is already in use",
@@ -1177,7 +1150,6 @@
           "familyHint": "Without a family the parent can sign in but will see no data."
         },
         "errors": {
-          "unauthorized": "You are not allowed to perform this action",
           "validation_error": "Check the information you entered",
           "validationError": "Check the information provided",
           "notFound": "User not found",
@@ -1211,7 +1183,6 @@
           "none": "No pending invitation",
           "error": "Something went wrong",
           "errors": {
-            "unauthorized": "You are not allowed to manage invitations",
             "invalidInput": "Check the information you entered",
             "notFound": "Invitation not found",
             "alreadyUsed": "This invitation has already been used",
@@ -1460,7 +1431,8 @@
       "invalidCurrentPassword": "Current password is incorrect",
       "sessionRevokeFailed": "Failed to revoke session",
       "linkFailed": "Failed to connect Google account",
-      "unlinkFailed": "Failed to disconnect Google account"
+      "unlinkFailed": "Failed to disconnect Google account",
+      "logoutFailed": "Could not sign you out, please try again"
     },
     "passkey": {
       "title": "Passkeys",
