@@ -18,23 +18,32 @@ type Props = {
   displayName: string
   logoUrl?: string
   expanded: boolean
+  canSwitchSchool: boolean
 }
 
 /**
  * Tête de la barre latérale : bascule d'école, ou identité fixe.
  *
  * Un menu d'un seul choix n'en est pas un : sous deux écoles la tête reste le bandeau
- * de marque, sans déclencheur. La liste reçue ne contient que des écoles actives —
- * `getAuthorizedSchools()` filtre à la source — donc aucune école désactivée ne peut
- * être proposée ici.
+ * de marque, sans déclencheur. Le drapeau plateforme éteint donne exactement le même
+ * repli — l'action refuse de son côté, l'interface ne fait que ne plus le proposer.
+ * La liste reçue ne contient que des écoles actives — `getAuthorizedSchools()` filtre
+ * à la source — donc aucune école désactivée ne peut être proposée ici.
  */
-export function SchoolSwitcher({ schools, activeSchoolId, displayName, logoUrl, expanded }: Props) {
+export function SchoolSwitcher({
+  schools,
+  activeSchoolId,
+  displayName,
+  logoUrl,
+  expanded,
+  canSwitchSchool,
+}: Props) {
   const t = useTranslations('schools.switcher')
   const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  if (schools.length <= 1) {
+  if (!canSwitchSchool || schools.length <= 1) {
     return <SidebarBrand displayName={displayName} logoUrl={logoUrl} expanded={expanded} />
   }
 

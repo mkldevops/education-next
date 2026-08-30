@@ -7,6 +7,7 @@ import { localizedHref } from '@/i18n/localized-href'
 import { auth } from '@/lib/auth'
 import { getBrandingConfig } from '@/lib/branding'
 import { getAuthorizedSchools, getSchoolContext } from '@/lib/school-context'
+import { canSwitchSchool } from './_lib/school-switch'
 
 type Props = {
   children: React.ReactNode
@@ -17,10 +18,11 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
   const context = await getSchoolContext()
   if (!context) redirect(localizedHref(locale, '/login'))
 
-  const [branding, session, schools] = await Promise.all([
+  const [branding, session, schools, switchAllowed] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
     getAuthorizedSchools(),
+    canSwitchSchool(),
   ])
 
   const userName = session?.user.name || session?.user.email || undefined
@@ -35,6 +37,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
       userName={userName}
       schools={schools}
       activeSchoolId={context.schoolId}
+      canSwitchSchool={switchAllowed}
     />
   )
 }

@@ -1272,7 +1272,8 @@
       "title": "Cette page appartient à une autre école",
       "description": "La ressource demandée se trouve dans {schoolName}, à laquelle vous avez accès. Basculez sur cette école pour l'ouvrir.",
       "switchTo": "Basculer sur {schoolName}",
-      "error": "La bascule a échoué. Réessayez ou vérifiez que vous avez toujours accès à cette école."
+      "error": "La bascule a échoué. Réessayez ou vérifiez que vous avez toujours accès à cette école.",
+      "switchDisabled": "La bascule d'école est désactivée sur cette plateforme. Demandez à un administrateur de la plateforme d'ouvrir l'accès à cette école."
     },
     "switcher": {
       "label": "Changer d'école",
@@ -1351,6 +1352,13 @@
           "alreadyInactive": "Cette école est déjà désactivée",
           "lastActiveSchool": "C'est la dernière école active : la désactiver rendrait le tableau de bord et cette page inaccessibles."
         }
+      },
+      "platformSwitch": {
+        "title": "Bascule d'école",
+        "description": "Autorise les membres à changer d'école depuis la barre latérale. Un super-admin conserve la bascule même lorsque le réglage est éteint.",
+        "enabled": "Bascule autorisée",
+        "disabled": "Bascule désactivée",
+        "error": "Le réglage n'a pas pu être enregistré, réessayez"
       }
     }
   },

@@ -22,6 +22,7 @@ type SidebarProps = {
   userName?: string
   schools?: AuthorizedSchool[]
   activeSchoolId?: string
+  canSwitchSchool?: boolean
 }
 
 export function Sidebar({
@@ -33,6 +34,7 @@ export function Sidebar({
   userName,
   schools = [],
   activeSchoolId,
+  canSwitchSchool = true,
 }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const platform = useTranslations('metadata')
@@ -96,6 +98,7 @@ export function Sidebar({
         <SchoolSwitcher
           schools={schools}
           activeSchoolId={activeSchoolId}
+          canSwitchSchool={canSwitchSchool}
           displayName={displayName}
           logoUrl={logoUrl}
           expanded={expanded}

@@ -15,6 +15,7 @@ import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
+import { canSwitchSchool } from '../../../_lib/school-switch'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
 import { DeactivateStudentButton } from '../_components/deactivate-student-button'
 import { EditStudentDialog } from '../_components/edit-student-dialog'
@@ -110,7 +111,11 @@ export default async function StudentDetailPage({ params }: Props) {
   if (resolution.status === 'notFound') notFound()
   if (resolution.status === 'otherSchool')
     return (
-      <SchoolSwitchPrompt schoolId={resolution.school.id} schoolName={resolution.school.name} />
+      <SchoolSwitchPrompt
+        schoolId={resolution.school.id}
+        schoolName={resolution.school.name}
+        canSwitch={await canSwitchSchool()}
+      />
     )
 
   const student = resolution.resource

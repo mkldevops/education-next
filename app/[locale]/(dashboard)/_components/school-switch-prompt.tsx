@@ -10,14 +10,19 @@ import { switchSchoolAction } from '@/actions/school-actions'
 type Props = {
   schoolId: string
   schoolName: string
+  canSwitch: boolean
 }
 
 /**
  * Écran proposé quand un lien profond désigne une ressource d'une autre école
  * autorisée. Le lien partagé n'emporte pas son contexte : plutôt que `notFound()`,
  * on propose la bascule, puis on rafraîchit pour rejouer la page dans la bonne école.
+ *
+ * Drapeau plateforme éteint : l'écran reste, la bascule disparaît. La résolution du
+ * lien profond n'est pas altérée pour autant — c'est elle qui nomme l'école, et la
+ * masquer laisserait l'utilisateur devant un `notFound()` inexplicable.
  */
-export function SchoolSwitchPrompt({ schoolId, schoolName }: Props) {
+export function SchoolSwitchPrompt({ schoolId, schoolName, canSwitch }: Props) {
   const t = useTranslations('schools.deepLink')
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -43,11 +48,15 @@ export function SchoolSwitchPrompt({ schoolId, schoolName }: Props) {
       <h1 className="mt-4 text-xl font-semibold text-gray-900">{t('title')}</h1>
       <p className="mt-2 text-sm text-gray-600">{t('description', { schoolName })}</p>
       {failed && <p className="mt-4 text-sm text-red-600">{t('error')}</p>}
-      <div className="mt-6 flex justify-center">
-        <Button onClick={onSwitch} disabled={pending}>
-          {t('switchTo', { schoolName })}
-        </Button>
-      </div>
+      {canSwitch ? (
+        <div className="mt-6 flex justify-center">
+          <Button onClick={onSwitch} disabled={pending}>
+            {t('switchTo', { schoolName })}
+          </Button>
+        </div>
+      ) : (
+        <p className="mt-6 text-sm text-gray-500">{t('switchDisabled')}</p>
+      )}
     </Card>
   )
 }
