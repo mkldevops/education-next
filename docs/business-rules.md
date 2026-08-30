@@ -74,8 +74,8 @@ which create the schools themselves.
 The `warn` journal was the working list of reads to scope. It is empty, which is what allowed the
 switch to `throw`. `app/[locale]/(dashboard)/__tests__/render-reads.test.tsx` keeps it that way: it
 drives every dashboard page, `generateMetadata` and layout read through its own loader against the
-real database, under `throw`, and asserts the journal stays empty. A read added without a `schoolId`
-filter fails there.
+real database, under `throw`. A read added without a `schoolId` filter fails there, as a
+`TenantScopeError` raised by the call itself.
 
 ### Importing a legacy database
 
@@ -90,6 +90,14 @@ carrying the target `schoolId`, in the purge order of `prisma/seed.ts`, starting
 `PaymentProviderEvent` rows joined to that school's `PaymentTransaction` since that model carries no
 school of its own. `Config` stays out: the script re-imports no configuration, so purging it would
 wipe the school's theme and logos with nothing to put back.
+
+**The import is destructive for the target school, beyond what it re-imports.** The script inserts
+twelve models; the purge covers more, because the extra ones hold foreign keys that would block the
+deletion. `UserFamily`, `Invitation`, `PaymentTransaction` and its `PaymentProviderEvent` rows are
+therefore deleted and never written back: a school that already has data loses its parent-to-family
+links, its outstanding invitations and its payment transactions, permanently. Only `School`,
+`SchoolMember`, `User` and `Config` survive untouched. Run it against a school whose business data
+is expendable.
 
 ### Administering schools
 

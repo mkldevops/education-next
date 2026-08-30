@@ -1,6 +1,5 @@
 // @vitest-environment node
 
-import type { MockInstance } from 'vitest'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PrismaClient } from '@/generated/prisma/client'
 
@@ -285,7 +284,6 @@ it('is never silently skipped in continuous integration', () => {
 
 describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
   let previousMode: string | undefined
-  let warn: MockInstance<typeof console.warn>
 
   beforeAll(async () => {
     raw = createUnguardedArchivedClient()
@@ -301,30 +299,26 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
     await raw.$disconnect()
   }, 90_000)
 
+  // Le mode est épinglé plutôt que laissé au défaut : ce fichier doit être
+  // déterministe quel que soit l'environnement qui le lance. Le défaut lui-même est
+  // verrouillé ailleurs, par `src/lib/__tests__/tenant-guard.test.ts`.
+  //
+  // Sous `throw`, `reportTenantViolation` lève avant d'atteindre son `console.warn` :
+  // le signal d'échec est le `TenantScopeError` remonté par l'appel, il n'y a pas de
+  // journal à inspecter ici.
   beforeEach(() => {
     previousMode = process.env.TENANT_GUARD_MODE
     process.env.TENANT_GUARD_MODE = 'throw'
-    warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     cookieStore.clear()
     sessionUser = null
   })
 
-  // Le mode `throw` transforme une lecture non scopée en rejet, donc l'échec de
-  // l'appel suffit. Le journal reste vérifié : une régression qui remettrait le
-  // mode `warn` rendrait sinon ces tests verts sans rien garantir.
   afterEach(() => {
-    const journal = warn.mock.calls
-      .map((call) => String(call[0]))
-      .filter((message) => message.includes('[tenant-guard]'))
-    warn.mockRestore()
-
     if (previousMode === undefined) {
       delete process.env.TENANT_GUARD_MODE
     } else {
       process.env.TENANT_GUARD_MODE = previousMode
     }
-
-    expect(journal).toEqual([])
   })
 
   const params = () => Promise.resolve({ locale: 'fr' })

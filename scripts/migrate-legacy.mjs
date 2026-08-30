@@ -21,6 +21,11 @@ import { randomUUID } from 'node:crypto'
  * The legacy database holds one school. The target database holds several, so the
  * import is confined to `--school-id`: every row is inserted with it, and the
  * cleanup phase only deletes rows carrying it.
+ *
+ * That cleanup is destructive beyond what this script re-imports. See the header of
+ * `scripts/lib/purge-school.mjs`: `UserFamily`, `Invitation`, `PaymentTransaction` and
+ * `PaymentProviderEvent` are purged and never written back. Target a school whose
+ * business data is expendable.
  */
 import mysql from 'mysql2/promise'
 import pg from 'pg'

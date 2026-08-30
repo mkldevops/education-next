@@ -10,7 +10,15 @@
  * first. `Config` is deliberately absent — the script re-imports no configuration, so
  * purging it would wipe the school's theme and logos with nothing to put back.
  * `School`, `SchoolMember` and `User` are absent too: the script imports into an
- * existing school and touches no account.
+ * existing school and creates no account.
+ *
+ * The list is WIDER than what `migrate-legacy.mjs` re-inserts, and that difference is
+ * destructive. Its twelve INSERTs do not cover `UserFamily`, `Invitation`,
+ * `PaymentTransaction` or `PaymentProviderEvent`; those are purged because they hold
+ * foreign keys that would otherwise block the deletion, and nothing puts them back. A
+ * school that already has data loses its parent-to-family links, its outstanding
+ * invitations and its payment transactions, permanently. Accounts and their
+ * `SchoolMember` rows survive; what tied a parent to a family does not.
  */
 export const SCHOOL_PURGE_TABLES = [
   'Payment',
