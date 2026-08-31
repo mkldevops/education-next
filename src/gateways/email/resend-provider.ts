@@ -15,11 +15,10 @@ export class ResendProvider implements EmailProvider {
   private fromName: string
 
   async send(message: EmailMessage): Promise<SendEmailResult> {
+    const from = this.fromName ? `${this.fromName} <${this.fromEmail}>` : this.fromEmail
+    const to = Array.isArray(message.to) ? message.to[0] : message.to
+
     try {
-      const from = this.fromName ? `${this.fromName} <${this.fromEmail}>` : this.fromEmail
-
-      const to = Array.isArray(message.to) ? message.to[0] : message.to
-
       const response = await this.client.emails.send({
         from,
         to,
@@ -30,12 +29,23 @@ export class ResendProvider implements EmailProvider {
       })
 
       if (response.error) {
-        return mapResendError(response.error)
+        const result = mapResendError(response.error)
+        console.error('[email/resend] rejected', {
+          from,
+          to,
+          subject: message.subject,
+          result,
+          name: response.error.name,
+          message: response.error.message,
+        })
+        return result
       }
 
       return 'OK'
     } catch (error) {
-      return mapResendCatchError(error)
+      const result = mapResendCatchError(error)
+      console.error('[email/resend] failed', { from, to, subject: message.subject, result }, error)
+      return result
     }
   }
 
