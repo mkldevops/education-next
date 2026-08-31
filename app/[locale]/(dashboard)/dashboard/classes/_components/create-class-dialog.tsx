@@ -24,10 +24,16 @@ interface Option {
 interface CreateClassDialogProps {
   levels: Option[]
   periods: Option[]
+  teachers: Option[]
   defaultCapacity?: number
 }
 
-export function CreateClassDialog({ levels, periods, defaultCapacity }: CreateClassDialogProps) {
+export function CreateClassDialog({
+  levels,
+  periods,
+  teachers,
+  defaultCapacity,
+}: CreateClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.create')
 
   return (
@@ -42,13 +48,18 @@ export function CreateClassDialog({ levels, periods, defaultCapacity }: CreateCl
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreateClassForm levels={levels} periods={periods} defaultCapacity={defaultCapacity} />
+        <CreateClassForm
+          levels={levels}
+          periods={periods}
+          teachers={teachers}
+          defaultCapacity={defaultCapacity}
+        />
       </DialogContent>
     </Dialog>
   )
 }
 
-function CreateClassForm({ levels, periods, defaultCapacity }: CreateClassDialogProps) {
+function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
 
@@ -58,6 +69,7 @@ function CreateClassForm({ levels, periods, defaultCapacity }: CreateClassDialog
       capacity: Number(formData.get('capacity')),
       levelId: formData.get('levelId') as string,
       periodId: formData.get('periodId') as string,
+      teacherIds: formData.getAll('teacherIds').map(String),
     })
   )
 
@@ -121,6 +133,24 @@ function CreateClassForm({ levels, periods, defaultCapacity }: CreateClassDialog
                 ))}
               </select>
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="class-teachers">{t('teachers')}</Label>
+            <select
+              id="class-teachers"
+              name="teacherIds"
+              multiple
+              size={Math.min(Math.max(teachers.length, 2), 6)}
+              disabled={isPending || teachers.length === 0}
+              className="min-h-20 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500">{t('teachersHint')}</p>
           </div>
         </div>
       </DialogBody>

@@ -183,6 +183,17 @@ async function seedSchool(label: string, suffix: string) {
       periodId: period.id,
     },
   })
+  const teacher = await raw.teacher.create({
+    data: {
+      schoolId: school.id,
+      firstName: `teacher ${label}`,
+      lastName: 'Render',
+      email: `teacher-${label}-${suffix}@render.test`,
+    },
+  })
+  await raw.classPeriodTeacher.create({
+    data: { schoolId: school.id, classPeriodId: classPeriod.id, teacherId: teacher.id },
+  })
 
   const enrollment = await raw.enrollment.create({
     data: {
@@ -220,7 +231,23 @@ async function seedSchool(label: string, suffix: string) {
     data: [
       { schoolId: school.id, name: 'theme_primary', value: '#123456', valueType: 'COLOR' },
       { schoolId: school.id, name: 'max_students_per_class', value: '20', valueType: 'NUMBER' },
+      {
+        schoolId: school.id,
+        name: 'teacher_expenses_enabled',
+        value: 'true',
+        valueType: 'BOOLEAN',
+      },
     ],
+  })
+  await raw.teacherExpense.create({
+    data: {
+      schoolId: school.id,
+      teacherId: teacher.id,
+      amount: 25,
+      category: 'Goûter',
+      description: `goûter ${label}`,
+      requestedAt: new Date('2026-09-15'),
+    },
   })
   await raw.invitation.create({
     data: {
@@ -245,6 +272,7 @@ async function seedSchool(label: string, suffix: string) {
     level,
     period,
     classPeriod,
+    teacher,
     enrollment,
   }
 }
@@ -255,9 +283,12 @@ async function cleanup(fixture: Fixture) {
   await raw.config.deleteMany({ where: { schoolId } })
   await raw.payment.deleteMany({ where: { schoolId } })
   await raw.paymentTransaction.deleteMany({ where: { schoolId } })
+  await raw.teacherExpense.deleteMany({ where: { schoolId } })
+  await raw.classPeriodTeacher.deleteMany({ where: { schoolId } })
   await raw.classAssignment.deleteMany({ where: { schoolId } })
   await raw.enrollment.deleteMany({ where: { schoolId } })
   await raw.classPeriod.deleteMany({ where: { schoolId } })
+  await raw.teacher.deleteMany({ where: { schoolId } })
   await raw.period.deleteMany({ where: { schoolId } })
   await raw.level.deleteMany({ where: { schoolId } })
   await raw.plan.deleteMany({ where: { schoolId } })
@@ -417,6 +448,12 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
     it('classes', async () => {
       const { default: Page } = await import('../dashboard/classes/page')
       await Page({ params: params() })
+    })
+
+    it('teachers', async () => {
+      const { default: Page, generateMetadata } = await import('../dashboard/teachers/page')
+      await generateMetadata({ params: params(), searchParams: Promise.resolve({}) })
+      await Page({ params: params(), searchParams: Promise.resolve({}) })
     })
 
     it('levels', async () => {

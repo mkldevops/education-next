@@ -169,7 +169,8 @@
       "plans": "Pricing Plans",
       "config": "Configuration",
       "users": "Users",
-      "schools": "Schools"
+      "schools": "Schools",
+      "teachers": "Teachers"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -196,7 +197,8 @@
       "closeMenu": "Close menu",
       "searchPlaceholder": "Search...",
       "account": "My account",
-      "schools": "Schools"
+      "schools": "Schools",
+      "teachers": "Teachers"
     },
     "pages": {
       "families": {
@@ -537,8 +539,11 @@
           "error": "Error creating class",
           "errors": {
             "validationError": "Check the information you entered",
-            "notFound": "Level or period not found"
-          }
+            "notFound": "Level or period not found",
+            "teacherNotFound": "One selected teacher was not found"
+          },
+          "teachers": "Teachers",
+          "teachersHint": "Hold Cmd/Ctrl to select multiple teachers."
         },
         "edit": {
           "title": "Edit Class",
@@ -549,9 +554,12 @@
           "errors": {
             "validationError": "Check the information you entered",
             "notFound": "Class not found",
-            "capacityBelowEnrolled": "Capacity is below the number of students already assigned"
+            "capacityBelowEnrolled": "Capacity is below the number of students already assigned",
+            "teacherNotFound": "One selected teacher was not found"
           }
-        }
+        },
+        "teachers": "Teachers",
+        "noTeachers": "No teacher"
       },
       "enrollments": {
         "title": "Enrollments",
@@ -724,10 +732,12 @@
         "known": {
           "logo": "Logo",
           "favicon": "Favicon",
-          "maxStudentsPerClass": "Maximum students per class"
+          "maxStudentsPerClass": "Maximum students per class",
+          "teacherExpenses": "Teacher expense notes"
         },
         "descriptions": {
-          "maxStudentsPerClass": "Maximum number of students allowed in a class."
+          "maxStudentsPerClass": "Maximum number of students allowed in a class.",
+          "teacherExpenses": "Enables recording teacher expense notes."
         },
         "create": {
           "title": "New Parameter",
@@ -1257,6 +1267,81 @@
           "enrolled": "Assigned students",
           "capacity": "Capacity",
           "seatsLeft": "Seats left"
+        },
+        "teachers": "Teachers",
+        "noTeachers": "No teacher assigned to this class."
+      },
+      "teachers": {
+        "title": "Teachers",
+        "actions": "Actions",
+        "tabs": {
+          "teachers": "Teachers",
+          "expenses": "Expense notes"
+        },
+        "teachers": {
+          "name": "Name",
+          "email": "Email",
+          "phone": "Phone",
+          "classes": "Classes",
+          "classLabel": "{className} ({level} — {period})",
+          "noClasses": "No class",
+          "empty": "No teacher registered"
+        },
+        "create": {
+          "title": "New teacher",
+          "firstName": "First name",
+          "lastName": "Last name",
+          "email": "Email",
+          "phone": "Phone",
+          "cancel": "Cancel",
+          "submit": "Create",
+          "success": "Teacher created",
+          "error": "Error creating teacher",
+          "errors": {
+            "validationError": "Check the information you entered"
+          }
+        },
+        "edit": {
+          "title": "Edit",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Teacher updated",
+          "error": "Error updating teacher",
+          "errors": {
+            "validationError": "Check the information you entered",
+            "notFound": "Teacher not found"
+          }
+        },
+        "expenses": {
+          "teacher": "Teacher",
+          "amount": "Amount",
+          "category": "Category",
+          "description": "Description",
+          "requestedAt": "Requested on",
+          "paidAt": "Paid on",
+          "notPaid": "Unpaid",
+          "empty": "No expense note",
+          "descriptionText": "Expense notes requested by a teacher: food, snacks, goods purchases, supplies, or another expense.",
+          "disabled": "Enable the teacher_expenses_enabled setting to record expense notes.",
+          "create": {
+            "title": "New expense note",
+            "teacher": "Teacher",
+            "amount": "Amount",
+            "category": "Category",
+            "categoryPlaceholder": "Food, snacks, goods purchase...",
+            "description": "Description",
+            "requestedAt": "Requested on",
+            "paidAt": "Paid on",
+            "cancel": "Cancel",
+            "submit": "Create",
+            "success": "Expense note created",
+            "error": "Error creating expense note",
+            "errors": {
+              "validationError": "Check the information you entered",
+              "notFound": "Teacher not found",
+              "notConfigured": "Expense notes are not enabled"
+            }
+          }
         }
       }
     },

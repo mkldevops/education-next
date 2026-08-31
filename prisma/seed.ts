@@ -22,10 +22,13 @@ async function purge() {
   await prisma.payment.deleteMany()
   await prisma.paymentTransaction.deleteMany()
   await prisma.invitation.deleteMany()
+  await prisma.teacherExpense.deleteMany()
+  await prisma.classPeriodTeacher.deleteMany()
   await prisma.classAssignment.deleteMany()
   await prisma.enrollment.deleteMany()
   await prisma.plan.deleteMany()
   await prisma.classPeriod.deleteMany()
+  await prisma.teacher.deleteMany()
   await prisma.level.deleteMany()
   await prisma.period.deleteMany()
   await prisma.phoneNumber.deleteMany()
@@ -113,6 +116,30 @@ async function seedSchoolContent(fixture: SchoolFixture) {
       periodId: currentPeriod.id,
     },
   })
+  const teachers = await prisma.teacher.createManyAndReturn({
+    data: [
+      {
+        schoolId,
+        firstName: 'Amina',
+        lastName: 'Benali',
+        email: `amina.${fixture.familyName.toLowerCase()}@school.test`,
+      },
+      {
+        schoolId,
+        firstName: 'Karim',
+        lastName: 'Foudil',
+        email: `karim.${fixture.familyName.toLowerCase()}@school.test`,
+      },
+    ],
+  })
+  await prisma.classPeriodTeacher.createMany({
+    data: teachers.map((teacher) => ({
+      schoolId,
+      classPeriodId: classCp.id,
+      teacherId: teacher.id,
+    })),
+  })
+
   await prisma.classPeriod.create({
     data: {
       schoolId,
@@ -221,6 +248,12 @@ async function seedSchoolContent(fixture: SchoolFixture) {
       { schoolId, name: 'theme_primary', value: fixture.themePrimary, valueType: 'COLOR' },
       { schoolId, name: 'logo_url', value: '', valueType: 'TEXT' },
       { schoolId, name: 'favicon_url', value: '', valueType: 'TEXT' },
+      {
+        schoolId,
+        name: 'teacher_expenses_enabled',
+        value: 'false',
+        valueType: 'BOOLEAN',
+      },
     ],
   })
 

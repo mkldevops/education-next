@@ -22,14 +22,17 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 | Assignment | `ClassAssignment` | A student's seat in a class, `endAt: null` while it holds. |
 | Enrollment | `Enrollment` | A student registered on a plan. Carries the money. |
 | Plan | `Plan` | A price list entry (Mi-temps, Temps plein…), priced per school. |
+| Teacher | `Teacher` | A teacher available to one school. |
+| Class teacher | `ClassPeriodTeacher` | A teacher assigned to one class for one period. |
+| Teacher expense | `TeacherExpense` | A generic expense note for a teacher, such as food, snacks, supplies, goods purchases, or another reimbursable item. |
 | Payment | `Payment` | Money received, always attached to one enrollment. |
 
 ## Multi-school
 
-Every business row belongs to exactly one `School`. Sixteen models carry `schoolId NOT NULL`:
+Every business row belongs to exactly one `School`. Nineteen models carry `schoolId NOT NULL`:
 `Family`, `UserFamily`, `Person`, `FamilyPerson`, `Student`, `PhoneNumber`, `Config`, `Level`,
-`Period`, `ClassPeriod`, `Enrollment`, `ClassAssignment`, `Payment`, `PaymentTransaction`, `Plan`,
-`Invitation`.
+`Period`, `ClassPeriod`, `ClassPeriodTeacher`, `Enrollment`, `ClassAssignment`, `Payment`,
+`PaymentTransaction`, `Plan`, `Invitation`, `Teacher`, `TeacherExpense`.
 
 `PaymentProviderEvent` is the one business model left unscoped, deliberately: its
 `paymentTransactionId` is nullable, so an unmatched provider event has no derivable school. It is a
@@ -334,6 +337,10 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
 - **Capacity cannot drop below current occupancy** → `capacityBelowEnrolled`.
 - **Occupancy counts** assignments with `endAt: null` whose enrollment is `PENDING`, `ACTIVE` or
   `COMPLETED`. Cancelled enrollments free their seat; completed ones do not.
+- **Teachers are many-to-many.** A `ClassPeriod` may have no teacher yet, one teacher, or several
+  teachers through `ClassPeriodTeacher`. Teacher assignments are scoped by the same `schoolId` as the
+  class and the teacher; cross-school class staffing is rejected by composite foreign keys and by the
+  class use cases.
 
 ## Enrollments
 
@@ -479,9 +486,11 @@ one school**.
   resolves the active row with `findFirst`, then updates it by **primary key**, keeping `schoolId` in
   the filter for the tenant guard. The other partial uniques (`Level`, `Period`, `Plan`) are never
   written through: those gateways address rows by `id_schoolId`, which is a total unique.
-- Consumed today: `max_students_per_class` (default class capacity), `logo_url` and `favicon_url`
-  (`src/lib/branding-config.ts`), and `theme_primary`, `theme_primary_hover`, `theme_primary_light`,
-  `theme_background` (`src/components/theme-provider.tsx`).
+- Consumed today: `max_students_per_class` (default class capacity),
+  `teacher_expenses_enabled` (enables generic teacher expense notes,
+  `src/lib/teacher-expense-config.ts`), `logo_url` and `favicon_url`
+  (`src/lib/branding-config.ts`), and `theme_primary`, `theme_primary_hover`,
+  `theme_primary_light`, `theme_background` (`src/components/theme-provider.tsx`).
 - **The school name is no longer a `Config` entry.** It lives on `School.name`, the single source of
   truth; keeping the old `school_name` key would have let two screens edit two different names. The
   migration copies it over and deletes the key.

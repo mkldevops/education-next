@@ -15,15 +15,22 @@ import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { updateClassPeriodAction } from '../../../_lib/class-period-actions'
 
+interface TeacherOption {
+  id: string
+  name: string
+}
+
 interface EditClassDialogProps {
   classItem: {
     id: string
     name: string
     capacity: number
+    teacherIds: string[]
   }
+  teachers: TeacherOption[]
 }
 
-export function EditClassDialog({ classItem }: EditClassDialogProps) {
+export function EditClassDialog({ classItem, teachers }: EditClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.edit')
 
   return (
@@ -37,13 +44,13 @@ export function EditClassDialog({ classItem }: EditClassDialogProps) {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <EditClassForm classItem={classItem} />
+        <EditClassForm classItem={classItem} teachers={teachers} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function EditClassForm({ classItem }: EditClassDialogProps) {
+function EditClassForm({ classItem, teachers }: EditClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.edit')
   const tCreate = useTranslations('dashboard.pages.classes.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
@@ -52,6 +59,7 @@ function EditClassForm({ classItem }: EditClassDialogProps) {
     updateClassPeriodAction(classItem.id, {
       name: formData.get('name') as string,
       capacity: Number(formData.get('capacity')),
+      teacherIds: formData.getAll('teacherIds').map(String),
     })
   )
 
@@ -81,6 +89,25 @@ function EditClassForm({ classItem }: EditClassDialogProps) {
               required
               disabled={isPending}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-class-teachers">{tCreate('teachers')}</Label>
+            <select
+              id="edit-class-teachers"
+              name="teacherIds"
+              multiple
+              size={Math.min(Math.max(teachers.length, 2), 6)}
+              defaultValue={classItem.teacherIds}
+              disabled={isPending || teachers.length === 0}
+              className="min-h-20 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500">{tCreate('teachersHint')}</p>
           </div>
         </div>
       </DialogBody>

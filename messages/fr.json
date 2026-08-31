@@ -169,7 +169,8 @@
       "plans": "Plans tarifaires",
       "config": "Configuration",
       "users": "Utilisateurs",
-      "schools": "Écoles"
+      "schools": "Écoles",
+      "teachers": "Enseignants"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -196,7 +197,8 @@
       "closeMenu": "Fermer le menu",
       "searchPlaceholder": "Rechercher...",
       "account": "Mon compte",
-      "schools": "Écoles"
+      "schools": "Écoles",
+      "teachers": "Enseignants"
     },
     "pages": {
       "families": {
@@ -537,8 +539,11 @@
           "error": "Erreur lors de la création",
           "errors": {
             "validationError": "Vérifiez les informations saisies",
-            "notFound": "Niveau ou période introuvable"
-          }
+            "notFound": "Niveau ou période introuvable",
+            "teacherNotFound": "Un enseignant sélectionné est introuvable"
+          },
+          "teachers": "Enseignants",
+          "teachersHint": "Maintenez Cmd/Ctrl pour sélectionner plusieurs enseignants."
         },
         "edit": {
           "title": "Modifier la classe",
@@ -549,9 +554,12 @@
           "errors": {
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Classe introuvable",
-            "capacityBelowEnrolled": "La capacité est inférieure au nombre d'élèves déjà affectés"
+            "capacityBelowEnrolled": "La capacité est inférieure au nombre d'élèves déjà affectés",
+            "teacherNotFound": "Un enseignant sélectionné est introuvable"
           }
-        }
+        },
+        "teachers": "Enseignants",
+        "noTeachers": "Aucun enseignant"
       },
       "enrollments": {
         "title": "Inscriptions",
@@ -724,10 +732,12 @@
         "known": {
           "logo": "Logo",
           "favicon": "Favicon",
-          "maxStudentsPerClass": "Élèves maximum par classe"
+          "maxStudentsPerClass": "Élèves maximum par classe",
+          "teacherExpenses": "Notes de frais enseignants"
         },
         "descriptions": {
-          "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe."
+          "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe.",
+          "teacherExpenses": "Active la saisie des notes de frais des enseignants."
         },
         "create": {
           "title": "Nouveau paramètre",
@@ -1257,6 +1267,81 @@
           "enrolled": "Élèves affectés",
           "capacity": "Capacité",
           "seatsLeft": "Places restantes"
+        },
+        "teachers": "Enseignants",
+        "noTeachers": "Aucun enseignant affecté à cette classe."
+      },
+      "teachers": {
+        "title": "Enseignants",
+        "actions": "Actions",
+        "tabs": {
+          "teachers": "Enseignants",
+          "expenses": "Notes de frais"
+        },
+        "teachers": {
+          "name": "Nom",
+          "email": "Email",
+          "phone": "Téléphone",
+          "classes": "Classes",
+          "classLabel": "{className} ({level} — {period})",
+          "noClasses": "Aucune classe",
+          "empty": "Aucun enseignant enregistré"
+        },
+        "create": {
+          "title": "Nouvel enseignant",
+          "firstName": "Prénom",
+          "lastName": "Nom",
+          "email": "Email",
+          "phone": "Téléphone",
+          "cancel": "Annuler",
+          "submit": "Créer",
+          "success": "Enseignant créé",
+          "error": "Erreur lors de la création",
+          "errors": {
+            "validationError": "Vérifiez les informations saisies"
+          }
+        },
+        "edit": {
+          "title": "Modifier",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Enseignant mis à jour",
+          "error": "Erreur lors de la mise à jour",
+          "errors": {
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Enseignant introuvable"
+          }
+        },
+        "expenses": {
+          "teacher": "Enseignant",
+          "amount": "Montant",
+          "category": "Nature",
+          "description": "Motif",
+          "requestedAt": "Demandé le",
+          "paidAt": "Réglé le",
+          "notPaid": "Non réglé",
+          "empty": "Aucune note de frais",
+          "descriptionText": "Notes de frais demandées par un enseignant : nourriture, goûter, achat de biens, matériel ou autre dépense.",
+          "disabled": "Activez la configuration teacher_expenses_enabled pour saisir les notes de frais.",
+          "create": {
+            "title": "Nouvelle note de frais",
+            "teacher": "Enseignant",
+            "amount": "Montant",
+            "category": "Nature",
+            "categoryPlaceholder": "Nourriture, goûter, achat de biens...",
+            "description": "Motif",
+            "requestedAt": "Demandé le",
+            "paidAt": "Réglé le",
+            "cancel": "Annuler",
+            "submit": "Créer",
+            "success": "Note de frais créée",
+            "error": "Erreur lors de la création",
+            "errors": {
+              "validationError": "Vérifiez les informations saisies",
+              "notFound": "Enseignant introuvable",
+              "notConfigured": "Les notes de frais ne sont pas activées"
+            }
+          }
         }
       }
     },
