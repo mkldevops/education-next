@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Settings,
   Shield,
+  ShieldCheck,
   Users,
   Wallet,
   Wrench,
@@ -41,6 +42,7 @@ const configItems: NavItemConfig[] = [
   { href: '/dashboard/config', icon: Wrench, key: 'config', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/users', icon: Shield, key: 'users', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/schools', icon: Building2, key: 'schools', platformOnly: true },
+  { href: '/dashboard/super-admins', icon: ShieldCheck, key: 'superAdmins', platformOnly: true },
 ]
 
 const bottomItems: NavItemConfig[] = [

@@ -169,7 +169,8 @@
       "plans": "Pricing Plans",
       "config": "Configuration",
       "users": "Users",
-      "schools": "Schools"
+      "schools": "Schools",
+      "superAdmins": "Super admins"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -196,7 +197,8 @@
       "closeMenu": "Close menu",
       "searchPlaceholder": "Search...",
       "account": "My account",
-      "schools": "Schools"
+      "schools": "Schools",
+      "superAdmins": "Super admins"
     },
     "pages": {
       "families": {
@@ -1242,6 +1244,19 @@
         "removeMemberWarning": "This member will lose access to this school's data. Their platform account will not be deleted.",
         "memberRemoved": "Member removed from the school",
         "close": "Close"
+      },
+      "superAdmins": {
+        "title": "Super administrators",
+        "description": "{count} active super administrator(s) on the platform.",
+        "name": "Name",
+        "schools": "Schools",
+        "allSchools": "All schools",
+        "lastLogin": "Last login",
+        "createdAt": "Created on",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "noSuperAdmins": "No super administrator"
       },
       "classDetails": {
         "title": "Class Details",
