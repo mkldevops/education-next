@@ -170,7 +170,8 @@
       "config": "Configuration",
       "users": "Utilisateurs",
       "schools": "Écoles",
-      "teachers": "Enseignants"
+      "teachers": "Enseignants",
+      "superAdmins": "Super-admins"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -198,7 +199,8 @@
       "searchPlaceholder": "Rechercher...",
       "account": "Mon compte",
       "schools": "Écoles",
-      "teachers": "Enseignants"
+      "teachers": "Enseignants",
+      "superAdmins": "Super-admins"
     },
     "pages": {
       "families": {
@@ -1252,6 +1254,19 @@
         "removeMemberWarning": "Ce membre perdra l'accès aux données de cette école. Son compte plateforme ne sera pas supprimé.",
         "memberRemoved": "Membre retiré de l’école",
         "close": "Fermer"
+      },
+      "superAdmins": {
+        "title": "Super-administrateurs",
+        "description": "{count} super-administrateur(s) actif(s) sur la plateforme.",
+        "name": "Nom",
+        "schools": "Écoles",
+        "allSchools": "Toutes les écoles",
+        "lastLogin": "Dernière connexion",
+        "createdAt": "Créé le",
+        "status": "Statut",
+        "active": "Actif",
+        "inactive": "Inactif",
+        "noSuperAdmins": "Aucun super-administrateur"
       },
       "classDetails": {
         "title": "Détail de la classe",

@@ -35,6 +35,30 @@ export const userGateway = {
     dbArchived.user.count({ where: { isSuperAdmin: true, isActive: true } }),
 
   /**
+   * Lecture plateforme, volontairement hors de toute école : un super-admin ne possède
+   * en général aucune ligne `SchoolMember` et reste donc invisible aux listes scopées.
+   * `dbArchived` fait aussi apparaître les comptes désactivés, qu'une revue des accès
+   * doit pouvoir constater.
+   */
+  listSuperAdmins: () =>
+    dbArchived.user.findMany({
+      where: { isSuperAdmin: true },
+      select: {
+        ...listSelect,
+        schoolMemberships: {
+          select: { school: { select: { id: true, name: true } } },
+          orderBy: { school: { name: 'asc' } },
+        },
+        sessions: {
+          select: { createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: [{ isActive: 'desc' }, { email: 'asc' }],
+    }),
+
+  /**
    * `schoolId` est requis, et il n'est pas décoratif : sans lui, tout administrateur
    * d'école lisait par les relations imbriquées les familles, les enfants et les
    * invitations des **autres** écoles d'un compte partagé. La garde tenant ne peut pas
