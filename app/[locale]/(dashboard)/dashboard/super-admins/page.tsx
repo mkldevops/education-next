@@ -42,15 +42,22 @@ export default async function SuperAdminsPage({ params }: Props) {
       ),
     },
     {
-      key: 'schools',
-      header: t('schools'),
-      className: 'text-gray-700',
-      render: (user) =>
-        user.schoolMemberships.length > 0 ? (
-          user.schoolMemberships.map((membership) => membership.school.name).join(', ')
-        ) : (
-          <span className="text-gray-400">{t('allSchools')}</span>
-        ),
+      key: 'scope',
+      header: t('scope'),
+      render: (user) => (
+        <div>
+          <p className="text-gray-700">{t('allSchools')}</p>
+          {user.schoolMemberships.length > 0 && (
+            <p className="text-xs text-gray-400">
+              {t('alsoMember', {
+                schools: user.schoolMemberships
+                  .map((membership) => membership.school.name)
+                  .join(', '),
+              })}
+            </p>
+          )}
+        </div>
+      ),
     },
     {
       key: 'lastLogin',
