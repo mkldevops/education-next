@@ -34,7 +34,9 @@ export default async function SuperAdminsPage({ params }: Props) {
       header: t('name'),
       render: (user) => (
         <div>
-          <p className="font-medium text-gray-900">{user.name || '-'}</p>
+          <p className="font-medium text-gray-900">
+            {user.name || <span className="text-gray-300">&mdash;</span>}
+          </p>
           <p className="text-xs text-gray-500">{user.email}</p>
         </div>
       ),

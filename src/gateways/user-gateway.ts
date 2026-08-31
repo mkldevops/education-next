@@ -46,7 +46,7 @@ export const userGateway = {
       select: {
         ...listSelect,
         schoolMemberships: {
-          select: { role: true, school: { select: { id: true, name: true } } },
+          select: { school: { select: { id: true, name: true } } },
           orderBy: { school: { name: 'asc' } },
         },
         sessions: {
