@@ -31,7 +31,7 @@ export default async function ClassesPage({ params }: Props) {
   const selectedPeriod = await getSelectedPeriod(schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
-  const [levels, periods, maxStudentsConfig] = await Promise.all([
+  const [levels, periods, maxStudentsConfig, teachers] = await Promise.all([
     db.level.findMany({
       where: { schoolId, isActive: true },
       select: { id: true, name: true },
@@ -45,6 +45,11 @@ export default async function ClassesPage({ params }: Props) {
     db.config.findFirst({
       where: { schoolId, name: 'max_students_per_class', isActive: true },
       select: { value: true },
+    }),
+    db.teacher.findMany({
+      where: { schoolId, isActive: true },
+      select: { id: true, firstName: true, lastName: true },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     }),
   ])
 
@@ -69,9 +74,17 @@ export default async function ClassesPage({ params }: Props) {
           enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
         },
       },
+      teachers: {
+        where: { teacher: { isActive: true } },
+        include: { teacher: true },
+      },
     },
     orderBy: { name: 'asc' },
   })
+  const teacherOptions = teachers.map((teacher) => ({
+    id: teacher.id,
+    name: `${teacher.lastName} ${teacher.firstName}`,
+  }))
 
   const columns: Column<(typeof classes)[0]>[] = [
     {
@@ -99,6 +112,17 @@ export default async function ClassesPage({ params }: Props) {
       render: (item) => item.period.name,
     },
     {
+      key: 'teachers',
+      header: t('teachers'),
+      className: 'text-gray-700',
+      render: (item) =>
+        item.teachers.length > 0
+          ? item.teachers
+              .map(({ teacher }) => `${teacher.lastName} ${teacher.firstName}`)
+              .join(', ')
+          : t('noTeachers'),
+    },
+    {
       key: 'capacity',
       header: t('capacity'),
       className: 'text-gray-700',
@@ -115,7 +139,9 @@ export default async function ClassesPage({ params }: Props) {
             id: item.id,
             name: item.name,
             capacity: item.capacity,
+            teacherIds: item.teachers.map(({ teacherId }) => teacherId),
           }}
+          teachers={teacherOptions}
         />
       ),
     },
@@ -132,7 +158,12 @@ export default async function ClassesPage({ params }: Props) {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {levels.length > 0 && periods.length > 0 && (
-          <CreateClassDialog levels={levels} periods={periods} defaultCapacity={defaultCapacity} />
+          <CreateClassDialog
+            levels={levels}
+            periods={periods}
+            teachers={teacherOptions}
+            defaultCapacity={defaultCapacity}
+          />
         )}
       </div>
       <Card className="rounded border border-gray-200">

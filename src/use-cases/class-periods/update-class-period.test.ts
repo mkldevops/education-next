@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { updateClassPeriod } from './update-class-period'
 
 type ClassPeriodGw = Parameters<typeof updateClassPeriod>[1]
+type TeacherGw = Parameters<typeof updateClassPeriod>[2]
 
 const schoolId = '00000000-0000-0000-0000-000000000001'
 
@@ -41,12 +42,22 @@ class ClassPeriodGatewaySpy {
   }
 }
 
+class TeacherGatewaySpy {
+  teachersToReturn: Array<{ id: string }> = []
+
+  async findByIds() {
+    return this.teachersToReturn
+  }
+}
+
 describe('updateClassPeriod', () => {
   let gateway: ClassPeriodGatewaySpy
+  let teacherGateway: TeacherGatewaySpy
   const classPeriodId1 = '123e4567-e89b-12d3-a456-426614174001'
 
   beforeEach(() => {
     gateway = new ClassPeriodGatewaySpy()
+    teacherGateway = new TeacherGatewaySpy()
     gateway.classPeriodsByIdMap = {
       [classPeriodId1]: {
         id: classPeriodId1,
@@ -92,6 +103,25 @@ describe('updateClassPeriod', () => {
 
     // THEN
     expect(result).toBe('capacityBelowEnrolled')
+  })
+
+  it('fails when one selected teacher does not belong to the school', async () => {
+    // GIVEN
+    const input = {
+      schoolId,
+      id: classPeriodId1,
+      teacherIds: ['123e4567-e89b-12d3-a456-426614174010', '123e4567-e89b-12d3-a456-426614174011'],
+    }
+
+    // WHEN
+    const result = await updateClassPeriod(
+      input,
+      gateway as unknown as ClassPeriodGw,
+      teacherGateway as unknown as TeacherGw
+    )
+
+    // THEN
+    expect(result).toBe('teacherNotFound')
   })
 
   it('updates class period name only', async () => {
@@ -156,6 +186,31 @@ describe('updateClassPeriod', () => {
 
     // THEN
     expect(result).toHaveProperty('id', classPeriodId1)
+  })
+
+  it('replaces the class teachers when teacher ids are supplied', async () => {
+    // GIVEN
+    const teacherIds = [
+      '123e4567-e89b-12d3-a456-426614174010',
+      '123e4567-e89b-12d3-a456-426614174011',
+    ]
+    teacherGateway.teachersToReturn = teacherIds.map((id) => ({ id }))
+    const input = {
+      schoolId,
+      id: classPeriodId1,
+      teacherIds,
+    }
+
+    // WHEN
+    const result = await updateClassPeriod(
+      input,
+      gateway as unknown as ClassPeriodGw,
+      teacherGateway as unknown as TeacherGw
+    )
+
+    // THEN
+    expect(result).toHaveProperty('id', classPeriodId1)
+    expect(gateway.updatedData).toMatchObject({ teacherIds })
   })
 
   it('excludes id and schoolId from update data sent to gateway', async () => {

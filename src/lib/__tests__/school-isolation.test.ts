@@ -92,6 +92,16 @@ async function seedSchool(label: string, suffix: string) {
       periodId: period.id,
     },
   })
+  const teacher = await raw.teacher.create({
+    data: {
+      schoolId: school.id,
+      firstName: `teacher ${label}`,
+      lastName: 'Iso',
+    },
+  })
+  const classPeriodTeacher = await raw.classPeriodTeacher.create({
+    data: { schoolId: school.id, classPeriodId: classPeriod.id, teacherId: teacher.id },
+  })
 
   const enrollment = await raw.enrollment.create({
     data: {
@@ -126,6 +136,16 @@ async function seedSchool(label: string, suffix: string) {
       paidAt: new Date(),
     },
   })
+  const teacherExpense = await raw.teacherExpense.create({
+    data: {
+      schoolId: school.id,
+      teacherId: teacher.id,
+      amount: 25,
+      category: 'Goûter',
+      description: `goûter ${label}`,
+      requestedAt: new Date('2026-09-15'),
+    },
+  })
 
   return {
     school,
@@ -141,10 +161,13 @@ async function seedSchool(label: string, suffix: string) {
     level,
     period,
     classPeriod,
+    teacher,
+    classPeriodTeacher,
     enrollment,
     classAssignment,
     paymentTransaction,
     payment,
+    teacherExpense,
   }
 }
 
@@ -152,9 +175,12 @@ async function cleanup(fixture: Fixture) {
   const schoolId = fixture.school.id
   await raw.payment.deleteMany({ where: { schoolId } })
   await raw.paymentTransaction.deleteMany({ where: { schoolId } })
+  await raw.teacherExpense.deleteMany({ where: { schoolId } })
+  await raw.classPeriodTeacher.deleteMany({ where: { schoolId } })
   await raw.classAssignment.deleteMany({ where: { schoolId } })
   await raw.enrollment.deleteMany({ where: { schoolId } })
   await raw.classPeriod.deleteMany({ where: { schoolId } })
+  await raw.teacher.deleteMany({ where: { schoolId } })
   await raw.period.deleteMany({ where: { schoolId } })
   await raw.level.deleteMany({ where: { schoolId } })
   await raw.plan.deleteMany({ where: { schoolId } })
@@ -225,6 +251,19 @@ describe.skipIf(!databaseUrl)('isolation inter-écoles sur base réelle', () => 
       ).resolves.not.toBeNull()
       await expect(
         db.paymentTransaction.findFirst({ where: { id: b.paymentTransaction.id, schoolId } })
+      ).resolves.not.toBeNull()
+      await expect(
+        db.teacher.findFirst({ where: { id: b.teacher.id, schoolId } })
+      ).resolves.not.toBeNull()
+      await expect(
+        db.classPeriodTeacher.findFirst({
+          where: { classPeriodId: b.classPeriod.id, teacherId: b.teacher.id, schoolId },
+        })
+      ).resolves.not.toBeNull()
+      await expect(
+        db.teacherExpense.findFirst({
+          where: { id: b.teacherExpense.id, schoolId },
+        })
       ).resolves.not.toBeNull()
     })
 
@@ -441,6 +480,48 @@ describe.skipIf(!databaseUrl)('isolation inter-écoles sur base réelle', () => 
         where: { id: b.paymentTransaction.id },
       })
       expect(intact.status).toBe('PENDING')
+    })
+  })
+
+  describe('Teacher', () => {
+    it("ne rend pas l'enseignant de B depuis A", async () => {
+      const found = await db.teacher.findFirst({
+        where: { id: b.teacher.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
+    })
+
+    it("n'écrit pas l'enseignant de B depuis A", async () => {
+      const { count } = await db.teacher.updateMany({
+        where: { id: b.teacher.id, schoolId: a.school.id },
+        data: { lastName: 'compromis' },
+      })
+      expect(count).toBe(0)
+
+      const intact = await raw.teacher.findUniqueOrThrow({ where: { id: b.teacher.id } })
+      expect(intact.lastName).toBe(b.teacher.lastName)
+    })
+  })
+
+  describe('TeacherExpense', () => {
+    it('ne rend pas la note de frais de B depuis A', async () => {
+      const found = await db.teacherExpense.findFirst({
+        where: { id: b.teacherExpense.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
+    })
+
+    it("n'écrit pas la note de frais de B depuis A", async () => {
+      const { count } = await db.teacherExpense.updateMany({
+        where: { id: b.teacherExpense.id, schoolId: a.school.id },
+        data: { description: 'compromis' },
+      })
+      expect(count).toBe(0)
+
+      const intact = await raw.teacherExpense.findUniqueOrThrow({
+        where: { id: b.teacherExpense.id },
+      })
+      expect(intact.description).toBe(b.teacherExpense.description)
     })
   })
 

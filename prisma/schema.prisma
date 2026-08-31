@@ -94,6 +94,9 @@ model School {
   paymentTransactions PaymentTransaction[]
   plans               Plan[]
   invitations         Invitation[]
+  teachers            Teacher[]
+  classPeriodTeachers ClassPeriodTeacher[]
+  teacherExpenses     TeacherExpense[]
 }
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
@@ -382,15 +385,73 @@ model ClassPeriod {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school           School            @relation(fields: [schoolId], references: [id])
-  level            Level             @relation(fields: [levelId, schoolId], references: [id, schoolId], onDelete: Restrict)
-  period           Period            @relation(fields: [periodId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  school           School               @relation(fields: [schoolId], references: [id])
+  level            Level                @relation(fields: [levelId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  period           Period               @relation(fields: [periodId, schoolId], references: [id, schoolId], onDelete: Restrict)
   classAssignments ClassAssignment[]
+  teachers         ClassPeriodTeacher[]
 
   @@unique([id, schoolId])
   @@index([levelId])
   @@index([periodId])
   @@index([schoolId])
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  schoolId  String
+  firstName String   @db.VarChar(250)
+  lastName  String   @db.VarChar(250)
+  email     String?  @db.VarChar(250)
+  phone     String?  @db.VarChar(20)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school       School               @relation(fields: [schoolId], references: [id])
+  classPeriods ClassPeriodTeacher[]
+  expenses     TeacherExpense[]
+
+  @@unique([id, schoolId])
+  @@index([schoolId])
+  @@index([schoolId, lastName, firstName])
+}
+
+model ClassPeriodTeacher {
+  schoolId      String
+  classPeriodId String
+  teacherId     String
+  assignedAt    DateTime @default(now())
+
+  school      School      @relation(fields: [schoolId], references: [id])
+  classPeriod ClassPeriod @relation(fields: [classPeriodId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  teacher     Teacher     @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Cascade)
+
+  @@id([classPeriodId, teacherId])
+  @@index([teacherId])
+  @@index([schoolId])
+}
+
+model TeacherExpense {
+  id          String    @id @default(uuid())
+  schoolId    String
+  teacherId   String
+  amount      Decimal   @db.Decimal(10, 2)
+  category    String    @db.VarChar(100)
+  description String    @db.VarChar(250)
+  requestedAt DateTime  @default(now())
+  paidAt      DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  school  School  @relation(fields: [schoolId], references: [id])
+  teacher Teacher @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Restrict)
+
+  @@unique([id, schoolId])
+  @@index([teacherId])
+  @@index([schoolId])
+  @@index([requestedAt])
 }
 
 model Enrollment {

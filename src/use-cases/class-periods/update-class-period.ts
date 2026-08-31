@@ -1,15 +1,20 @@
 import type { z } from 'zod'
 import { validateCapacityUpdate } from '@/domain/class-period'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
+import { teacherGateway } from '@/gateways/teacher-gateway'
 import { updateClassPeriodSchema } from './schemas'
 
 type Input = z.infer<typeof updateClassPeriodSchema>
 
-export async function updateClassPeriod(input: Input, classPeriodGw = classPeriodGateway) {
+export async function updateClassPeriod(
+  input: Input,
+  classPeriodGw = classPeriodGateway,
+  teacherGw = teacherGateway
+) {
   const parsed = updateClassPeriodSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const { schoolId, id, ...updateData } = parsed.data
+  const { schoolId, id, teacherIds, ...updateData } = parsed.data
 
   const classPeriod = await classPeriodGw.findById(schoolId, id)
   if (!classPeriod) return 'notFound' as const
@@ -20,6 +25,12 @@ export async function updateClassPeriod(input: Input, classPeriodGw = classPerio
     if (capacityCheck !== 'OK') return capacityCheck
   }
 
-  const updated = await classPeriodGw.update(schoolId, id, updateData)
+  if (teacherIds !== undefined && teacherIds.length > 0) {
+    const teachers = await teacherGw.findByIds(schoolId, teacherIds)
+    if (teachers.length !== teacherIds.length) return 'teacherNotFound' as const
+  }
+
+  const data = teacherIds === undefined ? updateData : { ...updateData, teacherIds }
+  const updated = await classPeriodGw.update(schoolId, id, data)
   return updated
 }

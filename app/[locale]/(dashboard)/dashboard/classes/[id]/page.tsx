@@ -47,6 +47,10 @@ const resolveClass = cache((id: string) =>
               },
             },
           },
+          teachers: {
+            where: { teacher: { isActive: true } },
+            include: { teacher: true },
+          },
         },
       }),
   })
@@ -80,6 +84,19 @@ export default async function ClassDetailPage({ params }: Props) {
     )
 
   const classPeriod = resolution.resource
+  const teachers = await db.teacher.findMany({
+    where: { schoolId: classPeriod.schoolId, isActive: true },
+    select: { id: true, firstName: true, lastName: true },
+    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+  })
+  const teacherOptions = teachers.map((teacher) => ({
+    id: teacher.id,
+    name: `${teacher.lastName} ${teacher.firstName}`,
+  }))
+  const assignedTeachers = classPeriod.teachers.map(({ teacher }) => ({
+    id: teacher.id,
+    name: `${teacher.lastName} ${teacher.firstName}`,
+  }))
 
   const roster = classPeriod.classAssignments
     .map((assignment) => ({
@@ -130,10 +147,30 @@ export default async function ClassDetailPage({ params }: Props) {
               id: classPeriod.id,
               name: classPeriod.name,
               capacity: classPeriod.capacity,
+              teacherIds: classPeriod.teachers.map(({ teacherId }) => teacherId),
             }}
+            teachers={teacherOptions}
           />
         </div>
       </div>
+
+      <Card className="p-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{t('teachers')}</p>
+        {assignedTeachers.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {assignedTeachers.map((teacher) => (
+              <span
+                key={teacher.id}
+                className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800"
+              >
+                {teacher.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-gray-500">{t('noTeachers')}</p>
+        )}
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-3">
         {kpis.map((kpi) => (

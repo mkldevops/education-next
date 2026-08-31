@@ -10,8 +10,8 @@ import type {
 import { updateClassPeriod } from '@/use-cases/class-periods/update-class-period'
 import { requireSchoolAdmin } from './auth-helper'
 
-type CreateClassPeriodInput = z.infer<typeof createClassPeriodSchema>
-type UpdateClassPeriodInput = z.infer<typeof updateClassPeriodSchema>
+type CreateClassPeriodInput = z.input<typeof createClassPeriodSchema>
+type UpdateClassPeriodInput = z.input<typeof updateClassPeriodSchema>
 
 // `schoolId` et `id` sont posés APRÈS le spread : une Server Action est un endpoint
 // HTTP, donc `data` est un payload arbitraire et l'`Omit` du type ne contraint que
@@ -32,5 +32,6 @@ export async function updateClassPeriodAction(
   const result = await updateClassPeriod({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/classes')
+  revalidatePath(`/dashboard/classes/${id}`)
   return result
 }

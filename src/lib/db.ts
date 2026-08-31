@@ -16,6 +16,8 @@ const modelsWithIsActive: Record<string, true> = {
   Level: true,
   Period: true,
   ClassPeriod: true,
+  Teacher: true,
+  TeacherExpense: true,
   Enrollment: true,
   Payment: true,
   Plan: true,

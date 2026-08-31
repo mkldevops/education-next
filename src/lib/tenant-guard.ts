@@ -16,7 +16,7 @@
  */
 
 /**
- * Les 16 modèles portant un `schoolId`. `SchoolMember` en est volontairement absent :
+ * Les 19 modèles portant un `schoolId`. `SchoolMember` en est volontairement absent :
  * c'est la table de découverte, lue par `userId` avant qu'une école soit connue.
  */
 const TENANT_SCOPED_MODELS: Record<string, true> = {
@@ -36,6 +36,9 @@ const TENANT_SCOPED_MODELS: Record<string, true> = {
   PaymentTransaction: true,
   Plan: true,
   Invitation: true,
+  Teacher: true,
+  ClassPeriodTeacher: true,
+  TeacherExpense: true,
 }
 
 const WHERE_OPERATIONS: Record<string, true> = {

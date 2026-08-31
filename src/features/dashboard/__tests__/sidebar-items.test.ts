@@ -14,7 +14,15 @@ describe('resolveNavItems', () => {
   it('exposes configuration to an admin of the school, minus the platform pages', () => {
     const items = resolveNavItems({ role: 'ADMIN', isSuperAdmin: false })
 
-    expect(keys(items.config)).toEqual(['periods', 'levels', 'classes', 'plans', 'config', 'users'])
+    expect(keys(items.config)).toEqual([
+      'periods',
+      'levels',
+      'classes',
+      'teachers',
+      'plans',
+      'config',
+      'users',
+    ])
     expect(keys(items.config)).not.toContain('schools')
     expect(keys(items.config)).not.toContain('superAdmins')
   })
