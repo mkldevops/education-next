@@ -32,6 +32,20 @@ describe('createTeacher', () => {
     expect(result).toBe('validationError')
   })
 
+  it('fails validation when email exceeds the storage limit', async () => {
+    const result = await createTeacher(
+      {
+        schoolId,
+        firstName: 'Amina',
+        lastName: 'Benali',
+        email: `${'a'.repeat(245)}@x.test`,
+      },
+      gateway as unknown as TeacherGw
+    )
+
+    expect(result).toBe('validationError')
+  })
+
   it('creates a teacher scoped to the school', async () => {
     const result = await createTeacher(
       {
