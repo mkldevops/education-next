@@ -10,6 +10,7 @@ import {
   DialogTrigger,
   Input,
   Label,
+  MultiSelect,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
@@ -92,21 +93,18 @@ function EditClassForm({ classItem, teachers }: EditClassDialogProps) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-class-teachers">{tCreate('teachers')}</Label>
-            <select
+            <MultiSelect
               id="edit-class-teachers"
               name="teacherIds"
-              multiple
-              size={Math.min(Math.max(teachers.length, 2), 6)}
+              options={teachers}
               defaultValue={classItem.teacherIds}
-              disabled={isPending || teachers.length === 0}
-              className="min-h-20 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}
-                </option>
-              ))}
-            </select>
+              disabled={isPending}
+              placeholder={tCreate('teachersPlaceholder')}
+              searchPlaceholder={tCreate('teachersSearch')}
+              emptyMessage={tCreate('teachersEmpty')}
+              noResultsMessage={tCreate('teachersNoResults')}
+              removeLabel={tCreate('teachersRemove')}
+            />
             <p className="text-xs text-gray-500">{tCreate('teachersHint')}</p>
           </div>
         </div>

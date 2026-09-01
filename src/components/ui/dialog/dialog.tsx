@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '../utils'
 
 interface DialogContextType {
@@ -116,6 +117,8 @@ export function DialogContent({ children, className }: DialogContentProps) {
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
+
       if (e.key === 'Escape') {
         setOpen(false)
         return
@@ -133,7 +136,10 @@ export function DialogContent({ children, className }: DialogContentProps) {
 
       const first = focusable[0]
       const last = focusable[focusable.length - 1]
-      if (e.shiftKey && document.activeElement === first) {
+      if (!panel.contains(document.activeElement)) {
+        e.preventDefault()
+        first.focus()
+      } else if (e.shiftKey && document.activeElement === first) {
         e.preventDefault()
         last.focus()
       } else if (!e.shiftKey && document.activeElement === last) {
@@ -145,15 +151,24 @@ export function DialogContent({ children, className }: DialogContentProps) {
     return () => document.removeEventListener('keydown', onKey)
   }, [open, setOpen])
 
-  if (!open) return null
+  useEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  if (!open || typeof document === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 text-left">
       <button
         type="button"
         tabIndex={-1}
         aria-hidden="true"
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
         onClick={() => setOpen(false)}
       />
       <div
@@ -162,11 +177,15 @@ export function DialogContent({ children, className }: DialogContentProps) {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={cn('relative z-10 w-full max-w-lg rounded bg-white shadow-xl', className)}
+        className={cn(
+          'relative z-10 w-full max-w-lg rounded-xl bg-white text-gray-900 shadow-2xl ring-1 ring-gray-900/5',
+          className
+        )}
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -176,7 +195,11 @@ export interface DialogHeaderProps {
 }
 
 export function DialogHeader({ children, className }: DialogHeaderProps) {
-  return <div className={cn('space-y-1.5 border-b px-6 py-4', className)}>{children}</div>
+  return (
+    <div className={cn('space-y-1.5 border-b border-gray-200 px-6 py-4', className)}>
+      {children}
+    </div>
+  )
 }
 
 export interface DialogTitleProps {
@@ -213,6 +236,13 @@ export interface DialogFooterProps {
 
 export function DialogFooter({ children, className }: DialogFooterProps) {
   return (
-    <div className={cn('flex justify-end gap-3 border-t px-6 py-4', className)}>{children}</div>
+    <div
+      className={cn(
+        'flex justify-end gap-3 rounded-b-xl border-t border-gray-200 bg-gray-50 px-6 py-4',
+        className
+      )}
+    >
+      {children}
+    </div>
   )
 }

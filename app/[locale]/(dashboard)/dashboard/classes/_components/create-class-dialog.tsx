@@ -10,6 +10,7 @@ import {
   DialogTrigger,
   Input,
   Label,
+  MultiSelect,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -136,20 +137,17 @@ function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateC
           </div>
           <div className="space-y-2">
             <Label htmlFor="class-teachers">{t('teachers')}</Label>
-            <select
+            <MultiSelect
               id="class-teachers"
               name="teacherIds"
-              multiple
-              size={Math.min(Math.max(teachers.length, 2), 6)}
-              disabled={isPending || teachers.length === 0}
-              className="min-h-20 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}
-                </option>
-              ))}
-            </select>
+              options={teachers}
+              disabled={isPending}
+              placeholder={t('teachersPlaceholder')}
+              searchPlaceholder={t('teachersSearch')}
+              emptyMessage={t('teachersEmpty')}
+              noResultsMessage={t('teachersNoResults')}
+              removeLabel={t('teachersRemove')}
+            />
             <p className="text-xs text-gray-500">{t('teachersHint')}</p>
           </div>
         </div>

@@ -76,6 +76,8 @@ export {
   Textarea,
   type TextareaProps,
 } from './input'
+// Multi Select
+export { MultiSelect, type MultiSelectOption, type MultiSelectProps } from './multi-select'
 // Rich Data Table
 export {
   RichDataTable,
