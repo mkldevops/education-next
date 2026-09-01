@@ -545,7 +545,12 @@
             "teacherNotFound": "One selected teacher was not found"
           },
           "teachers": "Teachers",
-          "teachersHint": "Hold Cmd/Ctrl to select multiple teachers."
+          "teachersHint": "Search for a teacher then select them. Multiple choices allowed.",
+          "teachersPlaceholder": "Search for a teacher...",
+          "teachersSearch": "Add...",
+          "teachersEmpty": "No teacher available",
+          "teachersNoResults": "No teacher found",
+          "teachersRemove": "Remove"
         },
         "edit": {
           "title": "Edit Class",

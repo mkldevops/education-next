@@ -545,7 +545,12 @@
             "teacherNotFound": "Un enseignant sélectionné est introuvable"
           },
           "teachers": "Enseignants",
-          "teachersHint": "Maintenez Cmd/Ctrl pour sélectionner plusieurs enseignants."
+          "teachersHint": "Recherchez un enseignant puis sélectionnez-le. Plusieurs choix possibles.",
+          "teachersPlaceholder": "Rechercher un enseignant...",
+          "teachersSearch": "Ajouter...",
+          "teachersEmpty": "Aucun enseignant disponible",
+          "teachersNoResults": "Aucun enseignant trouvé",
+          "teachersRemove": "Retirer"
         },
         "edit": {
           "title": "Modifier la classe",
