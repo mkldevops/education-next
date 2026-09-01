@@ -188,4 +188,37 @@ describe('setConfig', () => {
       valueType: 'TEXT',
     })
   })
+
+  it('refuses a color that escapes the style rule', async () => {
+    // GIVEN
+    const input = {
+      schoolId: SCHOOL_ID,
+      name: 'theme_primary',
+      value: '#fff; } body { display: none } :root {',
+      valueType: 'COLOR' as const,
+    }
+
+    // WHEN
+    const result = await setConfig(input, gateway as unknown as ConfigGw)
+
+    // THEN
+    expect(result).toBe('invalidConfigValue')
+    expect(gateway.setData).toBeNull()
+  })
+
+  it('accepts an hexadecimal color', async () => {
+    // GIVEN
+    const input = {
+      schoolId: SCHOOL_ID,
+      name: 'theme_primary',
+      value: '#3c6e71',
+      valueType: 'COLOR' as const,
+    }
+
+    // WHEN
+    await setConfig(input, gateway as unknown as ConfigGw)
+
+    // THEN
+    expect(gateway.setData).toMatchObject({ value: '#3c6e71' })
+  })
 })

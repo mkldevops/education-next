@@ -1,6 +1,7 @@
 import type { DeactivationVerdict } from '@/domain/school-deactivation'
 import { classifySchoolDeactivation } from '@/domain/school-deactivation'
 import { db } from '@/lib/db'
+import { SCHOOL_CONFIG_DEFAULTS } from '@/lib/school-config-defaults'
 
 type SchoolIdentity = {
   name: string
@@ -67,7 +68,19 @@ export const schoolGateway = {
   findBySlug: (slug: string) =>
     db.school.findUnique({ where: { slug }, select: { id: true, isActive: true } }),
 
-  create: (data: SchoolIdentity) => db.school.create({ data }),
+  /**
+   * L'école et ses réglages par défaut dans la même transaction : une école créée
+   * depuis l'interface arrivait sans aucune ligne `Config`, donc sans thème ni
+   * capacité de classe modifiables.
+   */
+  create: (data: SchoolIdentity) =>
+    db.$transaction(async (tx) => {
+      const school = await tx.school.create({ data })
+      await tx.config.createMany({
+        data: SCHOOL_CONFIG_DEFAULTS.map((config) => ({ ...config, schoolId: school.id })),
+      })
+      return school
+    }),
 
   update: (id: string, data: SchoolIdentity) => db.school.update({ where: { id }, data }),
 
