@@ -117,6 +117,8 @@ export function DialogContent({ children, className }: DialogContentProps) {
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
+
       if (e.key === 'Escape') {
         setOpen(false)
         return
@@ -134,7 +136,10 @@ export function DialogContent({ children, className }: DialogContentProps) {
 
       const first = focusable[0]
       const last = focusable[focusable.length - 1]
-      if (e.shiftKey && document.activeElement === first) {
+      if (!panel.contains(document.activeElement)) {
+        e.preventDefault()
+        first.focus()
+      } else if (e.shiftKey && document.activeElement === first) {
         e.preventDefault()
         last.focus()
       } else if (!e.shiftKey && document.activeElement === last) {
@@ -145,6 +150,15 @@ export function DialogContent({ children, className }: DialogContentProps) {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [open, setOpen])
+
+  useEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
 
   if (!open || typeof document === 'undefined') return null
 

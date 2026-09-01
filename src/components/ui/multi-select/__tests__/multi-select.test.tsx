@@ -1,21 +1,30 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../../dialog/dialog'
 import { MultiSelect } from '../multi-select'
 
 const teachers = [
   { id: '1', name: 'Chanrani Anissa' },
   { id: '2', name: 'Mohamed Rasmia' },
-  { id: '3', name: 'Said Djamael' },
+  { id: '3', name: 'Aïcha Bénédicte' },
 ]
 
-function renderMultiSelect(defaultValue?: string[]) {
+function renderMultiSelect(props?: { defaultValue?: string[]; options?: typeof teachers }) {
   return render(
     <form aria-label="class form">
       <MultiSelect
         name="teacherIds"
-        options={teachers}
-        defaultValue={defaultValue}
+        options={props?.options ?? teachers}
+        defaultValue={props?.defaultValue}
         placeholder="Rechercher un enseignant..."
+        emptyMessage="Aucun enseignant disponible"
         noResultsMessage="Aucun enseignant trouvé"
         removeLabel="Retirer"
       />
@@ -29,12 +38,12 @@ function submittedIds() {
 }
 
 describe('MultiSelect', () => {
-  it('filters options with an accent-insensitive search', () => {
+  it('filters options ignoring case and diacritics', () => {
     renderMultiSelect()
 
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'anissa' } })
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'aicha' } })
 
-    expect(screen.getByRole('option', { name: /Chanrani Anissa/ })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /Aïcha Bénédicte/ })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: /Mohamed Rasmia/ })).toBeNull()
   })
 
@@ -43,13 +52,22 @@ describe('MultiSelect', () => {
 
     fireEvent.focus(screen.getByRole('combobox'))
     fireEvent.click(screen.getByRole('option', { name: /Chanrani Anissa/ }))
-    fireEvent.click(screen.getByRole('option', { name: /Said Djamael/ }))
+    fireEvent.click(screen.getByRole('option', { name: /Aïcha Bénédicte/ }))
 
     expect(submittedIds()).toEqual(['1', '3'])
   })
 
+  it('deselects an option that is already selected', () => {
+    renderMultiSelect({ defaultValue: ['1'] })
+
+    fireEvent.focus(screen.getByRole('combobox'))
+    fireEvent.click(screen.getByRole('option', { name: /Chanrani Anissa/ }))
+
+    expect(submittedIds()).toEqual([])
+  })
+
   it('preselects the default value and removes a selection from its chip', () => {
-    renderMultiSelect(['2'])
+    renderMultiSelect({ defaultValue: ['2'] })
 
     expect(submittedIds()).toEqual(['2'])
 
@@ -58,15 +76,52 @@ describe('MultiSelect', () => {
     expect(submittedIds()).toEqual([])
   })
 
-  it('selects the active option with the keyboard', () => {
+  it('never submits an id that is absent from the options', () => {
+    renderMultiSelect({ defaultValue: ['2', 'deactivated-teacher'] })
+
+    expect(submittedIds()).toEqual(['2'])
+  })
+
+  it('removes the last selection with Backspace on an empty query', () => {
+    renderMultiSelect({ defaultValue: ['1', '2'] })
+
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Backspace' })
+
+    expect(submittedIds()).toEqual(['1'])
+  })
+
+  it('selects the active option with the keyboard and exposes it as active descendant', () => {
     renderMultiSelect()
 
     const combobox = screen.getByRole('combobox')
     fireEvent.keyDown(combobox, { key: 'ArrowDown' })
     fireEvent.keyDown(combobox, { key: 'ArrowDown' })
+
+    const activeId = combobox.getAttribute('aria-activedescendant')
+    expect(activeId).toBe(screen.getByRole('option', { name: /Mohamed Rasmia/ }).id)
+
+    fireEvent.keyDown(combobox, { key: 'Enter' })
+    expect(submittedIds()).toEqual(['2'])
+  })
+
+  it('does not select anything when Enter is pressed without an active option', () => {
+    renderMultiSelect()
+
+    const combobox = screen.getByRole('combobox')
+    fireEvent.focus(combobox)
     fireEvent.keyDown(combobox, { key: 'Enter' })
 
-    expect(submittedIds()).toEqual(['2'])
+    expect(submittedIds()).toEqual([])
+  })
+
+  it('keeps option buttons out of the tab order', () => {
+    renderMultiSelect()
+
+    fireEvent.focus(screen.getByRole('combobox'))
+
+    for (const option of screen.getAllByRole('option')) {
+      expect(option).toHaveAttribute('tabindex', '-1')
+    }
   })
 
   it('shows the no-results message when nothing matches', () => {
@@ -75,5 +130,64 @@ describe('MultiSelect', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'zzz' } })
 
     expect(screen.getByText('Aucun enseignant trouvé')).toBeInTheDocument()
+  })
+
+  it('disables the field and shows the empty message without options', () => {
+    renderMultiSelect({ options: [] })
+
+    const combobox = screen.getByRole('combobox')
+    expect(combobox).toBeDisabled()
+    expect(combobox).toHaveAttribute('placeholder', 'Aucun enseignant disponible')
+
+    fireEvent.focus(combobox)
+    expect(screen.queryByRole('listbox')).toBeNull()
+  })
+})
+
+describe('MultiSelect inside a Dialog', () => {
+  function renderInDialog() {
+    render(
+      <Dialog>
+        <DialogTrigger>
+          <button type="button">Open</button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier la classe</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <MultiSelect
+              name="teacherIds"
+              options={teachers}
+              placeholder="Rechercher un enseignant..."
+              noResultsMessage="Aucun enseignant trouvé"
+              removeLabel="Retirer"
+            />
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }))
+  }
+
+  it('closes only the option list when Escape is pressed with the list open', () => {
+    renderInDialog()
+
+    const combobox = screen.getByRole('combobox')
+    fireEvent.focus(combobox)
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+
+    fireEvent.keyDown(combobox, { key: 'Escape' })
+
+    expect(screen.queryByRole('listbox')).toBeNull()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('still closes the dialog on Escape when the option list is closed', () => {
+    renderInDialog()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

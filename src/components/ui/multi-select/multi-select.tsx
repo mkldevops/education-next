@@ -1,7 +1,8 @@
 'use client'
 
 import { Check, ChevronDown, X } from 'lucide-react'
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '../utils'
 
 export interface MultiSelectOption {
@@ -23,11 +24,36 @@ export interface MultiSelectProps {
   className?: string
 }
 
+interface ListPosition {
+  top: number
+  left: number
+  width: number
+  maxHeight: number
+}
+
+const LIST_MAX_HEIGHT = 224
+const LIST_GAP = 4
+
 function normalize(value: string) {
   return value
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
+}
+
+function computePosition(anchor: HTMLElement): ListPosition {
+  const rect = anchor.getBoundingClientRect()
+  const below = window.innerHeight - rect.bottom - LIST_GAP * 2
+  const above = rect.top - LIST_GAP * 2
+  const openAbove = below < Math.min(LIST_MAX_HEIGHT, above)
+  const maxHeight = Math.min(LIST_MAX_HEIGHT, Math.max(openAbove ? above : below, 96))
+
+  return {
+    top: openAbove ? rect.top - LIST_GAP - maxHeight : rect.bottom + LIST_GAP,
+    left: rect.left,
+    width: rect.width,
+    maxHeight,
+  }
 }
 
 export function MultiSelect({
@@ -46,88 +72,122 @@ export function MultiSelect({
   const generatedId = useId()
   const inputId = id ?? generatedId
   const listboxId = `${inputId}-listbox`
+  const optionId = (optionValue: string) => `${listboxId}-${optionValue}`
 
   const [selectedIds, setSelectedIds] = useState<string[]>(defaultValue)
   const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(false)
-  const [activeIndex, setActiveIndex] = useState(0)
+  const [position, setPosition] = useState<ListPosition | null>(null)
+  const [activeIndex, setActiveIndex] = useState(-1)
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const isDisabled = disabled || options.length === 0
+  const open = position !== null
 
-  const selected = useMemo(
-    () =>
-      selectedIds
-        .map((selectedId) => options.find((option) => option.id === selectedId))
-        .filter((option): option is MultiSelectOption => option !== undefined),
-    [selectedIds, options]
-  )
+  const selected = selectedIds
+    .map((selectedId) => options.find((option) => option.id === selectedId))
+    .filter((option): option is MultiSelectOption => option !== undefined)
 
-  const results = useMemo(() => {
-    const search = normalize(query.trim())
-    if (!search) return options
-    return options.filter((option) => normalize(option.name).includes(search))
-  }, [options, query])
+  const search = normalize(query.trim())
+  const results = search
+    ? options.filter((option) => normalize(option.name).includes(search))
+    : options
+  const activeOption = activeIndex >= 0 ? results[activeIndex] : undefined
+
+  const openList = () => {
+    if (isDisabled || !containerRef.current) return
+    setPosition(computePosition(containerRef.current))
+  }
+
+  const closeList = () => {
+    setPosition(null)
+    setActiveIndex(-1)
+  }
 
   useEffect(() => {
     if (!open) return
-    const onPointerDown = (event: MouseEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) setOpen(false)
+
+    const reposition = () => {
+      if (containerRef.current) setPosition(computePosition(containerRef.current))
     }
-    document.addEventListener('mousedown', onPointerDown)
-    return () => document.removeEventListener('mousedown', onPointerDown)
+    const closeOnOutside = (event: MouseEvent | FocusEvent) => {
+      const target = event.target as Node
+      if (containerRef.current?.contains(target) || listRef.current?.contains(target)) return
+      setPosition(null)
+      setActiveIndex(-1)
+    }
+
+    window.addEventListener('resize', reposition)
+    window.addEventListener('scroll', reposition, true)
+    document.addEventListener('mousedown', closeOnOutside)
+    document.addEventListener('focusin', closeOnOutside)
+
+    return () => {
+      window.removeEventListener('resize', reposition)
+      window.removeEventListener('scroll', reposition, true)
+      document.removeEventListener('mousedown', closeOnOutside)
+      document.removeEventListener('focusin', closeOnOutside)
+    }
   }, [open])
 
-  const toggle = (optionId: string) => {
+  const activeOptionId = activeOption ? optionId(activeOption.id) : undefined
+
+  useEffect(() => {
+    if (!activeOptionId) return
+    document.getElementById(activeOptionId)?.scrollIntoView?.({ block: 'nearest' })
+  }, [activeOptionId])
+
+  const toggle = (optionValue: string) => {
     setSelectedIds((current) =>
-      current.includes(optionId)
-        ? current.filter((value) => value !== optionId)
-        : [...current, optionId]
+      current.includes(optionValue)
+        ? current.filter((value) => value !== optionValue)
+        : [...current, optionValue]
     )
     setQuery('')
+    setActiveIndex(-1)
     inputRef.current?.focus()
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Escape' && open) {
-      event.stopPropagation()
-      setOpen(false)
+      event.preventDefault()
+      closeList()
       return
     }
 
-    if (event.key === 'Backspace' && query === '' && selectedIds.length > 0) {
-      setSelectedIds((current) => current.slice(0, -1))
+    if (event.key === 'Backspace' && query === '' && selected.length > 0) {
+      toggle(selected[selected.length - 1].id)
       return
     }
 
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
       if (!open) {
-        setOpen(true)
+        openList()
+        setActiveIndex(0)
         return
       }
       if (results.length === 0) return
       setActiveIndex((current) => {
+        if (current < 0) return event.key === 'ArrowDown' ? 0 : results.length - 1
         const next = event.key === 'ArrowDown' ? current + 1 : current - 1
         return (next + results.length) % results.length
       })
       return
     }
 
-    if (event.key === 'Enter') {
-      if (!open) return
+    if (event.key === 'Enter' && activeOption) {
       event.preventDefault()
-      const option = results[activeIndex]
-      if (option) toggle(option.id)
+      toggle(activeOption.id)
     }
   }
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
-      {selectedIds.map((selectedId) => (
-        <input key={selectedId} type="hidden" name={name} value={selectedId} />
+      {selected.map((option) => (
+        <input key={option.id} type="hidden" name={name} value={option.id} />
       ))}
 
       <div
@@ -162,7 +222,8 @@ export function MultiSelect({
           role="combobox"
           autoComplete="off"
           aria-expanded={open}
-          aria-controls={listboxId}
+          aria-controls={open ? listboxId : undefined}
+          aria-activedescendant={activeOptionId}
           aria-autocomplete="list"
           disabled={isDisabled}
           value={query}
@@ -175,10 +236,10 @@ export function MultiSelect({
           }
           onChange={(event) => {
             setQuery(event.target.value)
-            setActiveIndex(0)
-            setOpen(true)
+            setActiveIndex(event.target.value ? 0 : -1)
+            openList()
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={openList}
           onKeyDown={handleKeyDown}
           className="min-w-24 flex-1 bg-transparent px-1 py-0.5 text-sm outline-none placeholder:text-gray-400 disabled:cursor-not-allowed"
         />
@@ -186,39 +247,52 @@ export function MultiSelect({
         <ChevronDown className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
       </div>
 
-      {open && !isDisabled && (
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-multiselectable="true"
-          className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded border border-gray-200 bg-white py-1 shadow-lg"
-        >
-          {results.length === 0 && (
-            <p className="px-3 py-2 text-sm text-gray-500">{noResultsMessage}</p>
-          )}
-          {results.map((option, index) => {
-            const isSelected = selectedIds.includes(option.id)
-            return (
-              <button
-                key={option.id}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => toggle(option.id)}
-                className={cn(
-                  'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm',
-                  index === activeIndex ? 'bg-gray-100' : 'bg-transparent',
-                  isSelected ? 'font-medium text-gray-900' : 'text-gray-700'
-                )}
-              >
-                {option.name}
-                {isSelected && <Check className="h-4 w-4 text-primary" aria-hidden="true" />}
-              </button>
-            )
-          })}
-        </div>
-      )}
+      {position !== null &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={listRef}
+            id={listboxId}
+            role="listbox"
+            aria-multiselectable="true"
+            aria-label={placeholder}
+            style={{
+              top: position.top,
+              left: position.left,
+              width: position.width,
+              maxHeight: position.maxHeight,
+            }}
+            className="fixed z-[60] overflow-y-auto rounded border border-gray-200 bg-white py-1 shadow-lg"
+          >
+            {results.length === 0 && (
+              <p className="px-3 py-2 text-sm text-gray-500">{noResultsMessage}</p>
+            )}
+            {results.map((option, index) => {
+              const isSelected = selectedIds.includes(option.id)
+              return (
+                <button
+                  key={option.id}
+                  id={optionId(option.id)}
+                  type="button"
+                  role="option"
+                  tabIndex={-1}
+                  aria-selected={isSelected}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => toggle(option.id)}
+                  className={cn(
+                    'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm',
+                    index === activeIndex ? 'bg-gray-100' : 'bg-transparent',
+                    isSelected ? 'font-medium text-gray-900' : 'text-gray-700'
+                  )}
+                >
+                  {option.name}
+                  {isSelected && <Check className="h-4 w-4 text-primary" aria-hidden="true" />}
+                </button>
+              )
+            })}
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
