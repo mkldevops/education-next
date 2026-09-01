@@ -8,6 +8,9 @@ const dbMock = {
     create: vi.fn(),
     update: vi.fn(),
   },
+  config: {
+    createMany: vi.fn(),
+  },
   $transaction: vi.fn(),
 }
 
@@ -141,5 +144,30 @@ describe('schoolGateway.deactivate', () => {
       where: { id: 'school-1' },
       data: { isActive: false },
     })
+  })
+})
+
+describe('schoolGateway.create', () => {
+  it('creates the default settings with the school, in the same transaction', async () => {
+    const tx = {
+      school: { create: vi.fn().mockResolvedValue({ id: 'school-1' }) },
+      config: { createMany: vi.fn() },
+    }
+    dbMock.$transaction.mockImplementation((fn: (client: typeof tx) => unknown) => fn(tx))
+
+    const school = await schoolGateway.create({ name: 'Chioni', slug: 'chioni' })
+
+    expect(school).toEqual({ id: 'school-1' })
+    const [args] = tx.config.createMany.mock.calls[0]
+    expect(args.data.map((config: { name: string }) => config.name)).toEqual([
+      'logo_url',
+      'favicon_url',
+      'teacher_expenses_enabled',
+      'max_students_per_class',
+      'theme_primary',
+    ])
+    expect(args.data.every((config: { schoolId: string }) => config.schoolId === 'school-1')).toBe(
+      true
+    )
   })
 })

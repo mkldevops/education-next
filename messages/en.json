@@ -735,11 +735,13 @@
           "logo": "Logo",
           "favicon": "Favicon",
           "maxStudentsPerClass": "Maximum students per class",
-          "teacherExpenses": "Teacher expense notes"
+          "teacherExpenses": "Teacher expense notes",
+          "themePrimary": "Primary color"
         },
         "descriptions": {
           "maxStudentsPerClass": "Maximum number of students allowed in a class.",
-          "teacherExpenses": "Enables recording teacher expense notes."
+          "teacherExpenses": "Enables recording teacher expense notes.",
+          "themePrimary": "Primary interface color, in hexadecimal format."
         },
         "create": {
           "title": "New Parameter",

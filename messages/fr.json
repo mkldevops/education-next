@@ -735,11 +735,13 @@
           "logo": "Logo",
           "favicon": "Favicon",
           "maxStudentsPerClass": "Élèves maximum par classe",
-          "teacherExpenses": "Notes de frais enseignants"
+          "teacherExpenses": "Notes de frais enseignants",
+          "themePrimary": "Couleur principale"
         },
         "descriptions": {
           "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe.",
-          "teacherExpenses": "Active la saisie des notes de frais des enseignants."
+          "teacherExpenses": "Active la saisie des notes de frais des enseignants.",
+          "themePrimary": "Couleur principale de l'interface, au format hexadécimal."
         },
         "create": {
           "title": "Nouveau paramètre",

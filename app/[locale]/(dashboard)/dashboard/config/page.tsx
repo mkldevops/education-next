@@ -4,12 +4,14 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { ReactNode } from 'react'
 import { ConfigValueTypeLabel } from '@/features/enums'
-import { BRANDING_CONFIG_DEFAULTS, BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
+import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import { db } from '@/lib/db'
 import {
-  TEACHER_EXPENSES_CONFIG_DEFAULT,
-  TEACHER_EXPENSES_CONFIG_KEY,
-} from '@/lib/teacher-expense-config'
+  MAX_STUDENTS_PER_CLASS_CONFIG_KEY,
+  SCHOOL_CONFIG_DEFAULTS,
+  THEME_PRIMARY_CONFIG_KEY,
+} from '@/lib/school-config-defaults'
+import { TEACHER_EXPENSES_CONFIG_KEY } from '@/lib/teacher-expense-config'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateConfigDialog } from './_components/create-config-dialog'
@@ -44,25 +46,30 @@ export default async function ConfigPage({ params }: Props) {
   })
 
   const configuredNames = new Set(dbConfigs.map((config) => config.name))
-  const missingKnownConfigs = [...BRANDING_CONFIG_DEFAULTS, TEACHER_EXPENSES_CONFIG_DEFAULT]
-    .filter((config) => !configuredNames.has(config.name))
-    .map((config) => ({
-      ...config,
-      id: `default-${config.name}`,
-      schoolId,
-      isActive: true,
-      createdAt: new Date(0),
-      updatedAt: new Date(0),
-    }))
+  // Repli pour les écoles antérieures au backfill : la liste reste la même qu'à la création.
+  const missingKnownConfigs = SCHOOL_CONFIG_DEFAULTS.filter(
+    (config) => !configuredNames.has(config.name)
+  ).map((config) => ({
+    ...config,
+    id: `default-${config.name}`,
+    schoolId,
+    isActive: true,
+    createdAt: new Date(0),
+    updatedAt: new Date(0),
+  }))
   const configs = [...dbConfigs, ...missingKnownConfigs]
     .filter((config) => !HIDDEN_CONFIG_NAMES.has(config.name))
     .sort((a, b) => a.name.localeCompare(b.name))
   const knownConfig: Record<string, { label: string; description?: string }> = {
     [BRANDING_CONFIG_KEYS.logoUrl]: { label: t('known.logo') },
     [BRANDING_CONFIG_KEYS.faviconUrl]: { label: t('known.favicon') },
-    max_students_per_class: {
+    [MAX_STUDENTS_PER_CLASS_CONFIG_KEY]: {
       label: t('known.maxStudentsPerClass'),
       description: t('descriptions.maxStudentsPerClass'),
+    },
+    [THEME_PRIMARY_CONFIG_KEY]: {
+      label: t('known.themePrimary'),
+      description: t('descriptions.themePrimary'),
     },
     [TEACHER_EXPENSES_CONFIG_KEY]: {
       label: t('known.teacherExpenses'),
