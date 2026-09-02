@@ -84,6 +84,8 @@ export {
   type RichDataTableLabels,
   type RichDataTableProps,
 } from './rich-data-table'
+// Select
+export { Select, type SelectProps } from './select'
 // Status Badge
 export { StatusBadge, type StatusBadgeProps, statusBadgeVariants } from './status-badge'
 // Tabs

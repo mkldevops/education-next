@@ -1,9 +1,9 @@
 'use client'
 
-import { RichDataTable, StatusBadge } from '@peaklab/ui'
+import { RichDataTable, Select, StatusBadge } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useTableLabels } from '@/features/tables'
 import { formatDate } from '@/lib/date'
 import type { SchoolRole } from '@/types/enums'
@@ -52,21 +52,14 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
   const [roleFilter, setRoleFilter] = useState<'ALL' | SchoolRole>('ALL')
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'ARCHIVED'>('ACTIVE')
 
-  const selectedMember = useMemo(
-    () => members.find((member) => member.userId === selectedId) ?? null,
-    [members, selectedId]
-  )
+  const selectedMember = members.find((member) => member.userId === selectedId) ?? null
 
-  const filtered = useMemo(
-    () =>
-      members.filter((member) => {
-        if (roleFilter !== 'ALL' && member.role !== roleFilter) return false
-        if (statusFilter === 'ACTIVE' && !member.user.isActive) return false
-        if (statusFilter === 'ARCHIVED' && member.user.isActive) return false
-        return true
-      }),
-    [members, roleFilter, statusFilter]
-  )
+  const filtered = members.filter((member) => {
+    if (roleFilter !== 'ALL' && member.role !== roleFilter) return false
+    if (statusFilter === 'ACTIVE' && !member.user.isActive) return false
+    if (statusFilter === 'ARCHIVED' && member.user.isActive) return false
+    return true
+  })
 
   const columns: ColumnDef<MemberRow>[] = [
     {
@@ -76,10 +69,10 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-medium text-gray-900">{row.original.user.name || '-'}</span>
+            <span className="font-medium text-graphite">{row.original.user.name || '-'}</span>
             {row.original.user.isSuperAdmin && <StatusBadge status="red" label={t('superAdmin')} />}
           </div>
-          <span className="text-xs text-gray-500">{row.original.user.email}</span>
+          <span className="text-xs text-graphite-600">{row.original.user.email}</span>
         </div>
       ),
       enableSorting: true,
@@ -97,7 +90,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
       id: 'family',
       header: t('family'),
       accessorFn: (row) => row.family?.name ?? '',
-      cell: ({ row }) => <span className="text-gray-700">{row.original.family?.name ?? '-'}</span>,
+      cell: ({ row }) => <span className="text-graphite">{row.original.family?.name ?? '-'}</span>,
       enableSorting: true,
     },
     {
@@ -105,7 +98,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
       header: t('lastLogin'),
       accessorFn: (row) => row.lastLoginAt?.getTime() ?? 0,
       cell: ({ row }) => (
-        <span className="text-gray-700">
+        <span className="text-graphite">
           {row.original.lastLoginAt ? formatDate(row.original.lastLoginAt, locale) : '-'}
         </span>
       ),
@@ -145,10 +138,9 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
         }}
         toolbar={
           <div className="flex flex-wrap gap-2">
-            <select
+            <Select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as 'ALL' | SchoolRole)}
-              className="border border-gray-200 rounded px-3 py-2 text-sm bg-white"
               aria-label={t('filterRole')}
             >
               <option value="ALL">{t('schoolRoleAll')}</option>
@@ -157,17 +149,16 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
                   {tRoles(role)}
                 </option>
               ))}
-            </select>
-            <select
+            </Select>
+            <Select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'ARCHIVED')}
-              className="border border-gray-200 rounded px-3 py-2 text-sm bg-white"
               aria-label={t('filterStatus')}
             >
               <option value="ACTIVE">{t('active')}</option>
               <option value="ARCHIVED">{t('inactive')}</option>
               <option value="ALL">{t('statusAll')}</option>
-            </select>
+            </Select>
           </div>
         }
       />

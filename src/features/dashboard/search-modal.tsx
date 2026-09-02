@@ -3,9 +3,11 @@
 import { Command } from 'cmdk'
 import { User, Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { searchStudentsAndFamilies } from '@/services/search-service'
+
+const SEARCH_DEBOUNCE_MS = 300
 
 type SearchResult =
   | {
@@ -32,40 +34,32 @@ export function SearchModal({ onClose }: SearchModalProps) {
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
+  useEffect(() => {
+    if (!query.trim()) {
       setResults([])
+      setIsLoading(false)
       return
     }
 
-    setIsLoading(true)
-    try {
-      const response = await searchStudentsAndFamilies(searchQuery)
-      if (Array.isArray(response)) {
-        setResults(response)
-      } else {
-        setResults([])
+    let cancelled = false
+    const timeoutId = setTimeout(async () => {
+      setIsLoading(true)
+      try {
+        const response = await searchStudentsAndFamilies(query)
+        if (!cancelled) setResults(Array.isArray(response) ? response : [])
+      } finally {
+        if (!cancelled) setIsLoading(false)
       }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+    }, SEARCH_DEBOUNCE_MS)
 
-  const debouncedSearch = useMemo(() => {
-    let timeoutId: NodeJS.Timeout
-    return (searchQuery: string) => {
+    return () => {
+      cancelled = true
       clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
-        handleSearch(searchQuery)
-      }, 300)
     }
-  }, [handleSearch])
+  }, [query])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-      }
       if (e.key === 'Escape') {
         e.preventDefault()
         onClose?.()
@@ -120,10 +114,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
               value={query}
               // biome-ignore lint/a11y/noAutofocus: Modal input needs autofocus for UX
               autoFocus
-              onChange={(e) => {
-                setQuery(e.target.value)
-                debouncedSearch(e.target.value)
-              }}
+              onChange={(e) => setQuery(e.target.value)}
             />
           </div>
 
