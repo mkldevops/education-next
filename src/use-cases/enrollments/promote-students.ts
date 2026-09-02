@@ -15,7 +15,7 @@ export type SkipReason =
   | 'noTargetClass'
   | 'targetClassFull'
 
-export interface PromotionError {
+interface PromotionError {
   studentId: string
   reason: 'createFailed'
 }

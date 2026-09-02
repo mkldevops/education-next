@@ -32,11 +32,14 @@ let userId: string
 
 beforeAll(async () => {
   const context = await testAuth.$context
-  const user = await context.internalAdapter.createUser({
-    email: 'passkey-user@school.test',
-    name: 'Passkey User',
-    emailVerified: false,
-  })
+  const user = await context.internalAdapter.createUser(
+    {
+      email: 'passkey-user@school.test',
+      name: 'Passkey User',
+      emailVerified: false,
+    },
+    { method: 'email-password' }
+  )
   userId = user.id
 })
 
