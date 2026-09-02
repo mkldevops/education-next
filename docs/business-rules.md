@@ -341,6 +341,11 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   teachers through `ClassPeriodTeacher`. Teacher assignments are scoped by the same `schoolId` as the
   class and the teacher; cross-school class staffing is rejected by composite foreign keys and by the
   class use cases.
+- **Editing a class only replaces active-teacher assignments.** A submitted `teacherIds` list can
+  only ever contain active teachers (deactivated teachers are never offered as form options), so
+  `classPeriodGateway.update` scopes its assignment sweep to `teacher: { isActive: true }`. A
+  deactivated teacher's `ClassPeriodTeacher` row survives any class edit instead of being silently
+  destroyed.
 
 ## Enrollments
 

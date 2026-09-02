@@ -54,7 +54,7 @@ export const classPeriodGateway = {
       })
 
       await tx.classPeriodTeacher.deleteMany({
-        where: { schoolId, classPeriodId: id },
+        where: { schoolId, classPeriodId: id, teacher: { isActive: true } },
       })
 
       if (teacherIds.length > 0) {
