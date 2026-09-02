@@ -109,7 +109,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
         <Command shouldFilter={false}>
           <div className="flex items-center border-b px-4 py-3">
             <input
-              className="flex-1 outline-none text-sm placeholder-graphite-500"
+              className="flex-1 outline-none text-sm placeholder:text-graphite-700"
               placeholder={t('placeholder')}
               value={query}
               // biome-ignore lint/a11y/noAutofocus: Modal input needs autofocus for UX
@@ -131,19 +131,19 @@ export function SearchModal({ onClose }: SearchModalProps) {
 
             {!isLoading && query && groupedResults.families.length > 0 && (
               <div>
-                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-50">
+                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-900">
                   {t('families')}
                 </div>
                 {groupedResults.families.map((family) => (
                   <button
                     key={family.id}
                     type="button"
-                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-50 text-left transition-colors border-b last:border-b-0"
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-900 text-left transition-colors border-b last:border-b-0"
                     onClick={() => handleSelect(family)}
                   >
                     <Users className="h-4 w-4 text-primary flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-graphite-900 truncate">
+                      <div className="text-sm font-medium text-graphite truncate">
                         {family.name}
                       </div>
                       <div className="text-xs text-graphite-600 truncate">
@@ -157,19 +157,19 @@ export function SearchModal({ onClose }: SearchModalProps) {
 
             {!isLoading && query && groupedResults.students.length > 0 && (
               <div>
-                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-50">
+                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-900">
                   {t('students')}
                 </div>
                 {groupedResults.students.map((student) => (
                   <button
                     key={student.id}
                     type="button"
-                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-50 text-left transition-colors border-b last:border-b-0"
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-900 text-left transition-colors border-b last:border-b-0"
                     onClick={() => handleSelect(student)}
                   >
                     <User className="h-4 w-4 text-primary flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-graphite-900 truncate">
+                      <div className="text-sm font-medium text-graphite truncate">
                         {student.name}
                       </div>
                       {student.secondaryInfo && (
