@@ -23,6 +23,14 @@ type SearchResult =
       secondaryInfo: string
     }
 
+type SearchError = 'unauthorized' | 'validationError' | 'requestFailed'
+
+const ERROR_MESSAGE_KEYS: Record<SearchError, string> = {
+  unauthorized: 'errorUnauthorized',
+  validationError: 'errorValidation',
+  requestFailed: 'errorGeneric',
+}
+
 interface SearchModalProps {
   onClose?: () => void
 }
@@ -33,8 +41,11 @@ export function SearchModal({ onClose }: SearchModalProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<SearchError | null>(null)
 
   useEffect(() => {
+    setError(null)
+
     if (!query.trim()) {
       setResults([])
       setIsLoading(false)
@@ -46,7 +57,18 @@ export function SearchModal({ onClose }: SearchModalProps) {
       setIsLoading(true)
       try {
         const response = await searchStudentsAndFamilies(query)
-        if (!cancelled) setResults(Array.isArray(response) ? response : [])
+        if (cancelled) return
+        if (response === 'unauthorized' || response === 'validationError') {
+          setResults([])
+          setError(response)
+        } else {
+          setResults(response)
+        }
+      } catch {
+        if (!cancelled) {
+          setResults([])
+          setError('requestFailed')
+        }
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -123,7 +145,13 @@ export function SearchModal({ onClose }: SearchModalProps) {
               <div className="px-4 py-8 text-center text-sm text-graphite-600">{t('loading')}</div>
             )}
 
-            {!isLoading && query && results.length === 0 && (
+            {!isLoading && query && error && (
+              <div className="px-4 py-8 text-center text-sm text-red-600">
+                {t(ERROR_MESSAGE_KEYS[error])}
+              </div>
+            )}
+
+            {!isLoading && query && !error && results.length === 0 && (
               <div className="px-4 py-8 text-center text-sm text-graphite-600">
                 {t('noResults')}
               </div>
