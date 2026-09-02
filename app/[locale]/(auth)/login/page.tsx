@@ -43,7 +43,7 @@ export default async function LoginPage({ params }: Props) {
             <LoginForm />
           </div>
         </div>
-        <p className="mt-6 text-center text-sm text-gray-500">{t('contactAdmin')}</p>
+        <p className="mt-6 text-center text-sm text-graphite-600">{t('contactAdmin')}</p>
       </div>
     </div>
   )

@@ -33,7 +33,7 @@ export function StudentsDataTable({ data, locale, isAdmin }: Props) {
     header: t('family'),
     accessorFn: (row) =>
       row.person.families.length > 0 ? row.person.families[0].family.name : '-',
-    cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+    cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
     enableSorting: true,
   }
 
@@ -57,7 +57,7 @@ export function StudentsDataTable({ data, locale, isAdmin }: Props) {
       header: t('birthday'),
       accessorFn: (row) => row.birthday.getTime(),
       cell: ({ row }) => (
-        <span className="text-gray-700">{formatDate(row.original.birthday, locale)}</span>
+        <span className="text-graphite">{formatDate(row.original.birthday, locale)}</span>
       ),
       enableSorting: true,
     },
@@ -69,7 +69,7 @@ export function StudentsDataTable({ data, locale, isAdmin }: Props) {
         row.enrollments.length > 0 && row.enrollments[0].classAssignments.length > 0
           ? row.enrollments[0].classAssignments[0].classPeriod.name
           : '-',
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
       enableSorting: true,
     },
   ]

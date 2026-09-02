@@ -109,7 +109,7 @@ function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateC
                 name="levelId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 {levels.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -125,7 +125,7 @@ function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateC
                 name="periodId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 {periods.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -148,7 +148,7 @@ function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateC
               noResultsMessage={t('teachersNoResults')}
               removeLabel={t('teachersRemove')}
             />
-            <p className="text-xs text-gray-500">{t('teachersHint')}</p>
+            <p className="text-xs text-graphite-600">{t('teachersHint')}</p>
           </div>
         </div>
       </DialogBody>

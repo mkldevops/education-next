@@ -40,8 +40,8 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{Math.round(paidPercentage)}%</p>
-              <p className="text-xs text-gray-600 mt-0.5">{t('financial.paid')}</p>
+              <p className="text-2xl font-bold text-graphite">{Math.round(paidPercentage)}%</p>
+              <p className="text-xs text-graphite-600 mt-0.5">{t('financial.paid')}</p>
             </div>
           </div>
         </div>
@@ -50,7 +50,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
       <div className="space-y-2">
         <div className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
           <div>
-            <p className="text-xs text-gray-600">{t('financial.paid')}</p>
+            <p className="text-xs text-graphite-600">{t('financial.paid')}</p>
             <p className="text-sm font-semibold text-green-900">
               {formatCurrency(totalPaid, locale)}
             </p>
@@ -60,7 +60,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
 
         <div className="flex items-center justify-between p-2 bg-amber-50 rounded border border-amber-200">
           <div>
-            <p className="text-xs text-gray-600">{t('financial.remaining')}</p>
+            <p className="text-xs text-graphite-600">{t('financial.remaining')}</p>
             <p className="text-sm font-semibold text-amber-900">
               {formatCurrency(remainingBalance, locale)}
             </p>
@@ -70,7 +70,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
 
         <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
           <div>
-            <p className="text-xs text-gray-600">{t('financial.total')}</p>
+            <p className="text-xs text-graphite-600">{t('financial.total')}</p>
             <p className="text-sm font-semibold text-blue-900">
               {formatCurrency(totalDue, locale)}
             </p>
@@ -80,9 +80,9 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
       </div>
 
       {totalDiscount > 0 && (
-        <div className="pt-2 border-t border-gray-200">
-          <p className="text-xs text-gray-600">{t('financial.discount')}</p>
-          <p className="text-sm font-semibold text-gray-900">
+        <div className="pt-2 border-t border-alabaster-700">
+          <p className="text-xs text-graphite-600">{t('financial.discount')}</p>
+          <p className="text-sm font-semibold text-graphite">
             {formatCurrency(totalDiscount, locale)}
           </p>
         </div>

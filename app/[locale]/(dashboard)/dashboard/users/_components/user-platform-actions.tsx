@@ -48,7 +48,7 @@ export function UserPlatformActions({
   return (
     <Section title={t('sections.platformActions')}>
       <div className="space-y-3">
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 text-sm text-graphite">
           <input
             type="checkbox"
             checked={user.isSuperAdmin}
@@ -63,11 +63,11 @@ export function UserPlatformActions({
               )
             }
             disabled={isPending || isSelf}
-            className="h-4 w-4 rounded border-gray-300"
+            className="h-4 w-4 rounded border-alabaster"
           />
           {t('superAdmin')}
         </label>
-        {isSelf && <p className="text-xs text-gray-500">{t('cannotChangeOwnPlatformLevel')}</p>}
+        {isSelf && <p className="text-xs text-graphite-600">{t('cannotChangeOwnPlatformLevel')}</p>}
         <div className="flex flex-wrap gap-2">
           <EditUserDialog user={user} />
           <LinkFamilyDialog userId={user.id} families={unlinkedFamilies} />

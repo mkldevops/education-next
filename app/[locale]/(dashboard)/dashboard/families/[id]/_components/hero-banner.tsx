@@ -28,10 +28,10 @@ export async function HeroBanner({
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="min-w-0">
-        <h1 className="truncate text-2xl font-bold text-gray-900" title={family.name}>
+        <h1 className="truncate text-2xl font-bold text-graphite" title={family.name}>
           {family.name}
         </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-graphite-600">
           <span>
             {membersCount} {t('hero.members')}
           </span>
@@ -41,7 +41,7 @@ export async function HeroBanner({
           <span>
             {enrollmentsCount} {t('hero.enrollments')}
           </span>
-          <span className="text-gray-400">{t('scopeAll')}</span>
+          <span className="text-graphite-700">{t('scopeAll')}</span>
         </div>
       </div>
 

@@ -84,7 +84,7 @@ export function UserDrawer({
         <DrawerHeader>
           <div className="min-w-0">
             <DrawerTitle>{user.name || user.email}</DrawerTitle>
-            <p className="mt-1 truncate text-sm text-gray-500">{user.email}</p>
+            <p className="mt-1 truncate text-sm text-graphite-600">{user.email}</p>
           </div>
           <DrawerClose label={t('close')} />
         </DrawerHeader>

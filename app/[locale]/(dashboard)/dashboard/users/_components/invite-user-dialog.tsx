@@ -93,7 +93,7 @@ function InviteForm({ families }: { families: Family[] }) {
               value={role}
               onChange={(e) => setRole(e.target.value)}
               disabled={isPending}
-              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
             >
               <option value="PARENT">{tRoles('PARENT')}</option>
               <option value="ADMIN">{tRoles('ADMIN')}</option>
@@ -107,7 +107,7 @@ function InviteForm({ families }: { families: Family[] }) {
                 name="familyId"
                 defaultValue=""
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 <option value="">{t('noFamily')}</option>
                 {families.map((family) => (
@@ -116,7 +116,7 @@ function InviteForm({ families }: { families: Family[] }) {
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500">{t('familyHint')}</p>
+              <p className="text-xs text-graphite-600">{t('familyHint')}</p>
             </div>
           )}
           <div className="space-y-2">
@@ -126,7 +126,7 @@ function InviteForm({ families }: { families: Family[] }) {
               name="locale"
               defaultValue={locale}
               disabled={isPending}
-              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
             >
               <option value="fr">Français</option>
               <option value="en">English</option>

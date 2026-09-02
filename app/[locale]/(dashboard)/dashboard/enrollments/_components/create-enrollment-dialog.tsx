@@ -134,7 +134,7 @@ function CreateEnrollmentForm({
                 name="studentId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 {students.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -152,7 +152,7 @@ function CreateEnrollmentForm({
                 name="planId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 {plans.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -168,7 +168,7 @@ function CreateEnrollmentForm({
                 name="classPeriodId"
                 required
                 disabled={isPending || classes.length === 0}
-                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {classes.map((c) => (
                   <option key={c.id} value={c.id}>

@@ -168,7 +168,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
         type="button"
         tabIndex={-1}
         aria-hidden="true"
-        className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-graphite/50 backdrop-blur-sm"
         onClick={() => setOpen(false)}
       />
       <div
@@ -178,7 +178,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full max-w-lg rounded-xl bg-white text-gray-900 shadow-2xl ring-1 ring-gray-900/5',
+          'relative z-10 w-full max-w-lg rounded-xl bg-white text-graphite shadow-2xl ring-1 ring-graphite/5',
           className
         )}
       >
@@ -196,7 +196,7 @@ export interface DialogHeaderProps {
 
 export function DialogHeader({ children, className }: DialogHeaderProps) {
   return (
-    <div className={cn('space-y-1.5 border-b border-gray-200 px-6 py-4', className)}>
+    <div className={cn('space-y-1.5 border-b border-alabaster-700 px-6 py-4', className)}>
       {children}
     </div>
   )
@@ -238,7 +238,7 @@ export function DialogFooter({ children, className }: DialogFooterProps) {
   return (
     <div
       className={cn(
-        'flex justify-end gap-3 rounded-b-xl border-t border-gray-200 bg-gray-50 px-6 py-4',
+        'flex justify-end gap-3 rounded-b-xl border-t border-alabaster-700 bg-alabaster-900 px-6 py-4',
         className
       )}
     >

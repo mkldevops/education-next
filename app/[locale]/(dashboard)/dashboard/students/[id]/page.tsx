@@ -215,16 +215,16 @@ export default async function StudentDetailPage({ params }: Props) {
             {student.person.name.charAt(0)}
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold text-gray-900" title={fullName}>
+            <h1 className="truncate text-2xl font-bold text-graphite" title={fullName}>
               {fullName}
             </h1>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-graphite-600">
               {t('age', { age })}
-              <span className="mx-2 text-gray-300">·</span>
+              <span className="mx-2 text-graphite-800">·</span>
               {formatDateLong(birthday, locale)}
               {student.birthplace && (
                 <>
-                  <span className="mx-2 text-gray-300">·</span>
+                  <span className="mx-2 text-graphite-800">·</span>
                   {student.birthplace}
                 </>
               )}
@@ -284,14 +284,16 @@ export default async function StudentDetailPage({ params }: Props) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
           <Card key={kpi.label} className="p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{kpi.label}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-graphite-600">
+              {kpi.label}
+            </p>
             <p
               className={`mt-1 text-xl font-semibold tabular-nums ${
                 kpi.tone === 'amber'
                   ? 'text-amber-600'
                   : kpi.tone === 'emerald'
                     ? 'text-emerald-600'
-                    : 'text-gray-900'
+                    : 'text-graphite'
               }`}
             >
               {kpi.value}
@@ -303,7 +305,7 @@ export default async function StudentDetailPage({ params }: Props) {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-gray-900">{t('enrollments')}</h2>
+            <h2 className="text-base font-semibold text-graphite">{t('enrollments')}</h2>
             {isAdmin && (
               <CreateEnrollmentDialog
                 students={[{ id: student.id, name: fullName }]}
@@ -326,14 +328,14 @@ export default async function StudentDetailPage({ params }: Props) {
 
           {infoRows.length > 0 && (
             <Card className="p-4">
-              <h2 className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <h2 className="text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('information')}
               </h2>
               <dl className="mt-3 space-y-3">
                 {infoRows.map((row) => (
                   <div key={row.label}>
-                    <dt className="text-xs text-gray-500">{row.label}</dt>
-                    <dd className="mt-0.5 text-sm text-gray-900">{row.value}</dd>
+                    <dt className="text-xs text-graphite-600">{row.label}</dt>
+                    <dd className="mt-0.5 text-sm text-graphite">{row.value}</dd>
                   </div>
                 ))}
               </dl>

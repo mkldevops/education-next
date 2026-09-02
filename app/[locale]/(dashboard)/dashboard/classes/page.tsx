@@ -102,19 +102,19 @@ export default async function ClassesPage({ params }: Props) {
     {
       key: 'level',
       header: t('level'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (item) => item.level.name,
     },
     {
       key: 'period',
       header: t('period'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (item) => item.period.name,
     },
     {
       key: 'teachers',
       header: t('teachers'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (item) =>
         item.teachers.length > 0
           ? item.teachers
@@ -125,7 +125,7 @@ export default async function ClassesPage({ params }: Props) {
     {
       key: 'capacity',
       header: t('capacity'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (item) => `${item.classAssignments.length}/${item.capacity}`,
     },
     {
@@ -156,7 +156,7 @@ export default async function ClassesPage({ params }: Props) {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         {levels.length > 0 && periods.length > 0 && (
           <CreateClassDialog
             levels={levels}
@@ -166,7 +166,7 @@ export default async function ClassesPage({ params }: Props) {
           />
         )}
       </div>
-      <Card className="rounded border border-gray-200">
+      <Card className="rounded border border-alabaster-700">
         <DataTable
           data={classes}
           columns={columns}

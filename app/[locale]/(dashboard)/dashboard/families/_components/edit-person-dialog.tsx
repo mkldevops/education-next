@@ -119,7 +119,7 @@ function EditPersonForm({ familyId, person }: EditPersonDialogProps) {
                 required
                 defaultValue={person.sex}
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 <option value="MALE">{t('male')}</option>
                 <option value="FEMALE">{t('female')}</option>
@@ -133,7 +133,7 @@ function EditPersonForm({ familyId, person }: EditPersonDialogProps) {
                 required
                 defaultValue={person.relationType}
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 <option value="PARENT">{t('parent')}</option>
                 <option value="TUTOR">{t('tutor')}</option>

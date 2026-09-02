@@ -15,11 +15,11 @@ export async function UnlinkedParentNotice({ userName, schoolName }: Props) {
       <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
         <MailQuestion className="h-6 w-6 text-amber-700" />
       </span>
-      <h1 className="mt-4 text-xl font-semibold text-gray-900">
+      <h1 className="mt-4 text-xl font-semibold text-graphite">
         {userName ? t('greeting', { name: userName }) : t('title')}
       </h1>
-      <p className="mt-2 text-sm text-gray-600">{t('description')}</p>
-      <p className="mt-4 text-sm text-gray-500">{t('nextStep', { schoolName })}</p>
+      <p className="mt-2 text-sm text-graphite-600">{t('description')}</p>
+      <p className="mt-4 text-sm text-graphite-600">{t('nextStep', { schoolName })}</p>
     </Card>
   )
 }

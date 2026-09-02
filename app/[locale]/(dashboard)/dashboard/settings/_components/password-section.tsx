@@ -51,8 +51,8 @@ export function PasswordSection() {
 
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-semibold text-gray-900">{t('security.title')}</h2>
-      <p className="mt-1 text-sm text-gray-500">{t('security.description')}</p>
+      <h2 className="text-lg font-semibold text-graphite">{t('security.title')}</h2>
+      <p className="mt-1 text-sm text-graphite-600">{t('security.description')}</p>
 
       <form ref={formRef} onSubmit={handleSubmit} className="mt-6 max-w-md space-y-4">
         {success && (
@@ -86,7 +86,7 @@ export function PasswordSection() {
             required
             minLength={8}
           />
-          <p className="mt-1 text-xs text-gray-500">{t('security.passwordHint')}</p>
+          <p className="mt-1 text-xs text-graphite-600">{t('security.passwordHint')}</p>
         </div>
 
         <div>

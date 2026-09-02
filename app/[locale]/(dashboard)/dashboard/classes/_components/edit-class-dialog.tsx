@@ -105,7 +105,7 @@ function EditClassForm({ classItem, teachers }: EditClassDialogProps) {
               noResultsMessage={tCreate('teachersNoResults')}
               removeLabel={tCreate('teachersRemove')}
             />
-            <p className="text-xs text-gray-500">{tCreate('teachersHint')}</p>
+            <p className="text-xs text-graphite-600">{tCreate('teachersHint')}</p>
           </div>
         </div>
       </DialogBody>

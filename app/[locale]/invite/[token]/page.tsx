@@ -60,7 +60,7 @@ export default async function InvitePage({ params }: Props) {
   if (!school) notFound()
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-alabaster-900">
       <div className="w-full max-w-md">
         {existing ? (
           <JoinSchoolForm

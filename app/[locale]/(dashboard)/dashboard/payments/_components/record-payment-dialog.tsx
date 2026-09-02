@@ -64,7 +64,7 @@ export function RecordPaymentDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
-          {families.length === 1 && <p className="text-sm text-gray-500">{families[0].name}</p>}
+          {families.length === 1 && <p className="text-sm text-graphite-600">{families[0].name}</p>}
         </DialogHeader>
         <RecordPaymentForm families={families} remainingAmount={remainingAmount} />
       </DialogContent>
@@ -116,7 +116,7 @@ function RecordPaymentForm({
                 name="familyId"
                 required
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-alabaster bg-white px-3 py-2 text-sm"
               >
                 {families.map((family) => (
                   <option key={family.id} value={family.id}>
@@ -144,13 +144,13 @@ function RecordPaymentForm({
                 onChange={(e) => setAmount(e.target.value)}
                 className="h-12 pr-10 text-lg font-semibold tabular-nums"
               />
-              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-400">
+              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-graphite-700">
                 €
               </span>
             </div>
             {remainingAmount !== undefined && remainingAmount > 0 && (
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-gray-500">
+                <span className="text-graphite-600">
                   {t('remainingLabel', {
                     amount: format.number(remainingAmount, {
                       style: 'currency',
@@ -182,7 +182,7 @@ function RecordPaymentForm({
                     'flex cursor-pointer flex-col items-center gap-1.5 rounded border p-3 text-xs font-medium transition-colors',
                     method === value
                       ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                      : 'border-alabaster-700 text-graphite-600 hover:border-alabaster hover:bg-alabaster-900'
                   )}
                 >
                   <input
@@ -203,7 +203,7 @@ function RecordPaymentForm({
           <div className="space-y-2">
             <Label htmlFor="payment-reference">
               {t('reference')}
-              <span className="ml-1 font-normal text-gray-400">{t('optional')}</span>
+              <span className="ml-1 font-normal text-graphite-700">{t('optional')}</span>
             </Label>
             <Input
               id="payment-reference"
@@ -230,10 +230,10 @@ function RecordPaymentForm({
               <div className="space-y-2">
                 <Label htmlFor="payment-cashedAt">
                   {t('cashedAt')}
-                  <span className="ml-1 font-normal text-gray-400">{t('optional')}</span>
+                  <span className="ml-1 font-normal text-graphite-700">{t('optional')}</span>
                 </Label>
                 <Input id="payment-cashedAt" name="cashedAt" type="date" disabled={isPending} />
-                <p className="text-xs text-gray-500">{t('cashedAtHint')}</p>
+                <p className="text-xs text-graphite-600">{t('cashedAtHint')}</p>
               </div>
             )}
           </div>

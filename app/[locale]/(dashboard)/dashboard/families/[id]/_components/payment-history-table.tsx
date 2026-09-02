@@ -33,7 +33,7 @@ function MethodBadge({ method, label }: { method: PaymentMethod; label: string }
     <span
       className={cn(
         'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
-        METHOD_STYLES[method] ?? 'bg-gray-50 text-gray-700 ring-gray-600/20'
+        METHOD_STYLES[method] ?? 'bg-alabaster-900 text-graphite ring-graphite-600/20'
       )}
     >
       {label}
@@ -56,8 +56,8 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
     <section className="space-y-4">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">{t('title')}</h2>
-          <p className="mt-0.5 text-sm text-gray-500">
+          <h2 className="text-base font-semibold text-graphite">{t('title')}</h2>
+          <p className="mt-0.5 text-sm text-graphite-600">
             {t('count', { count: payments.length })} · {formatCurrency(total, locale)}
           </p>
         </div>
@@ -71,41 +71,41 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
         )}
       </header>
 
-      <div className="hidden overflow-hidden rounded border border-gray-200 bg-white md:block">
+      <div className="hidden overflow-hidden rounded border border-alabaster-700 bg-white md:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50/70">
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+            <tr className="border-b border-alabaster-700 bg-alabaster-900/70">
+              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('student')}
               </th>
-              <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-gray-500">
+              <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('amount')}
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('method')}
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('reference')}
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('paidAt')}
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('cashedAt')}
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-alabaster-800">
             {payments.map((payment) => (
-              <tr key={payment.id} className="transition-colors hover:bg-gray-50/70">
+              <tr key={payment.id} className="transition-colors hover:bg-alabaster-900/70">
                 <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-graphite">
                     {payment.enrollment.student.person.name}{' '}
                     {payment.enrollment.student.person.lastname}
                   </p>
-                  <p className="text-xs text-gray-500">{payment.enrollment.plan.name}</p>
+                  <p className="text-xs text-graphite-600">{payment.enrollment.plan.name}</p>
                 </td>
-                <td className="px-4 py-3 text-right font-semibold tabular-nums text-gray-900">
+                <td className="px-4 py-3 text-right font-semibold tabular-nums text-graphite">
                   {formatCurrency(payment.amount, locale)}
                 </td>
                 <td className="px-4 py-3">
@@ -113,17 +113,17 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
                 </td>
                 <td className="px-4 py-3">
                   {payment.reference ? (
-                    <span className="font-mono text-xs text-gray-600">{payment.reference}</span>
+                    <span className="font-mono text-xs text-graphite-600">{payment.reference}</span>
                   ) : (
-                    <span className="text-gray-300">—</span>
+                    <span className="text-graphite-800">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 tabular-nums text-gray-600">
+                <td className="px-4 py-3 tabular-nums text-graphite-600">
                   {formatDateLong(payment.paidAt, locale)}
                 </td>
                 <td className="px-4 py-3">
                   {payment.cashedAt ? (
-                    <span className="tabular-nums text-gray-600">
+                    <span className="tabular-nums text-graphite-600">
                       {formatDateLong(payment.cashedAt, locale)}
                     </span>
                   ) : payment.method === 'CHECK' ? (
@@ -131,18 +131,18 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
                       {t('notCashed')}
                     </span>
                   ) : (
-                    <span className="text-gray-300">—</span>
+                    <span className="text-graphite-800">—</span>
                   )}
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t border-gray-200 bg-gray-50/70">
-              <td className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-gray-500">
+            <tr className="border-t border-alabaster-700 bg-alabaster-900/70">
+              <td className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('total')}
               </td>
-              <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-gray-900">
+              <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-graphite">
                 {formatCurrency(total, locale)}
               </td>
               <td colSpan={4} />
@@ -153,16 +153,19 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
 
       <ul className="space-y-3 md:hidden">
         {payments.map((payment) => (
-          <li key={payment.id} className="rounded border border-gray-200 bg-white p-4 space-y-3">
+          <li
+            key={payment.id}
+            className="rounded border border-alabaster-700 bg-white p-4 space-y-3"
+          >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate font-medium text-gray-900">
+                <p className="truncate font-medium text-graphite">
                   {payment.enrollment.student.person.name}{' '}
                   {payment.enrollment.student.person.lastname}
                 </p>
-                <p className="truncate text-xs text-gray-500">{payment.enrollment.plan.name}</p>
+                <p className="truncate text-xs text-graphite-600">{payment.enrollment.plan.name}</p>
               </div>
-              <p className="shrink-0 font-semibold tabular-nums text-gray-900">
+              <p className="shrink-0 font-semibold tabular-nums text-graphite">
                 {formatCurrency(payment.amount, locale)}
               </p>
             </div>
@@ -170,24 +173,24 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
             <div className="flex flex-wrap items-center gap-2">
               <MethodBadge method={payment.method} label={t(`methods.${payment.method}`)} />
               {payment.reference && (
-                <span className="font-mono text-xs text-gray-600">{payment.reference}</span>
+                <span className="font-mono text-xs text-graphite-600">{payment.reference}</span>
               )}
             </div>
 
             <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
               <div className="flex gap-1.5">
-                <dt className="text-gray-500">{t('paidAt')}</dt>
-                <dd className="tabular-nums text-gray-700">
+                <dt className="text-graphite-600">{t('paidAt')}</dt>
+                <dd className="tabular-nums text-graphite">
                   {formatDateLong(payment.paidAt, locale)}
                 </dd>
               </div>
               {(payment.cashedAt || payment.method === 'CHECK') && (
                 <div className="flex gap-1.5">
-                  <dt className="text-gray-500">{t('cashedAt')}</dt>
+                  <dt className="text-graphite-600">{t('cashedAt')}</dt>
                   <dd
                     className={cn(
                       'tabular-nums',
-                      payment.cashedAt ? 'text-gray-700' : 'text-amber-700'
+                      payment.cashedAt ? 'text-graphite' : 'text-amber-700'
                     )}
                   >
                     {payment.cashedAt ? formatDateLong(payment.cashedAt, locale) : t('notCashed')}

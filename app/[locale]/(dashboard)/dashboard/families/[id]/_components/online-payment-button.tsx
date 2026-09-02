@@ -53,7 +53,7 @@ export function OnlinePaymentButton({ amount, outstanding, configured, locale }:
         {isPending ? t('pending') : t('action', { amount: formatCurrency(amount, locale) })}
       </Button>
       {!configured && <p className="text-xs text-amber-700">{t('unavailable')}</p>}
-      <p className="text-xs text-gray-500">{t('secure')}</p>
+      <p className="text-xs text-graphite-600">{t('secure')}</p>
     </div>
   )
 }

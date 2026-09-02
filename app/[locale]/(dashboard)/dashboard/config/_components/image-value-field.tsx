@@ -69,7 +69,7 @@ export function ImageValueField({ id, name, defaultValue, disabled }: Props) {
         >
           {isUploading ? t('uploading') : t('upload')}
         </Button>
-        <span className="text-xs text-gray-500">{t('hint')}</span>
+        <span className="text-xs text-graphite-600">{t('hint')}</span>
       </div>
 
       {value && (
@@ -77,7 +77,7 @@ export function ImageValueField({ id, name, defaultValue, disabled }: Props) {
         <img
           src={value}
           alt={t('preview')}
-          className="h-12 w-auto rounded border border-gray-200 bg-white object-contain p-1"
+          className="h-12 w-auto rounded border border-alabaster-700 bg-white object-contain p-1"
         />
       )}
     </div>

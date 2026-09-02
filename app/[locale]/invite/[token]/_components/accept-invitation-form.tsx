@@ -46,7 +46,7 @@ export function AcceptInvitationForm({ token, email }: Props) {
 
   return (
     <Card className="p-8">
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div className="space-y-2">
           <Label htmlFor="accept-email">{t('email')}</Label>
@@ -56,7 +56,7 @@ export function AcceptInvitationForm({ token, email }: Props) {
             value={email}
             readOnly
             disabled
-            className="bg-gray-50"
+            className="bg-alabaster-900"
           />
         </div>
         <div className="space-y-2">

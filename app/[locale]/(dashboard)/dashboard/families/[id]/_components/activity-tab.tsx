@@ -42,7 +42,7 @@ export async function ActivityTab({ enrollments, payments, locale }: Props) {
       {enrollments.length > 0 ? (
         <ActivityFeed enrollments={enrollments} payments={payments} locale={locale} />
       ) : (
-        <p className="text-sm text-gray-500 text-center py-8">{t('sections.noActivity')}</p>
+        <p className="text-sm text-graphite-600 text-center py-8">{t('sections.noActivity')}</p>
       )}
     </div>
   )

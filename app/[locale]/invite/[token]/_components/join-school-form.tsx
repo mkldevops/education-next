@@ -42,8 +42,8 @@ export function JoinSchoolForm({ token, email, schoolName, signedInAs }: Props) 
 
   return (
     <Card className="p-8">
-      <h1 className="text-2xl font-bold text-gray-900">{t('title', { schoolName })}</h1>
-      <p className="mt-2 text-sm text-gray-600">{t('description', { email })}</p>
+      <h1 className="text-2xl font-bold text-graphite">{t('title', { schoolName })}</h1>
+      <p className="mt-2 text-sm text-graphite-600">{t('description', { email })}</p>
 
       {matches ? (
         <Button type="button" onClick={handleJoin} disabled={isPending} className="mt-6 w-full">

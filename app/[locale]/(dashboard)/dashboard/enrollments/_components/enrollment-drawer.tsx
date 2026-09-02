@@ -136,14 +136,14 @@ export function EnrollmentDrawer({
         </DrawerHeader>
 
         <DrawerBody className="space-y-6">
-          <div className="space-y-4 rounded border border-gray-200 p-4">
+          <div className="space-y-4 rounded border border-alabaster-700 p-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <p className="text-sm font-medium text-gray-500">{t('plan')}</p>
-                <p className="mt-1 text-sm text-gray-900">{enrollment.plan.name}</p>
+                <p className="text-sm font-medium text-graphite-600">{t('plan')}</p>
+                <p className="mt-1 text-sm text-graphite">{enrollment.plan.name}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">{t('status')}</p>
+                <p className="text-sm font-medium text-graphite-600">{t('status')}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <EnrollmentStatusBadge status={enrollment.status} />
                   {remaining > 0 && (
@@ -154,12 +154,12 @@ export function EnrollmentDrawer({
                 </div>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">{t('family')}</p>
-                <p className="mt-1 text-sm text-gray-900">{familyName}</p>
+                <p className="text-sm font-medium text-graphite-600">{t('family')}</p>
+                <p className="mt-1 text-sm text-graphite">{familyName}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">{t('registeredAt')}</p>
-                <p className="mt-1 text-sm text-gray-900">
+                <p className="text-sm font-medium text-graphite-600">{t('registeredAt')}</p>
+                <p className="mt-1 text-sm text-graphite">
                   {formatDate(enrollment.registeredAt, locale)}
                 </p>
               </div>
@@ -200,28 +200,28 @@ export function EnrollmentDrawer({
           </div>
 
           <div>
-            <h3 className="mb-3 text-base font-semibold text-gray-900">{t('pricing')}</h3>
-            <div className="space-y-2 rounded border border-gray-200 p-4">
+            <h3 className="mb-3 text-base font-semibold text-graphite">{t('pricing')}</h3>
+            <div className="space-y-2 rounded border border-alabaster-700 p-4">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{t('totalAmount')}</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-graphite-600">{t('totalAmount')}</span>
+                <span className="font-medium text-graphite">
                   {formatCurrency(totalAmountNum, locale)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{t('discount')}</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-graphite-600">{t('discount')}</span>
+                <span className="font-medium text-graphite">
                   {formatCurrency(-discountNum, locale)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{t('totalPaid')}</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-graphite-600">{t('totalPaid')}</span>
+                <span className="font-medium text-graphite">
                   {formatCurrency(totalPaid, locale)}
                 </span>
               </div>
               <div className="flex justify-between border-t pt-2 text-sm font-semibold">
-                <span className="text-gray-900">{t('remaining')}</span>
+                <span className="text-graphite">{t('remaining')}</span>
                 <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
                   {formatCurrency(remaining, locale)}
                 </span>
@@ -231,13 +231,13 @@ export function EnrollmentDrawer({
 
           {enrollment.classAssignments.length > 0 && (
             <div>
-              <h3 className="mb-3 text-base font-semibold text-gray-900">
+              <h3 className="mb-3 text-base font-semibold text-graphite">
                 {t('classAssignments')}
               </h3>
-              <div className="overflow-x-auto rounded border border-gray-200">
+              <div className="overflow-x-auto rounded border border-alabaster-700">
                 <table className="w-full min-w-[400px]">
                   <thead>
-                    <tr className="border-b bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-400">
+                    <tr className="border-b bg-alabaster-900 text-xs font-medium uppercase tracking-wider text-graphite-700">
                       <th className="px-3 py-2 text-left">
                         {tDetails('classAssignmentTable.class')}
                       </th>
@@ -256,9 +256,11 @@ export function EnrollmentDrawer({
                     {enrollment.classAssignments.map((a) => (
                       <tr key={a.id} className="text-sm">
                         <td className="px-3 py-2">{a.classPeriod.name}</td>
-                        <td className="px-3 py-2 text-gray-600">{a.classPeriod.level.name}</td>
-                        <td className="px-3 py-2 text-gray-600">{a.classPeriod.period.name}</td>
-                        <td className="px-3 py-2 text-gray-600">{formatDate(a.startAt, locale)}</td>
+                        <td className="px-3 py-2 text-graphite-600">{a.classPeriod.level.name}</td>
+                        <td className="px-3 py-2 text-graphite-600">{a.classPeriod.period.name}</td>
+                        <td className="px-3 py-2 text-graphite-600">
+                          {formatDate(a.startAt, locale)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -269,11 +271,11 @@ export function EnrollmentDrawer({
 
           {enrollment.payments.length > 0 && (
             <div>
-              <h3 className="mb-3 text-base font-semibold text-gray-900">{t('payments')}</h3>
-              <div className="overflow-x-auto rounded border border-gray-200">
+              <h3 className="mb-3 text-base font-semibold text-graphite">{t('payments')}</h3>
+              <div className="overflow-x-auto rounded border border-alabaster-700">
                 <table className="w-full min-w-[400px]">
                   <thead>
-                    <tr className="border-b bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-400">
+                    <tr className="border-b bg-alabaster-900 text-xs font-medium uppercase tracking-wider text-graphite-700">
                       <th className="px-3 py-2 text-left">{tDetails('paymentTable.amount')}</th>
                       <th className="px-3 py-2 text-left">{tDetails('paymentTable.method')}</th>
                       <th className="px-3 py-2 text-left">{tDetails('paymentTable.reference')}</th>
@@ -286,11 +288,13 @@ export function EnrollmentDrawer({
                         <td className="px-3 py-2 font-medium">
                           {formatCurrency(p.amount, locale)}
                         </td>
-                        <td className="px-3 py-2 text-gray-600">
+                        <td className="px-3 py-2 text-graphite-600">
                           <PaymentMethodLabel method={p.method} />
                         </td>
-                        <td className="px-3 py-2 text-gray-600">{p.reference ?? '-'}</td>
-                        <td className="px-3 py-2 text-gray-600">{formatDate(p.paidAt, locale)}</td>
+                        <td className="px-3 py-2 text-graphite-600">{p.reference ?? '-'}</td>
+                        <td className="px-3 py-2 text-graphite-600">
+                          {formatDate(p.paidAt, locale)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

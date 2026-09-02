@@ -94,7 +94,7 @@ function EditConfigForm({ config }: EditConfigDialogProps) {
                   type="checkbox"
                   defaultChecked={config.value === 'true'}
                   disabled={isPending}
-                  className="h-4 w-4 rounded border-gray-300"
+                  className="h-4 w-4 rounded border-alabaster"
                 />
                 {config.value === 'true' ? t('true') : t('false')}
               </label>
@@ -107,7 +107,7 @@ function EditConfigForm({ config }: EditConfigDialogProps) {
                   defaultValue={config.value}
                   required
                   disabled={isPending}
-                  className="h-10 w-16 cursor-pointer rounded border border-gray-300 p-1"
+                  className="h-10 w-16 cursor-pointer rounded border border-alabaster p-1"
                 />
                 <Input
                   name="color-text"

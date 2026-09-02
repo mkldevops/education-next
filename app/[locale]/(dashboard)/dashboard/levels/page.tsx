@@ -53,13 +53,14 @@ export default async function LevelsPage({ params }: Props) {
     {
       key: 'nextLevel',
       header: t('nextLevel'),
-      className: 'text-gray-700',
-      render: (level) => level.nextLevel?.name ?? <span className="text-gray-300">&mdash;</span>,
+      className: 'text-graphite',
+      render: (level) =>
+        level.nextLevel?.name ?? <span className="text-graphite-800">&mdash;</span>,
     },
     {
       key: 'classes',
       header: t('classes'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (level) => level._count.classPeriods,
     },
     {
@@ -88,20 +89,20 @@ export default async function LevelsPage({ params }: Props) {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         <CreateLevelDialog />
       </div>
 
       {chains.length > 0 && (
-        <Card className="rounded border border-gray-200 p-4">
-          <p className="mb-2 text-sm font-medium text-gray-500">{t('promotionChain')}</p>
+        <Card className="rounded border border-alabaster-700 p-4">
+          <p className="mb-2 text-sm font-medium text-graphite-600">{t('promotionChain')}</p>
           <div className="flex flex-wrap gap-2">
             {chains.map((chain) => (
               <div key={chain.join('-')} className="flex items-center gap-1 text-sm">
                 {chain.map((name) => (
                   <span key={name} className="flex items-center gap-1">
-                    {chain.indexOf(name) > 0 && <span className="text-gray-400">&rarr;</span>}
-                    <span className="rounded bg-gray-100 px-2 py-0.5 font-medium">{name}</span>
+                    {chain.indexOf(name) > 0 && <span className="text-graphite-700">&rarr;</span>}
+                    <span className="rounded bg-alabaster-800 px-2 py-0.5 font-medium">{name}</span>
                   </span>
                 ))}
               </div>
@@ -110,7 +111,7 @@ export default async function LevelsPage({ params }: Props) {
         </Card>
       )}
 
-      <Card className="rounded border border-gray-200">
+      <Card className="rounded border border-alabaster-700">
         <DataTable
           data={levels}
           columns={columns}

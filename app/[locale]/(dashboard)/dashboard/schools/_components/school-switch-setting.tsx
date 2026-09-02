@@ -36,16 +36,16 @@ export function SchoolSwitchSetting({ enabled }: Props) {
   }
 
   return (
-    <Card className="rounded border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
-      <p className="mt-1 text-sm text-gray-600">{t('description')}</p>
-      <label className="mt-4 flex items-center gap-2 text-sm text-gray-800">
+    <Card className="rounded border border-alabaster-700 p-6">
+      <h2 className="text-lg font-semibold text-graphite">{t('title')}</h2>
+      <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
+      <label className="mt-4 flex items-center gap-2 text-sm text-graphite">
         <input
           type="checkbox"
           checked={checked}
           disabled={pending}
           onChange={(event) => onToggle(event.target.checked)}
-          className="h-4 w-4 rounded border-gray-300"
+          className="h-4 w-4 rounded border-alabaster"
         />
         {checked ? t('enabled') : t('disabled')}
       </label>

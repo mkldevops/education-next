@@ -29,7 +29,7 @@ export function DataTable<T>({
   className,
 }: DataTableProps<T>) {
   if (data.length === 0 && emptyMessage) {
-    return <div className="py-12 text-center text-gray-500">{emptyMessage}</div>
+    return <div className="py-12 text-center text-graphite-600">{emptyMessage}</div>
   }
 
   return (
@@ -53,7 +53,10 @@ export function DataTable<T>({
         </thead>
         <tbody>
           {data.map((item) => (
-            <tr key={getRowKey(item)} className="relative border-b border-gray-100 last:border-b-0">
+            <tr
+              key={getRowKey(item)}
+              className="relative border-b border-alabaster-800 last:border-b-0"
+            >
               {columns.map((col) => (
                 <td key={col.key} className={cn('px-4 py-4 text-sm', col.className)}>
                   {col.render ? col.render(item) : String(getCellValue(item, col.key) ?? '')}

@@ -63,8 +63,8 @@ export function SessionsSection({ sessions }: Props) {
 
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-semibold text-gray-900">{t('sessions.title')}</h2>
-      <p className="mt-1 text-sm text-gray-500">{t('sessions.description')}</p>
+      <h2 className="text-lg font-semibold text-graphite">{t('sessions.title')}</h2>
+      <p className="mt-1 text-sm text-graphite-600">{t('sessions.description')}</p>
 
       {error && (
         <div className="mt-4 rounded bg-red-50 p-3 text-sm text-red-600">
@@ -80,17 +80,17 @@ export function SessionsSection({ sessions }: Props) {
           return (
             <div
               key={session.id}
-              className="flex items-center justify-between rounded border border-gray-200 p-4"
+              className="flex items-center justify-between rounded border border-alabaster-700 p-4"
             >
               <div className="flex items-center gap-3">
                 {isMobile ? (
-                  <Smartphone size={20} className="text-gray-400" />
+                  <Smartphone size={20} className="text-graphite-700" />
                 ) : (
-                  <Monitor size={20} className="text-gray-400" />
+                  <Monitor size={20} className="text-graphite-700" />
                 )}
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-graphite">
                       {browser} — {device}
                     </span>
                     {session.isCurrent && (
@@ -99,7 +99,7 @@ export function SessionsSection({ sessions }: Props) {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-graphite-600">
                     {session.ipAddress || t('sessions.unknownIp')} —{' '}
                     {formatDate(session.createdAt, locale)}
                   </p>
@@ -122,7 +122,7 @@ export function SessionsSection({ sessions }: Props) {
         })}
 
         {sessions.length === 0 && (
-          <p className="text-sm text-gray-500">{t('sessions.noSessions')}</p>
+          <p className="text-sm text-graphite-600">{t('sessions.noSessions')}</p>
         )}
       </div>
     </Card>

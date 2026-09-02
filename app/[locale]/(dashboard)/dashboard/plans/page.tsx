@@ -45,13 +45,13 @@ export default async function PlansPage({ params }: Props) {
     {
       key: 'amount',
       header: t('amount'),
-      className: 'font-medium text-gray-900',
+      className: 'font-medium text-graphite',
       render: (plan) => formatCurrency(plan.amount, locale),
     },
     {
       key: 'enrollments',
       header: t('enrollments'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (plan) => plan._count.enrollments,
     },
     {
@@ -74,10 +74,10 @@ export default async function PlansPage({ params }: Props) {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         <CreatePlanDialog />
       </div>
-      <Card className="rounded border border-gray-200">
+      <Card className="rounded border border-alabaster-700">
         <DataTable
           data={plans}
           columns={columns}

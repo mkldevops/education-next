@@ -134,10 +134,10 @@ export default async function ClassDetailPage({ params }: Props) {
 
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-bold text-gray-900">{classPeriod.name}</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="truncate text-2xl font-bold text-graphite">{classPeriod.name}</h1>
+          <p className="mt-1 text-sm text-graphite-600">
             {classPeriod.level.name}
-            <span className="mx-2 text-gray-300">·</span>
+            <span className="mx-2 text-graphite-800">·</span>
             {classPeriod.period.name}
           </p>
         </div>
@@ -155,30 +155,34 @@ export default async function ClassDetailPage({ params }: Props) {
       </div>
 
       <Card className="p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{t('teachers')}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-graphite-600">
+          {t('teachers')}
+        </p>
         {assignedTeachers.length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-2">
             {assignedTeachers.map((teacher) => (
               <span
                 key={teacher.id}
-                className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800"
+                className="rounded-full bg-alabaster-800 px-3 py-1 text-sm font-medium text-graphite"
               >
                 {teacher.name}
               </span>
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-sm text-gray-500">{t('noTeachers')}</p>
+          <p className="mt-2 text-sm text-graphite-600">{t('noTeachers')}</p>
         )}
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-3">
         {kpis.map((kpi) => (
           <Card key={kpi.label} className="p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{kpi.label}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-graphite-600">
+              {kpi.label}
+            </p>
             <p
               className={`mt-1 text-xl font-semibold tabular-nums ${
-                kpi.tone === 'amber' ? 'text-amber-600' : 'text-gray-900'
+                kpi.tone === 'amber' ? 'text-amber-600' : 'text-graphite'
               }`}
             >
               {kpi.value}
@@ -188,16 +192,16 @@ export default async function ClassDetailPage({ params }: Props) {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-base font-semibold text-gray-900">{t('roster')}</h2>
+        <h2 className="text-base font-semibold text-graphite">{t('roster')}</h2>
         {roster.length === 0 ? (
           <Card className="p-6">
-            <p className="text-sm text-gray-500">{t('noStudents')}</p>
+            <p className="text-sm text-graphite-600">{t('noStudents')}</p>
           </Card>
         ) : (
-          <Card className="overflow-hidden rounded border border-gray-200">
+          <Card className="overflow-hidden rounded border border-alabaster-700">
             <table className="w-full text-left">
-              <thead className="bg-gray-50">
-                <tr className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <thead className="bg-alabaster-900">
+                <tr className="text-xs font-medium uppercase tracking-wide text-graphite-600">
                   <th className="px-4 py-3">{t('student')}</th>
                   <th className="px-4 py-3">{t('plan')}</th>
                   <th className="px-4 py-3">{t('status')}</th>
@@ -205,7 +209,7 @@ export default async function ClassDetailPage({ params }: Props) {
                   <th className="px-4 py-3 text-right">{t('enrollment')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-alabaster-800">
                 {roster.map((row) => (
                   <tr key={row.assignmentId} className="text-sm">
                     <td className="px-4 py-3">
@@ -216,11 +220,13 @@ export default async function ClassDetailPage({ params }: Props) {
                         {row.studentName}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-gray-700">{row.planName}</td>
+                    <td className="px-4 py-3 text-graphite">{row.planName}</td>
                     <td className="px-4 py-3">
                       <EnrollmentStatusBadge status={row.status} />
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{formatDate(row.startAt, locale)}</td>
+                    <td className="px-4 py-3 text-graphite-600">
+                      {formatDate(row.startAt, locale)}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/dashboard/enrollments/${row.enrollmentId}`}

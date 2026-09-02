@@ -92,19 +92,19 @@ export function AccountSection({ email, linkedAccounts }: Props) {
   return (
     <div className="space-y-6">
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900">{t('account.title')}</h2>
-        <p className="mt-1 text-sm text-gray-500">{t('account.description')}</p>
+        <h2 className="text-lg font-semibold text-graphite">{t('account.title')}</h2>
+        <p className="mt-1 text-sm text-graphite-600">{t('account.description')}</p>
 
         <div className="mt-6 max-w-md">
           <Label htmlFor="account-email">{t('profile.email')}</Label>
           <Input id="account-email" type="email" defaultValue={email} disabled className="mt-1" />
-          <p className="mt-1 text-xs text-gray-500">{t('profile.emailHint')}</p>
+          <p className="mt-1 text-xs text-graphite-600">{t('profile.emailHint')}</p>
         </div>
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900">{t('connectedAccounts.title')}</h2>
-        <p className="mt-1 text-sm text-gray-500">{t('connectedAccounts.description')}</p>
+        <h2 className="text-lg font-semibold text-graphite">{t('connectedAccounts.title')}</h2>
+        <p className="mt-1 text-sm text-graphite-600">{t('connectedAccounts.description')}</p>
 
         {error && (error === 'linkFailed' || error === 'unlinkFailed') && (
           <div className="mt-3 rounded bg-red-50 p-3 text-sm text-red-600">
@@ -113,7 +113,7 @@ export function AccountSection({ email, linkedAccounts }: Props) {
         )}
 
         <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between rounded border border-gray-200 p-4">
+          <div className="flex items-center justify-between rounded border border-alabaster-700 p-4">
             <div className="flex items-center gap-3">
               <svg className="h-5 w-5" viewBox="0 0 24 24" role="img" aria-label="Google">
                 <path
@@ -134,8 +134,8 @@ export function AccountSection({ email, linkedAccounts }: Props) {
                 />
               </svg>
               <div>
-                <p className="text-sm font-medium text-gray-900">Google</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-sm font-medium text-graphite">Google</p>
+                <p className="text-xs text-graphite-600">
                   {googleAccount
                     ? t('connectedAccounts.connected')
                     : t('connectedAccounts.notConnected')}
@@ -157,7 +157,7 @@ export function AccountSection({ email, linkedAccounts }: Props) {
 
       <Card className="border-orange-200 p-6">
         <h2 className="text-lg font-semibold text-orange-600">{t('logout.title')}</h2>
-        <p className="mt-1 text-sm text-gray-500">{t('logout.description')}</p>
+        <p className="mt-1 text-sm text-graphite-600">{t('logout.description')}</p>
 
         <div className="mt-6">
           {showLogoutConfirm ? (
@@ -186,7 +186,7 @@ export function AccountSection({ email, linkedAccounts }: Props) {
 
       <Card className="border-red-200 p-6">
         <h2 className="text-lg font-semibold text-red-600">{t('danger.title')}</h2>
-        <p className="mt-1 text-sm text-gray-500">{t('danger.description')}</p>
+        <p className="mt-1 text-sm text-graphite-600">{t('danger.description')}</p>
 
         {error && (
           <div className="mt-4 rounded bg-red-50 p-3 text-sm text-red-600">

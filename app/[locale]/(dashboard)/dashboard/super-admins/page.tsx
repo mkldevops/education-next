@@ -34,10 +34,10 @@ export default async function SuperAdminsPage({ params }: Props) {
       header: t('name'),
       render: (user) => (
         <div>
-          <p className="font-medium text-gray-900">
-            {user.name || <span className="text-gray-300">&mdash;</span>}
+          <p className="font-medium text-graphite">
+            {user.name || <span className="text-graphite-800">&mdash;</span>}
           </p>
-          <p className="text-xs text-gray-500">{user.email}</p>
+          <p className="text-xs text-graphite-600">{user.email}</p>
         </div>
       ),
     },
@@ -46,9 +46,9 @@ export default async function SuperAdminsPage({ params }: Props) {
       header: t('scope'),
       render: (user) => (
         <div>
-          <p className="text-gray-700">{t('allSchools')}</p>
+          <p className="text-graphite">{t('allSchools')}</p>
           {user.schoolMemberships.length > 0 && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-graphite-700">
               {t('alsoMember', {
                 schools: user.schoolMemberships
                   .map((membership) => membership.school.name)
@@ -62,18 +62,18 @@ export default async function SuperAdminsPage({ params }: Props) {
     {
       key: 'lastLogin',
       header: t('lastLogin'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (user) =>
         user.sessions[0] ? (
           formatDate(user.sessions[0].createdAt, locale)
         ) : (
-          <span className="text-gray-300">&mdash;</span>
+          <span className="text-graphite-800">&mdash;</span>
         ),
     },
     {
       key: 'createdAt',
       header: t('createdAt'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (user) => formatDate(user.createdAt, locale),
     },
     {
@@ -97,11 +97,11 @@ export default async function SuperAdminsPage({ params }: Props) {
         ]}
       />
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        <p className="text-sm text-gray-500">{t('description', { count: activeCount })}</p>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
+        <p className="text-sm text-graphite-600">{t('description', { count: activeCount })}</p>
       </div>
 
-      <Card className="rounded border border-gray-200">
+      <Card className="rounded border border-alabaster-700">
         <DataTable
           data={superAdmins}
           columns={columns}

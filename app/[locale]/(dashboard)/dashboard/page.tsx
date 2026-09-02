@@ -163,7 +163,7 @@ export default async function DashboardPage({ params }: Props) {
     {
       key: 'plan',
       header: t('table.plan'),
-      className: 'text-gray-600',
+      className: 'text-graphite-600',
       render: (item) => item.plan.name,
     },
     {
@@ -189,7 +189,7 @@ export default async function DashboardPage({ params }: Props) {
     {
       key: 'date',
       header: t('table.date'),
-      className: 'text-gray-600',
+      className: 'text-graphite-600',
       render: (item) => formatDate(item.registeredAt, locale),
     },
   ]
@@ -209,8 +209,8 @@ export default async function DashboardPage({ params }: Props) {
               className="block p-4 rounded border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
             >
               <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-gray-600" />
-                <span className="font-medium text-gray-900">{t('quickActions.newFamily')}</span>
+                <Users className="h-5 w-5 text-graphite-600" />
+                <span className="font-medium text-graphite">{t('quickActions.newFamily')}</span>
               </div>
             </Link>
           </div>
@@ -225,12 +225,12 @@ export default async function DashboardPage({ params }: Props) {
         }
       >
         {isAdmin && (
-          <Card className="rounded border border-gray-200 bg-white p-5">
+          <Card className="rounded border border-alabaster-700 bg-white p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{t('stats.families')}</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{familyCount}</p>
-                <p className="mt-1 text-xs text-gray-400">{t('stats.scopeAll')}</p>
+                <p className="text-sm font-medium text-graphite-600">{t('stats.families')}</p>
+                <p className="mt-2 text-3xl font-bold text-graphite">{familyCount}</p>
+                <p className="mt-1 text-xs text-graphite-700">{t('stats.scopeAll')}</p>
               </div>
               <div className="rounded bg-primary-light p-3">
                 <TrendingUp className="h-6 w-6 text-primary" />
@@ -238,24 +238,24 @@ export default async function DashboardPage({ params }: Props) {
             </div>
           </Card>
         )}
-        <Card className="rounded border border-gray-200 bg-white p-5">
+        <Card className="rounded border border-alabaster-700 bg-white p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">{t('stats.students')}</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{studentCount}</p>
-              <p className="mt-1 text-xs text-gray-400">{t('stats.scopeAll')}</p>
+              <p className="text-sm font-medium text-graphite-600">{t('stats.students')}</p>
+              <p className="mt-2 text-3xl font-bold text-graphite">{studentCount}</p>
+              <p className="mt-1 text-xs text-graphite-700">{t('stats.scopeAll')}</p>
             </div>
             <div className="rounded bg-primary-light p-3">
               <TrendingUp className="h-6 w-6 text-primary" />
             </div>
           </div>
         </Card>
-        <Card className="rounded border border-gray-200 bg-white p-5">
+        <Card className="rounded border border-alabaster-700 bg-white p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">{t('stats.enrollments')}</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{enrollmentCount}</p>
-              <p className="mt-1 text-xs text-gray-400">{periodScope}</p>
+              <p className="text-sm font-medium text-graphite-600">{t('stats.enrollments')}</p>
+              <p className="mt-2 text-3xl font-bold text-graphite">{enrollmentCount}</p>
+              <p className="mt-1 text-xs text-graphite-700">{periodScope}</p>
             </div>
             <div className="rounded bg-primary-light p-3">
               <TrendingUp className="h-6 w-6 text-primary" />
@@ -263,12 +263,14 @@ export default async function DashboardPage({ params }: Props) {
           </div>
         </Card>
         {isAdmin ? (
-          <Card className="rounded border border-gray-200 bg-white p-5">
+          <Card className="rounded border border-alabaster-700 bg-white p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{t('stats.pendingEnrollments')}</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{pendingPaymentCount}</p>
-                <p className="mt-1 text-xs text-gray-400">{periodScope}</p>
+                <p className="text-sm font-medium text-graphite-600">
+                  {t('stats.pendingEnrollments')}
+                </p>
+                <p className="mt-2 text-3xl font-bold text-graphite">{pendingPaymentCount}</p>
+                <p className="mt-1 text-xs text-graphite-700">{periodScope}</p>
               </div>
               <div className="rounded bg-amber-100 p-3">
                 <AlertCircle className="h-6 w-6 text-amber-600" />
@@ -277,11 +279,11 @@ export default async function DashboardPage({ params }: Props) {
           </Card>
         ) : (
           <Card className="rounded border border-amber-200 bg-white p-5">
-            <p className="text-sm font-medium text-gray-600">{t('stats.remainingBalance')}</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
+            <p className="text-sm font-medium text-graphite-600">{t('stats.remainingBalance')}</p>
+            <p className="mt-2 text-3xl font-bold text-graphite">
               {formatCurrency(parentBalance?.remainingBalance ?? 0, locale)}
             </p>
-            <p className="mt-1 text-xs text-gray-400">{t('stats.scopeAll')}</p>
+            <p className="mt-1 text-xs text-graphite-700">{t('stats.scopeAll')}</p>
             <div className="mt-4">
               <OnlinePaymentButton
                 amount={parentBalance?.payableBalance ?? 0}
@@ -294,9 +296,9 @@ export default async function DashboardPage({ params }: Props) {
         )}
       </div>
 
-      <Card className="rounded border border-gray-200">
+      <Card className="rounded border border-alabaster-700">
         <div className="flex items-center justify-between px-6 pt-6">
-          <h2 className="text-lg font-semibold text-gray-900">{t('recentEnrollments')}</h2>
+          <h2 className="text-lg font-semibold text-graphite">{t('recentEnrollments')}</h2>
           <Link
             href={isAdmin ? '/dashboard/enrollments' : `/dashboard/families/${scope.familyId}`}
             className="text-sm font-medium text-primary hover:text-primary-hover"
@@ -306,7 +308,7 @@ export default async function DashboardPage({ params }: Props) {
         </div>
 
         {recentEnrollments.length === 0 ? (
-          <p className="px-6 pb-6 pt-4 text-gray-500">
+          <p className="px-6 pb-6 pt-4 text-graphite-600">
             {selectedPeriod
               ? t('pages.enrollments.noEnrollmentsInPeriod', { period: selectedPeriod.name })
               : t('pages.enrollments.noEnrollments')}
