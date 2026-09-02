@@ -1385,7 +1385,8 @@
     },
     "switcher": {
       "label": "Changer d'école",
-      "error": "La bascule a échoué. Réessayez ou vérifiez que vous avez toujours accès à cette école."
+      "error": "La bascule a échoué. Réessayez ou vérifiez que vous avez toujours accès à cette école.",
+      "switching": "Passage à {schoolName}…"
     },
     "join": {
       "title": "Rejoindre {schoolName}",
