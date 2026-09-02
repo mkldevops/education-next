@@ -65,6 +65,8 @@
 
   --color-accent: var(--theme-accent, #539a9e);
 
+  --color-success: var(--theme-success, #10b981);
+
   --color-text: var(--theme-text, #353535);
   --color-background: var(--theme-background, #ffffff);
   --color-muted: var(--theme-muted, #d9d9d9);
@@ -79,6 +81,7 @@
   --theme-secondary: #284b63;
   --theme-secondary-hover: #203c4e;
   --theme-accent: #539a9e;
+  --theme-success: #10b981;
   --theme-text: #353535;
   --theme-background: #ffffff;
   --theme-muted: #d9d9d9;
@@ -110,5 +113,19 @@
 
   .display-md {
     @apply text-2xl font-bold leading-tight tracking-tight md:text-3xl;
+  }
+
+  .error-page-grid {
+    background-image: linear-gradient(
+        to right,
+        color-mix(in oklab, var(--color-graphite) 8%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--color-graphite) 8%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 42px 42px;
   }
 }
