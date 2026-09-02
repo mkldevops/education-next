@@ -36,7 +36,13 @@ export function SchoolSwitchPrompt({ schoolId, schoolName, canSwitch }: Props) {
         setFailed(true)
         return
       }
-      router.refresh()
+
+      // Seconde portée obligatoire : React ne prolonge pas la transition au-delà de
+      // l'`await`, donc sans elle le bouton se réactiverait avant le rendu de la
+      // nouvelle école.
+      startTransition(() => {
+        router.refresh()
+      })
     })
   }
 

@@ -1,15 +1,17 @@
 'use client'
 
 import { useMenu } from '@peaklab/ui'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown, LoaderCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import { switchSchoolAction } from '@/actions/school-actions'
 import type { AuthorizedSchool } from '@/domain/school-scope'
-import { useRouter } from '@/i18n/routing'
+import { usePathname, useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { toInitials } from './initials'
+import { schoolSwitchLanding } from './school-switch-landing'
 import { SidebarBrand } from './sidebar-brand'
 
 type Props = {
@@ -41,7 +43,9 @@ export function SchoolSwitcher({
   const t = useTranslations('schools.switcher')
   const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
   const router = useRouter()
+  const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
+  const [targetId, setTargetId] = useState<string | null>(null)
 
   if (!canSwitchSchool || schools.length <= 1) {
     return <SidebarBrand displayName={displayName} logoUrl={logoUrl} expanded={expanded} />
@@ -50,17 +54,29 @@ export function SchoolSwitcher({
   const active = schools.find((school) => school.id === activeSchoolId)
   const label = active?.name ?? displayName
 
+  const target = schools.find((school) => school.id === targetId)
+
   const onSelect = (schoolId: string) => {
     close(false)
     if (schoolId === activeSchoolId) return
 
+    setTargetId(schoolId)
     startTransition(async () => {
       const result = await switchSchoolAction(schoolId)
       if (result !== 'OK') {
+        setTargetId(null)
         toast.error(t('error'))
         return
       }
-      router.refresh()
+
+      // React ne prolonge pas la transition au-delà de l'`await` : sans cette seconde
+      // portée, `isPending` retomberait avant que le rendu serveur de la nouvelle école
+      // soit revenu, et l'écran resterait sur les données de l'ancienne sans indication.
+      startTransition(() => {
+        const landing = schoolSwitchLanding(pathname)
+        if (landing === pathname) router.refresh()
+        else router.replace(landing)
+      })
     })
   }
 
@@ -95,6 +111,25 @@ export function SchoolSwitcher({
           </>
         )}
       </button>
+
+      {isPending &&
+        createPortal(
+          // La barre latérale porte `translate-x-*` en permanence, ce qui en fait le bloc
+          // conteneur de ses descendants `fixed` : rendu sur place, le voile se replierait
+          // sur la colonne et laisserait l'ancienne école visible. Le portail l'ancre au
+          // `body`, comme l'infobulle de `sidebar-nav-item`.
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-white/80 backdrop-blur-sm"
+          >
+            <LoaderCircle size={28} className="animate-spin text-primary" aria-hidden />
+            <span className="text-sm font-medium text-graphite-800">
+              {target ? t('switching', { schoolName: target.name }) : t('label')}
+            </span>
+          </div>,
+          document.body
+        )}
 
       {open && (
         <div

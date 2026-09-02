@@ -11,7 +11,7 @@ vi.mock('@/i18n/routing', () => ({
       {children}
     </a>
   ),
-  usePathname: () => '/dashboard',
+  usePathname: () => pathname,
   useRouter: () => router,
 }))
 
@@ -56,6 +56,7 @@ const renderSwitcher = (schools: AuthorizedSchool[], canSwitchSchool = true) =>
     />
   )
 
+let pathname = '/dashboard'
 const router = { replace: vi.fn(), refresh: vi.fn() }
 const switchSchoolAction = vi.fn(async (_schoolId: string) => 'OK' as const)
 const signOut = vi.fn(async () => ({ error: null }))
@@ -153,10 +154,17 @@ describe('Sidebar accessibility', () => {
 describe('Sidebar school switcher', () => {
   beforeEach(() => {
     expand()
+    pathname = '/dashboard'
     router.refresh.mockClear()
+    router.replace.mockClear()
     switchSchoolAction.mockClear()
     switchSchoolAction.mockResolvedValue('OK' as const)
   })
+
+  const selectHorizon = () => {
+    fireEvent.click(screen.getByRole('button', { name: /Al-Nour/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Horizon/ }))
+  }
 
   it('renders a static brand when the caller belongs to a single school', () => {
     renderSwitcher([school('school-a', 'Al-Nour')])
@@ -187,11 +195,65 @@ describe('Sidebar school switcher', () => {
   it('switches the active school and replays the layout', async () => {
     renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
 
-    fireEvent.click(screen.getByRole('button', { name: /Al-Nour/ }))
-    fireEvent.click(screen.getByRole('menuitem', { name: /Horizon/ }))
+    selectHorizon()
 
     await waitFor(() => expect(switchSchoolAction).toHaveBeenCalledWith('school-b'))
     await waitFor(() => expect(router.refresh).toHaveBeenCalled())
+    expect(router.replace).not.toHaveBeenCalled()
+  })
+
+  it('leaves a detail page for its section list, whose data exists in every school', async () => {
+    pathname = '/dashboard/families/family-of-school-a'
+    renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
+
+    selectHorizon()
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/dashboard/families'))
+    expect(router.refresh).not.toHaveBeenCalled()
+  })
+
+  it('covers the stale school with a loader until the switch settles', async () => {
+    let settle: (result: 'OK') => void = () => {}
+    switchSchoolAction.mockImplementation(() => new Promise<'OK'>((resolve) => (settle = resolve)))
+
+    renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+
+    selectHorizon()
+
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('switching'))
+    settle('OK')
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+  })
+
+  it('ancre le voile hors de la barre latérale, dont le `translate` borne le `fixed`', async () => {
+    let settle: (result: 'OK') => void = () => {}
+    switchSchoolAction.mockImplementation(() => new Promise<'OK'>((resolve) => (settle = resolve)))
+
+    const { container } = renderSwitcher([
+      school('school-a', 'Al-Nour'),
+      school('school-b', 'Horizon'),
+    ])
+
+    selectHorizon()
+
+    const overlay = await screen.findByRole('status')
+    expect(container.querySelector('aside')).not.toContainElement(overlay)
+    expect(overlay.parentElement).toBe(document.body)
+
+    settle('OK')
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+  })
+
+  it('drops the loader when the switch is refused', async () => {
+    switchSchoolAction.mockResolvedValue('notFound' as never)
+
+    renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
+
+    selectHorizon()
+
+    await waitFor(() => expect(toastError).toHaveBeenCalled())
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('keeps the current school when the switch is refused', async () => {
@@ -199,8 +261,7 @@ describe('Sidebar school switcher', () => {
 
     renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
 
-    fireEvent.click(screen.getByRole('button', { name: /Al-Nour/ }))
-    fireEvent.click(screen.getByRole('menuitem', { name: /Horizon/ }))
+    selectHorizon()
 
     await waitFor(() => expect(switchSchoolAction).toHaveBeenCalledWith('school-b'))
     expect(router.refresh).not.toHaveBeenCalled()

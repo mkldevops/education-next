@@ -1385,7 +1385,8 @@
     },
     "switcher": {
       "label": "Switch school",
-      "error": "The switch failed. Try again, or check that you still have access to that school."
+      "error": "The switch failed. Try again, or check that you still have access to that school.",
+      "switching": "Switching to {schoolName}…"
     },
     "join": {
       "title": "Join {schoolName}",
