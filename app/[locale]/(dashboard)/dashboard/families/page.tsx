@@ -86,7 +86,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         {isAdmin && <CreateFamilyDialog defaultOpen={action === 'create'} />}
       </div>
       <FamiliesDataTable data={familyRows} />

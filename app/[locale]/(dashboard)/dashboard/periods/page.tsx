@@ -60,19 +60,19 @@ export default async function PeriodsPage({ params }: Props) {
     {
       key: 'startAt',
       header: t('startDate'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (period) => formatDate(period.startAt, locale),
     },
     {
       key: 'endAt',
       header: t('endDate'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (period) => formatDate(period.endAt, locale),
     },
     {
       key: 'classes',
       header: t('classes'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (period) => period._count.classPeriods,
     },
     {
@@ -103,7 +103,7 @@ export default async function PeriodsPage({ params }: Props) {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         <CreatePeriodDialog />
       </div>
       {currentPeriodId === null && (
@@ -111,7 +111,7 @@ export default async function PeriodsPage({ params }: Props) {
           <p className="text-sm text-amber-800">{t('betweenYears')}</p>
         </Card>
       )}
-      <Card className="rounded border border-gray-200">
+      <Card className="rounded border border-alabaster-700">
         <DataTable
           data={periods}
           columns={columns}

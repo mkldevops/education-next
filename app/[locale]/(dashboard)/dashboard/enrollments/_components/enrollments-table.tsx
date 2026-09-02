@@ -1,9 +1,9 @@
 'use client'
 
-import { BalanceBadge, RichDataTable } from '@peaklab/ui'
+import { BalanceBadge, RichDataTable, Select } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import { useTableLabels } from '@/features/tables'
@@ -34,19 +34,13 @@ export function EnrollmentsTable({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const selectedEnrollment = useMemo(
-    () => enrollments.find((enrollment) => enrollment.id === selectedId) ?? null,
-    [enrollments, selectedId]
-  )
+  const selectedEnrollment = enrollments.find((enrollment) => enrollment.id === selectedId) ?? null
   const [statusFilter, setStatusFilter] = useState<'ALL' | EnrollmentStatus>('ALL')
 
-  const filtered = useMemo(
-    () =>
-      statusFilter === 'ALL'
-        ? enrollments
-        : enrollments.filter((enrollment) => enrollment.status === statusFilter),
-    [enrollments, statusFilter]
-  )
+  const filtered =
+    statusFilter === 'ALL'
+      ? enrollments
+      : enrollments.filter((enrollment) => enrollment.status === statusFilter)
 
   const columns: ColumnDef<EnrollmentDrawerData>[] = [
     {
@@ -64,7 +58,7 @@ export function EnrollmentsTable({
       id: 'plan',
       header: t('plan'),
       accessorFn: (row) => row.plan.name,
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
       enableSorting: true,
     },
     {
@@ -93,7 +87,7 @@ export function EnrollmentsTable({
       id: 'class',
       header: t('class'),
       accessorFn: (row) => row.classAssignments.find((a) => !a.endAt)?.classPeriod.name ?? '-',
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
       enableSorting: true,
     },
     {
@@ -101,7 +95,7 @@ export function EnrollmentsTable({
       header: t('totalAmount'),
       accessorFn: (row) => toNumber(row.totalAmount),
       cell: ({ row }) => (
-        <span className="text-gray-700">{formatCurrency(row.original.totalAmount, locale)}</span>
+        <span className="text-graphite">{formatCurrency(row.original.totalAmount, locale)}</span>
       ),
       enableSorting: true,
     },
@@ -125,10 +119,9 @@ export function EnrollmentsTable({
         }
         onRowClick={handleRowClick}
         toolbar={
-          <select
+          <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'ALL' | EnrollmentStatus)}
-            className="border border-gray-200 rounded px-3 py-2 text-sm bg-white"
             aria-label={t('filterStatus')}
           >
             <option value="ALL">{t('statusAll')}</option>
@@ -137,7 +130,7 @@ export function EnrollmentsTable({
                 {tStatus(status)}
               </option>
             ))}
-          </select>
+          </Select>
         }
       />
 

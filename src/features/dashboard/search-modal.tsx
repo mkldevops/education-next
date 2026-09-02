@@ -3,9 +3,11 @@
 import { Command } from 'cmdk'
 import { User, Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { searchStudentsAndFamilies } from '@/services/search-service'
+
+const SEARCH_DEBOUNCE_MS = 300
 
 type SearchResult =
   | {
@@ -32,40 +34,32 @@ export function SearchModal({ onClose }: SearchModalProps) {
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
+  useEffect(() => {
+    if (!query.trim()) {
       setResults([])
+      setIsLoading(false)
       return
     }
 
-    setIsLoading(true)
-    try {
-      const response = await searchStudentsAndFamilies(searchQuery)
-      if (Array.isArray(response)) {
-        setResults(response)
-      } else {
-        setResults([])
+    let cancelled = false
+    const timeoutId = setTimeout(async () => {
+      setIsLoading(true)
+      try {
+        const response = await searchStudentsAndFamilies(query)
+        if (!cancelled) setResults(Array.isArray(response) ? response : [])
+      } finally {
+        if (!cancelled) setIsLoading(false)
       }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+    }, SEARCH_DEBOUNCE_MS)
 
-  const debouncedSearch = useMemo(() => {
-    let timeoutId: NodeJS.Timeout
-    return (searchQuery: string) => {
+    return () => {
+      cancelled = true
       clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
-        handleSearch(searchQuery)
-      }, 300)
     }
-  }, [handleSearch])
+  }, [query])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-      }
       if (e.key === 'Escape') {
         e.preventDefault()
         onClose?.()
@@ -115,15 +109,12 @@ export function SearchModal({ onClose }: SearchModalProps) {
         <Command shouldFilter={false}>
           <div className="flex items-center border-b px-4 py-3">
             <input
-              className="flex-1 outline-none text-sm placeholder-graphite-500"
+              className="flex-1 outline-none text-sm placeholder:text-graphite-700"
               placeholder={t('placeholder')}
               value={query}
               // biome-ignore lint/a11y/noAutofocus: Modal input needs autofocus for UX
               autoFocus
-              onChange={(e) => {
-                setQuery(e.target.value)
-                debouncedSearch(e.target.value)
-              }}
+              onChange={(e) => setQuery(e.target.value)}
             />
           </div>
 
@@ -140,19 +131,19 @@ export function SearchModal({ onClose }: SearchModalProps) {
 
             {!isLoading && query && groupedResults.families.length > 0 && (
               <div>
-                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-50">
+                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-900">
                   {t('families')}
                 </div>
                 {groupedResults.families.map((family) => (
                   <button
                     key={family.id}
                     type="button"
-                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-50 text-left transition-colors border-b last:border-b-0"
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-900 text-left transition-colors border-b last:border-b-0"
                     onClick={() => handleSelect(family)}
                   >
                     <Users className="h-4 w-4 text-primary flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-graphite-900 truncate">
+                      <div className="text-sm font-medium text-graphite truncate">
                         {family.name}
                       </div>
                       <div className="text-xs text-graphite-600 truncate">
@@ -166,19 +157,19 @@ export function SearchModal({ onClose }: SearchModalProps) {
 
             {!isLoading && query && groupedResults.students.length > 0 && (
               <div>
-                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-50">
+                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-900">
                   {t('students')}
                 </div>
                 {groupedResults.students.map((student) => (
                   <button
                     key={student.id}
                     type="button"
-                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-50 text-left transition-colors border-b last:border-b-0"
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-900 text-left transition-colors border-b last:border-b-0"
                     onClick={() => handleSelect(student)}
                   >
                     <User className="h-4 w-4 text-primary flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-graphite-900 truncate">
+                      <div className="text-sm font-medium text-graphite truncate">
                         {student.name}
                       </div>
                       {student.secondaryInfo && (

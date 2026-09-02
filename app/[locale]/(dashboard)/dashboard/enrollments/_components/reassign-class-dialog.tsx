@@ -97,7 +97,7 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
               name="newClassPeriodId"
               required
               disabled={isPending || availableClasses.length === 0}
-              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               {availableClasses.map((c) => (
                 <option key={c.id} value={c.id}>

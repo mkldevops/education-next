@@ -9,10 +9,10 @@ const KPI_COLOR_STYLES: Record<
   { bg: string; border: string; text: string; subText: string; iconBg: string; iconText: string }
 > = {
   gray: {
-    bg: 'bg-gray-50',
-    border: 'border-gray-200',
-    text: 'text-gray-900',
-    subText: 'text-gray-600',
+    bg: 'bg-alabaster-900',
+    border: 'border-alabaster-700',
+    text: 'text-graphite',
+    subText: 'text-graphite-600',
     iconBg: 'bg-primary-light',
     iconText: 'text-primary',
   },
@@ -54,7 +54,7 @@ export function KPICard({ label, value, subValue, icon: Icon, color = 'gray' }: 
           </div>
         )}
         <div className="flex-1">
-          <p className="text-xs font-medium text-gray-600">{label}</p>
+          <p className="text-xs font-medium text-graphite-600">{label}</p>
           <p className={cn('text-2xl font-bold', text)}>{value}</p>
           {subValue && <p className={cn('text-xs', subText)}>{subValue}</p>}
         </div>

@@ -32,11 +32,11 @@ function Tooltip({
           <div
             id={tooltipId}
             role="tooltip"
-            className="fixed z-50 -translate-y-1/2 rounded bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
+            className="fixed z-50 -translate-y-1/2 rounded bg-graphite px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
             style={{ top: pos.top, left: pos.left }}
           >
             {label}
-            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900" />
+            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-graphite" />
           </div>,
           document.body
         )}

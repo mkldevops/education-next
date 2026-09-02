@@ -12,7 +12,7 @@ type SessionRow = UserDetail['sessions'][number]
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">{title}</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-graphite-600">{title}</h3>
       <div className="space-y-2">{children}</div>
     </section>
   )
@@ -21,8 +21,8 @@ export function Section({ title, children }: { title: string; children: ReactNod
 export function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className={mono ? 'font-mono text-xs text-gray-700' : 'text-sm text-gray-900'}>
+      <span className="text-sm text-graphite-600">{label}</span>
+      <span className={mono ? 'font-mono text-xs text-graphite' : 'text-sm text-graphite'}>
         {value}
       </span>
     </div>
@@ -56,13 +56,13 @@ export function FamiliesSection({ detail, canUnlink, isPending, onUnlink }: Fami
   return (
     <Section title={t('sections.families')}>
       {detail && detail.families.length === 0 && (
-        <p className="text-sm text-gray-500">{t('noFamily')}</p>
+        <p className="text-sm text-graphite-600">{t('noFamily')}</p>
       )}
       {detail?.families.map(({ family }) => (
-        <div key={family.id} className="rounded border border-gray-200 p-3">
+        <div key={family.id} className="rounded border border-alabaster-700 p-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-gray-900">{family.name}</p>
+              <p className="text-sm font-medium text-graphite">{family.name}</p>
               {!family.isActive && (
                 <StatusBadge status="gray" label={t('archivedFamily')} className="mt-1" />
               )}
@@ -80,11 +80,11 @@ export function FamiliesSection({ detail, canUnlink, isPending, onUnlink }: Fami
           </div>
           <ul className="mt-2 space-y-1">
             {family.persons.map(({ person, relationType }) => (
-              <li key={person.id} className="text-sm text-gray-600">
+              <li key={person.id} className="text-sm text-graphite-600">
                 {person.name} {person.lastname}
-                <span className="text-gray-400"> · {relationType}</span>
+                <span className="text-graphite-700"> · {relationType}</span>
                 {person.student && (
-                  <span className="text-gray-400">
+                  <span className="text-graphite-700">
                     {' '}
                     · {t('enrollmentCount', { count: person.student._count.enrollments })}
                   </span>
@@ -123,10 +123,10 @@ export function SecuritySection({ detail, loading, activeSessions, locale }: Sec
       {activeSessions.length > 0 && (
         <ul className="space-y-2">
           {activeSessions.slice(0, 5).map((session) => (
-            <li key={session.id} className="rounded bg-gray-50 p-2 text-xs text-gray-600">
-              <p className="font-medium text-gray-800">{session.ipAddress || '-'}</p>
+            <li key={session.id} className="rounded bg-alabaster-900 p-2 text-xs text-graphite-600">
+              <p className="font-medium text-graphite">{session.ipAddress || '-'}</p>
               <p className="truncate">{session.userAgent || '-'}</p>
-              <p className="text-gray-400">
+              <p className="text-graphite-700">
                 {formatDateTime(session.createdAt, locale)} →{' '}
                 {formatDateTime(session.expiresAt, locale)}
               </p>
@@ -137,9 +137,9 @@ export function SecuritySection({ detail, loading, activeSessions, locale }: Sec
       {detail && detail.passkeys.length > 0 && (
         <ul className="space-y-1">
           {detail.passkeys.map((passkey) => (
-            <li key={passkey.id} className="text-sm text-gray-600">
+            <li key={passkey.id} className="text-sm text-graphite-600">
               {passkey.name}
-              <span className="text-gray-400"> · {passkey.deviceType}</span>
+              <span className="text-graphite-700"> · {passkey.deviceType}</span>
             </li>
           ))}
         </ul>
@@ -176,9 +176,9 @@ export function ActivitySection({ detail, lastLoginAt, locale }: ActivitySection
       {detail && detail.createdInvitations.length > 0 && (
         <ul className="space-y-1">
           {detail.createdInvitations.map((invitation) => (
-            <li key={invitation.id} className="text-sm text-gray-600">
+            <li key={invitation.id} className="text-sm text-graphite-600">
               {invitation.email}
-              <span className="text-gray-400">
+              <span className="text-graphite-700">
                 {' '}
                 · {tRoles(invitation.role)} · {formatDateTime(invitation.createdAt, locale)}
               </span>

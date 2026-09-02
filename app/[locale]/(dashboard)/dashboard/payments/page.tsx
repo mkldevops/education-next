@@ -86,7 +86,7 @@ export default async function PaymentsPage({ params }: Props) {
           { label: tBreadcrumbs('payments') },
         ]}
       />
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
       <PaymentsTable
         payments={paymentRows}
         locale={locale}

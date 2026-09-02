@@ -114,7 +114,7 @@ export default async function EnrollmentsPage({ params }: Props) {
           { label: tBreadcrumbs('enrollments') },
         ]}
       />
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
       <EnrollmentsTable
         enrollments={serializableEnrollments}
         isAdmin={isAdmin}

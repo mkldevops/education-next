@@ -84,7 +84,7 @@ function DeactivateForm({ familyId }: { familyId: string }) {
   return (
     <form onSubmit={handleConfirm}>
       <DialogBody>
-        <p className="text-sm text-gray-600">{t('description')}</p>
+        <p className="text-sm text-graphite-600">{t('description')}</p>
       </DialogBody>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>

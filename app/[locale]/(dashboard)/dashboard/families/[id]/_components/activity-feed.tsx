@@ -93,7 +93,7 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
 
   if (sortedActivities.length === 0) {
     return (
-      <Card className="p-6 text-center text-gray-600">
+      <Card className="p-6 text-center text-graphite-600">
         <p className="text-sm">{t('activity.empty')}</p>
       </Card>
     )
@@ -104,16 +104,16 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
       {sortedActivities.map((activity) => (
         <div
           key={activity.id}
-          className="flex gap-3 pb-3 last:pb-0 last:border-0 border-b border-gray-200"
+          className="flex gap-3 pb-3 last:pb-0 last:border-0 border-b border-alabaster-700"
         >
           <div className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${activity.color}`} />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-            <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{activity.description}</p>
+            <p className="text-sm font-medium text-graphite">{activity.title}</p>
+            <p className="text-xs text-graphite-600 mt-0.5 line-clamp-2">{activity.description}</p>
             {activity.student && (
-              <p className="text-xs font-medium text-gray-700 mt-0.5">{activity.student}</p>
+              <p className="text-xs font-medium text-graphite mt-0.5">{activity.student}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">{formatDate(activity.date, locale)}</p>
+            <p className="text-xs text-graphite-600 mt-1">{formatDate(activity.date, locale)}</p>
           </div>
         </div>
       ))}

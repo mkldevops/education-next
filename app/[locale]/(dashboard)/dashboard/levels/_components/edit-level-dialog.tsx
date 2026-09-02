@@ -129,7 +129,7 @@ function EditLevelForm({
               name="nextLevelId"
               defaultValue={currentNextLevelId ?? ''}
               disabled={isPending}
-              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
             >
               <option value="">{t('noNext')}</option>
               {selectableLevels.map((l) => (
@@ -138,7 +138,7 @@ function EditLevelForm({
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500">{t('nextLevelHint')}</p>
+            <p className="text-xs text-graphite-600">{t('nextLevelHint')}</p>
           </div>
         </div>
       </DialogBody>

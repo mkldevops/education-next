@@ -85,7 +85,7 @@ export async function ChildrenTab({
           ))}
         </div>
       ) : (
-        <p className="text-sm text-gray-500 text-center py-8">{t('sections.noChildren')}</p>
+        <p className="text-sm text-graphite-600 text-center py-8">{t('sections.noChildren')}</p>
       )}
     </div>
   )

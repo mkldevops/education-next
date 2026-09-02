@@ -81,7 +81,7 @@ export default async function ConfigPage({ params }: Props) {
     {
       key: 'name',
       header: t('name'),
-      className: 'font-medium text-gray-900',
+      className: 'font-medium text-graphite',
       render: (config): ReactNode => {
         const known = knownConfig[config.name]
 
@@ -90,9 +90,9 @@ export default async function ConfigPage({ params }: Props) {
         return (
           <div className="space-y-1">
             <span>{known.label}</span>
-            <div className="text-xs font-normal text-gray-500">{config.name}</div>
+            <div className="text-xs font-normal text-graphite-600">{config.name}</div>
             {known.description && (
-              <div className="text-xs font-normal text-gray-400">{known.description}</div>
+              <div className="text-xs font-normal text-graphite-700">{known.description}</div>
             )}
           </div>
         )
@@ -101,7 +101,7 @@ export default async function ConfigPage({ params }: Props) {
     {
       key: 'value',
       header: t('value'),
-      className: 'text-gray-700 break-words',
+      className: 'text-graphite break-words',
       render: (config): ReactNode => {
         if (config.valueType === 'BOOLEAN') {
           return config.value === 'true' ? t('booleanTrue') : t('booleanFalse')
@@ -115,22 +115,22 @@ export default async function ConfigPage({ params }: Props) {
               <img
                 src={config.value}
                 alt=""
-                className="size-8 shrink-0 rounded border border-gray-200 object-contain"
+                className="size-8 shrink-0 rounded border border-alabaster-700 object-contain"
               />
             )}
             <span className="min-w-0 break-all">{config.value}</span>
           </div>
         ) : (
-          <span className="text-gray-400">{t('notConfigured')}</span>
+          <span className="text-graphite-700">{t('notConfigured')}</span>
         )
       },
     },
     {
       key: 'valueType',
       header: t('type'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (config): ReactNode => (
-        <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+        <span className="inline-flex rounded-full bg-alabaster-800 px-2 py-1 text-xs font-medium text-graphite">
           <ConfigValueTypeLabel valueType={config.valueType} />
         </span>
       ),
@@ -159,10 +159,10 @@ export default async function ConfigPage({ params }: Props) {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         <CreateConfigDialog />
       </div>
-      <Card className="rounded border border-gray-200">
+      <Card className="rounded border border-alabaster-700">
         <DataTable
           data={configs}
           columns={columns}

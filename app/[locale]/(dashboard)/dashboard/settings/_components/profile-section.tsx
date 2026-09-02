@@ -60,8 +60,8 @@ export function ProfileSection({ user }: Props) {
   return (
     <div className="space-y-6">
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900">{t('profile.title')}</h2>
-        <p className="mt-1 text-sm text-gray-500">{t('profile.description')}</p>
+        <h2 className="text-lg font-semibold text-graphite">{t('profile.title')}</h2>
+        <p className="mt-1 text-sm text-graphite-600">{t('profile.description')}</p>
 
         <form onSubmit={handleSubmit} className="mt-6 max-w-md space-y-4">
           {success && (
@@ -82,7 +82,7 @@ export function ProfileSection({ user }: Props) {
           <div>
             <Label htmlFor="email">{t('profile.email')}</Label>
             <Input id="email" type="email" defaultValue={user.email} disabled className="mt-1" />
-            <p className="mt-1 text-xs text-gray-500">{t('profile.emailHint')}</p>
+            <p className="mt-1 text-xs text-graphite-600">{t('profile.emailHint')}</p>
           </div>
 
           <Button type="submit" disabled={isPending}>
@@ -92,8 +92,8 @@ export function ProfileSection({ user }: Props) {
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900">{t('language.title')}</h2>
-        <p className="mt-1 text-sm text-gray-500">{t('language.description')}</p>
+        <h2 className="text-lg font-semibold text-graphite">{t('language.title')}</h2>
+        <p className="mt-1 text-sm text-graphite-600">{t('language.description')}</p>
 
         <div className="mt-4 flex gap-3">
           {locales.map((loc) => (
@@ -106,7 +106,7 @@ export function ProfileSection({ user }: Props) {
                 'h-auto px-4 py-3',
                 locale === loc.value
                   ? 'border-primary bg-primary/5 text-primary'
-                  : 'text-gray-600 hover:border-gray-300'
+                  : 'text-graphite-600 hover:border-alabaster'
               )}
             >
               <span className="text-lg">{loc.flag}</span>

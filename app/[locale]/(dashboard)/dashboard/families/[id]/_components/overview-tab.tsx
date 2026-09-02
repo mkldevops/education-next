@@ -73,7 +73,7 @@ export async function OverviewTab({
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('sections.parentsTitle')}</h2>
+          <h2 className="text-lg font-semibold text-graphite mb-4">{t('sections.parentsTitle')}</h2>
           <ParentsSection
             persons={persons}
             familyId={familyId}
@@ -83,8 +83,8 @@ export async function OverviewTab({
         </Card>
         <Card className="p-6">
           <div className="mb-4 flex items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">{t('sections.financialTitle')}</h2>
-            <span className="text-xs text-gray-400">{t('scopeAll')}</span>
+            <h2 className="text-lg font-semibold text-graphite">{t('sections.financialTitle')}</h2>
+            <span className="text-xs text-graphite-700">{t('scopeAll')}</span>
           </div>
           <FinancialSummary
             totalDue={totalDue}
@@ -93,7 +93,7 @@ export async function OverviewTab({
             remainingBalance={remainingBalance}
           />
           {!isAdmin && (
-            <div className="mt-5 border-t border-gray-200 pt-5">
+            <div className="mt-5 border-t border-alabaster-700 pt-5">
               <OnlinePaymentButton
                 amount={payableBalance}
                 outstanding={remainingBalance}

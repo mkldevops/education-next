@@ -36,7 +36,7 @@ export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) 
     id: 'family',
     header: t('family'),
     accessorFn: (row) => row.familyName,
-    cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+    cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
     enableSorting: true,
   }
 
@@ -61,7 +61,7 @@ export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) 
       header: t('amount'),
       accessorFn: (row) => row.amount,
       cell: ({ row }) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-graphite">
           {formatCurrency(row.original.amount, locale)}
         </span>
       ),
@@ -72,7 +72,7 @@ export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) 
       header: t('method'),
       accessorFn: (row) => row.method,
       cell: ({ row }) => (
-        <span className="text-gray-700">
+        <span className="text-graphite">
           <PaymentMethodLabel method={row.original.method} />
         </span>
       ),
@@ -82,7 +82,7 @@ export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) 
       id: 'reference',
       header: t('reference'),
       accessorFn: (row) => row.reference ?? '-',
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as string}</span>,
+      cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
       enableSorting: true,
     },
     {
@@ -90,7 +90,7 @@ export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) 
       header: t('paidAt'),
       accessorFn: (row) => row.paidAt.getTime(),
       cell: ({ row }) => (
-        <span className="text-gray-700">{formatDate(row.original.paidAt, locale)}</span>
+        <span className="text-graphite">{formatDate(row.original.paidAt, locale)}</span>
       ),
       enableSorting: true,
     },
@@ -99,7 +99,7 @@ export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) 
       header: t('cashedAt'),
       accessorFn: (row) => row.cashedAt?.getTime() ?? 0,
       cell: ({ row }) => (
-        <span className="text-gray-700">
+        <span className="text-graphite">
           {row.original.cashedAt ? formatDate(row.original.cashedAt, locale) : '-'}
         </span>
       ),

@@ -69,10 +69,10 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
           {person.name.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 line-clamp-1">
+          <h3 className="text-sm font-semibold text-graphite line-clamp-1">
             {person.name} {person.lastname}
           </h3>
-          <p className="text-xs text-gray-600 mt-0.5">
+          <p className="text-xs text-graphite-600 mt-0.5">
             {t('childCard.age', { age })} • {formatDate(birthday, locale)}
           </p>
         </div>
@@ -95,7 +95,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
           </div>
         )}
 
-      <div className="space-y-2 mt-auto mb-4 pb-4 border-b border-gray-200">
+      <div className="space-y-2 mt-auto mb-4 pb-4 border-b border-alabaster-700">
         {enrollments.length > 0 ? (
           enrollments.map((enrollment) => {
             const totalAmount = Number(enrollment.totalAmount)
@@ -108,7 +108,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
             return (
               <div key={enrollment.id} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-medium text-gray-900">{enrollment.plan.name}</p>
+                  <p className="text-xs font-medium text-graphite">{enrollment.plan.name}</p>
                   <div className="flex items-center gap-2">
                     <EnrollmentStatusBadge status={enrollment.status} />
                     {isAdmin && enrollment.status === 'PENDING' && (
@@ -118,7 +118,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-graphite-600">
                     {currentAssignment
                       ? `${t('childCard.class')}: ${currentAssignment.classPeriod.name} (${currentAssignment.classPeriod.level.name} — ${currentAssignment.classPeriod.period.name})`
                       : t('childCard.noClass')}
@@ -141,7 +141,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-label={t('childCard.paymentProgress', { plan: enrollment.plan.name })}
-                  className="w-full bg-gray-200 rounded-full h-2 overflow-hidden"
+                  className="w-full bg-alabaster-700 rounded-full h-2 overflow-hidden"
                 >
                   <div
                     className="bg-gradient-to-r from-primary to-primary/70 h-full rounded-full transition-all duration-300"
@@ -150,7 +150,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-graphite-600">
                     {formatCurrency(totalPaid, locale)} / {formatCurrency(totalAmount, locale)}
                   </span>
                   {remaining > 0 && (
@@ -163,7 +163,9 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
             )
           })
         ) : (
-          <p className="text-xs text-gray-600 text-center py-2">{t('childCard.noEnrollments')}</p>
+          <p className="text-xs text-graphite-600 text-center py-2">
+            {t('childCard.noEnrollments')}
+          </p>
         )}
       </div>
 

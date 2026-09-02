@@ -115,11 +115,11 @@ export function RichDataTable<T>({
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
               {columnVisibilityOpen && (
-                <div className="absolute right-0 top-full mt-1 z-10 bg-white border border-gray-200 rounded shadow-md p-2 min-w-[140px]">
+                <div className="absolute right-0 top-full mt-1 z-10 bg-white border border-alabaster-700 rounded shadow-md p-2 min-w-[140px]">
                   {table.getAllColumns().map((col) => (
                     <label
                       key={col.id}
-                      className="flex items-center gap-2 px-2 py-1 text-sm cursor-pointer hover:bg-gray-50 rounded"
+                      className="flex items-center gap-2 px-2 py-1 text-sm cursor-pointer hover:bg-alabaster-900 rounded"
                     >
                       <input
                         type="checkbox"
@@ -136,7 +136,7 @@ export function RichDataTable<T>({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded border border-alabaster-700 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gradient-to-br from-primary to-primary/70">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -177,7 +177,7 @@ export function RichDataTable<T>({
           <tbody>
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="text-center py-8 text-gray-500">
+                <td colSpan={columns.length} className="text-center py-8 text-graphite-600">
                   {globalFilter ? labels.noResults : emptyMessage}
                 </td>
               </tr>
@@ -186,9 +186,9 @@ export function RichDataTable<T>({
                 <tr
                   key={row.id}
                   className={cn(
-                    'relative border-b border-gray-100 hover:bg-gray-50 transition-colors',
+                    'relative border-b border-alabaster-800 hover:bg-alabaster-900 transition-colors',
                     onRowClick &&
-                      'cursor-pointer focus-visible:outline-none focus-visible:bg-gray-50'
+                      'cursor-pointer focus-visible:outline-none focus-visible:bg-alabaster-900'
                   )}
                   role={onRowClick ? 'button' : undefined}
                   tabIndex={onRowClick ? 0 : undefined}
@@ -218,12 +218,12 @@ export function RichDataTable<T>({
 
       {enablePagination && (
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-graphite-600">
             <span>{labels.rowsPerPage}</span>
             <select
               value={pagination.pageSize}
               onChange={(e) => table.setPageSize(Number(e.target.value))}
-              className="border border-gray-200 rounded px-2 py-1 text-sm bg-white"
+              className="border border-alabaster-700 rounded px-2 py-1 text-sm bg-white"
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -232,7 +232,7 @@ export function RichDataTable<T>({
               ))}
             </select>
           </div>
-          <div className="flex items-center gap-3 text-sm text-gray-600">
+          <div className="flex items-center gap-3 text-sm text-graphite-600">
             <span>{labels.page(currentPage, totalPages || 1)}</span>
             <div className="flex gap-1">
               <Button

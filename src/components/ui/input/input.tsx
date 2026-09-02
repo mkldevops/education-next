@@ -8,8 +8,8 @@ export function Input({ className, type = 'text', ...props }: InputProps) {
     <input
       type={type}
       className={cn(
-        'flex h-10 w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm',
-        'placeholder:text-gray-400',
+        'flex h-10 w-full rounded border border-alabaster bg-white px-3 py-2 text-sm',
+        'placeholder:text-graphite-700',
         'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-1',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className
@@ -40,8 +40,8 @@ export function Textarea({ className, ...props }: TextareaProps) {
   return (
     <textarea
       className={cn(
-        'flex min-h-[80px] w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm',
-        'placeholder:text-gray-400',
+        'flex min-h-[80px] w-full rounded border border-alabaster bg-white px-3 py-2 text-sm',
+        'placeholder:text-graphite-700',
         'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-1',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className

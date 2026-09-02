@@ -65,7 +65,7 @@ function ChangeSchoolMemberRoleForm({ userId, role }: { userId: string; role: Sc
             value={selectedRole}
             onChange={(event) => setSelectedRole(event.target.value as SchoolRole)}
             disabled={isPending}
-            className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+            className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
           >
             <option value="ADMIN">{tRoles('ADMIN')}</option>
             <option value="PARENT">{tRoles('PARENT')}</option>
@@ -119,7 +119,7 @@ function RemoveSchoolMemberForm({ userId, onRemoved }: { userId: string; onRemov
   return (
     <form onSubmit={handleSubmit}>
       <DialogBody>
-        <p className="text-sm text-gray-600">{t('removeMemberWarning')}</p>
+        <p className="text-sm text-graphite-600">{t('removeMemberWarning')}</p>
       </DialogBody>
       <DialogFormActions
         t={t}

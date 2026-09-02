@@ -103,13 +103,13 @@ function EditUserForm({ user }: Props) {
               maxLength={250}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-graphite">
             <input
               type="checkbox"
               checked={emailVerified}
               onChange={(e) => setEmailVerified(e.target.checked)}
               disabled={isPending}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-alabaster"
             />
             {t('emailVerified')}
           </label>

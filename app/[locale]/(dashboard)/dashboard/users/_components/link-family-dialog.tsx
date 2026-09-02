@@ -76,7 +76,7 @@ function LinkFamilyForm({ userId, families }: Props) {
             value={familyId}
             onChange={(e) => setFamilyId(e.target.value)}
             disabled={isPending}
-            className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+            className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
           >
             {families.map((family) => (
               <option key={family.id} value={family.id}>

@@ -5,7 +5,7 @@ import { startRegistration } from '@simplewebauthn/browser'
 import { KeyRound, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import {
   deletePasskey,
   getPasskeyRegistrationOptions,
@@ -31,16 +31,17 @@ export function PasskeySection() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const loadPasskeys = useCallback(() => {
+  const loadPasskeys = () => {
     startTransition(async () => {
       const data = await getUserPasskeys()
       setPasskeys(data)
     })
-  }, [])
+  }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: chargement initial uniquement
   useEffect(() => {
     loadPasskeys()
-  }, [loadPasskeys])
+  }, [])
 
   const handleRegister = () => {
     if (!newName.trim()) {
@@ -97,10 +98,10 @@ export function PasskeySection() {
   return (
     <Card className="p-6">
       <div className="flex items-center gap-3">
-        <KeyRound className="h-5 w-5 text-gray-600" />
+        <KeyRound className="h-5 w-5 text-graphite-600" />
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
-          <p className="text-sm text-gray-500">{t('description')}</p>
+          <h2 className="text-lg font-semibold text-graphite">{t('title')}</h2>
+          <p className="text-sm text-graphite-600">{t('description')}</p>
         </div>
       </div>
 
@@ -111,15 +112,15 @@ export function PasskeySection() {
 
       {passkeys.length > 0 && (
         <div className="mt-6 space-y-2">
-          <p className="text-sm font-medium text-gray-700">{t('registeredPasskeys')}</p>
+          <p className="text-sm font-medium text-graphite">{t('registeredPasskeys')}</p>
           {passkeys.map((pk) => (
             <div
               key={pk.id}
-              className="flex items-center justify-between rounded border border-gray-200 px-4 py-3"
+              className="flex items-center justify-between rounded border border-alabaster-700 px-4 py-3"
             >
               <div>
-                <p className="text-sm font-medium text-gray-900">{pk.name}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-sm font-medium text-graphite">{pk.name}</p>
+                <p className="text-xs text-graphite-600">
                   {pk.deviceType} — {formatDate(pk.createdAt, locale)}
                 </p>
               </div>

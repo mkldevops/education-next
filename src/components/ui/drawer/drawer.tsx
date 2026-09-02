@@ -183,7 +183,7 @@ export function DrawerClose({ children, className, label }: DrawerCloseProps) {
       onClick={() => setOpen(false)}
       type="button"
       aria-label={label}
-      className={cn('text-gray-400 transition-colors hover:text-gray-600', className)}
+      className={cn('text-graphite-700 transition-colors hover:text-graphite-600', className)}
     >
       {children ?? <X className="h-5 w-5" aria-hidden="true" />}
     </button>

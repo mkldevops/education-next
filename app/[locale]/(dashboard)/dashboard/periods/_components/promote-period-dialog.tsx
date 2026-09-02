@@ -135,7 +135,7 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
                 disabled={isPending}
                 value={targetPeriodId}
                 onChange={(e) => setTargetPeriodId(e.target.value)}
-                className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 {targetOptions.map((period) => (
                   <option key={period.id} value={period.id}>
@@ -163,12 +163,12 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
       {step === 'preview' && preview && (
         <>
           <DialogBody>
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-graphite">
               {t('promotedCount', { count: preview.promoted })}
             </p>
-            <p className="text-sm text-gray-700">{t('skippedCount', { count: preview.skipped })}</p>
+            <p className="text-sm text-graphite">{t('skippedCount', { count: preview.skipped })}</p>
             {preview.skipped > 0 && (
-              <ul className="space-y-1 text-sm text-gray-600">
+              <ul className="space-y-1 text-sm text-graphite-600">
                 {SKIP_REASONS.filter((reason) => preview.skippedByReason[reason] > 0).map(
                   (reason) => (
                     <li key={reason}>
@@ -197,10 +197,10 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
       {step === 'report' && report && (
         <>
           <DialogBody>
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-graphite">
               {t('promotedCount', { count: report.promoted })}
             </p>
-            <p className="text-sm text-gray-700">{t('skippedCount', { count: report.skipped })}</p>
+            <p className="text-sm text-graphite">{t('skippedCount', { count: report.skipped })}</p>
             {report.errors.length > 0 && (
               <ul className="space-y-1 text-sm text-red-700">
                 {report.errors.map((error) => (

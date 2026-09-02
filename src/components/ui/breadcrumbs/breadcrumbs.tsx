@@ -23,13 +23,13 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
             <Fragment key={item.href ?? item.label}>
               {index > 0 && (
                 <li aria-hidden="true">
-                  <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+                  <ChevronRight className="h-3.5 w-3.5 text-graphite-700" />
                 </li>
               )}
               <li className="min-w-0">
                 {isLast || !item.href ? (
                   <span
-                    className="block max-w-[12rem] truncate font-medium text-gray-900"
+                    className="block max-w-[12rem] truncate font-medium text-graphite"
                     title={item.icon ? undefined : item.label}
                   >
                     {item.icon === 'home' && <Home className="inline h-4 w-4" />}
@@ -38,7 +38,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
                 ) : (
                   <Link
                     href={item.href}
-                    className="block max-w-[12rem] truncate text-gray-500 transition-colors hover:text-gray-700"
+                    className="block max-w-[12rem] truncate text-graphite-600 transition-colors hover:text-graphite"
                     title={item.icon ? undefined : item.label}
                   >
                     {item.icon === 'home' ? <Home className="inline h-4 w-4" /> : item.label}

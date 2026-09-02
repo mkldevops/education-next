@@ -71,7 +71,7 @@ function DeleteUserForm({ user, onDeleted }: Props) {
     <form onSubmit={handleSubmit}>
       <DialogBody>
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">{t('deleteWarning')}</p>
+          <p className="text-sm text-graphite-600">{t('deleteWarning')}</p>
           <div className="space-y-2">
             <Label htmlFor="delete-confirmation">
               {t('deleteConfirmationLabel', { email: user.email })}

@@ -43,7 +43,7 @@ export function FamiliesDataTable({ data }: Props) {
       accessorFn: (row) =>
         [row.emergencyContactName, row.emergencyContactPhone].filter(Boolean).join(' ') || '-',
       cell: ({ row }) => (
-        <div className="flex flex-col text-gray-700">
+        <div className="flex flex-col text-graphite">
           {row.original.emergencyContactName && <span>{row.original.emergencyContactName}</span>}
           {row.original.emergencyContactPhone && (
             <a
@@ -64,14 +64,14 @@ export function FamiliesDataTable({ data }: Props) {
       id: 'studentCount',
       header: t('students'),
       accessorFn: (row) => row.studentCount,
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as number}</span>,
+      cell: ({ getValue }) => <span className="text-graphite">{getValue() as number}</span>,
       enableSorting: true,
     },
     {
       id: 'enrollmentCount',
       header: t('enrollments'),
       accessorFn: (row) => row.enrollmentCount,
-      cell: ({ getValue }) => <span className="text-gray-700">{getValue() as number}</span>,
+      cell: ({ getValue }) => <span className="text-graphite">{getValue() as number}</span>,
       enableSorting: true,
     },
   ]

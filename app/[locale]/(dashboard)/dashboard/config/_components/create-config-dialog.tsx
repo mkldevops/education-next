@@ -80,7 +80,7 @@ function CreateConfigForm() {
                 setValueType(e.target.value as 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'COLOR')
               }
               disabled={isPending}
-              className="flex h-10 w-full rounded border border-gray-300 bg-transparent px-3 py-2 text-sm"
+              className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
             >
               <option value="TEXT">{t('types.TEXT')}</option>
               <option value="NUMBER">{t('types.NUMBER')}</option>
@@ -97,7 +97,7 @@ function CreateConfigForm() {
                   name="value"
                   type="checkbox"
                   disabled={isPending}
-                  className="h-4 w-4 rounded border-gray-300"
+                  className="h-4 w-4 rounded border-alabaster"
                 />
                 {t('enabled')}
               </label>
@@ -109,7 +109,7 @@ function CreateConfigForm() {
                 defaultValue="#3c6e71"
                 required
                 disabled={isPending}
-                className="h-10 w-16 cursor-pointer rounded border border-gray-300 p-1"
+                className="h-10 w-16 cursor-pointer rounded border border-alabaster p-1"
               />
             ) : (
               <Input

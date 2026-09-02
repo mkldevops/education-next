@@ -158,7 +158,7 @@ function ActionDropdown({
         <div
           ref={menuRef}
           role="menu"
-          className="absolute right-0 top-full z-20 mt-1 w-56 rounded border border-gray-200 bg-white py-1 shadow-lg"
+          className="absolute right-0 top-full z-20 mt-1 w-56 rounded border border-alabaster-700 bg-white py-1 shadow-lg"
         >
           {items.map(({ key, label, icon: Icon, action, danger, disabled, title }) => (
             <button
@@ -174,16 +174,16 @@ function ActionDropdown({
               }}
               className={cn(
                 'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors',
-                disabled && 'cursor-not-allowed text-gray-400',
-                !disabled && !danger && 'text-gray-700 hover:bg-gray-50',
+                disabled && 'cursor-not-allowed text-graphite-700',
+                !disabled && !danger && 'text-graphite hover:bg-alabaster-900',
                 !disabled && danger && 'text-red-600 hover:bg-red-50'
               )}
             >
               <Icon
                 className={cn(
                   'h-4 w-4',
-                  disabled && 'text-gray-300',
-                  !disabled && !danger && 'text-gray-400',
+                  disabled && 'text-graphite-800',
+                  !disabled && !danger && 'text-graphite-700',
                   !disabled && danger && 'text-red-500'
                 )}
               />

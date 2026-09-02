@@ -91,19 +91,19 @@ export default async function UsersPage({ params }: Props) {
     {
       key: 'role',
       header: tInvitations('role'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (invitation) => tRoles(invitation.role),
     },
     {
       key: 'family',
       header: tInvitations('family'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (invitation) => invitation.family?.name ?? '-',
     },
     {
       key: 'expiresAt',
       header: tInvitations('expiresAt'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (invitation) =>
         invitation.expiresAt < new Date()
           ? tInvitations('expired')
@@ -127,7 +127,7 @@ export default async function UsersPage({ params }: Props) {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         <InviteUserDialog families={families} />
       </div>
       <UsersTable
@@ -140,10 +140,10 @@ export default async function UsersPage({ params }: Props) {
 
       <div className="space-y-3">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">{tInvitations('title')}</h2>
-          <p className="mt-1 text-sm text-gray-600">{tInvitations('description')}</p>
+          <h2 className="text-base font-semibold text-graphite">{tInvitations('title')}</h2>
+          <p className="mt-1 text-sm text-graphite-600">{tInvitations('description')}</p>
         </div>
-        <Card className="rounded border border-gray-200">
+        <Card className="rounded border border-alabaster-700">
           <DataTable
             data={invitations}
             columns={invitationColumns}

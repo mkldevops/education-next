@@ -40,27 +40,27 @@ export default async function SchoolsPage({ params }: Props) {
       header: t('name'),
       render: (school) => (
         <div>
-          <p className="font-medium text-gray-900">{school.name}</p>
-          <p className="text-xs text-gray-500">{school.slug}</p>
+          <p className="font-medium text-graphite">{school.name}</p>
+          <p className="text-xs text-graphite-600">{school.slug}</p>
         </div>
       ),
     },
     {
       key: 'city',
       header: t('city'),
-      className: 'text-gray-700',
-      render: (school) => school.city || <span className="text-gray-300">&mdash;</span>,
+      className: 'text-graphite',
+      render: (school) => school.city || <span className="text-graphite-800">&mdash;</span>,
     },
     {
       key: 'members',
       header: t('members'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (school) => school._count.members,
     },
     {
       key: 'families',
       header: t('families'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (school) => school._count.families,
     },
     {
@@ -104,13 +104,13 @@ export default async function SchoolsPage({ params }: Props) {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         <CreateSchoolDialog />
       </div>
 
       <SchoolSwitchSetting enabled={switchEnabled} />
 
-      <Card className="rounded border border-gray-200">
+      <Card className="rounded border border-alabaster-700">
         <DataTable
           data={schools}
           columns={columns}

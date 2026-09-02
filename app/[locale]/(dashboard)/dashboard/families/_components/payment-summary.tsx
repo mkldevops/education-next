@@ -16,28 +16,28 @@ export async function PaymentSummary({ totalDue, totalDiscount, totalPaid }: Pay
 
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('title')}</h2>
+      <h2 className="text-lg font-semibold text-graphite mb-4">{t('title')}</h2>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div>
-          <p className="text-sm text-gray-500">{t('totalDue')}</p>
-          <p className="mt-1 text-lg font-semibold text-gray-900">
+          <p className="text-sm text-graphite-600">{t('totalDue')}</p>
+          <p className="mt-1 text-lg font-semibold text-graphite">
             {formatCurrency(totalDue, locale)}
           </p>
         </div>
         <div>
-          <p className="text-sm text-gray-500">{t('discount')}</p>
-          <p className="mt-1 text-lg font-semibold text-gray-900">
+          <p className="text-sm text-graphite-600">{t('discount')}</p>
+          <p className="mt-1 text-lg font-semibold text-graphite">
             {formatCurrency(-totalDiscount, locale)}
           </p>
         </div>
         <div>
-          <p className="text-sm text-gray-500">{t('totalPaid')}</p>
+          <p className="text-sm text-graphite-600">{t('totalPaid')}</p>
           <p className="mt-1 text-lg font-semibold text-green-600">
             {formatCurrency(totalPaid, locale)}
           </p>
         </div>
         <div>
-          <p className="text-sm text-gray-500">{t('remaining')}</p>
+          <p className="text-sm text-graphite-600">{t('remaining')}</p>
           <p
             className={`mt-1 text-lg font-semibold ${remaining > 0 ? 'text-red-600' : 'text-green-600'}`}
           >

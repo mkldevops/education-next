@@ -66,7 +66,7 @@ export function SchoolIdentityFields({ idPrefix, disabled, defaults }: Props) {
           defaultValue={defaults?.slug}
           disabled={disabled}
         />
-        <p className="text-xs text-gray-500">{t('slugHint')}</p>
+        <p className="text-xs text-graphite-600">{t('slugHint')}</p>
       </div>
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-address`}>{t('address')}</Label>

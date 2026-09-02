@@ -7,7 +7,10 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 
 export function Card({ className, children, ...props }: CardProps) {
   return (
-    <div className={cn('rounded border border-gray-200 bg-white shadow-sm', className)} {...props}>
+    <div
+      className={cn('rounded border border-alabaster-700 bg-white shadow-sm', className)}
+      {...props}
+    >
       {children}
     </div>
   )
@@ -43,7 +46,7 @@ export interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElemen
 
 export function CardDescription({ className, children, ...props }: CardDescriptionProps) {
   return (
-    <p className={cn('text-sm text-gray-500', className)} {...props}>
+    <p className={cn('text-sm text-graphite-600', className)} {...props}>
       {children}
     </p>
   )

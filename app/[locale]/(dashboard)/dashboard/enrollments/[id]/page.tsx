@@ -139,7 +139,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-graphite">
             <Link
               href={`/dashboard/students/${enrollment.student.id}`}
               className="hover:text-primary hover:underline"
@@ -147,7 +147,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               {enrollment.student.person.name} {enrollment.student.person.lastname}
             </Link>
           </h1>
-          <p className="mt-1 text-sm text-gray-500">{t('subtitle')}</p>
+          <p className="mt-1 text-sm text-graphite-600">{t('subtitle')}</p>
         </div>
         <EnrollmentActions
           enrollmentId={enrollment.id}
@@ -163,11 +163,11 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         <Card className="p-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="text-sm font-medium text-gray-500">{t('plan')}</p>
-              <p className="mt-1 text-sm text-gray-900">{enrollment.plan.name}</p>
+              <p className="text-sm font-medium text-graphite-600">{t('plan')}</p>
+              <p className="mt-1 text-sm text-graphite">{enrollment.plan.name}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">{t('status')}</p>
+              <p className="text-sm font-medium text-graphite-600">{t('status')}</p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <EnrollmentStatusBadge status={enrollment.status} />
                 {remaining > 0 && (
@@ -178,12 +178,12 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">{t('family')}</p>
-              <p className="mt-1 text-sm text-gray-900">{familyName}</p>
+              <p className="text-sm font-medium text-graphite-600">{t('family')}</p>
+              <p className="mt-1 text-sm text-graphite">{familyName}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">{t('registered')}</p>
-              <p className="mt-1 text-sm text-gray-900">
+              <p className="text-sm font-medium text-graphite-600">{t('registered')}</p>
+              <p className="mt-1 text-sm text-graphite">
                 {formatDate(enrollment.registeredAt, locale)}
               </p>
             </div>
@@ -191,24 +191,24 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         </Card>
 
         <Card className="p-6">
-          <h2 className="mb-4 text-base font-semibold text-gray-900">{t('pricing')}</h2>
+          <h2 className="mb-4 text-base font-semibold text-graphite">{t('pricing')}</h2>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{t('totalAmount')}</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-graphite-600">{t('totalAmount')}</span>
+              <span className="font-medium text-graphite">
                 {formatCurrency(totalAmount, locale)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{t('discount')}</span>
-              <span className="font-medium text-gray-900">{formatCurrency(-discount, locale)}</span>
+              <span className="text-graphite-600">{t('discount')}</span>
+              <span className="font-medium text-graphite">{formatCurrency(-discount, locale)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{t('totalPaid')}</span>
-              <span className="font-medium text-gray-900">{formatCurrency(totalPaid, locale)}</span>
+              <span className="text-graphite-600">{t('totalPaid')}</span>
+              <span className="font-medium text-graphite">{formatCurrency(totalPaid, locale)}</span>
             </div>
             <div className="flex justify-between border-t pt-2 text-sm font-semibold">
-              <span className="text-gray-900">{t('remaining')}</span>
+              <span className="text-graphite">{t('remaining')}</span>
               <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
                 {formatCurrency(remaining, locale)}
               </span>
@@ -218,14 +218,14 @@ export default async function EnrollmentDetailPage({ params }: Props) {
       </div>
 
       <Card className="p-6">
-        <h2 className="mb-4 text-base font-semibold text-gray-900">{t('classAssignments')}</h2>
+        <h2 className="mb-4 text-base font-semibold text-graphite">{t('classAssignments')}</h2>
         {enrollment.classAssignments.length === 0 ? (
-          <p className="text-sm text-gray-500">-</p>
+          <p className="text-sm text-graphite-600">-</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b text-xs font-medium uppercase tracking-wider text-gray-400">
+                <tr className="border-b text-xs font-medium uppercase tracking-wider text-graphite-700">
                   <th className="pb-2 text-left">{t('classAssignmentTable.class')}</th>
                   <th className="pb-2 text-left">{t('classAssignmentTable.level')}</th>
                   <th className="pb-2 text-left">{t('classAssignmentTable.period')}</th>
@@ -243,9 +243,9 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                         {a.classPeriod.name}
                       </Link>
                     </td>
-                    <td className="py-3 pr-4 text-gray-600">{a.classPeriod.level.name}</td>
-                    <td className="py-3 pr-4 text-gray-600">{a.classPeriod.period.name}</td>
-                    <td className="py-3 text-gray-600">{formatDate(a.startAt, locale)}</td>
+                    <td className="py-3 pr-4 text-graphite-600">{a.classPeriod.level.name}</td>
+                    <td className="py-3 pr-4 text-graphite-600">{a.classPeriod.period.name}</td>
+                    <td className="py-3 text-graphite-600">{formatDate(a.startAt, locale)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -255,14 +255,14 @@ export default async function EnrollmentDetailPage({ params }: Props) {
       </Card>
 
       <Card className="p-6">
-        <h2 className="mb-4 text-base font-semibold text-gray-900">{t('payments')}</h2>
+        <h2 className="mb-4 text-base font-semibold text-graphite">{t('payments')}</h2>
         {enrollment.payments.length === 0 ? (
-          <p className="text-sm text-gray-500">-</p>
+          <p className="text-sm text-graphite-600">-</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b text-xs font-medium uppercase tracking-wider text-gray-400">
+                <tr className="border-b text-xs font-medium uppercase tracking-wider text-graphite-700">
                   <th className="pb-2 text-left">{t('paymentTable.amount')}</th>
                   <th className="pb-2 text-left">{t('paymentTable.method')}</th>
                   <th className="pb-2 text-left">{t('paymentTable.reference')}</th>
@@ -273,15 +273,15 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               <tbody className="divide-y">
                 {enrollment.payments.map((p) => (
                   <tr key={p.id} className="text-sm">
-                    <td className="py-3 pr-4 font-medium text-gray-900">
+                    <td className="py-3 pr-4 font-medium text-graphite">
                       {formatCurrency(p.amount, locale)}
                     </td>
-                    <td className="py-3 pr-4 text-gray-600">
+                    <td className="py-3 pr-4 text-graphite-600">
                       <PaymentMethodLabel method={p.method} />
                     </td>
-                    <td className="py-3 pr-4 text-gray-600">{p.reference ?? '-'}</td>
-                    <td className="py-3 pr-4 text-gray-600">{formatDate(p.paidAt, locale)}</td>
-                    <td className="py-3 text-gray-600">
+                    <td className="py-3 pr-4 text-graphite-600">{p.reference ?? '-'}</td>
+                    <td className="py-3 pr-4 text-graphite-600">{formatDate(p.paidAt, locale)}</td>
+                    <td className="py-3 text-graphite-600">
                       {p.cashedAt ? formatDate(p.cashedAt, locale) : '-'}
                     </td>
                   </tr>

@@ -50,7 +50,7 @@ function ConfirmDialogContent({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <DialogBody>
-          <p className="text-sm text-gray-600">{description}</p>
+          <p className="text-sm text-graphite-600">{description}</p>
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>

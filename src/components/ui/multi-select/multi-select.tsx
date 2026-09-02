@@ -192,15 +192,15 @@ export function MultiSelect({
 
       <div
         className={cn(
-          'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded border border-gray-300 bg-white px-2 py-1.5 text-sm',
+          'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded border border-alabaster bg-white px-2 py-1.5 text-sm',
           'focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-1',
-          isDisabled && 'cursor-not-allowed bg-gray-50 opacity-60'
+          isDisabled && 'cursor-not-allowed bg-alabaster-900 opacity-60'
         )}
       >
         {selected.map((option) => (
           <span
             key={option.id}
-            className="inline-flex items-center gap-1 rounded bg-gray-100 py-0.5 pl-2 pr-1 text-xs font-medium text-gray-800"
+            className="inline-flex items-center gap-1 rounded bg-alabaster-800 py-0.5 pl-2 pr-1 text-xs font-medium text-graphite"
           >
             {option.name}
             <button
@@ -208,7 +208,7 @@ export function MultiSelect({
               disabled={isDisabled}
               onClick={() => toggle(option.id)}
               aria-label={removeLabel ? `${removeLabel} ${option.name}` : option.name}
-              className="rounded p-0.5 text-gray-500 hover:bg-gray-200 hover:text-gray-900 disabled:cursor-not-allowed"
+              className="rounded p-0.5 text-graphite-600 hover:bg-alabaster-700 hover:text-graphite disabled:cursor-not-allowed"
             >
               <X className="h-3 w-3" />
             </button>
@@ -241,10 +241,10 @@ export function MultiSelect({
           }}
           onFocus={openList}
           onKeyDown={handleKeyDown}
-          className="min-w-24 flex-1 bg-transparent px-1 py-0.5 text-sm outline-none placeholder:text-gray-400 disabled:cursor-not-allowed"
+          className="min-w-24 flex-1 bg-transparent px-1 py-0.5 text-sm outline-none placeholder:text-graphite-700 disabled:cursor-not-allowed"
         />
 
-        <ChevronDown className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+        <ChevronDown className="h-4 w-4 shrink-0 text-graphite-700" aria-hidden="true" />
       </div>
 
       {position !== null &&
@@ -262,10 +262,10 @@ export function MultiSelect({
               width: position.width,
               maxHeight: position.maxHeight,
             }}
-            className="fixed z-[60] overflow-y-auto rounded border border-gray-200 bg-white py-1 shadow-lg"
+            className="fixed z-[60] overflow-y-auto rounded border border-alabaster-700 bg-white py-1 shadow-lg"
           >
             {results.length === 0 && (
-              <p className="px-3 py-2 text-sm text-gray-500">{noResultsMessage}</p>
+              <p className="px-3 py-2 text-sm text-graphite-600">{noResultsMessage}</p>
             )}
             {results.map((option, index) => {
               const isSelected = selectedIds.includes(option.id)
@@ -281,8 +281,8 @@ export function MultiSelect({
                   onClick={() => toggle(option.id)}
                   className={cn(
                     'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm',
-                    index === activeIndex ? 'bg-gray-100' : 'bg-transparent',
-                    isSelected ? 'font-medium text-gray-900' : 'text-gray-700'
+                    index === activeIndex ? 'bg-alabaster-800' : 'bg-transparent',
+                    isSelected ? 'font-medium text-graphite' : 'text-graphite'
                   )}
                 >
                   {option.name}

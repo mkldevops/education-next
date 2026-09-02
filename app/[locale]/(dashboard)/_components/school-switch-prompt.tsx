@@ -51,8 +51,8 @@ export function SchoolSwitchPrompt({ schoolId, schoolName, canSwitch }: Props) {
       <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
         <Building2 className="h-6 w-6 text-primary" />
       </span>
-      <h1 className="mt-4 text-xl font-semibold text-gray-900">{t('title')}</h1>
-      <p className="mt-2 text-sm text-gray-600">{t('description', { schoolName })}</p>
+      <h1 className="mt-4 text-xl font-semibold text-graphite">{t('title')}</h1>
+      <p className="mt-2 text-sm text-graphite-600">{t('description', { schoolName })}</p>
       {failed && <p className="mt-4 text-sm text-red-600">{t('error')}</p>}
       {canSwitch ? (
         <div className="mt-6 flex justify-center">
@@ -61,7 +61,7 @@ export function SchoolSwitchPrompt({ schoolId, schoolName, canSwitch }: Props) {
           </Button>
         </div>
       ) : (
-        <p className="mt-6 text-sm text-gray-500">{t('switchDisabled')}</p>
+        <p className="mt-6 text-sm text-graphite-600">{t('switchDisabled')}</p>
       )}
     </Card>
   )

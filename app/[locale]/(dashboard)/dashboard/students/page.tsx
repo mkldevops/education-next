@@ -70,7 +70,7 @@ export default async function StudentsPage({ params }: Props) {
           { label: tBreadcrumbs('students') },
         ]}
       />
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
       <StudentsDataTable data={students} locale={locale} isAdmin={isAdmin} />
     </div>
   )

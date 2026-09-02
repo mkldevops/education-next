@@ -66,25 +66,25 @@ export default async function TeachersPage({ params, searchParams }: Props) {
     {
       key: 'name',
       header: t('teachers.name'),
-      className: 'font-medium text-gray-900',
+      className: 'font-medium text-graphite',
       render: (teacher) => `${teacher.lastName} ${teacher.firstName}`,
     },
     {
       key: 'email',
       header: t('teachers.email'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (teacher) => teacher.email || '-',
     },
     {
       key: 'phone',
       header: t('teachers.phone'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (teacher) => teacher.phone || '-',
     },
     {
       key: 'classes',
       header: t('teachers.classes'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (teacher) =>
         teacher.classPeriods.length > 0
           ? teacher.classPeriods
@@ -121,35 +121,35 @@ export default async function TeachersPage({ params, searchParams }: Props) {
     {
       key: 'teacher',
       header: t('expenses.teacher'),
-      className: 'font-medium text-gray-900',
+      className: 'font-medium text-graphite',
       render: (expense) => `${expense.teacher.lastName} ${expense.teacher.firstName}`,
     },
     {
       key: 'amount',
       header: t('expenses.amount'),
-      className: 'text-gray-900 font-medium',
+      className: 'text-graphite font-medium',
       render: (expense) => formatCurrency(expense.amount, locale),
     },
     {
       key: 'category',
       header: t('expenses.category'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
     },
     {
       key: 'description',
       header: t('expenses.description'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
     },
     {
       key: 'requestedAt',
       header: t('expenses.requestedAt'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (expense) => formatDate(expense.requestedAt, locale),
     },
     {
       key: 'paidAt',
       header: t('expenses.paidAt'),
-      className: 'text-gray-700',
+      className: 'text-graphite',
       render: (expense) =>
         expense.paidAt ? formatDate(expense.paidAt, locale) : t('expenses.notPaid'),
     },
@@ -164,7 +164,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         <CreateTeacherDialog />
       </div>
 
@@ -174,7 +174,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
           {
             label: t('tabs.teachers'),
             content: (
-              <Card className="rounded border border-gray-200">
+              <Card className="rounded border border-alabaster-700">
                 <DataTable
                   data={teachers}
                   columns={teacherColumns}
@@ -189,7 +189,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
             content: (
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm text-gray-600">{t('expenses.descriptionText')}</p>
+                  <p className="text-sm text-graphite-600">{t('expenses.descriptionText')}</p>
                   {expensesEnabled && <CreateExpenseDialog teachers={teacherOptions} />}
                 </div>
                 {!expensesEnabled && (
@@ -197,7 +197,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
                     {t('expenses.disabled')}
                   </div>
                 )}
-                <Card className="rounded border border-gray-200">
+                <Card className="rounded border border-alabaster-700">
                   <DataTable
                     data={expenses}
                     columns={expenseColumns}
