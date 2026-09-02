@@ -37,7 +37,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
               cy="50"
               r="45"
               fill="none"
-              stroke="#10b981"
+              stroke="var(--color-success)"
               strokeWidth="8"
               strokeDasharray={circumference}
               strokeDashoffset={paidOffset}

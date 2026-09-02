@@ -77,7 +77,7 @@ export function ErrorPageShell({
         minHeight === 'screen' ? 'min-h-screen' : 'min-h-[calc(100vh-9rem)] rounded'
       )}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(53,53,53,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(53,53,53,0.08)_1px,transparent_1px)] bg-[size:42px_42px] opacity-60" />
+      <div className="pointer-events-none absolute inset-0 error-page-grid opacity-60" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-graphite-900 to-transparent" />
 
       <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-12 md:flex-row md:items-end md:justify-between">
