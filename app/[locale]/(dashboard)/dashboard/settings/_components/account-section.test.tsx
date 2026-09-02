@@ -35,7 +35,7 @@ const signOut = vi.fn(async () => ({ error: null }))
 const toastError = vi.fn()
 
 const logout = () => {
-  render(<AccountSection email="parent@school.test" linkedProviders={[]} />)
+  render(<AccountSection email="parent@school.test" linkedAccounts={[]} />)
   fireEvent.click(screen.getByRole('button', { name: 'logout.button' }))
   fireEvent.click(screen.getByRole('button', { name: 'logout.confirm' }))
 }

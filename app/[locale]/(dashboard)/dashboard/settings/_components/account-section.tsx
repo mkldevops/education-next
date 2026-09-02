@@ -9,12 +9,17 @@ import { useRouter as useI18nRouter } from '@/i18n/routing'
 import { linkSocial, signOut, unlinkAccount } from '@/lib/auth-client'
 import { toast } from '@/lib/toast'
 
-type Props = {
-  email: string
-  linkedProviders: string[]
+type LinkedAccount = {
+  id: string
+  providerId: string
 }
 
-export function AccountSection({ email, linkedProviders }: Props) {
+type Props = {
+  email: string
+  linkedAccounts: LinkedAccount[]
+}
+
+export function AccountSection({ email, linkedAccounts }: Props) {
   const t = useTranslations('settings')
   const router = useRouter()
   const i18nRouter = useI18nRouter()
@@ -23,9 +28,9 @@ export function AccountSection({ email, linkedProviders }: Props) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const locale = useLocale()
-  const [providers, setProviders] = useState(linkedProviders)
+  const [accounts, setAccounts] = useState(linkedAccounts)
 
-  const isGoogleLinked = providers.includes('google')
+  const googleAccount = accounts.find((a) => a.providerId === 'google')
 
   const handleLinkGoogle = () => {
     setError(null)
@@ -43,11 +48,16 @@ export function AccountSection({ email, linkedProviders }: Props) {
   const handleUnlinkGoogle = () => {
     setError(null)
     startTransition(async () => {
-      const result = await unlinkAccount({ providerId: 'google' })
+      if (!googleAccount) {
+        setError('unlinkFailed')
+        return
+      }
+
+      const result = await unlinkAccount({ accountId: googleAccount.id })
       if (result.error) {
         setError('unlinkFailed')
       } else {
-        setProviders((prev) => prev.filter((p) => p !== 'google'))
+        setAccounts((prev) => prev.filter((a) => a.id !== googleAccount.id))
         router.refresh()
       }
     })
@@ -126,13 +136,13 @@ export function AccountSection({ email, linkedProviders }: Props) {
               <div>
                 <p className="text-sm font-medium text-gray-900">Google</p>
                 <p className="text-xs text-gray-500">
-                  {isGoogleLinked
+                  {googleAccount
                     ? t('connectedAccounts.connected')
                     : t('connectedAccounts.notConnected')}
                 </p>
               </div>
             </div>
-            {isGoogleLinked ? (
+            {googleAccount ? (
               <Button variant="outline" size="sm" onClick={handleUnlinkGoogle} disabled={isPending}>
                 {t('connectedAccounts.disconnect')}
               </Button>

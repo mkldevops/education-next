@@ -19,6 +19,11 @@ type SessionData = {
   isCurrent: boolean
 }
 
+type LinkedAccount = {
+  id: string
+  providerId: string
+}
+
 type Props = {
   user: {
     name: string
@@ -26,10 +31,10 @@ type Props = {
     image: string | null
   }
   sessions: SessionData[]
-  linkedProviders: string[]
+  linkedAccounts: LinkedAccount[]
 }
 
-export function SettingsTabs({ user, sessions, linkedProviders }: Props) {
+export function SettingsTabs({ user, sessions, linkedAccounts }: Props) {
   const t = useTranslations('settings')
 
   return (
@@ -61,7 +66,7 @@ export function SettingsTabs({ user, sessions, linkedProviders }: Props) {
           {
             label: t('tabs.account'),
             icon: Shield,
-            content: <AccountSection email={user.email} linkedProviders={linkedProviders} />,
+            content: <AccountSection email={user.email} linkedAccounts={linkedAccounts} />,
           },
         ]}
       />
