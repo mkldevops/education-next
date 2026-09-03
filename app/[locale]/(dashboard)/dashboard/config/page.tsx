@@ -92,7 +92,7 @@ export default async function ConfigPage({ params }: Props) {
             <span>{known.label}</span>
             <div className="text-xs font-normal text-graphite-600">{config.name}</div>
             {known.description && (
-              <div className="text-xs font-normal text-graphite-700">{known.description}</div>
+              <div className="text-xs font-normal text-graphite-600">{known.description}</div>
             )}
           </div>
         )
@@ -121,7 +121,7 @@ export default async function ConfigPage({ params }: Props) {
             <span className="min-w-0 break-all">{config.value}</span>
           </div>
         ) : (
-          <span className="text-graphite-700">{t('notConfigured')}</span>
+          <span className="text-graphite-600">{t('notConfigured')}</span>
         )
       },
     },

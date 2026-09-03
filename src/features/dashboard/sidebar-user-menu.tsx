@@ -9,7 +9,7 @@ import { toInitials } from './initials'
 import type { NavItemConfig } from './sidebar-items'
 
 const itemClass =
-  'flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm text-graphite-800 transition-colors hover:bg-alabaster-900 hover:text-graphite-600'
+  'flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm text-graphite-600 transition-colors hover:bg-alabaster-900 hover:text-graphite'
 
 export function UserMenu({
   userName,

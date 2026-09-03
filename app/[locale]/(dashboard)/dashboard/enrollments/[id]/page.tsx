@@ -225,7 +225,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b text-xs font-medium uppercase tracking-wider text-graphite-700">
+                <tr className="border-b text-xs font-medium uppercase tracking-wider text-graphite-600">
                   <th className="pb-2 text-left">{t('classAssignmentTable.class')}</th>
                   <th className="pb-2 text-left">{t('classAssignmentTable.level')}</th>
                   <th className="pb-2 text-left">{t('classAssignmentTable.period')}</th>
@@ -262,7 +262,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b text-xs font-medium uppercase tracking-wider text-graphite-700">
+                <tr className="border-b text-xs font-medium uppercase tracking-wider text-graphite-600">
                   <th className="pb-2 text-left">{t('paymentTable.amount')}</th>
                   <th className="pb-2 text-left">{t('paymentTable.method')}</th>
                   <th className="pb-2 text-left">{t('paymentTable.reference')}</th>

@@ -237,7 +237,7 @@ export function EnrollmentDrawer({
               <div className="overflow-x-auto rounded border border-alabaster-700">
                 <table className="w-full min-w-[400px]">
                   <thead>
-                    <tr className="border-b bg-alabaster-900 text-xs font-medium uppercase tracking-wider text-graphite-700">
+                    <tr className="border-b bg-alabaster-900 text-xs font-medium uppercase tracking-wider text-graphite-600">
                       <th className="px-3 py-2 text-left">
                         {tDetails('classAssignmentTable.class')}
                       </th>
@@ -275,7 +275,7 @@ export function EnrollmentDrawer({
               <div className="overflow-x-auto rounded border border-alabaster-700">
                 <table className="w-full min-w-[400px]">
                   <thead>
-                    <tr className="border-b bg-alabaster-900 text-xs font-medium uppercase tracking-wider text-graphite-700">
+                    <tr className="border-b bg-alabaster-900 text-xs font-medium uppercase tracking-wider text-graphite-600">
                       <th className="px-3 py-2 text-left">{tDetails('paymentTable.amount')}</th>
                       <th className="px-3 py-2 text-left">{tDetails('paymentTable.method')}</th>
                       <th className="px-3 py-2 text-left">{tDetails('paymentTable.reference')}</th>
