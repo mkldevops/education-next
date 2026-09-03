@@ -55,7 +55,7 @@ export function UserDrawer({
   const tRoles = useTranslations('roles')
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const { detail, loading, refresh } = useUserDetail(member?.userId ?? null, open)
+  const { detail, loading, error, refresh } = useUserDetail(member?.userId ?? null, open)
 
   if (!member) return null
 
@@ -90,6 +90,8 @@ export function UserDrawer({
         </DrawerHeader>
 
         <DrawerBody className="space-y-6">
+          {error && <div className="rounded bg-red-50 p-3 text-sm text-red-600">{t('error')}</div>}
+
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={ROLE_COLORS[member.role]} label={tRoles(member.role)} />
             {user.isSuperAdmin && <StatusBadge status="red" label={t('superAdmin')} />}
