@@ -126,7 +126,7 @@ export function SecuritySection({ detail, loading, activeSessions, locale }: Sec
             <li key={session.id} className="rounded bg-alabaster-900 p-2 text-xs text-graphite-600">
               <p className="font-medium text-graphite">{session.ipAddress || '-'}</p>
               <p className="truncate">{session.userAgent || '-'}</p>
-              <p className="text-graphite-700">
+              <p className="text-graphite-600">
                 {formatDateTime(session.createdAt, locale)} →{' '}
                 {formatDateTime(session.expiresAt, locale)}
               </p>
@@ -139,7 +139,7 @@ export function SecuritySection({ detail, loading, activeSessions, locale }: Sec
           {detail.passkeys.map((passkey) => (
             <li key={passkey.id} className="text-sm text-graphite-600">
               {passkey.name}
-              <span className="text-graphite-700"> · {passkey.deviceType}</span>
+              <span className="text-graphite-600"> · {passkey.deviceType}</span>
             </li>
           ))}
         </ul>
@@ -178,7 +178,7 @@ export function ActivitySection({ detail, lastLoginAt, locale }: ActivitySection
           {detail.createdInvitations.map((invitation) => (
             <li key={invitation.id} className="text-sm text-graphite-600">
               {invitation.email}
-              <span className="text-graphite-700">
+              <span className="text-graphite-600">
                 {' '}
                 · {tRoles(invitation.role)} · {formatDateTime(invitation.createdAt, locale)}
               </span>

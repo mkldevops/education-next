@@ -106,7 +106,7 @@ export function Sidebar({
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {expanded && (
-            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-graphite-700">
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-graphite-600">
               {t('sectionGestion')}
             </p>
           )}
@@ -115,7 +115,7 @@ export function Sidebar({
           {items.config.length > 0 && (
             <>
               {expanded ? (
-                <p className="mb-2 mt-6 border-t border-alabaster-700 px-3 pt-4 text-xs font-semibold uppercase tracking-wider text-graphite-700">
+                <p className="mb-2 mt-6 border-t border-alabaster-700 px-3 pt-4 text-xs font-semibold uppercase tracking-wider text-graphite-600">
                   {t('sectionConfig')}
                 </p>
               ) : (

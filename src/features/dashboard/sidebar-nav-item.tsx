@@ -70,7 +70,7 @@ export function NavItem({
         expanded ? 'gap-3 px-3 py-2' : 'size-11 justify-center',
         active
           ? 'bg-gradient-to-br from-primary to-primary/70 text-white shadow-lg shadow-primary/25'
-          : 'text-graphite-800 hover:bg-alabaster-900 hover:text-graphite-600'
+          : 'text-graphite-600 hover:bg-alabaster-900 hover:text-graphite'
       )}
     >
       <Icon size={20} className="shrink-0" />

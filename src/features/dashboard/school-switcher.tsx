@@ -124,7 +124,7 @@ export function SchoolSwitcher({
             className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-white/80 backdrop-blur-sm"
           >
             <LoaderCircle size={28} className="animate-spin text-primary" aria-hidden />
-            <span className="text-sm font-medium text-graphite-800">
+            <span className="text-sm font-medium text-graphite-600">
               {target ? t('switching', { schoolName: target.name }) : t('label')}
             </span>
           </div>,
@@ -147,7 +147,7 @@ export function SchoolSwitcher({
               type="button"
               role="menuitem"
               onClick={() => onSelect(school.id)}
-              className="flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm text-graphite-800 transition-colors hover:bg-alabaster-900 hover:text-graphite-600"
+              className="flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm text-graphite-600 transition-colors hover:bg-alabaster-900 hover:text-graphite"
             >
               <span className="flex-1 truncate">{school.name}</span>
               {school.id === activeSchoolId && (

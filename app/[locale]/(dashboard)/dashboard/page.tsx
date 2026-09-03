@@ -230,7 +230,7 @@ export default async function DashboardPage({ params }: Props) {
               <div>
                 <p className="text-sm font-medium text-graphite-600">{t('stats.families')}</p>
                 <p className="mt-2 text-3xl font-bold text-graphite">{familyCount}</p>
-                <p className="mt-1 text-xs text-graphite-700">{t('stats.scopeAll')}</p>
+                <p className="mt-1 text-xs text-graphite-600">{t('stats.scopeAll')}</p>
               </div>
               <div className="rounded bg-primary-light p-3">
                 <TrendingUp className="h-6 w-6 text-primary" />
@@ -243,7 +243,7 @@ export default async function DashboardPage({ params }: Props) {
             <div>
               <p className="text-sm font-medium text-graphite-600">{t('stats.students')}</p>
               <p className="mt-2 text-3xl font-bold text-graphite">{studentCount}</p>
-              <p className="mt-1 text-xs text-graphite-700">{t('stats.scopeAll')}</p>
+              <p className="mt-1 text-xs text-graphite-600">{t('stats.scopeAll')}</p>
             </div>
             <div className="rounded bg-primary-light p-3">
               <TrendingUp className="h-6 w-6 text-primary" />
@@ -255,7 +255,7 @@ export default async function DashboardPage({ params }: Props) {
             <div>
               <p className="text-sm font-medium text-graphite-600">{t('stats.enrollments')}</p>
               <p className="mt-2 text-3xl font-bold text-graphite">{enrollmentCount}</p>
-              <p className="mt-1 text-xs text-graphite-700">{periodScope}</p>
+              <p className="mt-1 text-xs text-graphite-600">{periodScope}</p>
             </div>
             <div className="rounded bg-primary-light p-3">
               <TrendingUp className="h-6 w-6 text-primary" />
@@ -270,7 +270,7 @@ export default async function DashboardPage({ params }: Props) {
                   {t('stats.pendingEnrollments')}
                 </p>
                 <p className="mt-2 text-3xl font-bold text-graphite">{pendingPaymentCount}</p>
-                <p className="mt-1 text-xs text-graphite-700">{periodScope}</p>
+                <p className="mt-1 text-xs text-graphite-600">{periodScope}</p>
               </div>
               <div className="rounded bg-amber-100 p-3">
                 <AlertCircle className="h-6 w-6 text-amber-600" />
@@ -283,7 +283,7 @@ export default async function DashboardPage({ params }: Props) {
             <p className="mt-2 text-3xl font-bold text-graphite">
               {formatCurrency(parentBalance?.remainingBalance ?? 0, locale)}
             </p>
-            <p className="mt-1 text-xs text-graphite-700">{t('stats.scopeAll')}</p>
+            <p className="mt-1 text-xs text-graphite-600">{t('stats.scopeAll')}</p>
             <div className="mt-4">
               <OnlinePaymentButton
                 amount={parentBalance?.payableBalance ?? 0}
