@@ -45,7 +45,7 @@ describe('unassignClassPeriodTeacher', () => {
     expect(result).toBe('validationError')
   })
 
-  it('fails when the class period is not found', async () => {
+  it('fails when the class period is not found, without calling unassignTeacher', async () => {
     // GIVEN
     const input = { schoolId, id: '123e4567-e89b-12d3-a456-426614174099', teacherId }
 
@@ -54,6 +54,7 @@ describe('unassignClassPeriodTeacher', () => {
 
     // THEN
     expect(result).toBe('notFound')
+    expect(gateway.unassignedTeacherId).toBeNull()
   })
 
   it('fails when no assignment matched the given teacher', async () => {
@@ -80,16 +81,5 @@ describe('unassignClassPeriodTeacher', () => {
     expect(gateway.unassignedSchoolId).toBe(schoolId)
     expect(gateway.unassignedClassPeriodId).toBe(classPeriodId)
     expect(gateway.unassignedTeacherId).toBe(teacherId)
-  })
-
-  it('never calls unassignTeacher when the class period is not found', async () => {
-    // GIVEN
-    const input = { schoolId, id: '123e4567-e89b-12d3-a456-426614174099', teacherId }
-
-    // WHEN
-    await unassignClassPeriodTeacher(input, gateway as unknown as ClassPeriodGw)
-
-    // THEN
-    expect(gateway.unassignedTeacherId).toBeNull()
   })
 })

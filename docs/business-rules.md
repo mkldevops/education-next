@@ -346,15 +346,17 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   `classPeriodGateway.update` scopes its assignment sweep to `teacher: { isActive: true }`. A
   deactivated teacher's `ClassPeriodTeacher` row survives any class edit instead of being silently
   destroyed.
-- **A deactivated teacher's stray assignment is removable, explicitly.** The class detail page reads
-  every `ClassPeriodTeacher` row through `classPeriodGateway.listTeacherAssignments` — unlike
-  `findById`/`list`, it carries no `teacher.isActive` filter, so a deactivated teacher's row is
+- **A deactivated teacher's stray assignment is removable, explicitly, and only that one.** The
+  class detail page reads `ClassPeriodTeacher` rows through
+  `classPeriodGateway.listInactiveTeacherAssignments`, which — unlike `findById`/`list` — filters
+  `teacher: { isActive: false }` instead of excluding them, so a deactivated teacher's row is
   surfaced there instead of staying invisible. `unassignClassPeriodTeacher`
   (`src/use-cases/class-periods/unassign-teacher.ts`) is the only path that deletes such a row,
-  through `classPeriodGateway.unassignTeacher`, scoped by `schoolId`, `classPeriodId` and `teacherId`
-  together. It does not duplicate the active-teacher roster management already covered by
-  `classPeriodGateway.update`: the class detail page only offers the action next to an inactive
-  assignment, since an active one is already removable by editing the class.
+  through `classPeriodGateway.unassignTeacher`. The restriction to inactive teachers is enforced in
+  that gateway call's `where` — `{ schoolId, classPeriodId, teacherId, teacher: { isActive: false } }`
+  — not only by the page hiding the button next to an active one: calling the action directly on an
+  active teacher's assignment deletes nothing (`count` stays 0, same as a missing assignment). This
+  keeps `classPeriodGateway.update` the sole path that ever touches an active-teacher assignment.
 
 ## Enrollments
 

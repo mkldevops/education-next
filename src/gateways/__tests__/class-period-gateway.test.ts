@@ -85,14 +85,14 @@ describe('classPeriodGateway.update', () => {
   })
 })
 
-describe('classPeriodGateway.listTeacherAssignments', () => {
-  it('reads every assignment for the class, including inactive teachers', async () => {
+describe('classPeriodGateway.listInactiveTeacherAssignments', () => {
+  it('reads only assignments whose teacher is inactive', async () => {
     dbMock.classPeriodTeacher.findMany.mockResolvedValue([])
 
-    await classPeriodGateway.listTeacherAssignments(SCHOOL, CLASS_ID)
+    await classPeriodGateway.listInactiveTeacherAssignments(SCHOOL, CLASS_ID)
 
     expect(dbMock.classPeriodTeacher.findMany).toHaveBeenCalledWith({
-      where: { schoolId: SCHOOL, classPeriodId: CLASS_ID },
+      where: { schoolId: SCHOOL, classPeriodId: CLASS_ID, teacher: { isActive: false } },
       include: { teacher: true },
       orderBy: { teacher: { lastName: 'asc' } },
     })
@@ -100,13 +100,18 @@ describe('classPeriodGateway.listTeacherAssignments', () => {
 })
 
 describe('classPeriodGateway.unassignTeacher', () => {
-  it('deletes exactly the targeted assignment, scoped by school', async () => {
+  it('deletes exactly the targeted inactive-teacher assignment, scoped by school', async () => {
     dbMock.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 1 })
 
     const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'teacher-1')
 
     expect(dbMock.classPeriodTeacher.deleteMany).toHaveBeenCalledWith({
-      where: { schoolId: SCHOOL, classPeriodId: CLASS_ID, teacherId: 'teacher-1' },
+      where: {
+        schoolId: SCHOOL,
+        classPeriodId: CLASS_ID,
+        teacherId: 'teacher-1',
+        teacher: { isActive: false },
+      },
     })
     expect(removed).toBe(true)
   })
@@ -116,6 +121,26 @@ describe('classPeriodGateway.unassignTeacher', () => {
 
     const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'teacher-1')
 
+    expect(removed).toBe(false)
+  })
+
+  it("never deletes an active teacher's assignment, even if targeted directly", async () => {
+    // Un enseignant actif ne matche jamais `teacher: { isActive: false }` : le
+    // `deleteMany` renvoie `count: 0` côté base réelle. Ce test fige le contrat côté
+    // gateway ; la garantie réelle vient du filtre dans le `where` ci-dessus, pas
+    // d'une simulation de la base.
+    dbMock.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 0 })
+
+    const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'active-teacher')
+
+    expect(dbMock.classPeriodTeacher.deleteMany).toHaveBeenCalledWith({
+      where: {
+        schoolId: SCHOOL,
+        classPeriodId: CLASS_ID,
+        teacherId: 'active-teacher',
+        teacher: { isActive: false },
+      },
+    })
     expect(removed).toBe(false)
   })
 })

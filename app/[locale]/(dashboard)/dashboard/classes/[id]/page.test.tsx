@@ -6,6 +6,8 @@ const dbMock = {
   user: { findUnique: vi.fn() },
   userFamily: { findFirst: vi.fn() },
   classPeriod: { findFirst: vi.fn() },
+  teacher: { findMany: vi.fn() },
+  classPeriodTeacher: { findMany: vi.fn() },
 }
 const authMock = { api: { getSession: vi.fn() } }
 const schoolMemberGatewayMock = { listAuthorizedSchools: vi.fn() }
@@ -101,5 +103,43 @@ describe('ClassDetailPage, ressource dans une autre école', () => {
 
     expect(screen.getByRole('button', { name: 'switchTo' })).toBeInTheDocument()
     expect(screen.queryByText('switchDisabled')).not.toBeInTheDocument()
+  })
+})
+
+describe('ClassDetailPage, ressource dans l’école active', () => {
+  it('affiche une affectation d’enseignant désactivé et son action de désaffectation', async () => {
+    dbMock.classPeriod.findFirst.mockResolvedValue({
+      id: 'class-1',
+      schoolId: AL_NOUR.id,
+      name: 'CP-A',
+      capacity: 20,
+      level: { name: 'CP' },
+      period: { name: '2026-2027' },
+      classAssignments: [],
+      teachers: [],
+    })
+    dbMock.teacher.findMany.mockResolvedValue([])
+    dbMock.classPeriodTeacher.findMany.mockResolvedValue([
+      {
+        teacherId: 'teacher-inactive-1',
+        teacher: {
+          id: 'teacher-inactive-1',
+          firstName: 'Sofia',
+          lastName: 'Amrani',
+          isActive: false,
+        },
+      },
+    ])
+
+    render(await ClassDetailPage({ params: Promise.resolve({ locale: 'fr', id: 'class-1' }) }))
+
+    expect(screen.getByText('Amrani Sofia')).toBeInTheDocument()
+    // `aria-label` distingue le bouton quand plusieurs lignes désactivées coexistent :
+    // son nom accessible n'est pas le libellé générique visible ('trigger').
+    expect(screen.getByRole('button', { name: 'triggerLabel' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'trigger' })).not.toBeInTheDocument()
+    // La carte ne doit pas prétendre qu'il n'y a aucun enseignant alors qu'une
+    // affectation désactivée est listée juste en dessous.
+    expect(screen.queryByText('noTeachers')).not.toBeInTheDocument()
   })
 })

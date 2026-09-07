@@ -1298,6 +1298,7 @@
         "inactiveBadge": "Deactivated",
         "unassignTeacher": {
           "trigger": "Unassign",
+          "triggerLabel": "Unassign {teacher}",
           "title": "Unassign {teacher}",
           "warning": "This permanently removes {teacher}'s assignment to this class. This cannot be undone.",
           "cancel": "Cancel",

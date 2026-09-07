@@ -86,11 +86,14 @@ export default async function ClassDetailPage({ params }: Props) {
     )
 
   const classPeriod = resolution.resource
-  const teachers = await db.teacher.findMany({
-    where: { schoolId: classPeriod.schoolId, isActive: true },
-    select: { id: true, firstName: true, lastName: true },
-    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
-  })
+  const [teachers, inactiveTeacherAssignments] = await Promise.all([
+    db.teacher.findMany({
+      where: { schoolId: classPeriod.schoolId, isActive: true },
+      select: { id: true, firstName: true, lastName: true },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    }),
+    classPeriodGateway.listInactiveTeacherAssignments(classPeriod.schoolId, classPeriod.id),
+  ])
   const teacherOptions = teachers.map((teacher) => ({
     id: teacher.id,
     name: `${teacher.lastName} ${teacher.firstName}`,
@@ -99,16 +102,10 @@ export default async function ClassDetailPage({ params }: Props) {
     id: teacher.id,
     name: `${teacher.lastName} ${teacher.firstName}`,
   }))
-  const teacherAssignments = await classPeriodGateway.listTeacherAssignments(
-    classPeriod.schoolId,
-    classPeriod.id
-  )
-  const inactiveAssignments = teacherAssignments
-    .filter((assignment) => !assignment.teacher.isActive)
-    .map((assignment) => ({
-      teacherId: assignment.teacherId,
-      name: `${assignment.teacher.lastName} ${assignment.teacher.firstName}`,
-    }))
+  const inactiveAssignments = inactiveTeacherAssignments.map((assignment) => ({
+    teacherId: assignment.teacherId,
+    name: `${assignment.teacher.lastName} ${assignment.teacher.firstName}`,
+  }))
 
   const roster = classPeriod.classAssignments
     .map((assignment) => ({
@@ -181,12 +178,12 @@ export default async function ClassDetailPage({ params }: Props) {
               </span>
             ))}
           </div>
-        ) : (
+        ) : inactiveAssignments.length === 0 ? (
           <p className="mt-2 text-sm text-graphite-600">{t('noTeachers')}</p>
-        )}
+        ) : null}
         {inactiveAssignments.length > 0 && (
           <div className="mt-4 space-y-2 border-t border-alabaster-700 pt-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-amber-600">
+            <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
               {t('inactiveAssignments')}
             </p>
             <p className="text-xs text-graphite-600">{t('inactiveAssignmentsHint')}</p>
@@ -198,7 +195,7 @@ export default async function ClassDetailPage({ params }: Props) {
                 >
                   <span className="text-sm text-graphite">
                     {assignment.name}
-                    <span className="ml-2 text-xs font-medium text-amber-600">
+                    <span className="ml-2 text-xs font-medium text-amber-700">
                       {t('inactiveBadge')}
                     </span>
                   </span>

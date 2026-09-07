@@ -1298,6 +1298,7 @@
         "inactiveBadge": "Désactivé",
         "unassignTeacher": {
           "trigger": "Désaffecter",
+          "triggerLabel": "Désaffecter {teacher}",
           "title": "Désaffecter {teacher}",
           "warning": "Cette action retire définitivement l'affectation de {teacher} à cette classe. Elle ne peut pas être annulée.",
           "cancel": "Annuler",

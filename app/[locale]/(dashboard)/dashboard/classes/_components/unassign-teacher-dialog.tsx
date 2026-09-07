@@ -30,7 +30,11 @@ export function UnassignTeacherDialog({
   return (
     <Dialog>
       <DialogTrigger>
-        <Button variant="destructive" size="sm">
+        <Button
+          variant="destructive"
+          size="sm"
+          aria-label={t('triggerLabel', { teacher: teacherName })}
+        >
           {t('trigger')}
         </Button>
       </DialogTrigger>
