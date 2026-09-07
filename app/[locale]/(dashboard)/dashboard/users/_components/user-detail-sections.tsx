@@ -82,9 +82,9 @@ export function FamiliesSection({ detail, canUnlink, isPending, onUnlink }: Fami
             {family.persons.map(({ person, relationType }) => (
               <li key={person.id} className="text-sm text-graphite-600">
                 {person.name} {person.lastname}
-                <span className="text-graphite-700"> · {relationType}</span>
+                <span className="text-graphite-600"> · {relationType}</span>
                 {person.student && (
-                  <span className="text-graphite-700">
+                  <span className="text-graphite-600">
                     {' '}
                     · {t('enrollmentCount', { count: person.student._count.enrollments })}
                   </span>

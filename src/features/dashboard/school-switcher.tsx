@@ -121,12 +121,14 @@ export function SchoolSwitcher({
           <div
             role="status"
             aria-live="polite"
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-white/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm"
           >
-            <LoaderCircle size={28} className="animate-spin text-primary" aria-hidden />
-            <span className="text-sm font-medium text-graphite-600">
-              {target ? t('switching', { schoolName: target.name }) : t('label')}
-            </span>
+            <div className="flex flex-col items-center gap-3 rounded-xl bg-white px-6 py-5 shadow-lg">
+              <LoaderCircle size={28} className="animate-spin text-primary" aria-hidden />
+              <span className="text-sm font-medium text-graphite-600">
+                {target ? t('switching', { schoolName: target.name }) : t('label')}
+              </span>
+            </div>
           </div>,
           document.body
         )}
