@@ -1292,7 +1292,24 @@
           "seatsLeft": "Places restantes"
         },
         "teachers": "Enseignants",
-        "noTeachers": "Aucun enseignant affecté à cette classe."
+        "noTeachers": "Aucun enseignant affecté à cette classe.",
+        "inactiveAssignments": "Affectations d'enseignants désactivés",
+        "inactiveAssignmentsHint": "Ces enseignants ont été désactivés mais restent affectés à cette classe. Désaffectez-les pour les retirer définitivement.",
+        "inactiveBadge": "Désactivé",
+        "unassignTeacher": {
+          "trigger": "Désaffecter",
+          "title": "Désaffecter {teacher}",
+          "warning": "Cette action retire définitivement l'affectation de {teacher} à cette classe. Elle ne peut pas être annulée.",
+          "cancel": "Annuler",
+          "confirm": "Désaffecter",
+          "success": "Enseignant désaffecté",
+          "error": "Erreur lors de la désaffectation",
+          "errors": {
+            "validationError": "Requête invalide",
+            "notFound": "Classe introuvable",
+            "assignmentNotFound": "Cette affectation n'existe plus"
+          }
+        }
       },
       "teachers": {
         "title": "Enseignants",

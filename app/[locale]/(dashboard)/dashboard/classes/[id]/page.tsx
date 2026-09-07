@@ -5,6 +5,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { cache } from 'react'
 import { EnrollmentStatusBadge } from '@/features/enums'
+import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
@@ -14,6 +15,7 @@ import { resolveDeepLink } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { EditClassDialog } from '../_components/edit-class-dialog'
+import { UnassignTeacherDialog } from '../_components/unassign-teacher-dialog'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -97,6 +99,16 @@ export default async function ClassDetailPage({ params }: Props) {
     id: teacher.id,
     name: `${teacher.lastName} ${teacher.firstName}`,
   }))
+  const teacherAssignments = await classPeriodGateway.listTeacherAssignments(
+    classPeriod.schoolId,
+    classPeriod.id
+  )
+  const inactiveAssignments = teacherAssignments
+    .filter((assignment) => !assignment.teacher.isActive)
+    .map((assignment) => ({
+      teacherId: assignment.teacherId,
+      name: `${assignment.teacher.lastName} ${assignment.teacher.firstName}`,
+    }))
 
   const roster = classPeriod.classAssignments
     .map((assignment) => ({
@@ -171,6 +183,34 @@ export default async function ClassDetailPage({ params }: Props) {
           </div>
         ) : (
           <p className="mt-2 text-sm text-graphite-600">{t('noTeachers')}</p>
+        )}
+        {inactiveAssignments.length > 0 && (
+          <div className="mt-4 space-y-2 border-t border-alabaster-700 pt-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-amber-600">
+              {t('inactiveAssignments')}
+            </p>
+            <p className="text-xs text-graphite-600">{t('inactiveAssignmentsHint')}</p>
+            <ul className="space-y-2">
+              {inactiveAssignments.map((assignment) => (
+                <li
+                  key={assignment.teacherId}
+                  className="flex items-center justify-between gap-3 rounded border border-alabaster-700 px-3 py-2"
+                >
+                  <span className="text-sm text-graphite">
+                    {assignment.name}
+                    <span className="ml-2 text-xs font-medium text-amber-600">
+                      {t('inactiveBadge')}
+                    </span>
+                  </span>
+                  <UnassignTeacherDialog
+                    classPeriodId={classPeriod.id}
+                    teacherId={assignment.teacherId}
+                    teacherName={assignment.name}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </Card>
 

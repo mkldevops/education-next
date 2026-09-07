@@ -30,6 +30,10 @@ const dbMock = {
   classPeriod: {
     update: vi.fn(),
   },
+  classPeriodTeacher: {
+    findMany: vi.fn(),
+    deleteMany: vi.fn(),
+  },
   $transaction: vi.fn(),
 }
 
@@ -78,5 +82,40 @@ describe('classPeriodGateway.update', () => {
       data: { capacity: 25 },
     })
     expect(dbMock.$transaction).not.toHaveBeenCalled()
+  })
+})
+
+describe('classPeriodGateway.listTeacherAssignments', () => {
+  it('reads every assignment for the class, including inactive teachers', async () => {
+    dbMock.classPeriodTeacher.findMany.mockResolvedValue([])
+
+    await classPeriodGateway.listTeacherAssignments(SCHOOL, CLASS_ID)
+
+    expect(dbMock.classPeriodTeacher.findMany).toHaveBeenCalledWith({
+      where: { schoolId: SCHOOL, classPeriodId: CLASS_ID },
+      include: { teacher: true },
+      orderBy: { teacher: { lastName: 'asc' } },
+    })
+  })
+})
+
+describe('classPeriodGateway.unassignTeacher', () => {
+  it('deletes exactly the targeted assignment, scoped by school', async () => {
+    dbMock.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 1 })
+
+    const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'teacher-1')
+
+    expect(dbMock.classPeriodTeacher.deleteMany).toHaveBeenCalledWith({
+      where: { schoolId: SCHOOL, classPeriodId: CLASS_ID, teacherId: 'teacher-1' },
+    })
+    expect(removed).toBe(true)
+  })
+
+  it('reports false when no assignment matched', async () => {
+    dbMock.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 0 })
+
+    const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'teacher-1')
+
+    expect(removed).toBe(false)
   })
 })

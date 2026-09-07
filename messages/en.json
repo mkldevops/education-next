@@ -1292,7 +1292,24 @@
           "seatsLeft": "Seats left"
         },
         "teachers": "Teachers",
-        "noTeachers": "No teacher assigned to this class."
+        "noTeachers": "No teacher assigned to this class.",
+        "inactiveAssignments": "Deactivated teacher assignments",
+        "inactiveAssignmentsHint": "These teachers were deactivated but remain assigned to this class. Unassign them to remove them for good.",
+        "inactiveBadge": "Deactivated",
+        "unassignTeacher": {
+          "trigger": "Unassign",
+          "title": "Unassign {teacher}",
+          "warning": "This permanently removes {teacher}'s assignment to this class. This cannot be undone.",
+          "cancel": "Cancel",
+          "confirm": "Unassign",
+          "success": "Teacher unassigned",
+          "error": "Error unassigning teacher",
+          "errors": {
+            "validationError": "Invalid request",
+            "notFound": "Class not found",
+            "assignmentNotFound": "This assignment no longer exists"
+          }
+        }
       },
       "teachers": {
         "title": "Teachers",
