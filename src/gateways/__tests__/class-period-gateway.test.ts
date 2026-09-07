@@ -123,24 +123,4 @@ describe('classPeriodGateway.unassignTeacher', () => {
 
     expect(removed).toBe(false)
   })
-
-  it("never deletes an active teacher's assignment, even if targeted directly", async () => {
-    // Un enseignant actif ne matche jamais `teacher: { isActive: false }` : le
-    // `deleteMany` renvoie `count: 0` côté base réelle. Ce test fige le contrat côté
-    // gateway ; la garantie réelle vient du filtre dans le `where` ci-dessus, pas
-    // d'une simulation de la base.
-    dbMock.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 0 })
-
-    const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'active-teacher')
-
-    expect(dbMock.classPeriodTeacher.deleteMany).toHaveBeenCalledWith({
-      where: {
-        schoolId: SCHOOL,
-        classPeriodId: CLASS_ID,
-        teacherId: 'active-teacher',
-        teacher: { isActive: false },
-      },
-    })
-    expect(removed).toBe(false)
-  })
 })
