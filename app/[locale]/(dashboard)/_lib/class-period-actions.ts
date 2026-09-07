@@ -7,6 +7,7 @@ import type {
   createClassPeriodSchema,
   updateClassPeriodSchema,
 } from '@/use-cases/class-periods/schemas'
+import { unassignClassPeriodTeacher } from '@/use-cases/class-periods/unassign-teacher'
 import { updateClassPeriod } from '@/use-cases/class-periods/update-class-period'
 import { requireSchoolAdmin } from './auth-helper'
 
@@ -31,6 +32,15 @@ export async function updateClassPeriodAction(
   const { schoolId } = await requireSchoolAdmin()
   const result = await updateClassPeriod({ ...data, id, schoolId })
   if (typeof result === 'string') return result
+  revalidatePath('/dashboard/classes')
+  revalidatePath(`/dashboard/classes/${id}`)
+  return result
+}
+
+export async function unassignClassPeriodTeacherAction(id: string, teacherId: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await unassignClassPeriodTeacher({ schoolId, id, teacherId })
+  if (result !== 'OK') return result
   revalidatePath('/dashboard/classes')
   revalidatePath(`/dashboard/classes/${id}`)
   return result

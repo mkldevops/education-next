@@ -20,3 +20,9 @@ export const updateClassPeriodSchema = z.object({
   capacity: z.number().int().positive().optional(),
   teacherIds: teacherIdsSchema.optional(),
 })
+
+export const unassignClassPeriodTeacherSchema = z.object({
+  schoolId: z.string().min(1),
+  id: z.string().uuid(),
+  teacherId: z.string().uuid(),
+})

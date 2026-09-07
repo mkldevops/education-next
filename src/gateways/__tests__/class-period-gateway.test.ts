@@ -30,6 +30,10 @@ const dbMock = {
   classPeriod: {
     update: vi.fn(),
   },
+  classPeriodTeacher: {
+    findMany: vi.fn(),
+    deleteMany: vi.fn(),
+  },
   $transaction: vi.fn(),
 }
 
@@ -78,5 +82,45 @@ describe('classPeriodGateway.update', () => {
       data: { capacity: 25 },
     })
     expect(dbMock.$transaction).not.toHaveBeenCalled()
+  })
+})
+
+describe('classPeriodGateway.listInactiveTeacherAssignments', () => {
+  it('reads only assignments whose teacher is inactive', async () => {
+    dbMock.classPeriodTeacher.findMany.mockResolvedValue([])
+
+    await classPeriodGateway.listInactiveTeacherAssignments(SCHOOL, CLASS_ID)
+
+    expect(dbMock.classPeriodTeacher.findMany).toHaveBeenCalledWith({
+      where: { schoolId: SCHOOL, classPeriodId: CLASS_ID, teacher: { isActive: false } },
+      include: { teacher: true },
+      orderBy: { teacher: { lastName: 'asc' } },
+    })
+  })
+})
+
+describe('classPeriodGateway.unassignTeacher', () => {
+  it('deletes exactly the targeted inactive-teacher assignment, scoped by school', async () => {
+    dbMock.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 1 })
+
+    const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'teacher-1')
+
+    expect(dbMock.classPeriodTeacher.deleteMany).toHaveBeenCalledWith({
+      where: {
+        schoolId: SCHOOL,
+        classPeriodId: CLASS_ID,
+        teacherId: 'teacher-1',
+        teacher: { isActive: false },
+      },
+    })
+    expect(removed).toBe(true)
+  })
+
+  it('reports false when no assignment matched', async () => {
+    dbMock.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 0 })
+
+    const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'teacher-1')
+
+    expect(removed).toBe(false)
   })
 })

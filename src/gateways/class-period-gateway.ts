@@ -119,4 +119,28 @@ export const classPeriodGateway = {
       },
       include: { level: true, period: true },
     }),
+
+  // Contrairement à `findById`/`list`, filtre les enseignants désactivés au lieu de
+  // les exclure : c'est la seule lecture qui doit exposer ces affectations, pour que
+  // l'admin puisse les désaffecter (#253).
+  listInactiveTeacherAssignments: (schoolId: string, classPeriodId: string) =>
+    db.classPeriodTeacher.findMany({
+      where: { schoolId, classPeriodId, teacher: { isActive: false } },
+      include: { teacher: true },
+      orderBy: { teacher: { lastName: 'asc' } },
+    }),
+
+  // Seul chemin qui retire une ligne `ClassPeriodTeacher` d'un enseignant désactivé :
+  // `update` ci-dessus l'épargne délibérément (#252). Le filtre `teacher.isActive:
+  // false` est structurel, pas seulement porté par l'UI qui n'expose le bouton que
+  // sur une affectation inactive : un appel direct sur un enseignant actif ne
+  // supprime rien, `count` reste 0, comme une affectation absente. Le booléen
+  // distingue une affectation absente (ou active) d'une suppression réelle, sans
+  // lever d'erreur sur un id fourni par le client.
+  unassignTeacher: async (schoolId: string, classPeriodId: string, teacherId: string) => {
+    const { count } = await db.classPeriodTeacher.deleteMany({
+      where: { schoolId, classPeriodId, teacherId, teacher: { isActive: false } },
+    })
+    return count > 0
+  },
 }
