@@ -10,6 +10,7 @@ import {
   DialogTrigger,
   Input,
   Label,
+  Select,
 } from '@peaklab/ui'
 import { Pencil } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -113,34 +114,32 @@ function EditPersonForm({ familyId, person }: EditPersonDialogProps) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="edit-person-sex">{t('sex')}</Label>
-              <select
+              <Select
                 id="edit-person-sex"
                 name="sex"
                 required
                 defaultValue={person.sex}
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 <option value="MALE">{t('male')}</option>
                 <option value="FEMALE">{t('female')}</option>
-              </select>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-person-relation">{t('relationType')}</Label>
-              <select
+              <Select
                 id="edit-person-relation"
                 name="relationType"
                 required
                 defaultValue={person.relationType}
                 disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 <option value="PARENT">{t('parent')}</option>
                 <option value="TUTOR">{t('tutor')}</option>
                 <option value="GRANDPARENT">{t('grandparent')}</option>
                 <option value="SIBLING">{t('sibling')}</option>
                 <option value="OTHER">{t('other')}</option>
-              </select>
+              </Select>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

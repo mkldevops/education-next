@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Label,
+  Select,
   useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
@@ -92,19 +93,18 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="reassign-class">{t('selectClass')}</Label>
-            <select
+            <Select
               id="reassign-class"
               name="newClassPeriodId"
               required
               disabled={isPending || availableClasses.length === 0}
-              className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               {availableClasses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))}
-            </select>
+            </Select>
             {availableClasses.length === 0 && (
               <p className="text-xs text-amber-700">{t('noClassAvailable')}</p>
             )}

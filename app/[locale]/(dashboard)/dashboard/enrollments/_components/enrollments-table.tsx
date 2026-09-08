@@ -123,6 +123,7 @@ export function EnrollmentsTable({
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'ALL' | EnrollmentStatus)}
             aria-label={t('filterStatus')}
+            className="w-auto"
           >
             <option value="ALL">{t('statusAll')}</option>
             {STATUS_VALUES.map((status) => (

@@ -11,6 +11,7 @@ import {
   Input,
   Label,
   MultiSelect,
+  Select,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -104,35 +105,23 @@ function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateC
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="class-level">{t('selectLevel')}</Label>
-              <select
-                id="class-level"
-                name="levelId"
-                required
-                disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
-              >
+              <Select id="class-level" name="levelId" required disabled={isPending}>
                 {levels.map((l) => (
                   <option key={l.id} value={l.id}>
                     {l.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="class-period">{t('selectPeriod')}</Label>
-              <select
-                id="class-period"
-                name="periodId"
-                required
-                disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
-              >
+              <Select id="class-period" name="periodId" required disabled={isPending}>
                 {periods.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
           <div className="space-y-2">

@@ -1,7 +1,7 @@
-import type { InputHTMLAttributes } from 'react'
+import type { ComponentPropsWithRef } from 'react'
 import { cn } from '../utils'
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {}
+export interface InputProps extends ComponentPropsWithRef<'input'> {}
 
 export function Input({ className, type = 'text', ...props }: InputProps) {
   return (
@@ -19,7 +19,7 @@ export function Input({ className, type = 'text', ...props }: InputProps) {
   )
 }
 
-export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
+export interface LabelProps extends ComponentPropsWithRef<'label'> {}
 
 export function Label({ className, ...props }: LabelProps) {
   return (
@@ -34,7 +34,7 @@ export function Label({ className, ...props }: LabelProps) {
   )
 }
 
-export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+export interface TextareaProps extends ComponentPropsWithRef<'textarea'> {}
 
 export function Textarea({ className, ...props }: TextareaProps) {
   return (

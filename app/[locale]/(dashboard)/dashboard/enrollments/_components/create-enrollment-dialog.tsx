@@ -13,6 +13,7 @@ import {
   DialogTrigger,
   Input,
   Label,
+  Select,
   useDialog,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
@@ -129,53 +130,40 @@ function CreateEnrollmentForm({
           ) : (
             <div className="space-y-2">
               <Label htmlFor="enroll-student">{t('selectStudent')}</Label>
-              <select
-                id="enroll-student"
-                name="studentId"
-                required
-                disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
-              >
+              <Select id="enroll-student" name="studentId" required disabled={isPending}>
                 {students.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="enroll-plan">{t('selectPlan')}</Label>
-              <select
-                id="enroll-plan"
-                name="planId"
-                required
-                disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
-              >
+              <Select id="enroll-plan" name="planId" required disabled={isPending}>
                 {plans.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="enroll-class">{t('selectClass')}</Label>
-              <select
+              <Select
                 id="enroll-class"
                 name="classPeriodId"
                 required
                 disabled={isPending || classes.length === 0}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {classes.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}
-              </select>
+              </Select>
               {classes.length === 0 && (
                 <p className="text-xs text-amber-700">{t('noClassInPeriod')}</p>
               )}

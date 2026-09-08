@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Label,
+  Select,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
@@ -60,16 +61,15 @@ function ChangeSchoolMemberRoleForm({ userId, role }: { userId: string; role: Sc
       <DialogBody>
         <div className="space-y-2">
           <Label htmlFor="school-member-role">{t('newRole')}</Label>
-          <select
+          <Select
             id="school-member-role"
             value={selectedRole}
             onChange={(event) => setSelectedRole(event.target.value as SchoolRole)}
             disabled={isPending}
-            className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
           >
             <option value="ADMIN">{tRoles('ADMIN')}</option>
             <option value="PARENT">{tRoles('PARENT')}</option>
-          </select>
+          </Select>
         </div>
       </DialogBody>
       <DialogFormActions t={t} isPending={isPending} onCancel={close} submitKey="confirm" />

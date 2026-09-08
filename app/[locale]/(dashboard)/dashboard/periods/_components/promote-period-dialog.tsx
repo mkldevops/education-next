@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Label,
+  Select,
   useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
@@ -129,20 +130,19 @@ function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeri
           <DialogBody>
             <div className="space-y-2">
               <Label htmlFor="promote-target-period">{t('selectTarget')}</Label>
-              <select
+              <Select
                 id="promote-target-period"
                 required
                 disabled={isPending}
                 value={targetPeriodId}
                 onChange={(e) => setTargetPeriodId(e.target.value)}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
               >
                 {targetOptions.map((period) => (
                   <option key={period.id} value={period.id}>
                     {period.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </DialogBody>
           <DialogFooter>

@@ -11,6 +11,7 @@ import {
   DialogTrigger,
   Input,
   Label,
+  Select,
   useDialog,
 } from '@peaklab/ui'
 import { useLocale, useTranslations } from 'next-intl'
@@ -86,51 +87,38 @@ function InviteForm({ families }: { families: Family[] }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="invite-role">{t('role')}</Label>
-            <select
+            <Select
               id="invite-role"
               name="role"
               required
               value={role}
               onChange={(e) => setRole(e.target.value)}
               disabled={isPending}
-              className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
             >
               <option value="PARENT">{tRoles('PARENT')}</option>
               <option value="ADMIN">{tRoles('ADMIN')}</option>
-            </select>
+            </Select>
           </div>
           {role === 'PARENT' && families.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="invite-family">{t('family')}</Label>
-              <select
-                id="invite-family"
-                name="familyId"
-                defaultValue=""
-                disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
-              >
+              <Select id="invite-family" name="familyId" defaultValue="" disabled={isPending}>
                 <option value="">{t('noFamily')}</option>
                 {families.map((family) => (
                   <option key={family.id} value={family.id}>
                     {family.name}
                   </option>
                 ))}
-              </select>
+              </Select>
               <p className="text-xs text-graphite-600">{t('familyHint')}</p>
             </div>
           )}
           <div className="space-y-2">
             <Label htmlFor="invite-locale">{t('language')}</Label>
-            <select
-              id="invite-locale"
-              name="locale"
-              defaultValue={locale}
-              disabled={isPending}
-              className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
-            >
+            <Select id="invite-locale" name="locale" defaultValue={locale} disabled={isPending}>
               <option value="fr">Français</option>
               <option value="en">English</option>
-            </select>
+            </Select>
           </div>
         </div>
       </DialogBody>
