@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Label,
+  Select,
   useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
@@ -71,19 +72,18 @@ function LinkFamilyForm({ userId, families }: Props) {
       <DialogBody>
         <div className="space-y-2">
           <Label htmlFor="link-family">{t('family')}</Label>
-          <select
+          <Select
             id="link-family"
             value={familyId}
             onChange={(e) => setFamilyId(e.target.value)}
             disabled={isPending}
-            className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
           >
             {families.map((family) => (
               <option key={family.id} value={family.id}>
                 {family.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       </DialogBody>
       <DialogFooter>

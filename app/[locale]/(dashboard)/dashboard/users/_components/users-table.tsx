@@ -142,6 +142,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as 'ALL' | SchoolRole)}
               aria-label={t('filterRole')}
+              className="w-auto"
             >
               <option value="ALL">{t('schoolRoleAll')}</option>
               {ROLE_VALUES.map((role) => (
@@ -154,6 +155,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'ARCHIVED')}
               aria-label={t('filterStatus')}
+              className="w-auto"
             >
               <option value="ACTIVE">{t('active')}</option>
               <option value="ARCHIVED">{t('inactive')}</option>

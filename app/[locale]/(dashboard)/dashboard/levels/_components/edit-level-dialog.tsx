@@ -11,6 +11,7 @@ import {
   DialogTrigger,
   Input,
   Label,
+  Select,
   useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
@@ -124,12 +125,11 @@ function EditLevelForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-next-level">{t('selectNextLevel')}</Label>
-            <select
+            <Select
               id="edit-next-level"
               name="nextLevelId"
               defaultValue={currentNextLevelId ?? ''}
               disabled={isPending}
-              className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
             >
               <option value="">{t('noNext')}</option>
               {selectableLevels.map((l) => (
@@ -137,7 +137,7 @@ function EditLevelForm({
                   {l.name}
                 </option>
               ))}
-            </select>
+            </Select>
             <p className="text-xs text-graphite-600">{t('nextLevelHint')}</p>
           </div>
         </div>

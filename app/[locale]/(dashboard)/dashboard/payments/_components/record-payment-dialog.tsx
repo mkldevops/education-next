@@ -12,6 +12,7 @@ import {
   DialogTrigger,
   Input,
   Label,
+  Select,
 } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
 import { ArrowLeftRight, Banknote, CreditCard, FileCheck, Plus } from 'lucide-react'
@@ -111,19 +112,13 @@ function RecordPaymentForm({
           ) : (
             <div className="space-y-2">
               <Label htmlFor="payment-family">{t('selectFamily')}</Label>
-              <select
-                id="payment-family"
-                name="familyId"
-                required
-                disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-white px-3 py-2 text-sm"
-              >
+              <Select id="payment-family" name="familyId" required disabled={isPending}>
                 {families.map((family) => (
                   <option key={family.id} value={family.id}>
                     {family.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
 

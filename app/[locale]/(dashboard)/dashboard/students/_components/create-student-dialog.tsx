@@ -11,6 +11,7 @@ import {
   DialogTrigger,
   Input,
   Label,
+  Select,
   Textarea,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
@@ -112,16 +113,10 @@ function CreateStudentForm({ familyId }: { familyId: string }) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="student-sex">{t('sex')}</Label>
-              <select
-                id="student-sex"
-                name="sex"
-                required
-                disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
-              >
+              <Select id="student-sex" name="sex" required disabled={isPending}>
                 <option value="MALE">{t('male')}</option>
                 <option value="FEMALE">{t('female')}</option>
-              </select>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="student-birthday">{t('birthday')}</Label>

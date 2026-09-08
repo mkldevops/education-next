@@ -10,6 +10,7 @@ import {
   DialogTrigger,
   Input,
   Label,
+  Select,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -86,32 +87,20 @@ function AddPersonForm({ familyId }: { familyId: string }) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="person-sex">{t('sex')}</Label>
-              <select
-                id="person-sex"
-                name="sex"
-                required
-                disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
-              >
+              <Select id="person-sex" name="sex" required disabled={isPending}>
                 <option value="MALE">{t('male')}</option>
                 <option value="FEMALE">{t('female')}</option>
-              </select>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="person-relation">{t('relationType')}</Label>
-              <select
-                id="person-relation"
-                name="relationType"
-                required
-                disabled={isPending}
-                className="flex h-10 w-full rounded border border-alabaster bg-transparent px-3 py-2 text-sm"
-              >
+              <Select id="person-relation" name="relationType" required disabled={isPending}>
                 <option value="PARENT">{t('parent')}</option>
                 <option value="TUTOR">{t('tutor')}</option>
                 <option value="GRANDPARENT">{t('grandparent')}</option>
                 <option value="SIBLING">{t('sibling')}</option>
                 <option value="OTHER">{t('other')}</option>
-              </select>
+              </Select>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
