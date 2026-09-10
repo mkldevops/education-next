@@ -197,9 +197,12 @@ boundaries:
   `verifyPasskeyRegistration()` return `signInDisabled` before touching a challenge, and
   `POST /api/passkey/authenticate` answers `403` after the rate limiter (`src/actions/passkey-actions.ts`,
   `app/api/passkey/authenticate/route.ts`).
-- `app/api/auth/[...all]/route.ts` wraps the Better Auth handler and refuses `POST` on
-  `/sign-in/social` and `/link-social` with `403`. Google is the only declared social provider, so
-  the path identifies the request and no body has to be read.
+- `app/api/auth/[...all]/route.ts` wraps the Better Auth handler and refuses `/sign-in/social`,
+  `/link-social` and `/callback/*` with `403`, on `GET` as well as `POST`. Google is the only
+  declared social provider, so the path identifies the request and no body has to be read. The
+  provider callback is guarded alongside the departure: a flow opened before the switch would
+  otherwise still land and issue a session, for the lifetime of the stored `state`. The path is
+  matched against the handler base (`/api/auth`), never with a loose suffix test.
 
 Disabling Google **does not unlink** an account that is already linked: the card stays visible in
 `/dashboard/settings` with its disconnect action, so nobody is left with a credential they can

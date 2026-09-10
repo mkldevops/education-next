@@ -27,27 +27,45 @@ function AuthMethodToggle({ title, description, hint, enabled, onSave }: ToggleP
   const t = useTranslations('dashboard.pages.authSettings')
   const router = useRouter()
   const inputId = useId()
+  const titleId = useId()
+  const descriptionId = useId()
+  const hintId = useId()
   const [checked, setChecked] = useState(enabled)
   const [pending, startTransition] = useTransition()
 
   const onToggle = (next: boolean) => {
     setChecked(next)
     startTransition(async () => {
-      const result = await onSave(next)
-      if (result !== 'OK') {
+      // Le refus typé et le rejet réseau doivent tous deux revenir en arrière : afficher
+      // une case cochée pour une écriture qui n'a pas eu lieu ment sur l'état de l'instance.
+      try {
+        const result = await onSave(next)
+        if (result !== 'OK') {
+          setChecked(!next)
+          toast.error(t('error'))
+          return
+        }
+        router.refresh()
+      } catch {
         setChecked(!next)
         toast.error(t('error'))
-        return
       }
-      router.refresh()
     })
   }
 
   return (
     <Card className="rounded border border-alabaster-700 p-6">
-      <h2 className="text-lg font-semibold text-graphite">{title}</h2>
-      <p className="mt-1 text-sm text-graphite-600">{description}</p>
-      {hint && <p className="mt-2 text-sm text-orange-600">{hint}</p>}
+      <h2 id={titleId} className="text-lg font-semibold text-graphite">
+        {title}
+      </h2>
+      <p id={descriptionId} className="mt-1 text-sm text-graphite-600">
+        {description}
+      </p>
+      {hint && (
+        <p id={hintId} className="mt-2 text-sm text-orange-600">
+          {hint}
+        </p>
+      )}
       <label htmlFor={inputId} className="mt-4 flex items-center gap-2 text-sm text-graphite">
         <input
           id={inputId}
@@ -55,9 +73,11 @@ function AuthMethodToggle({ title, description, hint, enabled, onSave }: ToggleP
           checked={checked}
           disabled={pending}
           onChange={(event) => onToggle(event.target.checked)}
+          aria-labelledby={`${titleId} ${inputId}-state`}
+          aria-describedby={hint ? `${descriptionId} ${hintId}` : descriptionId}
           className="h-4 w-4 rounded border-alabaster"
         />
-        {checked ? t('enabled') : t('disabled')}
+        <span id={`${inputId}-state`}>{checked ? t('enabled') : t('disabled')}</span>
       </label>
     </Card>
   )

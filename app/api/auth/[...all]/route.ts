@@ -5,19 +5,36 @@ import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-s
 
 const handler = toNextJsHandler(auth)
 
+const BASE_PATH = '/api/auth'
+
 // Google est le seul fournisseur social déclaré : le chemin suffit à identifier la
-// demande, sans lire le corps de la requête.
+// demande, sans lire le corps de la requête. Le retour du fournisseur est gardé au
+// même titre que le départ, sinon un flux ouvert avant la coupure aboutit encore.
 const SOCIAL_PATHS = ['/sign-in/social', '/link-social']
+const CALLBACK_PREFIX = '/callback/'
+
+function isSocialRequest(request: Request): boolean {
+  const { pathname } = new URL(request.url)
+  if (!pathname.startsWith(BASE_PATH)) return false
+
+  const authPath = pathname.slice(BASE_PATH.length).replace(/\/$/, '')
+
+  return SOCIAL_PATHS.includes(authPath) || authPath.startsWith(CALLBACK_PREFIX)
+}
 
 async function guardSocial(request: Request): Promise<NextResponse | null> {
-  const { pathname } = new URL(request.url)
-  if (!SOCIAL_PATHS.some((path) => pathname.endsWith(path))) return null
+  if (!isSocialRequest(request)) return null
   if (await isGoogleSignInEnabled()) return null
 
   return NextResponse.json({ error: 'signInDisabled' }, { status: 403 })
 }
 
-export const GET = handler.GET
+export async function GET(request: Request) {
+  const refusal = await guardSocial(request)
+  if (refusal) return refusal
+
+  return handler.GET(request)
+}
 
 export async function POST(request: Request) {
   const refusal = await guardSocial(request)

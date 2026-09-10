@@ -10,7 +10,11 @@ vi.mock('@/use-cases/platform-settings/set-platform-setting', () => ({
   setPlatformSetting: setPlatformSettingMock,
 }))
 
-const { setSchoolSwitchEnabledAction } = await import('./platform-settings-actions')
+const {
+  setGoogleSignInEnabledAction,
+  setPasskeySignInEnabledAction,
+  setSchoolSwitchEnabledAction,
+} = await import('./platform-settings-actions')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -55,6 +59,40 @@ describe('setSchoolSwitchEnabledAction', () => {
     setPlatformSettingMock.mockResolvedValue('invalidSettingValue')
 
     expect(await setSchoolSwitchEnabledAction(true)).toBe('invalidSettingValue')
+    expect(revalidatePathMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('sign-in method actions', () => {
+  it('opens on the platform guard before writing', async () => {
+    requirePlatformAdminMock.mockRejectedValue(new Error('notFound'))
+
+    await expect(setGoogleSignInEnabledAction(false)).rejects.toThrow('notFound')
+    await expect(setPasskeySignInEnabledAction(false)).rejects.toThrow('notFound')
+    expect(setPlatformSettingMock).not.toHaveBeenCalled()
+  })
+
+  it('writes each method under its own setting name', async () => {
+    await setGoogleSignInEnabledAction(false)
+    expect(setPlatformSettingMock).toHaveBeenCalledWith({
+      name: 'google_sign_in_enabled',
+      value: 'false',
+      valueType: 'BOOLEAN',
+    })
+
+    await setPasskeySignInEnabledAction(true)
+    expect(setPlatformSettingMock).toHaveBeenCalledWith({
+      name: 'passkey_sign_in_enabled',
+      value: 'true',
+      valueType: 'BOOLEAN',
+    })
+  })
+
+  it('forwards a use-case refusal without revalidating', async () => {
+    setPlatformSettingMock.mockResolvedValue('invalidSettingValue')
+
+    expect(await setGoogleSignInEnabledAction(true)).toBe('invalidSettingValue')
+    expect(await setPasskeySignInEnabledAction(true)).toBe('invalidSettingValue')
     expect(revalidatePathMock).not.toHaveBeenCalled()
   })
 })
