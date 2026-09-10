@@ -117,7 +117,8 @@ creating fixtures, so run it only against disposable local data.
 Docker Compose runs PostgreSQL and Mailpit, not the application. Branding image uploads go to the
 shared MinIO at `S3_ENDPOINT` in every environment, local included; without the `S3_*` variables
 the upload degrades to `notConfigured` and a URL can still be typed by hand. The Docker image
-performs Prisma generation and a standard Next.js build but does not deploy migrations. No Vercel
+performs Prisma generation at build time and runs `prisma migrate deploy` at container start through
+`pnpm start:prod`, so a container refuses to serve a database it has not migrated. No Vercel
 or Coolify deployment configuration is tracked; do not infer a deployment target from ignored
 local files.
 

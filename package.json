@@ -9,6 +9,7 @@
     "build": "next build",
     "build:prod": "prisma generate && prisma migrate deploy && next build",
     "start": "dotenv -- next start",
+    "start:prod": "prisma migrate deploy && dotenv -- next start",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
