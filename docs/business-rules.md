@@ -170,6 +170,41 @@ The flag changes nothing else. `getAuthorizedSchools()` is untouched, so deep-li
 names the other school; `_components/school-switch-prompt.tsx` keeps the screen and drops the button,
 because hiding the resolution would leave the user in front of an unexplainable `notFound()`.
 
+## Sign-in methods
+
+Email and password is the method this application always offers. The two alternatives are governed by
+`PlatformSetting` rows written from `/dashboard/auth-settings`, a **platform** surface open on
+`requirePlatformAdmin()` like `/dashboard/schools`:
+
+- `google_sign_in_enabled` — the "Sign in with Google" button and Google account linking.
+- `passkey_sign_in_enabled` — passkey sign-in and the registration of new passkeys.
+
+Both follow the same reading as `school_switch_enabled`: **absence of the row reads as enabled**, and
+so does an unexpected value (`readsAsEnabled`, `src/domain/platform-settings.ts`). All three go
+through the memoised `readPlatformFlag()`
+(`src/use-cases/platform-settings/read-platform-flag.ts`), so one render costs one read per flag.
+
+Google carries a second, independent condition: `isGoogleConfigured` (`src/lib/social-providers.ts`)
+requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Without credentials `betterAuth` receives
+empty strings and the redirect fails, so the setting alone must never surface the button. The
+platform page states this rather than hiding the toggle — a super-admin needs to know the setting is
+inert and why.
+
+Each flag is enforced on the server, not only in the UI, because both entry points are callable
+boundaries:
+
+- `getPasskeyAuthenticationOptions()`, `getPasskeyRegistrationOptions()` and
+  `verifyPasskeyRegistration()` return `signInDisabled` before touching a challenge, and
+  `POST /api/passkey/authenticate` answers `403` after the rate limiter (`src/actions/passkey-actions.ts`,
+  `app/api/passkey/authenticate/route.ts`).
+- `app/api/auth/[...all]/route.ts` wraps the Better Auth handler and refuses `POST` on
+  `/sign-in/social` and `/link-social` with `403`. Google is the only declared social provider, so
+  the path identifies the request and no body has to be read.
+
+Disabling Google **does not unlink** an account that is already linked: the card stays visible in
+`/dashboard/settings` with its disconnect action, so nobody is left with a credential they can
+neither use nor remove.
+
 ## Roles and scope
 
 Roles are **per school**. `SchoolRole` is `ADMIN` or `PARENT` (`src/types/enums.ts`), carried by a

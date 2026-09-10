@@ -8,13 +8,20 @@ import { useState } from 'react'
 import { getPasskeyAuthenticationOptions } from '@/actions'
 import { Link, useRouter } from '@/i18n/routing'
 import { signIn } from '@/lib/auth-client'
+import { GoogleIcon } from './google-icon'
 
-export function LoginForm() {
+type Props = {
+  googleEnabled: boolean
+  passkeyEnabled: boolean
+}
+
+export function LoginForm({ googleEnabled, passkeyEnabled }: Props) {
   const t = useTranslations('auth.login')
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -40,12 +47,31 @@ export function LoginForm() {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    setError(null)
+    setIsGoogleLoading(true)
+
+    try {
+      const { error } = await signIn.social({ provider: 'google', callbackURL: '/dashboard' })
+      if (error) setError(t('googleError'))
+    } catch {
+      setError(t('googleError'))
+    } finally {
+      setIsGoogleLoading(false)
+    }
+  }
+
   const handlePasskeySignIn = async () => {
     setError(null)
     setIsPasskeyLoading(true)
 
     try {
       const optionsData = await getPasskeyAuthenticationOptions()
+      if ('error' in optionsData) {
+        setError(t('passkeyError'))
+        return
+      }
+
       const { challengeId, ...options } = optionsData
       const response = await startAuthentication({ optionsJSON: options })
 
@@ -108,25 +134,42 @@ export function LoginForm() {
         </Button>
       </form>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-alabaster-700" />
+      {(googleEnabled || passkeyEnabled) && (
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-alabaster-700" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-graphite-600">{t('or')}</span>
+          </div>
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-graphite-600">{t('or')}</span>
-        </div>
-      </div>
+      )}
 
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full"
-        onClick={handlePasskeySignIn}
-        disabled={isPasskeyLoading}
-      >
-        <KeyRound className="mr-2 h-4 w-4" />
-        {isPasskeyLoading ? '...' : t('signInWithPasskey')}
-      </Button>
+      {googleEnabled && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleGoogleSignIn}
+          disabled={isGoogleLoading}
+        >
+          <GoogleIcon className="mr-2 h-4 w-4" />
+          {isGoogleLoading ? '...' : t('signInWithGoogle')}
+        </Button>
+      )}
+
+      {passkeyEnabled && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handlePasskeySignIn}
+          disabled={isPasskeyLoading}
+        >
+          <KeyRound className="mr-2 h-4 w-4" />
+          {isPasskeyLoading ? '...' : t('signInWithPasskey')}
+        </Button>
+      )}
     </div>
   )
 }

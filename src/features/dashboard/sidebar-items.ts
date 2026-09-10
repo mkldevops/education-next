@@ -6,6 +6,7 @@ import {
   ClipboardList,
   CreditCard,
   GraduationCap,
+  KeyRound,
   Layers,
   LayoutGrid,
   Settings,
@@ -45,6 +46,7 @@ const configItems: NavItemConfig[] = [
   { href: '/dashboard/users', icon: Shield, key: 'users', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/schools', icon: Building2, key: 'schools', platformOnly: true },
   { href: '/dashboard/super-admins', icon: ShieldCheck, key: 'superAdmins', platformOnly: true },
+  { href: '/dashboard/auth-settings', icon: KeyRound, key: 'authSettings', platformOnly: true },
 ]
 
 const bottomItems: NavItemConfig[] = [

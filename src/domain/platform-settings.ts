@@ -1,6 +1,12 @@
 /** Réglage plateforme gouvernant la bascule d'école pour toute l'instance. */
 export const SCHOOL_SWITCH_SETTING = 'school_switch_enabled'
 
+/** Réglage plateforme gouvernant la connexion Google pour toute l'instance. */
+export const GOOGLE_SIGN_IN_SETTING = 'google_sign_in_enabled'
+
+/** Réglage plateforme gouvernant la connexion par passkey pour toute l'instance. */
+export const PASSKEY_SIGN_IN_SETTING = 'passkey_sign_in_enabled'
+
 /**
  * Les écritures que ce dépôt produit ne posent que `'true'` ou `'false'` — `BOOLEAN` est
  * validé par `set-platform-setting`. La normalisation couvre un réglage écrit autrement :

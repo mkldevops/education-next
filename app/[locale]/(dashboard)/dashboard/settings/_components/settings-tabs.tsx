@@ -32,9 +32,17 @@ type Props = {
   }
   sessions: SessionData[]
   linkedAccounts: LinkedAccount[]
+  googleEnabled: boolean
+  passkeyEnabled: boolean
 }
 
-export function SettingsTabs({ user, sessions, linkedAccounts }: Props) {
+export function SettingsTabs({
+  user,
+  sessions,
+  linkedAccounts,
+  googleEnabled,
+  passkeyEnabled,
+}: Props) {
   const t = useTranslations('settings')
 
   return (
@@ -54,7 +62,7 @@ export function SettingsTabs({ user, sessions, linkedAccounts }: Props) {
             content: (
               <div className="space-y-6">
                 <PasswordSection />
-                <PasskeySection />
+                {passkeyEnabled && <PasskeySection />}
               </div>
             ),
           },
@@ -66,7 +74,13 @@ export function SettingsTabs({ user, sessions, linkedAccounts }: Props) {
           {
             label: t('tabs.account'),
             icon: Shield,
-            content: <AccountSection email={user.email} linkedAccounts={linkedAccounts} />,
+            content: (
+              <AccountSection
+                email={user.email}
+                linkedAccounts={linkedAccounts}
+                googleEnabled={googleEnabled}
+              />
+            ),
           },
         ]}
       />

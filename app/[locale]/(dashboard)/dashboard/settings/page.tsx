@@ -4,6 +4,9 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { isGoogleConfigured } from '@/lib/social-providers'
+import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-sign-in-enabled'
+import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 import { SettingsTabs } from './_components/settings-tabs'
 
 type Props = {
@@ -54,6 +57,11 @@ export default async function SettingsPage({ params }: Props) {
 
   const linkedAccounts = accounts.filter((a) => a.providerId !== 'credential')
 
+  const [googleEnabled, passkeyEnabled] = await Promise.all([
+    isGoogleConfigured ? isGoogleSignInEnabled() : Promise.resolve(false),
+    isPasskeySignInEnabled(),
+  ])
+
   return (
     <SettingsTabs
       user={{
@@ -63,6 +71,8 @@ export default async function SettingsPage({ params }: Props) {
       }}
       sessions={sessionData}
       linkedAccounts={linkedAccounts}
+      googleEnabled={googleEnabled}
+      passkeyEnabled={passkeyEnabled}
     />
   )
 }

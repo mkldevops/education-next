@@ -83,7 +83,9 @@
       "serviceUnavailable": "Service unavailable, please try again.",
       "or": "or",
       "signInWithPasskey": "Sign in with a passkey",
-      "passkeyError": "Passkey authentication failed"
+      "passkeyError": "Passkey authentication failed",
+      "signInWithGoogle": "Sign in with Google",
+      "googleError": "Google sign-in failed, please try again"
     },
     "register": {
       "title": "Create account",
@@ -171,7 +173,8 @@
       "users": "Users",
       "schools": "Schools",
       "teachers": "Teachers",
-      "superAdmins": "Super admins"
+      "superAdmins": "Super admins",
+      "authSettings": "Sign-in methods"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -200,7 +203,8 @@
       "account": "My account",
       "schools": "Schools",
       "teachers": "Teachers",
-      "superAdmins": "Super admins"
+      "superAdmins": "Super admins",
+      "authSettings": "Sign-in methods"
     },
     "pages": {
       "families": {
@@ -1383,6 +1387,22 @@
               "notConfigured": "Expense notes are not enabled"
             }
           }
+        }
+      },
+      "authSettings": {
+        "title": "Sign-in methods",
+        "description": "Choose the methods offered on this instance sign-in page. Email and password always remain available.",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "error": "The setting could not be saved, please try again",
+        "google": {
+          "title": "Google sign-in",
+          "description": "Allows \"Sign in with Google\" on the sign-in page and linking a Google account from the settings.",
+          "notConfigured": "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are missing: the button stays hidden even when the setting is enabled."
+        },
+        "passkey": {
+          "title": "Passkey sign-in",
+          "description": "Allows signing in with a passkey and registering new passkeys from the account settings."
         }
       }
     },
