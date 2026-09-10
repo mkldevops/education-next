@@ -11,12 +11,15 @@ import {
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 
 const rpName = process.env.NEXT_PUBLIC_APP_NAME || 'Education App'
 const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 const rpID = process.env.NEXT_PUBLIC_APP_DOMAIN || new URL(origin).hostname
 
 export async function getPasskeyRegistrationOptions(passkeyName: string) {
+  if (!(await isPasskeySignInEnabled())) return { error: 'signInDisabled' as const }
+
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return { error: 'unauthorized' as const }
 
@@ -62,6 +65,8 @@ export async function verifyPasskeyRegistration(
   response: RegistrationResponseJSON,
   passkeyName: string
 ) {
+  if (!(await isPasskeySignInEnabled())) return 'signInDisabled' as const
+
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return 'unauthorized' as const
 
@@ -107,6 +112,8 @@ export async function verifyPasskeyRegistration(
 }
 
 export async function getPasskeyAuthenticationOptions() {
+  if (!(await isPasskeySignInEnabled())) return { error: 'signInDisabled' as const }
+
   const options = await generateAuthenticationOptions({
     rpID,
     userVerification: 'preferred',

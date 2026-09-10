@@ -83,7 +83,9 @@
       "serviceUnavailable": "Service indisponible, veuillez réessayer.",
       "or": "ou",
       "signInWithPasskey": "Se connecter avec une clé de sécurité",
-      "passkeyError": "Authentification par clé de sécurité échouée"
+      "passkeyError": "Authentification par clé de sécurité échouée",
+      "signInWithGoogle": "Se connecter avec Google",
+      "googleError": "La connexion Google a échoué, réessayez"
     },
     "register": {
       "title": "Créer un compte",
@@ -171,7 +173,8 @@
       "users": "Utilisateurs",
       "schools": "Écoles",
       "teachers": "Enseignants",
-      "superAdmins": "Super-admins"
+      "superAdmins": "Super-admins",
+      "authSettings": "Méthodes de connexion"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -200,7 +203,8 @@
       "account": "Mon compte",
       "schools": "Écoles",
       "teachers": "Enseignants",
-      "superAdmins": "Super-admins"
+      "superAdmins": "Super-admins",
+      "authSettings": "Méthodes de connexion"
     },
     "pages": {
       "families": {
@@ -1383,6 +1387,22 @@
               "notConfigured": "Les notes de frais ne sont pas activées"
             }
           }
+        }
+      },
+      "authSettings": {
+        "title": "Méthodes de connexion",
+        "description": "Choisissez les méthodes proposées sur la page de connexion de l'instance. L'e-mail et le mot de passe restent toujours disponibles.",
+        "enabled": "Activée",
+        "disabled": "Désactivée",
+        "error": "Le réglage n'a pas pu être enregistré, réessayez",
+        "google": {
+          "title": "Connexion Google",
+          "description": "Autorise « Se connecter avec Google » sur la page de connexion et la liaison d'un compte Google depuis les paramètres.",
+          "notConfigured": "GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET sont absents : le bouton reste masqué même si le réglage est activé."
+        },
+        "passkey": {
+          "title": "Connexion par passkey",
+          "description": "Autorise la connexion par passkey et l'enregistrement de nouvelles passkeys depuis les paramètres du compte."
         }
       }
     },

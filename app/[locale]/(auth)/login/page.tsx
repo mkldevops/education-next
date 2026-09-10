@@ -4,6 +4,9 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { LoginForm } from '@/features/auth'
 import { redirect } from '@/i18n/routing'
 import { getSchoolContext } from '@/lib/school-context'
+import { isGoogleConfigured } from '@/lib/social-providers'
+import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-sign-in-enabled'
+import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -29,7 +32,11 @@ export default async function LoginPage({ params }: Props) {
     redirect({ href: '/dashboard', locale })
   }
 
-  const t = await getTranslations('auth.login')
+  const [t, googleEnabled, passkeyEnabled] = await Promise.all([
+    getTranslations('auth.login'),
+    isGoogleConfigured ? isGoogleSignInEnabled() : Promise.resolve(false),
+    isPasskeySignInEnabled(),
+  ])
 
   return (
     <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -40,7 +47,7 @@ export default async function LoginPage({ params }: Props) {
             <p className="mt-1 text-sm text-white/80">{t('subtitle')}</p>
           </div>
           <div className="px-8 py-8">
-            <LoginForm />
+            <LoginForm googleEnabled={googleEnabled} passkeyEnabled={passkeyEnabled} />
           </div>
         </div>
         <p className="mt-6 text-center text-sm text-graphite-600">{t('contactAdmin')}</p>

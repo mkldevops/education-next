@@ -1,3 +1,4 @@
 export { ForgotPasswordForm } from './forgot-password-form'
+export { GoogleIcon } from './google-icon'
 export { LoginForm } from './login-form'
 export { ResetPasswordForm } from './reset-password-form'

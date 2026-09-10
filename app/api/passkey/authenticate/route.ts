@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { authenticateWithPasskey } from '@/use-cases/auth/authenticate-with-passkey'
+import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 import { getClientIp, isRateLimited } from './_lib/rate-limit'
 
 const AuthBodySchema = z.object({
@@ -22,6 +23,10 @@ export async function POST(request: Request) {
   try {
     if (isRateLimited(getClientIp(request))) {
       return NextResponse.json({ error: 'tooManyRequests' }, { status: 429 })
+    }
+
+    if (!(await isPasskeySignInEnabled())) {
+      return NextResponse.json({ error: 'signInDisabled' }, { status: 403 })
     }
 
     let rawBody: unknown
