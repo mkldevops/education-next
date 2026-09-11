@@ -73,4 +73,13 @@ describe('LoginForm handleGoogleSignIn', () => {
 
     expect(await screen.findByText('googleError')).not.toBeNull()
   })
+
+  it('shows the google error message when signIn.social resolves with an error', async () => {
+    vi.mocked(signIn.social).mockResolvedValue({ data: null, error: { message: 'oauth' } } as never)
+
+    render(<LoginForm googleEnabled passkeyEnabled={false} />)
+    fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
+
+    expect(await screen.findByText('googleError')).not.toBeNull()
+  })
 })
