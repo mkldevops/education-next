@@ -58,7 +58,7 @@ describe('LoginForm handleGoogleSignIn', () => {
     vi.mocked(signIn.social).mockResolvedValue({ data: null, error: null } as never)
 
     render(<LoginForm googleEnabled passkeyEnabled={false} />)
-    fireEvent.click(button('signInWithGoogle') as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
 
     await waitFor(() =>
       expect(signIn.social).toHaveBeenCalledWith({ provider: 'google', callbackURL: '/dashboard' })
@@ -69,7 +69,7 @@ describe('LoginForm handleGoogleSignIn', () => {
     vi.mocked(signIn.social).mockRejectedValue(new Error('network error'))
 
     render(<LoginForm googleEnabled passkeyEnabled={false} />)
-    fireEvent.click(button('signInWithGoogle') as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
 
     expect(await screen.findByText('googleError')).not.toBeNull()
   })
