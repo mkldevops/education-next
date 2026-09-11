@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -18,6 +18,7 @@ vi.mock('@/lib/auth-client', () => ({
   signIn: { email: vi.fn(), social: vi.fn() },
 }))
 
+import { signIn } from '@/lib/auth-client'
 import { LoginForm } from '../login-form'
 
 const button = (name: string) => screen.queryByRole('button', { name })
@@ -45,5 +46,40 @@ describe('LoginForm sign-in methods', () => {
     expect(button('signInWithPasskey')).toBeNull()
     expect(screen.queryByText('or')).toBeNull()
     expect(button('submit')).not.toBeNull()
+  })
+})
+
+describe('LoginForm handleGoogleSignIn', () => {
+  beforeEach(() => {
+    vi.mocked(signIn.social).mockReset()
+  })
+
+  it('calls signIn.social with the google provider and dashboard callback on click', async () => {
+    vi.mocked(signIn.social).mockResolvedValue({ data: null, error: null } as never)
+
+    render(<LoginForm googleEnabled passkeyEnabled={false} />)
+    fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
+
+    await waitFor(() =>
+      expect(signIn.social).toHaveBeenCalledWith({ provider: 'google', callbackURL: '/dashboard' })
+    )
+  })
+
+  it('shows the google error message when signIn.social rejects', async () => {
+    vi.mocked(signIn.social).mockRejectedValue(new Error('network error'))
+
+    render(<LoginForm googleEnabled passkeyEnabled={false} />)
+    fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
+
+    expect(await screen.findByText('googleError')).not.toBeNull()
+  })
+
+  it('shows the google error message when signIn.social resolves with an error', async () => {
+    vi.mocked(signIn.social).mockResolvedValue({ data: null, error: { message: 'oauth' } } as never)
+
+    render(<LoginForm googleEnabled passkeyEnabled={false} />)
+    fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
+
+    expect(await screen.findByText('googleError')).not.toBeNull()
   })
 })
