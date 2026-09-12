@@ -1,10 +1,27 @@
 'use client'
 
-import { Card } from '@peaklab/ui'
+import {
+  Button,
+  Card,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  useDialog,
+} from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useId, useState, useTransition } from 'react'
+import { useEffect, useId, useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
+
+type ConfirmDisable = {
+  title: string
+  description: string
+  confirmLabel: string
+  cancelLabel: string
+}
 
 type Props = {
   title: string
@@ -12,6 +29,13 @@ type Props = {
   hint?: string
   enabled: boolean
   onSave: (enabled: boolean) => Promise<string>
+  /**
+   * Fourni uniquement par Google, dont la coupure peut laisser des comptes sans aucune
+   * méthode de connexion : décocher pendant que le drapeau est activé ouvre cette
+   * confirmation au lieu d'écrire directement. Absent (passkey, MCP, bascule d'école),
+   * le comportement reste le bascule à un clic d'origine, dans les deux sens.
+   */
+  confirmDisable?: ConfirmDisable
 }
 
 /**
@@ -19,7 +43,14 @@ type Props = {
  * réglage gouverne toute l'instance, afficher un état non enregistré serait pire que
  * l'attente.
  */
-export function PlatformFlagToggle({ title, description, hint, enabled, onSave }: Props) {
+export function PlatformFlagToggle({
+  title,
+  description,
+  hint,
+  enabled,
+  onSave,
+  confirmDisable,
+}: Props) {
   const t = useTranslations('dashboard.platformFlag')
   const router = useRouter()
   const inputId = useId()
@@ -27,10 +58,10 @@ export function PlatformFlagToggle({ title, description, hint, enabled, onSave }
   const descriptionId = useId()
   const hintId = useId()
   const [checked, setChecked] = useState(enabled)
+  const [confirming, setConfirming] = useState(false)
   const [pending, startTransition] = useTransition()
 
-  const onToggle = (next: boolean) => {
-    setChecked(next)
+  const commit = (next: boolean, onSaved?: () => void) => {
     startTransition(async () => {
       // Le refus typé et le rejet réseau doivent tous deux revenir en arrière : afficher
       // une case cochée pour une écriture qui n'a pas eu lieu ment sur l'état de l'instance.
@@ -41,6 +72,7 @@ export function PlatformFlagToggle({ title, description, hint, enabled, onSave }
           toast.error(t('error'))
           return
         }
+        onSaved?.()
         router.refresh()
       } catch {
         setChecked(!next)
@@ -48,6 +80,26 @@ export function PlatformFlagToggle({ title, description, hint, enabled, onSave }
       }
     })
   }
+
+  const onToggle = (next: boolean) => {
+    setChecked(next)
+    // Décocher pendant que le drapeau est activé est la seule transition possible vers
+    // `false` : la confirmation ne s'ouvre donc jamais à l'activation.
+    if (!next && confirmDisable) {
+      setConfirming(true)
+      return
+    }
+    commit(next)
+  }
+
+  const cancelDisable = () => {
+    setConfirming(false)
+    setChecked(true)
+  }
+
+  // Ferme la confirmation seulement après l'écriture réussie : un refus ou un rejet la
+  // laisse ouverte, avec le toast d'erreur, plutôt que de forcer un nouveau clic sur la case.
+  const confirmDisableNow = () => commit(false, () => setConfirming(false))
 
   return (
     <Card className="rounded border border-alabaster-700 p-6">
@@ -75,6 +127,62 @@ export function PlatformFlagToggle({ title, description, hint, enabled, onSave }
         />
         <span id={`${inputId}-state`}>{checked ? t('enabled') : t('disabled')}</span>
       </label>
+      {confirming && confirmDisable && (
+        <Dialog initialOpen>
+          <DisableConfirmation
+            confirmDisable={confirmDisable}
+            pending={pending}
+            onConfirm={confirmDisableNow}
+            onDismiss={cancelDisable}
+          />
+        </Dialog>
+      )}
     </Card>
+  )
+}
+
+type DisableConfirmationProps = {
+  confirmDisable: ConfirmDisable
+  pending: boolean
+  onConfirm: () => void
+  onDismiss: () => void
+}
+
+/**
+ * `DialogContent` ferme aussi sur Échap et sur un clic hors panneau, en appelant son
+ * `setOpen` interne — jamais un gestionnaire du parent. Sans cet effet, ces deux voies
+ * masquent le panneau sans jamais rétablir la case ni réarmer la confirmation, qui ne
+ * se rouvrirait plus : couper Google deviendrait silencieusement impossible.
+ * `useDialog()` n'existe qu'à l'intérieur de `Dialog`, d'où ce composant séparé.
+ */
+function DisableConfirmation({
+  confirmDisable,
+  pending,
+  onConfirm,
+  onDismiss,
+}: DisableConfirmationProps) {
+  const { open, setOpen } = useDialog()
+
+  useEffect(() => {
+    if (!open) onDismiss()
+  }, [open, onDismiss])
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{confirmDisable.title}</DialogTitle>
+      </DialogHeader>
+      <DialogBody>
+        <p className="text-sm text-graphite-600">{confirmDisable.description}</p>
+      </DialogBody>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+          {confirmDisable.cancelLabel}
+        </Button>
+        <Button type="button" variant="destructive" onClick={onConfirm} disabled={pending}>
+          {pending ? '...' : confirmDisable.confirmLabel}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   )
 }

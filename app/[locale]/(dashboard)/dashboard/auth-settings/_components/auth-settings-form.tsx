@@ -11,9 +11,15 @@ type Props = {
   googleEnabled: boolean
   googleConfigured: boolean
   passkeyEnabled: boolean
+  googleOnlyAccountCount: number
 }
 
-export function AuthSettingsForm({ googleEnabled, googleConfigured, passkeyEnabled }: Props) {
+export function AuthSettingsForm({
+  googleEnabled,
+  googleConfigured,
+  passkeyEnabled,
+  googleOnlyAccountCount,
+}: Props) {
   const t = useTranslations('dashboard.pages.authSettings')
 
   return (
@@ -24,6 +30,18 @@ export function AuthSettingsForm({ googleEnabled, googleConfigured, passkeyEnabl
         hint={googleConfigured ? undefined : t('google.notConfigured')}
         enabled={googleEnabled}
         onSave={setGoogleSignInEnabledAction}
+        confirmDisable={
+          googleOnlyAccountCount > 0
+            ? {
+                title: t('google.confirmDisable.title'),
+                description: t('google.confirmDisable.description', {
+                  count: googleOnlyAccountCount,
+                }),
+                confirmLabel: t('google.confirmDisable.confirm'),
+                cancelLabel: t('google.confirmDisable.cancel'),
+              }
+            : undefined
+        }
       />
       <PlatformFlagToggle
         title={t('passkey.title')}

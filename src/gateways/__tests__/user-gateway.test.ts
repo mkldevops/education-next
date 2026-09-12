@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const dbMock = { user: { findUnique: vi.fn() } }
+const dbMock = { user: { findUnique: vi.fn(), count: vi.fn() } }
 const dbArchivedMock = {
   user: { findUnique: vi.fn(), count: vi.fn(), update: vi.fn() },
   userFamily: { findFirst: vi.fn(), create: vi.fn(), deleteMany: vi.fn() },
@@ -103,5 +103,37 @@ describe('userGateway family links', () => {
     expect(dbArchivedMock.userFamily.create).toHaveBeenCalledWith({
       data: { userId: USER, familyId: 'family-1', schoolId: SCHOOL },
     })
+  })
+})
+
+describe('userGateway.countGoogleOnlyAccounts', () => {
+  /**
+   * Le risque nommé par #265 : un compte qui tient un second identifiant (mot de passe,
+   * un autre fournisseur) ne perd rien à la coupure de Google. Ce test échoue si la
+   * requête cesse d'exclure ces comptes-là.
+   */
+  it('requires a google account and excludes any account holding a second identifier', async () => {
+    dbMock.user.count.mockResolvedValue(0)
+
+    await userGateway.countGoogleOnlyAccounts()
+
+    const { where } = dbMock.user.count.mock.calls[0][0]
+    expect(where.accounts.some).toEqual({ providerId: 'google' })
+    expect(where.accounts.none).toEqual({ providerId: { not: 'google' } })
+  })
+
+  it('reads through db, not dbArchived, so a deactivated account is not counted', async () => {
+    dbMock.user.count.mockResolvedValue(0)
+
+    await userGateway.countGoogleOnlyAccounts()
+
+    expect(dbArchivedMock.user.count).not.toHaveBeenCalled()
+    expect(dbMock.user.count).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns the count from the database', async () => {
+    dbMock.user.count.mockResolvedValue(3)
+
+    await expect(userGateway.countGoogleOnlyAccounts()).resolves.toBe(3)
   })
 })

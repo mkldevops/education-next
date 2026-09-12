@@ -1397,7 +1397,13 @@
         "google": {
           "title": "Google sign-in",
           "description": "Allows \"Sign in with Google\" on the sign-in page and linking a Google account from the settings.",
-          "notConfigured": "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are missing: the button stays hidden even when the setting is enabled."
+          "notConfigured": "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are missing: the button stays hidden even when the setting is enabled.",
+          "confirmDisable": {
+            "title": "Disable Google sign-in?",
+            "description": "{count} account(s) have only Google as a sign-in method and would lose all access. They will be able to set a password from \"Forgot password\" to keep signing in.",
+            "confirm": "Disable anyway",
+            "cancel": "Cancel"
+          }
         },
         "passkey": {
           "title": "Passkey sign-in",

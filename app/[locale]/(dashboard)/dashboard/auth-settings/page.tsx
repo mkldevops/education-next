@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { isGoogleConfigured } from '@/lib/social-providers'
 import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-sign-in-enabled'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
+import { countGoogleOnlyAccounts } from '@/use-cases/users/count-google-only-accounts'
 import { requirePlatformAdmin } from '../../_lib/auth-helper'
 import { platformPageMetadata } from '../../_lib/page-metadata'
 import { AuthSettingsForm } from './_components/auth-settings-form'
@@ -27,9 +28,10 @@ export default async function AuthSettingsPage({ params }: Props) {
 
   await requirePlatformAdmin()
 
-  const [googleEnabled, passkeyEnabled] = await Promise.all([
+  const [googleEnabled, passkeyEnabled, googleOnlyAccountCount] = await Promise.all([
     isGoogleSignInEnabled(),
     isPasskeySignInEnabled(),
+    countGoogleOnlyAccounts(),
   ])
 
   return (
@@ -49,6 +51,7 @@ export default async function AuthSettingsPage({ params }: Props) {
         googleEnabled={googleEnabled}
         googleConfigured={isGoogleConfigured}
         passkeyEnabled={passkeyEnabled}
+        googleOnlyAccountCount={googleOnlyAccountCount}
       />
     </div>
   )
