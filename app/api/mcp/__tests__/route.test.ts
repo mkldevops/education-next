@@ -1,0 +1,136 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const isMcpEnabledMock = vi.fn()
+const resolveMcpScopeMock = vi.fn()
+const buildMcpServerMock = vi.fn()
+const touchMock = vi.fn()
+const fetchMock = vi.fn()
+const createMcpHandlerMock = vi.fn(() => ({ fetch: fetchMock }))
+const afterMock = vi.fn()
+
+vi.mock('@modelcontextprotocol/server', () => ({ createMcpHandler: createMcpHandlerMock }))
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  after: afterMock,
+}))
+vi.mock('@/mcp/server', () => ({ buildMcpServer: buildMcpServerMock }))
+vi.mock('@/gateways/mcp-api-key-gateway', () => ({ mcpApiKeyGateway: { touch: touchMock } }))
+vi.mock('@/use-cases/mcp/resolve-mcp-scope', () => ({ resolveMcpScope: resolveMcpScopeMock }))
+vi.mock('@/use-cases/platform-settings/is-mcp-enabled', () => ({ isMcpEnabled: isMcpEnabledMock }))
+
+const { DELETE, GET, POST } = await import('../route')
+
+const scope = {
+  keyId: 'key-1',
+  keyPrefix: 'edu_mcp_aaaa',
+  userId: 'user-1',
+  schoolId: 'school-1',
+  isSuperAdmin: false as const,
+}
+
+const request = (headers: Record<string, string> = {}) =>
+  new Request('http://localhost:8550/api/mcp', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...headers },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+  })
+
+const authorized = () => request({ authorization: 'Bearer edu_mcp_key' })
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  isMcpEnabledMock.mockResolvedValue(true)
+  resolveMcpScopeMock.mockResolvedValue({ status: 'OK', scope })
+  fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
+})
+
+describe('POST /api/mcp', () => {
+  it('refuses everything while the platform flag is off, before authenticating', async () => {
+    isMcpEnabledMock.mockResolvedValue(false)
+
+    const response = await POST(authorized())
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: 'mcpDisabled' })
+    expect(resolveMcpScopeMock).not.toHaveBeenCalled()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('answers 401 without a usable credential', async () => {
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+
+    const response = await POST(request())
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: 'unauthorized' })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('answers 403 for an authenticated key whose holder lost the right', async () => {
+    resolveMcpScopeMock.mockResolvedValue({ status: 'forbidden' })
+
+    const response = await POST(authorized())
+
+    expect(response.status).toBe(403)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('hands the resolved scope to the SDK without ever exposing the presented key', async () => {
+    await POST(authorized())
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [, options] = fetchMock.mock.calls[0]
+    expect(options.authInfo.extra.scope).toEqual(scope)
+    expect(JSON.stringify(options.authInfo)).not.toContain('edu_mcp_key')
+  })
+
+  it('records the key usage off the response path', async () => {
+    await POST(authorized())
+
+    expect(afterMock).toHaveBeenCalledTimes(1)
+    expect(touchMock).not.toHaveBeenCalled()
+
+    afterMock.mock.calls[0][0]()
+    expect(touchMock).toHaveBeenCalledWith('key-1', expect.any(Date), expect.any(Date))
+  })
+
+  it('turns an unexpected failure into a 500 rather than a stack trace', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    resolveMcpScopeMock.mockRejectedValue(new Error('boom'))
+
+    const response = await POST(authorized())
+
+    expect(response.status).toBe(500)
+    expect(await response.json()).toEqual({ error: 'serverError' })
+    consoleError.mockRestore()
+  })
+
+  /**
+   * Invariante de sécurité de cette route : aucune autorité ambiante. Un cookie lu ici
+   * rendrait la route falsifiable depuis un navigateur, ce qu'aucune validation
+   * d'`Origin` ne rattraperait proprement.
+   */
+  it('never reads a cookie', async () => {
+    const withCookie = authorized()
+    const cookieReads = vi.fn()
+    Object.defineProperty(withCookie.headers, 'get', {
+      value: (name: string) => {
+        if (name.toLowerCase() === 'cookie') cookieReads()
+        return name.toLowerCase() === 'authorization' ? 'Bearer edu_mcp_key' : null
+      },
+    })
+
+    await POST(withCookie)
+
+    expect(cookieReads).not.toHaveBeenCalled()
+  })
+})
+
+describe('unsupported methods', () => {
+  it('answers 405 without a resumable stream or a session', async () => {
+    for (const response of [GET(), DELETE()]) {
+      expect(response.status).toBe(405)
+      expect(await response.json()).toEqual({ error: 'methodNotAllowed' })
+    }
+  })
+})

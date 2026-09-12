@@ -9,6 +9,7 @@ import {
   KeyRound,
   Layers,
   LayoutGrid,
+  Plug,
   Settings,
   Shield,
   ShieldCheck,
@@ -47,6 +48,7 @@ const configItems: NavItemConfig[] = [
   { href: '/dashboard/schools', icon: Building2, key: 'schools', platformOnly: true },
   { href: '/dashboard/super-admins', icon: ShieldCheck, key: 'superAdmins', platformOnly: true },
   { href: '/dashboard/auth-settings', icon: KeyRound, key: 'authSettings', platformOnly: true },
+  { href: '/dashboard/integrations', icon: Plug, key: 'integrations', platformOnly: true },
 ]
 
 const bottomItems: NavItemConfig[] = [

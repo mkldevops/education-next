@@ -1,0 +1,85 @@
+import { isKeyUsable, isWellFormedMcpKey } from '@/domain/mcp-key'
+import { mcpApiKeyGateway } from '@/gateways/mcp-api-key-gateway'
+import { schoolGateway } from '@/gateways/school-gateway'
+import { schoolMemberGateway } from '@/gateways/school-member-gateway'
+import { userGateway } from '@/gateways/user-gateway'
+import { hashMcpKey } from '@/lib/mcp-key-crypto'
+
+/**
+ * Portée d'un appelant machine, calquée sur `SchoolContext` **moins la variante
+ * `PARENT`**, qui est ici irreprésentable.
+ *
+ * L'autorisation d'un parent a la forme d'un `familyId`, pas d'un `schoolId` : l'admettre
+ * créerait un second mécanisme de cantonnement à côté du garde tenant. Le MCP n'ouvre que
+ * l'administration d'école.
+ */
+export type McpScope =
+  | { keyId: string; keyPrefix: string; userId: string; schoolId: string; isSuperAdmin: true }
+  | { keyId: string; keyPrefix: string; userId: string; schoolId: string; isSuperAdmin: false }
+
+export type McpScopeResult =
+  | { status: 'OK'; scope: McpScope }
+  | { status: 'unauthenticated' }
+  | { status: 'forbidden' }
+
+/**
+ * Dépendances décrites par ce dont ce use case a besoin, pas par le type complet de
+ * chaque passerelle : un test injecte quatre fonctions au lieu de quatre objets entiers.
+ */
+type Deps = {
+  keyGw?: Pick<typeof mcpApiKeyGateway, 'findByHash'>
+  userGw?: Pick<typeof userGateway, 'findPlatformLevel'>
+  schoolGw?: Pick<typeof schoolGateway, 'findActiveById'>
+  memberGw?: Pick<typeof schoolMemberGateway, 'findMembership'>
+}
+
+/**
+ * Authentifie une clé présentée et en déduit la portée.
+ *
+ * Un use case qui authentifie est le précédent de `authenticate-with-passkey` : il prend
+ * une preuve opaque et rend un verdict typé, sans toucher aux en-têtes ni rediriger. Les
+ * quatre gardes de `auth-helper.ts` se terminent toutes par une navigation Next, donc
+ * aucune n'est utilisable depuis un gestionnaire JSON-RPC.
+ *
+ * Révocation, expiration, compte désactivé et appartenance retirée sont tous relus à
+ * chaque appel : une clé durable ne doit jamais survivre à la perte du droit qui la
+ * justifiait.
+ */
+export async function resolveMcpScope(
+  presentedKey: string | null,
+  { keyGw, userGw, schoolGw, memberGw }: Deps = {}
+): Promise<McpScopeResult> {
+  const keys = keyGw ?? mcpApiKeyGateway
+  const users = userGw ?? userGateway
+  const schools = schoolGw ?? schoolGateway
+  const members = memberGw ?? schoolMemberGateway
+
+  // Forme vérifiée avant tout accès base : une chaîne quelconque ne doit pas coûter
+  // une requête.
+  if (!presentedKey || !isWellFormedMcpKey(presentedKey)) return { status: 'unauthenticated' }
+
+  const key = await keys.findByHash(hashMcpKey(presentedKey))
+  if (!key || !isKeyUsable(key)) return { status: 'unauthenticated' }
+
+  // `findPlatformLevel` lit par `db` : un compte désactivé remonte `null`, ce qui vaut
+  // révocation de toutes ses clés sans écriture.
+  const user = await users.findPlatformLevel(key.userId)
+  if (!user) return { status: 'forbidden' }
+
+  const school = await schools.findActiveById(key.schoolId)
+  if (!school) return { status: 'forbidden' }
+
+  const scope = {
+    keyId: key.id,
+    keyPrefix: key.prefix,
+    userId: key.userId,
+    schoolId: key.schoolId,
+  }
+
+  if (user.isSuperAdmin) return { status: 'OK', scope: { ...scope, isSuperAdmin: true } }
+
+  const membership = await members.findMembership(key.userId, key.schoolId)
+  if (membership?.role !== 'ADMIN') return { status: 'forbidden' }
+
+  return { status: 'OK', scope: { ...scope, isSuperAdmin: false } }
+}

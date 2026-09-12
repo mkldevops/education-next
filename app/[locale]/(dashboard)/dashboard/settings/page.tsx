@@ -4,10 +4,14 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { getSchoolContext } from '@/lib/school-context'
 import { isGoogleConfigured } from '@/lib/social-providers'
+import { listMcpApiKeys } from '@/use-cases/mcp/list-mcp-api-keys'
 import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-sign-in-enabled'
+import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 import { SettingsTabs } from './_components/settings-tabs'
+import { toMcpApiKeyView } from './_lib/mcp-api-key-view'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -62,6 +66,8 @@ export default async function SettingsPage({ params }: Props) {
     isPasskeySignInEnabled(),
   ])
 
+  const apiKeys = await loadApiKeys()
+
   return (
     <SettingsTabs
       user={{
@@ -73,6 +79,25 @@ export default async function SettingsPage({ params }: Props) {
       linkedAccounts={linkedAccounts}
       googleEnabled={googleEnabled}
       passkeyEnabled={passkeyEnabled}
+      apiKeys={apiKeys}
     />
   )
+}
+
+/**
+ * L'onglet n'existe que pour un administrateur de l'école active, et seulement quand le
+ * serveur MCP est ouvert : `null` retire l'onglet, il ne l'affiche pas vide.
+ *
+ * La page reste à portée utilisateur pour tout le reste ; le contexte d'école n'est lu
+ * que pour cette section, sans redirection — un parent garde ses autres onglets.
+ */
+async function loadApiKeys() {
+  const context = await getSchoolContext()
+  if (!context) return null
+  if (!context.isSuperAdmin && context.role !== 'ADMIN') return null
+  if (!(await isMcpEnabled())) return null
+
+  const keys = await listMcpApiKeys(context.userId, context.schoolId)
+
+  return keys.map(toMcpApiKeyView)
 }

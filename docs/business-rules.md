@@ -297,6 +297,84 @@ tenant-scoped resource. Written with `db` mocked they would only test the mock.
 `proxy.ts` protects `/dashboard`, `/settings`, `/profile` coarsely. Its matcher **excludes `/api`**,
 so every route handler and Server Action authenticates itself.
 
+## Machine access (MCP)
+
+`POST /api/mcp` exposes the application to an agent — Claude or Codex — over the Model Context
+Protocol. A photographed paper form becomes typed tool calls; **the image never reaches the server**.
+Vision happens in the agent, so the route is an ordinary typed API guarded like any other, not an
+upload endpoint. `docs/mcp.md` documents the client side.
+
+The whole surface is governed by a fourth `PlatformSetting` row, `mcp_enabled`, written from
+`/dashboard/integrations` (a **platform** page on `requirePlatformAdmin()`). It reads the opposite way
+from the three sign-in flags: **absence of the row reads as disabled** (`readsAsOptedIn`,
+`src/domain/platform-settings.ts`). A write API for machines does not open itself on the deployment
+that ships its migration; only an affirmative value activates it.
+
+### Who may hold a key
+
+`ADMIN` of the key's school, or a super-admin. **A `PARENT` never reaches the MCP**, and the refusal is
+structural rather than a branch: `McpScope` (`src/use-cases/mcp/resolve-mcp-scope.ts`) has no parent
+variant. A parent's authorization has the shape of a `familyId`, not a `schoolId`; admitting it would
+build a second confinement mechanism beside the tenant guard.
+
+The `schoolId` comes from the key and is injected into every use-case call. No tool takes a school
+argument — an identifier is exactly what a vision model invents — so multi-school isolation is the
+tenant guard's, with no dedicated code.
+
+`resolveMcpScope()` **returns** a verdict instead of navigating, because the four helpers of
+`app/[locale]/(dashboard)/_lib/auth-helper.ts` all end in `redirect()` or `notFound()` and none is
+usable from a JSON-RPC handler. It re-reads revocation, expiry, `User.isActive` and the `SchoolMember`
+row **on every call**: a durable credential must never outlive the right that justified it. A revoked
+key and an expired key are refused identically — telling them apart would teach the bearer that a key
+existed.
+
+### Key lifecycle
+
+`McpApiKey` rows are created from the "API keys" tab of `/dashboard/settings`, which appears only for a
+school admin while the flag is on. The token is `edu_mcp_` plus 32 random bytes in base64url, **stored
+as SHA-256 only** and shown in clear exactly once. Unlike `Invitation.token` (short, single-use, mailed),
+an API key is durable and will carry write access, so it must not exist in clear in the database.
+The 12-character `prefix` is the sole visual landmark of the list.
+
+- Expiry is mandatory: 30, 90 or 365 days, 90 by default. A key without an end of life is not a key.
+- Revocation writes `revokedAt`; the row is never deleted, so the audit trail survives.
+- Five live keys per (user, school) pair.
+
+The table is **excluded from `TENANT_SCOPED_MODELS`** for the reason already written for `SchoolMember`:
+it is a discovery table, read by `keyHash` before any school is known. Its single boundary is
+`src/gateways/mcp-api-key-gateway.ts` — no fifth exception in `src/lib/db-unscoped.ts`.
+
+### Route guards
+
+The order in `app/api/mcp/route.ts` is deliberate: IP rate limit → platform flag → credential → scope →
+per-key rate limit → handler. The flag is read before authentication so a closed instance answers `503`
+without touching the database for a key.
+
+Two rate-limiting tiers because they measure different things. Claude reaches the server from Anthropic's
+infrastructure, not from the user's machine, so `x-forwarded-for` names a handful of shared egress
+addresses: the IP tier (120/min) only damps unauthenticated flooding, and **the real budget is the key's**
+(600/min), one user on one school.
+
+`POST` only; `GET` and `DELETE` answer `405`. The route **never reads a cookie** and never calls
+`auth.api.getSession()`, so it carries no ambient authority and a browser cannot set `Authorization`
+cross-origin — CSRF is impossible by construction rather than by `Origin` validation. That invariant is
+pinned by a test. `AuthInfo` carries the key's public `prefix` as its `token`, the `keyId` as
+`clientId` and the resolved scope in `extra` — never the presented key, which the SDK could serialize
+into an error.
+
+### Refusals
+
+| Body | Status | Cause |
+|---|---|---|
+| `mcpDisabled` | 503 | `mcp_enabled` absent or not affirmative |
+| `unauthorized` | 401 | no key, malformed key, unknown, revoked or expired |
+| `forbidden` | 403 | deactivated account, deactivated school, non-`ADMIN` membership |
+| `tooManyRequests` | 429 | IP or key tier exhausted |
+| `methodNotAllowed` | 405 | `GET` or `DELETE` |
+
+No `WWW-Authenticate: Bearer resource_metadata=…` and no `.well-known` route: the application operates no
+authorization server, and advertising that flow would send clients into a discovery loop.
+
 ## User management
 
 The `/dashboard/users` drawer is the single management surface. Its guards live in

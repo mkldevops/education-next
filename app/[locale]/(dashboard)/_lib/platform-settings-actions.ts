@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import {
   GOOGLE_SIGN_IN_SETTING,
+  MCP_ENABLED_SETTING,
   PASSKEY_SIGN_IN_SETTING,
   SCHOOL_SWITCH_SETTING,
 } from '@/domain/platform-settings'
@@ -39,4 +40,8 @@ export async function setGoogleSignInEnabledAction(enabled: boolean) {
 
 export async function setPasskeySignInEnabledAction(enabled: boolean) {
   return writeFlag(PASSKEY_SIGN_IN_SETTING, enabled)
+}
+
+export async function setMcpEnabledAction(enabled: boolean) {
+  return writeFlag(MCP_ENABLED_SETTING, enabled)
 }

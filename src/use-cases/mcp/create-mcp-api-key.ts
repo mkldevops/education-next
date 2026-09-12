@@ -1,0 +1,37 @@
+import { expiryFromDays, MCP_KEY_MAX_PER_USER, mcpKeyPrefix } from '@/domain/mcp-key'
+import { mcpApiKeyGateway } from '@/gateways/mcp-api-key-gateway'
+import { generateMcpKey, hashMcpKey } from '@/lib/mcp-key-crypto'
+import { createMcpApiKeySchema } from './schemas'
+
+/**
+ * `lifetimeDays` arrive en `number` : l'appelant est une action ouverte au client, donc
+ * la restriction aux durées proposées appartient au `safeParse`, pas au type.
+ */
+type Input = { name: string; lifetimeDays: number; userId: string; schoolId: string }
+
+/**
+ * La clé en clair n'est rendue qu'ici, une seule fois : la base n'en garde que le
+ * hachage, donc elle est irrécupérable ensuite.
+ */
+type KeyGateway = Pick<typeof mcpApiKeyGateway, 'countLive' | 'create'>
+
+export async function createMcpApiKey(input: Input, keyGw: KeyGateway = mcpApiKeyGateway) {
+  const parsed = createMcpApiKeySchema.safeParse(input)
+  if (!parsed.success) return 'validationError' as const
+
+  const now = new Date()
+  const live = await keyGw.countLive(input.userId, input.schoolId, now)
+  if (live >= MCP_KEY_MAX_PER_USER) return 'tooManyKeys' as const
+
+  const key = generateMcpKey()
+  const record = await keyGw.create({
+    schoolId: input.schoolId,
+    userId: input.userId,
+    name: parsed.data.name,
+    prefix: mcpKeyPrefix(key),
+    keyHash: hashMcpKey(key),
+    expiresAt: expiryFromDays(parsed.data.lifetimeDays, now),
+  })
+
+  return { key, record }
+}

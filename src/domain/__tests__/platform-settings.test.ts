@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { readsAsEnabled, SCHOOL_SWITCH_SETTING } from '../platform-settings'
+import {
+  MCP_ENABLED_SETTING,
+  readsAsEnabled,
+  readsAsOptedIn,
+  SCHOOL_SWITCH_SETTING,
+} from '../platform-settings'
 
 describe('readsAsEnabled', () => {
   it('reads an absent setting as enabled', () => {
@@ -32,5 +37,32 @@ describe('readsAsEnabled', () => {
 describe('SCHOOL_SWITCH_SETTING', () => {
   it('names the platform flag governing the school switch', () => {
     expect(SCHOOL_SWITCH_SETTING).toBe('school_switch_enabled')
+  })
+})
+
+describe('readsAsOptedIn', () => {
+  it('reads an absent setting as disabled, so a write API never opens itself', () => {
+    expect(readsAsOptedIn(undefined)).toBe(false)
+    expect(readsAsOptedIn(null)).toBe(false)
+  })
+
+  it('opens only on an affirmative value', () => {
+    expect(readsAsOptedIn('true')).toBe(true)
+    expect(readsAsOptedIn('TRUE')).toBe(true)
+    expect(readsAsOptedIn(' 1 ')).toBe(true)
+    expect(readsAsOptedIn('on')).toBe(true)
+    expect(readsAsOptedIn('yes')).toBe(true)
+  })
+
+  it('keeps an unreadable value closed', () => {
+    expect(readsAsOptedIn('')).toBe(false)
+    expect(readsAsOptedIn('nope')).toBe(false)
+    expect(readsAsOptedIn('false')).toBe(false)
+  })
+})
+
+describe('MCP_ENABLED_SETTING', () => {
+  it('names the platform flag governing the MCP server', () => {
+    expect(MCP_ENABLED_SETTING).toBe('mcp_enabled')
   })
 })

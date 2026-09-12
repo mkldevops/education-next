@@ -38,6 +38,7 @@ async function purge() {
   await prisma.person.deleteMany()
   await prisma.userFamily.deleteMany()
   await prisma.family.deleteMany()
+  await prisma.mcpApiKey.deleteMany()
   await prisma.schoolMember.deleteMany()
   await prisma.passkey.deleteMany()
   await prisma.session.deleteMany()

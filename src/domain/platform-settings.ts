@@ -7,6 +7,9 @@ export const GOOGLE_SIGN_IN_SETTING = 'google_sign_in_enabled'
 /** Réglage plateforme gouvernant la connexion par passkey pour toute l'instance. */
 export const PASSKEY_SIGN_IN_SETTING = 'passkey_sign_in_enabled'
 
+/** Réglage plateforme gouvernant le serveur MCP pour toute l'instance. */
+export const MCP_ENABLED_SETTING = 'mcp_enabled'
+
 /**
  * Les écritures que ce dépôt produit ne posent que `'true'` ou `'false'` — `BOOLEAN` est
  * validé par `set-platform-setting`. La normalisation couvre un réglage écrit autrement :
@@ -27,4 +30,19 @@ export function readsAsEnabled(value: string | null | undefined): boolean {
   if (value === null || value === undefined) return true
 
   return !DISABLED_VALUES.has(value.trim().toLowerCase())
+}
+
+const ENABLED_VALUES = new Set(['true', '1', 'on', 'yes'])
+
+/**
+ * Verdict inverse, pour les fonctions qui doivent être explicitement ouvertes.
+ *
+ * L'absence de ligne vaut désactivé : le serveur MCP est une API d'écriture machine,
+ * elle ne doit pas s'ouvrir d'elle-même au premier déploiement qui embarque la
+ * migration. Seule une valeur affirmative l'active.
+ */
+export function readsAsOptedIn(value: string | null | undefined): boolean {
+  if (value === null || value === undefined) return false
+
+  return ENABLED_VALUES.has(value.trim().toLowerCase())
 }

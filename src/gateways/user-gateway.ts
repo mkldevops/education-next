@@ -19,6 +19,17 @@ export const userGateway = {
       select: { id: true, isActive: true },
     }),
 
+  /**
+   * Niveau plateforme d'un compte, lu par `db` et non `dbArchived` : la suppression
+   * douce doit ici valoir révocation. Un compte désactivé remonte `null`, ce qui coupe
+   * l'accès machine sans qu'aucun appelant ait à penser à tester `isActive`.
+   */
+  findPlatformLevel: (id: string) =>
+    db.user.findUnique({
+      where: { id },
+      select: { id: true, isSuperAdmin: true },
+    }),
+
   findManaged: (id: string) =>
     dbArchived.user.findUnique({
       where: { id },
