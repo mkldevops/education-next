@@ -401,9 +401,12 @@ The `/dashboard/users` drawer is the single management surface. Its guards live 
   `reactivateUser` restores them. Archiving an already archived user answers `alreadyInactive`.
 - **Permanent deletion is a second, deliberate step.** `deleteUser` refuses an active account
   (`stillActive`) and refuses an account still referenced by history — families created, invitations
-  sent, payment transactions initiated (`hasRelatedRecords`). The dialog also requires the target's
-  email to be typed back; a mismatch answers `confirmationMismatch`. Sessions, accounts, passkeys
-  and family links cascade with the row.
+  sent, payment transactions initiated, machine API keys held (`hasRelatedRecords`). The dialog also
+  requires the target's email to be typed back; a mismatch answers `confirmationMismatch`. Sessions,
+  accounts, passkeys and family links cascade with the row; `McpApiKey` deliberately does not.
+  Self-service deletion (`deleteProfile`, from `/dashboard/settings`) counts the same blockers
+  through `countUserDeletionBlockers` and answers the same `hasRelatedRecords`, so neither path can
+  reach the foreign key and fail raw.
 - **Email uniqueness is checked before an update**, including against archived accounts
   (`emailAlreadyUsed`).
 - **`User.email` is only ever written in lower case.** Every writer normalizes at its own boundary:
@@ -768,7 +771,8 @@ the guard nor the filter.
 That exception does not cover every blocker. `McpApiKey` is counted through its own boundary,
 `mcpApiKeyGateway.countForUser`, because the model is outside the tenant guard and has no
 `isActive`: the ordinary `db` connection already sees all of its rows, so dropping the guard would
-buy nothing. `deleteUser` sums both counts before asking `checkDeletion`.
+buy nothing. `countUserDeletionBlockers` in `src/use-cases/users/count-deletion-blockers.ts` sums
+both counts, and both deletion paths ask it rather than counting for themselves.
 
 ## Known gaps
 

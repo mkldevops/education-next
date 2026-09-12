@@ -33,6 +33,7 @@ function createProfile(overrides?: Partial<{ userId: string; name: string }>): P
 
 describe('deleteProfile', () => {
   let gateway: ProfileGatewaySpy
+  const noBlockers = async () => 0
 
   beforeEach(() => {
     gateway = new ProfileGatewaySpy()
@@ -44,7 +45,7 @@ describe('deleteProfile', () => {
       gateway.profileToReturn = null
 
       // WHEN
-      const result = await deleteProfile('user-123', gateway)
+      const result = await deleteProfile('user-123', gateway, noBlockers)
 
       // THEN
       expect(result).toBe('profileNotFound')
@@ -55,7 +56,7 @@ describe('deleteProfile', () => {
       gateway.profileToReturn = null
 
       // WHEN
-      await deleteProfile('user-123', gateway)
+      await deleteProfile('user-123', gateway, noBlockers)
 
       // THEN
       expect(gateway.deletedUserId).toBeNull()
@@ -72,7 +73,7 @@ describe('deleteProfile', () => {
       const userId = 'user-456'
 
       // WHEN
-      const result = await deleteProfile(userId, gateway)
+      const result = await deleteProfile(userId, gateway, noBlockers)
 
       // THEN
       expect(result).toBe('OK')
@@ -83,10 +84,22 @@ describe('deleteProfile', () => {
       const userId = 'user-789'
 
       // WHEN
-      await deleteProfile(userId, gateway)
+      await deleteProfile(userId, gateway, noBlockers)
 
       // THEN
       expect(gateway.deletedUserId).toBe(userId)
+    })
+
+    it('refuses to delete an account still referenced elsewhere on the platform', async () => {
+      // GIVEN
+      const countBlockers = async () => 1
+
+      // WHEN
+      const result = await deleteProfile('user-123', gateway, countBlockers)
+
+      // THEN
+      expect(result).toBe('hasRelatedRecords')
+      expect(gateway.deletedUserId).toBeNull()
     })
   })
 })
