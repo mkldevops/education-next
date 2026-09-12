@@ -7,7 +7,7 @@ type Props = {
   membersCount: number
   studentsCount: number
   enrollmentsCount: number
-  remainingBalance?: number
+  remainingBalance: number
   showActions?: boolean
   children?: React.ReactNode
 }
@@ -17,7 +17,7 @@ export async function HeroBanner({
   membersCount,
   studentsCount,
   enrollmentsCount,
-  remainingBalance = 0,
+  remainingBalance,
   showActions,
   children,
 }: Props) {

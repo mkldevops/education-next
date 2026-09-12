@@ -1,5 +1,7 @@
 import { cache } from 'react'
+import { enrollmentBalances } from '@/domain/payment'
 import { db } from '@/lib/db'
+import { roundHalfUp } from '@/lib/decimal'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
 
 /**
@@ -117,13 +119,11 @@ export function deriveStudentDetail(student: StudentDetail) {
     totalPaid,
     remaining: Math.max(0, totalDue - totalPaid),
     activeEnrollments,
-    payableRemaining: student.enrollments
-      .filter((e) => e.status === 'PENDING' || e.status === 'ACTIVE')
-      .reduce(
-        (sum, e) =>
-          sum + Number(e.totalAmount) - e.payments.reduce((paid, p) => paid + Number(p.amount), 0),
-        0
-      ),
+    payableRemaining: roundHalfUp(
+      enrollmentBalances(
+        student.enrollments.filter((e) => e.status === 'PENDING' || e.status === 'ACTIVE')
+      ).reduce((sum, balance) => sum + balance.remainingBalance, 0)
+    ),
     languagesAtHome: Array.isArray(student.languagesAtHome)
       ? student.languagesAtHome.join(', ')
       : '',

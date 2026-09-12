@@ -7,6 +7,28 @@ export type EnrollmentBalance = {
   discount: number
 }
 
+type PayableEnrollment = {
+  id: string
+  totalAmount: number | { toString(): string }
+  discount: number | { toString(): string }
+  payments: Array<{ amount: number | { toString(): string } }>
+}
+
+export function enrollmentBalances(enrollments: PayableEnrollment[]): EnrollmentBalance[] {
+  return enrollments.map((enrollment) => {
+    const totalAmount = Number(enrollment.totalAmount)
+    const paid = roundHalfUp(
+      enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
+    )
+    return {
+      enrollmentId: enrollment.id,
+      totalAmount,
+      discount: Number(enrollment.discount),
+      remainingBalance: Math.max(0, roundHalfUp(totalAmount - paid)),
+    }
+  })
+}
+
 type DistributionSuccess = {
   result: 'OK'
   distribution: Array<{ enrollmentId: string; amount: number }>
@@ -165,19 +187,19 @@ export function groupFamilyPayments<T extends GroupablePayment>(
   payments: T[]
 ): Array<FamilyPayment<T>> {
   const groups: Array<FamilyPayment<T> & { key: string; lastCreatedAt: number }> = []
+  const latestByKey = new Map<string, (typeof groups)[number]>()
   const byCreation = [...payments].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 
   for (const payment of byCreation) {
     const key = paymentKey(payment)
     const createdAt = payment.createdAt.getTime()
-    const group = [...groups]
-      .reverse()
-      .find(
-        (candidate) =>
-          candidate.key === key &&
-          createdAt - candidate.lastCreatedAt <= SAME_PAYMENT_WINDOW_MS &&
-          !candidate.lines.some((line) => line.enrollmentId === payment.enrollmentId)
-      )
+    const latest = latestByKey.get(key)
+    const group =
+      latest &&
+      createdAt - latest.lastCreatedAt <= SAME_PAYMENT_WINDOW_MS &&
+      !latest.lines.some((line) => line.enrollmentId === payment.enrollmentId)
+        ? latest
+        : undefined
 
     if (group) {
       group.lines.push(payment)
@@ -186,7 +208,7 @@ export function groupFamilyPayments<T extends GroupablePayment>(
       continue
     }
 
-    groups.push({
+    const created = {
       key,
       lastCreatedAt: createdAt,
       id: payment.id,
@@ -197,7 +219,9 @@ export function groupFamilyPayments<T extends GroupablePayment>(
       paidAt: payment.paidAt,
       cashedAt: payment.cashedAt,
       lines: [payment],
-    })
+    }
+    groups.push(created)
+    latestByKey.set(key, created)
   }
 
   return groups

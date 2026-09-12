@@ -97,7 +97,8 @@ export const enrollmentGateway = {
           },
         },
       },
-      include: { payments: true },
+      include: { payments: { where: { isActive: true } } },
+      orderBy: [{ registeredAt: 'asc' }, { id: 'asc' }],
     }),
 
   findEnrolledStudentIds: async (schoolId: string, periodId: string, studentIds: string[]) => {

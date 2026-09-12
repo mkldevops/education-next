@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { distributePayment, type EnrollmentBalance } from '@/domain/payment'
+import { distributePayment, enrollmentBalances } from '@/domain/payment'
 import { db } from '@/lib/db'
 import { claimDraft, releaseDraft } from './claim-draft'
 import { RECORD_PAYMENT_TOOL } from './preview-record-payment'
@@ -56,23 +56,11 @@ export async function commitRecordPayment(scope: McpScope, input: Input) {
           status: { in: ['PENDING', 'ACTIVE'] },
           student: { person: { families: { some: { familyId: resolved.family.id } } } },
         },
-        include: { payments: true },
+        include: { payments: { where: { isActive: true } } },
+        orderBy: [{ registeredAt: 'asc' }, { id: 'asc' }],
       })
 
-      const balances: EnrollmentBalance[] = enrollments.map((enrollment) => {
-        const totalPaid = enrollment.payments.reduce(
-          (sum, payment) => sum + Number(payment.amount),
-          0
-        )
-        return {
-          enrollmentId: enrollment.id,
-          totalAmount: Number(enrollment.totalAmount),
-          discount: Number(enrollment.discount),
-          remainingBalance: Number(enrollment.totalAmount) - totalPaid,
-        }
-      })
-
-      const distribution = distributePayment(resolved.amount, balances)
+      const distribution = distributePayment(resolved.amount, enrollmentBalances(enrollments))
       if (distribution.result !== 'OK') return distribution.result
 
       // La ventilation validée par l'humain doit rester celle qu'on écrit. Une

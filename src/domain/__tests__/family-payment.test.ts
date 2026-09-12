@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupFamilyPayments } from '../payment'
+import { enrollmentBalances, groupFamilyPayments } from '../payment'
 
 const paidAt = new Date('2026-09-12T00:00:00.000Z')
 const createdAt = new Date('2026-09-12T10:00:00.000Z')
@@ -82,5 +82,67 @@ describe('groupFamilyPayments', () => {
     ])
 
     expect(groups.map((group) => group.id)).toEqual(['newer', 'older'])
+  })
+
+  it('chains lines written a few seconds apart into one payment', () => {
+    const at = (seconds: number) => new Date(createdAt.getTime() + seconds * 1000)
+    const groups = groupFamilyPayments([
+      line({ id: 'a', enrollmentId: 'enrollment-a', createdAt: at(0) }),
+      line({ id: 'b', enrollmentId: 'enrollment-b', createdAt: at(4) }),
+      line({ id: 'c', enrollmentId: 'enrollment-c', createdAt: at(8) }),
+    ])
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0].amount).toBe(270)
+  })
+
+  it('groups an online payment by its transaction', () => {
+    const groups = groupFamilyPayments([
+      line({
+        id: 'a',
+        enrollmentId: 'enrollment-a',
+        method: 'CARD',
+        reference: null,
+        paymentTransactionId: 'tx-1',
+      }),
+      line({
+        id: 'b',
+        enrollmentId: 'enrollment-b',
+        method: 'CARD',
+        reference: null,
+        paymentTransactionId: 'tx-1',
+      }),
+      line({
+        id: 'c',
+        enrollmentId: 'enrollment-a',
+        method: 'CARD',
+        reference: null,
+        paymentTransactionId: 'tx-2',
+      }),
+    ])
+
+    expect(groups).toHaveLength(2)
+    expect(groups.map((group) => group.lines.length).sort()).toEqual([1, 2])
+  })
+})
+
+describe('enrollmentBalances', () => {
+  it('computes what is left on each enrollment, rounded to the cent', () => {
+    expect(
+      enrollmentBalances([
+        {
+          id: 'e1',
+          totalAmount: 180,
+          discount: 0,
+          payments: [{ amount: 33.333 }, { amount: 33.333 }],
+        },
+      ])
+    ).toEqual([{ enrollmentId: 'e1', totalAmount: 180, discount: 0, remainingBalance: 113.33 }])
+  })
+
+  it('floors an overpaid enrollment at zero and keeps it for refunds', () => {
+    expect(
+      enrollmentBalances([{ id: 'e1', totalAmount: 100, discount: 0, payments: [{ amount: 120 }] }])
+    ).toEqual([{ enrollmentId: 'e1', totalAmount: 100, discount: 0, remainingBalance: 0 }])
   })
 })
