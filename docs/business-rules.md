@@ -571,7 +571,7 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   destroyed.
 - **A deactivated teacher's stray assignment is removable, explicitly, and only that one.** The
   class detail page reads `ClassPeriodTeacher` rows through
-  `classPeriodGateway.listInactiveTeacherAssignments`, which — unlike `findById`/`list` — filters
+  `classPeriodGateway.listInactiveTeacherAssignments`, which — unlike `findById` — filters
   `teacher: { isActive: false }` instead of excluding them, so a deactivated teacher's row is
   surfaced there instead of staying invisible. `unassignClassPeriodTeacher`
   (`src/use-cases/class-periods/unassign-teacher.ts`) is the only path that deletes such a row,

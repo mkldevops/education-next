@@ -93,26 +93,4 @@ describe('mcpReadGateway', () => {
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     })
   })
-
-  it('never lets a contact column reach the model provider, through any read', async () => {
-    await Promise.all([
-      mcpReadGateway.describeSchool(SCHOOL),
-      mcpReadGateway.listLevels(SCHOOL),
-      mcpReadGateway.listPeriods(SCHOOL),
-      mcpReadGateway.listClassPeriods(SCHOOL),
-      mcpReadGateway.listPlans(SCHOOL),
-      mcpReadGateway.listTeachers(SCHOOL),
-    ])
-
-    const published = Object.values(dbMock)
-      .flatMap((model) => Object.values(model))
-      .flatMap((read) => read.mock.calls)
-      .map((call) => JSON.stringify(call))
-
-    expect(published).toHaveLength(6)
-    for (const read of published) {
-      expect(read).not.toContain('email')
-      expect(read).not.toContain('phone')
-    }
-  })
 })

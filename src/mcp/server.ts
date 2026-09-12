@@ -114,7 +114,9 @@ export function buildMcpServer(scope: McpScope): McpServer {
     'list_plans',
     {
       title: 'Formules tarifaires',
-      description: 'Formules actives et leur montant, en centimes.',
+      description:
+        'Formules actives et leur montant. Le montant est une valeur décimale rendue en ' +
+        "chaîne, dans la devise de l'école — jamais des centimes.",
       inputSchema: NO_ARGS,
     },
     async () => read('list_plans', () => mcpReadGateway.listPlans(schoolId))

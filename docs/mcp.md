@@ -107,7 +107,7 @@ Every one of them works in the key's school and takes no arguments.
 | `list_levels` | `id`, `name`, `nextLevel { id, name }` |
 | `list_periods` | `id`, `name`, `startAt`, `endAt` |
 | `list_class_periods` | `id`, `name`, `capacity`, `level { id, name }`, `period { id, name }`, `teachers[].teacher { id, firstName, lastName }` |
-| `list_plans` | `id`, `name`, `amount` (in cents) |
+| `list_plans` | `id`, `name`, `amount` (decimal string, not cents) |
 | `list_teachers` | `id`, `firstName`, `lastName` |
 
 They are the resolution layer: a label read on paper — "CE1 / 2026-2027", the name of a plan —

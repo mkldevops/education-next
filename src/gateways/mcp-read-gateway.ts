@@ -26,6 +26,9 @@ export const mcpReadGateway = {
   listLevels: (schoolId: string) =>
     db.level.findMany({
       where: { schoolId, isActive: true },
+      // `nextLevel` ne porte pas de filtre `isActive` — Prisma n'en accepte pas sur le
+      // `select` d'une relation to-one. Désactiver un niveau vide d'abord les pointeurs
+      // qui le visent (`levelGateway.deactivate`), donc la cible publiée est toujours active.
       select: { id: true, name: true, nextLevel: { select: namedRef } },
       orderBy: { name: 'asc' },
     }),
@@ -44,10 +47,14 @@ export const mcpReadGateway = {
         id: true,
         name: true,
         capacity: true,
+        // Même raison qu'au-dessus pour `level` et `period`, et même invariant tenu à
+        // l'écriture : une désactivation est refusée tant qu'une classe les référence
+        // (`levelInUse`, `periodInUse`).
         level: { select: namedRef },
         period: { select: namedRef },
-        // L'extension soft-delete ne filtre que la racine de la requête : une relation
-        // imbriquée qui ne pose pas `isActive` publie les enseignants archivés.
+        // La relation to-many, elle, filtre : l'extension soft-delete de `src/lib/db.ts`
+        // ne couvre que la racine de la requête, et un enseignant désactivé garde sa ligne
+        // `ClassPeriodTeacher`.
         teachers: {
           where: { teacher: { isActive: true } },
           select: { teacher: { select: teacherIdentity } },
