@@ -217,6 +217,19 @@ Disabling Google **does not unlink** an account that is already linked: the card
 `/dashboard/settings` with its disconnect action, so nobody is left with a credential they can
 neither use nor remove.
 
+Disabling passkeys follows the same rule. `/dashboard/settings` keeps the passkey card as long as
+the user owns at least one, with its list and its delete action, and drops only the registration
+form — replaced by a sentence stating why (`_components/passkey-section.tsx`). The card disappears
+entirely when nothing is left to administer, no passkey and registration closed, exactly like the
+Google card without a linked account. This is why `getUserPasskeys()` and `deletePasskey()` take a
+session and nothing else: putting them behind the flag would lock a user out of credentials they can
+no longer use.
+
+The page reads that list server-side and hands it down as a prop, like `linkedAccounts`. Loading it
+from the client would leave the card absent for the length of the round trip — the very symptom the
+rule forbids. Deletion is confirmed through a notification rather than a banner inside the card,
+because removing the last passkey while the flag is off unmounts the card in the same render.
+
 ## Roles and scope
 
 Roles are **per school**. `SchoolRole` is `ADMIN` or `PARENT` (`src/types/enums.ts`), carried by a
