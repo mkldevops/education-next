@@ -367,6 +367,16 @@ infrastructure, not from the user's machine, so `x-forwarded-for` names a handfu
 addresses: the IP tier (120/min) only damps unauthenticated flooding, and **the real budget is the key's**
 (600/min), one user on one school.
 
+The IP tier is only worth its cost if its key cannot be chosen by the caller. `getClientIp`
+(`src/lib/rate-limit.ts`) therefore reads `x-forwarded-for` **from the right**, at
+`length - TRUSTED_PROXY_HOPS` (default `1`, clamped to the leftmost entry): the last hops were appended
+by our own proxies, while everything before them was sent by the client. Reading the first entry let a
+caller rotate a forged prefix and mint one counter per imagined address, so the only pre-auth brake was
+optional. `TRUSTED_PROXY_HOPS=0` declares that no forwarding header is verifiable and puts all pre-auth
+traffic in a single bucket. The tracked-key cap evicts the **least recently used** key, refreshed on
+refused calls too: evicting by insertion order dropped an established client before a freshly forged
+address, and let a blocked key buy a new budget by getting itself evicted.
+
 `POST` only; `GET` and `DELETE` answer `405`. The route **never reads a cookie** and never calls
 `auth.api.getSession()`, so it carries no ambient authority and a browser cannot set `Authorization`
 cross-origin — CSRF is impossible by construction rather than by `Origin` validation. That invariant is
