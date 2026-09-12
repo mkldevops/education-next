@@ -41,6 +41,11 @@ const presentedKey = `edu_mcp_${'k'.repeat(43)}`
 /** Les étages sont module-level et leur fenêtre glisse sur 60 s : une adresse par test. */
 let addressSeq = 0
 
+function nextAddress() {
+  addressSeq += 1
+  return `203.0.113.${addressSeq}`
+}
+
 const authorized = () => request({ authorization: `Bearer ${presentedKey}` })
 
 beforeEach(() => {
@@ -203,8 +208,7 @@ describe('POST /api/mcp', () => {
    * clés de toutes les autres écoles dès qu'une seule est active.
    */
   it('keeps a key budget out of the shared address budget', async () => {
-    addressSeq += 1
-    const address = `203.0.113.${addressSeq}`
+    const address = nextAddress()
     const from = (headers: Record<string, string> = {}) =>
       request({ 'x-forwarded-for': address, ...headers })
     resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
@@ -219,8 +223,7 @@ describe('POST /api/mcp', () => {
   })
 
   it('damps credential-less traffic before reading the platform flag', async () => {
-    addressSeq += 1
-    const address = `203.0.113.${addressSeq}`
+    const address = nextAddress()
     const anonymous = () => request({ 'x-forwarded-for': address })
     resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
 
@@ -241,8 +244,7 @@ describe('POST /api/mcp', () => {
    * payer, à chaque requête, la lecture en base du drapeau plateforme.
    */
   it('damps a malformed credential like credential-less traffic', async () => {
-    addressSeq += 1
-    const address = `203.0.113.${addressSeq}`
+    const address = nextAddress()
     const malformed = () => request({ 'x-forwarded-for': address, authorization: 'Bearer x' })
     resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
 

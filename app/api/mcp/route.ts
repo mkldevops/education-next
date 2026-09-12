@@ -24,14 +24,16 @@ export const dynamic = 'force-dynamic'
  * qu'une seule est active, et bornerait le budget par clé bien avant sa valeur.
  *
  * L'étage par adresse ne couvre donc que ce qu'il est censé amortir — les requêtes qui
- * ne présentent aucune clé — et le vrai budget est celui de la clé, donc d'un
- * utilisateur sur une école, appliqué après la résolution de portée.
+ * ne présentent aucune clé bien formée — et le vrai budget est celui de la clé, donc
+ * d'un utilisateur sur une école, appliqué après la résolution de portée.
  *
- * Une clé bien formée mais inconnue échappe par conséquent à tout étage : elle coûte la
- * lecture du drapeau puis un `findByHash` indexé, et l'y soumettre par adresse
- * recréerait exactement le déni entre écoles que cette séparation supprime.
+ * Toute clé bien formée que la route ne sert pas échappe par conséquent aux deux
+ * étages : inconnue, révoquée ou expirée, elle coûte la lecture du drapeau puis un
+ * `findByHash` indexé ; portée refusée, elle va jusqu'aux lectures d'appartenance. La
+ * soumettre à l'étage par adresse recréerait exactement le déni entre écoles que cette
+ * séparation supprime.
  */
-const isAnonymousRateLimited = createRateLimiter({ limit: 120, windowMs: 60 * 1000 })
+const isAddressRateLimited = createRateLimiter({ limit: 120, windowMs: 60 * 1000 })
 const isKeyRateLimited = createRateLimiter({ limit: 600, windowMs: 60 * 1000 })
 
 const LAST_USED_STALE_MS = 60 * 1000
@@ -59,7 +61,7 @@ export async function POST(request: Request) {
     // quelconque échapper aux deux étages tout en payant cette lecture.
     const credential = readMcpCredential(request.headers)
     const presentsKey = credential !== null && isWellFormedMcpKey(credential)
-    if (!presentsKey && isAnonymousRateLimited(getClientIp(request))) {
+    if (!presentsKey && isAddressRateLimited(getClientIp(request))) {
       return denied('tooManyRequests', 429)
     }
 
