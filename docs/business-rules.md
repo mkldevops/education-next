@@ -202,10 +202,10 @@ the redirect inside `betterAuth`, so the route does not need to test `isGoogleCo
 Each flag is enforced on the server, not only in the UI, because both entry points are callable
 boundaries:
 
-- `getPasskeyAuthenticationOptions()`, `getPasskeyRegistrationOptions()` and
-  `verifyPasskeyRegistration()` return `signInDisabled` before touching a challenge, and
-  `POST /api/passkey/authenticate` answers `403` after the rate limiter (`src/actions/passkey-actions.ts`,
-  `app/api/passkey/authenticate/route.ts`).
+- `getPasskeyRegistrationOptions()`, `verifyPasskeyRegistration()`,
+  `getPasskeyAuthenticationOptions()` and `verifyPasskeyAuthentication()` return `signInDisabled`
+  before touching a challenge, and `POST /api/passkey/authenticate` answers `403` after the rate
+  limiter (`src/actions/passkey-actions.ts`, `app/api/passkey/authenticate/route.ts`).
 - `app/api/auth/[...all]/route.ts` wraps the Better Auth handler and refuses `/sign-in/social`,
   `/link-social` and `/callback/*` with `403`, on `GET` as well as `POST`. Google is the only
   declared social provider, so the path identifies the request and no body has to be read. The
