@@ -97,6 +97,7 @@ model School {
   teachers            Teacher[]
   classPeriodTeachers ClassPeriodTeacher[]
   teacherExpenses     TeacherExpense[]
+  mcpApiKeys          McpApiKey[]
 }
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
@@ -137,6 +138,7 @@ model User {
   paymentTransactions PaymentTransaction[] @relation("paymentInitiatedBy")
   passkeys            Passkey[]
   schoolMemberships   SchoolMember[]
+  mcpApiKeys          McpApiKey[]
 }
 
 model Session {
@@ -629,4 +631,36 @@ model Passkey {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/// Clé d'accès machine au serveur MCP, portée par un utilisateur sur une école.
+///
+/// La clé n'existe en base que sous forme de hachage SHA-256 : contrairement à
+/// `Invitation.token`, elle est durable et donne le droit d'écrire.
+///
+/// `schoolId` est figé dans la clé plutôt que passé en argument d'outil : la portée est
+/// ainsi établie avant tout appel, et le rayon d'une fuite se limite à une école.
+///
+/// Volontairement hors du garde tenant : c'est une table de découverte, lue par
+/// `keyHash` avant qu'une école soit connue. `src/gateways/mcp-api-key-gateway.ts` en est
+/// la seule frontière.
+model McpApiKey {
+  id         String    @id @default(uuid())
+  schoolId   String
+  userId     String
+  name       String    @db.VarChar(80)
+  prefix     String    @db.VarChar(16)
+  keyHash    String    @unique @db.VarChar(64)
+  lastUsedAt DateTime?
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([id, schoolId])
+  @@index([schoolId])
+  @@index([userId, schoolId])
 }

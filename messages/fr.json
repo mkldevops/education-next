@@ -174,7 +174,8 @@
       "schools": "Écoles",
       "teachers": "Enseignants",
       "superAdmins": "Super-admins",
-      "authSettings": "Méthodes de connexion"
+      "authSettings": "Méthodes de connexion",
+      "integrations": "Intégrations"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -204,7 +205,8 @@
       "schools": "Écoles",
       "teachers": "Enseignants",
       "superAdmins": "Super-admins",
-      "authSettings": "Méthodes de connexion"
+      "authSettings": "Méthodes de connexion",
+      "integrations": "Intégrations"
     },
     "pages": {
       "families": {
@@ -1392,9 +1394,6 @@
       "authSettings": {
         "title": "Méthodes de connexion",
         "description": "Choisissez les méthodes proposées sur la page de connexion de l'instance. L'e-mail et le mot de passe restent toujours disponibles.",
-        "enabled": "Activée",
-        "disabled": "Désactivée",
-        "error": "Le réglage n'a pas pu être enregistré, réessayez",
         "google": {
           "title": "Connexion Google",
           "description": "Autorise « Se connecter avec Google » sur la page de connexion et la liaison d'un compte Google depuis les paramètres.",
@@ -1404,6 +1403,15 @@
           "title": "Connexion par passkey",
           "description": "Autorise la connexion par passkey et l'enregistrement de nouvelles passkeys depuis les paramètres du compte."
         }
+      },
+      "integrations": {
+        "title": "Intégrations",
+        "description": "Ouvrez ou fermez les accès machine à l'instance.",
+        "mcp": {
+          "title": "Serveur MCP",
+          "description": "Autorise Claude et Codex à lire et à écrire les données de leur école via une clé API. Chaque administrateur crée ses clés depuis ses paramètres.",
+          "hint": "C'est une API d'écriture : elle reste fermée tant qu'elle n'est pas activée ici."
+        }
       }
     },
     "unlinkedParent": {
@@ -1411,6 +1419,11 @@
       "greeting": "Bienvenue, {name}",
       "description": "Votre compte fonctionne, mais il n'est encore rattaché à aucune famille. Tant que ce lien n'est pas fait, il n'y a rien à afficher ici.",
       "nextStep": "{schoolName} doit vous rattacher à votre famille. Contactez le secrétariat si cela tarde."
+    },
+    "platformFlag": {
+      "enabled": "Activée",
+      "disabled": "Désactivée",
+      "error": "Le réglage n'a pas pu être enregistré, réessayez"
     }
   },
   "schools": {
@@ -1515,7 +1528,8 @@
       "profile": "Profil",
       "security": "Sécurité",
       "sessions": "Sessions",
-      "account": "Compte"
+      "account": "Compte",
+      "apiKeys": "Clés API"
     },
     "profile": {
       "title": "Profil",
@@ -1601,6 +1615,45 @@
       "error": "Erreur lors de l'enregistrement de la clé",
       "deleteError": "Erreur lors de la suppression",
       "cancelled": "Enregistrement annulé"
+    },
+    "apiKeys": {
+      "title": "Clés API MCP",
+      "description": "Une clé donne à Claude ou Codex les droits d'administration que vous détenez sur l'école active. Elle n'est affichée qu'à sa création.",
+      "nameLabel": "Nom",
+      "namePlaceholder": "Poste de Fatima",
+      "nameRequired": "Donnez un nom à la clé",
+      "lifetimeLabel": "Validité",
+      "lifetimeDays": "{days} jours",
+      "create": "Créer la clé",
+      "atCapacity": "Vous avez atteint la limite de {max} clés actives. Révoquez-en une pour en créer une autre.",
+      "copied": "Copié",
+      "copyFailed": "Copie impossible, sélectionnez le texte à la main",
+      "revoked": "Clé révoquée",
+      "error": "L'opération a échoué, réessayez",
+      "errors": {
+        "tooManyKeys": "Vous avez atteint la limite de clés actives",
+        "validationError": "Le nom de la clé est invalide",
+        "mcpDisabled": "Le serveur MCP est désactivé sur cette instance"
+      },
+      "created": {
+        "title": "Votre nouvelle clé",
+        "warning": "Copiez-la maintenant : elle ne sera plus jamais affichée.",
+        "keyLabel": "Clé",
+        "copyKey": "Copier la clé",
+        "commandLabel": "Commande de configuration",
+        "copyCommand": "Copier la commande"
+      },
+      "list": {
+        "title": "Vos clés",
+        "empty": "Aucune clé pour le moment.",
+        "created": "Créée le {date}",
+        "expires": "Expire le {date}",
+        "lastUsed": "Dernier usage {date}",
+        "neverUsed": "Jamais utilisée",
+        "revoked": "Révoquée",
+        "expired": "Expirée",
+        "revoke": "Révoquer la clé {name}"
+      }
     }
   },
   "status": {

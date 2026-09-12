@@ -4,13 +4,9 @@
   "project": ["src/**/*.{ts,tsx}"],
   "ignore": [
     "src/components/ui/**",
-    "src/use-cases/class-periods/list-class-periods.ts",
     "src/use-cases/enrollments/list-enrollments.ts",
     "src/use-cases/families/list-families.ts",
-    "src/use-cases/levels/list-levels.ts",
     "src/use-cases/payments/list-payments.ts",
-    "src/use-cases/periods/list-periods.ts",
-    "src/use-cases/plans/list-plans.ts",
     "src/use-cases/students/list-students.ts",
     "src/config/email.ts",
     "src/domain/index.ts",

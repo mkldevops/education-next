@@ -1,9 +1,11 @@
 'use client'
 
 import { Tabs } from '@peaklab/ui'
-import { KeyRound, Monitor, Shield, User } from 'lucide-react'
+import { KeyRound, Monitor, Plug, Shield, User } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import type { McpApiKeyView } from '../_lib/mcp-api-key-view'
 import { AccountSection } from './account-section'
+import { ApiKeysSection } from './api-keys-section'
 import { PasskeySection } from './passkey-section'
 import { PasswordSection } from './password-section'
 import { ProfileSection } from './profile-section'
@@ -34,6 +36,7 @@ type Props = {
   linkedAccounts: LinkedAccount[]
   googleEnabled: boolean
   passkeyEnabled: boolean
+  apiKeys: McpApiKeyView[] | null
 }
 
 export function SettingsTabs({
@@ -42,6 +45,7 @@ export function SettingsTabs({
   linkedAccounts,
   googleEnabled,
   passkeyEnabled,
+  apiKeys,
 }: Props) {
   const t = useTranslations('settings')
 
@@ -82,6 +86,15 @@ export function SettingsTabs({
               />
             ),
           },
+          ...(apiKeys
+            ? [
+                {
+                  label: t('tabs.apiKeys'),
+                  icon: Plug,
+                  content: <ApiKeysSection keys={apiKeys} />,
+                },
+              ]
+            : []),
         ]}
       />
     </div>

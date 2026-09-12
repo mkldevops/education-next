@@ -12,6 +12,7 @@ vi.mock('@/use-cases/platform-settings/set-platform-setting', () => ({
 
 const {
   setGoogleSignInEnabledAction,
+  setMcpEnabledAction,
   setPasskeySignInEnabledAction,
   setSchoolSwitchEnabledAction,
 } = await import('./platform-settings-actions')
@@ -94,5 +95,23 @@ describe('sign-in method actions', () => {
     expect(await setGoogleSignInEnabledAction(true)).toBe('invalidSettingValue')
     expect(await setPasskeySignInEnabledAction(true)).toBe('invalidSettingValue')
     expect(revalidatePathMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('setMcpEnabledAction', () => {
+  it('opens on the platform guard before writing', async () => {
+    requirePlatformAdminMock.mockRejectedValue(new Error('notFound'))
+
+    await expect(setMcpEnabledAction(true)).rejects.toThrow('notFound')
+    expect(setPlatformSettingMock).not.toHaveBeenCalled()
+  })
+
+  it('writes the MCP flag under its own setting name', async () => {
+    expect(await setMcpEnabledAction(true)).toBe('OK')
+    expect(setPlatformSettingMock).toHaveBeenCalledWith({
+      name: 'mcp_enabled',
+      value: 'true',
+      valueType: 'BOOLEAN',
+    })
   })
 })

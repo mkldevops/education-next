@@ -174,7 +174,8 @@
       "schools": "Schools",
       "teachers": "Teachers",
       "superAdmins": "Super admins",
-      "authSettings": "Sign-in methods"
+      "authSettings": "Sign-in methods",
+      "integrations": "Integrations"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -204,7 +205,8 @@
       "schools": "Schools",
       "teachers": "Teachers",
       "superAdmins": "Super admins",
-      "authSettings": "Sign-in methods"
+      "authSettings": "Sign-in methods",
+      "integrations": "Integrations"
     },
     "pages": {
       "families": {
@@ -1392,9 +1394,6 @@
       "authSettings": {
         "title": "Sign-in methods",
         "description": "Choose the methods offered on this instance sign-in page. Email and password always remain available.",
-        "enabled": "Enabled",
-        "disabled": "Disabled",
-        "error": "The setting could not be saved, please try again",
         "google": {
           "title": "Google sign-in",
           "description": "Allows \"Sign in with Google\" on the sign-in page and linking a Google account from the settings.",
@@ -1404,6 +1403,15 @@
           "title": "Passkey sign-in",
           "description": "Allows signing in with a passkey and registering new passkeys from the account settings."
         }
+      },
+      "integrations": {
+        "title": "Integrations",
+        "description": "Open or close machine access to this instance.",
+        "mcp": {
+          "title": "MCP server",
+          "description": "Lets Claude and Codex read and write their school data through an API key. Each administrator creates their own keys from their settings.",
+          "hint": "This is a write API: it stays closed until it is enabled here."
+        }
       }
     },
     "unlinkedParent": {
@@ -1411,6 +1419,11 @@
       "greeting": "Welcome, {name}",
       "description": "Your account works, but it is not linked to a family yet. Until that link is made there is nothing to show here.",
       "nextStep": "{schoolName} needs to link you to your family. Contact the office if it takes too long."
+    },
+    "platformFlag": {
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "error": "The setting could not be saved, please try again"
     }
   },
   "schools": {
@@ -1515,7 +1528,8 @@
       "profile": "Profile",
       "security": "Security",
       "sessions": "Sessions",
-      "account": "Account"
+      "account": "Account",
+      "apiKeys": "API keys"
     },
     "profile": {
       "title": "Profile",
@@ -1601,6 +1615,45 @@
       "error": "Error registering passkey",
       "deleteError": "Error removing passkey",
       "cancelled": "Registration cancelled"
+    },
+    "apiKeys": {
+      "title": "MCP API keys",
+      "description": "A key grants Claude or Codex the administration rights you hold on the active school. It is shown only once, when created.",
+      "nameLabel": "Name",
+      "namePlaceholder": "Fatima's laptop",
+      "nameRequired": "Give the key a name",
+      "lifetimeLabel": "Validity",
+      "lifetimeDays": "{days} days",
+      "create": "Create key",
+      "atCapacity": "You have reached the limit of {max} active keys. Revoke one to create another.",
+      "copied": "Copied",
+      "copyFailed": "Copy failed, select the text manually",
+      "revoked": "Key revoked",
+      "error": "The operation failed, please try again",
+      "errors": {
+        "tooManyKeys": "You have reached the limit of active keys",
+        "validationError": "The key name is invalid",
+        "mcpDisabled": "The MCP server is disabled on this instance"
+      },
+      "created": {
+        "title": "Your new key",
+        "warning": "Copy it now: it will never be shown again.",
+        "keyLabel": "Key",
+        "copyKey": "Copy the key",
+        "commandLabel": "Setup command",
+        "copyCommand": "Copy the command"
+      },
+      "list": {
+        "title": "Your keys",
+        "empty": "No keys yet.",
+        "created": "Created {date}",
+        "expires": "Expires {date}",
+        "lastUsed": "Last used {date}",
+        "neverUsed": "Never used",
+        "revoked": "Revoked",
+        "expired": "Expired",
+        "revoke": "Revoke key {name}"
+      }
     }
   },
   "status": {
