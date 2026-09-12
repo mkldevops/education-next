@@ -315,7 +315,9 @@ The whole surface is governed by a fourth `PlatformSetting` row, `mcp_enabled`, 
 `/dashboard/integrations` (a **platform** page on `requirePlatformAdmin()`). It reads the opposite way
 from the three sign-in flags: **absence of the row reads as disabled** (`readsAsOptedIn`,
 `src/domain/platform-settings.ts`). A write API for machines does not open itself on the deployment
-that ships its migration; only an affirmative value activates it.
+that ships its migration; only an affirmative value activates it. Like the three sign-in flags, the
+read is memoised per render, through `readPlatformOptInFlag()` — the opt-in sibling of
+`readPlatformFlag()` in the same `src/use-cases/platform-settings/read-platform-flag.ts`.
 
 ### Who may hold a key
 
