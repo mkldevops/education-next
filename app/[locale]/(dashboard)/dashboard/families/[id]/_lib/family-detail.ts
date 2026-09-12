@@ -1,6 +1,6 @@
 import { cache } from 'react'
 import { db } from '@/lib/db'
-import type { getFamilyBalance } from '@/use-cases/payments/family-balance'
+import type { FamilyBalance } from '@/use-cases/payments/family-balance'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
 
 /**
@@ -90,8 +90,6 @@ export type FamilyDetail = Extract<
   { status: 'found' }
 >['resource']
 
-type FamilyBalance = Awaited<ReturnType<typeof getFamilyBalance>>
-
 /**
  * Plans et classes proposés par les dialogues d'administration, vides pour un parent.
  */
@@ -150,6 +148,10 @@ export function deriveFamilyDetail(
     scopedStudentId: students.some((s) => s.person.student.id === studentId)
       ? studentId
       : undefined,
-    ...balance,
+    totalAmount: balance.totalAmount,
+    totalDiscount: balance.totalDiscount,
+    totalPaid: balance.totalPaid,
+    remainingBalance: balance.remainingBalance,
+    payableBalance: balance.payableBalance,
   }
 }

@@ -1,9 +1,7 @@
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
-import type { requireSchoolScope } from '../../_lib/auth-helper'
-
-type SchoolScope = Awaited<ReturnType<typeof requireSchoolScope>>
+import type { SchoolScope } from '../../_lib/auth-helper'
 
 /**
  * Compteurs, inscriptions récentes et solde parent d'une école, tous scopés par `scope`.

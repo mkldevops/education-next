@@ -25,6 +25,10 @@ notably, `biome.json` excludes CSS. The pre-push hook runs `pnpm test`.
 Use 2-space indentation, single quotes, no semicolons, ES5 trailing commas, and a 100-column target.
 Biome enforces `import type` for type-only imports.
 
+Biome does not check identifier or filename casing. Use `PascalCase` for components and types,
+`camelCase` for functions and variables, and descriptive kebab-case filenames such as
+`create-family.ts` and `edit-plan-dialog.tsx`.
+
 Use `biome-ignore` with the exact rule and a concrete reason when suppression is unavoidable:
 
 ```typescript
