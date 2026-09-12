@@ -74,10 +74,12 @@ Isolation rests on three layers. None is sufficient alone.
 `userId` before any school is known. All access goes through `src/gateways/school-member-gateway.ts`,
 which is the single read *and* write boundary for that model.
 
-Three named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
+Five named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
 school: the invitation read by its unique token (public flow), the Stripe webhook finding its
-transaction by `providerSessionId` (signed request, no session), and the seed and data scripts,
-which create the schools themselves.
+transaction by `providerSessionId` (signed request, no session), the reference count before a
+definitive account deletion (a platform question, detailed under *Soft deletion*), the retention
+purge of expired `McpDraft` rows (an instance-wide sweep, not a tenant read), and the seed and data
+scripts, which create the schools themselves.
 
 The `warn` journal was the working list of reads to scope. It is empty, which is what allowed the
 switch to `throw`. `app/[locale]/(dashboard)/__tests__/render-reads.test.tsx` keeps it that way: it
@@ -358,13 +360,15 @@ The 12-character `prefix` is the sole visual landmark of the list.
 
 The table is **excluded from `TENANT_SCOPED_MODELS`** for the reason already written for `SchoolMember`:
 it is a discovery table, read by `keyHash` before any school is known. Its single boundary is
-`src/gateways/mcp-api-key-gateway.ts` — no fifth exception in `src/lib/db-unscoped.ts`.
+`src/gateways/mcp-api-key-gateway.ts` — no further exception in `src/lib/db-unscoped.ts`.
 
 ### Route guards
 
-The order in `app/api/mcp/route.ts` is deliberate: IP rate limit → platform flag → credential → scope →
-per-key rate limit → handler. The flag is read before authentication so a closed instance answers `503`
-without touching the database for a key.
+The order in `app/api/mcp/route.ts` is deliberate: IP rate limit → retention sweep → platform flag →
+credential → scope → per-key rate limit → handler. The flag is read before authentication so a
+closed instance answers `503` without ever looking up a key. The sweep sits above the flag on
+purpose and is the one thing a closed instance still does, since retention cannot depend on the
+service being open.
 
 Two rate-limiting tiers because they measure different things. Claude reaches the server from Anthropic's
 infrastructure, not from the user's machine, so `x-forwarded-for` names a handful of shared egress
@@ -445,6 +449,33 @@ one killed between the claim and the transaction is reclaimable after
 `MCP_DRAFT_COMMIT_TIMEOUT_SECONDS` (60 s, `src/domain/mcp-draft.ts`) through `reclaim()`, which
 re-dates the lock under the same conditions as `claim()`. Without it a dead process would pin a draft
 on `commitInProgress` forever, and an agent that gave up would re-preview and write twice.
+
+**A draft does not outlive its usefulness.** `resolved` holds the raw reading of a photographed
+form — student names, birthdays, parent phone numbers — so an expired `PENDING` draft, one no human
+ever validated, is deleted as soon as it expires. A `COMMITTED` draft keeps its `result`, the only
+correct answer to a late replay, for **seven days past its expiry**
+(`MCP_DRAFT_COMMITTED_RETENTION_DAYS`, `src/domain/mcp-draft.ts`); after that the agent has given up
+and the business write lives elsewhere. The committed branch requires **both** `expiresAt` and
+`committedAt` past the retention: `reclaim()` re-dates an abandoned lock without looking at the
+expiry, so a draft expired eight days ago can be committed right now, and deleting it would tear the
+row out from under its transaction. Both branches filter on `expiresAt`, which is what finally gives
+`@@index([expiresAt])` a consumer.
+
+The sweep has no clock of its own. `purgeExpiredDrafts()`
+(`src/use-cases/mcp/purge-expired-drafts.ts`) runs from `POST /api/mcp` through `after()`, off the
+response path, at most once every `MCP_DRAFT_PURGE_INTERVAL_MINUTES` (15 min) per process. It is
+registered **before the platform flag**: retention does not depend on the service being open, or
+closing the MCP would freeze the sweep while personal data keeps expiring. No scheduler is deployed
+with this application, and a maintenance route would wait for a caller that does not exist;
+MCP traffic is the only available clock, and it is also the only traffic that creates
+drafts. Like the rate-limit counters, the interval is in-process: horizontal scaling multiplies the
+sweeps, which an idempotent `deleteMany` does not mind.
+
+The delete itself is a named tenant-guard exception, `purgeExpiredMcpDrafts` in
+`src/lib/db-unscoped.ts`, called by `mcpDraftGateway.purgeExpired` — which remains the model's single
+boundary. A retention sweep has no `schoolId` to offer, and the guard rejects an unscoped
+`deleteMany` on `db`; enumerating the schools to delete school by school would describe nothing the
+rows still belong to.
 
 `commit_enroll_family` owns **one `db.$transaction`** with direct `tx.*` calls, like
 `create-enrollment.ts`: no gateway accepts an injected client, and chaining the four use cases would

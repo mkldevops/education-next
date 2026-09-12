@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  committedRetentionBefore,
   draftExpiry,
   isDraftUsable,
   MCP_DRAFT_COMMIT_TIMEOUT_SECONDS,
+  MCP_DRAFT_COMMITTED_RETENTION_DAYS,
   MCP_DRAFT_TTL_MINUTES,
   staleCommitBefore,
 } from '../mcp-draft'
@@ -44,5 +46,19 @@ describe('staleCommitBefore', () => {
 
   it('stays far shorter than the draft time to live, which it must not outlive', () => {
     expect(MCP_DRAFT_COMMIT_TIMEOUT_SECONDS).toBeLessThan(MCP_DRAFT_TTL_MINUTES * 60)
+  })
+})
+
+describe('committedRetentionBefore', () => {
+  it('keeps a committed draft for the published retention, counted from its expiry', () => {
+    expect(now.getTime() - committedRetentionBefore(now).getTime()).toBe(
+      MCP_DRAFT_COMMITTED_RETENTION_DAYS * 24 * 60 * 60 * 1000
+    )
+  })
+
+  it('outlives the draft time to live, so a late replay still finds its recorded result', () => {
+    expect(now.getTime() - committedRetentionBefore(now).getTime()).toBeGreaterThan(
+      MCP_DRAFT_TTL_MINUTES * 60 * 1000
+    )
   })
 })
