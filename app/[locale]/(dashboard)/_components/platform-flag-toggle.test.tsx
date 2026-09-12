@@ -31,7 +31,7 @@ describe('PlatformFlagToggle', () => {
   })
 
   it('rolls back the optimistic toggle when the write is typed-refused', async () => {
-    const onSave = vi.fn(async () => 'unexpected' as never)
+    const onSave = vi.fn(async () => 'unexpected')
     render(<PlatformFlagToggle {...baseProps} onSave={onSave} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
