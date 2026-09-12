@@ -4,7 +4,7 @@ const familyGatewayMock = {
   findById: vi.fn(),
 }
 const enrollmentGatewayMock = {
-  findActiveByFamily: vi.fn(),
+  findPayableByFamily: vi.fn(),
 }
 const paymentGatewayMock = {
   createInTransaction: vi.fn(),
@@ -30,7 +30,7 @@ describe('recordPayment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     familyGatewayMock.findById = vi.fn()
-    enrollmentGatewayMock.findActiveByFamily = vi.fn()
+    enrollmentGatewayMock.findPayableByFamily = vi.fn()
     paymentGatewayMock.createInTransaction = vi.fn()
   })
 
@@ -87,7 +87,7 @@ describe('recordPayment', () => {
 
   it('should fail when no active enrollments found', async () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
-    enrollmentGatewayMock.findActiveByFamily.mockResolvedValue([])
+    enrollmentGatewayMock.findPayableByFamily.mockResolvedValue([])
 
     const result = await recordPayment({
       schoolId,
@@ -97,12 +97,12 @@ describe('recordPayment', () => {
       paidAt: new Date(),
     })
 
-    expect(result).toBe('noActiveEnrollments')
+    expect(result).toBe('noPayableEnrollments')
   })
 
   it('should fail when payment exceeds total balance', async () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
-    enrollmentGatewayMock.findActiveByFamily.mockResolvedValue([
+    enrollmentGatewayMock.findPayableByFamily.mockResolvedValue([
       {
         id: '550e8400-e29b-41d4-a716-446655440001',
         totalAmount: 100,
@@ -124,7 +124,7 @@ describe('recordPayment', () => {
 
   it('should succeed recording payment with valid data', async () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
-    enrollmentGatewayMock.findActiveByFamily.mockResolvedValue([
+    enrollmentGatewayMock.findPayableByFamily.mockResolvedValue([
       {
         id: '550e8400-e29b-41d4-a716-446655440001',
         totalAmount: 100,
@@ -147,7 +147,7 @@ describe('recordPayment', () => {
   it('should record payment with correct payment method', async () => {
     const paidAt = new Date()
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
-    enrollmentGatewayMock.findActiveByFamily.mockResolvedValue([
+    enrollmentGatewayMock.findPayableByFamily.mockResolvedValue([
       {
         id: '550e8400-e29b-41d4-a716-446655440001',
         totalAmount: 100,
@@ -176,7 +176,7 @@ describe('recordPayment', () => {
 
   it('should not subtract an enrollment discount twice', async () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
-    enrollmentGatewayMock.findActiveByFamily.mockResolvedValue([
+    enrollmentGatewayMock.findPayableByFamily.mockResolvedValue([
       {
         id: '550e8400-e29b-41d4-a716-446655440001',
         totalAmount: 80,

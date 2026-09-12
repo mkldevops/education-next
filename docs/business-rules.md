@@ -483,7 +483,7 @@ before anything is written.
 including how a payment divides across siblings — is the preview's and is stored in `resolved`; the
 commit reads it back, revalidates its shape, and writes it unchanged. What it does re-run, inside its
 own transaction, are the two counts the preview could only observe: **class occupancy** → `classFull`,
-and the family's **fresh balances** → `overpayment`, `noActiveEnrollments`, `refundExceedsPaid`, or
+and the family's **fresh balances** → `overpayment`, `noPayableEnrollments`, `refundExceedsPaid`, or
 `staleDraft` when the recomputed split no longer matches the one the human validated. Without that,
 two drafts prepared on the same free seat, or on the same outstanding balance, would both land. A
 plan computed on a stale reading must not silently become a different write, so a draft lives
@@ -579,17 +579,16 @@ leave an orphan family behind the first failure.
 | `commitInProgress` | a concurrent commit is still inside its transaction, and under 60 s old |
 | `notFound` | the class the preview resolved no longer exists |
 | `classFull` | the class filled up between the preview and the commit |
-| `overpayment` / `noActiveEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
+| `overpayment` / `noPayableEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
 | `staleDraft` | the recomputed split no longer matches the validated one |
 
 A refusal writes nothing and unlocks the draft, so the caller may fix the cause or preview again
 without waiting out the timeout.
 
-**The two pairs do not chain.** `enroll_family` creates its enrollments `PENDING`, while
-`record_payment` only distributes across `ACTIVE` ones — so a family enrolled through the MCP answers
-`noActiveEnrollments` until an admin validates the enrollment. The deposit taken by
-`commit_enroll_family` is the exception: it is written against the enrollments of that same call.
-Validation stays a dashboard decision, and that is deliberate.
+**The two pairs chain.** `enroll_family` creates its enrollments `PENDING`, and `record_payment`
+distributes across `PENDING` and `ACTIVE` ones alike — so a family enrolled through the MCP can pay
+its next instalment before an admin validates the enrollment. Validation stays a dashboard decision;
+collecting money does not wait for it.
 
 These discriminants answer an agent, not a dialog, so they carry no `messages/*.json` entry — the
 rule in [Surfacing a rule in the UI](#surfacing-a-rule-in-the-ui) applies to screens.
@@ -733,31 +732,45 @@ Atomic in one `db.$transaction`: the capacity count, the enrollment, and the cla
 
 Owner: `src/domain/payment.ts`, `src/use-cases/payments/`.
 
-### The two balances
+### One family balance
 
-This distinction is the source of most past confusion. Both are computed by
-`calculateFamilyBalance()` in `src/use-cases/payments/family-balance.ts`:
+**A family pays, not a student.** Four children enrolled at 180 make one debt of 720, settled in as
+many payments as the family wants. `calculateFamilyBalance()` in
+`src/use-cases/payments/family-balance.ts` computes that single figure:
 
-| Figure | Covers | Used for |
-|---|---|---|
-| `remainingBalance` | `PENDING` + `ACTIVE` enrollments | **Display.** What the family owes overall. |
-| `payableBalance` | `ACTIVE` enrollments only | **Collection.** What can be paid right now. |
+| Figure | Covers |
+|---|---|
+| `remainingBalance` | `PENDING` + `ACTIVE` enrollments, across every period |
+| `remainingAmountInCents` | the same figure, as the integer Stripe charges |
 
-A family can therefore owe money and still have nothing to pay: its only debt sits on an enrollment
-awaiting validation. Both the family page and the parent portal say so explicitly instead of showing
-a disabled control with no reason.
+An enrollment awaiting validation is owed and payable: the money is collected when the family hands
+it over, not when an admin gets to the enrollment. `CANCELLED` and `COMPLETED` enrollments are out.
 
 ### Recording a payment
 
 `recordPayment()` never targets one enrollment. It takes a family-level amount and **distributes it
-across that family's `ACTIVE` enrollments**, proportionally to each remaining balance.
+across that family's `PENDING` and `ACTIVE` enrollments**, proportionally to each remaining balance.
 
-- **No active enrollment** → `noActiveEnrollments`.
+- **No enrollment left to pay** → `noPayableEnrollments`.
 - **More than the family owes** → `overpayment`. The sum of remaining balances is the ceiling.
 - **Rounding is absorbed by the last enrollment**: earlier parts are rounded half-up and capped at
   their own remaining balance, and the last one takes `amount - alreadyDistributed`. The parts
   always sum to exactly the amount received.
 - **Zero is rejected** by the schema; a negative amount is a refund.
+- **Several payments are normal.** Each one is distributed against the balances left by the
+  previous ones, until the family owes nothing.
+
+### Displaying a payment
+
+The database keeps **one `Payment` row per enrollment**, so each enrollment knows what it received.
+Screens show what the family handed over instead: `groupFamilyPayments()` in
+`src/domain/payment.ts` folds the rows of one payment back into a single line with its split.
+
+- **Rows belong to one payment** when family, method, reference, payment date, cash date and
+  transaction all match, and they were written within five seconds of each other.
+- **One enrollment appears at most once per payment**, so two identical cash payments recorded back
+  to back stay two payments.
+- Enrollment pages still show the part that enrollment received.
 
 ### Refunds
 
@@ -777,8 +790,8 @@ the checkout flow, not by the form.
 `create-checkout-session.ts` / `complete-checkout-session.ts`.
 
 - Missing Stripe client or webhook secret → `notConfigured`. The feature degrades, it does not crash.
-- Nothing payable → `noBalance`. The session is always opened for the **full `payableBalance`**;
-  partial online payment is not offered.
+- Nothing owed → `noBalance`. The session is always opened for the **full `remainingBalance`**,
+  pending enrollments included; partial online payment is not offered.
 - The `PaymentTransaction` row is created **before** the Stripe session and its id is the
   idempotency key.
 - The webhook refuses anything that does not match: an already-seen provider event → `duplicate`;
@@ -994,7 +1007,7 @@ Real holes, verified against the running application. Not aspirations.
 - **The disabled "record a payment" button explains itself through `title` only** — unreachable by
   keyboard, since a disabled button takes no focus, and unannounced by screen readers.
 - **Manual payment cannot target a specific enrollment.** Distribution is always proportional across
-  every active enrollment of the family.
+  every `PENDING` or `ACTIVE` enrollment of the family.
 - **A `User.email` or `Invitation.email` row written before the normalization rule keeps its mixed
   case.** Every read lowers its needle, so such a row stays invisible to the account lookups and to
   the uniqueness guard, and a case-variant duplicate created earlier still coexists under the unique

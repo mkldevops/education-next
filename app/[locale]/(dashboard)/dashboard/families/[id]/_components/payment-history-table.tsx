@@ -1,6 +1,7 @@
 import { EmptyState } from '@peaklab/ui'
 import { Receipt } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
+import { type FamilyPayment, groupFamilyPayments } from '@/domain/payment'
 import type { Enrollment, Payment, PaymentMethod, Plan, Student } from '@/generated/prisma/client'
 import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
@@ -28,6 +29,29 @@ const METHOD_STYLES: Record<PaymentMethod, string> = {
   STRIPE: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
 }
 
+function Allocation({
+  payment,
+  locale,
+}: {
+  payment: FamilyPayment<PaymentWithRelation>
+  locale: string
+}) {
+  return (
+    <ul className="space-y-0.5">
+      {payment.lines.map((line) => (
+        <li key={line.id} className="flex items-baseline justify-between gap-3">
+          <span className="truncate text-graphite">
+            {line.enrollment.student.person.name} {line.enrollment.student.person.lastname}
+          </span>
+          <span className="shrink-0 text-xs tabular-nums text-graphite-600">
+            {formatCurrency(line.amount, locale)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function MethodBadge({ method, label }: { method: PaymentMethod; label: string }) {
   return (
     <span
@@ -48,8 +72,9 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
     return <EmptyState icon={Receipt} title={t('noPayments')} description={t('noPaymentsHint')} />
   }
 
-  const total = payments.reduce((sum, p) => sum + Number(p.amount), 0)
-  const pending = payments.filter((p) => p.method === 'CHECK' && !p.cashedAt)
+  const familyPayments = groupFamilyPayments(payments)
+  const total = familyPayments.reduce((sum, p) => sum + p.amount, 0)
+  const pending = familyPayments.filter((p) => p.method === 'CHECK' && !p.cashedAt)
   const pendingTotal = pending.reduce((sum, p) => sum + Number(p.amount), 0)
 
   return (
@@ -58,7 +83,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
         <div>
           <h2 className="text-base font-semibold text-graphite">{t('title')}</h2>
           <p className="mt-0.5 text-sm text-graphite-600">
-            {t('count', { count: payments.length })} · {formatCurrency(total, locale)}
+            {t('count', { count: familyPayments.length })} · {formatCurrency(total, locale)}
           </p>
         </div>
         {pending.length > 0 && (
@@ -76,7 +101,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
           <thead>
             <tr className="border-b border-alabaster-700 bg-alabaster-900/70">
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-graphite-600">
-                {t('student')}
+                {t('allocation')}
               </th>
               <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('amount')}
@@ -96,14 +121,10 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-alabaster-800">
-            {payments.map((payment) => (
+            {familyPayments.map((payment) => (
               <tr key={payment.id} className="transition-colors hover:bg-alabaster-900/70">
                 <td className="px-4 py-3">
-                  <p className="font-medium text-graphite">
-                    {payment.enrollment.student.person.name}{' '}
-                    {payment.enrollment.student.person.lastname}
-                  </p>
-                  <p className="text-xs text-graphite-600">{payment.enrollment.plan.name}</p>
+                  <Allocation payment={payment} locale={locale} />
                 </td>
                 <td className="px-4 py-3 text-right font-semibold tabular-nums text-graphite">
                   {formatCurrency(payment.amount, locale)}
@@ -152,30 +173,25 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
       </div>
 
       <ul className="space-y-3 md:hidden">
-        {payments.map((payment) => (
+        {familyPayments.map((payment) => (
           <li
             key={payment.id}
             className="rounded border border-alabaster-700 bg-white p-4 space-y-3"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate font-medium text-graphite">
-                  {payment.enrollment.student.person.name}{' '}
-                  {payment.enrollment.student.person.lastname}
-                </p>
-                <p className="truncate text-xs text-graphite-600">{payment.enrollment.plan.name}</p>
-              </div>
-              <p className="shrink-0 font-semibold tabular-nums text-graphite">
+              <p className="font-semibold tabular-nums text-graphite">
                 {formatCurrency(payment.amount, locale)}
               </p>
+              <MethodBadge method={payment.method} label={t(`methods.${payment.method}`)} />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <MethodBadge method={payment.method} label={t(`methods.${payment.method}`)} />
-              {payment.reference && (
-                <span className="font-mono text-xs text-graphite-600">{payment.reference}</span>
-              )}
+            <div className="text-sm">
+              <Allocation payment={payment} locale={locale} />
             </div>
+
+            {payment.reference && (
+              <p className="font-mono text-xs text-graphite-600">{payment.reference}</p>
+            )}
 
             <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
               <div className="flex gap-1.5">

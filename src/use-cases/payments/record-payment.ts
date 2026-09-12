@@ -1,6 +1,5 @@
 import type { z } from 'zod'
-import type { EnrollmentBalance } from '@/domain/payment'
-import { distributePayment } from '@/domain/payment'
+import { distributePayment, enrollmentBalances } from '@/domain/payment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
@@ -16,19 +15,9 @@ export async function recordPayment(input: Input) {
   const family = await familyGateway.findById(schoolId, parsed.data.familyId)
   if (!family) return 'notFound' as const
 
-  const enrollments = await enrollmentGateway.findActiveByFamily(schoolId, parsed.data.familyId)
+  const enrollments = await enrollmentGateway.findPayableByFamily(schoolId, parsed.data.familyId)
 
-  const balances: EnrollmentBalance[] = enrollments.map((e) => {
-    const totalPaid = e.payments.reduce((sum, p) => sum + Number(p.amount), 0)
-    return {
-      enrollmentId: e.id,
-      totalAmount: Number(e.totalAmount),
-      discount: Number(e.discount),
-      remainingBalance: Number(e.totalAmount) - totalPaid,
-    }
-  })
-
-  const distribution = distributePayment(parsed.data.amount, balances)
+  const distribution = distributePayment(parsed.data.amount, enrollmentBalances(enrollments))
   if (distribution.result !== 'OK') return distribution.result
 
   await paymentGateway.createInTransaction(

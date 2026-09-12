@@ -84,11 +84,11 @@ export const enrollmentGateway = {
       data: { discount, totalAmount },
     }),
 
-  findActiveByFamily: (schoolId: string, familyId: string) =>
+  findPayableByFamily: (schoolId: string, familyId: string) =>
     db.enrollment.findMany({
       where: {
         schoolId,
-        status: 'ACTIVE',
+        status: { in: ['PENDING', 'ACTIVE'] },
         student: {
           person: {
             families: {
@@ -97,7 +97,8 @@ export const enrollmentGateway = {
           },
         },
       },
-      include: { payments: true },
+      include: { payments: { where: { isActive: true } } },
+      orderBy: [{ registeredAt: 'asc' }, { id: 'asc' }],
     }),
 
   findEnrolledStudentIds: async (schoolId: string, periodId: string, studentIds: string[]) => {

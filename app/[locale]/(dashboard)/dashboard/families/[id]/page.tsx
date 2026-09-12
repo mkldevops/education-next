@@ -78,7 +78,6 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     totalDiscount,
     totalPaid,
     remainingBalance,
-    payableBalance,
   } = deriveFamilyDetail(family, familyBalance, studentId)
 
   const classOptions = classes.map((c) => ({
@@ -102,7 +101,6 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         studentsCount={students.length}
         enrollmentsCount={allEnrollments.length}
         remainingBalance={remainingBalance}
-        payableBalance={payableBalance}
         showActions={isAdmin}
       >
         {isAdmin && (
@@ -121,7 +119,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             />
             <RecordPaymentDialog
               families={[{ id: family.id, name: family.name }]}
-              remainingAmount={payableBalance}
+              remainingAmount={remainingBalance}
               defaultOpen={action === 'addPayment'}
               redirectTo={`/dashboard/families/${family.id}`}
               showTrigger={false}
@@ -183,7 +181,6 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 remainingBalance={remainingBalance}
                 totalDue={totalAmount}
                 totalDiscount={totalDiscount}
-                payableBalance={payableBalance}
               />
             ),
           },

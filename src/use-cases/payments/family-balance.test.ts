@@ -14,13 +14,11 @@ describe('calculateFamilyBalance', () => {
   it('returns an empty balance without enrollments', () => {
     expect(calculateFamilyBalance([])).toEqual({
       enrollments: [],
-      payableEnrollments: [],
       totalAmount: 0,
       totalDiscount: 0,
       totalPaid: 0,
       remainingBalance: 0,
-      payableBalance: 0,
-      payableAmountInCents: 0,
+      remainingAmountInCents: 0,
     })
   })
 
@@ -38,7 +36,7 @@ describe('calculateFamilyBalance', () => {
     expect(balance.totalAmount).toBe(80)
     expect(balance.totalDiscount).toBe(20)
     expect(balance.remainingBalance).toBe(80)
-    expect(balance.payableAmountInCents).toBe(8000)
+    expect(balance.remainingAmountInCents).toBe(8000)
   })
 
   it('subtracts partial payments and excludes paid enrollments from allocation', () => {
@@ -73,7 +71,7 @@ describe('calculateFamilyBalance', () => {
     ])
   })
 
-  it('keeps pending enrollments out of the payable balance', () => {
+  it('makes pending enrollments payable like active ones', () => {
     const balance = calculateFamilyBalance([
       {
         id: 'enrollment-1',
@@ -92,9 +90,8 @@ describe('calculateFamilyBalance', () => {
     ])
 
     expect(balance.remainingBalance).toBe(260)
-    expect(balance.payableBalance).toBe(60)
-    expect(balance.payableAmountInCents).toBe(6000)
-    expect(balance.payableEnrollments.map((e) => e.enrollmentId)).toEqual(['enrollment-1'])
+    expect(balance.remainingAmountInCents).toBe(26000)
+    expect(balance.enrollments.map((e) => e.enrollmentId)).toEqual(['enrollment-1', 'enrollment-2'])
   })
 
   it('rounds the checkout amount to integer cents', () => {
@@ -109,7 +106,7 @@ describe('calculateFamilyBalance', () => {
     ])
 
     expect(balance.remainingBalance).toBe(100.09)
-    expect(balance.payableAmountInCents).toBe(10009)
+    expect(balance.remainingAmountInCents).toBe(10009)
   })
 })
 
@@ -163,10 +160,27 @@ describe('getFamilyBalance', () => {
     expect(balance.totalAmount).toBe(1400)
     expect(balance.totalPaid).toBe(1200)
     expect(balance.remainingBalance).toBe(200)
-    expect(balance.payableBalance).toBe(200)
   })
 
-  it('keeps pending enrollments out of the payable balance across periods', async () => {
+  it('owes four enrollments of 180 as one family balance of 720', async () => {
+    dbMock.enrollment.findMany.mockResolvedValue(
+      ['a', 'b', 'c', 'd'].map((id, index) => ({
+        id,
+        status: index < 2 ? 'ACTIVE' : 'PENDING',
+        totalAmount: 180,
+        discount: 0,
+        payments: [],
+      }))
+    )
+
+    const balance = await getFamilyBalance(schoolId, 'family-1')
+
+    expect(balance.totalAmount).toBe(720)
+    expect(balance.remainingBalance).toBe(720)
+    expect(balance.enrollments).toHaveLength(4)
+  })
+
+  it('pays pending enrollments across periods', async () => {
     dbMock.enrollment.findMany.mockResolvedValue([
       {
         id: 'enrollment-2025',
@@ -187,7 +201,9 @@ describe('getFamilyBalance', () => {
     const balance = await getFamilyBalance(schoolId, 'family-1')
 
     expect(balance.remainingBalance).toBe(900)
-    expect(balance.payableBalance).toBe(100)
-    expect(balance.payableEnrollments.map((e) => e.enrollmentId)).toEqual(['enrollment-2025'])
+    expect(balance.enrollments.map((e) => e.enrollmentId)).toEqual([
+      'enrollment-2025',
+      'enrollment-2026',
+    ])
   })
 })

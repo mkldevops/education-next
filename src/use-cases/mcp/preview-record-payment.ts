@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 import { draftExpiry, type McpFinding } from '@/domain/mcp-draft'
-import { distributePayment, type EnrollmentBalance } from '@/domain/payment'
+import { distributePayment, enrollmentBalances } from '@/domain/payment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
@@ -40,20 +40,10 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
   }
 
   const family = candidates[0]
-  const enrollments = await enrollmentGateway.findActiveByFamily(schoolId, family.id)
-
-  const balances: EnrollmentBalance[] = enrollments.map((enrollment) => {
-    const totalPaid = enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
-    return {
-      enrollmentId: enrollment.id,
-      totalAmount: Number(enrollment.totalAmount),
-      discount: Number(enrollment.discount),
-      remainingBalance: Number(enrollment.totalAmount) - totalPaid,
-    }
-  })
+  const enrollments = await enrollmentGateway.findPayableByFamily(schoolId, family.id)
 
   let allocation: Array<{ enrollmentId: string; amount: number }> = []
-  const distribution = distributePayment(data.amount, balances)
+  const distribution = distributePayment(data.amount, enrollmentBalances(enrollments))
   if (distribution.result === 'OK') {
     allocation = distribution.distribution
   } else {

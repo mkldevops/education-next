@@ -10,12 +10,11 @@ import { createOnlinePaymentAction } from '../../../../_lib/online-payment-actio
 
 type Props = {
   amount: number
-  outstanding: number
   configured: boolean
   locale: string
 }
 
-export function OnlinePaymentButton({ amount, outstanding, configured, locale }: Props) {
+export function OnlinePaymentButton({ amount, configured, locale }: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.onlinePayment')
   const [isPending, startTransition] = useTransition()
 
@@ -33,12 +32,8 @@ export function OnlinePaymentButton({ amount, outstanding, configured, locale }:
     })
   }
 
-  if (outstanding <= 0) {
-    return <p className="text-sm font-medium text-emerald-700">{t('settled')}</p>
-  }
-
   if (amount <= 0) {
-    return <p className="text-sm text-amber-700">{t('notPayableYet')}</p>
+    return <p className="text-sm font-medium text-emerald-700">{t('settled')}</p>
   }
 
   return (

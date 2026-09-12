@@ -83,10 +83,10 @@ describe('payment distribution', () => {
       expect(result).not.toHaveProperty('distribution')
     })
 
-    it('should return noActiveEnrollments error for empty enrollments', () => {
+    it('should return noPayableEnrollments error for empty enrollments', () => {
       const result = distributePayment(100, [])
 
-      expect(result.result).toBe('noActiveEnrollments')
+      expect(result.result).toBe('noPayableEnrollments')
       expect(result).not.toHaveProperty('distribution')
     })
 

@@ -2,6 +2,7 @@ import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { groupFamilyPayments } from '@/domain/payment'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
@@ -66,12 +67,17 @@ export default async function PaymentsPage({ params }: Props) {
     orderBy: { paidAt: 'desc' },
   })
 
-  const paymentRows = payments.map((payment) => ({
+  const paymentRows = groupFamilyPayments(payments).map((payment) => ({
     id: payment.id,
-    enrollmentId: payment.enrollmentId,
-    familyName: payment.family.name,
-    studentName: `${payment.enrollment.student.person.name} ${payment.enrollment.student.person.lastname}`,
-    amount: Number(payment.amount),
+    familyId: payment.familyId,
+    familyName: payment.lines[0].family.name,
+    students: payment.lines
+      .map(
+        (line) =>
+          `${line.enrollment.student.person.name} ${line.enrollment.student.person.lastname}`
+      )
+      .join(', '),
+    amount: payment.amount,
     method: payment.method,
     reference: payment.reference,
     paidAt: payment.paidAt,

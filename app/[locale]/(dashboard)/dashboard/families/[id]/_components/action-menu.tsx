@@ -20,7 +20,6 @@ type Props = {
   familyId: string
   canEnroll: boolean
   canRecordPayment: boolean
-  hasUnpayableBalance?: boolean
 }
 
 type FamilyAction = 'addPayment' | 'addStudent' | 'addEnrollment' | 'editFamily' | 'archiveFamily'
@@ -35,7 +34,7 @@ type FamilyActionItem = {
   title?: string
 }
 
-export function ActionMenu({ familyId, canEnroll, canRecordPayment, hasUnpayableBalance }: Props) {
+export function ActionMenu({ familyId, canEnroll, canRecordPayment }: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.actions')
   const router = useRouter()
 
@@ -53,11 +52,7 @@ export function ActionMenu({ familyId, canEnroll, canRecordPayment, hasUnpayable
       icon: CreditCard,
       action: 'addPayment',
       disabled: !canRecordPayment,
-      title: canRecordPayment
-        ? undefined
-        : hasUnpayableBalance
-          ? t('payNoActiveEnrollment')
-          : t('payUnavailable'),
+      title: canRecordPayment ? undefined : t('payUnavailable'),
     },
     {
       key: 'newStudent',

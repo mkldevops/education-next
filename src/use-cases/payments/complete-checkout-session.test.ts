@@ -46,7 +46,7 @@ describe('completeCheckoutSession', () => {
     dbMock.paymentProviderEvent.findUnique.mockResolvedValue(null)
     findPaymentTransactionByProviderSessionIdMock.mockResolvedValue(transaction)
     getFamilyBalanceMock.mockResolvedValue({
-      payableEnrollments: [
+      enrollments: [
         {
           enrollmentId: 'enrollment-1',
           totalAmount: 60,
