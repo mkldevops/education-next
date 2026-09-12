@@ -234,8 +234,10 @@ Google toggle goes enabled → disabled while the count is greater than zero
 (`PlatformFlagToggle`'s `confirmDisable`,
 `app/[locale]/(dashboard)/_components/platform-flag-toggle.tsx`). Re-enabling stays the original
 one-click toggle, and so does disabling when the count is zero — the confirmation is additive
-friction on top of the existing optimistic toggle, not a new toggle shape, and the three other flags
-on this page (passkey, MCP, school switch) never receive it.
+friction on top of the existing optimistic toggle, not a new toggle shape. The passkey toggle on
+this same page never receives it either, and neither do the two other `PlatformFlagToggle`
+instances elsewhere in the dashboard — MCP on `/dashboard/integrations`, the school switch on
+`/dashboard/schools`.
 
 The recovery path itself needs no code: `/forgot-password` and `/reset-password` are public and read
 no platform flag. Better Auth's `resetPassword` handler creates the missing `credential` `Account`

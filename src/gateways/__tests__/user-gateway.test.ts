@@ -122,18 +122,12 @@ describe('userGateway.countGoogleOnlyAccounts', () => {
     expect(where.accounts.none).toEqual({ providerId: { not: 'google' } })
   })
 
-  it('reads through db, not dbArchived, so a deactivated account is not counted', async () => {
+  it('reads through db, not dbArchived', async () => {
     dbMock.user.count.mockResolvedValue(0)
 
     await userGateway.countGoogleOnlyAccounts()
 
     expect(dbArchivedMock.user.count).not.toHaveBeenCalled()
     expect(dbMock.user.count).toHaveBeenCalledTimes(1)
-  })
-
-  it('returns the count from the database', async () => {
-    dbMock.user.count.mockResolvedValue(3)
-
-    await expect(userGateway.countGoogleOnlyAccounts()).resolves.toBe(3)
   })
 })

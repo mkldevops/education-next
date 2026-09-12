@@ -1400,7 +1400,7 @@
           "notConfigured": "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are missing: the button stays hidden even when the setting is enabled.",
           "confirmDisable": {
             "title": "Disable Google sign-in?",
-            "description": "{count} account(s) have only Google as a sign-in method and would lose all access. They will be able to set a password from \"Forgot password\" to keep signing in.",
+            "description": "{count, plural, one {# account has only Google as a sign-in method and would lose all access} other {# accounts have only Google as a sign-in method and would lose all access}}. They will be able to set a password from \"Forgot password\" to keep signing in.",
             "confirm": "Disable anyway",
             "cancel": "Cancel"
           }

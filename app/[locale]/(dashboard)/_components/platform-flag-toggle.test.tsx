@@ -184,3 +184,65 @@ describe('PlatformFlagToggle confirmDisable dismissal', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })
+
+describe('PlatformFlagToggle confirmDisable checkbox consistency', () => {
+  const confirmDisable = {
+    title: 'Disable Google?',
+    description: '2 accounts would lose access',
+    confirmLabel: 'Disable anyway',
+    cancelLabel: 'Keep it on',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // #302 QA : le succès ne réappliquait jamais `next`, il supposait la case déjà dans
+  // le bon état optimiste. Un refus intercalé invalide cette hypothèse : la relance
+  // réussie laissait la case cochée alors que le réglage venait d'être désactivé.
+  it('reflects the persisted value once a retry succeeds after a failed attempt', async () => {
+    const onSave = vi.fn().mockResolvedValueOnce('unexpected').mockResolvedValueOnce('OK')
+    render(
+      <PlatformFlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />
+    )
+
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('button', { name: confirmDisable.confirmLabel }))
+
+    await waitFor(() => expect(screen.getByRole('checkbox')).toBeChecked())
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: confirmDisable.confirmLabel }))
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(screen.getByRole('checkbox')).not.toBeChecked())
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  // Même racine : une dissmiss pendant l'écriture roule en arrière optimiste, mais
+  // l'écriture en vol finit par réussir après coup — la case doit suivre le réglage
+  // réellement persisté, pas l'annulation apparente.
+  it('reflects the persisted value when a dismissal races an in-flight write', async () => {
+    let resolveSave: (value: string) => void = () => {}
+    const onSave = vi.fn(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveSave = resolve
+        })
+    )
+    render(
+      <PlatformFlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />
+    )
+
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('button', { name: confirmDisable.confirmLabel }))
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.getByRole('checkbox')).toBeChecked()
+
+    resolveSave('OK')
+
+    await waitFor(() => expect(refresh).toHaveBeenCalled())
+    expect(screen.getByRole('checkbox')).not.toBeChecked()
+  })
+})

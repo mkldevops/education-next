@@ -72,6 +72,11 @@ export function PlatformFlagToggle({
           toast.error(t('error'))
           return
         }
+        // Réapplique `next` plutôt que de supposer la case déjà dans cet état : un
+        // refus intercalé (relance) ou une confirmation abandonnée pendant que cette
+        // écriture était en vol (dismiss) l'ont pu remettre à `!next` entre-temps. La
+        // case ne doit jamais contredire le réglage qui vient d'être persisté.
+        setChecked(next)
         onSaved?.()
         router.refresh()
       } catch {
