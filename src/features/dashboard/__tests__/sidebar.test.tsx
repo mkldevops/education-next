@@ -288,8 +288,10 @@ describe('Sidebar school switcher', () => {
 
     expect(switchSchoolAction).toHaveBeenCalledWith('school-b')
     // L'action est invoquée synchroniquement dans la transition : l'attendre rendrait la main
-    // avant le traitement du refus. La retombée du voile signale la transition terminée, donc
-    // qu'un `router.refresh` fautif aurait déjà eu lieu.
+    // avant le traitement du refus. Le voile est donc déjà monté ici, et sa retombée signale la
+    // transition terminée — un `router.refresh` fautif aurait alors déjà eu lieu. Sans l'ancrage
+    // du montage, débrancher `isPending` rendrait l'attente vraie dès le premier contrôle.
+    expect(screen.getByRole('status')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
     expect(router.refresh).not.toHaveBeenCalled()
   })
