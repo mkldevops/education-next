@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { inSerializableTransaction } from '@/lib/serializable-transaction'
 
 const listSelect = {
   id: true,
@@ -50,7 +51,8 @@ export const mcpApiKeyGateway = {
    * Comptage et création dans une transaction `Serializable`, pour la même raison que
    * `schoolMemberGateway.changeMembershipRole` : compter puis insérer en deux appels
    * laisse deux créations concurrentes du même porteur lire le même total et franchir
-   * le plafond, seule borne sur le nombre de secrets durables qu'un compte peut émettre.
+   * le plafond, seule borne sur le nombre de secrets durables qu'un compte peut émettre
+   * sur une école.
    *
    * `maxLive` est passé par l'appelant : le plafond est une règle du domaine, l'atomicité
    * est une affaire de frontière.
@@ -66,22 +68,19 @@ export const mcpApiKeyGateway = {
     },
     limit: { now: Date; maxLive: number }
   ) =>
-    db.$transaction(
-      async (tx) => {
-        const live = await tx.mcpApiKey.count({
-          where: {
-            userId: data.userId,
-            schoolId: data.schoolId,
-            revokedAt: null,
-            expiresAt: { gt: limit.now },
-          },
-        })
-        if (live >= limit.maxLive) return 'tooManyKeys' as const
+    inSerializableTransaction(async (tx) => {
+      const live = await tx.mcpApiKey.count({
+        where: {
+          userId: data.userId,
+          schoolId: data.schoolId,
+          revokedAt: null,
+          expiresAt: { gt: limit.now },
+        },
+      })
+      if (live >= limit.maxLive) return 'tooManyKeys' as const
 
-        return tx.mcpApiKey.create({ data, select: listSelect })
-      },
-      { isolationLevel: 'Serializable' }
-    ),
+      return tx.mcpApiKey.create({ data, select: listSelect })
+    }),
 
   /**
    * Clés portées par un compte, toutes écoles et clés révoquées comprises : la question

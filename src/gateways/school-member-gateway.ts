@@ -1,5 +1,6 @@
 import type { SchoolRole } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
+import { inSerializableTransaction } from '@/lib/serializable-transaction'
 
 /**
  * Seule frontière de lecture ET de mutation de `SchoolMember`.
@@ -69,28 +70,25 @@ export const schoolMemberGateway = {
    * vider l'école de tout administrateur.
    */
   changeMembershipRole: (userId: string, schoolId: string, role: SchoolRole) =>
-    db.$transaction(
-      async (tx) => {
-        const member = await tx.schoolMember.findUnique({
-          where: { userId_schoolId: { userId, schoolId } },
-          select: { role: true },
-        })
-        if (!member) return 'notFound' as const
-        if (member.role === role) return 'OK' as const
+    inSerializableTransaction(async (tx) => {
+      const member = await tx.schoolMember.findUnique({
+        where: { userId_schoolId: { userId, schoolId } },
+        select: { role: true },
+      })
+      if (!member) return 'notFound' as const
+      if (member.role === role) return 'OK' as const
 
-        if (member.role === 'ADMIN') {
-          const admins = await tx.schoolMember.count({ where: { schoolId, role: 'ADMIN' } })
-          if (admins <= 1) return 'lastAdmin' as const
-        }
+      if (member.role === 'ADMIN') {
+        const admins = await tx.schoolMember.count({ where: { schoolId, role: 'ADMIN' } })
+        if (admins <= 1) return 'lastAdmin' as const
+      }
 
-        await tx.schoolMember.update({
-          where: { userId_schoolId: { userId, schoolId } },
-          data: { role },
-        })
-        return 'OK' as const
-      },
-      { isolationLevel: 'Serializable' }
-    ),
+      await tx.schoolMember.update({
+        where: { userId_schoolId: { userId, schoolId } },
+        data: { role },
+      })
+      return 'OK' as const
+    }),
 
   /**
    * Retire une appartenance, en refusant de retirer le dernier `ADMIN` de l'école.
@@ -100,23 +98,20 @@ export const schoolMemberGateway = {
    * suppression. Isolation `Serializable` pour la même raison que ci-dessus.
    */
   removeMembership: (userId: string, schoolId: string) =>
-    db.$transaction(
-      async (tx) => {
-        const member = await tx.schoolMember.findUnique({
-          where: { userId_schoolId: { userId, schoolId } },
-          select: { role: true },
-        })
-        if (!member) return 'notFound' as const
+    inSerializableTransaction(async (tx) => {
+      const member = await tx.schoolMember.findUnique({
+        where: { userId_schoolId: { userId, schoolId } },
+        select: { role: true },
+      })
+      if (!member) return 'notFound' as const
 
-        if (member.role === 'ADMIN') {
-          const admins = await tx.schoolMember.count({ where: { schoolId, role: 'ADMIN' } })
-          if (admins <= 1) return 'lastAdmin' as const
-        }
+      if (member.role === 'ADMIN') {
+        const admins = await tx.schoolMember.count({ where: { schoolId, role: 'ADMIN' } })
+        if (admins <= 1) return 'lastAdmin' as const
+      }
 
-        await tx.userFamily.deleteMany({ where: { userId, schoolId } })
-        await tx.schoolMember.delete({ where: { userId_schoolId: { userId, schoolId } } })
-        return 'OK' as const
-      },
-      { isolationLevel: 'Serializable' }
-    ),
+      await tx.userFamily.deleteMany({ where: { userId, schoolId } })
+      await tx.schoolMember.delete({ where: { userId_schoolId: { userId, schoolId } } })
+      return 'OK' as const
+    }),
 }

@@ -244,9 +244,12 @@ unrepresentable in the database as well as in the types.
   the active school; `User` has no `schoolId` and could not be filtered.
 - **Removing a member or demoting them cannot leave a school without an administrator.** The check
   and the mutation share one `Serializable` transaction in
-  `src/gateways/school-member-gateway.ts` → `lastAdmin`. Deactivating a platform account refuses
-  self-deactivation and refuses to remove the last active super-admin → `selfDeactivation`,
-  `lastSuperAdmin` (`app/[locale]/(dashboard)/_lib/user-actions.ts`).
+  `src/gateways/school-member-gateway.ts` → `lastAdmin`. Every such check-then-mutate goes through
+  `inSerializableTransaction` (`src/lib/serializable-transaction.ts`), which replays a serialization
+  abort (`P2034`) exactly once: PostgreSQL aborting one of two concurrent transactions is how the
+  rule holds, but the loser must get the verdict rather than an exception. Deactivating a platform
+  account refuses self-deactivation and refuses to remove the last active super-admin →
+  `selfDeactivation`, `lastSuperAdmin` (`app/[locale]/(dashboard)/_lib/user-actions.ts`).
 - **Platform account mutations require a super-admin** — granting or revoking platform level,
   profile edit, archiving, restoration, permanent deletion, session revocation, password reset,
   family link and unlink (`app/[locale]/(dashboard)/_lib/user-actions.ts`, `requirePlatformAdmin()`).
