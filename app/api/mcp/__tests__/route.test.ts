@@ -91,12 +91,20 @@ describe('POST /api/mcp', () => {
    * `toAuthInfo` refuse un cran plus bas.
    */
   it('forwards a request stripped of every credential header', async () => {
-    await POST(request({ authorization: 'Bearer edu_mcp_key', 'x-api-key': 'edu_mcp_key' }))
+    await POST(
+      request({
+        authorization: 'Bearer edu_mcp_key',
+        'x-api-key': 'edu_mcp_key',
+        cookie: 'better-auth.session_token=session-secret',
+        'proxy-authorization': 'Basic cHJveHk6c2VjcmV0',
+      })
+    )
 
     const [forwarded] = fetchMock.mock.calls[0]
     expect(forwarded.headers.get('authorization')).toBeNull()
     expect(forwarded.headers.get('x-api-key')).toBeNull()
-    expect([...forwarded.headers.values()].join(' ')).not.toContain('edu_mcp_key')
+    expect(forwarded.headers.get('cookie')).toBeNull()
+    expect(forwarded.headers.get('proxy-authorization')).toBeNull()
   })
 
   it('keeps the headers, method, url and body the SDK needs to serve the call', async () => {
@@ -117,6 +125,28 @@ describe('POST /api/mcp', () => {
     expect(forwarded.headers.get('mcp-protocol-version')).toBe('2026-07-28')
     expect(forwarded.headers.get('mcp-session-id')).toBe('session-1')
     expect(await forwarded.json()).toEqual({ jsonrpc: '2.0', id: 1, method: 'tools/list' })
+  })
+
+  /**
+   * Le SDK abandonne ses flux sur ce signal. Reconstruire la requête depuis son URL
+   * plutôt que depuis la requête elle-même le perdrait sans rien casser d'autre.
+   */
+  it('keeps the abort signal the SDK uses to tear down a call', async () => {
+    const controller = new AbortController()
+    const original = new Request('http://localhost:8550/api/mcp', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer edu_mcp_key' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+      signal: controller.signal,
+    })
+
+    await POST(original)
+
+    const [forwarded] = fetchMock.mock.calls[0]
+    expect(forwarded.signal.aborted).toBe(false)
+
+    controller.abort()
+    expect(forwarded.signal.aborted).toBe(true)
   })
 
   it('records the key usage off the response path', async () => {
