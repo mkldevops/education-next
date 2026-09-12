@@ -4,16 +4,13 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { cache } from 'react'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
-import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
-import { adminOrLinkedTo, resolveDeepLink } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
@@ -21,71 +18,11 @@ import { DeactivateStudentButton } from '../_components/deactivate-student-butto
 import { EditStudentDialog } from '../_components/edit-student-dialog'
 import { EnrollmentList } from './_components/enrollment-list'
 import { FamilyPanel } from './_components/family-panel'
+import { deriveStudentDetail, getStudentDialogData, resolveStudent } from './_lib/student-detail'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
 }
-
-/**
- * Résolveur unique de la page ET de `generateMetadata`.
- *
- * Le rattachement parent passe par `UserFamily` plutôt que par le `familyId` de l'école
- * active : c'est la seule forme qui reste vraie quand la ressource vit dans une autre
- * école autorisée.
- */
-const resolveStudent = cache((id: string) =>
-  resolveDeepLink({
-    requireAdmin: false,
-    find: (access) =>
-      db.student.findFirst({
-        where: {
-          id,
-          schoolId: { in: access.schoolIds },
-          ...adminOrLinkedTo(access, {
-            person: {
-              families: { some: { family: { users: { some: { userId: access.userId } } } } },
-            },
-          }),
-        },
-        include: {
-          person: {
-            include: {
-              families: {
-                include: {
-                  family: {
-                    include: {
-                      persons: {
-                        include: { person: { include: { phoneNumbers: true } } },
-                      },
-                    },
-                  },
-                },
-              },
-              phoneNumbers: true,
-            },
-          },
-          enrollments: {
-            where: { isActive: true },
-            include: {
-              plan: true,
-              classAssignments: {
-                include: {
-                  classPeriod: {
-                    include: {
-                      period: true,
-                      level: true,
-                    },
-                  },
-                },
-              },
-              payments: { where: { isActive: true } },
-            },
-            orderBy: { registeredAt: 'desc' as const },
-          },
-        },
-      }),
-  })
-)
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
@@ -123,45 +60,20 @@ export default async function StudentDetailPage({ params }: Props) {
 
   const selectedPeriodId = isAdmin ? await getSelectedPeriodId(student.schoolId) : null
 
-  const [plans, classes] = isAdmin
-    ? await Promise.all([
-        db.plan.findMany({
-          where: { schoolId: student.schoolId, isActive: true },
-          orderBy: { name: 'asc' },
-        }),
-        db.classPeriod.findMany({
-          where: {
-            schoolId: student.schoolId,
-            isActive: true,
-            ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
-          },
-          include: { level: true, period: true },
-          orderBy: { name: 'asc' },
-        }),
-      ])
-    : [[], []]
+  const { plans, classes } = await getStudentDialogData(student.schoolId, isAdmin, selectedPeriodId)
 
-  const fullName = `${student.person.name} ${student.person.lastname}`
-  const family = student.person.families[0]?.family ?? null
-  const birthday = new Date(student.birthday)
-  const age = Math.floor((Date.now() - birthday.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-
-  const totalDue = student.enrollments.reduce((sum, e) => sum + Number(e.totalAmount), 0)
-  const totalPaid = student.enrollments.reduce(
-    (sum, e) => sum + e.payments.reduce((acc, p) => acc + Number(p.amount), 0),
-    0
-  )
-  const remaining = Math.max(0, totalDue - totalPaid)
-  const activeEnrollments = student.enrollments.filter((e) => e.status === 'ACTIVE')
-  const payableRemaining = activeEnrollments.reduce(
-    (sum, e) =>
-      sum + Number(e.totalAmount) - e.payments.reduce((paid, p) => paid + Number(p.amount), 0),
-    0
-  )
-
-  const languagesAtHome = Array.isArray(student.languagesAtHome)
-    ? student.languagesAtHome.join(', ')
-    : ''
+  const {
+    fullName,
+    family,
+    birthday,
+    age,
+    totalDue,
+    totalPaid,
+    remaining,
+    activeEnrollments,
+    payableRemaining,
+    languagesAtHome,
+  } = deriveStudentDetail(student)
 
   const infoRows = [
     { label: t('birthplace'), value: student.birthplace },

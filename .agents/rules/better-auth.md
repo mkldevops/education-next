@@ -22,11 +22,11 @@ if (!session) return 'unauthorized' as const
 
 Never allow `session?.user.id` or another optional identity to reach a Prisma `where` clause.
 
-Dashboard operations use `requireAdmin()`, `requireRole()`, or `getSessionWithRole()` from
-`app/[locale]/(dashboard)/_lib/auth-helper.ts`. Parent reads must also constrain data by the linked
-`familyId`; resource pages return `notFound()` when the caller is outside that scope. If a parent has
-no linked family, deny access before building the query. Never pass an optional identity or scope into
-Prisma.
+Dashboard operations use `requireSchoolAdmin()`, `requireSchoolSession()`, `requireSchoolScope()`, or
+`requirePlatformAdmin()` from `app/[locale]/(dashboard)/_lib/auth-helper.ts`. Parent reads must also
+constrain data by the linked `familyId`; resource pages return `notFound()` when the caller is
+outside that scope. If a parent has no linked family, deny access before building the query. Never
+pass an optional identity or scope into Prisma.
 
 Role assignment is a privileged operation. Use an explicit allowed-role policy—ordinary admin access
 must not implicitly authorize creation or promotion of a `SUPER_ADMIN`.

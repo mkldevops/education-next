@@ -4,18 +4,16 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { getSelectedPeriod } from '@/features/dashboard/period'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { formatDate } from '@/lib/date'
-import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolContext } from '@/lib/school-context'
 import { isStripeConfigured } from '@/lib/stripe'
-import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { requireSchoolScope } from '../_lib/auth-helper'
 import { UnlinkedParentNotice } from './_components/unlinked-parent-notice'
+import { getDashboardOverview } from './_lib/dashboard-overview'
 import { OnlinePaymentButton } from './families/[id]/_components/online-payment-button'
 
 type Props = {
@@ -54,102 +52,21 @@ export default async function DashboardPage({ params }: Props) {
 
   const isAdmin = scope.isAdmin
 
-  const selectedPeriod = await getSelectedPeriod(scope.schoolId)
-  const selectedPeriodId = selectedPeriod?.id ?? null
-  const periodFilter = selectedPeriodId
-    ? { classAssignments: { some: { classPeriod: { periodId: selectedPeriodId } } } }
-    : {}
-
-  const [familyCount, studentCount, enrollmentCount, pendingPaymentCount, recentEnrollments] =
-    await Promise.all([
-      db.family.count({
-        where: {
-          schoolId: scope.schoolId,
-          isActive: true,
-          ...(scope.isAdmin ? {} : { id: scope.familyId }),
-        },
-      }),
-      db.student.count({
-        where: {
-          schoolId: scope.schoolId,
-          isActive: true,
-          person: {
-            families: {
-              some: scope.isAdmin ? {} : { familyId: scope.familyId },
-            },
-          },
-        },
-      }),
-      db.enrollment.count({
-        where: {
-          schoolId: scope.schoolId,
-          status: { in: ['PENDING', 'ACTIVE'] },
-          isActive: true,
-          ...periodFilter,
-          student: {
-            person: {
-              families: {
-                some: scope.isAdmin ? {} : { familyId: scope.familyId },
-              },
-            },
-          },
-        },
-      }),
-      db.enrollment.count({
-        where: {
-          schoolId: scope.schoolId,
-          status: 'PENDING',
-          isActive: true,
-          ...periodFilter,
-          student: {
-            person: {
-              families: {
-                some: scope.isAdmin ? {} : { familyId: scope.familyId },
-              },
-            },
-          },
-        },
-      }),
-      db.enrollment.findMany({
-        where: {
-          schoolId: scope.schoolId,
-          isActive: true,
-          ...periodFilter,
-          ...(scope.isAdmin
-            ? {}
-            : {
-                student: {
-                  person: {
-                    families: {
-                      some: { familyId: scope.familyId },
-                    },
-                  },
-                },
-              }),
-        },
-        include: {
-          student: {
-            include: {
-              person: true,
-            },
-          },
-          plan: true,
-          payments: true,
-        },
-        orderBy: { registeredAt: 'desc' },
-        take: 5,
-      }),
-    ])
+  const {
+    selectedPeriod,
+    familyCount,
+    studentCount,
+    enrollmentCount,
+    pendingPaymentCount,
+    recentEnrollments,
+    parentBalance,
+  } = await getDashboardOverview(scope)
 
   const periodScope = selectedPeriod
     ? t('stats.scopePeriod', { period: selectedPeriod.name })
     : t('stats.scopeAll')
 
   const userName = session?.user.name || 'User'
-  const parentBalance = !scope.isAdmin
-    ? await getFamilyBalance(scope.schoolId, scope.familyId)
-    : null
-
   const enrollmentColumns: Column<(typeof recentEnrollments)[number]>[] = [
     {
       key: 'student',
