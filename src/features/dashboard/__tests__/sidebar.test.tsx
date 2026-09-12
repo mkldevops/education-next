@@ -264,7 +264,7 @@ describe('Sidebar school switcher', () => {
     selectHorizon()
 
     await waitFor(() => expect(toastError).toHaveBeenCalled())
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
   })
 
   it('keeps the current school when the switch is refused', async () => {
