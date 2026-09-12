@@ -234,7 +234,7 @@ model Person {
   schoolId  String
   name      String   @db.VarChar(250)
   lastname  String   @db.VarChar(250)
-  sex       Sex
+  sex       Sex?
   email     String?  @db.VarChar(250)
   address   String?  @db.VarChar(250)
   postCode  String?  @db.VarChar(10)
@@ -272,7 +272,7 @@ model Student {
   id                 String   @id @default(uuid())
   schoolId           String
   personId           String
-  birthday           DateTime
+  birthday           DateTime?
   birthplace         String?  @db.VarChar(250)
   previousSchool     String?  @db.VarChar(250)
   healthNotes        String?  @db.Text

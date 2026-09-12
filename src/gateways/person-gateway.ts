@@ -7,7 +7,7 @@ export const personGateway = {
     data: {
       name: string
       lastname: string
-      sex: 'MALE' | 'FEMALE'
+      sex?: 'MALE' | 'FEMALE'
       email?: string
       address?: string
       postCode?: string
@@ -22,7 +22,7 @@ export const personGateway = {
     data: {
       name: string
       lastname: string
-      sex: 'MALE' | 'FEMALE'
+      sex?: 'MALE' | 'FEMALE'
       email?: string
       address?: string
       postCode?: string
@@ -53,7 +53,7 @@ export const personGateway = {
       person: {
         name?: string
         lastname?: string
-        sex?: 'MALE' | 'FEMALE'
+        sex?: 'MALE' | 'FEMALE' | null
         email?: string | null
         address?: string | null
         postCode?: string | null

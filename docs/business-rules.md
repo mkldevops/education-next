@@ -488,8 +488,9 @@ siblings, since no single one is the one in excess.
 and a single unconvertible field makes that listing throw for **all** tools, read tools included: the
 server becomes unusable. Dates therefore enter as ISO strings (`src/use-cases/mcp/schemas.ts`) and
 become `Date` in the use case, after the `safeParse`. A payment date is a day or a zoned timestamp
-(`z.iso.datetime({ offset: true })`); **a birthday is a day only** (`z.iso.date()`), because an
-offset timestamp would land on the previous UTC day where the dashboard stores UTC midnight. A test in `src/mcp/server.test.ts` runs `z.toJSONSchema()` over every registered tool,
+(`z.iso.datetime({ offset: true })`); **a birthday, when given, is a day only** (`z.iso.date()`),
+because an offset timestamp would land on the previous UTC day where the dashboard stores UTC
+midnight. A test in `src/mcp/server.test.ts` runs `z.toJSONSchema()` over every registered tool,
 because the failure shows up nowhere but in production.
 
 The duplicate probe is not defensive politeness. Prisma has **no uniqueness on `Family(schoolId,
@@ -797,7 +798,13 @@ A student is **skipped**, with the reason reported, when:
   to already be linked to the family → `notFound` otherwise. Person fields, relation type and the
   primary phone number are written in one transaction; `phoneNumber: null` deactivates that number
   instead of deleting it, and the first active number is the one edited.
-- **A student's birthday must be in the past** → `validationError` (`src/domain/student.ts`).
+- **A person's sex and a student's birthday are optional** — `Person.sex` and `Student.birthday`
+  are nullable. A paper enrollment sheet often carries neither, and a required field forced the
+  operator to invent a value that then read as real data. A form left blank sends `undefined` on
+  create and `null` on update, which clears the column; age is simply not shown.
+- **A family may be created without any parent**, on the dashboard and through `enroll_family` alike.
+- **A student's birthday, when given, must be in the past** → `validationError`
+  (`src/domain/student.ts`).
 - **A student carrying a `PENDING` or `ACTIVE` enrollment cannot be archived**
   → `hasActiveEnrollments`.
 - **A family cannot be archived either while any of its students holds one** — same discriminant,

@@ -67,10 +67,12 @@ function CreateStudentForm({ familyId }: { familyId: string }) {
         person: {
           name: formData.get('name') as string,
           lastname: formData.get('lastname') as string,
-          sex: formData.get('sex') as 'MALE' | 'FEMALE',
+          sex: (formData.get('sex') as 'MALE' | 'FEMALE' | '') || undefined,
         },
         student: {
-          birthday: new Date(formData.get('birthday') as string),
+          birthday: formData.get('birthday')
+            ? new Date(formData.get('birthday') as string)
+            : undefined,
           birthplace: (formData.get('birthplace') as string) || undefined,
           allergies: (formData.get('allergies') as string) || undefined,
           healthNotes: (formData.get('healthNotes') as string) || undefined,
@@ -113,20 +115,15 @@ function CreateStudentForm({ familyId }: { familyId: string }) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="student-sex">{t('sex')}</Label>
-              <Select id="student-sex" name="sex" required disabled={isPending}>
+              <Select id="student-sex" name="sex" disabled={isPending}>
+                <option value="">{t('unspecified')}</option>
                 <option value="MALE">{t('male')}</option>
                 <option value="FEMALE">{t('female')}</option>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="student-birthday">{t('birthday')}</Label>
-              <Input
-                id="student-birthday"
-                name="birthday"
-                type="date"
-                required
-                disabled={isPending}
-              />
+              <Input id="student-birthday" name="birthday" type="date" disabled={isPending} />
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

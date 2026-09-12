@@ -98,7 +98,7 @@ export async function getStudentDialogData(
 }
 
 export function deriveStudentDetail(student: StudentDetail) {
-  const birthday = new Date(student.birthday)
+  const birthday = student.birthday ? new Date(student.birthday) : null
   const totalDue = student.enrollments.reduce((sum, e) => sum + Number(e.totalAmount), 0)
   const totalPaid = student.enrollments.reduce(
     (sum, e) => sum + e.payments.reduce((acc, p) => acc + Number(p.amount), 0),
@@ -110,7 +110,9 @@ export function deriveStudentDetail(student: StudentDetail) {
     fullName: `${student.person.name} ${student.person.lastname}`,
     family: student.person.families[0]?.family ?? null,
     birthday,
-    age: Math.floor((Date.now() - birthday.getTime()) / (365.25 * 24 * 60 * 60 * 1000)),
+    age: birthday
+      ? Math.floor((Date.now() - birthday.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+      : null,
     totalDue,
     totalPaid,
     remaining: Math.max(0, totalDue - totalPaid),

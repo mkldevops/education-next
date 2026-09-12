@@ -12,7 +12,7 @@ export const familyGateway = {
       parents: Array<{
         name: string
         lastname: string
-        sex: 'MALE' | 'FEMALE'
+        sex?: 'MALE' | 'FEMALE'
         email?: string
         address?: string
         postCode?: string

@@ -118,6 +118,21 @@ describe('updateStudent', () => {
     expect(result).toHaveProperty('id', 'student-123')
   })
 
+  it('clears a birthday sent as null instead of dating it 1970', async () => {
+    // GIVEN
+    const input = {
+      schoolId: 'school-1',
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      birthday: null,
+    }
+
+    // WHEN
+    await updateStudent(input, gateway as unknown as Gateway)
+
+    // THEN
+    expect(gateway.updatedData).toMatchObject({ birthday: null })
+  })
+
   it('calls update with correct data', async () => {
     // GIVEN
     const input = {
