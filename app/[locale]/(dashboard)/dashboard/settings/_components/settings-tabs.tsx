@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import type { McpApiKeyView } from '../_lib/mcp-api-key-view'
 import { AccountSection } from './account-section'
 import { ApiKeysSection } from './api-keys-section'
-import { PasskeySection } from './passkey-section'
+import { type Passkey, PasskeySection } from './passkey-section'
 import { PasswordSection } from './password-section'
 import { ProfileSection } from './profile-section'
 import { SessionsSection } from './sessions-section'
@@ -34,6 +34,7 @@ type Props = {
   }
   sessions: SessionData[]
   linkedAccounts: LinkedAccount[]
+  passkeys: Passkey[]
   googleEnabled: boolean
   passkeyEnabled: boolean
   apiKeys: McpApiKeyView[] | null
@@ -43,6 +44,7 @@ export function SettingsTabs({
   user,
   sessions,
   linkedAccounts,
+  passkeys,
   googleEnabled,
   passkeyEnabled,
   apiKeys,
@@ -66,7 +68,7 @@ export function SettingsTabs({
             content: (
               <div className="space-y-6">
                 <PasswordSection />
-                <PasskeySection enabled={passkeyEnabled} />
+                <PasskeySection enabled={passkeyEnabled} initialPasskeys={passkeys} />
               </div>
             ),
           },

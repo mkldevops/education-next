@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next-intl', () => ({
@@ -26,17 +32,15 @@ vi.mock('@/actions', () => ({
   verifyPasskeyRegistration: vi.fn(),
 }))
 
-import { PasskeySection } from './passkey-section'
+vi.mock('@/lib/toast', () => ({
+  toast: { success: (message: string) => toastSuccess(message) },
+}))
+
+import { type Passkey, PasskeySection } from './passkey-section'
 
 const deletePasskey = vi.fn(async (_passkeyId: string) => 'OK' as const)
 const getUserPasskeys = vi.fn(async () => [] as Passkey[])
-
-type Passkey = {
-  id: string
-  name: string
-  deviceType: string
-  createdAt: Date
-}
+const toastSuccess = vi.fn()
 
 const macBook: Passkey = {
   id: 'pk_1',
@@ -45,59 +49,62 @@ const macBook: Passkey = {
   createdAt: new Date('2026-01-15T10:00:00Z'),
 }
 
-describe('PasskeySection with passkey sign-in disabled', () => {
-  beforeEach(() => {
-    deletePasskey.mockClear()
-    getUserPasskeys.mockReset()
-    getUserPasskeys.mockResolvedValue([])
-  })
+beforeEach(() => {
+  deletePasskey.mockClear()
+  toastSuccess.mockClear()
+  getUserPasskeys.mockReset()
+  getUserPasskeys.mockResolvedValue([])
+})
 
+describe('PasskeySection with passkey sign-in disabled', () => {
   it('keeps the existing passkeys listed and removable', async () => {
     getUserPasskeys.mockResolvedValue([macBook])
 
-    render(<PasskeySection enabled={false} />)
+    render(<PasskeySection enabled={false} initialPasskeys={[macBook]} />)
 
-    expect(await screen.findByText('MacBook Touch ID')).toBeInTheDocument()
+    expect(screen.getByText('MacBook Touch ID')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'delete' }))
 
     await waitFor(() => expect(deletePasskey).toHaveBeenCalledWith('pk_1'))
   })
 
-  it('drops the registration form and explains why', async () => {
-    getUserPasskeys.mockResolvedValue([macBook])
+  it('drops the registration form and explains why', () => {
+    render(<PasskeySection enabled={false} initialPasskeys={[macBook]} />)
 
-    render(<PasskeySection enabled={false} />)
-
-    // La liste rendue signe la fin de la transition de chargement : sans elle le bouton
-    // « Ajouter » s'appellerait encore `...` et son absence ne prouverait rien.
-    expect(await screen.findByText('MacBook Touch ID')).toBeInTheDocument()
     expect(screen.getByText('registrationDisabled')).toBeInTheDocument()
+    expect(screen.getByText('descriptionDisabled')).toBeInTheDocument()
+    expect(screen.queryByText('description')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('namePlaceholder')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'register' })).not.toBeInTheDocument()
   })
 
-  it('renders nothing when the user owns no passkey', async () => {
-    render(<PasskeySection enabled={false} />)
+  it('renders nothing when the user owns no passkey', () => {
+    render(<PasskeySection enabled={false} initialPasskeys={[]} />)
 
-    await waitFor(() => expect(getUserPasskeys).toHaveBeenCalled())
     expect(screen.queryByText('title')).not.toBeInTheDocument()
+  })
+
+  it('withdraws the card once the last passkey is deleted, and still confirms it', async () => {
+    render(<PasskeySection enabled={false} initialPasskeys={[macBook]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+
+    // Le bandeau de succès disparaîtrait avec la carte : la confirmation passe par une
+    // notification, seule à survivre au démontage.
+    await waitForElementToBeRemoved(() => screen.queryByText('title'))
+    expect(toastSuccess).toHaveBeenCalledWith('deleted')
   })
 })
 
 describe('PasskeySection with passkey sign-in enabled', () => {
-  beforeEach(() => {
-    deletePasskey.mockClear()
-    getUserPasskeys.mockReset()
-    getUserPasskeys.mockResolvedValue([])
-  })
+  it('offers the registration form even without any passkey', () => {
+    render(<PasskeySection enabled={true} initialPasskeys={[]} />)
 
-  it('offers the registration form even without any passkey', async () => {
-    render(<PasskeySection enabled={true} />)
-
-    expect(await screen.findByText('title')).toBeInTheDocument()
+    expect(screen.getByText('title')).toBeInTheDocument()
+    expect(screen.getByText('description')).toBeInTheDocument()
     expect(screen.getByLabelText('namePlaceholder')).toBeInTheDocument()
-    expect(await screen.findByRole('button', { name: 'register' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'register' })).toBeInTheDocument()
     expect(screen.queryByText('registrationDisabled')).not.toBeInTheDocument()
   })
 })

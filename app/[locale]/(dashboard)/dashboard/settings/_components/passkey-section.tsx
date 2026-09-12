@@ -5,7 +5,7 @@ import { startRegistration } from '@simplewebauthn/browser'
 import { KeyRound, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import {
   deletePasskey,
   getPasskeyRegistrationOptions,
@@ -13,8 +13,9 @@ import {
   verifyPasskeyRegistration,
 } from '@/actions'
 import { formatDate } from '@/lib/date'
+import { toast } from '@/lib/toast'
 
-type Passkey = {
+export type Passkey = {
   id: string
   name: string
   deviceType: string
@@ -24,6 +25,8 @@ type Passkey = {
 type Props = {
   /** Reflet de `passkey_sign_in_enabled` : gouverne le seul enregistrement. */
   enabled: boolean
+  /** Liste rendue par le serveur : la carte est juste, dès le premier rendu. */
+  initialPasskeys: Passkey[]
 }
 
 /**
@@ -33,27 +36,24 @@ type Props = {
  * retirer. `getUserPasskeys()` et `deletePasskey()` ne sont donc pas gardés par le
  * drapeau côté serveur, contrairement aux actions d'enregistrement.
  */
-export function PasskeySection({ enabled }: Props) {
+export function PasskeySection({ enabled, initialPasskeys }: Props) {
   const t = useTranslations('settings.passkey')
   const locale = useLocale()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [passkeys, setPasskeys] = useState<Passkey[]>([])
+  const [passkeys, setPasskeys] = useState<Passkey[]>(initialPasskeys)
   const [newName, setNewName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  // Pas de chargement au montage : `page.tsx` fournit la liste initiale. Ce rafraîchissement
+  // ne sert qu'après une mutation.
   const loadPasskeys = () => {
     startTransition(async () => {
       const data = await getUserPasskeys()
       setPasskeys(data)
     })
   }
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: chargement initial uniquement
-  useEffect(() => {
-    loadPasskeys()
-  }, [])
 
   const handleRegister = () => {
     if (!newName.trim()) {
@@ -102,7 +102,9 @@ export function PasskeySection({ enabled }: Props) {
         setError(t('deleteError'))
         return
       }
-      setSuccess(t('deleted'))
+      // Notification plutôt que bandeau : supprimer la dernière passkey d'un drapeau éteint
+      // démonte la carte dans le même rendu, et le bandeau partirait avec elle.
+      toast.success(t('deleted'))
       loadPasskeys()
     })
   }
@@ -117,7 +119,9 @@ export function PasskeySection({ enabled }: Props) {
         <KeyRound className="h-5 w-5 text-graphite-600" />
         <div>
           <h2 className="text-lg font-semibold text-graphite">{t('title')}</h2>
-          <p className="text-sm text-graphite-600">{t('description')}</p>
+          <p className="text-sm text-graphite-600">
+            {enabled ? t('description') : t('descriptionDisabled')}
+          </p>
         </div>
       </div>
 
@@ -147,7 +151,7 @@ export function PasskeySection({ enabled }: Props) {
                 disabled={isPending}
                 aria-label={t('delete', { name: pk.name })}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           ))}
