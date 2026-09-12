@@ -101,17 +101,21 @@ revoked or expired key), `403 forbidden` (deactivated account or school, or a me
 
 Every one of them works in the key's school and takes no arguments.
 
-| Tool | Returns |
+| Tool | Publishes |
 |---|---|
-| `describe_school` | the school the key opens |
-| `list_levels` | active levels, with their next level when defined |
-| `list_periods` | active school years, most recent first |
-| `list_class_periods` | active classes with capacity, level and period |
-| `list_plans` | active pricing plans and their amount, in cents |
-| `list_teachers` | active teachers |
+| `describe_school` | `id`, `name`, `slug` |
+| `list_levels` | `id`, `name`, `nextLevel { id, name }` |
+| `list_periods` | `id`, `name`, `startAt`, `endAt` |
+| `list_class_periods` | `id`, `name`, `capacity`, `level { id, name }`, `period { id, name }`, `teachers[].teacher { id, firstName, lastName }` |
+| `list_plans` | `id`, `name`, `amount` (in cents) |
+| `list_teachers` | `id`, `firstName`, `lastName` |
 
 They are the resolution layer: a label read on paper — "CE1 / 2026-2027", the name of a plan —
-becomes an identifier through these lists, before any write is attempted.
+becomes an identifier through these lists, before any write is attempted. That is also why the
+columns above are the whole of it: a teacher's `email` and `phone` are never published, because
+resolving a paper form needs an identity, not a way to contact anyone. Every column is named in
+`src/gateways/mcp-read-gateway.ts`, so widening the surface is an edit to that file, not a
+side effect of a schema change.
 
 ## Writing: the preview/commit pairs
 

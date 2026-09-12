@@ -8,11 +8,10 @@ import { validateStudentBirthday } from '@/domain/student'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
+import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { personGateway } from '@/gateways/person-gateway'
 import { draftChecksum } from '@/lib/mcp-draft-crypto'
-import { listClassPeriods } from '../class-periods/list-class-periods'
-import { listPlans } from '../plans/list-plans'
 import type { McpScope } from './resolve-mcp-scope'
 import { previewEnrollFamilySchema } from './schemas'
 
@@ -57,7 +56,10 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     }
   }
 
-  const [classPeriods, plans] = await Promise.all([listClassPeriods(schoolId), listPlans(schoolId)])
+  const [classPeriods, plans] = await Promise.all([
+    mcpReadGateway.listClassPeriods(schoolId),
+    mcpReadGateway.listPlans(schoolId),
+  ])
 
   const classMatches = matchByName(classPeriods, data.className)
   if (classMatches.length !== 1) {

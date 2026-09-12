@@ -392,6 +392,15 @@ runtime `406`, not a compile error.
 No `WWW-Authenticate: Bearer resource_metadata=…` and no `.well-known` route: the application operates no
 authorization server, and advertising that flow would send clients into a discovery loop.
 
+### Reads
+
+The six read tools do not reuse the dashboard's gateways. `src/gateways/mcp-read-gateway.ts` carries
+one explicit `select` per tool and is the only boundary they read through. Reusing
+`teacherGateway.list` published every column of `Teacher`, `email` and `phone` included, and any
+column added to the model later would have followed it into the model provider's context without a
+single MCP review. The published surface is therefore written where the MCP reads, not where a
+screen is built; `docs/mcp.md` lists the columns.
+
 ### Write drafts
 
 A write is never one call. **`preview_*` resolves and persists a plan, `commit_*` engages it**, and
