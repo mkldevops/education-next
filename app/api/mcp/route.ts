@@ -7,6 +7,7 @@ import { resolveMcpScope } from '@/use-cases/mcp/resolve-mcp-scope'
 import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { scopeFromAuthInfo, toAuthInfo } from './_lib/auth-info'
 import { readMcpCredential } from './_lib/credential'
+import { withoutCredentials } from './_lib/forwarded-request'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
       mcpApiKeyGateway.touch(scope.keyId, now, new Date(now.getTime() - LAST_USED_STALE_MS))
     )
 
-    return await handler.fetch(request, { authInfo: toAuthInfo(scope) })
+    return await handler.fetch(withoutCredentials(request), { authInfo: toAuthInfo(scope) })
   } catch (error) {
     console.error('[api/mcp] unexpected error:', error)
     return denied('serverError', 500)
