@@ -346,7 +346,10 @@ an API key is durable and will carry write access, so it must not exist in clear
 The 12-character `prefix` is the sole visual landmark of the list.
 
 - Expiry is mandatory: 30, 90 or 365 days, 90 by default. A key without an end of life is not a key.
-- Revocation writes `revokedAt`; the row is never deleted, so the audit trail survives.
+- Revocation writes `revokedAt`; the row is never deleted, so the audit trail survives. The
+  `userId` foreign key is therefore `Restrict`, and `mcpApiKeyGateway.countForUser` makes a key —
+  revoked or not — block the permanent deletion of its holder's account. Cascading the account
+  deletion would have erased exactly the evidence this rule promises to keep.
 - Five live keys per (user, school) pair.
 
 The table is **excluded from `TENANT_SCOPED_MODELS`** for the reason already written for `SchoolMember`:
@@ -761,6 +764,11 @@ school, and it must see archived rows: an archived family still constrains the f
 ignoring it would report "deletable" and then fail on the constraint. It is therefore a named
 exception, `countRowsBlockingUserDeletion` in `src/lib/db-unscoped.ts`, on a connection with neither
 the guard nor the filter.
+
+That exception does not cover every blocker. `McpApiKey` is counted through its own boundary,
+`mcpApiKeyGateway.countForUser`, because the model is outside the tenant guard and has no
+`isActive`: the ordinary `db` connection already sees all of its rows, so dropping the guard would
+buy nothing. `deleteUser` sums both counts before asking `checkDeletion`.
 
 ## Known gaps
 
