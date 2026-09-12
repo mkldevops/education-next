@@ -1515,10 +1515,7 @@
       },
       "platformSwitch": {
         "title": "Bascule d'école",
-        "description": "Autorise les membres à changer d'école depuis la barre latérale. Un super-admin conserve la bascule même lorsque le réglage est éteint.",
-        "enabled": "Bascule autorisée",
-        "disabled": "Bascule désactivée",
-        "error": "Le réglage n'a pas pu être enregistré, réessayez"
+        "description": "Autorise les membres à changer d'école depuis la barre latérale. Un super-admin conserve la bascule même lorsque le réglage est éteint."
       }
     }
   },

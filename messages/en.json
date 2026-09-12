@@ -1515,10 +1515,7 @@
       },
       "platformSwitch": {
         "title": "School switching",
-        "description": "Lets members change school from the sidebar. A super-admin keeps the switch even when the setting is off.",
-        "enabled": "Switching allowed",
-        "disabled": "Switching turned off",
-        "error": "The setting could not be saved, try again"
+        "description": "Lets members change school from the sidebar. A super-admin keeps the switch even when the setting is off."
       }
     }
   },

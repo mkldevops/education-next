@@ -57,4 +57,23 @@ describe('PlatformFlagToggle', () => {
     expect(toastError).toHaveBeenCalledWith('error')
     expect(refresh).not.toHaveBeenCalled()
   })
+
+  it('associates only the description via aria-describedby when there is no hint', () => {
+    const onSave = vi.fn()
+    render(<PlatformFlagToggle {...baseProps} onSave={onSave} />)
+
+    const checkbox = screen.getByRole('checkbox')
+    const description = screen.getByText(baseProps.description)
+    expect(checkbox).toHaveAttribute('aria-describedby', description.id)
+  })
+
+  it('associates both the description and the hint via aria-describedby when a hint is present', () => {
+    const onSave = vi.fn()
+    render(<PlatformFlagToggle {...baseProps} hint="be careful" onSave={onSave} />)
+
+    const checkbox = screen.getByRole('checkbox')
+    const description = screen.getByText(baseProps.description)
+    const hint = screen.getByText('be careful')
+    expect(checkbox).toHaveAttribute('aria-describedby', `${description.id} ${hint.id}`)
+  })
 })
