@@ -169,6 +169,7 @@ describe('Sidebar school switcher', () => {
     router.refresh.mockClear()
     router.replace.mockClear()
     switchSchoolAction.mockClear()
+    toastError.mockClear()
     switchSchoolAction.mockResolvedValue('OK' as const)
   })
 
@@ -263,8 +264,13 @@ describe('Sidebar school switcher', () => {
 
     selectHorizon()
 
-    await waitFor(() => expect(toastError).toHaveBeenCalled())
-    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+    // `toast.error` est appelé avant la fin de la transition : attendre le seul mock rend la
+    // main pendant que le voile est encore monté. Les deux attentes partagent donc un
+    // `waitFor`, ancré sur le DOM, qui ne passe qu'une fois la transition retombée.
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalled()
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    })
   })
 
   it('keeps the current school when the switch is refused', async () => {
