@@ -189,6 +189,41 @@ describe('POST /api/mcp', () => {
 
     expect(cookieReads).not.toHaveBeenCalled()
   })
+
+  /**
+   * L'étage par adresse est un budget partagé : Claude atteint la route depuis une
+   * poignée d'adresses de sortie d'Anthropic, et sans `x-forwarded-for` tout le trafic
+   * retombe sur un seau unique. Le facturer au trafic authentifié rendrait `429` aux
+   * clés de toutes les autres écoles dès qu'une seule est active.
+   */
+  it('keeps a key budget out of the shared address budget', async () => {
+    const from = (headers: Record<string, string> = {}) =>
+      request({ 'x-forwarded-for': '203.0.113.12', ...headers })
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+    for (let i = 0; i < 121; i += 1) await POST(from())
+    expect((await POST(from())).status).toBe(429)
+
+    resolveMcpScopeMock.mockResolvedValue({ status: 'OK', scope })
+    const response = await POST(from({ authorization: 'Bearer edu_mcp_key' }))
+
+    expect(response.status).toBe(200)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('damps credential-less traffic before reading the platform flag', async () => {
+    const anonymous = () => request({ 'x-forwarded-for': '203.0.113.11' })
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+
+    const statuses: number[] = []
+    for (let i = 0; i < 120; i += 1) statuses.push((await POST(anonymous())).status)
+    expect(statuses.filter((status) => status !== 401)).toEqual([])
+
+    const refused = await POST(anonymous())
+
+    expect(refused.status).toBe(429)
+    expect(await refused.json()).toEqual({ error: 'tooManyRequests' })
+    expect(isMcpEnabledMock).toHaveBeenCalledTimes(120)
+  })
 })
 
 describe('unsupported methods', () => {

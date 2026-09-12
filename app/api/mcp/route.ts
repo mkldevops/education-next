@@ -17,11 +17,20 @@ export const dynamic = 'force-dynamic'
  *
  * Claude atteint ce serveur depuis l'infrastructure d'Anthropic, pas depuis le poste de
  * l'utilisateur : `x-forwarded-for` ne désigne qu'une poignée d'adresses de sortie
- * partagées. L'étage IP n'amortit donc que le flot non authentifié ; le vrai budget est
- * celui de la clé, donc d'un utilisateur sur une école, et il ne peut être appliqué
- * qu'après la résolution de portée.
+ * partagées, et sans l'en-tête tout le trafic retombe sur un seau unique. Une adresse
+ * n'est donc pas l'identité d'un appelant mais un budget commun à toutes les écoles :
+ * le facturer au trafic authentifié rendrait `429` aux clés des autres écoles dès
+ * qu'une seule est active, et bornerait le budget par clé bien avant sa valeur.
+ *
+ * L'étage par adresse ne couvre donc que ce qu'il est censé amortir — les requêtes qui
+ * ne présentent aucune clé — et le vrai budget est celui de la clé, donc d'un
+ * utilisateur sur une école, appliqué après la résolution de portée.
+ *
+ * Une clé bien formée mais inconnue échappe par conséquent à tout étage : elle coûte un
+ * `findByHash` indexé, et l'y soumettre par adresse recréerait exactement le déni entre
+ * écoles que cette séparation supprime.
  */
-const isIpRateLimited = createRateLimiter({ limit: 120, windowMs: 60 * 1000 })
+const isAnonymousRateLimited = createRateLimiter({ limit: 120, windowMs: 60 * 1000 })
 const isKeyRateLimited = createRateLimiter({ limit: 600, windowMs: 60 * 1000 })
 
 const LAST_USED_STALE_MS = 60 * 1000
@@ -43,11 +52,16 @@ function denied(error: string, status: number) {
  */
 export async function POST(request: Request) {
   try {
-    if (isIpRateLimited(getClientIp(request))) return denied('tooManyRequests', 429)
+    // Lecture d'en-tête pure, donc gratuite : elle décide de l'étage à appliquer avant
+    // que le drapeau plateforme ne coûte une lecture en base.
+    const credential = readMcpCredential(request.headers)
+    if (!credential && isAnonymousRateLimited(getClientIp(request))) {
+      return denied('tooManyRequests', 429)
+    }
 
     if (!(await isMcpEnabled())) return denied('mcpDisabled', 503)
 
-    const result = await resolveMcpScope(readMcpCredential(request.headers))
+    const result = await resolveMcpScope(credential)
     if (result.status === 'unauthenticated') return denied('unauthorized', 401)
     if (result.status === 'forbidden') return denied('forbidden', 403)
 
