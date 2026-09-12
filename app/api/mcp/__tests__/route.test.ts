@@ -158,7 +158,7 @@ describe('POST /api/mcp', () => {
 
     expect(touchMock).not.toHaveBeenCalled()
 
-    afterMock.mock.calls[0][0]()
+    afterMock.mock.calls[1][0]()
     expect(touchMock).toHaveBeenCalledWith('key-1', expect.any(Date), expect.any(Date))
   })
 
@@ -167,7 +167,21 @@ describe('POST /api/mcp', () => {
 
     expect(purgeExpiredDraftsMock).not.toHaveBeenCalled()
 
-    afterMock.mock.calls[1][0]()
+    afterMock.mock.calls[0][0]()
+    expect(purgeExpiredDraftsMock).toHaveBeenCalledWith(expect.any(Date))
+  })
+
+  /**
+   * La rétention ne dépend pas de l'ouverture du service : une instance fermée continue de
+   * balayer, sinon des données personnelles expirées survivraient au drapeau.
+   */
+  it('still sweeps while the platform flag is off', async () => {
+    isMcpEnabledMock.mockResolvedValue(false)
+
+    const response = await POST(authorized())
+
+    expect(response.status).toBe(503)
+    afterMock.mock.calls[0][0]()
     expect(purgeExpiredDraftsMock).toHaveBeenCalledWith(expect.any(Date))
   })
 

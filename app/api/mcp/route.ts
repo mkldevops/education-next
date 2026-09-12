@@ -46,6 +46,12 @@ export async function POST(request: Request) {
   try {
     if (isIpRateLimited(getClientIp(request))) return denied('tooManyRequests', 429)
 
+    const now = new Date()
+
+    // Avant le drapeau : la rétention ne dépend pas de l'ouverture du service. Fermer le MCP
+    // arrêterait sinon le balayage tout en laissant expirer des données personnelles.
+    after(() => purgeExpiredDrafts(now))
+
     if (!(await isMcpEnabled())) return denied('mcpDisabled', 503)
 
     const result = await resolveMcpScope(readMcpCredential(request.headers))
@@ -55,11 +61,9 @@ export async function POST(request: Request) {
     const { scope } = result
     if (isKeyRateLimited(scope.keyId)) return denied('tooManyRequests', 429)
 
-    const now = new Date()
     after(() =>
       mcpApiKeyGateway.touch(scope.keyId, now, new Date(now.getTime() - LAST_USED_STALE_MS))
     )
-    after(() => purgeExpiredDrafts(now))
 
     return await handler.fetch(withoutCredentials(request), { authInfo: toAuthInfo(scope) })
   } catch (error) {

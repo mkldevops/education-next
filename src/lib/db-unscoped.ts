@@ -75,6 +75,12 @@ export async function countRowsBlockingUserDeletion(userId: string): Promise<num
  * d'énumérer les écoles pour supprimer partout : le `schoolId` ne décrit rien ici, et
  * les lignes visées n'appartiennent plus à personne — elles sont hors d'usage.
  *
+ * La branche engagée exige `expiresAt` ET `committedAt` hors rétention. `expiresAt` seul
+ * suffirait si un verrou n'était jamais re-daté, mais `reclaim()` repousse `committedAt`
+ * sans condition sur l'expiration : un brouillon expiré depuis huit jours, repris à
+ * l'instant par un `commit_*`, serait supprimé au milieu de sa transaction. `expiresAt`
+ * reste en tête pour l'index, `committedAt` ferme la fenêtre.
+ *
  * Appelée par `mcpDraftGateway.purgeExpired`, qui reste la seule frontière de `McpDraft`.
  */
 export async function purgeExpiredMcpDrafts(now: Date, committedBefore: Date): Promise<number> {
@@ -82,7 +88,11 @@ export async function purgeExpiredMcpDrafts(now: Date, committedBefore: Date): P
     where: {
       OR: [
         { status: 'PENDING', expiresAt: { lte: now } },
-        { status: 'COMMITTED', expiresAt: { lte: committedBefore } },
+        {
+          status: 'COMMITTED',
+          expiresAt: { lte: committedBefore },
+          committedAt: { lte: committedBefore },
+        },
       ],
     },
   })

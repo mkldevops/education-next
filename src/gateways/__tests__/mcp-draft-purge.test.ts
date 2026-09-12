@@ -73,6 +73,7 @@ describe.skipIf(!databaseUrl)('mcpDraftGateway.purgeExpired', () => {
       new Date(now.getTime() - 8 * day),
       new Date(now.getTime() - 8 * day)
     )
+    const reclaimedNow = await seedDraft('e', 'COMMITTED', new Date(now.getTime() - 8 * day), now)
 
     await mcpDraftGateway.purgeExpired(now, committedRetentionBefore(now))
 
@@ -83,5 +84,6 @@ describe.skipIf(!databaseUrl)('mcpDraftGateway.purgeExpired', () => {
     expect(ids).toContain(freshResult)
     expect(ids).not.toContain(expiredPending)
     expect(ids).not.toContain(staleResult)
+    expect(ids).toContain(reclaimedNow)
   })
 })

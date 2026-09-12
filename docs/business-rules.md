@@ -74,11 +74,12 @@ Isolation rests on three layers. None is sufficient alone.
 `userId` before any school is known. All access goes through `src/gateways/school-member-gateway.ts`,
 which is the single read *and* write boundary for that model.
 
-Four named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
+Five named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
 school: the invitation read by its unique token (public flow), the Stripe webhook finding its
-transaction by `providerSessionId` (signed request, no session), the retention purge of expired
-`McpDraft` rows (an instance-wide sweep, not a tenant read), and the seed and data scripts, which
-create the schools themselves.
+transaction by `providerSessionId` (signed request, no session), the reference count before a
+definitive account deletion (a platform question, detailed under *Soft deletion*), the retention
+purge of expired `McpDraft` rows (an instance-wide sweep, not a tenant read), and the seed and data
+scripts, which create the schools themselves.
 
 The `warn` journal was the working list of reads to scope. It is empty, which is what allowed the
 switch to `throw`. `app/[locale]/(dashboard)/__tests__/render-reads.test.tsx` keeps it that way: it
@@ -452,15 +453,19 @@ form — student names, birthdays, parent phone numbers — so an expired `PENDI
 ever validated, is deleted as soon as it expires. A `COMMITTED` draft keeps its `result`, the only
 correct answer to a late replay, for **seven days past its expiry**
 (`MCP_DRAFT_COMMITTED_RETENTION_DAYS`, `src/domain/mcp-draft.ts`); after that the agent has given up
-and the business write lives elsewhere. Both branches filter on `expiresAt`, which is what makes
-`@@index([expiresAt])` worth its write cost, and never on `committedAt`: a commit still inside its
-transaction expired minutes ago, not a week.
+and the business write lives elsewhere. The committed branch requires **both** `expiresAt` and
+`committedAt` past the retention: `reclaim()` re-dates an abandoned lock without looking at the
+expiry, so a draft expired eight days ago can be committed right now, and deleting it would tear the
+row out from under its transaction. `expiresAt` leads the filter, which is what makes
+`@@index([expiresAt])` worth its write cost.
 
 The sweep has no clock of its own. `purgeExpiredDrafts()`
 (`src/use-cases/mcp/purge-expired-drafts.ts`) runs from `POST /api/mcp` through `after()`, off the
-response path, at most once every `MCP_DRAFT_PURGE_INTERVAL_MINUTES` (15 min) per process. No
-scheduler is deployed with this application, and a maintenance route would wait for a caller that
-does not exist; MCP traffic is the only available clock, and it is also the only traffic that creates
+response path, at most once every `MCP_DRAFT_PURGE_INTERVAL_MINUTES` (15 min) per process. It is
+registered **before the platform flag**: retention does not depend on the service being open, or
+closing the MCP would freeze the sweep while personal data keeps expiring. No scheduler is deployed
+with this application, and a maintenance route would wait for a caller that does not exist;
+MCP traffic is the only available clock, and it is also the only traffic that creates
 drafts. Like the rate-limit counters, the interval is in-process: horizontal scaling multiplies the
 sweeps, which an idempotent `deleteMany` does not mind.
 

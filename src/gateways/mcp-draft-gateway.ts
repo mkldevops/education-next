@@ -98,9 +98,10 @@ export const mcpDraftGateway = {
   /**
    * Supprime les brouillons hors d'usage, et rend enfin `@@index([expiresAt])` utile.
    *
-   * Les deux branches sont filtrées sur `expiresAt`, jamais sur `committedAt` : l'index porte cette
-   * colonne, et le `committedAt` d'un brouillon engagé précède toujours son expiration. Une
-   * transaction encore en vol est donc hors de portée — son expiration a moins d'une semaine.
+   * Un brouillon engagé n'est supprimé que si son expiration ET son `committedAt` sont hors
+   * rétention : `reclaim()` re-date un verrou abandonné sans regarder l'expiration, donc un
+   * brouillon vieux d'une semaine peut être engagé à l'instant, et le supprimer arracherait la
+   * ligne au milieu de sa transaction.
    *
    * La requête passe par l'exception nommée du garde tenant : une purge de rétention n'a pas de
    * `schoolId` à produire, et le garde refuse — à raison — un `deleteMany` non scopé sur `db`.
