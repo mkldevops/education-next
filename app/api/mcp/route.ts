@@ -3,6 +3,7 @@ import { after, NextResponse } from 'next/server'
 import { mcpApiKeyGateway } from '@/gateways/mcp-api-key-gateway'
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit'
 import { buildMcpServer } from '@/mcp/server'
+import { purgeExpiredDrafts } from '@/use-cases/mcp/purge-expired-drafts'
 import { resolveMcpScope } from '@/use-cases/mcp/resolve-mcp-scope'
 import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { scopeFromAuthInfo, toAuthInfo } from './_lib/auth-info'
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
     after(() =>
       mcpApiKeyGateway.touch(scope.keyId, now, new Date(now.getTime() - LAST_USED_STALE_MS))
     )
+    after(() => purgeExpiredDrafts(now))
 
     return await handler.fetch(withoutCredentials(request), { authInfo: toAuthInfo(scope) })
   } catch (error) {

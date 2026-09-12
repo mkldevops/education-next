@@ -10,7 +10,8 @@
  *     `providerSessionId` unique ;
  *  3. le décompte des références d'un compte avant sa suppression définitive — la
  *     question est plateforme, donc sans école, et doit voir les lignes archivées ;
- *  4. le seed et la migration legacy — ils créent les écoles elles-mêmes.
+ *  4. la purge des brouillons MCP expirés — un entretien de rétention, donc global ;
+ *  5. le seed et la migration legacy — ils créent les écoles elles-mêmes.
  *
  * Aucun autre appelant ne doit importer ce module.
  */
@@ -70,7 +71,26 @@ export async function countRowsBlockingUserDeletion(userId: string): Promise<num
 }
 
 /**
- * Exception 4 — seed et scripts de données uniquement. Ces programmes créent les
+ * Exception 4 — rétention, pas lecture de tenant. Un balayage par école demanderait
+ * d'énumérer les écoles pour supprimer partout : le `schoolId` ne décrit rien ici, et
+ * les lignes visées n'appartiennent plus à personne — elles sont hors d'usage.
+ *
+ * Appelée par `mcpDraftGateway.purgeExpired`, qui reste la seule frontière de `McpDraft`.
+ */
+export async function purgeExpiredMcpDrafts(now: Date, committedBefore: Date): Promise<number> {
+  const { count } = await client().mcpDraft.deleteMany({
+    where: {
+      OR: [
+        { status: 'PENDING', expiresAt: { lte: now } },
+        { status: 'COMMITTED', expiresAt: { lte: committedBefore } },
+      ],
+    },
+  })
+  return count
+}
+
+/**
+ * Exception 5 — seed et scripts de données uniquement. Ces programmes créent les
  * écoles et purgent des tables entières, deux opérations qu'aucun scope ne peut
  * décrire. Ne jamais importer depuis `app/**` ni `src/**`.
  */
