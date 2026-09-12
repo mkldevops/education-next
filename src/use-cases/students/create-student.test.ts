@@ -215,6 +215,28 @@ describe('createStudent', () => {
     expect(personGateway.createdData).not.toHaveProperty('sex')
   })
 
+  it('stores a birthday sent as null as unknown instead of dating it 1970', async () => {
+    // GIVEN
+    const input = {
+      schoolId: 'school-1',
+      familyId: '123e4567-e89b-12d3-a456-426614174000',
+      person: { name: 'Ylias', lastname: 'Youssouf' },
+      student: { birthday: null, languagesAtHome: [], snackAuthorization: false },
+    }
+
+    // WHEN
+    const result = await createStudent(
+      input as never,
+      familyGateway as unknown as FamilyGw,
+      personGateway as unknown as PersonGw,
+      studentGateway as unknown as StudentGw
+    )
+
+    // THEN
+    expect(result).toEqual({ id: 'student-123' })
+    expect(studentGateway.createdData).toMatchObject({ birthday: null })
+  })
+
   it('creates person with provided data', async () => {
     // GIVEN
     const input = {

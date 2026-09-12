@@ -6,7 +6,7 @@ export const studentGateway = {
     schoolId: string,
     data: {
       personId: string
-      birthday?: Date
+      birthday?: Date | null
       birthplace?: string
       previousSchool?: string
       healthNotes?: string

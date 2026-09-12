@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { personInputSchema } from '../families/schemas'
 
 const studentInputSchema = z.object({
-  birthday: z.coerce.date().optional(),
+  birthday: z.coerce.date().nullish(),
   birthplace: z.string().max(250).optional(),
   previousSchool: z.string().max(250).optional(),
   healthNotes: z.string().optional(),
@@ -24,4 +24,3 @@ export const updateStudentSchema = z
     id: z.string().uuid(),
   })
   .merge(studentInputSchema.partial())
-  .extend({ birthday: z.coerce.date().nullish() })

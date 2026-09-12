@@ -245,7 +245,6 @@
           "sex": "Sex",
           "male": "Male",
           "female": "Female",
-          "unspecified": "Not specified",
           "email": "Email",
           "phone": "Phone",
           "addressTitle": "Address",
