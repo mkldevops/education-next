@@ -333,7 +333,7 @@ existed.
 `McpApiKey` rows are created from the "API keys" tab of `/dashboard/settings`, which appears only for a
 school admin while the flag is on. The token is `edu_mcp_` plus 32 random bytes in base64url, **stored
 as SHA-256 only** and shown in clear exactly once. Unlike `Invitation.token` (short, single-use, mailed),
-an API key is durable and will carry write access, so it must not exist in clear in the database.
+an API key is durable and carries write access, so it must not exist in clear in the database.
 The 12-character `prefix` is the sole visual landmark of the list.
 
 - Expiry is mandatory: 30, 90 or 365 days, 90 by default. A key without an end of life is not a key.
@@ -374,6 +374,54 @@ into an error.
 
 No `WWW-Authenticate: Bearer resource_metadata=…` and no `.well-known` route: the application operates no
 authorization server, and advertising that flow would send clients into a discovery loop.
+
+### Write drafts
+
+A write is never one call. **`preview_*` resolves and persists a plan, `commit_*` engages it**, and
+the two are joined by an `McpDraft` row (`src/gateways/mcp-draft-gateway.ts`, the model's single
+boundary). The reason is the caller: the fields come from a photograph read by a vision model, so a
+human has to see the resolved plan — the class and the plan it picked, the split it computed —
+before anything is written.
+
+**The commit recomputes nothing.** Everything, down to how a payment divides across siblings, is
+decided by the preview and stored in `resolved`; the commit reads that plan back, revalidates its
+shape, and writes. A plan computed on a stale reading must not silently become a different write, so
+a draft lives **thirty minutes** (`MCP_DRAFT_TTL_MINUTES`, `src/domain/mcp-draft.ts`) and is then
+refused.
+
+**A non-empty `blockers` writes no draft at all**, so there is nothing to commit. Each entry names
+the field, the value read and the reason — `unknownClass`, `ambiguousPlan`, `classFull`,
+`overpayment`, `birthdayNotInThePast`. An opaque `validationError` would force a vision model to
+re-guess the whole form instead of correcting one digit. `warnings` is the opposite: an existing
+namesake or a receipt number already banked never blocks, because only a human can tell a duplicate
+from a sibling.
+
+The duplicate probe is not defensive politeness. Prisma has **no uniqueness on `Family(schoolId,
+name)`, none on a `Person` name, and `Payment.reference` is nullable and not unique**; the only
+structural guard is `Student @@unique([personId, schoolId])`. Duplication is prevented upstream, by
+`familyGateway.searchByName`, `personGateway.searchByName` and `paymentGateway.findByReference` —
+all narrow projections, because a model's context has no business holding `healthNotes` or an
+address.
+
+**The lock is single-pass**: `claim()` is a conditional `updateMany` on `(id, schoolId, tool,
+checksum, status: PENDING, expiresAt > now)`, never a read followed by a write. A client that
+retries after a network cut must see exactly one commit win; the loser re-reads the draft and
+returns the **recorded result**, which is the correct answer to a replay, not a second family.
+
+`commit_enroll_family` owns **one `db.$transaction`** with direct `tx.*` calls, like
+`create-enrollment.ts`: no gateway accepts an injected client, and chaining the four use cases would
+leave an orphan family behind the first failure.
+
+| Body | Cause |
+|---|---|
+| `validationError` | malformed `draftId`/`checksum`, or a stored plan of an older shape |
+| `draftNotFound` | unknown draft, or one belonging to the other tool |
+| `draftExpired` | past the thirty minutes |
+| `checksumMismatch` | the checksum does not match the plan that was shown |
+| `commitInProgress` | a concurrent commit is still inside its transaction |
+
+These discriminants answer an agent, not a dialog, so they carry no `messages/*.json` entry — the
+rule in [Surfacing a rule in the UI](#surfacing-a-rule-in-the-ui) applies to screens.
 
 ## User management
 

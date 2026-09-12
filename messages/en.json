@@ -1409,8 +1409,8 @@
         "description": "Open or close machine access to this instance.",
         "mcp": {
           "title": "MCP server",
-          "description": "Lets Claude and Codex read their school data through an API key. Each administrator creates their own keys from their settings.",
-          "hint": "Read-only for now, and closed by default: the surface will grow to writes."
+          "description": "Lets Claude and Codex read and write their school data through an API key. Each administrator creates their own keys from their settings.",
+          "hint": "Closed by default. A write takes two steps: the agent proposes a plan, a human commits it."
         }
       }
     },

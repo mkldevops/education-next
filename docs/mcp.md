@@ -97,9 +97,9 @@ Expected refusals: `503 mcpDisabled` (flag off), `401 unauthorized` (missing, ma
 revoked or expired key), `403 forbidden` (deactivated account or school, or a membership that is not
 `ADMIN`), `429 tooManyRequests`, `405 methodNotAllowed` on anything but `POST`.
 
-## Tools
+## Read tools
 
-Read-only, for now. Every one of them works in the key's school and takes no arguments.
+Every one of them works in the key's school and takes no arguments.
 
 | Tool | Returns |
 |---|---|
@@ -115,22 +115,23 @@ becomes an identifier through these lists, before any write is attempted.
 
 ## Writing: the preview/commit pairs
 
-**Not shipped yet.** The write tools land in the next two increments, in pairs:
+Two pairs are shipped. `create_teacher` and `record_teacher_expense` are not — a teacher sheet and a
+teacher expense note still go through the dashboard.
 
-| Tool | Paper it matches |
-|---|---|
-| `enroll_family` | a full enrollment form: family, parents, students, enrollment, deposit |
-| `record_payment` | a receipt or payment slip |
-| `create_teacher` | a teacher sheet |
-| `record_teacher_expense` | a teacher expense note |
+| Tool | Paper it matches | State |
+|---|---|---|
+| `enroll_family` | a full enrollment form: family, parents, students, enrollment, deposit | shipped |
+| `record_payment` | a receipt or payment slip | shipped |
+| `create_teacher` | a teacher sheet | not shipped |
+| `record_teacher_expense` | a teacher expense note | not shipped |
 
-The shape they will follow, and the reason for it:
+The shape, and the reason for it:
 
 ```text
 photo ──▶ agent extracts fields
       ──▶ preview_enroll_family(fields)
             → { draftId, checksum, plan, matches, warnings, blockers }
-            → writes nothing
+            → writes nothing but the draft
       ──▶ human reads the resolved plan
       ──▶ commit_enroll_family({ draftId, checksum })
             → family, parents, students, enrollment, payment
@@ -138,11 +139,23 @@ photo ──▶ agent extracts fields
 
 `preview_*` normalizes, validates field by field — an agent must be able to correct its reading,
 which an opaque `validationError` does not allow — resolves human labels into identifiers, and
-probes for duplicates. It persists a draft and returns a 12-character checksum.
+probes for duplicates. It persists a draft and returns a 12-character checksum. A non-empty
+`blockers` means no draft was written at all, so there is nothing to commit until the named field is
+fixed. `warnings` never blocks: an existing namesake or a receipt number already banked is for the
+human to judge.
 
 `commit_*` sends back the `draftId` and that checksum, not the payload: a model does not
 re-serialize two kilobytes byte for byte. The checksum proves the resolved plan was read; a
 single-pass lock makes a replay after a network cut return the recorded result instead of a second
-family.
+family. A draft lives thirty minutes.
 
-Until then, the six read tools are safe to leave connected: this server cannot write.
+Refusals a commit can return, as `{ "error": … }` with `isError`:
+
+| Body | Cause |
+|---|---|
+| `validationError` | malformed `draftId` or `checksum`, or a stored plan of an older shape |
+| `draftNotFound` | unknown draft, or a draft belonging to the other tool |
+| `draftExpired` | the thirty minutes ran out; run the preview again |
+| `checksumMismatch` | the checksum does not match the plan that was shown |
+| `commitInProgress` | a concurrent commit is still inside its transaction; retry |
+| `internalError` | anything unexpected, with the detail kept server-side |

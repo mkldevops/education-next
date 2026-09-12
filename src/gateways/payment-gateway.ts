@@ -48,6 +48,18 @@ export const paymentGateway = {
       orderBy: { paidAt: 'desc' },
     }),
 
+  /**
+   * `Payment.reference` n'est ni unique ni obligatoire en base : un numéro de reçu
+   * ressaisi ne heurte aucune contrainte. C'est ce que le `preview_*` MCP signale.
+   */
+  findByReference: (schoolId: string, reference: string) =>
+    db.payment.findMany({
+      where: { schoolId, reference },
+      select: { id: true, amount: true, paidAt: true },
+      orderBy: { paidAt: 'desc' },
+      take: 10,
+    }),
+
   calculateBalance: async (schoolId: string, enrollmentId: string) => {
     const result = await db.payment.aggregate({
       where: { schoolId, enrollmentId },
