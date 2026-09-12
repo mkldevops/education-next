@@ -369,13 +369,26 @@ addresses: the IP tier (120/min) only damps unauthenticated flooding, and **the 
 
 The IP tier is only worth its cost if its key cannot be chosen by the caller. `getClientIp`
 (`src/lib/rate-limit.ts`) therefore reads `x-forwarded-for` **from the right**, at
-`length - TRUSTED_PROXY_HOPS` (default `1`, clamped to the leftmost entry): the last hops were appended
-by our own proxies, while everything before them was sent by the client. Reading the first entry let a
-caller rotate a forged prefix and mint one counter per imagined address, so the only pre-auth brake was
-optional. `TRUSTED_PROXY_HOPS=0` declares that no forwarding header is verifiable and puts all pre-auth
-traffic in a single bucket. The tracked-key cap evicts the **least recently used** key, refreshed on
-refused calls too: evicting by insertion order dropped an established client before a freshly forged
-address, and let a blocked key buy a new budget by getting itself evicted.
+`length - TRUSTED_PROXY_HOPS` (default `1`, read strictly: anything but a plausible digit string
+falls back to that default): the last hops were appended by our own proxies, while everything before
+them was sent by the client. Reading the first entry let a caller rotate a forged prefix and mint one
+counter per imagined address, so the only pre-auth brake was optional.
+
+Two deliberate refusals rather than a lenient guess. A chain **shorter** than the declared hops did
+not traverse the announced proxies, so its entries are unattributable and the request falls into the
+single `unknown` bucket instead of an entry the caller picked. And there is **no `x-real-ip`
+fallback**: that scalar carries no hop count, `next start` already fills `x-forwarded-for` from the
+socket address when the header is absent, so the fallback would only ever have served a caller who
+sends an empty `x-forwarded-for` — the one case worth refusing.
+
+`TRUSTED_PROXY_HOPS=0` declares that no forwarding header is verifiable: every pre-auth request then
+shares one counter, so the passkey tier becomes 10 authentications per minute for the whole instance.
+Conversely, declaring fewer hops than the deployment really has buckets every caller behind the
+outermost proxy together — the hop count must match the deployment.
+
+The tracked-key cap evicts the **least recently used** key, refreshed on refused calls too: evicting
+by insertion order dropped an established client before a freshly forged address, and let a blocked
+key buy a new budget by getting itself evicted.
 
 `POST` only; `GET` and `DELETE` answer `405`. The route **never reads a cookie** and never calls
 `auth.api.getSession()`, so it carries no ambient authority and a browser cannot set `Authorization`

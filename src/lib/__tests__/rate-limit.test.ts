@@ -35,8 +35,14 @@ describe('getClientIp', () => {
     )
   })
 
-  it('takes the leftmost entry when the chain is shorter than the declared hops', () => {
+  it('refuses a chain shorter than the declared hops instead of trusting its prefix', () => {
     vi.stubEnv('TRUSTED_PROXY_HOPS', '3')
+
+    expect(ipOf({ 'x-forwarded-for': '203.0.113.7, 10.0.0.1' })).toBe('unknown')
+  })
+
+  it('reads the leftmost entry when the chain is exactly the declared hops', () => {
+    vi.stubEnv('TRUSTED_PROXY_HOPS', '2')
 
     expect(ipOf({ 'x-forwarded-for': '203.0.113.7, 10.0.0.1' })).toBe('203.0.113.7')
   })
@@ -48,17 +54,17 @@ describe('getClientIp', () => {
   })
 
   it('falls back to one trusted hop when the setting is unusable', () => {
-    for (const raw of ['', 'nonsense', '-1', '1.5']) {
+    for (const raw of ['', '  ', 'nonsense', '-1', '1.5', '1e1', '0x10', '99']) {
       vi.stubEnv('TRUSTED_PROXY_HOPS', raw)
       expect(ipOf({ 'x-forwarded-for': '198.51.100.9, 203.0.113.7' })).toBe('203.0.113.7')
     }
   })
 
-  it('falls back to the real-ip header, then to a constant bucket', () => {
+  it('never derives the bucket from a header carrying no hop count', () => {
     vi.stubEnv('TRUSTED_PROXY_HOPS', undefined)
 
-    expect(ipOf({ 'x-real-ip': '203.0.113.7' })).toBe('203.0.113.7')
-    expect(ipOf({ 'x-forwarded-for': '  ', 'x-real-ip': '203.0.113.7' })).toBe('203.0.113.7')
+    expect(ipOf({ 'x-real-ip': '203.0.113.7' })).toBe('unknown')
+    expect(ipOf({ 'x-forwarded-for': '  ', 'x-real-ip': '203.0.113.7' })).toBe('unknown')
     expect(ipOf({})).toBe('unknown')
   })
 })

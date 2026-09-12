@@ -2,6 +2,7 @@ type RateLimiterOptions = { limit: number; windowMs: number; maxTrackedKeys?: nu
 
 const DEFAULT_MAX_TRACKED_KEYS = 10_000
 const DEFAULT_TRUSTED_PROXY_HOPS = 1
+const MAX_TRUSTED_PROXY_HOPS = 4
 const UNKNOWN_CLIENT = 'unknown'
 
 /**
@@ -9,15 +10,20 @@ const UNKNOWN_CLIENT = 'unknown'
  *
  * Le défaut est `1` : l'image Docker sert `next start` derrière un proxy, jamais en
  * direct. `0` déclare qu'aucun en-tête de transfert n'est vérifiable et range donc tout
- * le trafic pré-auth dans un seul compteur — utile pour un exposant direct, au prix de
- * la granularité.
+ * le trafic pré-auth dans un seul compteur.
+ *
+ * Lecture stricte, parce qu'une valeur mal formée décide ici d'une frontière de
+ * confiance : `Number` accepterait `' '` comme `0` (un seul compteur pour l'instance
+ * entière) et `'0x10'` comme seize sauts (le compte déclaré dépasse alors la chaîne
+ * reçue, cf. `getClientIp`). Tout ce qui n'est pas une suite de chiffres dans la plage
+ * plausible retombe sur le défaut.
  */
 function trustedProxyHops(): number {
-  const raw = process.env.TRUSTED_PROXY_HOPS
-  if (!raw) return DEFAULT_TRUSTED_PROXY_HOPS
+  const raw = process.env.TRUSTED_PROXY_HOPS?.trim()
+  if (!raw || !/^\d+$/.test(raw)) return DEFAULT_TRUSTED_PROXY_HOPS
 
   const hops = Number(raw)
-  return Number.isInteger(hops) && hops >= 0 ? hops : DEFAULT_TRUSTED_PROXY_HOPS
+  return hops <= MAX_TRUSTED_PROXY_HOPS ? hops : DEFAULT_TRUSTED_PROXY_HOPS
 }
 
 /**
@@ -27,8 +33,15 @@ function trustedProxyHops(): number {
  * entrées viennent de nos proxys, tout ce qui précède a été envoyé par le client et peut
  * être inventé. Prendre la première entrée laissait donc un attaquant faire tourner son
  * propre préfixe et s'offrir autant de compteurs que d'adresses imaginées. L'adresse du
- * pair de notre proxy le plus externe est à `length - hops`, bornée à `0` quand la chaîne
- * est plus courte que les sauts déclarés — toutes ses entrées sont alors les nôtres.
+ * pair de notre proxy le plus externe est à `length - hops`.
+ *
+ * Une chaîne plus courte que les sauts déclarés n'a pas traversé les proxys annoncés :
+ * son contenu n'est plus attribuable, donc un seul compteur plutôt qu'une entrée choisie
+ * par l'appelant. Même raison pour l'absence de repli sur `x-real-ip` : ce scalaire ne
+ * porte aucun compte de sauts. `next start` renseigne lui-même `x-forwarded-for` depuis
+ * l'adresse de la socket quand l'en-tête est absent
+ * (`next/dist/server/base-server.js`, `??=`), donc le repli n'aurait servi que le cas où
+ * l'appelant envoie un `x-forwarded-for` vide — exactement celui qu'il faut refuser.
  */
 export function getClientIp(request: Request): string {
   const hops = trustedProxyHops()
@@ -39,11 +52,7 @@ export function getClientIp(request: Request): string {
     .map((hop) => hop.trim())
     .filter(Boolean)
 
-  return (
-    chain[Math.max(0, chain.length - hops)] ||
-    request.headers.get('x-real-ip')?.trim() ||
-    UNKNOWN_CLIENT
-  )
+  return chain.length < hops ? UNKNOWN_CLIENT : chain[chain.length - hops]
 }
 
 /**
