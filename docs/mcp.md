@@ -152,9 +152,9 @@ children across classes — "C4 / C2 / F" on a single line — and a single clas
 force the siblings into separate calls; each call creates a family, so the siblings would come back
 as duplicates. An unresolved label is a blocker naming the child: `students.2.className`.
 
-Dates are ISO strings, never anything else: `2018-04-02` or `2018-04-02T00:00:00Z`. A day alone
-suits a birthday read off paper, a full timestamp suits a terminal receipt. `02/04/2018` is
-refused.
+Dates are ISO strings, never anything else. A birthday is a day, `2018-04-02`. A payment date is a
+day or a timestamp with seconds and a zone, `2026-09-12T14:30:00Z` or `2026-09-12T14:30:00+02:00`.
+`02/04/2018` and a timestamp without a zone are refused.
 
 `commit_*` sends back the `draftId` and that checksum, not the payload: a model does not
 re-serialize two kilobytes byte for byte. The checksum proves the resolved plan was read; a

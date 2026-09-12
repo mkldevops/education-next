@@ -17,8 +17,8 @@ const phoneNumberFormat = /^\+?[\d\s().-]{6,20}$/
  * listing de **tous** les outils, lecture comprise, donc à rendre le serveur inutilisable.
  * La conversion en `Date` appartient au use case, après le `safeParse`.
  *
- * Le jour seul et l'horodatage complet sont acceptés : une fiche papier porte une date de
- * naissance sans heure, un reçu porte parfois l'horodatage du terminal.
+ * Le jour seul et l'horodatage complet sont acceptés pour un encaissement : un reçu porte
+ * parfois l'horodatage du terminal.
  */
 const isoDate = z.union([z.iso.date(), z.iso.datetime({ offset: true })])
 
@@ -42,7 +42,9 @@ const mcpParentSchema = mcpPersonSchema.extend({
  * en doublons.
  */
 const mcpStudentSchema = mcpPersonSchema.extend({
-  birthday: isoDate,
+  // Un jour de calendrier, pas un instant : un horodatage décalé (`+02:00`) tomberait la
+  // veille en UTC, là où le tableau de bord range la même date à minuit UTC.
+  birthday: z.iso.date(),
   birthplace: z.string().trim().max(250).optional(),
   className: z.string().trim().min(1).max(250),
 })

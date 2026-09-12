@@ -111,14 +111,21 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
       // `checkCapacity` répond pour une place : on lui présente la classe une fois les
       // premiers élèves assis, donc `wanted - 1` en plus.
       const enrolled = await classPeriodGateway.countEnrolled(schoolId, id)
-      if (checkCapacity(classPeriod.capacity, enrolled + wanted - 1) === 'OK') return null
-
-      return { field: 'students.className', value: classPeriod.name, reason: 'classFull' as const }
+      return checkCapacity(classPeriod.capacity, enrolled + wanted - 1) === 'OK' ? null : id
     })
   )
 
-  for (const check of seatChecks) {
-    if (check) blockers.push(check)
+  // Un blocage par enfant de la classe pleine, au chemin de son champ : l'agent corrige
+  // un élève, et aucun enfant de la classe n'est plus en trop qu'un autre.
+  const fullClasses = new Set(seatChecks.filter((id) => id !== null))
+  for (const [index, classPeriod] of studentClasses.entries()) {
+    if (!classPeriod || !fullClasses.has(classPeriod.id)) continue
+
+    blockers.push({
+      field: `students.${index}.className`,
+      value: data.students[index].className,
+      reason: 'classFull',
+    })
   }
 
   // La répartition est calculée ici, pas au commit : les inscriptions n'existent pas
@@ -186,8 +193,22 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     students: personMatches.flat(),
   }
 
-  const resolvedClasses = studentClasses.filter((row) => row !== null)
-  if (blockers.length > 0 || !plan || resolvedClasses.length !== data.students.length) {
+  // Chaque élève emporte sa classe dans le même élément : un filtre suivi d'un accès par
+  // index désalignerait élèves et classes au premier élève non résolu.
+  const students = data.students.flatMap(({ className, ...student }, index) => {
+    const classPeriod = studentClasses[index]
+    if (!classPeriod) return []
+
+    return [
+      {
+        ...student,
+        birthday: new Date(student.birthday).toISOString(),
+        classPeriod: { id: classPeriod.id, name: classPeriod.name },
+      },
+    ]
+  })
+
+  if (blockers.length > 0 || !plan || students.length !== data.students.length) {
     return { draftId: null, checksum: null, plan: null, matches, warnings, blockers }
   }
 
@@ -200,11 +221,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
       createdById: scope.userId,
     },
     parents: data.parents,
-    students: data.students.map(({ className, ...student }, index) => ({
-      ...student,
-      birthday: new Date(student.birthday).toISOString(),
-      classPeriod: { id: resolvedClasses[index].id, name: resolvedClasses[index].name },
-    })),
+    students,
     plan: { id: plan.id, name: plan.name, amount: planAmount },
     discount: data.discount,
     totalAmount,
