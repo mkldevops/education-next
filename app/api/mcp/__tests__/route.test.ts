@@ -84,6 +84,41 @@ describe('POST /api/mcp', () => {
     expect(JSON.stringify(options.authInfo)).not.toContain('edu_mcp_key')
   })
 
+  /**
+   * Le SDK passe la `Request` qu'il reçoit à la factory de serveur (`requestInfo`) et au
+   * contexte d'exécution des outils : elle est aussi lisible qu'`authInfo`. Transmettre
+   * l'originale ferait donc franchir la frontière à la clé présentée, exactement ce que
+   * `toAuthInfo` refuse un cran plus bas.
+   */
+  it('forwards a request stripped of every credential header', async () => {
+    await POST(request({ authorization: 'Bearer edu_mcp_key', 'x-api-key': 'edu_mcp_key' }))
+
+    const [forwarded] = fetchMock.mock.calls[0]
+    expect(forwarded.headers.get('authorization')).toBeNull()
+    expect(forwarded.headers.get('x-api-key')).toBeNull()
+    expect([...forwarded.headers.values()].join(' ')).not.toContain('edu_mcp_key')
+  })
+
+  it('keeps the headers, method, url and body the SDK needs to serve the call', async () => {
+    const original = request({
+      authorization: 'Bearer edu_mcp_key',
+      accept: 'application/json, text/event-stream',
+      'mcp-protocol-version': '2026-07-28',
+      'mcp-session-id': 'session-1',
+    })
+
+    await POST(original)
+
+    const [forwarded] = fetchMock.mock.calls[0]
+    expect(forwarded.method).toBe('POST')
+    expect(forwarded.url).toBe(original.url)
+    expect(forwarded.headers.get('content-type')).toBe('application/json')
+    expect(forwarded.headers.get('accept')).toBe('application/json, text/event-stream')
+    expect(forwarded.headers.get('mcp-protocol-version')).toBe('2026-07-28')
+    expect(forwarded.headers.get('mcp-session-id')).toBe('session-1')
+    expect(await forwarded.json()).toEqual({ jsonrpc: '2.0', id: 1, method: 'tools/list' })
+  })
+
   it('records the key usage off the response path', async () => {
     await POST(authorized())
 

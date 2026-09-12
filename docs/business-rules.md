@@ -369,7 +369,12 @@ addresses: the IP tier (120/min) only damps unauthenticated flooding, and **the 
 cross-origin — CSRF is impossible by construction rather than by `Origin` validation. That invariant is
 pinned by a test. `AuthInfo` carries the key's public `prefix` as its `token`, the `keyId` as
 `clientId` and the resolved scope in `extra` — never the presented key, which the SDK could serialize
-into an error.
+into an error. The same invariant holds one level higher: the SDK hands the `Request` it receives to
+the server factory and to every tool's execution context, so the route forwards a clone stripped of
+`Authorization`, `X-API-Key`, `Cookie` and `Proxy-Authorization`
+(`app/api/mcp/_lib/forwarded-request.ts`) rather than the original. Removal rather than an allowlist:
+the header set the protocol requires moves with the SDK, and a forgotten one would surface as a
+runtime `406`, not a compile error.
 
 ### Refusals
 
