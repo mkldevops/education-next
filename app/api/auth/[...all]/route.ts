@@ -24,6 +24,8 @@ function isSocialRequest(request: Request): boolean {
 
 async function guardSocial(request: Request): Promise<NextResponse | null> {
   if (!isSocialRequest(request)) return null
+  // Seul le drapeau est testé, pas `isGoogleConfigured` : sans identifiants, Better Auth
+  // échoue déjà de lui-même à l'étape suivante.
   if (await isGoogleSignInEnabled()) return null
 
   return NextResponse.json({ error: 'signInDisabled' }, { status: 403 })

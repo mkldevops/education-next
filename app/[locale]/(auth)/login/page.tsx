@@ -4,8 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { LoginForm } from '@/features/auth'
 import { redirect } from '@/i18n/routing'
 import { getSchoolContext } from '@/lib/school-context'
-import { isGoogleConfigured } from '@/lib/social-providers'
-import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-sign-in-enabled'
+import { isGoogleSignInAvailable } from '@/use-cases/platform-settings/is-google-sign-in-available'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 
 type Props = {
@@ -34,7 +33,7 @@ export default async function LoginPage({ params }: Props) {
 
   const [t, googleEnabled, passkeyEnabled] = await Promise.all([
     getTranslations('auth.login'),
-    isGoogleConfigured ? isGoogleSignInEnabled() : Promise.resolve(false),
+    isGoogleSignInAvailable(),
     isPasskeySignInEnabled(),
   ])
 

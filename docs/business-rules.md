@@ -190,6 +190,13 @@ empty strings and the redirect fails, so the setting alone must never surface th
 platform page states this rather than hiding the toggle — a super-admin needs to know the setting is
 inert and why.
 
+`isGoogleSignInAvailable()` (`src/use-cases/platform-settings/`) combines both conditions for the
+pages that decide whether to render the button, `/login` and `/dashboard/settings`.
+`/dashboard/auth-settings` keeps `isGoogleSignInEnabled()` and `isGoogleConfigured` separate on
+purpose: the toggle reflects the setting alone, and the hint above explains when it is inert.
+`app/api/auth/[...all]/route.ts` only checks the flag — an unconfigured environment already fails
+the redirect inside `betterAuth`, so the route does not need to test `isGoogleConfigured` too.
+
 Each flag is enforced on the server, not only in the UI, because both entry points are callable
 boundaries:
 

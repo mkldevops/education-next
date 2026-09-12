@@ -5,9 +5,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { getSchoolContext } from '@/lib/school-context'
-import { isGoogleConfigured } from '@/lib/social-providers'
 import { listMcpApiKeys } from '@/use-cases/mcp/list-mcp-api-keys'
-import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-sign-in-enabled'
+import { isGoogleSignInAvailable } from '@/use-cases/platform-settings/is-google-sign-in-available'
 import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 import { SettingsTabs } from './_components/settings-tabs'
@@ -62,7 +61,7 @@ export default async function SettingsPage({ params }: Props) {
   const linkedAccounts = accounts.filter((a) => a.providerId !== 'credential')
 
   const [googleEnabled, passkeyEnabled] = await Promise.all([
-    isGoogleConfigured ? isGoogleSignInEnabled() : Promise.resolve(false),
+    isGoogleSignInAvailable(),
     isPasskeySignInEnabled(),
   ])
 
