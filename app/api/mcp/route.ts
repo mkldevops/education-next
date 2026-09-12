@@ -1,5 +1,6 @@
 import { createMcpHandler } from '@modelcontextprotocol/server'
 import { after, NextResponse } from 'next/server'
+import { isWellFormedMcpKey } from '@/domain/mcp-key'
 import { mcpApiKeyGateway } from '@/gateways/mcp-api-key-gateway'
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit'
 import { buildMcpServer } from '@/mcp/server'
@@ -26,9 +27,9 @@ export const dynamic = 'force-dynamic'
  * ne présentent aucune clé — et le vrai budget est celui de la clé, donc d'un
  * utilisateur sur une école, appliqué après la résolution de portée.
  *
- * Une clé bien formée mais inconnue échappe par conséquent à tout étage : elle coûte un
- * `findByHash` indexé, et l'y soumettre par adresse recréerait exactement le déni entre
- * écoles que cette séparation supprime.
+ * Une clé bien formée mais inconnue échappe par conséquent à tout étage : elle coûte la
+ * lecture du drapeau puis un `findByHash` indexé, et l'y soumettre par adresse
+ * recréerait exactement le déni entre écoles que cette séparation supprime.
  */
 const isAnonymousRateLimited = createRateLimiter({ limit: 120, windowMs: 60 * 1000 })
 const isKeyRateLimited = createRateLimiter({ limit: 600, windowMs: 60 * 1000 })
@@ -52,10 +53,13 @@ function denied(error: string, status: number) {
  */
 export async function POST(request: Request) {
   try {
-    // Lecture d'en-tête pure, donc gratuite : elle décide de l'étage à appliquer avant
-    // que le drapeau plateforme ne coûte une lecture en base.
+    // Lecture et vérification de forme : deux opérations pures, donc gratuites, qui
+    // décident de l'étage avant que le drapeau plateforme ne coûte une lecture en base.
+    // Une chaîne mal formée ne présente pas de clé — l'exempter laisserait un en-tête
+    // quelconque échapper aux deux étages tout en payant cette lecture.
     const credential = readMcpCredential(request.headers)
-    if (!credential && isAnonymousRateLimited(getClientIp(request))) {
+    const presentsKey = credential !== null && isWellFormedMcpKey(credential)
+    if (!presentsKey && isAnonymousRateLimited(getClientIp(request))) {
       return denied('tooManyRequests', 429)
     }
 

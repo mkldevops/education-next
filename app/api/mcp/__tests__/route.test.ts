@@ -35,7 +35,13 @@ const request = (headers: Record<string, string> = {}) =>
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
   })
 
-const authorized = () => request({ authorization: 'Bearer edu_mcp_key' })
+/** Une clé réelle : la route choisit l'étage de limitation sur la forme de la clé. */
+const presentedKey = `edu_mcp_${'k'.repeat(43)}`
+
+/** Les étages sont module-level et leur fenêtre glisse sur 60 s : une adresse par test. */
+let addressSeq = 0
+
+const authorized = () => request({ authorization: `Bearer ${presentedKey}` })
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -81,7 +87,7 @@ describe('POST /api/mcp', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [, options] = fetchMock.mock.calls[0]
     expect(options.authInfo.extra.scope).toEqual(scope)
-    expect(JSON.stringify(options.authInfo)).not.toContain('edu_mcp_key')
+    expect(JSON.stringify(options.authInfo)).not.toContain(presentedKey)
   })
 
   /**
@@ -93,8 +99,8 @@ describe('POST /api/mcp', () => {
   it('forwards a request stripped of every credential header', async () => {
     await POST(
       request({
-        authorization: 'Bearer edu_mcp_key',
-        'x-api-key': 'edu_mcp_key',
+        authorization: `Bearer ${presentedKey}`,
+        'x-api-key': presentedKey,
         cookie: 'better-auth.session_token=session-secret',
         'proxy-authorization': 'Basic cHJveHk6c2VjcmV0',
       })
@@ -109,7 +115,7 @@ describe('POST /api/mcp', () => {
 
   it('keeps the headers, method, url and body the SDK needs to serve the call', async () => {
     const original = request({
-      authorization: 'Bearer edu_mcp_key',
+      authorization: `Bearer ${presentedKey}`,
       accept: 'application/json, text/event-stream',
       'mcp-protocol-version': '2026-07-28',
       'mcp-session-id': 'session-1',
@@ -135,7 +141,7 @@ describe('POST /api/mcp', () => {
     const controller = new AbortController()
     const original = new Request('http://localhost:8550/api/mcp', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer edu_mcp_key' },
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${presentedKey}` },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
       signal: controller.signal,
     })
@@ -181,7 +187,7 @@ describe('POST /api/mcp', () => {
     Object.defineProperty(withCookie.headers, 'get', {
       value: (name: string) => {
         if (name.toLowerCase() === 'cookie') cookieReads()
-        return name.toLowerCase() === 'authorization' ? 'Bearer edu_mcp_key' : null
+        return name.toLowerCase() === 'authorization' ? `Bearer ${presentedKey}` : null
       },
     })
 
@@ -197,21 +203,25 @@ describe('POST /api/mcp', () => {
    * clés de toutes les autres écoles dès qu'une seule est active.
    */
   it('keeps a key budget out of the shared address budget', async () => {
+    addressSeq += 1
+    const address = `203.0.113.${addressSeq}`
     const from = (headers: Record<string, string> = {}) =>
-      request({ 'x-forwarded-for': '203.0.113.12', ...headers })
+      request({ 'x-forwarded-for': address, ...headers })
     resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
-    for (let i = 0; i < 121; i += 1) await POST(from())
+    for (let i = 0; i < 120; i += 1) await POST(from())
     expect((await POST(from())).status).toBe(429)
 
     resolveMcpScopeMock.mockResolvedValue({ status: 'OK', scope })
-    const response = await POST(from({ authorization: 'Bearer edu_mcp_key' }))
+    const response = await POST(from({ authorization: `Bearer ${presentedKey}` }))
 
     expect(response.status).toBe(200)
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('damps credential-less traffic before reading the platform flag', async () => {
-    const anonymous = () => request({ 'x-forwarded-for': '203.0.113.11' })
+    addressSeq += 1
+    const address = `203.0.113.${addressSeq}`
+    const anonymous = () => request({ 'x-forwarded-for': address })
     resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
 
     const statuses: number[] = []
@@ -222,6 +232,24 @@ describe('POST /api/mcp', () => {
 
     expect(refused.status).toBe(429)
     expect(await refused.json()).toEqual({ error: 'tooManyRequests' })
+    expect(isMcpEnabledMock).toHaveBeenCalledTimes(120)
+  })
+
+  /**
+   * Une chaîne quelconque derrière `Bearer` n'est pas une clé. L'exempter de l'étage par
+   * adresse laisserait un en-tête vide de sens échapper aux deux étages tout en faisant
+   * payer, à chaque requête, la lecture en base du drapeau plateforme.
+   */
+  it('damps a malformed credential like credential-less traffic', async () => {
+    addressSeq += 1
+    const address = `203.0.113.${addressSeq}`
+    const malformed = () => request({ 'x-forwarded-for': address, authorization: 'Bearer x' })
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+
+    for (let i = 0; i < 120; i += 1) await POST(malformed())
+    const refused = await POST(malformed())
+
+    expect(refused.status).toBe(429)
     expect(isMcpEnabledMock).toHaveBeenCalledTimes(120)
   })
 })

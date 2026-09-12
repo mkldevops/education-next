@@ -358,22 +358,24 @@ it is a discovery table, read by `keyHash` before any school is known. Its singl
 
 ### Route guards
 
-The order in `app/api/mcp/route.ts` is deliberate: credential read → address rate limit, only for a
-request presenting no credential → platform flag → scope → per-key rate limit → handler. Reading the
-credential is a pure header parse, so it selects the applicable tier before the flag costs a database
-read; the flag is still read before authentication so a closed instance answers `503` without touching
-the database for a key.
+The order in `app/api/mcp/route.ts` is deliberate: credential read → address rate limit, charged to any
+request that does not present a well-formed key → platform flag → scope → per-key rate limit → handler.
+Reading the credential and checking its shape are pure operations, so they select the applicable tier
+before the flag costs a database read; the flag is still read before authentication so a closed instance
+answers `503` without touching the database for a key. Keying the tier on presence alone would let
+`Authorization: Bearer x` escape both tiers while still paying that read on every request.
 
 Two rate-limiting tiers because they measure different things. Claude reaches the server from Anthropic's
 infrastructure, not from the user's machine, so `x-forwarded-for` names a handful of shared egress
 addresses — and without that header every caller falls into the single `'unknown'` bucket. An address is
 therefore not a caller but a budget shared by every school, so the address tier (120/min) charges only
-what it is meant to damp: requests presenting no key. **The real budget is the key's** (600/min), one
-user on one school, applied after the scope resolution.
+what it is meant to damp: requests presenting no well-formed key. **The real budget is the key's**
+(600/min), one user on one school, applied after the scope resolution.
 
-A well-formed but unknown key consequently escapes every tier, at the cost of one indexed `findByHash`.
-Bounding it per address would recreate the cross-school denial this separation removes: a flood of
-failures from the shared egress address would refuse the valid keys arriving from it.
+A well-formed but unknown key consequently escapes every tier, at the cost of the platform-flag read
+then one indexed `findByHash`. Bounding it per address would recreate the cross-school denial this
+separation removes: a flood of failures from the shared egress address would refuse the valid keys
+arriving from it.
 
 `POST` only; `GET` and `DELETE` answer `405`. The route **never reads a cookie** and never calls
 `auth.api.getSession()`, so it carries no ambient authority and a browser cannot set `Authorization`
@@ -394,7 +396,7 @@ runtime `406`, not a compile error.
 | `mcpDisabled` | 503 | `mcp_enabled` absent or not affirmative |
 | `unauthorized` | 401 | no key, malformed key, unknown, revoked or expired |
 | `forbidden` | 403 | deactivated account, deactivated school, non-`ADMIN` membership |
-| `tooManyRequests` | 429 | address tier exhausted by credential-less traffic, or key tier exhausted |
+| `tooManyRequests` | 429 | address tier exhausted by traffic without a well-formed key, or key tier exhausted |
 | `methodNotAllowed` | 405 | `GET` or `DELETE` |
 
 No `WWW-Authenticate: Bearer resource_metadata=…` and no `.well-known` route: the application operates no
