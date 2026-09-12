@@ -51,6 +51,13 @@ export const mcpApiKeyGateway = {
       where: { userId, schoolId, revokedAt: null, expiresAt: { gt: now } },
     }),
 
+  /**
+   * Clés portées par un compte, toutes écoles et clés révoquées comprises : la question
+   * est posée avant une suppression définitive de compte, et une clé révoquée est
+   * précisément la trace que la contrainte `Restrict` protège.
+   */
+  countForUser: (userId: string) => db.mcpApiKey.count({ where: { userId } }),
+
   create: (data: {
     schoolId: string
     userId: string

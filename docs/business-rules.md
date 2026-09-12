@@ -346,7 +346,10 @@ an API key is durable and carries write access, so it must not exist in clear in
 The 12-character `prefix` is the sole visual landmark of the list.
 
 - Expiry is mandatory: 30, 90 or 365 days, 90 by default. A key without an end of life is not a key.
-- Revocation writes `revokedAt`; the row is never deleted, so the audit trail survives.
+- Revocation writes `revokedAt`; the row is never deleted, so the audit trail survives. The
+  `userId` foreign key is therefore `Restrict`, and `mcpApiKeyGateway.countForUser` makes a key —
+  revoked or not — block the permanent deletion of its holder's account. Cascading the account
+  deletion would have erased exactly the evidence this rule promises to keep.
 - Five live keys per (user, school) pair.
 
 The table is **excluded from `TENANT_SCOPED_MODELS`** for the reason already written for `SchoolMember`:
@@ -476,9 +479,12 @@ The `/dashboard/users` drawer is the single management surface. Its guards live 
   `reactivateUser` restores them. Archiving an already archived user answers `alreadyInactive`.
 - **Permanent deletion is a second, deliberate step.** `deleteUser` refuses an active account
   (`stillActive`) and refuses an account still referenced by history — families created, invitations
-  sent, payment transactions initiated (`hasRelatedRecords`). The dialog also requires the target's
-  email to be typed back; a mismatch answers `confirmationMismatch`. Sessions, accounts, passkeys
-  and family links cascade with the row.
+  sent, payment transactions initiated, machine API keys held (`hasRelatedRecords`). The dialog also
+  requires the target's email to be typed back; a mismatch answers `confirmationMismatch`. Sessions,
+  accounts, passkeys and family links cascade with the row; `McpApiKey` deliberately does not.
+  Self-service deletion (`deleteProfile`, from `/dashboard/settings`) counts the same blockers
+  through `countUserDeletionBlockers` and answers the same `hasRelatedRecords`, so neither path can
+  reach the foreign key and fail raw.
 - **Email uniqueness is checked before an update**, including against archived accounts
   (`emailAlreadyUsed`).
 - **`User.email` is only ever written in lower case.** Every writer normalizes at its own boundary:
@@ -839,6 +845,12 @@ school, and it must see archived rows: an archived family still constrains the f
 ignoring it would report "deletable" and then fail on the constraint. It is therefore a named
 exception, `countRowsBlockingUserDeletion` in `src/lib/db-unscoped.ts`, on a connection with neither
 the guard nor the filter.
+
+That exception does not cover every blocker. `McpApiKey` is counted through its own boundary,
+`mcpApiKeyGateway.countForUser`, because the model is outside the tenant guard and has no
+`isActive`: the ordinary `db` connection already sees all of its rows, so dropping the guard would
+buy nothing. `countUserDeletionBlockers` in `src/use-cases/users/count-deletion-blockers.ts` sums
+both counts, and both deletion paths ask it rather than counting for themselves.
 
 ## Known gaps
 

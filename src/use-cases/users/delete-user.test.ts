@@ -9,8 +9,16 @@ const dbUnscopedMock = {
   countRowsBlockingUserDeletion: vi.fn(),
 }
 
+const mcpApiKeyGatewayMock = {
+  countForUser: vi.fn(),
+}
+
 vi.mock('@/gateways/user-gateway', () => ({
   userGateway: userGatewayMock,
+}))
+
+vi.mock('@/gateways/mcp-api-key-gateway', () => ({
+  mcpApiKeyGateway: mcpApiKeyGatewayMock,
 }))
 
 vi.mock('@/lib/db-unscoped', () => ({
@@ -26,6 +34,7 @@ describe('deleteUser', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     dbUnscopedMock.countRowsBlockingUserDeletion.mockResolvedValue(0)
+    mcpApiKeyGatewayMock.countForUser.mockResolvedValue(0)
   })
 
   it('rejects an empty id', async () => {
@@ -54,6 +63,17 @@ describe('deleteUser', () => {
       isActive: false,
     })
     dbUnscopedMock.countRowsBlockingUserDeletion.mockResolvedValue(3)
+    expect(await deleteUser(actor, { id: targetId })).toBe('hasRelatedRecords')
+    expect(userGatewayMock.delete).not.toHaveBeenCalled()
+  })
+
+  it('refuses a user whose only remaining trace is a machine key', async () => {
+    userGatewayMock.findManaged.mockResolvedValue({
+      id: targetId,
+      isSuperAdmin: false,
+      isActive: false,
+    })
+    mcpApiKeyGatewayMock.countForUser.mockResolvedValue(1)
     expect(await deleteUser(actor, { id: targetId })).toBe('hasRelatedRecords')
     expect(userGatewayMock.delete).not.toHaveBeenCalled()
   })

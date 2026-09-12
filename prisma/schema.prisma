@@ -659,7 +659,9 @@ model McpApiKey {
   updatedAt  DateTime  @updatedAt
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Sans `onDelete`, donc `Restrict` : la suppression d'un compte doit échouer plutôt
+  // qu'effacer la trace de ses clés, comme pour `PaymentTransaction.initiatedBy`.
+  user User @relation(fields: [userId], references: [id])
 
   @@unique([id, schoolId])
   @@index([schoolId])
