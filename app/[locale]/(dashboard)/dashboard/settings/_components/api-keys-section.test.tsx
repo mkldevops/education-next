@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MCP_KEY_MAX_PER_USER } from '@/domain/mcp-key'
 import type { McpApiKeyView } from '../_lib/mcp-api-key-view'
@@ -104,14 +104,42 @@ describe('ApiKeysSection', () => {
     })
   })
 
-  describe('optimistic revocation', () => {
-    it('marks a key revoked immediately once the action confirms', async () => {
+  describe('revoke confirmation', () => {
+    it('opens a dialog naming the key instead of revoking immediately', () => {
+      const key = keyRow()
+
+      render(<ApiKeysSection keys={[key]} />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'list.revoke' }))
+
+      const dialog = screen.getByRole('dialog')
+      expect(within(dialog).getByText('revokeDialog.title')).toBeInTheDocument()
+      expect(within(dialog).getByText(key.name)).toBeInTheDocument()
+      expect(within(dialog).getByText(`${key.prefix}…`)).toBeInTheDocument()
+      expect(revokeMcpApiKeyAction).not.toHaveBeenCalled()
+    })
+
+    it('does not revoke the key when the dialog is cancelled', () => {
+      const key = keyRow()
+
+      render(<ApiKeysSection keys={[key]} />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'list.revoke' }))
+      fireEvent.click(screen.getByRole('button', { name: 'revokeDialog.cancel' }))
+
+      expect(revokeMcpApiKeyAction).not.toHaveBeenCalled()
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'list.revoke' })).toBeInTheDocument()
+    })
+
+    it('marks a key revoked once the dialog is confirmed', async () => {
       revokeMcpApiKeyAction.mockResolvedValue('OK')
       const key = keyRow()
 
       render(<ApiKeysSection keys={[key]} />)
 
       fireEvent.click(screen.getByRole('button', { name: 'list.revoke' }))
+      fireEvent.click(screen.getByRole('button', { name: 'revokeDialog.confirm' }))
 
       await waitFor(() => expect(revokeMcpApiKeyAction).toHaveBeenCalledWith(key.id))
       await waitFor(() => expect(screen.getByText('list.revoked')).toBeInTheDocument())
@@ -119,13 +147,14 @@ describe('ApiKeysSection', () => {
       expect(toastSuccess).toHaveBeenCalledWith('revoked')
     })
 
-    it('leaves the key listed as active when the action refuses', async () => {
+    it('leaves the key listed as active when the confirmed action refuses', async () => {
       revokeMcpApiKeyAction.mockResolvedValue('notFound')
       const key = keyRow()
 
       render(<ApiKeysSection keys={[key]} />)
 
       fireEvent.click(screen.getByRole('button', { name: 'list.revoke' }))
+      fireEvent.click(screen.getByRole('button', { name: 'revokeDialog.confirm' }))
 
       await waitFor(() => expect(revokeMcpApiKeyAction).toHaveBeenCalledWith(key.id))
       await waitFor(() => expect(toastError).toHaveBeenCalledWith('error'))

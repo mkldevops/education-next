@@ -1650,6 +1650,12 @@
         "revoked": "Révoquée",
         "expired": "Expirée",
         "revoke": "Révoquer la clé {name}"
+      },
+      "revokeDialog": {
+        "title": "Révoquer « {name} » ?",
+        "warning": "Cette action est irréversible : la clé ne pourra pas être restaurée, et son porteur devra en configurer une nouvelle.",
+        "cancel": "Annuler",
+        "confirm": "Révoquer"
       }
     }
   },

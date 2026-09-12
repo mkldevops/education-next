@@ -1650,6 +1650,12 @@
         "revoked": "Revoked",
         "expired": "Expired",
         "revoke": "Revoke key {name}"
+      },
+      "revokeDialog": {
+        "title": "Revoke \"{name}\"?",
+        "warning": "This cannot be undone: the key cannot be restored, and its holder will need to set up a new one.",
+        "cancel": "Cancel",
+        "confirm": "Revoke"
       }
     }
   },
