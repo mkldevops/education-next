@@ -168,9 +168,18 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     }
   }
 
+  // La surface publiée est décidée ici, pas héritée des gateways du dashboard : ces lignes
+  // partent dans le contexte du fournisseur de modèle, et un homonyme n'a besoin que d'un nom
+  // et du drapeau « déjà élève ». Une colonne ajoutée plus tard à `Person` ou `Student` ne peut
+  // pas la suivre sans passer par ce `map`.
   const matches = {
-    families: familyMatches,
-    students: personMatches.flat(),
+    families: familyMatches.map((row) => ({ id: row.id, name: row.name })),
+    students: personMatches.flat().map((row) => ({
+      id: row.id,
+      name: row.name,
+      lastname: row.lastname,
+      isStudent: row.student !== null,
+    })),
   }
 
   if (blockers.length > 0 || !classPeriod || !plan) {

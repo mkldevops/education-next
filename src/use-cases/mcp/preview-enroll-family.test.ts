@@ -185,6 +185,35 @@ describe('previewEnrollFamily', () => {
     expect(result.draftId).toBe('draft-1')
   })
 
+  // Les homonymes partent dans le contexte du fournisseur de modèle. Le gateway est celui du
+  // dashboard : la ligne rendue ici porte volontairement plus que ce que le MCP publie, et le
+  // test échoue le jour où une colonne la suit.
+  it('publishes a namesake as a name and an already-a-student flag, nothing more', async () => {
+    searchFamilies.mockResolvedValue([
+      { id: 'family-9', name: 'Bouhahima', createdAt: new Date('2020-01-01') },
+    ])
+    searchPersons.mockResolvedValue([
+      {
+        id: 'person-9',
+        name: 'Mayza',
+        lastname: 'BOURAHIMA',
+        student: { id: 'student-9', birthday: new Date('2018-04-02') },
+      },
+      { id: 'person-8', name: 'Mayza', lastname: 'BOURAHIMA', student: null },
+    ])
+
+    const result = await previewEnrollFamily(scope, input)
+    assertPreview(result)
+
+    expect(result.matches).toEqual({
+      families: [{ id: 'family-9', name: 'Bouhahima' }],
+      students: [
+        { id: 'person-9', name: 'Mayza', lastname: 'BOURAHIMA', isStudent: true },
+        { id: 'person-8', name: 'Mayza', lastname: 'BOURAHIMA', isStudent: false },
+      ],
+    })
+  })
+
   it('warns when the receipt number has already been banked', async () => {
     findByReference.mockResolvedValue([{ id: 'payment-9', amount: 100, paidAt: new Date() }])
 
