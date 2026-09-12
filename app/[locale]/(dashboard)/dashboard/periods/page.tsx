@@ -8,8 +8,7 @@ import { db } from '@/lib/db'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreatePeriodDialog } from './_components/create-period-dialog'
-import { EditPeriodDialog } from './_components/edit-period-dialog'
-import { PromotePeriodDialog } from './_components/promote-period-dialog'
+import { PeriodRowActions } from './_components/period-row-actions'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -85,10 +84,11 @@ export default async function PeriodsPage({ params }: Props) {
           .filter((candidate) => new Date(candidate.startAt) > new Date(period.startAt))
           .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
         return (
-          <div className="flex justify-end gap-2">
-            <PromotePeriodDialog sourcePeriod={period} targetOptions={targetOptions} />
-            <EditPeriodDialog period={period} classPeriodCount={period._count.classPeriods} />
-          </div>
+          <PeriodRowActions
+            period={period}
+            targetOptions={targetOptions}
+            classPeriodCount={period._count.classPeriods}
+          />
         )
       },
     },

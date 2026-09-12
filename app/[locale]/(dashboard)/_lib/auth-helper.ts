@@ -13,12 +13,16 @@ async function redirectToLogin(): Promise<never> {
  * Portée d'administration sur l'école active. Un `isSuperAdmin` la couvre sans
  * posséder de ligne `SchoolMember`.
  */
-export async function requireSchoolAdmin(): Promise<{ schoolId: string; userId: string }> {
+export async function requireSchoolAdmin(): Promise<{
+  schoolId: string
+  userId: string
+  isSuperAdmin: boolean
+}> {
   const context = await getSchoolContext()
   if (!context) return redirectToLogin()
   if (!context.isSuperAdmin && context.role !== 'ADMIN') notFound()
 
-  return { schoolId: context.schoolId, userId: context.userId }
+  return { schoolId: context.schoolId, userId: context.userId, isSuperAdmin: context.isSuperAdmin }
 }
 
 /**

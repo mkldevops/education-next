@@ -2,13 +2,11 @@
 
 import {
   Button,
-  Dialog,
   DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   Label,
   Select,
   useDialog,
@@ -45,26 +43,12 @@ const SKIP_REASONS: SkipReason[] = [
   'targetClassFull',
 ]
 
-export function PromotePeriodDialog({ sourcePeriod, targetOptions }: PromotePeriodDialogProps) {
-  const t = useTranslations('dashboard.pages.periods.promote')
-
-  if (targetOptions.length === 0) return null
-
-  return (
-    <Dialog>
-      <DialogTrigger>
-        <Button variant="outline" size="sm">
-          {t('trigger')}
-        </Button>
-      </DialogTrigger>
-      <PromotePeriodDialogContent sourcePeriod={sourcePeriod} targetOptions={targetOptions} />
-    </Dialog>
-  )
-}
-
 type Step = 'form' | 'preview' | 'report'
 
-function PromotePeriodDialogContent({ sourcePeriod, targetOptions }: PromotePeriodDialogProps) {
+export function PromotePeriodDialogContent({
+  sourcePeriod,
+  targetOptions,
+}: PromotePeriodDialogProps) {
   const t = useTranslations('dashboard.pages.periods.promote')
   const { open, setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
