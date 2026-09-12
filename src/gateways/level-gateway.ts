@@ -22,11 +22,14 @@ export const levelGateway = {
       include: { nextLevel: true },
     }),
 
+  /**
+   * Graphe de progression, seule lecture d'ensemble du modèle : `setNextLevel` y cherche
+   * un cycle, et n'a besoin que des deux colonnes de l'arête.
+   */
   list: (schoolId: string) =>
     db.level.findMany({
       where: { schoolId, isActive: true },
-      include: { nextLevel: true },
-      orderBy: { name: 'asc' },
+      select: { id: true, nextLevelId: true },
     }),
 
   setNextLevel: (schoolId: string, id: string, nextLevelId: string | null) =>

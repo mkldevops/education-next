@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const listClassPeriods = vi.fn()
 const listPlans = vi.fn()
+const mcpReadGateway = { listClassPeriods, listPlans }
 const countEnrolled = vi.fn()
 const searchFamilies = vi.fn()
 const searchPersons = vi.fn()
 const findByReference = vi.fn()
 const createDraft = vi.fn()
 
-vi.mock('@/use-cases/class-periods/list-class-periods', () => ({ listClassPeriods }))
-vi.mock('@/use-cases/plans/list-plans', () => ({ listPlans }))
+vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
 vi.mock('@/gateways/class-period-gateway', () => ({ classPeriodGateway: { countEnrolled } }))
 vi.mock('@/gateways/family-gateway', () => ({ familyGateway: { searchByName: searchFamilies } }))
 vi.mock('@/gateways/person-gateway', () => ({ personGateway: { searchByName: searchPersons } }))

@@ -23,12 +23,6 @@ export const periodGateway = {
       where: { id_schoolId: { id, schoolId } },
     }),
 
-  list: (schoolId: string) =>
-    db.period.findMany({
-      where: { schoolId, isActive: true },
-      orderBy: { startAt: 'desc' },
-    }),
-
   checkOverlap: async (schoolId: string, startAt: Date, endAt: Date, excludeId?: string) => {
     const periods = await db.period.findMany({
       where: {

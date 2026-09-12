@@ -84,17 +84,6 @@ export const classPeriodGateway = {
       },
     }),
 
-  list: (schoolId: string) =>
-    db.classPeriod.findMany({
-      where: { schoolId, isActive: true },
-      include: {
-        level: true,
-        period: true,
-        teachers: { where: { teacher: { isActive: true } }, include: { teacher: true } },
-      },
-      orderBy: { name: 'asc' },
-    }),
-
   countEnrolled: async (schoolId: string, id: string) => {
     const count = await db.classAssignment.count({
       where: {
