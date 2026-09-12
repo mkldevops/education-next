@@ -66,7 +66,7 @@ export function SettingsTabs({
             content: (
               <div className="space-y-6">
                 <PasswordSection />
-                {passkeyEnabled && <PasskeySection />}
+                <PasskeySection enabled={passkeyEnabled} />
               </div>
             ),
           },

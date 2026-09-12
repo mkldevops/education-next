@@ -1610,6 +1610,8 @@
       "nameRequired": "Veuillez saisir un nom pour la clé",
       "registered": "Clé de sécurité enregistrée avec succès",
       "deleted": "Clé de sécurité supprimée",
+      "delete": "Supprimer la clé {name}",
+      "registrationDisabled": "La connexion par passkey est désactivée sur cette plateforme : vous ne pouvez plus en enregistrer de nouvelle, seulement supprimer celles déjà présentes.",
       "error": "Erreur lors de l'enregistrement de la clé",
       "deleteError": "Erreur lors de la suppression",
       "cancelled": "Enregistrement annulé"

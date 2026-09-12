@@ -1610,6 +1610,8 @@
       "nameRequired": "Please enter a name for the key",
       "registered": "Passkey registered successfully",
       "deleted": "Passkey removed",
+      "delete": "Delete passkey {name}",
+      "registrationDisabled": "Passkey sign-in is disabled on this platform: you can no longer register a new one, only remove those already present.",
       "error": "Error registering passkey",
       "deleteError": "Error removing passkey",
       "cancelled": "Registration cancelled"

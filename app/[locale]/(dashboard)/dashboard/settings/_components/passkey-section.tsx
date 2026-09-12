@@ -21,7 +21,19 @@ type Passkey = {
   createdAt: Date
 }
 
-export function PasskeySection() {
+type Props = {
+  /** Reflet de `passkey_sign_in_enabled` : gouverne le seul enregistrement. */
+  enabled: boolean
+}
+
+/**
+ * Drapeau éteint : l'enregistrement disparaît, la liste et la suppression restent.
+ * Même principe que la carte « comptes liés » (`account-section.tsx`) — désactiver une
+ * méthode ne doit laisser personne avec une credential qu'il ne peut ni utiliser ni
+ * retirer. `getUserPasskeys()` et `deletePasskey()` ne sont donc pas gardés par le
+ * drapeau côté serveur, contrairement aux actions d'enregistrement.
+ */
+export function PasskeySection({ enabled }: Props) {
   const t = useTranslations('settings.passkey')
   const locale = useLocale()
   const router = useRouter()
@@ -95,6 +107,10 @@ export function PasskeySection() {
     })
   }
 
+  // Plus aucune passkey à administrer et l'enregistrement fermé : la carte n'a plus
+  // d'objet, exactement comme celle de Google sans compte lié.
+  if (!enabled && passkeys.length === 0) return null
+
   return (
     <Card className="p-6">
       <div className="flex items-center gap-3">
@@ -129,6 +145,7 @@ export function PasskeySection() {
                 size="sm"
                 onClick={() => handleDelete(pk.id)}
                 disabled={isPending}
+                aria-label={t('delete', { name: pk.name })}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -137,23 +154,27 @@ export function PasskeySection() {
         </div>
       )}
 
-      <div className="mt-6 flex gap-3">
-        <div className="flex-1">
-          <Label htmlFor="passkey-name">{t('namePlaceholder')}</Label>
-          <Input
-            id="passkey-name"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder={t('namePlaceholder')}
-            className="mt-1"
-          />
+      {enabled ? (
+        <div className="mt-6 flex gap-3">
+          <div className="flex-1">
+            <Label htmlFor="passkey-name">{t('namePlaceholder')}</Label>
+            <Input
+              id="passkey-name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder={t('namePlaceholder')}
+              className="mt-1"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button onClick={handleRegister} disabled={isPending || !newName.trim()}>
+              {isPending ? '...' : t('register')}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-end">
-          <Button onClick={handleRegister} disabled={isPending || !newName.trim()}>
-            {isPending ? '...' : t('register')}
-          </Button>
-        </div>
-      </div>
+      ) : (
+        <p className="mt-6 text-sm text-graphite-600">{t('registrationDisabled')}</p>
+      )}
     </Card>
   )
 }
