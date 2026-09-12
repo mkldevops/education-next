@@ -7,7 +7,7 @@ import { localizedHref } from '@/i18n/localized-href'
 import { auth } from '@/lib/auth'
 import { getBrandingConfig } from '@/lib/branding'
 import { getAuthorizedSchools, getSchoolContext } from '@/lib/school-context'
-import { canSwitchSchool } from './_lib/school-switch'
+import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 
 type Props = {
   children: React.ReactNode
@@ -18,11 +18,14 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
   const context = await getSchoolContext()
   if (!context) redirect(localizedHref(locale, '/login'))
 
+  // La tête de la barre latérale suit le drapeau seul, super-admin compris : le réglage
+  // vit sur `/dashboard/config`, l'éteindre doit se voir immédiatement chez celui qui
+  // l'écrit. L'issue de secours des liens profonds reste ouverte par `canSwitchSchool()`.
   const [branding, session, schools, switchAllowed] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
     getAuthorizedSchools(),
-    canSwitchSchool(),
+    isSchoolSwitchEnabled(),
   ])
 
   const userName = session?.user.name || session?.user.email || undefined

@@ -173,9 +173,7 @@
       "users": "Users",
       "schools": "Schools",
       "teachers": "Teachers",
-      "superAdmins": "Super admins",
-      "authSettings": "Sign-in methods",
-      "integrations": "Integrations"
+      "superAdmins": "Super admins"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -204,9 +202,7 @@
       "account": "My account",
       "schools": "Schools",
       "teachers": "Teachers",
-      "superAdmins": "Super admins",
-      "authSettings": "Sign-in methods",
-      "integrations": "Integrations"
+      "superAdmins": "Super admins"
     },
     "pages": {
       "families": {
@@ -450,10 +446,7 @@
           "submit": "Save",
           "success": "Period updated",
           "error": "Error updating period",
-          "delete": "Archive",
-          "deleteSuccess": "Period archived",
           "errors": {
-            "periodInUse": "Classes or enrollments use this period: it cannot be archived",
             "notFound": "Period not found",
             "validationError": "Check the information entered"
           }
@@ -481,6 +474,21 @@
           "errors": {
             "validationError": "Check the information you entered",
             "notFound": "Source or target period not found"
+          },
+          "noTarget": "No later period to promote into"
+        },
+        "delete": {
+          "trigger": "Delete",
+          "title": "Delete period",
+          "description": "“{name}” will be removed from the period list. Data already attached to it is not erased.",
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "success": "Period deleted",
+          "error": "Error deleting period",
+          "errors": {
+            "periodInUse": "Classes use this period: it cannot be deleted",
+            "notFound": "Period not found",
+            "validationError": "Check the information you entered"
           }
         }
       },
@@ -737,6 +745,13 @@
       },
       "config": {
         "title": "Configuration",
+        "description": "Settings for the active school and, for a super-admin, for the instance.",
+        "sections": {
+          "school": "School settings",
+          "schoolDescription": "Settings specific to the active school.",
+          "schools": "Schools",
+          "schoolsDescription": "Settings governing every school on this instance."
+        },
         "name": "Name",
         "value": "Value",
         "type": "Type",
@@ -1518,7 +1533,7 @@
       },
       "platformSwitch": {
         "title": "School switching",
-        "description": "Lets members change school from the sidebar. A super-admin keeps the switch even when the setting is off."
+        "description": "Lets members change school from the sidebar. When off, the switcher disappears from the sidebar, super-admins included."
       }
     }
   },

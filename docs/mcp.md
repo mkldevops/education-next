@@ -16,7 +16,8 @@ reads as disabled by absence — live in
 
 Two switches, both required.
 
-1. A super-admin enables **MCP** on `/dashboard/integrations`. The platform flag `mcp_enabled` is
+1. A super-admin enables **MCP** in the Integrations section of `/dashboard/config`. The platform
+   flag `mcp_enabled` is
    **off by default**; while it is off, `POST /api/mcp` answers `503 {"error":"mcpDisabled"}` before
    reading any credential.
 2. A school admin creates a key in the **API keys** tab of `/dashboard/settings`. The tab exists

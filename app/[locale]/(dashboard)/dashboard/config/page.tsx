@@ -11,11 +11,17 @@ import {
   SCHOOL_CONFIG_DEFAULTS,
   THEME_PRIMARY_CONFIG_KEY,
 } from '@/lib/school-config-defaults'
+import { isGoogleConfigured } from '@/lib/social-providers'
 import { TEACHER_EXPENSES_CONFIG_KEY } from '@/lib/teacher-expense-config'
+import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-sign-in-enabled'
+import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
+import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
+import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateConfigDialog } from './_components/create-config-dialog'
 import { EditConfigDialog } from './_components/edit-config-dialog'
+import { PlatformSettingsPanel } from './_components/platform-settings-panel'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -35,7 +41,18 @@ export default async function ConfigPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
 
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId, isSuperAdmin } = await requireSchoolAdmin()
+
+  // Les réglages plateforme ne sont lus que pour un super-admin : la page reste ouverte
+  // à un ADMIN d'école, qui n'en voit que la table de configuration de son école.
+  const [googleEnabled, passkeyEnabled, mcpEnabled, schoolSwitchEnabled] = isSuperAdmin
+    ? await Promise.all([
+        isGoogleSignInEnabled(),
+        isPasskeySignInEnabled(),
+        isMcpEnabled(),
+        isSchoolSwitchEnabled(),
+      ])
+    : [false, false, false, false]
 
   const t = await getTranslations('dashboard.pages.config')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -151,25 +168,45 @@ export default async function ConfigPage({ params }: Props) {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Breadcrumbs
         items={[
           { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
           { label: tBreadcrumbs('config') },
         ]}
       />
-      <div className="flex items-center justify-between">
+      <div>
         <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        <CreateConfigDialog />
+        <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
       </div>
-      <Card className="rounded border border-alabaster-700">
-        <DataTable
-          data={configs}
-          columns={columns}
-          getRowKey={(config) => config.id}
-          emptyMessage={t('noConfig')}
+
+      <section className="space-y-3">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-graphite">{t('sections.school')}</h2>
+            <p className="mt-1 text-sm text-graphite-600">{t('sections.schoolDescription')}</p>
+          </div>
+          <CreateConfigDialog />
+        </div>
+        <Card className="rounded border border-alabaster-700">
+          <DataTable
+            data={configs}
+            columns={columns}
+            getRowKey={(config) => config.id}
+            emptyMessage={t('noConfig')}
+          />
+        </Card>
+      </section>
+
+      {isSuperAdmin && (
+        <PlatformSettingsPanel
+          googleEnabled={googleEnabled}
+          googleConfigured={isGoogleConfigured}
+          passkeyEnabled={passkeyEnabled}
+          mcpEnabled={mcpEnabled}
+          schoolSwitchEnabled={schoolSwitchEnabled}
         />
-      </Card>
+      )}
     </div>
   )
 }

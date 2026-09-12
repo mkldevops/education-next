@@ -173,9 +173,7 @@
       "users": "Utilisateurs",
       "schools": "Écoles",
       "teachers": "Enseignants",
-      "superAdmins": "Super-admins",
-      "authSettings": "Méthodes de connexion",
-      "integrations": "Intégrations"
+      "superAdmins": "Super-admins"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -204,9 +202,7 @@
       "account": "Mon compte",
       "schools": "Écoles",
       "teachers": "Enseignants",
-      "superAdmins": "Super-admins",
-      "authSettings": "Méthodes de connexion",
-      "integrations": "Intégrations"
+      "superAdmins": "Super-admins"
     },
     "pages": {
       "families": {
@@ -450,10 +446,7 @@
           "submit": "Enregistrer",
           "success": "Période mise à jour",
           "error": "Erreur lors de la mise à jour",
-          "delete": "Archiver",
-          "deleteSuccess": "Période archivée",
           "errors": {
-            "periodInUse": "Des classes ou inscriptions utilisent cette période : elle ne peut pas être archivée",
             "notFound": "Période introuvable",
             "validationError": "Vérifiez les informations saisies"
           }
@@ -481,6 +474,21 @@
           "errors": {
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Période source ou cible introuvable"
+          },
+          "noTarget": "Aucune période postérieure vers laquelle promouvoir"
+        },
+        "delete": {
+          "trigger": "Supprimer",
+          "title": "Supprimer la période",
+          "description": "« {name} » sera retirée de la liste des périodes. Les données déjà rattachées ne sont pas effacées.",
+          "cancel": "Annuler",
+          "confirm": "Supprimer",
+          "success": "Période supprimée",
+          "error": "Erreur lors de la suppression",
+          "errors": {
+            "periodInUse": "Des classes utilisent cette période : elle ne peut pas être supprimée",
+            "notFound": "Période introuvable",
+            "validationError": "Vérifiez les informations saisies"
           }
         }
       },
@@ -737,6 +745,13 @@
       },
       "config": {
         "title": "Configuration",
+        "description": "Réglages de l'école active et, pour un super-admin, de l'instance.",
+        "sections": {
+          "school": "Paramètres de l'école",
+          "schoolDescription": "Réglages propres à l'école active.",
+          "schools": "Écoles",
+          "schoolsDescription": "Réglages qui gouvernent toutes les écoles de l'instance."
+        },
         "name": "Nom",
         "value": "Valeur",
         "type": "Type",
@@ -1518,7 +1533,7 @@
       },
       "platformSwitch": {
         "title": "Bascule d'école",
-        "description": "Autorise les membres à changer d'école depuis la barre latérale. Un super-admin conserve la bascule même lorsque le réglage est éteint."
+        "description": "Autorise les membres à changer d'école depuis la barre latérale. Éteint, le sélecteur disparaît de la barre latérale, super-admin compris."
       }
     }
   },

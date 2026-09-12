@@ -151,9 +151,10 @@ cookie, then `router.refresh()` replays the dashboard in the new school. The act
 membership; the cookie is never trusted on the way back in.
 
 The switch can be closed platform-wide by the `school_switch_enabled` `PlatformSetting`, written from
-`/dashboard/schools` by a super-admin only. **Absence of the row reads as enabled** — the migration
-seeds nothing, so an existing installation keeps its switcher — and so does any unexpected value: an
-unreadable setting must not silently remove a working feature (`src/domain/platform-settings.ts`).
+the **Schools** section of `/dashboard/config` by a super-admin only. **Absence of the row reads as
+enabled** — the migration seeds nothing, so an existing installation keeps its switcher — and so does
+any unexpected value: an unreadable setting must not silently remove a working feature
+(`src/domain/platform-settings.ts`).
 
 The flag constrains **both** ways of changing school, because a cookie is an input and not a
 decision. `switchSchoolAction` refuses with `switchDisabled` **before** looking the target school up,
@@ -165,8 +166,12 @@ second read is where the cookie is already validated, so the flag is one more co
 school it may select rather than a mechanism bolted alongside; it is consulted only when the cookie
 would actually change the retained school.
 
-**A super-admin is never blocked** on either path: the flag governs the school-to-school move of
-ordinary members, not platform administration.
+**A super-admin is never blocked on the server**: the flag governs the school-to-school move of
+ordinary members, not platform administration. The sidebar head is the one exception, and it is a
+display rule: `layout.tsx` reads `isSchoolSwitchEnabled()` directly, so a super-admin who turns the
+setting off sees the switcher disappear from their own sidebar. The deep-link escape hatch stays
+open through `canSwitchSchool()` (`app/[locale]/(dashboard)/_lib/school-switch.ts`), which keeps the
+super-admin bypass.
 
 The flag changes nothing else. `getAuthorizedSchools()` is untouched, so deep-link resolution still
 names the other school; `_components/school-switch-prompt.tsx` keeps the screen and drops the button,
@@ -175,8 +180,9 @@ because hiding the resolution would leave the user in front of an unexplainable 
 ## Sign-in methods
 
 Email and password is the method this application always offers. The two alternatives are governed by
-`PlatformSetting` rows written from `/dashboard/auth-settings`, a **platform** surface open on
-`requirePlatformAdmin()` like `/dashboard/schools`:
+`PlatformSetting` rows written from the **Sign-in methods** section of `/dashboard/config`. That page
+is open on `requireSchoolAdmin()`, and the platform sections are rendered only when the caller is a
+super-admin; the write actions re-check `requirePlatformAdmin()`:
 
 - `google_sign_in_enabled` — the "Sign in with Google" button and Google account linking.
 - `passkey_sign_in_enabled` — passkey sign-in and the registration of new passkeys.
@@ -194,8 +200,9 @@ inert and why.
 
 `isGoogleSignInAvailable()` (`src/use-cases/platform-settings/`) combines both conditions for the
 pages that decide whether to render the button, `/login` and `/dashboard/settings`.
-`/dashboard/auth-settings` keeps `isGoogleSignInEnabled()` and `isGoogleConfigured` separate on
-purpose: the toggle reflects the setting alone, and the hint above explains when it is inert.
+The sign-in section of `/dashboard/config` keeps `isGoogleSignInEnabled()` and `isGoogleConfigured`
+separate on purpose: the toggle reflects the setting alone, and the hint above explains when it is
+inert.
 `app/api/auth/[...all]/route.ts` only checks the flag — an unconfigured environment already fails
 the redirect inside `betterAuth`, so the route does not need to test `isGoogleConfigured` too.
 
@@ -330,8 +337,9 @@ Protocol. A photographed paper form becomes typed tool calls; **the image never 
 Vision happens in the agent, so the route is an ordinary typed API guarded like any other, not an
 upload endpoint. `docs/mcp.md` documents the client side.
 
-The whole surface is governed by a fourth `PlatformSetting` row, `mcp_enabled`, written from
-`/dashboard/integrations` (a **platform** page on `requirePlatformAdmin()`). It reads the opposite way
+The whole surface is governed by a fourth `PlatformSetting` row, `mcp_enabled`, written from the
+**Integrations** section of `/dashboard/config` (rendered for a super-admin only, written behind
+`requirePlatformAdmin()`). It reads the opposite way
 from the three sign-in flags: **absence of the row reads as disabled** (`readsAsOptedIn`,
 `src/domain/platform-settings.ts`). A write API for machines does not open itself on the deployment
 that ships its migration; only an affirmative value activates it. Like the three sign-in flags, the

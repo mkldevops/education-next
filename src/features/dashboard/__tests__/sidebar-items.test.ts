@@ -25,8 +25,7 @@ describe('resolveNavItems', () => {
     ])
     expect(keys(items.config)).not.toContain('schools')
     expect(keys(items.config)).not.toContain('superAdmins')
-    expect(keys(items.config)).not.toContain('authSettings')
-    expect(keys(items.config)).not.toContain('integrations')
+    expect(keys(items.config)).toContain('config')
   })
 
   it('exposes the platform pages to a super admin only', () => {
@@ -37,12 +36,6 @@ describe('resolveNavItems', () => {
     expect(items.config.find((item) => item.key === 'superAdmins')?.href).toBe(
       '/dashboard/super-admins'
     )
-    expect(items.config.find((item) => item.key === 'authSettings')?.href).toBe(
-      '/dashboard/auth-settings'
-    )
-    expect(items.config.find((item) => item.key === 'integrations')?.href).toBe(
-      '/dashboard/integrations'
-    )
   })
 
   it('hides the platform pages from a parent who is not a super admin', () => {
@@ -50,8 +43,7 @@ describe('resolveNavItems', () => {
 
     expect(keys(items.config)).not.toContain('schools')
     expect(keys(items.config)).not.toContain('superAdmins')
-    expect(keys(items.config)).not.toContain('authSettings')
-    expect(keys(items.config)).not.toContain('integrations')
+    expect(keys(items.config)).not.toContain('config')
   })
 
   it('points a parent at their own family and drops the management pages', () => {
