@@ -1,5 +1,6 @@
 import { createMcpHandler } from '@modelcontextprotocol/server'
 import { after, NextResponse } from 'next/server'
+import { isWellFormedMcpKey } from '@/domain/mcp-key'
 import { mcpApiKeyGateway } from '@/gateways/mcp-api-key-gateway'
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit'
 import { buildMcpServer } from '@/mcp/server'
@@ -18,11 +19,22 @@ export const dynamic = 'force-dynamic'
  *
  * Claude atteint ce serveur depuis l'infrastructure d'Anthropic, pas depuis le poste de
  * l'utilisateur : `x-forwarded-for` ne désigne qu'une poignée d'adresses de sortie
- * partagées. L'étage IP n'amortit donc que le flot non authentifié ; le vrai budget est
- * celui de la clé, donc d'un utilisateur sur une école, et il ne peut être appliqué
- * qu'après la résolution de portée.
+ * partagées, et sans l'en-tête tout le trafic retombe sur un seau unique. Une adresse
+ * n'est donc pas l'identité d'un appelant mais un budget commun à toutes les écoles :
+ * le facturer au trafic authentifié rendrait `429` aux clés des autres écoles dès
+ * qu'une seule est active, et bornerait le budget par clé bien avant sa valeur.
+ *
+ * L'étage par adresse ne couvre donc que ce qu'il est censé amortir — les requêtes qui
+ * ne présentent aucune clé bien formée — et le vrai budget est celui de la clé, donc
+ * d'un utilisateur sur une école, appliqué après la résolution de portée.
+ *
+ * Toute clé bien formée que la route ne sert pas échappe par conséquent aux deux
+ * étages : inconnue, révoquée ou expirée, elle coûte la lecture du drapeau puis un
+ * `findByHash` indexé ; portée refusée, elle va jusqu'aux lectures d'appartenance. La
+ * soumettre à l'étage par adresse recréerait exactement le déni entre écoles que cette
+ * séparation supprime.
  */
-const isIpRateLimited = createRateLimiter({ limit: 120, windowMs: 60 * 1000 })
+const isAddressRateLimited = createRateLimiter({ limit: 120, windowMs: 60 * 1000 })
 const isKeyRateLimited = createRateLimiter({ limit: 600, windowMs: 60 * 1000 })
 
 const LAST_USED_STALE_MS = 60 * 1000
@@ -44,7 +56,15 @@ function denied(error: string, status: number) {
  */
 export async function POST(request: Request) {
   try {
-    if (isIpRateLimited(getClientIp(request))) return denied('tooManyRequests', 429)
+    // Lecture et vérification de forme : deux opérations pures, donc gratuites, qui
+    // décident de l'étage avant que le drapeau plateforme ne coûte une lecture en base.
+    // Une chaîne mal formée ne présente pas de clé — l'exempter laisserait un en-tête
+    // quelconque échapper aux deux étages tout en payant cette lecture.
+    const credential = readMcpCredential(request.headers)
+    const presentsKey = credential !== null && isWellFormedMcpKey(credential)
+    if (!presentsKey && isAddressRateLimited(getClientIp(request))) {
+      return denied('tooManyRequests', 429)
+    }
 
     const now = new Date()
 
@@ -54,7 +74,7 @@ export async function POST(request: Request) {
 
     if (!(await isMcpEnabled())) return denied('mcpDisabled', 503)
 
-    const result = await resolveMcpScope(readMcpCredential(request.headers))
+    const result = await resolveMcpScope(credential)
     if (result.status === 'unauthenticated') return denied('unauthorized', 401)
     if (result.status === 'forbidden') return denied('forbidden', 403)
 

@@ -364,16 +364,27 @@ it is a discovery table, read by `keyHash` before any school is known. Its singl
 
 ### Route guards
 
-The order in `app/api/mcp/route.ts` is deliberate: IP rate limit → retention sweep → platform flag →
-credential → scope → per-key rate limit → handler. The flag is read before authentication so a
-closed instance answers `503` without ever looking up a key. The sweep sits above the flag on
-purpose and is the one thing a closed instance still does, since retention cannot depend on the
-service being open.
+The order in `app/api/mcp/route.ts` is deliberate: credential read → address rate limit, charged to
+any request that does not present a well-formed key → retention sweep → platform flag → scope →
+per-key rate limit → handler. Reading the credential and checking its shape are pure operations, so
+they select the applicable tier before the flag costs a database read; the flag is still read before
+authentication so a closed instance answers `503` without ever looking up a key. Keying the tier on
+presence alone would let `Authorization: Bearer x` escape both tiers while still paying that read on
+every request. The sweep sits above the flag on purpose and is the one thing a closed instance still
+does, since retention cannot depend on the service being open.
 
 Two rate-limiting tiers because they measure different things. Claude reaches the server from Anthropic's
 infrastructure, not from the user's machine, so `x-forwarded-for` names a handful of shared egress
-addresses: the IP tier (120/min) only damps unauthenticated flooding, and **the real budget is the key's**
-(600/min), one user on one school.
+addresses — and without that header every caller falls into the single `'unknown'` bucket. An address is
+therefore not a caller but a budget shared by every school, so the address tier (120/min) charges only
+what it is meant to damp: requests presenting no well-formed key. **The real budget is the key's**
+(600/min), one user on one school, applied after the scope resolution.
+
+Any well-formed key the route does not serve consequently escapes both tiers: unknown, revoked or
+expired it costs the platform-flag read then one indexed `findByHash`, and a key whose holder lost the
+right goes on through the membership reads before its `403`. Bounding that per address would recreate
+the cross-school denial this separation removes: a flood of failures from the shared egress address
+would refuse the valid keys arriving from it.
 
 The IP tier is only worth its cost if its key cannot be chosen by the caller. `getClientIp`
 (`src/lib/rate-limit.ts`) therefore reads `x-forwarded-for` **from the right**, at
@@ -420,7 +431,7 @@ runtime `406`, not a compile error.
 | `mcpDisabled` | 503 | `mcp_enabled` absent or not affirmative |
 | `unauthorized` | 401 | no key, malformed key, unknown, revoked or expired |
 | `forbidden` | 403 | deactivated account, deactivated school, non-`ADMIN` membership |
-| `tooManyRequests` | 429 | IP or key tier exhausted |
+| `tooManyRequests` | 429 | address tier exhausted by traffic without a well-formed key, or key tier exhausted |
 | `methodNotAllowed` | 405 | `GET` or `DELETE` |
 
 No `WWW-Authenticate: Bearer resource_metadata=…` and no `.well-known` route: the application operates no
