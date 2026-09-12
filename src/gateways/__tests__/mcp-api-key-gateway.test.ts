@@ -74,11 +74,19 @@ describe('mcpApiKeyGateway.createWithinLimit', () => {
     })
   })
 
-  it('returns the created row without its hash', async () => {
-    const created = await mcpApiKeyGateway.createWithinLimit(data, { now, maxLive: 5 })
-    if (created === 'tooManyKeys') throw new Error('expected a row')
+  it('projects the list row back out of the insert, never the hash', async () => {
+    await mcpApiKeyGateway.createWithinLimit(data, { now, maxLive: 5 })
 
-    expect(tx.mcpApiKey.create.mock.calls[0][0].select).toMatchObject({ prefix: true })
-    expect(tx.mcpApiKey.create.mock.calls[0][0].select).not.toHaveProperty('keyHash')
+    // La liste de gestion rend les sept champs : une projection rognée les priverait
+    // d'un rendu, une projection élargie sortirait l'empreinte de la base.
+    expect(tx.mcpApiKey.create.mock.calls[0][0].select).toEqual({
+      id: true,
+      name: true,
+      prefix: true,
+      lastUsedAt: true,
+      expiresAt: true,
+      revokedAt: true,
+      createdAt: true,
+    })
   })
 })
