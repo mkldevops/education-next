@@ -74,10 +74,12 @@ Isolation rests on three layers. None is sufficient alone.
 `userId` before any school is known. All access goes through `src/gateways/school-member-gateway.ts`,
 which is the single read *and* write boundary for that model.
 
-Three named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
+Five named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
 school: the invitation read by its unique token (public flow), the Stripe webhook finding its
-transaction by `providerSessionId` (signed request, no session), and the seed and data scripts,
-which create the schools themselves.
+transaction by `providerSessionId` (signed request, no session), the reference count before a
+definitive account deletion (a platform question, detailed under *Soft deletion*), the retention
+purge of expired `McpDraft` rows (an instance-wide sweep, not a tenant read), and the seed and data
+scripts, which create the schools themselves.
 
 The `warn` journal was the working list of reads to scope. It is empty, which is what allowed the
 switch to `throw`. `app/[locale]/(dashboard)/__tests__/render-reads.test.tsx` keeps it that way: it
@@ -200,10 +202,10 @@ the redirect inside `betterAuth`, so the route does not need to test `isGoogleCo
 Each flag is enforced on the server, not only in the UI, because both entry points are callable
 boundaries:
 
-- `getPasskeyAuthenticationOptions()`, `getPasskeyRegistrationOptions()` and
-  `verifyPasskeyRegistration()` return `signInDisabled` before touching a challenge, and
-  `POST /api/passkey/authenticate` answers `403` after the rate limiter (`src/actions/passkey-actions.ts`,
-  `app/api/passkey/authenticate/route.ts`).
+- `getPasskeyRegistrationOptions()`, `verifyPasskeyRegistration()`,
+  `getPasskeyAuthenticationOptions()` and `verifyPasskeyAuthentication()` return `signInDisabled`
+  before touching a challenge, and `POST /api/passkey/authenticate` answers `403` after the rate
+  limiter (`src/actions/passkey-actions.ts`, `app/api/passkey/authenticate/route.ts`).
 - `app/api/auth/[...all]/route.ts` wraps the Better Auth handler and refuses `/sign-in/social`,
   `/link-social` and `/callback/*` with `403`, on `GET` as well as `POST`. Google is the only
   declared social provider, so the path identifies the request and no body has to be read. The
@@ -242,9 +244,13 @@ unrepresentable in the database as well as in the types.
   the active school; `User` has no `schoolId` and could not be filtered.
 - **Removing a member or demoting them cannot leave a school without an administrator.** The check
   and the mutation share one `Serializable` transaction in
-  `src/gateways/school-member-gateway.ts` → `lastAdmin`. Deactivating a platform account refuses
-  self-deactivation and refuses to remove the last active super-admin → `selfDeactivation`,
-  `lastSuperAdmin` (`app/[locale]/(dashboard)/_lib/user-actions.ts`).
+  `src/gateways/school-member-gateway.ts` → `lastAdmin`. Both operations, and the MCP key cap
+  below, go through `inSerializableTransaction` (`src/lib/serializable-transaction.ts`), which
+  replays a serialization abort (`P2034`) exactly once: PostgreSQL aborting one of two concurrent
+  transactions is how the rule holds, but the loser must get the verdict rather than an exception.
+  Deactivating a platform account refuses self-deactivation and refuses to remove the last active
+  super-admin → `selfDeactivation`, `lastSuperAdmin`
+  (`app/[locale]/(dashboard)/_lib/user-actions.ts`).
 - **Platform account mutations require a super-admin** — granting or revoking platform level,
   profile edit, archiving, restoration, permanent deletion, session revocation, password reset,
   family link and unlink (`app/[locale]/(dashboard)/_lib/user-actions.ts`, `requirePlatformAdmin()`).
@@ -358,18 +364,57 @@ The 12-character `prefix` is the sole visual landmark of the list.
 
 The table is **excluded from `TENANT_SCOPED_MODELS`** for the reason already written for `SchoolMember`:
 it is a discovery table, read by `keyHash` before any school is known. Its single boundary is
-`src/gateways/mcp-api-key-gateway.ts` — no fifth exception in `src/lib/db-unscoped.ts`.
+`src/gateways/mcp-api-key-gateway.ts` — no further exception in `src/lib/db-unscoped.ts`.
 
 ### Route guards
 
-The order in `app/api/mcp/route.ts` is deliberate: IP rate limit → platform flag → credential → scope →
-per-key rate limit → handler. The flag is read before authentication so a closed instance answers `503`
-without touching the database for a key.
+The order in `app/api/mcp/route.ts` is deliberate: credential read → address rate limit, charged to
+any request that does not present a well-formed key → retention sweep → platform flag → scope →
+per-key rate limit → handler. Reading the credential and checking its shape are pure operations, so
+they select the applicable tier before the flag costs a database read; the flag is still read before
+authentication so a closed instance answers `503` without ever looking up a key. Keying the tier on
+presence alone would let `Authorization: Bearer x` escape both tiers while still paying that read on
+every request. The sweep sits above the flag on purpose and is the one thing a closed instance still
+does, since retention cannot depend on the service being open.
 
 Two rate-limiting tiers because they measure different things. Claude reaches the server from Anthropic's
 infrastructure, not from the user's machine, so `x-forwarded-for` names a handful of shared egress
-addresses: the IP tier (120/min) only damps unauthenticated flooding, and **the real budget is the key's**
-(600/min), one user on one school.
+addresses — and without that header every caller falls into the single `'unknown'` bucket. An address is
+therefore not a caller but a budget shared by every school, so the address tier (120/min) charges only
+what it is meant to damp: requests presenting no well-formed key. **The real budget is the key's**
+(600/min), one user on one school, applied after the scope resolution.
+
+Any well-formed key the route does not serve consequently escapes both tiers: unknown, revoked or
+expired it costs the platform-flag read then one indexed `findByHash`, and a key whose holder lost the
+right goes on through the membership reads before its `403`. Bounding that per address would recreate
+the cross-school denial this separation removes: a flood of failures from the shared egress address
+would refuse the valid keys arriving from it.
+
+The IP tier is only worth its cost if its key cannot be chosen by the caller. `getClientIp`
+(`src/lib/rate-limit.ts`) therefore reads `x-forwarded-for` **from the right**, at
+`length - TRUSTED_PROXY_HOPS` (default `1`, accepted range `0..4`, and anything else — a stray
+space, `0x10`, `5` — falls back to that default): the last hops were appended by our own proxies,
+while everything before them was sent by the client. Reading the first entry let a caller rotate a
+forged prefix and mint one counter per imagined address, so the only pre-auth brake was optional.
+
+The guarantee holds **only if the count is exact**, and each counted proxy must *append* the peer
+address (nginx `$proxy_add_x_forwarded_for`). Declaring too few hops buckets every caller behind the
+outermost proxy together. Declaring too many is narrowed, not closed: a chain **shorter** than the
+declared hops did not traverse the announced proxies, so its entries are unattributable and the
+request falls into the single `unknown` bucket, but a caller who pads the chain up to that length
+moves the read index back into the part it writes itself. There is no safe direction to be wrong in.
+
+There is also **no `x-real-ip` fallback**: that scalar carries no hop count, and `next start` fills
+`x-forwarded-for` from the socket address when the header is absent
+(`next/dist/server/base-server.js`, `??=`), so the fallback would only ever have served a caller who
+sends an *empty* `x-forwarded-for` — the one case worth refusing.
+
+`TRUSTED_PROXY_HOPS=0` declares that no forwarding header is verifiable: every pre-auth request then
+shares one counter, so the passkey tier becomes 10 authentications per minute for the whole instance.
+
+The tracked-key cap evicts the **least recently used** key, refreshed on refused calls too: evicting
+by insertion order dropped an established client before a freshly forged address, and let a blocked
+key buy a new budget by getting itself evicted.
 
 `POST` only; `GET` and `DELETE` answer `405`. The route **never reads a cookie** and never calls
 `auth.api.getSession()`, so it carries no ambient authority and a browser cannot set `Authorization`
@@ -390,11 +435,20 @@ runtime `406`, not a compile error.
 | `mcpDisabled` | 503 | `mcp_enabled` absent or not affirmative |
 | `unauthorized` | 401 | no key, malformed key, unknown, revoked or expired |
 | `forbidden` | 403 | deactivated account, deactivated school, non-`ADMIN` membership |
-| `tooManyRequests` | 429 | IP or key tier exhausted |
+| `tooManyRequests` | 429 | address tier exhausted by traffic without a well-formed key, or key tier exhausted |
 | `methodNotAllowed` | 405 | `GET` or `DELETE` |
 
 No `WWW-Authenticate: Bearer resource_metadata=…` and no `.well-known` route: the application operates no
 authorization server, and advertising that flow would send clients into a discovery loop.
+
+### Reads
+
+The six read tools do not reuse the dashboard's gateways. `src/gateways/mcp-read-gateway.ts` carries
+one explicit `select` per tool and is the only boundary they read through. Reusing
+`teacherGateway.list` published every column of `Teacher`, `email` and `phone` included, and any
+column added to the model later would have followed it into the model provider's context without a
+single MCP review. The published surface is therefore written where the MCP reads, not where a
+screen is built; `docs/mcp.md` lists the columns.
 
 ### Write drafts
 
@@ -462,6 +516,33 @@ one killed between the claim and the transaction is reclaimable after
 `MCP_DRAFT_COMMIT_TIMEOUT_SECONDS` (60 s, `src/domain/mcp-draft.ts`) through `reclaim()`, which
 re-dates the lock under the same conditions as `claim()`. Without it a dead process would pin a draft
 on `commitInProgress` forever, and an agent that gave up would re-preview and write twice.
+
+**A draft does not outlive its usefulness.** `resolved` holds the raw reading of a photographed
+form — student names, birthdays, parent phone numbers — so an expired `PENDING` draft, one no human
+ever validated, is deleted as soon as it expires. A `COMMITTED` draft keeps its `result`, the only
+correct answer to a late replay, for **seven days past its expiry**
+(`MCP_DRAFT_COMMITTED_RETENTION_DAYS`, `src/domain/mcp-draft.ts`); after that the agent has given up
+and the business write lives elsewhere. The committed branch requires **both** `expiresAt` and
+`committedAt` past the retention: `reclaim()` re-dates an abandoned lock without looking at the
+expiry, so a draft expired eight days ago can be committed right now, and deleting it would tear the
+row out from under its transaction. Both branches filter on `expiresAt`, which is what finally gives
+`@@index([expiresAt])` a consumer.
+
+The sweep has no clock of its own. `purgeExpiredDrafts()`
+(`src/use-cases/mcp/purge-expired-drafts.ts`) runs from `POST /api/mcp` through `after()`, off the
+response path, at most once every `MCP_DRAFT_PURGE_INTERVAL_MINUTES` (15 min) per process. It is
+registered **before the platform flag**: retention does not depend on the service being open, or
+closing the MCP would freeze the sweep while personal data keeps expiring. No scheduler is deployed
+with this application, and a maintenance route would wait for a caller that does not exist;
+MCP traffic is the only available clock, and it is also the only traffic that creates
+drafts. Like the rate-limit counters, the interval is in-process: horizontal scaling multiplies the
+sweeps, which an idempotent `deleteMany` does not mind.
+
+The delete itself is a named tenant-guard exception, `purgeExpiredMcpDrafts` in
+`src/lib/db-unscoped.ts`, called by `mcpDraftGateway.purgeExpired` — which remains the model's single
+boundary. A retention sweep has no `schoolId` to offer, and the guard rejects an unscoped
+`deleteMany` on `db`; enumerating the schools to delete school by school would describe nothing the
+rows still belong to.
 
 `commit_enroll_family` owns **one `db.$transaction`** with direct `tx.*` calls, like
 `create-enrollment.ts`: no gateway accepts an injected client, and chaining the four use cases would
@@ -583,7 +664,7 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   destroyed.
 - **A deactivated teacher's stray assignment is removable, explicitly, and only that one.** The
   class detail page reads `ClassPeriodTeacher` rows through
-  `classPeriodGateway.listInactiveTeacherAssignments`, which — unlike `findById`/`list` — filters
+  `classPeriodGateway.listInactiveTeacherAssignments`, which — unlike `findById` — filters
   `teacher: { isActive: false }` instead of excluding them, so a deactivated teacher's row is
   surfaced there instead of staying invisible. `unassignClassPeriodTeacher`
   (`src/use-cases/class-periods/unassign-teacher.ts`) is the only path that deletes such a row,

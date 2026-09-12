@@ -21,10 +21,4 @@ export const planGateway = {
     db.plan.findUnique({
       where: { id_schoolId: { id, schoolId } },
     }),
-
-  list: (schoolId: string) =>
-    db.plan.findMany({
-      where: { schoolId, isActive: true },
-      orderBy: { name: 'asc' },
-    }),
 }

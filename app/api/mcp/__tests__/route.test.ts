@@ -7,6 +7,7 @@ const touchMock = vi.fn()
 const fetchMock = vi.fn()
 const createMcpHandlerMock = vi.fn(() => ({ fetch: fetchMock }))
 const afterMock = vi.fn()
+const purgeExpiredDraftsMock = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ createMcpHandler: createMcpHandlerMock }))
 vi.mock('next/server', async (importOriginal) => ({
@@ -17,6 +18,9 @@ vi.mock('@/mcp/server', () => ({ buildMcpServer: buildMcpServerMock }))
 vi.mock('@/gateways/mcp-api-key-gateway', () => ({ mcpApiKeyGateway: { touch: touchMock } }))
 vi.mock('@/use-cases/mcp/resolve-mcp-scope', () => ({ resolveMcpScope: resolveMcpScopeMock }))
 vi.mock('@/use-cases/platform-settings/is-mcp-enabled', () => ({ isMcpEnabled: isMcpEnabledMock }))
+vi.mock('@/use-cases/mcp/purge-expired-drafts', () => ({
+  purgeExpiredDrafts: purgeExpiredDraftsMock,
+}))
 
 const { DELETE, GET, POST } = await import('../route')
 
@@ -35,7 +39,18 @@ const request = (headers: Record<string, string> = {}) =>
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
   })
 
-const authorized = () => request({ authorization: 'Bearer edu_mcp_key' })
+/** Une clé réelle : la route choisit l'étage de limitation sur la forme de la clé. */
+const presentedKey = `edu_mcp_${'k'.repeat(43)}`
+
+/** Les étages sont module-level et leur fenêtre glisse sur 60 s : une adresse par test. */
+let addressSeq = 0
+
+function nextAddress() {
+  addressSeq += 1
+  return `203.0.113.${addressSeq}`
+}
+
+const authorized = () => request({ authorization: `Bearer ${presentedKey}` })
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -81,7 +96,7 @@ describe('POST /api/mcp', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [, options] = fetchMock.mock.calls[0]
     expect(options.authInfo.extra.scope).toEqual(scope)
-    expect(JSON.stringify(options.authInfo)).not.toContain('edu_mcp_key')
+    expect(JSON.stringify(options.authInfo)).not.toContain(presentedKey)
   })
 
   /**
@@ -93,8 +108,8 @@ describe('POST /api/mcp', () => {
   it('forwards a request stripped of every credential header', async () => {
     await POST(
       request({
-        authorization: 'Bearer edu_mcp_key',
-        'x-api-key': 'edu_mcp_key',
+        authorization: `Bearer ${presentedKey}`,
+        'x-api-key': presentedKey,
         cookie: 'better-auth.session_token=session-secret',
         'proxy-authorization': 'Basic cHJveHk6c2VjcmV0',
       })
@@ -109,7 +124,7 @@ describe('POST /api/mcp', () => {
 
   it('keeps the headers, method, url and body the SDK needs to serve the call', async () => {
     const original = request({
-      authorization: 'Bearer edu_mcp_key',
+      authorization: `Bearer ${presentedKey}`,
       accept: 'application/json, text/event-stream',
       'mcp-protocol-version': '2026-07-28',
       'mcp-session-id': 'session-1',
@@ -135,7 +150,7 @@ describe('POST /api/mcp', () => {
     const controller = new AbortController()
     const original = new Request('http://localhost:8550/api/mcp', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer edu_mcp_key' },
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${presentedKey}` },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
       signal: controller.signal,
     })
@@ -149,14 +164,40 @@ describe('POST /api/mcp', () => {
     expect(forwarded.signal.aborted).toBe(true)
   })
 
+  const runAfterCallbacks = () => {
+    for (const [callback] of afterMock.mock.calls) callback()
+  }
+
   it('records the key usage off the response path', async () => {
     await POST(authorized())
 
-    expect(afterMock).toHaveBeenCalledTimes(1)
     expect(touchMock).not.toHaveBeenCalled()
 
-    afterMock.mock.calls[0][0]()
+    runAfterCallbacks()
     expect(touchMock).toHaveBeenCalledWith('key-1', expect.any(Date), expect.any(Date))
+  })
+
+  it('sweeps expired drafts off the response path', async () => {
+    await POST(authorized())
+
+    expect(purgeExpiredDraftsMock).not.toHaveBeenCalled()
+
+    runAfterCallbacks()
+    expect(purgeExpiredDraftsMock).toHaveBeenCalledWith(expect.any(Date))
+  })
+
+  /**
+   * La rétention ne dépend pas de l'ouverture du service : une instance fermée continue de
+   * balayer, sinon des données personnelles expirées survivraient au drapeau.
+   */
+  it('still sweeps while the platform flag is off', async () => {
+    isMcpEnabledMock.mockResolvedValue(false)
+
+    const response = await POST(authorized())
+
+    expect(response.status).toBe(503)
+    runAfterCallbacks()
+    expect(purgeExpiredDraftsMock).toHaveBeenCalledWith(expect.any(Date))
   })
 
   it('turns an unexpected failure into a 500 rather than a stack trace', async () => {
@@ -181,13 +222,67 @@ describe('POST /api/mcp', () => {
     Object.defineProperty(withCookie.headers, 'get', {
       value: (name: string) => {
         if (name.toLowerCase() === 'cookie') cookieReads()
-        return name.toLowerCase() === 'authorization' ? 'Bearer edu_mcp_key' : null
+        return name.toLowerCase() === 'authorization' ? `Bearer ${presentedKey}` : null
       },
     })
 
     await POST(withCookie)
 
     expect(cookieReads).not.toHaveBeenCalled()
+  })
+
+  /**
+   * L'étage par adresse est un budget partagé : Claude atteint la route depuis une
+   * poignée d'adresses de sortie d'Anthropic, et sans `x-forwarded-for` tout le trafic
+   * retombe sur un seau unique. Le facturer au trafic authentifié rendrait `429` aux
+   * clés de toutes les autres écoles dès qu'une seule est active.
+   */
+  it('keeps a key budget out of the shared address budget', async () => {
+    const address = nextAddress()
+    const from = (headers: Record<string, string> = {}) =>
+      request({ 'x-forwarded-for': address, ...headers })
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+    for (let i = 0; i < 120; i += 1) await POST(from())
+    expect((await POST(from())).status).toBe(429)
+
+    resolveMcpScopeMock.mockResolvedValue({ status: 'OK', scope })
+    const response = await POST(from({ authorization: `Bearer ${presentedKey}` }))
+
+    expect(response.status).toBe(200)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('damps credential-less traffic before reading the platform flag', async () => {
+    const address = nextAddress()
+    const anonymous = () => request({ 'x-forwarded-for': address })
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+
+    const statuses: number[] = []
+    for (let i = 0; i < 120; i += 1) statuses.push((await POST(anonymous())).status)
+    expect(statuses.filter((status) => status !== 401)).toEqual([])
+
+    const refused = await POST(anonymous())
+
+    expect(refused.status).toBe(429)
+    expect(await refused.json()).toEqual({ error: 'tooManyRequests' })
+    expect(isMcpEnabledMock).toHaveBeenCalledTimes(120)
+  })
+
+  /**
+   * Une chaîne quelconque derrière `Bearer` n'est pas une clé. L'exempter de l'étage par
+   * adresse laisserait un en-tête vide de sens échapper aux deux étages tout en faisant
+   * payer, à chaque requête, la lecture en base du drapeau plateforme.
+   */
+  it('damps a malformed credential like credential-less traffic', async () => {
+    const address = nextAddress()
+    const malformed = () => request({ 'x-forwarded-for': address, authorization: 'Bearer x' })
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+
+    for (let i = 0; i < 120; i += 1) await POST(malformed())
+    const refused = await POST(malformed())
+
+    expect(refused.status).toBe(429)
+    expect(isMcpEnabledMock).toHaveBeenCalledTimes(120)
   })
 })
 

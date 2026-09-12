@@ -101,17 +101,21 @@ revoked or expired key), `403 forbidden` (deactivated account or school, or a me
 
 Every one of them works in the key's school and takes no arguments.
 
-| Tool | Returns |
+| Tool | Publishes |
 |---|---|
-| `describe_school` | the school the key opens |
-| `list_levels` | active levels, with their next level when defined |
-| `list_periods` | active school years, most recent first |
-| `list_class_periods` | active classes with capacity, level and period |
-| `list_plans` | active pricing plans and their amount, in cents |
-| `list_teachers` | active teachers |
+| `describe_school` | `id`, `name`, `slug` |
+| `list_levels` | `id`, `name`, `nextLevel { id, name }` |
+| `list_periods` | `id`, `name`, `startAt`, `endAt` |
+| `list_class_periods` | `id`, `name`, `capacity`, `level { id, name }`, `period { id, name }`, `teachers[].teacher { id, firstName, lastName }` |
+| `list_plans` | `id`, `name`, `amount` (decimal string, not cents) |
+| `list_teachers` | `id`, `firstName`, `lastName` |
 
 They are the resolution layer: a label read on paper — "CE1 / 2026-2027", the name of a plan —
-becomes an identifier through these lists, before any write is attempted.
+becomes an identifier through these lists, before any write is attempted. That is also why the
+columns above are the whole of it: a teacher's `email` and `phone` are never published, because
+resolving a paper form needs an identity, not a way to contact anyone. Every column is named in
+`src/gateways/mcp-read-gateway.ts`, so widening the surface is an edit to that file, not a
+side effect of a schema change.
 
 ## Writing: the preview/commit pairs
 
@@ -155,6 +159,11 @@ as duplicates. An unresolved label is a blocker naming the child: `students.2.cl
 Dates are ISO strings, never anything else. A birthday is a day, `2018-04-02`. A payment date is a
 day or a timestamp with seconds and a zone, `2026-09-12T14:30:00Z` or `2026-09-12T14:30:00+02:00`.
 `02/04/2018` and a timestamp without a zone are refused.
+
+`matches` reports what the duplicate probe found, projected by the use case, not by the dashboard
+gateway it reads: a family is an `id` and a `name`. Only `enroll_family` probes people, so only it
+carries `students` — a namesake is an `id`, both names and an `isStudent` flag. A namesake already
+enrolled is named, never dated.
 
 `commit_*` sends back the `draftId` and that checksum, not the payload: a model does not
 re-serialize two kilobytes byte for byte. The checksum proves the resolved plan was read; a

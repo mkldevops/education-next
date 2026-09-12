@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const listClassPeriods = vi.fn()
 const listPlans = vi.fn()
+const mcpReadGateway = { listClassPeriods, listPlans }
 const countEnrolled = vi.fn()
 const searchFamilies = vi.fn()
 const searchPersons = vi.fn()
 const findByReference = vi.fn()
 const createDraft = vi.fn()
 
-vi.mock('@/use-cases/class-periods/list-class-periods', () => ({ listClassPeriods }))
-vi.mock('@/use-cases/plans/list-plans', () => ({ listPlans }))
+vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
 vi.mock('@/gateways/class-period-gateway', () => ({ classPeriodGateway: { countEnrolled } }))
 vi.mock('@/gateways/family-gateway', () => ({ familyGateway: { searchByName: searchFamilies } }))
 vi.mock('@/gateways/person-gateway', () => ({ personGateway: { searchByName: searchPersons } }))
@@ -209,6 +209,35 @@ describe('previewEnrollFamily', () => {
       'existingStudent',
     ])
     expect(result.draftId).toBe('draft-1')
+  })
+
+  // Les homonymes partent dans le contexte du fournisseur de modèle. Le gateway est celui du
+  // dashboard : la ligne rendue ici porte volontairement plus que ce que le MCP publie, et le
+  // test échoue le jour où une colonne la suit.
+  it('publishes a namesake as a name and an already-a-student flag, nothing more', async () => {
+    searchFamilies.mockResolvedValue([
+      { id: 'family-9', name: 'Bouhahima', createdAt: new Date('2020-01-01') },
+    ])
+    searchPersons.mockResolvedValue([
+      {
+        id: 'person-9',
+        name: 'Mayza',
+        lastname: 'BOURAHIMA',
+        student: { id: 'student-9', birthday: new Date('2018-04-02') },
+      },
+      { id: 'person-8', name: 'Mayza', lastname: 'BOURAHIMA', student: null },
+    ])
+
+    const result = await previewEnrollFamily(scope, input)
+    assertPreview(result)
+
+    expect(result.matches).toEqual({
+      families: [{ id: 'family-9', name: 'Bouhahima' }],
+      students: [
+        { id: 'person-9', name: 'Mayza', lastname: 'BOURAHIMA', isStudent: true },
+        { id: 'person-8', name: 'Mayza', lastname: 'BOURAHIMA', isStudent: false },
+      ],
+    })
   })
 
   it('warns when the receipt number has already been banked', async () => {

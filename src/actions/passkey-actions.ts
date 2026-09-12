@@ -141,6 +141,8 @@ export async function verifyPasskeyAuthentication(
   response: AuthenticationResponseJSON,
   challengeId: string
 ) {
+  if (!(await isPasskeySignInEnabled())) return 'signInDisabled' as const
+
   const challengeRecord = await db.verification.findUnique({
     where: { identifier: `passkey-auth-challenge:${challengeId}` },
   })

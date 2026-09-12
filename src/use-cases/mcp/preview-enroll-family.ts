@@ -8,11 +8,10 @@ import { validateStudentBirthday } from '@/domain/student'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
+import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { personGateway } from '@/gateways/person-gateway'
 import { draftChecksum } from '@/lib/mcp-draft-crypto'
-import { listClassPeriods } from '../class-periods/list-class-periods'
-import { listPlans } from '../plans/list-plans'
 import type { McpScope } from './resolve-mcp-scope'
 import { previewEnrollFamilySchema } from './schemas'
 
@@ -57,7 +56,10 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     }
   }
 
-  const [classPeriods, plans] = await Promise.all([listClassPeriods(schoolId), listPlans(schoolId)])
+  const [classPeriods, plans] = await Promise.all([
+    mcpReadGateway.listClassPeriods(schoolId),
+    mcpReadGateway.listPlans(schoolId),
+  ])
 
   // Une classe par élève : la fratrie se répartit couramment sur plusieurs classes, et
   // l'échec de résolution doit nommer l'enfant concerné, pas la famille entière.
@@ -188,9 +190,18 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     }
   }
 
+  // La surface publiée est décidée ici, pas héritée des gateways du dashboard : ces lignes
+  // partent dans le contexte du fournisseur de modèle, et un homonyme n'a besoin que d'un nom
+  // et du drapeau « déjà élève ». Une colonne ajoutée plus tard à `Person` ou `Student` ne peut
+  // pas la suivre sans passer par ce `map`.
   const matches = {
-    families: familyMatches,
-    students: personMatches.flat(),
+    families: familyMatches.map((row) => ({ id: row.id, name: row.name })),
+    students: personMatches.flat().map((row) => ({
+      id: row.id,
+      name: row.name,
+      lastname: row.lastname,
+      isStudent: row.student !== null,
+    })),
   }
 
   // Chaque élève emporte sa classe dans le même élément : un filtre suivi d'un accès par

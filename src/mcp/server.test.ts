@@ -14,24 +14,22 @@ class FakeMcpServer {
   }
 }
 
-const findActiveById = vi.fn()
-const listLevels = vi.fn()
-const listPeriods = vi.fn()
-const listClassPeriods = vi.fn()
-const listPlans = vi.fn()
-const listTeachers = vi.fn()
+const mcpReadGateway = {
+  describeSchool: vi.fn(),
+  listLevels: vi.fn(),
+  listPeriods: vi.fn(),
+  listClassPeriods: vi.fn(),
+  listPlans: vi.fn(),
+  listTeachers: vi.fn(),
+}
+
 const previewEnrollFamily = vi.fn()
 const commitEnrollFamily = vi.fn()
 const previewRecordPayment = vi.fn()
 const commitRecordPayment = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ McpServer: FakeMcpServer }))
-vi.mock('@/gateways/school-gateway', () => ({ schoolGateway: { findActiveById } }))
-vi.mock('@/use-cases/levels/list-levels', () => ({ listLevels }))
-vi.mock('@/use-cases/periods/list-periods', () => ({ listPeriods }))
-vi.mock('@/use-cases/class-periods/list-class-periods', () => ({ listClassPeriods }))
-vi.mock('@/use-cases/plans/list-plans', () => ({ listPlans }))
-vi.mock('@/use-cases/teachers/list-teachers', () => ({ listTeachers }))
+vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
 vi.mock('@/use-cases/mcp/preview-enroll-family', () => ({ previewEnrollFamily }))
 vi.mock('@/use-cases/mcp/commit-enroll-family', () => ({ commitEnrollFamily }))
 vi.mock('@/use-cases/mcp/preview-record-payment', () => ({ previewRecordPayment }))
