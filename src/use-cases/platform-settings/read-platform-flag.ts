@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { readsAsEnabled } from '@/domain/platform-settings'
+import { readsAsEnabled, readsAsOptedIn } from '@/domain/platform-settings'
 import { getPlatformSetting } from './get-platform-setting'
 
 /**
@@ -23,4 +23,24 @@ export function readPlatformFlag(
   getSetting: typeof getPlatformSetting = getPlatformSetting
 ): Promise<boolean> {
   return readFlag(name, getSetting)
+}
+
+/**
+ * Frère de `readFlag` pour les drapeaux qui s'ouvrent sur un `true` explicite au lieu de
+ * se fermer sur un `false` explicite — mémoïsé de la même façon, réduit à un appel direct
+ * hors rendu.
+ */
+const readOptInFlag = cache(
+  async (name: string, getSetting: typeof getPlatformSetting): Promise<boolean> => {
+    const setting = await getSetting({ name })
+
+    return readsAsOptedIn(typeof setting === 'string' ? null : setting.value)
+  }
+)
+
+export function readPlatformOptInFlag(
+  name: string,
+  getSetting: typeof getPlatformSetting = getPlatformSetting
+): Promise<boolean> {
+  return readOptInFlag(name, getSetting)
 }
