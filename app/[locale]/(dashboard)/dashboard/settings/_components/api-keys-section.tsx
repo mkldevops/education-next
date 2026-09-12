@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, Input, Label, Select } from '@peaklab/ui'
-import { Copy, Trash2 } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import {
@@ -13,6 +13,7 @@ import { formatDate, formatDateTime } from '@/lib/date'
 import { toast } from '@/lib/toast'
 import { createMcpApiKeyAction, revokeMcpApiKeyAction } from '../_lib/mcp-api-key-actions'
 import type { McpApiKeyView } from '../_lib/mcp-api-key-view'
+import { RevokeApiKeyDialog } from './revoke-api-key-dialog'
 
 type Props = {
   keys: McpApiKeyView[]
@@ -175,16 +176,11 @@ export function ApiKeysSection({ keys }: Props) {
                       {revoked ? t('list.revoked') : t('list.expired')}
                     </span>
                   ) : (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={pending}
-                      aria-label={t('list.revoke', { name: row.name })}
-                      onClick={() => onRevoke(row.id)}
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </Button>
+                    <RevokeApiKeyDialog
+                      apiKey={row}
+                      pending={pending}
+                      onConfirm={() => onRevoke(row.id)}
+                    />
                   )}
                 </li>
               )
