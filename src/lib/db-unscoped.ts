@@ -1,8 +1,8 @@
 /**
  * Les seules portes de sortie du garde tenant, nommées et auditées.
  *
- * Chacune correspond à un chemin qui s'exécute AVANT qu'une école active puisse
- * exister, et dont l'autorisation est portée par autre chose qu'un `schoolId` :
+ * Chacune est autorisée par autre chose qu'une école : soit le chemin s'exécute AVANT
+ * qu'une école active puisse exister, soit il ne porte sur aucune école :
  *
  *  1. l'invitation lue par `token` — flux public, le token unique et non devinable
  *     porte l'autorisation, et l'école est LUE depuis l'invitation ;
@@ -10,7 +10,9 @@
  *     `providerSessionId` unique ;
  *  3. le décompte des références d'un compte avant sa suppression définitive — la
  *     question est plateforme, donc sans école, et doit voir les lignes archivées ;
- *  4. le seed et la migration legacy — ils créent les écoles elles-mêmes.
+ *  4. la purge de rétention des brouillons MCP expirés — un entretien global, sans
+ *     école à produire, donc sans lecture de tenant ;
+ *  5. le seed et la migration legacy — ils créent les écoles elles-mêmes.
  *
  * Aucun autre appelant ne doit importer ce module.
  */
@@ -70,7 +72,36 @@ export async function countRowsBlockingUserDeletion(userId: string): Promise<num
 }
 
 /**
- * Exception 4 — seed et scripts de données uniquement. Ces programmes créent les
+ * Exception 4 — rétention, pas lecture de tenant. Un balayage par école demanderait
+ * d'énumérer les écoles pour supprimer partout : le `schoolId` ne décrit rien ici, et
+ * les lignes visées n'appartiennent plus à personne — elles sont hors d'usage.
+ *
+ * La branche engagée exige `expiresAt` ET `committedAt` hors rétention. `expiresAt` seul
+ * suffirait si un verrou n'était jamais re-daté, mais `reclaim()` repousse `committedAt`
+ * sans condition sur l'expiration : un brouillon expiré depuis huit jours, repris à
+ * l'instant par un `commit_*`, serait supprimé au milieu de sa transaction. Les deux branches
+ * contraignent `expiresAt`, ce qui donne enfin un lecteur à `@@index([expiresAt])`.
+ *
+ * Appelée par `mcpDraftGateway.purgeExpired`, qui reste la seule frontière de `McpDraft`.
+ */
+export async function purgeExpiredMcpDrafts(now: Date, committedBefore: Date): Promise<number> {
+  const { count } = await client().mcpDraft.deleteMany({
+    where: {
+      OR: [
+        { status: 'PENDING', expiresAt: { lte: now } },
+        {
+          status: 'COMMITTED',
+          expiresAt: { lte: committedBefore },
+          committedAt: { lte: committedBefore },
+        },
+      ],
+    },
+  })
+  return count
+}
+
+/**
+ * Exception 5 — seed et scripts de données uniquement. Ces programmes créent les
  * écoles et purgent des tables entières, deux opérations qu'aucun scope ne peut
  * décrire. Ne jamais importer depuis `app/**` ni `src/**`.
  */

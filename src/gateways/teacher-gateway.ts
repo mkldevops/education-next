@@ -39,12 +39,6 @@ export const teacherGateway = {
       select: { id: true },
     }),
 
-  list: (schoolId: string) =>
-    db.teacher.findMany({
-      where: { schoolId, isActive: true },
-      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
-    }),
-
   createExpense: (schoolId: string, data: TeacherExpenseData) =>
     db.teacherExpense.create({
       data: { ...data, schoolId },

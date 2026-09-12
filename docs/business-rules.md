@@ -74,10 +74,12 @@ Isolation rests on three layers. None is sufficient alone.
 `userId` before any school is known. All access goes through `src/gateways/school-member-gateway.ts`,
 which is the single read *and* write boundary for that model.
 
-Three named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
+Five named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
 school: the invitation read by its unique token (public flow), the Stripe webhook finding its
-transaction by `providerSessionId` (signed request, no session), and the seed and data scripts,
-which create the schools themselves.
+transaction by `providerSessionId` (signed request, no session), the reference count before a
+definitive account deletion (a platform question, detailed under *Soft deletion*), the retention
+purge of expired `McpDraft` rows (an instance-wide sweep, not a tenant read), and the seed and data
+scripts, which create the schools themselves.
 
 The `warn` journal was the working list of reads to scope. It is empty, which is what allowed the
 switch to `throw`. `app/[locale]/(dashboard)/__tests__/render-reads.test.tsx` keeps it that way: it
@@ -350,21 +352,26 @@ The 12-character `prefix` is the sole visual landmark of the list.
   `userId` foreign key is therefore `Restrict`, and `mcpApiKeyGateway.countForUser` makes a key —
   revoked or not — block the permanent deletion of its holder's account. Cascading the account
   deletion would have erased exactly the evidence this rule promises to keep.
-- Five live keys per (user, school) pair.
+- Five live keys per (user, school) pair. The count and the insert share one `Serializable`
+  transaction in `src/gateways/mcp-api-key-gateway.ts` → `tooManyKeys`, for the reason already
+  written for `lastAdmin`: counting outside the write lets two concurrent creations read the same
+  total and both pass. That cap is the only bound on the number of durable secrets one account
+  emits on one school.
 
 The table is **excluded from `TENANT_SCOPED_MODELS`** for the reason already written for `SchoolMember`:
 it is a discovery table, read by `keyHash` before any school is known. Its single boundary is
-`src/gateways/mcp-api-key-gateway.ts` — no fifth exception in `src/lib/db-unscoped.ts`.
+`src/gateways/mcp-api-key-gateway.ts` — no further exception in `src/lib/db-unscoped.ts`.
 
 ### Route guards
 
 The order in `app/api/mcp/route.ts` is deliberate: credential read → address rate limit, charged to
-any request that does not present a well-formed key → platform flag → scope → per-key rate limit →
-handler. Reading the credential and checking its shape are pure operations, so they select the
-applicable tier before the flag costs a database read; the flag is still read before authentication
-so a closed instance answers `503` without touching the database for a key. Keying the tier on
+any request that does not present a well-formed key → retention sweep → platform flag → scope →
+per-key rate limit → handler. Reading the credential and checking its shape are pure operations, so
+they select the applicable tier before the flag costs a database read; the flag is still read before
+authentication so a closed instance answers `503` without ever looking up a key. Keying the tier on
 presence alone would let `Authorization: Bearer x` escape both tiers while still paying that read on
-every request.
+every request. The sweep sits above the flag on purpose and is the one thing a closed instance still
+does, since retention cannot depend on the service being open.
 
 Two rate-limiting tiers because they measure different things. Claude reaches the server from Anthropic's
 infrastructure, not from the user's machine, so `x-forwarded-for` names a handful of shared egress
@@ -403,6 +410,15 @@ runtime `406`, not a compile error.
 
 No `WWW-Authenticate: Bearer resource_metadata=…` and no `.well-known` route: the application operates no
 authorization server, and advertising that flow would send clients into a discovery loop.
+
+### Reads
+
+The six read tools do not reuse the dashboard's gateways. `src/gateways/mcp-read-gateway.ts` carries
+one explicit `select` per tool and is the only boundary they read through. Reusing
+`teacherGateway.list` published every column of `Teacher`, `email` and `phone` included, and any
+column added to the model later would have followed it into the model provider's context without a
+single MCP review. The published surface is therefore written where the MCP reads, not where a
+screen is built; `docs/mcp.md` lists the columns.
 
 ### Write drafts
 
@@ -453,6 +469,33 @@ one killed between the claim and the transaction is reclaimable after
 `MCP_DRAFT_COMMIT_TIMEOUT_SECONDS` (60 s, `src/domain/mcp-draft.ts`) through `reclaim()`, which
 re-dates the lock under the same conditions as `claim()`. Without it a dead process would pin a draft
 on `commitInProgress` forever, and an agent that gave up would re-preview and write twice.
+
+**A draft does not outlive its usefulness.** `resolved` holds the raw reading of a photographed
+form — student names, birthdays, parent phone numbers — so an expired `PENDING` draft, one no human
+ever validated, is deleted as soon as it expires. A `COMMITTED` draft keeps its `result`, the only
+correct answer to a late replay, for **seven days past its expiry**
+(`MCP_DRAFT_COMMITTED_RETENTION_DAYS`, `src/domain/mcp-draft.ts`); after that the agent has given up
+and the business write lives elsewhere. The committed branch requires **both** `expiresAt` and
+`committedAt` past the retention: `reclaim()` re-dates an abandoned lock without looking at the
+expiry, so a draft expired eight days ago can be committed right now, and deleting it would tear the
+row out from under its transaction. Both branches filter on `expiresAt`, which is what finally gives
+`@@index([expiresAt])` a consumer.
+
+The sweep has no clock of its own. `purgeExpiredDrafts()`
+(`src/use-cases/mcp/purge-expired-drafts.ts`) runs from `POST /api/mcp` through `after()`, off the
+response path, at most once every `MCP_DRAFT_PURGE_INTERVAL_MINUTES` (15 min) per process. It is
+registered **before the platform flag**: retention does not depend on the service being open, or
+closing the MCP would freeze the sweep while personal data keeps expiring. No scheduler is deployed
+with this application, and a maintenance route would wait for a caller that does not exist;
+MCP traffic is the only available clock, and it is also the only traffic that creates
+drafts. Like the rate-limit counters, the interval is in-process: horizontal scaling multiplies the
+sweeps, which an idempotent `deleteMany` does not mind.
+
+The delete itself is a named tenant-guard exception, `purgeExpiredMcpDrafts` in
+`src/lib/db-unscoped.ts`, called by `mcpDraftGateway.purgeExpired` — which remains the model's single
+boundary. A retention sweep has no `schoolId` to offer, and the guard rejects an unscoped
+`deleteMany` on `db`; enumerating the schools to delete school by school would describe nothing the
+rows still belong to.
 
 `commit_enroll_family` owns **one `db.$transaction`** with direct `tx.*` calls, like
 `create-enrollment.ts`: no gateway accepts an injected client, and chaining the four use cases would
@@ -574,7 +617,7 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   destroyed.
 - **A deactivated teacher's stray assignment is removable, explicitly, and only that one.** The
   class detail page reads `ClassPeriodTeacher` rows through
-  `classPeriodGateway.listInactiveTeacherAssignments`, which — unlike `findById`/`list` — filters
+  `classPeriodGateway.listInactiveTeacherAssignments`, which — unlike `findById` — filters
   `teacher: { isActive: false }` instead of excluding them, so a deactivated teacher's row is
   surfaced there instead of staying invisible. `unassignClassPeriodTeacher`
   (`src/use-cases/class-periods/unassign-teacher.ts`) is the only path that deletes such a row,

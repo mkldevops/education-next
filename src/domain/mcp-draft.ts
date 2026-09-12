@@ -24,6 +24,30 @@ export function staleCommitBefore(now: Date = new Date()): Date {
   return new Date(now.getTime() - MCP_DRAFT_COMMIT_TIMEOUT_SECONDS * 1000)
 }
 
+/**
+ * Rétention d'un brouillon engagé, comptée depuis son expiration.
+ *
+ * `resolved` porte les données brutes d'un formulaire photographié — noms d'élèves, dates de
+ * naissance, téléphones. Un brouillon `PENDING` périmé n'a jamais été validé par un humain : il
+ * disparaît dès son expiration. Un brouillon `COMMITTED` garde son `result`, seule réponse correcte
+ * à un rejeu tardif, mais une semaine borne cette survie : passé ce délai l'agent a abandonné, et
+ * l'écriture métier vit ailleurs.
+ */
+export const MCP_DRAFT_COMMITTED_RETENTION_DAYS = 7
+
+/**
+ * Intervalle minimal entre deux purges dans un même process.
+ *
+ * La purge n'a pas d'horloge propre : elle suit le trafic MCP, qui est aussi le seul trafic qui crée
+ * des brouillons. L'étranglement évite un `deleteMany` par requête sans rien promettre de plus qu'un
+ * balayage régulier tant que le serveur est sollicité.
+ */
+export const MCP_DRAFT_PURGE_INTERVAL_MINUTES = 15
+
+export function committedRetentionBefore(now: Date = new Date()): Date {
+  return new Date(now.getTime() - MCP_DRAFT_COMMITTED_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+}
+
 export type McpDraftLifecycle = {
   status: 'PENDING' | 'COMMITTED'
   expiresAt: Date

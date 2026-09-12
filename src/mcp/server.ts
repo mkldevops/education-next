@@ -1,8 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
-import { schoolGateway } from '@/gateways/school-gateway'
-import { listClassPeriods } from '@/use-cases/class-periods/list-class-periods'
-import { listLevels } from '@/use-cases/levels/list-levels'
+import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
@@ -13,9 +11,6 @@ import {
   previewEnrollFamilySchema,
   previewRecordPaymentSchema,
 } from '@/use-cases/mcp/schemas'
-import { listPeriods } from '@/use-cases/periods/list-periods'
-import { listPlans } from '@/use-cases/plans/list-plans'
-import { listTeachers } from '@/use-cases/teachers/list-teachers'
 
 const SERVER_INFO = { name: 'education', version: '1.0.0' }
 
@@ -80,7 +75,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
         "et il n'existe aucun moyen d'en viser une autre avec cette clé.",
       inputSchema: NO_ARGS,
     },
-    async () => read('describe_school', () => schoolGateway.findActiveById(schoolId))
+    async () => read('describe_school', () => mcpReadGateway.describeSchool(schoolId))
   )
 
   server.registerTool(
@@ -90,7 +85,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
       description: "Niveaux actifs de l'école, avec leur niveau suivant lorsqu'il est défini.",
       inputSchema: NO_ARGS,
     },
-    async () => read('list_levels', () => listLevels(schoolId))
+    async () => read('list_levels', () => mcpReadGateway.listLevels(schoolId))
   )
 
   server.registerTool(
@@ -100,7 +95,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
       description: 'Années ou périodes scolaires actives, de la plus récente à la plus ancienne.',
       inputSchema: NO_ARGS,
     },
-    async () => read('list_periods', () => listPeriods(schoolId))
+    async () => read('list_periods', () => mcpReadGateway.listPeriods(schoolId))
   )
 
   server.registerTool(
@@ -112,17 +107,19 @@ export function buildMcpServer(scope: McpScope): McpServer {
         'une fiche papier se résout en identifiant de classe par cette liste.',
       inputSchema: NO_ARGS,
     },
-    async () => read('list_class_periods', () => listClassPeriods(schoolId))
+    async () => read('list_class_periods', () => mcpReadGateway.listClassPeriods(schoolId))
   )
 
   server.registerTool(
     'list_plans',
     {
       title: 'Formules tarifaires',
-      description: 'Formules actives et leur montant, en centimes.',
+      description:
+        'Formules actives et leur montant. Le montant est une valeur décimale rendue en ' +
+        "chaîne, dans la devise de l'école — jamais des centimes.",
       inputSchema: NO_ARGS,
     },
-    async () => read('list_plans', () => listPlans(schoolId))
+    async () => read('list_plans', () => mcpReadGateway.listPlans(schoolId))
   )
 
   server.registerTool(
@@ -132,7 +129,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
       description: "Enseignants actifs de l'école.",
       inputSchema: NO_ARGS,
     },
-    async () => read('list_teachers', () => listTeachers(schoolId))
+    async () => read('list_teachers', () => mcpReadGateway.listTeachers(schoolId))
   )
 
   server.registerTool(

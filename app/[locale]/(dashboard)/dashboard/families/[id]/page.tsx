@@ -3,14 +3,11 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { cache } from 'react'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
-import { db } from '@/lib/db'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
-import { adminOrLinkedTo, resolveDeepLink } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
@@ -23,6 +20,7 @@ import { ChildrenTab } from './_components/children-tab'
 import { HeroBanner } from './_components/hero-banner'
 import { OverviewTab } from './_components/overview-tab'
 import { PaymentsTab } from './_components/payments-tab'
+import { deriveFamilyDetail, getFamilyDialogData, resolveFamily } from './_lib/family-detail'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -30,88 +28,6 @@ type Props = {
 }
 
 const TAB_KEYS = ['overview', 'children', 'payments', 'activity'] as const
-
-/**
- * Résolveur unique de la page ET de `generateMetadata`.
- *
- * Un parent n'est pas contraint par la famille de son école active mais par son propre
- * rattachement (`users`) : sinon un lien profond vers son dossier d'une autre école
- * renverrait `notFound()` au lieu de proposer la bascule.
- */
-const resolveFamily = cache((id: string) =>
-  resolveDeepLink({
-    requireAdmin: false,
-    find: (access) =>
-      db.family.findFirst({
-        where: {
-          id,
-          schoolId: { in: access.schoolIds },
-          ...adminOrLinkedTo(access, { users: { some: { userId: access.userId } } }),
-        },
-        include: {
-          persons: {
-            where: { person: { isActive: true } },
-            include: {
-              person: {
-                include: {
-                  student: {
-                    where: { isActive: true },
-                    include: {
-                      enrollments: {
-                        where: { isActive: true },
-                        include: {
-                          plan: true,
-                          classAssignments: {
-                            where: { endAt: null },
-                            include: {
-                              classPeriod: {
-                                include: {
-                                  period: true,
-                                  level: true,
-                                },
-                              },
-                            },
-                          },
-                          payments: {
-                            where: { isActive: true },
-                          },
-                        },
-                      },
-                    },
-                  },
-                  phoneNumbers: {
-                    where: { isActive: true },
-                    orderBy: { createdAt: 'asc' },
-                  },
-                },
-              },
-            },
-          },
-          users: {
-            include: {
-              user: {
-                select: { email: true },
-              },
-            },
-          },
-          payments: {
-            where: { isActive: true },
-            include: {
-              enrollment: {
-                include: {
-                  student: {
-                    include: { person: true },
-                  },
-                  plan: true,
-                },
-              },
-            },
-            orderBy: { paidAt: 'desc' as const },
-          },
-        },
-      }),
-  })
-)
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
@@ -149,50 +65,21 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     getFamilyBalance(family.schoolId, family.id),
   ])
 
-  const [plans, classes] = isAdmin
-    ? await Promise.all([
-        db.plan.findMany({
-          where: { schoolId: family.schoolId, isActive: true },
-          orderBy: { name: 'asc' },
-        }),
-        db.classPeriod.findMany({
-          where: {
-            schoolId: family.schoolId,
-            isActive: true,
-            ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
-          },
-          include: { level: true, period: true },
-          orderBy: { name: 'asc' },
-        }),
-      ])
-    : [[], []]
+  const { plans, classes } = await getFamilyDialogData(family.schoolId, isAdmin, selectedPeriodId)
 
-  const students = family.persons.filter(
-    (
-      fp
-    ): fp is typeof fp & {
-      person: typeof fp.person & { student: NonNullable<typeof fp.person.student> }
-    } => fp.person.student !== null
-  )
-
-  const allEnrollments = students.flatMap((s) =>
-    s.person.student.enrollments.map((e) => ({
-      ...e,
-      studentName: `${s.person.name} ${s.person.lastname}`,
-    }))
-  )
-  const totalDue = familyBalance.totalAmount
-  const totalDiscount = familyBalance.totalDiscount
-  const totalPaid = familyBalance.totalPaid
-  const remainingBalance = familyBalance.remainingBalance
-
-  const enrolledChildren = students.filter((s) => s.person.student.enrollments.length > 0).length
-  const activeEnrollments = allEnrollments.filter((e) => e.status === 'ACTIVE').length
-
-  const payableBalance = familyBalance.payableBalance
-  const scopedStudentId = students.some((s) => s.person.student.id === studentId)
-    ? studentId
-    : undefined
+  const {
+    students,
+    allEnrollments,
+    enrolledChildren,
+    activeEnrollments,
+    pendingCount,
+    scopedStudentId,
+    totalAmount,
+    totalDiscount,
+    totalPaid,
+    remainingBalance,
+    payableBalance,
+  } = deriveFamilyDetail(family, familyBalance, studentId)
 
   const classOptions = classes.map((c) => ({
     id: c.id,
@@ -294,7 +181,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 activeEnrollments={activeEnrollments}
                 totalPaid={totalPaid}
                 remainingBalance={remainingBalance}
-                totalDue={totalDue}
+                totalDue={totalAmount}
                 totalDiscount={totalDiscount}
                 payableBalance={payableBalance}
               />
@@ -305,8 +192,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             content: (
               <ChildrenTab
                 students={students}
-                hasPendingEnrollments={allEnrollments.some((e) => e.status === 'PENDING')}
-                pendingCount={allEnrollments.filter((e) => e.status === 'PENDING').length}
+                hasPendingEnrollments={pendingCount > 0}
+                pendingCount={pendingCount}
                 locale={locale}
                 familyId={family.id}
                 isAdmin={isAdmin}

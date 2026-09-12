@@ -7,6 +7,7 @@ const touchMock = vi.fn()
 const fetchMock = vi.fn()
 const createMcpHandlerMock = vi.fn(() => ({ fetch: fetchMock }))
 const afterMock = vi.fn()
+const purgeExpiredDraftsMock = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ createMcpHandler: createMcpHandlerMock }))
 vi.mock('next/server', async (importOriginal) => ({
@@ -17,6 +18,9 @@ vi.mock('@/mcp/server', () => ({ buildMcpServer: buildMcpServerMock }))
 vi.mock('@/gateways/mcp-api-key-gateway', () => ({ mcpApiKeyGateway: { touch: touchMock } }))
 vi.mock('@/use-cases/mcp/resolve-mcp-scope', () => ({ resolveMcpScope: resolveMcpScopeMock }))
 vi.mock('@/use-cases/platform-settings/is-mcp-enabled', () => ({ isMcpEnabled: isMcpEnabledMock }))
+vi.mock('@/use-cases/mcp/purge-expired-drafts', () => ({
+  purgeExpiredDrafts: purgeExpiredDraftsMock,
+}))
 
 const { DELETE, GET, POST } = await import('../route')
 
@@ -160,14 +164,40 @@ describe('POST /api/mcp', () => {
     expect(forwarded.signal.aborted).toBe(true)
   })
 
+  const runAfterCallbacks = () => {
+    for (const [callback] of afterMock.mock.calls) callback()
+  }
+
   it('records the key usage off the response path', async () => {
     await POST(authorized())
 
-    expect(afterMock).toHaveBeenCalledTimes(1)
     expect(touchMock).not.toHaveBeenCalled()
 
-    afterMock.mock.calls[0][0]()
+    runAfterCallbacks()
     expect(touchMock).toHaveBeenCalledWith('key-1', expect.any(Date), expect.any(Date))
+  })
+
+  it('sweeps expired drafts off the response path', async () => {
+    await POST(authorized())
+
+    expect(purgeExpiredDraftsMock).not.toHaveBeenCalled()
+
+    runAfterCallbacks()
+    expect(purgeExpiredDraftsMock).toHaveBeenCalledWith(expect.any(Date))
+  })
+
+  /**
+   * La rétention ne dépend pas de l'ouverture du service : une instance fermée continue de
+   * balayer, sinon des données personnelles expirées survivraient au drapeau.
+   */
+  it('still sweeps while the platform flag is off', async () => {
+    isMcpEnabledMock.mockResolvedValue(false)
+
+    const response = await POST(authorized())
+
+    expect(response.status).toBe(503)
+    runAfterCallbacks()
+    expect(purgeExpiredDraftsMock).toHaveBeenCalledWith(expect.any(Date))
   })
 
   it('turns an unexpected failure into a 500 rather than a stack trace', async () => {
