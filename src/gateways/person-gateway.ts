@@ -109,6 +109,27 @@ export const personGateway = {
       where: { id_schoolId: { id, schoolId } },
     }),
 
+  /**
+   * Sonde de doublons du `preview_*` MCP. `student` est joint parce qu'un homonyme déjà
+   * élève et un homonyme simple parent ne se traitent pas de la même façon.
+   */
+  searchByName: (schoolId: string, name: string, lastname: string) =>
+    db.person.findMany({
+      where: {
+        schoolId,
+        name: { contains: name, mode: 'insensitive' },
+        lastname: { contains: lastname, mode: 'insensitive' },
+      },
+      select: {
+        id: true,
+        name: true,
+        lastname: true,
+        student: { select: { id: true, birthday: true } },
+      },
+      orderBy: [{ lastname: 'asc' }, { name: 'asc' }],
+      take: 10,
+    }),
+
   addPhone: (
     schoolId: string,
     personId: string,

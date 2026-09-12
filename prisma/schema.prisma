@@ -98,6 +98,7 @@ model School {
   classPeriodTeachers ClassPeriodTeacher[]
   teacherExpenses     TeacherExpense[]
   mcpApiKeys          McpApiKey[]
+  mcpDrafts           McpDraft[]
 }
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
@@ -663,4 +664,32 @@ model McpApiKey {
   @@unique([id, schoolId])
   @@index([schoolId])
   @@index([userId, schoolId])
+}
+
+enum McpDraftStatus {
+  PENDING
+  COMMITTED
+}
+
+// Plan résolu d'une écriture MCP, entre le `preview_*` qui le calcule et le `commit_*` qui
+// l'engage. Il porte le verrou à passage unique : `status` passe de PENDING à COMMITTED par
+// un `updateMany` conditionnel, et `result` garde la réponse à rendre à un rejeu.
+model McpDraft {
+  id          String         @id @default(uuid())
+  schoolId    String
+  keyId       String
+  tool        String         @db.VarChar(50)
+  checksum    String         @db.VarChar(12)
+  resolved    Json
+  status      McpDraftStatus @default(PENDING)
+  result      Json?
+  expiresAt   DateTime
+  committedAt DateTime?
+  createdAt   DateTime       @default(now())
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([id, schoolId])
+  @@index([schoolId])
+  @@index([expiresAt])
 }

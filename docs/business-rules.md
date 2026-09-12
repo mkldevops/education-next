@@ -342,7 +342,7 @@ existed.
 `McpApiKey` rows are created from the "API keys" tab of `/dashboard/settings`, which appears only for a
 school admin while the flag is on. The token is `edu_mcp_` plus 32 random bytes in base64url, **stored
 as SHA-256 only** and shown in clear exactly once. Unlike `Invitation.token` (short, single-use, mailed),
-an API key is durable and will carry write access, so it must not exist in clear in the database.
+an API key is durable and carries write access, so it must not exist in clear in the database.
 The 12-character `prefix` is the sole visual landmark of the list.
 
 - Expiry is mandatory: 30, 90 or 365 days, 90 by default. A key without an end of life is not a key.
@@ -383,6 +383,84 @@ into an error.
 
 No `WWW-Authenticate: Bearer resource_metadata=…` and no `.well-known` route: the application operates no
 authorization server, and advertising that flow would send clients into a discovery loop.
+
+### Write drafts
+
+A write is never one call. **`preview_*` resolves and persists a plan, `commit_*` engages it**, and
+the two are joined by an `McpDraft` row (`src/gateways/mcp-draft-gateway.ts`, the model's single
+boundary). The reason is the caller: the fields come from a photograph read by a vision model, so a
+human has to see the resolved plan — the class and the plan it picked, the split it computed —
+before anything is written.
+
+**The commit decides nothing, but it re-checks everything that could have moved.** The plan —
+including how a payment divides across siblings — is the preview's and is stored in `resolved`; the
+commit reads it back, revalidates its shape, and writes it unchanged. What it does re-run, inside its
+own transaction, are the two counts the preview could only observe: **class occupancy** → `classFull`,
+and the family's **fresh balances** → `overpayment`, `noActiveEnrollments`, `refundExceedsPaid`, or
+`staleDraft` when the recomputed split no longer matches the one the human validated. Without that,
+two drafts prepared on the same free seat, or on the same outstanding balance, would both land. A
+plan computed on a stale reading must not silently become a different write, so a draft lives
+**thirty minutes** (`MCP_DRAFT_TTL_MINUTES`, `src/domain/mcp-draft.ts`) and is then refused.
+
+**A non-empty `blockers` writes no draft at all**, so there is nothing to commit. Each entry names
+the field, the value read and the reason — `unknownClass`, `ambiguousPlan`, `classFull`,
+`overpayment`, `birthdayNotInThePast`. An opaque `validationError` would force a vision model to
+re-guess the whole form instead of correcting one digit. `warnings` is the opposite: an existing
+namesake or a receipt number already banked never blocks, because only a human can tell a duplicate
+from a sibling.
+
+The duplicate probe is not defensive politeness. Prisma has **no uniqueness on `Family(schoolId,
+name)`, none on a `Person` name, and `Payment.reference` is nullable and not unique**; the only
+structural guard is `Student @@unique([personId, schoolId])`. Duplication is prevented upstream, by
+`familyGateway.searchByName`, `personGateway.searchByName` and `paymentGateway.findByReference` —
+all narrow projections, because a model's context has no business holding `healthNotes` or an
+address.
+
+**The lock is single-pass**: `claim()` is a conditional `updateMany` on `(id, schoolId, keyId, tool,
+checksum, status: PENDING, expiresAt > now)`, never a read followed by a write. A client that
+retries after a network cut must see exactly one commit win; the loser re-reads the draft and
+returns the **recorded result**, which is the correct answer to a replay, not a second family.
+
+**A draft belongs to the key that proposed it.** `keyId` is part of the claim condition, and a draft
+presented by another key of the same school is refused as `draftNotFound` rather than as forbidden.
+The resolved plan freezes the proposing key's user in `createdById`: without that binding, a revoked
+key's plan would still land, signed by its owner.
+
+**The lock always has an exit.** The result is written by the same transaction that writes the data,
+so a `COMMITTED` draft with a null `result` provably wrote nothing. Two ways out follow from that: a
+commit that refuses on a business rule, or throws, calls `release()` and hands the lock back at once;
+one killed between the claim and the transaction is reclaimable after
+`MCP_DRAFT_COMMIT_TIMEOUT_SECONDS` (60 s, `src/domain/mcp-draft.ts`) through `reclaim()`, which
+re-dates the lock under the same conditions as `claim()`. Without it a dead process would pin a draft
+on `commitInProgress` forever, and an agent that gave up would re-preview and write twice.
+
+`commit_enroll_family` owns **one `db.$transaction`** with direct `tx.*` calls, like
+`create-enrollment.ts`: no gateway accepts an injected client, and chaining the four use cases would
+leave an orphan family behind the first failure.
+
+| Body | Cause |
+|---|---|
+| `validationError` | malformed `draftId`/`checksum`, or a stored plan of an older shape |
+| `draftNotFound` | unknown draft, one belonging to the other tool, or one proposed by another key |
+| `draftExpired` | past the thirty minutes |
+| `checksumMismatch` | the checksum does not match the plan that was shown |
+| `commitInProgress` | a concurrent commit is still inside its transaction, and under 60 s old |
+| `notFound` | the class the preview resolved no longer exists |
+| `classFull` | the class filled up between the preview and the commit |
+| `overpayment` / `noActiveEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
+| `staleDraft` | the recomputed split no longer matches the validated one |
+
+A refusal writes nothing and unlocks the draft, so the caller may fix the cause or preview again
+without waiting out the timeout.
+
+**The two pairs do not chain.** `enroll_family` creates its enrollments `PENDING`, while
+`record_payment` only distributes across `ACTIVE` ones — so a family enrolled through the MCP answers
+`noActiveEnrollments` until an admin validates the enrollment. The deposit taken by
+`commit_enroll_family` is the exception: it is written against the enrollments of that same call.
+Validation stays a dashboard decision, and that is deliberate.
+
+These discriminants answer an agent, not a dialog, so they carry no `messages/*.json` entry — the
+rule in [Surfacing a rule in the UI](#surfacing-a-rule-in-the-ui) applies to screens.
 
 ## User management
 
