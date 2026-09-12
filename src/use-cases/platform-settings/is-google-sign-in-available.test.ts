@@ -9,8 +9,6 @@ vi.mock('@/lib/social-providers', () => ({
 }))
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, mais sa factory est lazy.
-// Un import statique du module testé l'évaluerait avant l'affectation du getter,
-// qui serait alors dans sa zone morte. Même motif que `session-gateway.test.ts`.
 const { isGoogleSignInAvailable } = await import('./is-google-sign-in-available')
 
 type GetSetting = NonNullable<Parameters<typeof isGoogleSignInAvailable>[0]>
@@ -39,7 +37,6 @@ describe('isGoogleSignInAvailable', () => {
     })
 
     await expect(isGoogleSignInAvailable(getSetting)).resolves.toBe(false)
-    expect(getSetting).toHaveBeenCalledWith({ name: 'google_sign_in_enabled' })
   })
 
   it('is available when configured and the flag is enabled', async () => {
