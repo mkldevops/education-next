@@ -46,10 +46,42 @@ export const mcpApiKeyGateway = {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     }),
 
-  countLive: (userId: string, schoolId: string, now: Date) =>
-    db.mcpApiKey.count({
-      where: { userId, schoolId, revokedAt: null, expiresAt: { gt: now } },
-    }),
+  /**
+   * Comptage et création dans une transaction `Serializable`, pour la même raison que
+   * `schoolMemberGateway.changeMembershipRole` : compter puis insérer en deux appels
+   * laisse deux créations concurrentes du même porteur lire le même total et franchir
+   * le plafond, seule borne sur le nombre de secrets durables qu'un compte peut émettre.
+   *
+   * `maxLive` est passé par l'appelant : le plafond est une règle du domaine, l'atomicité
+   * est une affaire de frontière.
+   */
+  createWithinLimit: (
+    data: {
+      schoolId: string
+      userId: string
+      name: string
+      prefix: string
+      keyHash: string
+      expiresAt: Date
+    },
+    limit: { now: Date; maxLive: number }
+  ) =>
+    db.$transaction(
+      async (tx) => {
+        const live = await tx.mcpApiKey.count({
+          where: {
+            userId: data.userId,
+            schoolId: data.schoolId,
+            revokedAt: null,
+            expiresAt: { gt: limit.now },
+          },
+        })
+        if (live >= limit.maxLive) return 'tooManyKeys' as const
+
+        return tx.mcpApiKey.create({ data, select: listSelect })
+      },
+      { isolationLevel: 'Serializable' }
+    ),
 
   /**
    * Clés portées par un compte, toutes écoles et clés révoquées comprises : la question
@@ -57,15 +89,6 @@ export const mcpApiKeyGateway = {
    * précisément la trace que la contrainte `Restrict` protège.
    */
   countForUser: (userId: string) => db.mcpApiKey.count({ where: { userId } }),
-
-  create: (data: {
-    schoolId: string
-    userId: string
-    name: string
-    prefix: string
-    keyHash: string
-    expiresAt: Date
-  }) => db.mcpApiKey.create({ data, select: listSelect }),
 
   /**
    * Révocation par `updateMany` scopé sur `(id, userId, schoolId)` : une clé d'un autre

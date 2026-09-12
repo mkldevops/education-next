@@ -350,7 +350,10 @@ The 12-character `prefix` is the sole visual landmark of the list.
   `userId` foreign key is therefore `Restrict`, and `mcpApiKeyGateway.countForUser` makes a key —
   revoked or not — block the permanent deletion of its holder's account. Cascading the account
   deletion would have erased exactly the evidence this rule promises to keep.
-- Five live keys per (user, school) pair.
+- Five live keys per (user, school) pair. The count and the insert share one `Serializable`
+  transaction in `src/gateways/mcp-api-key-gateway.ts` → `tooManyKeys`, for the reason already
+  written for `lastAdmin`: counting outside the write lets two concurrent creations read the same
+  total and both pass. The cap is the only bound on the number of durable secrets an account emits.
 
 The table is **excluded from `TENANT_SCOPED_MODELS`** for the reason already written for `SchoolMember`:
 it is a discovery table, read by `keyHash` before any school is known. Its single boundary is
