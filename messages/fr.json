@@ -1610,12 +1610,15 @@
     "passkey": {
       "title": "Clés de sécurité (Passkeys)",
       "description": "Connectez-vous avec votre empreinte digitale, Face ID ou une clé matérielle",
+      "descriptionDisabled": "Vos clés de sécurité enregistrées, que vous pouvez supprimer à tout moment",
       "registeredPasskeys": "Clés enregistrées",
       "register": "Ajouter",
       "namePlaceholder": "Nom de la clé (ex : MacBook Touch ID)",
       "nameRequired": "Veuillez saisir un nom pour la clé",
       "registered": "Clé de sécurité enregistrée avec succès",
       "deleted": "Clé de sécurité supprimée",
+      "delete": "Supprimer la clé {name}",
+      "registrationDisabled": "La connexion par clé de sécurité est désactivée sur cette plateforme : vous ne pouvez plus en enregistrer de nouvelle, seulement supprimer celles déjà présentes. Demandez à un administrateur de la plateforme de la réactiver.",
       "error": "Erreur lors de l'enregistrement de la clé",
       "deleteError": "Erreur lors de la suppression",
       "cancelled": "Enregistrement annulé"

@@ -37,9 +37,14 @@ const resolved = {
   family: { name: 'Bouhahima', createdById: 'user-1' },
   parents: [{ name: 'Anliati', lastname: 'IKIBALA', sex: 'FEMALE', phoneNumber: '0600000000' }],
   students: [
-    { name: 'Mayza', lastname: 'BOURAHIMA', sex: 'FEMALE', birthday: '2018-04-02T00:00:00.000Z' },
+    {
+      name: 'Mayza',
+      lastname: 'BOURAHIMA',
+      sex: 'FEMALE',
+      birthday: '2018-04-02T00:00:00.000Z',
+      classPeriod: { id: 'class-1', name: 'C4' },
+    },
   ],
-  classPeriod: { id: 'class-1', name: 'C4' },
   plan: { id: 'plan-1', name: 'Tarif annuel', amount: 100 },
   discount: 0,
   totalAmount: 100,
@@ -156,7 +161,7 @@ describe('commitEnrollFamily', () => {
     expect(release).toHaveBeenCalledWith('school-1', input.draftId)
   })
 
-  it('counts the seats the siblings already took before judging the last one', async () => {
+  it('counts occupancy with the predicate create-enrollment uses', async () => {
     await commitEnrollFamily(scope, input)
 
     expect(tx.classAssignment.count).toHaveBeenCalledWith({
@@ -167,6 +172,113 @@ describe('commitEnrollFamily', () => {
         enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
       },
     })
+  })
+
+  it.each([
+    { enrolled: 11, expected: 'classFull' },
+    { enrolled: 10, expected: 'OK' },
+  ])(
+    'judges two siblings sharing a class on both seats ($enrolled enrolled of 12)',
+    async ({ enrolled, expected }) => {
+      tx.classAssignment.count.mockResolvedValue(enrolled)
+      findById.mockResolvedValue({
+        keyId: 'key-1',
+        tool: 'enroll_family',
+        checksum: input.checksum,
+        resolved: {
+          ...resolved,
+          students: [
+            resolved.students[0],
+            {
+              name: 'Manzil',
+              lastname: 'BEN',
+              sex: 'MALE',
+              birthday: '2016-01-10T00:00:00.000Z',
+              classPeriod: { id: 'class-1', name: 'C4' },
+            },
+          ],
+        },
+      })
+      tx.person.create
+        .mockReset()
+        .mockResolvedValueOnce({ id: 'person-parent' })
+        .mockResolvedValueOnce({ id: 'person-student-1' })
+        .mockResolvedValueOnce({ id: 'person-student-2' })
+
+      const result = await commitEnrollFamily(scope, input)
+
+      expect(tx.classAssignment.count).toHaveBeenCalledTimes(1)
+      if (expected === 'classFull') {
+        expect(result).toBe('classFull')
+        expect(tx.family.create).not.toHaveBeenCalled()
+      } else {
+        expect(result).toMatchObject({ familyId: 'family-1' })
+      }
+    }
+  )
+
+  it('seats each sibling in its own class and counts each class once', async () => {
+    findById.mockResolvedValue({
+      keyId: 'key-1',
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [
+          resolved.students[0],
+          {
+            name: 'Manzil',
+            lastname: 'BEN',
+            sex: 'MALE',
+            birthday: '2016-01-10T00:00:00.000Z',
+            classPeriod: { id: 'class-2', name: 'C2' },
+          },
+        ],
+      },
+    })
+    tx.person.create
+      .mockReset()
+      .mockResolvedValueOnce({ id: 'person-parent' })
+      .mockResolvedValueOnce({ id: 'person-student-1' })
+      .mockResolvedValueOnce({ id: 'person-student-2' })
+
+    await commitEnrollFamily(scope, input)
+
+    expect(tx.classAssignment.count).toHaveBeenCalledTimes(2)
+    expect(tx.classAssignment.create.mock.calls.map((call) => call[0].data.classPeriodId)).toEqual([
+      'class-1',
+      'class-2',
+    ])
+  })
+
+  it('judges each class on the seats its own siblings take, not the whole group', async () => {
+    tx.classPeriod.findUnique.mockResolvedValue({ capacity: 4 })
+    tx.classAssignment.count.mockResolvedValue(3)
+    findById.mockResolvedValue({
+      keyId: 'key-1',
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [
+          resolved.students[0],
+          {
+            name: 'Manzil',
+            lastname: 'BEN',
+            sex: 'MALE',
+            birthday: '2016-01-10T00:00:00.000Z',
+            classPeriod: { id: 'class-2', name: 'C2' },
+          },
+        ],
+      },
+    })
+    tx.person.create
+      .mockReset()
+      .mockResolvedValueOnce({ id: 'person-parent' })
+      .mockResolvedValueOnce({ id: 'person-student-1' })
+      .mockResolvedValueOnce({ id: 'person-student-2' })
+
+    expect(await commitEnrollFamily(scope, input)).toMatchObject({ familyId: 'family-1' })
   })
 
   it('refuses a stored split that points past the students it creates', async () => {

@@ -1610,12 +1610,15 @@
     "passkey": {
       "title": "Passkeys",
       "description": "Sign in with your fingerprint, Face ID, or a security key",
+      "descriptionDisabled": "The passkeys registered on your account, which you can remove at any time",
       "registeredPasskeys": "Registered passkeys",
       "register": "Add",
       "namePlaceholder": "Key name (e.g. MacBook Touch ID)",
       "nameRequired": "Please enter a name for the key",
       "registered": "Passkey registered successfully",
       "deleted": "Passkey removed",
+      "delete": "Delete passkey {name}",
+      "registrationDisabled": "Passkey sign-in is disabled on this platform: you can no longer register a new one, only remove those already present. Ask a platform administrator to turn it back on.",
       "error": "Error registering passkey",
       "deleteError": "Error removing passkey",
       "cancelled": "Registration cancelled"

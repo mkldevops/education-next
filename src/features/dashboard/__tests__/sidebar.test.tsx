@@ -169,6 +169,7 @@ describe('Sidebar school switcher', () => {
     router.refresh.mockClear()
     router.replace.mockClear()
     switchSchoolAction.mockClear()
+    toastError.mockClear()
     switchSchoolAction.mockResolvedValue('OK' as const)
   })
 
@@ -257,14 +258,25 @@ describe('Sidebar school switcher', () => {
   })
 
   it('drops the loader when the switch is refused', async () => {
-    switchSchoolAction.mockResolvedValue('notFound' as never)
+    let settle: (result: 'OK') => void = () => {}
+    switchSchoolAction.mockImplementation(() => new Promise<'OK'>((resolve) => (settle = resolve)))
 
     renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
 
     selectHorizon()
 
-    await waitFor(() => expect(toastError).toHaveBeenCalled())
-    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+    // Le refus est différé pour observer le voile monté : sans cela l'assertion ne
+    // distinguerait pas un voile démonté d'un voile jamais rendu.
+    await screen.findByRole('status')
+    settle('notFound' as never)
+
+    // `toast.error` est appelé avant la fin de la transition : attendre le seul mock rend la
+    // main pendant que le voile est encore monté. Les deux attentes partagent donc un
+    // `waitFor`, ancré sur le DOM, qui ne passe qu'une fois la transition retombée.
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalled()
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    })
   })
 
   it('keeps the current school when the switch is refused', async () => {
@@ -274,7 +286,13 @@ describe('Sidebar school switcher', () => {
 
     selectHorizon()
 
-    await waitFor(() => expect(switchSchoolAction).toHaveBeenCalledWith('school-b'))
+    expect(switchSchoolAction).toHaveBeenCalledWith('school-b')
+    // L'action est invoquée synchroniquement dans la transition : l'attendre rendrait la main
+    // avant le traitement du refus. Le voile est donc déjà monté ici, et sa retombée signale la
+    // transition terminée — un `router.refresh` fautif aurait alors déjà eu lieu. Sans l'ancrage
+    // du montage, débrancher `isPending` rendrait l'attente vraie dès le premier contrôle.
+    expect(screen.getByRole('status')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
     expect(router.refresh).not.toHaveBeenCalled()
   })
 

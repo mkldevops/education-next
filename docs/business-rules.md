@@ -217,6 +217,19 @@ Disabling Google **does not unlink** an account that is already linked: the card
 `/dashboard/settings` with its disconnect action, so nobody is left with a credential they can
 neither use nor remove.
 
+Disabling passkeys follows the same rule. `/dashboard/settings` keeps the passkey card as long as
+the user owns at least one, with its list and its delete action, and drops only the registration
+form — replaced by a sentence stating why (`_components/passkey-section.tsx`). The card disappears
+entirely when nothing is left to administer, no passkey and registration closed, exactly like the
+Google card without a linked account. This is why `getUserPasskeys()` and `deletePasskey()` take a
+session and nothing else: putting them behind the flag would lock a user out of credentials they can
+no longer use.
+
+The page reads that list server-side and hands it down as a prop, like `linkedAccounts`. Loading it
+from the client would leave the card absent for the length of the round trip — the very symptom the
+rule forbids. Deletion is confirmed through a notification rather than a banner inside the card,
+because removing the last passkey while the flag is off unmounts the card in the same render.
+
 A Google-only account — one whose only `Account` row carries `providerId: 'google'`, with no
 `credential` or other identifier — loses every sign-in method entirely if the flag is turned off:
 email and password requires a `credential` `Account`, which such a user never created.
@@ -501,6 +514,23 @@ the field, the value read and the reason — `unknownClass`, `ambiguousPlan`, `c
 re-guess the whole form instead of correcting one digit. `warnings` is the opposite: an existing
 namesake or a receipt number already banked never blocks, because only a human can tell a duplicate
 from a sibling.
+
+**The class is carried by the student, not by the family.** A family sheet routinely spreads its
+children across classes — « C4 / C2 / F » on one line — and a root-level class would force the
+siblings into separate `preview_enroll_family` calls; each call creates a family, so the siblings
+would come back as duplicates. Every class blocker names the child, `students.2.className`.
+Capacity is counted **per class visited** — three siblings spread over three classes take one seat
+in each, two siblings sharing a class take two there — and a full class blocks each of its
+siblings, since no single one is the one in excess.
+
+**No input schema may hold a type JSON Schema cannot express** — no `z.date()`, no
+`z.coerce.date()`, no `.transform()`. The SDK converts every `inputSchema` to answer `tools/list`,
+and a single unconvertible field makes that listing throw for **all** tools, read tools included: the
+server becomes unusable. Dates therefore enter as ISO strings (`src/use-cases/mcp/schemas.ts`) and
+become `Date` in the use case, after the `safeParse`. A payment date is a day or a zoned timestamp
+(`z.iso.datetime({ offset: true })`); **a birthday is a day only** (`z.iso.date()`), because an
+offset timestamp would land on the previous UTC day where the dashboard stores UTC midnight. A test in `src/mcp/server.test.ts` runs `z.toJSONSchema()` over every registered tool,
+because the failure shows up nowhere but in production.
 
 The duplicate probe is not defensive politeness. Prisma has **no uniqueness on `Family(schoolId,
 name)`, none on a `Person` name, and `Payment.reference` is nullable and not unique**; the only

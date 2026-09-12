@@ -60,6 +60,15 @@ export default async function SettingsPage({ params }: Props) {
 
   const linkedAccounts = accounts.filter((a) => a.providerId !== 'credential')
 
+  // Chargées ici, et non au montage du composant : le drapeau éteint n'affiche la carte
+  // que si l'utilisateur possède au moins une passkey, et un aller-retour client laisserait
+  // le temps du chargement un écran vide — c'est-à-dire le symptôme même de l'issue #264.
+  const passkeys = await db.passkey.findMany({
+    where: { userId: session.user.id },
+    select: { id: true, name: true, deviceType: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  })
+
   const [googleEnabled, passkeyEnabled] = await Promise.all([
     isGoogleSignInAvailable(),
     isPasskeySignInEnabled(),
@@ -76,6 +85,7 @@ export default async function SettingsPage({ params }: Props) {
       }}
       sessions={sessionData}
       linkedAccounts={linkedAccounts}
+      passkeys={passkeys}
       googleEnabled={googleEnabled}
       passkeyEnabled={passkeyEnabled}
       apiKeys={apiKeys}

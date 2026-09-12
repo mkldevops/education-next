@@ -36,9 +36,9 @@ const resolvedSchema = z.object({
       sex: z.enum(['MALE', 'FEMALE']),
       birthday: z.coerce.date(),
       birthplace: z.string().optional(),
+      classPeriod: z.object({ id: z.string(), name: z.string() }),
     })
   ),
-  classPeriod: z.object({ id: z.string(), name: z.string() }),
   plan: z.object({ id: z.string(), name: z.string(), amount: z.number() }),
   discount: z.number(),
   totalAmount: z.number(),
@@ -87,28 +87,38 @@ export async function commitEnrollFamily(scope: McpScope, input: Input) {
   // premier échec. Précédent du dépôt : `create-enrollment.ts`.
   try {
     const result = await db.$transaction(async (tx) => {
-      // La classe est recomptée ici, pas seulement au preview : deux brouillons calculés
-      // sur la même place libre s'engageraient sinon tous les deux. Même prédicat que
-      // `create-enrollment.ts`, et le refus sort avant la première écriture.
-      const classPeriod = await tx.classPeriod.findUnique({
-        where: { id_schoolId: { id: resolved.classPeriod.id, schoolId } },
-        select: { capacity: true },
-      })
-      if (!classPeriod) return 'notFound' as const
+      // Les classes sont recomptées ici, pas seulement au preview : deux brouillons
+      // calculés sur la même place libre s'engageraient sinon tous les deux. Même
+      // prédicat que `create-enrollment.ts`, et le refus sort avant la première écriture.
+      // Une par classe visée : une fratrie répartie sur trois classes ne prend pas trois
+      // places dans chacune.
+      const seatsWanted = new Map<string, number>()
+      for (const student of resolved.students) {
+        const id = student.classPeriod.id
+        seatsWanted.set(id, (seatsWanted.get(id) ?? 0) + 1)
+      }
 
-      const enrolled = await tx.classAssignment.count({
-        where: {
-          schoolId,
-          classPeriodId: resolved.classPeriod.id,
-          endAt: null,
-          enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
-        },
-      })
+      for (const [classPeriodId, wanted] of seatsWanted) {
+        const classPeriod = await tx.classPeriod.findUnique({
+          where: { id_schoolId: { id: classPeriodId, schoolId } },
+          select: { capacity: true },
+        })
+        if (!classPeriod) return 'notFound' as const
 
-      // `checkCapacity` répond pour une place : on lui présente la classe une fois les
-      // premiers élèves de la fratrie assis, donc `students.length - 1` en plus.
-      if (checkCapacity(classPeriod.capacity, enrolled + resolved.students.length - 1) !== 'OK') {
-        return 'classFull' as const
+        const enrolled = await tx.classAssignment.count({
+          where: {
+            schoolId,
+            classPeriodId,
+            endAt: null,
+            enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
+          },
+        })
+
+        // `checkCapacity` répond pour une place : on lui présente la classe une fois les
+        // premiers élèves assis, donc `wanted - 1` en plus.
+        if (checkCapacity(classPeriod.capacity, enrolled + wanted - 1) !== 'OK') {
+          return 'classFull' as const
+        }
       }
 
       const family = await tx.family.create({
@@ -134,7 +144,7 @@ export async function commitEnrollFamily(scope: McpScope, input: Input) {
       }
 
       const students: Array<{ personId: string; studentId: string; enrollmentId: string }> = []
-      for (const { birthday, birthplace, ...person } of resolved.students) {
+      for (const { birthday, birthplace, classPeriod, ...person } of resolved.students) {
         const created = await tx.person.create({
           data: {
             ...person,
@@ -164,7 +174,7 @@ export async function commitEnrollFamily(scope: McpScope, input: Input) {
           data: {
             schoolId,
             enrollmentId: enrollment.id,
-            classPeriodId: resolved.classPeriod.id,
+            classPeriodId: classPeriod.id,
             startAt: new Date(),
           },
         })
