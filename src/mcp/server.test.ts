@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 
 type ToolHandler = (args: unknown) => Promise<{
   content: Array<{ type: 'text'; text: string }>
@@ -107,6 +108,20 @@ describe('buildMcpServer', () => {
     await tools.get('preview_enroll_family')?.handler({ schoolId: 'other-school' })
 
     expect(previewEnrollFamily).toHaveBeenCalledWith(scope, { schoolId: 'other-school' })
+  })
+
+  // `tools/list` convertit chaque `inputSchema` en JSON Schema, côté entrée, et exige un
+  // objet à la racine. Un type sans représentation — `z.date()`, `z.coerce.date()` — y
+  // jette, et le listing tombe pour **tous** les outils, lecture comprise. Mêmes options
+  // que le SDK, parce que l'échec ne se voit nulle part ailleurs qu'en production.
+  it('exposes only input schemas the tool listing can publish as JSON Schema', () => {
+    for (const [name, tool] of build()) {
+      const schema = tool.config.inputSchema as z.ZodType
+      const convert = () => z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' })
+
+      expect(convert, name).not.toThrow()
+      expect(convert().type ?? 'object', name).toBe('object')
+    }
   })
 
   it('returns the use-case payload as JSON content on success', async () => {

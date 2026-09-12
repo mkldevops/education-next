@@ -9,8 +9,8 @@ import { draftChecksum } from '@/lib/mcp-draft-crypto'
 import type { McpScope } from './resolve-mcp-scope'
 import { previewRecordPaymentSchema } from './schemas'
 
-// `z.input`, pas `z.infer` : l'entrée vient d'un modèle et traverse la coercition du
-// schéma — une date y arrive en chaîne, un défaut y est absent.
+// `z.input`, pas `z.infer` : l'entrée vient d'un modèle et traverse le schéma — un défaut
+// y est absent.
 type Input = z.input<typeof previewRecordPaymentSchema>
 
 export const RECORD_PAYMENT_TOOL = 'record_payment'
@@ -84,8 +84,8 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
     family: { id: family.id, name: family.name },
     method: data.method,
     reference: data.reference,
-    paidAt: data.paidAt.toISOString(),
-    cashedAt: data.cashedAt?.toISOString(),
+    paidAt: new Date(data.paidAt).toISOString(),
+    cashedAt: data.cashedAt ? new Date(data.cashedAt).toISOString() : undefined,
     amount: data.amount,
     // La répartition résolue est ce que l'action serveur actuelle ne montre jamais :
     // l'humain valide un encaissement ventilé, pas un montant global. Le commit la

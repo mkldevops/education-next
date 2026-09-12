@@ -151,6 +151,15 @@ probes for duplicates. It persists a draft and returns a 12-character checksum. 
 fixed. `warnings` never blocks: an existing namesake or a receipt number already banked is for the
 human to judge.
 
+The class is named on each student, not once on the family. A family sheet routinely spreads its
+children across classes — "C4 / C2 / F" on a single line — and a single class at the root would
+force the siblings into separate calls; each call creates a family, so the siblings would come back
+as duplicates. An unresolved label is a blocker naming the child: `students.2.className`.
+
+Dates are ISO strings, never anything else. A birthday is a day, `2018-04-02`. A payment date is a
+day or a timestamp with seconds and a zone, `2026-09-12T14:30:00Z` or `2026-09-12T14:30:00+02:00`.
+`02/04/2018` and a timestamp without a zone are refused.
+
 `matches` reports what the duplicate probe found, projected by the use case, not by the dashboard
 gateway it reads: a family is an `id` and a `name`. Only `enroll_family` probes people, so only it
 carries `students` — a namesake is an `id`, both names and an `isStudent` flag. A namesake already
