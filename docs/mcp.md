@@ -147,6 +147,15 @@ probes for duplicates. It persists a draft and returns a 12-character checksum. 
 fixed. `warnings` never blocks: an existing namesake or a receipt number already banked is for the
 human to judge.
 
+The class is named on each student, not once on the family. A family sheet routinely spreads its
+children across classes — "C4 / C2 / F" on a single line — and a single class at the root would
+force the siblings into separate calls; each call creates a family, so the siblings would come back
+as duplicates. An unresolved label is a blocker naming the child: `students.2.className`.
+
+Dates are ISO strings, never anything else: `2018-04-02` or `2018-04-02T00:00:00Z`. A day alone
+suits a birthday read off paper, a full timestamp suits a terminal receipt. `02/04/2018` is
+refused.
+
 `commit_*` sends back the `draftId` and that checksum, not the payload: a model does not
 re-serialize two kilobytes byte for byte. The checksum proves the resolved plan was read; a
 single-pass lock makes a replay after a network cut return the recorded result instead of a second

@@ -30,9 +30,14 @@ const input = {
   familyName: 'Bouhahima',
   parents: [{ name: 'Anliati', lastname: 'IKIBALA', sex: 'FEMALE' as const }],
   students: [
-    { name: 'Mayza', lastname: 'BOURAHIMA', sex: 'FEMALE' as const, birthday: '2018-04-02' },
+    {
+      name: 'Mayza',
+      lastname: 'BOURAHIMA',
+      sex: 'FEMALE' as const,
+      birthday: '2018-04-02',
+      className: 'C4',
+    },
   ],
-  className: 'C4',
   planName: 'Tarif annuel',
   payment: { amount: 100, method: 'CARD' as const, reference: '34-36', paidAt: '2026-09-12' },
 }
@@ -66,7 +71,7 @@ describe('previewEnrollFamily', () => {
 
     expect(result.blockers).toEqual([])
     expect(result.draftId).toBe('draft-1')
-    expect(result.plan?.classPeriod).toEqual({ id: 'class-1', name: 'C4' })
+    expect(result.plan?.students[0].classPeriod).toEqual({ id: 'class-1', name: 'C4' })
     expect(result.plan?.plan).toEqual({ id: 'plan-1', name: 'Tarif annuel', amount: 100 })
     expect(createDraft).toHaveBeenCalledTimes(1)
   })
@@ -93,7 +98,13 @@ describe('previewEnrollFamily', () => {
       ...input,
       students: [
         ...input.students,
-        { name: 'Manzil', lastname: 'BEN', sex: 'MALE' as const, birthday: '2016-01-10' },
+        {
+          name: 'Manzil',
+          lastname: 'BEN',
+          sex: 'MALE' as const,
+          birthday: '2016-01-10',
+          className: 'C4',
+        },
       ],
       payment: { ...input.payment, amount: 200 },
     })
@@ -106,11 +117,14 @@ describe('previewEnrollFamily', () => {
   })
 
   it('names an unknown class as a blocker and writes nothing', async () => {
-    const result = await previewEnrollFamily(scope, { ...input, className: 'Z9' })
+    const result = await previewEnrollFamily(scope, {
+      ...input,
+      students: [{ ...input.students[0], className: 'Z9' }],
+    })
     assertPreview(result)
 
     expect(result.blockers).toContainEqual({
-      field: 'className',
+      field: 'students.0.className',
       value: 'Z9',
       reason: 'unknownClass',
     })
@@ -128,7 +142,7 @@ describe('previewEnrollFamily', () => {
     assertPreview(result)
 
     expect(result.blockers).toContainEqual({
-      field: 'className',
+      field: 'students.0.className',
       value: 'C4',
       reason: 'ambiguousClass',
     })
@@ -140,7 +154,11 @@ describe('previewEnrollFamily', () => {
     const result = await previewEnrollFamily(scope, input)
     assertPreview(result)
 
-    expect(result.blockers).toContainEqual({ field: 'className', value: 'C4', reason: 'classFull' })
+    expect(result.blockers).toContainEqual({
+      field: 'students.className',
+      value: 'C4',
+      reason: 'classFull',
+    })
     expect(createDraft).not.toHaveBeenCalled()
   })
 
@@ -196,6 +214,54 @@ describe('previewEnrollFamily', () => {
       value: '34-36',
       reason: 'referenceAlreadyUsed',
     })
+  })
+
+  it('seats siblings in the classes their own line names', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...input,
+      students: [
+        input.students[0],
+        {
+          name: 'Manzil',
+          lastname: 'BEN',
+          sex: 'MALE' as const,
+          birthday: '2016-01-10',
+          className: 'C5',
+        },
+      ],
+      payment: { ...input.payment, amount: 200 },
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.plan?.students.map((student) => student.classPeriod)).toEqual([
+      { id: 'class-1', name: 'C4' },
+      { id: 'class-2', name: 'C5' },
+    ])
+  })
+
+  it('counts a seat per class visited, not the whole group in each of them', async () => {
+    countEnrolled.mockResolvedValue(19)
+
+    const result = await previewEnrollFamily(scope, {
+      ...input,
+      students: [
+        input.students[0],
+        {
+          name: 'Manzil',
+          lastname: 'BEN',
+          sex: 'MALE' as const,
+          birthday: '2016-01-10',
+          className: 'C5',
+        },
+      ],
+      payment: { ...input.payment, amount: 200 },
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(countEnrolled).toHaveBeenCalledWith('school-1', 'class-1')
+    expect(countEnrolled).toHaveBeenCalledWith('school-1', 'class-2')
   })
 
   it('rejects malformed input before reading anything', async () => {
