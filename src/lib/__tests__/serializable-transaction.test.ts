@@ -27,8 +27,13 @@ describe('inSerializableTransaction', () => {
       .mockRejectedValueOnce(abort('P2034'))
       .mockResolvedValueOnce('second attempt')
 
-    expect(await inSerializableTransaction(async () => 'unused')).toBe('second attempt')
+    const run = async () => 'unused'
+
+    expect(await inSerializableTransaction(run)).toBe('second attempt')
     expect(dbMock.$transaction).toHaveBeenCalledTimes(2)
+    // C'est la reprise qui rend le verdict : la relancer hors `Serializable` rouvrirait
+    // en silence la course que ce module ferme.
+    expect(dbMock.$transaction.mock.calls[1]).toEqual([run, { isolationLevel: 'Serializable' }])
   })
 
   it('lets a second abort reach the caller instead of replaying again', async () => {
