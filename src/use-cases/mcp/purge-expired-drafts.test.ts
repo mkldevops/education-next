@@ -7,14 +7,18 @@ vi.mock('@/gateways/mcp-draft-gateway', () => ({
   mcpDraftGateway: { purgeExpired },
 }))
 
-const { purgeExpiredDrafts } = await import('./purge-expired-drafts')
+// `lastPurgeAt` est un état de module : sans réinitialisation, chaque cas hériterait de
+// l'étranglement du précédent et l'ordre du fichier deviendrait significatif.
+let purgeExpiredDrafts: typeof import('./purge-expired-drafts').purgeExpiredDrafts
 
 const now = new Date('2026-09-12T10:00:00.000Z')
 const intervalMs = MCP_DRAFT_PURGE_INTERVAL_MINUTES * 60 * 1000
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks()
   purgeExpired.mockResolvedValue(3)
+  vi.resetModules()
+  ;({ purgeExpiredDrafts } = await import('./purge-expired-drafts'))
 })
 
 describe('purgeExpiredDrafts', () => {

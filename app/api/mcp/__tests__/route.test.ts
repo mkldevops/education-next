@@ -152,13 +152,16 @@ describe('POST /api/mcp', () => {
     controller.abort()
     expect(forwarded.signal.aborted).toBe(true)
   })
+  const runAfterCallbacks = () => {
+    for (const [callback] of afterMock.mock.calls) callback()
+  }
 
   it('records the key usage off the response path', async () => {
     await POST(authorized())
 
     expect(touchMock).not.toHaveBeenCalled()
 
-    afterMock.mock.calls[1][0]()
+    runAfterCallbacks()
     expect(touchMock).toHaveBeenCalledWith('key-1', expect.any(Date), expect.any(Date))
   })
 
@@ -167,7 +170,7 @@ describe('POST /api/mcp', () => {
 
     expect(purgeExpiredDraftsMock).not.toHaveBeenCalled()
 
-    afterMock.mock.calls[0][0]()
+    runAfterCallbacks()
     expect(purgeExpiredDraftsMock).toHaveBeenCalledWith(expect.any(Date))
   })
 
@@ -181,7 +184,7 @@ describe('POST /api/mcp', () => {
     const response = await POST(authorized())
 
     expect(response.status).toBe(503)
-    afterMock.mock.calls[0][0]()
+    runAfterCallbacks()
     expect(purgeExpiredDraftsMock).toHaveBeenCalledWith(expect.any(Date))
   })
 

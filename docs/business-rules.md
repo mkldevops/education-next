@@ -364,9 +364,11 @@ it is a discovery table, read by `keyHash` before any school is known. Its singl
 
 ### Route guards
 
-The order in `app/api/mcp/route.ts` is deliberate: IP rate limit → platform flag → credential → scope →
-per-key rate limit → handler. The flag is read before authentication so a closed instance answers `503`
-without touching the database for a key.
+The order in `app/api/mcp/route.ts` is deliberate: IP rate limit → retention sweep → platform flag →
+credential → scope → per-key rate limit → handler. The flag is read before authentication so a
+closed instance answers `503` without ever looking up a key. The sweep sits above the flag on
+purpose and is the one thing a closed instance still does, since retention cannot depend on the
+service being open.
 
 Two rate-limiting tiers because they measure different things. Claude reaches the server from Anthropic's
 infrastructure, not from the user's machine, so `x-forwarded-for` names a handful of shared egress
@@ -456,8 +458,8 @@ correct answer to a late replay, for **seven days past its expiry**
 and the business write lives elsewhere. The committed branch requires **both** `expiresAt` and
 `committedAt` past the retention: `reclaim()` re-dates an abandoned lock without looking at the
 expiry, so a draft expired eight days ago can be committed right now, and deleting it would tear the
-row out from under its transaction. `expiresAt` leads the filter, which is what makes
-`@@index([expiresAt])` worth its write cost.
+row out from under its transaction. Both branches filter on `expiresAt`, which is what finally gives
+`@@index([expiresAt])` a consumer.
 
 The sweep has no clock of its own. `purgeExpiredDrafts()`
 (`src/use-cases/mcp/purge-expired-drafts.ts`) runs from `POST /api/mcp` through `after()`, off the
