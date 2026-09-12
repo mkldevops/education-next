@@ -258,11 +258,17 @@ describe('Sidebar school switcher', () => {
   })
 
   it('drops the loader when the switch is refused', async () => {
-    switchSchoolAction.mockResolvedValue('notFound' as never)
+    let settle: (result: 'OK') => void = () => {}
+    switchSchoolAction.mockImplementation(() => new Promise<'OK'>((resolve) => (settle = resolve)))
 
     renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')])
 
     selectHorizon()
+
+    // Le refus est différé pour observer le voile monté : sans cela l'assertion ne
+    // distinguerait pas un voile démonté d'un voile jamais rendu.
+    await screen.findByRole('status')
+    settle('notFound' as never)
 
     // `toast.error` est appelé avant la fin de la transition : attendre le seul mock rend la
     // main pendant que le voile est encore monté. Les deux attentes partagent donc un
@@ -280,7 +286,11 @@ describe('Sidebar school switcher', () => {
 
     selectHorizon()
 
-    await waitFor(() => expect(switchSchoolAction).toHaveBeenCalledWith('school-b'))
+    expect(switchSchoolAction).toHaveBeenCalledWith('school-b')
+    // L'action est invoquée synchroniquement dans la transition : l'attendre rendrait la main
+    // avant le traitement du refus. La retombée du voile signale la transition terminée, donc
+    // qu'un `router.refresh` fautif aurait déjà eu lieu.
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
     expect(router.refresh).not.toHaveBeenCalled()
   })
 
