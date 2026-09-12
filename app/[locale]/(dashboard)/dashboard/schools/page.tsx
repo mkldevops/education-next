@@ -8,7 +8,7 @@ import { requirePlatformAdmin } from '../../_lib/auth-helper'
 import { platformPageMetadata } from '../../_lib/page-metadata'
 import { CreateSchoolDialog } from './_components/create-school-dialog'
 import { EditSchoolDialog } from './_components/edit-school-dialog'
-import { SchoolSwitchSetting } from './_components/school-switch-setting'
+import { SchoolSwitchToggle } from './_components/school-switch-toggle'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -108,7 +108,7 @@ export default async function SchoolsPage({ params }: Props) {
         <CreateSchoolDialog />
       </div>
 
-      <SchoolSwitchSetting enabled={switchEnabled} />
+      <SchoolSwitchToggle enabled={switchEnabled} />
 
       <Card className="rounded border border-alabaster-700">
         <DataTable
