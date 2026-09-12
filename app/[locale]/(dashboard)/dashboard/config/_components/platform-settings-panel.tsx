@@ -16,6 +16,7 @@ type Props = {
   passkeyEnabled: boolean
   mcpEnabled: boolean
   schoolSwitchEnabled: boolean
+  googleOnlyAccountCount: number
 }
 
 /**
@@ -28,6 +29,7 @@ export function PlatformSettingsPanel({
   passkeyEnabled,
   mcpEnabled,
   schoolSwitchEnabled,
+  googleOnlyAccountCount,
 }: Props) {
   const t = useTranslations('dashboard.pages.config')
   const tAuth = useTranslations('dashboard.pages.authSettings')
@@ -43,6 +45,18 @@ export function PlatformSettingsPanel({
           hint={googleConfigured ? undefined : tAuth('google.notConfigured')}
           enabled={googleEnabled}
           onSave={setGoogleSignInEnabledAction}
+          confirmDisable={
+            googleOnlyAccountCount > 0
+              ? {
+                  title: tAuth('google.confirmDisable.title'),
+                  description: tAuth('google.confirmDisable.description', {
+                    count: googleOnlyAccountCount,
+                  }),
+                  confirmLabel: tAuth('google.confirmDisable.confirm'),
+                  cancelLabel: tAuth('google.confirmDisable.cancel'),
+                }
+              : undefined
+          }
         />
         <PlatformFlagToggle
           title={tAuth('passkey.title')}

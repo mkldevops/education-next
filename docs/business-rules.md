@@ -237,6 +237,32 @@ from the client would leave the card absent for the length of the round trip —
 rule forbids. Deletion is confirmed through a notification rather than a banner inside the card,
 because removing the last passkey while the flag is off unmounts the card in the same render.
 
+A Google-only account — one whose only `Account` row carries `providerId: 'google'`, with no
+`credential` or other identifier — loses every sign-in method entirely if the flag is turned off:
+email and password requires a `credential` `Account`, which such a user never created.
+`userGateway.countGoogleOnlyAccounts()` (`src/gateways/user-gateway.ts`) counts them through `db`,
+so the shared `isActive` extension (`src/lib/db.ts`) excludes a deactivated user the same way as
+everywhere else — an archived account already lost access through that archival, not through this
+flag. The count does **not** exclude an account that also holds a `Passkey`: passkey sign-in is
+itself governed by its own, independently mutable flag (`passkey_sign_in_enabled`), so anchoring the
+warning to Google/credential enrollment rather than to that other flag's current state keeps it from
+silently drifting when an unrelated toggle changes, and the recovery path below holds regardless of
+passkey enrollment.
+
+`/dashboard/config` requires an explicit confirmation naming that recovery path before the Google
+toggle goes enabled → disabled while the count is greater than zero (`PlatformFlagToggle`'s
+`confirmDisable`, `app/[locale]/(dashboard)/_components/platform-flag-toggle.tsx`). Re-enabling
+stays the original one-click toggle, and so does disabling when the count is zero — the
+confirmation is additive friction on top of the existing optimistic toggle, not a new toggle shape.
+The passkey toggle in the same **Sign-in methods** section never receives it either, and neither do
+the school-switch toggle in **Schools** or the MCP toggle in **Integrations** — the two other
+sections of the same page.
+
+The recovery path itself needs no code: `/forgot-password` and `/reset-password` are public and read
+no platform flag. Better Auth's `resetPassword` handler creates the missing `credential` `Account`
+when none exists instead of requiring one, so a Google-only account can request the reset e-mail and
+set a password from it after the flag is off, exactly as the confirmation names.
+
 ## Roles and scope
 
 Roles are **per school**. `SchoolRole` is `ADMIN` or `PARENT` (`src/types/enums.ts`), carried by a

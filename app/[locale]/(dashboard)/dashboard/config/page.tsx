@@ -17,6 +17,7 @@ import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-s
 import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
+import { countGoogleOnlyAccounts } from '@/use-cases/users/count-google-only-accounts'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateConfigDialog } from './_components/create-config-dialog'
@@ -45,14 +46,16 @@ export default async function ConfigPage({ params }: Props) {
 
   // Les réglages plateforme ne sont lus que pour un super-admin : la page reste ouverte
   // à un ADMIN d'école, qui n'en voit que la table de configuration de son école.
-  const [googleEnabled, passkeyEnabled, mcpEnabled, schoolSwitchEnabled] = isSuperAdmin
-    ? await Promise.all([
-        isGoogleSignInEnabled(),
-        isPasskeySignInEnabled(),
-        isMcpEnabled(),
-        isSchoolSwitchEnabled(),
-      ])
-    : [false, false, false, false]
+  const [googleEnabled, passkeyEnabled, mcpEnabled, schoolSwitchEnabled, googleOnlyAccountCount] =
+    isSuperAdmin
+      ? await Promise.all([
+          isGoogleSignInEnabled(),
+          isPasskeySignInEnabled(),
+          isMcpEnabled(),
+          isSchoolSwitchEnabled(),
+          countGoogleOnlyAccounts(),
+        ])
+      : [false, false, false, false, 0]
 
   const t = await getTranslations('dashboard.pages.config')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -205,6 +208,7 @@ export default async function ConfigPage({ params }: Props) {
           passkeyEnabled={passkeyEnabled}
           mcpEnabled={mcpEnabled}
           schoolSwitchEnabled={schoolSwitchEnabled}
+          googleOnlyAccountCount={googleOnlyAccountCount}
         />
       )}
     </div>

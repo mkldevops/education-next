@@ -46,6 +46,23 @@ export const userGateway = {
     dbArchived.user.count({ where: { isSuperAdmin: true, isActive: true } }),
 
   /**
+   * Comptes qui perdraient tout accès si la connexion Google était coupée : au moins un
+   * `Account` `google`, aucun autre (`credential` ou un autre fournisseur). Lu par `db`
+   * et non `dbArchived` — l'extension de `src/lib/db.ts` y force `isActive: true` — un
+   * compte désactivé a déjà perdu l'accès par la désactivation, pas par ce réglage, et
+   * ne doit donc pas grossir l'avertissement affiché à l'administrateur.
+   */
+  countGoogleOnlyAccounts: () =>
+    db.user.count({
+      where: {
+        accounts: {
+          some: { providerId: 'google' },
+          none: { providerId: { not: 'google' } },
+        },
+      },
+    }),
+
+  /**
    * Lecture plateforme, volontairement hors de toute école : un super-admin ne possède
    * en général aucune ligne `SchoolMember` et reste donc invisible aux listes scopées.
    * `dbArchived` fait aussi apparaître les comptes désactivés, qu'une revue des accès

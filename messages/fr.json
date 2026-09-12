@@ -1413,7 +1413,13 @@
         "google": {
           "title": "Connexion Google",
           "description": "Autorise « Se connecter avec Google » sur la page de connexion et la liaison d'un compte Google depuis les paramètres.",
-          "notConfigured": "GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET sont absents : le bouton reste masqué même si le réglage est activé."
+          "notConfigured": "GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET sont absents : le bouton reste masqué même si le réglage est activé.",
+          "confirmDisable": {
+            "title": "Désactiver la connexion Google ?",
+            "description": "{count, plural, one {# compte n'a que Google comme moyen de connexion et perdrait tout accès. Il pourra redéfinir un mot de passe depuis « Mot de passe oublié » pour continuer à se connecter.} other {# comptes n'ont que Google comme moyen de connexion et perdraient tout accès. Ils pourront redéfinir un mot de passe depuis « Mot de passe oublié » pour continuer à se connecter.}}",
+            "confirm": "Désactiver quand même",
+            "cancel": "Annuler"
+          }
         },
         "passkey": {
           "title": "Connexion par passkey",
