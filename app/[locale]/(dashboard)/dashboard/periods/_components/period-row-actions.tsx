@@ -24,16 +24,42 @@ type Props = {
 
 type OpenDialog = 'promote' | 'edit' | 'delete'
 
+const MENU_WIDTH = 224
+
 /**
  * Une seule colonne d'actions par ligne : le menu porte les trois opérations et chaque
  * dialogue n'est monté que le temps de son ouverture. Le montage conditionnel remplace
  * le `DialogTrigger` : un déclencheur vivant dans le panneau du menu disparaîtrait avec
  * lui au premier clic hors du menu, dialogue compris.
+ *
+ * Le panneau est positionné en `fixed` d'après le rectangle du déclencheur : `DataTable`
+ * enveloppe le tableau dans un `overflow-x-auto`, qui rogne aussi la verticale et
+ * couperait un menu absolu sur la dernière ligne.
  */
 export function PeriodRowActions({ period, targetOptions, classPeriodCount }: Props) {
   const t = useTranslations('dashboard.pages.periods')
   const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
   const [dialog, setDialog] = useState<OpenDialog | null>(null)
+  const [anchor, setAnchor] = useState<{ top: number; left: number }>()
+
+  // Un panneau `fixed` ne suit pas le défilement : le refermer vaut mieux que le laisser
+  // flotter loin de sa ligne.
+  useEffect(() => {
+    if (!open) return
+    const dismiss = () => close(false)
+    window.addEventListener('scroll', dismiss, true)
+    window.addEventListener('resize', dismiss)
+    return () => {
+      window.removeEventListener('scroll', dismiss, true)
+      window.removeEventListener('resize', dismiss)
+    }
+  }, [open, close])
+
+  const onTriggerClick = () => {
+    const rect = triggerRef.current?.getBoundingClientRect()
+    if (rect) setAnchor({ top: rect.bottom + 4, left: rect.right - MENU_WIDTH })
+    toggle()
+  }
 
   const select = (next: OpenDialog) => {
     close()
@@ -62,7 +88,7 @@ export function PeriodRowActions({ period, targetOptions, classPeriodCount }: Pr
   ] as const
 
   return (
-    <div ref={containerRef} className="relative inline-block text-left">
+    <div ref={containerRef} className="inline-block text-left">
       <Button
         ref={triggerRef}
         size="sm"
@@ -71,7 +97,7 @@ export function PeriodRowActions({ period, targetOptions, classPeriodCount }: Pr
         aria-label={t('actions')}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={toggle}
+        onClick={onTriggerClick}
       >
         <MoreHorizontal className="h-4 w-4" />
       </Button>
@@ -79,7 +105,8 @@ export function PeriodRowActions({ period, targetOptions, classPeriodCount }: Pr
         <div
           ref={menuRef}
           role="menu"
-          className="absolute right-0 top-full z-20 mt-1 w-56 rounded border border-alabaster-700 bg-white py-1 text-left shadow-lg"
+          style={anchor}
+          className="fixed z-30 w-56 rounded border border-alabaster-700 bg-white py-1 text-left shadow-lg"
         >
           {items.map(({ key, label, icon: Icon, disabled, title, ...rest }) => {
             const danger = 'danger' in rest && rest.danger

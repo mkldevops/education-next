@@ -45,14 +45,14 @@ export default async function ConfigPage({ params }: Props) {
 
   // Les réglages plateforme ne sont lus que pour un super-admin : la page reste ouverte
   // à un ADMIN d'école, qui n'en voit que la table de configuration de son école.
-  const platformSettings = isSuperAdmin
+  const [googleEnabled, passkeyEnabled, mcpEnabled, schoolSwitchEnabled] = isSuperAdmin
     ? await Promise.all([
         isGoogleSignInEnabled(),
         isPasskeySignInEnabled(),
         isMcpEnabled(),
         isSchoolSwitchEnabled(),
       ])
-    : null
+    : [false, false, false, false]
 
   const t = await getTranslations('dashboard.pages.config')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -198,13 +198,13 @@ export default async function ConfigPage({ params }: Props) {
         </Card>
       </section>
 
-      {platformSettings && (
+      {isSuperAdmin && (
         <PlatformSettingsPanel
-          googleEnabled={platformSettings[0]}
+          googleEnabled={googleEnabled}
           googleConfigured={isGoogleConfigured}
-          passkeyEnabled={platformSettings[1]}
-          mcpEnabled={platformSettings[2]}
-          schoolSwitchEnabled={platformSettings[3]}
+          passkeyEnabled={passkeyEnabled}
+          mcpEnabled={mcpEnabled}
+          schoolSwitchEnabled={schoolSwitchEnabled}
         />
       )}
     </div>
