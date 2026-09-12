@@ -52,8 +52,11 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
     }
   })
 
+  let allocation: Array<{ enrollmentId: string; amount: number }> = []
   const distribution = distributePayment(data.amount, balances)
-  if (distribution.result !== 'OK') {
+  if (distribution.result === 'OK') {
+    allocation = distribution.distribution
+  } else {
     blockers.push({
       field: 'amount',
       value: String(data.amount),
@@ -72,7 +75,7 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
     }
   }
 
-  if (blockers.length > 0 || distribution.result !== 'OK') {
+  if (blockers.length > 0) {
     return { draftId: null, checksum: null, plan: null, matches, warnings, blockers }
   }
 
@@ -85,8 +88,9 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
     cashedAt: data.cashedAt?.toISOString(),
     amount: data.amount,
     // La répartition résolue est ce que l'action serveur actuelle ne montre jamais :
-    // l'humain valide un encaissement ventilé, pas un montant global.
-    allocation: distribution.distribution,
+    // l'humain valide un encaissement ventilé, pas un montant global. Le commit la
+    // recalcule sur les soldes frais et refuse si elle a bougé.
+    allocation,
   }
 
   const checksum = draftChecksum(resolved)

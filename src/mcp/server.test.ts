@@ -80,11 +80,14 @@ describe('buildMcpServer', () => {
     ])
   })
 
-  it('marks previews read-only and commits non-destructive and idempotent', () => {
+  it('declares previews as writers and commits as non-destructive and idempotent', () => {
     const tools = build()
 
     for (const name of ['preview_enroll_family', 'preview_record_payment']) {
-      expect(tools.get(name)?.config.annotations).toMatchObject({ readOnlyHint: true })
+      expect(tools.get(name)?.config.annotations).toMatchObject({
+        readOnlyHint: false,
+        idempotentHint: false,
+      })
     }
     for (const name of ['commit_enroll_family', 'commit_record_payment']) {
       expect(tools.get(name)?.config.annotations).toMatchObject({

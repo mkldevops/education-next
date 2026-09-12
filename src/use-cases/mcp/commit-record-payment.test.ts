@@ -2,13 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const claim = vi.fn()
 const findById = vi.fn()
-const recordResult = vi.fn()
-const createInTransaction = vi.fn()
+const reclaim = vi.fn()
+const release = vi.fn()
+const transaction = vi.fn()
+
+const tx = {
+  enrollment: { findMany: vi.fn() },
+  payment: { create: vi.fn() },
+  mcpDraft: { updateMany: vi.fn() },
+}
 
 vi.mock('@/gateways/mcp-draft-gateway', () => ({
-  mcpDraftGateway: { claim, findById, recordResult },
+  mcpDraftGateway: { claim, findById, reclaim, release },
 }))
-vi.mock('@/gateways/payment-gateway', () => ({ paymentGateway: { createInTransaction } }))
+vi.mock('@/lib/db', () => ({ db: { $transaction: transaction } }))
 
 const { commitRecordPayment } = await import('./commit-record-payment')
 
@@ -35,19 +42,40 @@ const resolved = {
 
 const input = { draftId: '33333333-3333-4333-8333-333333333333', checksum: 'abcdef012345' }
 
+function enrollment(id: string, totalAmount: number, paid: number[] = []) {
+  return {
+    id,
+    totalAmount,
+    discount: 0,
+    payments: paid.map((amount) => ({ amount })),
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   claim.mockResolvedValue({ count: 1 })
-  findById.mockResolvedValue({ tool: 'record_payment', checksum: input.checksum, resolved })
-  createInTransaction.mockResolvedValue([{ id: 'payment-1' }, { id: 'payment-2' }])
+  findById.mockResolvedValue({
+    keyId: 'key-1',
+    tool: 'record_payment',
+    checksum: input.checksum,
+    resolved,
+  })
+  transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
+  tx.enrollment.findMany.mockResolvedValue([enrollment('enr-1', 90), enrollment('enr-2', 90)])
+  tx.payment.create
+    .mockResolvedValueOnce({ id: 'payment-1' })
+    .mockResolvedValueOnce({ id: 'payment-2' })
+  tx.mcpDraft.updateMany.mockResolvedValue({ count: 1 })
 })
 
 describe('commitRecordPayment', () => {
-  it('writes the split it was shown, without recomputing it', async () => {
+  it('writes the split the caller validated', async () => {
     const result = await commitRecordPayment(scope, input)
 
-    expect(createInTransaction).toHaveBeenCalledWith('school-1', [
-      {
+    expect(tx.payment.create).toHaveBeenCalledTimes(2)
+    expect(tx.payment.create).toHaveBeenNthCalledWith(1, {
+      data: {
+        schoolId: 'school-1',
         familyId: 'family-1',
         enrollmentId: 'enr-1',
         amount: 90,
@@ -56,16 +84,8 @@ describe('commitRecordPayment', () => {
         paidAt: new Date(resolved.paidAt),
         cashedAt: undefined,
       },
-      {
-        familyId: 'family-1',
-        enrollmentId: 'enr-2',
-        amount: 90,
-        method: 'CASH',
-        reference: '34-45',
-        paidAt: new Date(resolved.paidAt),
-        cashedAt: undefined,
-      },
-    ])
+      select: { id: true },
+    })
     expect(result).toEqual({
       familyId: 'family-1',
       amount: 180,
@@ -73,15 +93,48 @@ describe('commitRecordPayment', () => {
     })
   })
 
-  it('records the result so a replay has something to return', async () => {
+  it('writes the result inside the transaction that writes the payments', async () => {
     const result = await commitRecordPayment(scope, input)
 
-    expect(recordResult).toHaveBeenCalledWith('school-1', input.draftId, result)
+    expect(tx.mcpDraft.updateMany).toHaveBeenCalledWith({
+      where: { id: input.draftId, schoolId: 'school-1' },
+      data: { result },
+    })
+  })
+
+  it('refuses a second draft drawn on a balance the first one consumed', async () => {
+    tx.enrollment.findMany.mockResolvedValue([
+      enrollment('enr-1', 90, [90]),
+      enrollment('enr-2', 90, [90]),
+    ])
+
+    expect(await commitRecordPayment(scope, input)).toBe('overpayment')
+    expect(tx.payment.create).not.toHaveBeenCalled()
+    expect(release).toHaveBeenCalledWith('school-1', input.draftId)
+  })
+
+  it('refuses a split that no longer matches the fresh balances', async () => {
+    tx.enrollment.findMany.mockResolvedValue([
+      enrollment('enr-1', 120),
+      enrollment('enr-2', 120),
+      enrollment('enr-3', 120),
+    ])
+
+    expect(await commitRecordPayment(scope, input)).toBe('staleDraft')
+    expect(tx.payment.create).not.toHaveBeenCalled()
+  })
+
+  it('gives the lock back when the transaction blows up', async () => {
+    transaction.mockRejectedValue(new Error('connection lost'))
+
+    await expect(commitRecordPayment(scope, input)).rejects.toThrow('connection lost')
+    expect(release).toHaveBeenCalledWith('school-1', input.draftId)
   })
 
   it('returns the recorded result on a replay instead of banking twice', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      keyId: 'key-1',
       tool: 'record_payment',
       checksum: input.checksum,
       status: 'COMMITTED',
@@ -94,12 +147,13 @@ describe('commitRecordPayment', () => {
       amount: 180,
       paymentIds: ['payment-1'],
     })
-    expect(createInTransaction).not.toHaveBeenCalled()
+    expect(transaction).not.toHaveBeenCalled()
   })
 
   it('refuses a checksum altered by a single character', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      keyId: 'key-1',
       tool: 'record_payment',
       checksum: 'abcdef012346',
       status: 'PENDING',
@@ -107,12 +161,13 @@ describe('commitRecordPayment', () => {
     })
 
     expect(await commitRecordPayment(scope, input)).toBe('checksumMismatch')
-    expect(createInTransaction).not.toHaveBeenCalled()
+    expect(transaction).not.toHaveBeenCalled()
   })
 
   it('refuses an expired draft', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      keyId: 'key-1',
       tool: 'record_payment',
       checksum: input.checksum,
       status: 'PENDING',
@@ -122,9 +177,23 @@ describe('commitRecordPayment', () => {
     expect(await commitRecordPayment(scope, input)).toBe('draftExpired')
   })
 
+  it('refuses a draft proposed by another key of the same school', async () => {
+    claim.mockResolvedValue({ count: 0 })
+    findById.mockResolvedValue({
+      keyId: 'key-2',
+      tool: 'record_payment',
+      checksum: input.checksum,
+      status: 'PENDING',
+      expiresAt: new Date(Date.now() + 60_000),
+    })
+
+    expect(await commitRecordPayment(scope, input)).toBe('draftNotFound')
+  })
+
   it('refuses an enrolment draft presented to the payment commit', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      keyId: 'key-1',
       tool: 'enroll_family',
       checksum: input.checksum,
       status: 'PENDING',

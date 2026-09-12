@@ -145,7 +145,14 @@ export function buildMcpServer(scope: McpScope): McpServer {
         'homonymes trouvés, des avertissements et des `blockers`. Un `blockers` non vide ' +
         'nomme le champ à corriger et interdit le commit.',
       inputSchema: previewEnrollFamilySchema,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
+      // en approbation automatique fabrique des lignes sans jamais demander.
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
     async (args) => write('preview_enroll_family', () => previewEnrollFamily(scope, args))
   )
@@ -173,7 +180,14 @@ export function buildMcpServer(scope: McpScope): McpServer {
         'répartition sans rien écrire. La famille se désigne par son identifiant ou par ' +
         'son nom ; un nom qui vise plusieurs familles est un `blocker`.',
       inputSchema: previewRecordPaymentSchema,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
+      // en approbation automatique fabrique des lignes sans jamais demander.
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
     async (args) => write('preview_record_payment', () => previewRecordPayment(scope, args))
   )

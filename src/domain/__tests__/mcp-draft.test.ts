@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { draftExpiry, isDraftUsable, MCP_DRAFT_TTL_MINUTES } from '../mcp-draft'
+import {
+  draftExpiry,
+  isDraftUsable,
+  MCP_DRAFT_COMMIT_TIMEOUT_SECONDS,
+  MCP_DRAFT_TTL_MINUTES,
+  staleCommitBefore,
+} from '../mcp-draft'
 
 const now = new Date('2026-09-12T10:00:00.000Z')
 
@@ -26,5 +32,17 @@ describe('isDraftUsable', () => {
 
   it('refuses a draft expiring on the very instant it is read', () => {
     expect(isDraftUsable({ status: 'PENDING', expiresAt: now }, now)).toBe(false)
+  })
+})
+
+describe('staleCommitBefore', () => {
+  it('holds a commit for the published abandon delay before it can be taken over', () => {
+    expect(now.getTime() - staleCommitBefore(now).getTime()).toBe(
+      MCP_DRAFT_COMMIT_TIMEOUT_SECONDS * 1000
+    )
+  })
+
+  it('stays far shorter than the draft time to live, which it must not outlive', () => {
+    expect(MCP_DRAFT_COMMIT_TIMEOUT_SECONDS).toBeLessThan(MCP_DRAFT_TTL_MINUTES * 60)
   })
 })

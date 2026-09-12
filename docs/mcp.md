@@ -137,6 +137,9 @@ photo ──▶ agent extracts fields
             → family, parents, students, enrollment, payment
 ```
 
+`preview_*` writes: it persists the resolved plan as a draft row, which is why neither preview is
+annotated `readOnlyHint`. Nothing else is created.
+
 `preview_*` normalizes, validates field by field — an agent must be able to correct its reading,
 which an opaque `validationError` does not allow — resolves human labels into identifiers, and
 probes for duplicates. It persists a draft and returns a 12-character checksum. A non-empty
@@ -149,13 +152,38 @@ re-serialize two kilobytes byte for byte. The checksum proves the resolved plan 
 single-pass lock makes a replay after a network cut return the recorded result instead of a second
 family. A draft lives thirty minutes.
 
+A draft belongs to the API key that proposed it. Another key of the same school — even one held by
+the same person — is told the draft does not exist, because the plan carries the proposing key's
+user as the author of everything it creates.
+
+The result is written inside the same transaction as the data, so a draft that is `COMMITTED` with
+no result wrote nothing. That is the exit for a commit killed mid-flight: after sixty seconds the
+lock is reclaimable, and a commit refused on a business rule gives the lock back immediately.
+
+A commit re-checks what the preview could only observe: class capacity is recounted, and a payment
+split is recomputed against fresh balances. Two drafts prepared on the same free seat, or on the
+same outstanding balance, cannot both land.
+
 Refusals a commit can return, as `{ "error": … }` with `isError`:
 
 | Body | Cause |
 |---|---|
 | `validationError` | malformed `draftId` or `checksum`, or a stored plan of an older shape |
-| `draftNotFound` | unknown draft, or a draft belonging to the other tool |
+| `draftNotFound` | unknown draft, a draft belonging to the other tool, or one proposed by another key |
 | `draftExpired` | the thirty minutes ran out; run the preview again |
 | `checksumMismatch` | the checksum does not match the plan that was shown |
 | `commitInProgress` | a concurrent commit is still inside its transaction; retry |
+| `notFound` | the class resolved by the preview no longer exists |
+| `classFull` | the class filled up between the preview and the commit |
+| `overpayment` | the amount now exceeds what the family still owes |
+| `noActiveEnrollments` | the family's enrollments are no longer `ACTIVE` |
+| `refundExceedsPaid` | the refund now exceeds what was banked |
+| `staleDraft` | the split no longer matches the fresh balances; preview again |
 | `internalError` | anything unexpected, with the detail kept server-side |
+
+A commit that refuses leaves the draft intact and unlocked: fix what the body names, or run the
+preview again, and no partial row was written.
+
+The two pairs do not chain: `enroll_family` creates enrollments as `PENDING`, and `record_payment`
+only pays `ACTIVE` ones, so a family just enrolled answers `noActiveEnrollments` until an admin
+validates the enrollment from the dashboard. Its deposit still goes through `enroll_family` itself.

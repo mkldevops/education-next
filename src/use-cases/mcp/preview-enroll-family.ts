@@ -92,6 +92,9 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
   const totalAmount = calculateTotalAmount(planAmount, data.discount)
 
   if (classPeriod) {
+    // `checkCapacity` répond pour une place : on lui présente la classe une fois les
+    // premiers élèves de la fratrie assis, donc `students.length - 1` en plus. Le commit
+    // refait ce compte dans sa transaction, seul endroit où il fait autorité.
     const enrolled = await classPeriodGateway.countEnrolled(schoolId, classPeriod.id)
     const capacity = checkCapacity(classPeriod.capacity, enrolled + data.students.length - 1)
     if (capacity !== 'OK') {

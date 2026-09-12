@@ -51,12 +51,18 @@ beforeEach(() => {
   createDraft.mockResolvedValue({ id: 'draft-1' })
 })
 
+// Un `return` silencieux ferait passer le test sans rien vérifier le jour où le preview
+// refuse. L'assertion échoue en nommant le refus, et rétrécit le type au passage.
+function assertPreview<T>(result: T): asserts result is Exclude<T, string> {
+  if (typeof result === 'string') throw new Error(`expected a preview, got ${result}`)
+}
+
 describe('previewEnrollFamily', () => {
   it('resolves labels into identifiers and persists exactly one draft', async () => {
     const result = await previewEnrollFamily(scope, input)
 
     expect(result).not.toBe('validationError')
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toEqual([])
     expect(result.draftId).toBe('draft-1')
@@ -77,7 +83,7 @@ describe('previewEnrollFamily', () => {
   it('returns a checksum the caller can echo back, over the very plan it was shown', async () => {
     const { draftChecksum } = await import('@/lib/mcp-draft-crypto')
     const result = await previewEnrollFamily(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.checksum).toBe(draftChecksum(result.plan))
   })
@@ -91,7 +97,7 @@ describe('previewEnrollFamily', () => {
       ],
       payment: { ...input.payment, amount: 200 },
     })
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.plan?.payment?.allocation).toEqual([
       { studentIndex: 0, amount: 100 },
@@ -101,7 +107,7 @@ describe('previewEnrollFamily', () => {
 
   it('names an unknown class as a blocker and writes nothing', async () => {
     const result = await previewEnrollFamily(scope, { ...input, className: 'Z9' })
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toContainEqual({
       field: 'className',
@@ -119,7 +125,7 @@ describe('previewEnrollFamily', () => {
     ])
 
     const result = await previewEnrollFamily(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toContainEqual({
       field: 'className',
@@ -132,7 +138,7 @@ describe('previewEnrollFamily', () => {
     countEnrolled.mockResolvedValue(20)
 
     const result = await previewEnrollFamily(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toContainEqual({ field: 'className', value: 'C4', reason: 'classFull' })
     expect(createDraft).not.toHaveBeenCalled()
@@ -143,7 +149,7 @@ describe('previewEnrollFamily', () => {
       ...input,
       payment: { ...input.payment, amount: 500 },
     })
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toContainEqual({
       field: 'payment.amount',
@@ -157,7 +163,7 @@ describe('previewEnrollFamily', () => {
       ...input,
       students: [{ ...input.students[0], birthday: '2099-01-01' }],
     })
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers.map((blocker) => blocker.reason)).toContain('birthdayNotInThePast')
   })
@@ -169,7 +175,7 @@ describe('previewEnrollFamily', () => {
     ])
 
     const result = await previewEnrollFamily(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toEqual([])
     expect(result.warnings.map((warning) => warning.reason)).toEqual([
@@ -183,7 +189,7 @@ describe('previewEnrollFamily', () => {
     findByReference.mockResolvedValue([{ id: 'payment-9', amount: 100, paidAt: new Date() }])
 
     const result = await previewEnrollFamily(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.warnings).toContainEqual({
       field: 'payment.reference',

@@ -49,10 +49,16 @@ beforeEach(() => {
   createDraft.mockResolvedValue({ id: 'draft-2' })
 })
 
+// Un `return` silencieux ferait passer le test sans rien vérifier le jour où le preview
+// refuse. L'assertion échoue en nommant le refus, et rétrécit le type au passage.
+function assertPreview<T>(result: T): asserts result is Exclude<T, string> {
+  if (typeof result === 'string') throw new Error(`expected a preview, got ${result}`)
+}
+
 describe('previewRecordPayment', () => {
   it('surfaces the split across active enrollments, which the dashboard never shows', async () => {
     const result = await previewRecordPayment(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toEqual([])
     expect(result.plan?.allocation).toEqual([
@@ -64,7 +70,7 @@ describe('previewRecordPayment', () => {
 
   it('accepts the family by identifier without searching by name', async () => {
     const result = await previewRecordPayment(scope, { ...input, familyId: family.id })
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(findFamilyById).toHaveBeenCalledWith('school-1', family.id)
     expect(searchFamilies).not.toHaveBeenCalled()
@@ -84,7 +90,7 @@ describe('previewRecordPayment', () => {
     searchFamilies.mockResolvedValue([family, { id: 'family-9', name: 'Madi Said' }])
 
     const result = await previewRecordPayment(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toEqual([
       { field: 'familyName', value: 'Madi', reason: 'ambiguousFamily' },
@@ -97,7 +103,7 @@ describe('previewRecordPayment', () => {
     searchFamilies.mockResolvedValue([])
 
     const result = await previewRecordPayment(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toEqual([{ field: 'familyName', value: 'Madi', reason: 'notFound' }])
   })
@@ -106,7 +112,7 @@ describe('previewRecordPayment', () => {
     findActiveByFamily.mockResolvedValue([])
 
     const result = await previewRecordPayment(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toContainEqual({
       field: 'amount',
@@ -120,7 +126,7 @@ describe('previewRecordPayment', () => {
     findActiveByFamily.mockResolvedValue([enrollment('enr-1', 100, 90)])
 
     const result = await previewRecordPayment(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.blockers).toContainEqual({
       field: 'amount',
@@ -133,7 +139,7 @@ describe('previewRecordPayment', () => {
     findByReference.mockResolvedValue([{ id: 'payment-9', amount: 180, paidAt: new Date() }])
 
     const result = await previewRecordPayment(scope, input)
-    if (typeof result === 'string') return
+    assertPreview(result)
 
     expect(result.warnings).toContainEqual({
       field: 'reference',

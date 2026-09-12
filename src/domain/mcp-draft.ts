@@ -11,6 +11,19 @@ export const MCP_DRAFT_TTL_MINUTES = 30
  */
 export const MCP_DRAFT_CHECKSUM_LENGTH = 12
 
+/**
+ * Au-delà de ce délai, un brouillon engagé sans résultat est tenu pour abandonné.
+ *
+ * Le résultat est écrit dans la transaction qui écrit les données : `result` nul équivaut
+ * donc à « rien n'a été écrit ». Passé ce délai, reprendre le verrou ne peut pas produire
+ * de doublon, et c'est la seule sortie d'un `commit_*` interrompu entre les deux.
+ */
+export const MCP_DRAFT_COMMIT_TIMEOUT_SECONDS = 60
+
+export function staleCommitBefore(now: Date = new Date()): Date {
+  return new Date(now.getTime() - MCP_DRAFT_COMMIT_TIMEOUT_SECONDS * 1000)
+}
+
 export type McpDraftLifecycle = {
   status: 'PENDING' | 'COMMITTED'
   expiresAt: Date
