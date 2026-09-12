@@ -13,25 +13,30 @@ type Input = { name: string; lifetimeDays: number; userId: string; schoolId: str
  * La clé en clair n'est rendue qu'ici, une seule fois : la base n'en garde que le
  * hachage, donc elle est irrécupérable ensuite.
  */
-type KeyGateway = Pick<typeof mcpApiKeyGateway, 'countLive' | 'create'>
+type KeyGateway = Pick<typeof mcpApiKeyGateway, 'createWithinLimit'>
 
 export async function createMcpApiKey(input: Input, keyGw: KeyGateway = mcpApiKeyGateway) {
   const parsed = createMcpApiKeySchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
   const now = new Date()
-  const live = await keyGw.countLive(input.userId, input.schoolId, now)
-  if (live >= MCP_KEY_MAX_PER_USER) return 'tooManyKeys' as const
 
+  // La clé est engendrée avant le verdict : son empreinte et son préfixe font partie de
+  // la ligne insérée, et c'est cette insertion qui porte le plafond. Une clé refusée
+  // n'aura existé qu'en mémoire.
   const key = generateMcpKey()
-  const record = await keyGw.create({
-    schoolId: input.schoolId,
-    userId: input.userId,
-    name: parsed.data.name,
-    prefix: mcpKeyPrefix(key),
-    keyHash: hashMcpKey(key),
-    expiresAt: expiryFromDays(parsed.data.lifetimeDays, now),
-  })
+  const record = await keyGw.createWithinLimit(
+    {
+      schoolId: input.schoolId,
+      userId: input.userId,
+      name: parsed.data.name,
+      prefix: mcpKeyPrefix(key),
+      keyHash: hashMcpKey(key),
+      expiresAt: expiryFromDays(parsed.data.lifetimeDays, now),
+    },
+    { now, maxLive: MCP_KEY_MAX_PER_USER }
+  )
+  if (record === 'tooManyKeys') return 'tooManyKeys' as const
 
   return { key, record }
 }
