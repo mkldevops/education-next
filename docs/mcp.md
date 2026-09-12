@@ -152,8 +152,9 @@ fixed. `warnings` never blocks: an existing namesake or a receipt number already
 human to judge.
 
 `matches` reports what the duplicate probe found, projected by the use case, not by the dashboard
-gateway it reads: a family is an `id` and a `name`, a namesake is an `id`, both names and an
-`isStudent` flag. A namesake already enrolled is named, never dated.
+gateway it reads: a family is an `id` and a `name`. Only `enroll_family` probes people, so only it
+carries `students` — a namesake is an `id`, both names and an `isStudent` flag. A namesake already
+enrolled is named, never dated.
 
 `commit_*` sends back the `draftId` and that checksum, not the payload: a model does not
 re-serialize two kilobytes byte for byte. The checksum proves the resolved plan was read; a
