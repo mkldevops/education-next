@@ -48,7 +48,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
       person: {
         name: formData.get('name') as string,
         lastname: formData.get('lastname') as string,
-        sex: formData.get('sex') as 'MALE' | 'FEMALE',
+        sex: (formData.get('sex') as 'MALE' | 'FEMALE' | '') || undefined,
         email: (formData.get('email') as string) || undefined,
         address: (formData.get('address') as string) || undefined,
         postCode: (formData.get('postCode') as string) || undefined,
@@ -87,7 +87,8 @@ function AddPersonForm({ familyId }: { familyId: string }) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="person-sex">{t('sex')}</Label>
-              <Select id="person-sex" name="sex" required disabled={isPending}>
+              <Select id="person-sex" name="sex" disabled={isPending}>
+                <option value="">{t('unspecified')}</option>
                 <option value="MALE">{t('male')}</option>
                 <option value="FEMALE">{t('female')}</option>
               </Select>

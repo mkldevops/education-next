@@ -156,6 +156,9 @@ children across classes — "C4 / C2 / F" on a single line — and a single clas
 force the siblings into separate calls; each call creates a family, so the siblings would come back
 as duplicates. An unresolved label is a blocker naming the child: `students.2.className`.
 
+Sex and birthday may be omitted, and `parents` may be an empty array, when the sheet does not carry
+them.
+
 Dates are ISO strings, never anything else. A birthday is a day, `2018-04-02`. A payment date is a
 day or a timestamp with seconds and a zone, `2026-09-12T14:30:00Z` or `2026-09-12T14:30:00+02:00`.
 `02/04/2018` and a timestamp without a zone are refused.

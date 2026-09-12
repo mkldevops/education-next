@@ -59,8 +59,10 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
   const { person } = student
   const enrollments = person.student.enrollments
 
-  const birthday = new Date(person.student.birthday)
-  const age = Math.floor((Date.now() - birthday.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+  const birthday = person.student.birthday ? new Date(person.student.birthday) : null
+  const age = birthday
+    ? Math.floor((Date.now() - birthday.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null
 
   return (
     <Card className="flex h-full flex-col p-4 rounded border overflow-hidden hover:shadow-md transition-all duration-200">
@@ -72,9 +74,11 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
           <h3 className="text-sm font-semibold text-graphite line-clamp-1">
             {person.name} {person.lastname}
           </h3>
-          <p className="text-xs text-graphite-600 mt-0.5">
-            {t('childCard.age', { age })} • {formatDate(birthday, locale)}
-          </p>
+          {birthday && age !== null && (
+            <p className="text-xs text-graphite-600 mt-0.5">
+              {t('childCard.age', { age })} • {formatDate(birthday, locale)}
+            </p>
+          )}
         </div>
       </div>
 

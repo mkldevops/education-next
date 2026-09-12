@@ -55,9 +55,12 @@ export function StudentsDataTable({ data, locale, isAdmin }: Props) {
     {
       id: 'birthday',
       header: t('birthday'),
-      accessorFn: (row) => row.birthday.getTime(),
+      accessorFn: (row) => row.birthday?.getTime(),
+      sortUndefined: 'last',
       cell: ({ row }) => (
-        <span className="text-graphite">{formatDate(row.original.birthday, locale)}</span>
+        <span className="text-graphite">
+          {row.original.birthday ? formatDate(row.original.birthday, locale) : '—'}
+        </span>
       ),
       enableSorting: true,
     },

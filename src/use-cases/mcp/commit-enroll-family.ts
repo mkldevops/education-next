@@ -24,7 +24,7 @@ const resolvedSchema = z.object({
     z.object({
       name: z.string(),
       lastname: z.string(),
-      sex: z.enum(['MALE', 'FEMALE']),
+      sex: z.enum(['MALE', 'FEMALE']).optional(),
       email: z.string().optional(),
       phoneNumber: z.string().optional(),
     })
@@ -33,8 +33,8 @@ const resolvedSchema = z.object({
     z.object({
       name: z.string(),
       lastname: z.string(),
-      sex: z.enum(['MALE', 'FEMALE']),
-      birthday: z.coerce.date(),
+      sex: z.enum(['MALE', 'FEMALE']).optional(),
+      birthday: z.coerce.date().optional(),
       birthplace: z.string().optional(),
       classPeriod: z.object({ id: z.string(), name: z.string() }),
     })

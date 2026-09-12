@@ -19,8 +19,11 @@ export async function createStudent(
   const family = await familyGw.findById(parsed.data.schoolId, parsed.data.familyId)
   if (!family) return 'notFound' as const
 
-  const birthdayCheck = validateStudentBirthday(parsed.data.student.birthday)
-  if (birthdayCheck !== 'OK') return birthdayCheck
+  const { birthday } = parsed.data.student
+  if (birthday) {
+    const birthdayCheck = validateStudentBirthday(birthday)
+    if (birthdayCheck !== 'OK') return birthdayCheck
+  }
 
   const person = await personGw.create(parsed.data.schoolId, parsed.data.person)
   const student = await studentGw.create(parsed.data.schoolId, {
