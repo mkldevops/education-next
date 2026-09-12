@@ -15,8 +15,8 @@ const UNKNOWN_CLIENT = 'unknown'
  * Lecture stricte, parce qu'une valeur mal formée décide ici d'une frontière de
  * confiance : `Number` accepterait `' '` comme `0` (un seul compteur pour l'instance
  * entière) et `'0x10'` comme seize sauts (le compte déclaré dépasse alors la chaîne
- * reçue, cf. `getClientIp`). Tout ce qui n'est pas une suite de chiffres dans la plage
- * plausible retombe sur le défaut.
+ * reçue, cf. `getClientIp`). Seule une suite de chiffres valant au plus
+ * `MAX_TRUSTED_PROXY_HOPS` est retenue ; tout le reste retombe sur le défaut.
  */
 function trustedProxyHops(): number {
   const raw = process.env.TRUSTED_PROXY_HOPS?.trim()
@@ -42,6 +42,11 @@ function trustedProxyHops(): number {
  * l'adresse de la socket quand l'en-tête est absent
  * (`next/dist/server/base-server.js`, `??=`), donc le repli n'aurait servi que le cas où
  * l'appelant envoie un `x-forwarded-for` vide — exactement celui qu'il faut refuser.
+ *
+ * La garantie vaut pour un compte exact, chaque saut compté devant *ajouter* l'adresse
+ * du pair. Sous-déclarer regroupe tout le monde derrière le proxy le plus externe ;
+ * sur-déclarer est rétréci, pas fermé, puisqu'un appelant qui bourre la chaîne jusqu'à
+ * `hops` entrées ramène l'index dans ce qu'il écrit lui-même.
  */
 export function getClientIp(request: Request): string {
   const hops = trustedProxyHops()

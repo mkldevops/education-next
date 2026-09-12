@@ -369,22 +369,25 @@ addresses: the IP tier (120/min) only damps unauthenticated flooding, and **the 
 
 The IP tier is only worth its cost if its key cannot be chosen by the caller. `getClientIp`
 (`src/lib/rate-limit.ts`) therefore reads `x-forwarded-for` **from the right**, at
-`length - TRUSTED_PROXY_HOPS` (default `1`, read strictly: anything but a plausible digit string
-falls back to that default): the last hops were appended by our own proxies, while everything before
-them was sent by the client. Reading the first entry let a caller rotate a forged prefix and mint one
-counter per imagined address, so the only pre-auth brake was optional.
+`length - TRUSTED_PROXY_HOPS` (default `1`, accepted range `0..4`, and anything else — a stray
+space, `0x10`, `5` — falls back to that default): the last hops were appended by our own proxies,
+while everything before them was sent by the client. Reading the first entry let a caller rotate a
+forged prefix and mint one counter per imagined address, so the only pre-auth brake was optional.
 
-Two deliberate refusals rather than a lenient guess. A chain **shorter** than the declared hops did
-not traverse the announced proxies, so its entries are unattributable and the request falls into the
-single `unknown` bucket instead of an entry the caller picked. And there is **no `x-real-ip`
-fallback**: that scalar carries no hop count, `next start` already fills `x-forwarded-for` from the
-socket address when the header is absent, so the fallback would only ever have served a caller who
-sends an empty `x-forwarded-for` — the one case worth refusing.
+The guarantee holds **only if the count is exact**, and each counted proxy must *append* the peer
+address (nginx `$proxy_add_x_forwarded_for`). Declaring too few hops buckets every caller behind the
+outermost proxy together. Declaring too many is narrowed, not closed: a chain **shorter** than the
+declared hops did not traverse the announced proxies, so its entries are unattributable and the
+request falls into the single `unknown` bucket, but a caller who pads the chain up to that length
+moves the read index back into the part it writes itself. There is no safe direction to be wrong in.
+
+There is also **no `x-real-ip` fallback**: that scalar carries no hop count, and `next start` fills
+`x-forwarded-for` from the socket address when the header is absent
+(`next/dist/server/base-server.js`, `??=`), so the fallback would only ever have served a caller who
+sends an *empty* `x-forwarded-for` — the one case worth refusing.
 
 `TRUSTED_PROXY_HOPS=0` declares that no forwarding header is verifiable: every pre-auth request then
 shares one counter, so the passkey tier becomes 10 authentications per minute for the whole instance.
-Conversely, declaring fewer hops than the deployment really has buckets every caller behind the
-outermost proxy together — the hop count must match the deployment.
 
 The tracked-key cap evicts the **least recently used** key, refreshed on refused calls too: evicting
 by insertion order dropped an established client before a freshly forged address, and let a blocked

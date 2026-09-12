@@ -53,6 +53,16 @@ describe('getClientIp', () => {
     expect(ipOf({ 'x-forwarded-for': '203.0.113.7', 'x-real-ip': '203.0.113.8' })).toBe('unknown')
   })
 
+  it('accepts the highest supported hop count and refuses the one above it', () => {
+    const chain = '198.51.100.9, 203.0.113.7, 10.0.0.1, 10.0.0.2, 10.0.0.3'
+
+    vi.stubEnv('TRUSTED_PROXY_HOPS', '4')
+    expect(ipOf({ 'x-forwarded-for': chain })).toBe('203.0.113.7')
+
+    vi.stubEnv('TRUSTED_PROXY_HOPS', '5')
+    expect(ipOf({ 'x-forwarded-for': chain })).toBe('10.0.0.3')
+  })
+
   it('falls back to one trusted hop when the setting is unusable', () => {
     for (const raw of ['', '  ', 'nonsense', '-1', '1.5', '1e1', '0x10', '99']) {
       vi.stubEnv('TRUSTED_PROXY_HOPS', raw)
