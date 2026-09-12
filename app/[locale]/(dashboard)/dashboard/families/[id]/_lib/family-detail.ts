@@ -152,6 +152,5 @@ export function deriveFamilyDetail(
     totalDiscount: balance.totalDiscount,
     totalPaid: balance.totalPaid,
     remainingBalance: balance.remainingBalance,
-    payableBalance: balance.payableBalance,
   }
 }

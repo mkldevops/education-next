@@ -84,11 +84,11 @@ export const enrollmentGateway = {
       data: { discount, totalAmount },
     }),
 
-  findActiveByFamily: (schoolId: string, familyId: string) =>
+  findPayableByFamily: (schoolId: string, familyId: string) =>
     db.enrollment.findMany({
       where: {
         schoolId,
-        status: 'ACTIVE',
+        status: { in: ['PENDING', 'ACTIVE'] },
         student: {
           person: {
             families: {

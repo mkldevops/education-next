@@ -16,7 +16,7 @@ export async function recordPayment(input: Input) {
   const family = await familyGateway.findById(schoolId, parsed.data.familyId)
   if (!family) return 'notFound' as const
 
-  const enrollments = await enrollmentGateway.findActiveByFamily(schoolId, parsed.data.familyId)
+  const enrollments = await enrollmentGateway.findPayableByFamily(schoolId, parsed.data.familyId)
 
   const balances: EnrollmentBalance[] = enrollments.map((e) => {
     const totalPaid = e.payments.reduce((sum, p) => sum + Number(p.amount), 0)

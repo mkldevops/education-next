@@ -93,6 +93,14 @@ describe('commitRecordPayment', () => {
     })
   })
 
+  it('pays enrollments still awaiting validation', async () => {
+    await commitRecordPayment(scope, input)
+
+    expect(tx.enrollment.findMany.mock.calls[0][0].where.status).toEqual({
+      in: ['PENDING', 'ACTIVE'],
+    })
+  })
+
   it('writes the result inside the transaction that writes the payments', async () => {
     const result = await commitRecordPayment(scope, input)
 

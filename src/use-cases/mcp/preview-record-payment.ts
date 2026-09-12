@@ -40,7 +40,7 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
   }
 
   const family = candidates[0]
-  const enrollments = await enrollmentGateway.findActiveByFamily(schoolId, family.id)
+  const enrollments = await enrollmentGateway.findPayableByFamily(schoolId, family.id)
 
   const balances: EnrollmentBalance[] = enrollments.map((enrollment) => {
     const totalPaid = enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)

@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const findFamilyById = vi.fn()
 const searchFamilies = vi.fn()
-const findActiveByFamily = vi.fn()
+const findPayableByFamily = vi.fn()
 const findByReference = vi.fn()
 const createDraft = vi.fn()
 
 vi.mock('@/gateways/family-gateway', () => ({
   familyGateway: { findById: findFamilyById, searchByName: searchFamilies },
 }))
-vi.mock('@/gateways/enrollment-gateway', () => ({ enrollmentGateway: { findActiveByFamily } }))
+vi.mock('@/gateways/enrollment-gateway', () => ({ enrollmentGateway: { findPayableByFamily } }))
 vi.mock('@/gateways/payment-gateway', () => ({ paymentGateway: { findByReference } }))
 vi.mock('@/gateways/mcp-draft-gateway', () => ({ mcpDraftGateway: { create: createDraft } }))
 
@@ -44,7 +44,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   findFamilyById.mockResolvedValue(family)
   searchFamilies.mockResolvedValue([family])
-  findActiveByFamily.mockResolvedValue([enrollment('enr-1', 100, 0), enrollment('enr-2', 100, 0)])
+  findPayableByFamily.mockResolvedValue([enrollment('enr-1', 100, 0), enrollment('enr-2', 100, 0)])
   findByReference.mockResolvedValue([])
   createDraft.mockResolvedValue({ id: 'draft-2' })
 })
@@ -95,7 +95,7 @@ describe('previewRecordPayment', () => {
     expect(result.blockers).toEqual([
       { field: 'familyName', value: 'Madi', reason: 'ambiguousFamily' },
     ])
-    expect(findActiveByFamily).not.toHaveBeenCalled()
+    expect(findPayableByFamily).not.toHaveBeenCalled()
     expect(createDraft).not.toHaveBeenCalled()
   })
 
@@ -109,7 +109,7 @@ describe('previewRecordPayment', () => {
   })
 
   it('blocks a family with nothing left to pay', async () => {
-    findActiveByFamily.mockResolvedValue([])
+    findPayableByFamily.mockResolvedValue([])
 
     const result = await previewRecordPayment(scope, input)
     assertPreview(result)
@@ -117,13 +117,13 @@ describe('previewRecordPayment', () => {
     expect(result.blockers).toContainEqual({
       field: 'amount',
       value: '180',
-      reason: 'noActiveEnrollments',
+      reason: 'noPayableEnrollments',
     })
     expect(createDraft).not.toHaveBeenCalled()
   })
 
   it('blocks a payment above the outstanding balance', async () => {
-    findActiveByFamily.mockResolvedValue([enrollment('enr-1', 100, 90)])
+    findPayableByFamily.mockResolvedValue([enrollment('enr-1', 100, 90)])
 
     const result = await previewRecordPayment(scope, input)
     assertPreview(result)

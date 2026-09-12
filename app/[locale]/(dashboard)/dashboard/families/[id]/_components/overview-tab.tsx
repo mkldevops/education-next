@@ -28,7 +28,6 @@ type Props = {
   remainingBalance: number
   totalDue: number
   totalDiscount: number
-  payableBalance: number
 }
 
 export async function OverviewTab({
@@ -44,7 +43,6 @@ export async function OverviewTab({
   remainingBalance,
   totalDue,
   totalDiscount,
-  payableBalance,
 }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
@@ -95,8 +93,7 @@ export async function OverviewTab({
           {!isAdmin && (
             <div className="mt-5 border-t border-alabaster-700 pt-5">
               <OnlinePaymentButton
-                amount={payableBalance}
-                outstanding={remainingBalance}
+                amount={remainingBalance}
                 configured={isStripeConfigured()}
                 locale={locale}
               />

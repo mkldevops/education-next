@@ -657,7 +657,7 @@
       "payments": {
         "title": "Encaissements",
         "family": "Famille",
-        "student": "Élève",
+        "students": "Élèves",
         "amount": "Montant",
         "method": "Méthode",
         "reference": "Référence",
@@ -703,8 +703,8 @@
           "success": "Règlement enregistré",
           "error": "Erreur lors de l'enregistrement",
           "errors": {
-            "overpayment": "Le montant dépasse le solde des inscriptions actives",
-            "noActiveEnrollments": "Cette famille n'a aucune inscription active à régler",
+            "overpayment": "Le montant dépasse le solde restant dû par la famille",
+            "noPayableEnrollments": "Cette famille n'a aucune inscription en cours à régler",
             "refundExceedsPaid": "Le remboursement dépasse le montant déjà réglé",
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Famille introuvable"
@@ -844,7 +844,6 @@
           "new": "Nouveau",
           "pay": "Enregistrer un règlement",
           "payUnavailable": "Cette famille n'a aucun solde à régler",
-          "payNoActiveEnrollment": "Aucune inscription active : activez une inscription pour encaisser",
           "newStudent": "Ajouter un élève",
           "newEnrollment": "Inscrire un élève",
           "manage": "Actions",
@@ -878,7 +877,6 @@
           "unavailable": "Le paiement en ligne n'est pas encore configuré.",
           "noBalance": "Cette famille n'a aucun solde à régler.",
           "settled": "Votre famille est à jour.",
-          "notPayableYet": "Le solde en cours concerne une inscription en attente de validation : rien à régler en ligne pour le moment.",
           "error": "Impossible de démarrer le paiement.",
           "returned": "Votre paiement a été transmis. L'historique sera actualisé après confirmation bancaire.",
           "cancelled": "Le paiement a été annulé. Aucun règlement n'a été enregistré."
@@ -983,7 +981,7 @@
         },
         "paymentHistory": {
           "title": "Historique des paiements",
-          "student": "Élève",
+          "allocation": "Répartition",
           "amount": "Montant",
           "method": "Méthode",
           "reference": "Référence",
@@ -1714,7 +1712,7 @@
     "classFull": "La classe a atteint sa capacité maximale",
     "capacityBelowEnrolled": "La capacité ne peut pas être inférieure au nombre d'inscrits",
     "overpayment": "Le montant dépasse le solde restant dû",
-    "noActiveEnrollments": "Aucune inscription active pour cette famille",
+    "noPayableEnrollments": "Aucune inscription en cours pour cette famille",
     "refundExceedsPaid": "Le remboursement dépasse le montant déjà payé"
   },
   "search": {

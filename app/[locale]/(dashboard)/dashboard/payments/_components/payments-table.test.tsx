@@ -22,9 +22,9 @@ vi.mock('next-intl/navigation', () => ({
 }))
 
 const basePayment: Omit<PaymentRow, 'id' | 'paidAt' | 'cashedAt'> = {
-  enrollmentId: 'enrollment-1',
+  familyId: 'family-1',
   familyName: 'Dupont',
-  studentName: 'Alice Dupont',
+  students: 'Alice Dupont, Bruno Dupont',
   amount: 100,
   method: 'CASH',
   reference: null,
@@ -57,7 +57,7 @@ const rowC: PaymentRow = {
   cashedAt: new Date('2025-01-10T00:00:00Z'),
 } // '10/01/2025'
 
-// Columns (isAdmin=false): student, amount, method, reference, paidAt, cashedAt.
+// Columns (isAdmin=false): students, amount, method, reference, paidAt, cashedAt.
 const CELL_INDEX = { paidAt: 4, cashedAt: 5 } as const
 
 const readColumn = (cellIndex: number) =>

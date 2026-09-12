@@ -203,8 +203,7 @@ export default async function DashboardPage({ params }: Props) {
             <p className="mt-1 text-xs text-graphite-600">{t('stats.scopeAll')}</p>
             <div className="mt-4">
               <OnlinePaymentButton
-                amount={parentBalance?.payableBalance ?? 0}
-                outstanding={parentBalance?.remainingBalance ?? 0}
+                amount={parentBalance?.remainingBalance ?? 0}
                 configured={isStripeConfigured()}
                 locale={locale}
               />

@@ -657,7 +657,7 @@
       "payments": {
         "title": "Collections",
         "family": "Family",
-        "student": "Student",
+        "students": "Students",
         "amount": "Amount",
         "method": "Method",
         "reference": "Reference",
@@ -703,8 +703,8 @@
           "success": "Collection recorded",
           "error": "Error recording payment",
           "errors": {
-            "overpayment": "The amount exceeds the balance of active enrollments",
-            "noActiveEnrollments": "This family has no active enrollment to pay",
+            "overpayment": "The amount exceeds what the family still owes",
+            "noPayableEnrollments": "This family has no current enrollment to pay",
             "refundExceedsPaid": "The refund exceeds the amount already paid",
             "validationError": "Check the information entered",
             "notFound": "Family not found"
@@ -844,7 +844,6 @@
           "new": "New",
           "pay": "Record a collection",
           "payUnavailable": "This family has no outstanding balance",
-          "payNoActiveEnrollment": "No active enrollment: activate one to record a payment",
           "newStudent": "Add a student",
           "newEnrollment": "Enroll a student",
           "manage": "Actions",
@@ -878,7 +877,6 @@
           "unavailable": "Online payment is not configured yet.",
           "noBalance": "This family has no outstanding balance.",
           "settled": "Your family is up to date.",
-          "notPayableYet": "The outstanding balance relates to an enrollment awaiting approval: nothing to pay online yet.",
           "error": "Unable to start payment.",
           "returned": "Your payment was submitted. History will update after bank confirmation.",
           "cancelled": "Payment was cancelled. No payment was recorded."
@@ -983,7 +981,7 @@
         },
         "paymentHistory": {
           "title": "Payment History",
-          "student": "Student",
+          "allocation": "Split",
           "amount": "Amount",
           "method": "Method",
           "reference": "Reference",
@@ -1714,7 +1712,7 @@
     "classFull": "The class has reached its maximum capacity",
     "capacityBelowEnrolled": "Capacity cannot be lower than the number of enrolled students",
     "overpayment": "Amount exceeds the remaining balance due",
-    "noActiveEnrollments": "No active enrollments for this family",
+    "noPayableEnrollments": "No current enrollments for this family",
     "refundExceedsPaid": "Refund exceeds the amount already paid"
   },
   "search": {

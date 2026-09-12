@@ -14,7 +14,7 @@ type DistributionSuccess = {
 
 type DistributionError =
   | { result: 'overpayment' }
-  | { result: 'noActiveEnrollments' }
+  | { result: 'noPayableEnrollments' }
   | { result: 'refundExceedsPaid' }
 
 type DistributionResult = DistributionSuccess | DistributionError
@@ -24,7 +24,7 @@ export function distributePayment(
   enrollments: EnrollmentBalance[]
 ): DistributionResult {
   if (enrollments.length === 0) {
-    return { result: 'noActiveEnrollments' }
+    return { result: 'noPayableEnrollments' }
   }
 
   if (amount > 0) {
@@ -117,4 +117,90 @@ function distributeRefund(
     result: 'OK',
     distribution,
   }
+}
+
+type GroupablePayment = {
+  id: string
+  familyId: string
+  enrollmentId: string
+  amount: number | { toString(): string }
+  method: string
+  reference: string | null
+  paidAt: Date
+  cashedAt: Date | null
+  paymentTransactionId: string | null
+  createdAt: Date
+}
+
+export type FamilyPayment<T extends GroupablePayment> = {
+  id: string
+  familyId: string
+  amount: number
+  method: T['method']
+  reference: string | null
+  paidAt: Date
+  cashedAt: Date | null
+  lines: T[]
+}
+
+const SAME_PAYMENT_WINDOW_MS = 5_000
+
+function paymentKey(payment: GroupablePayment): string {
+  return [
+    payment.familyId,
+    payment.method,
+    payment.reference ?? '',
+    payment.paidAt.getTime(),
+    payment.cashedAt?.getTime() ?? '',
+    payment.paymentTransactionId ?? '',
+  ].join('|')
+}
+
+/**
+ * Une famille paie une somme, la base la ventile en une ligne par inscription. Ce regroupement
+ * rend la somme versée : mêmes famille, mode, référence, dates et transaction, écrites ensemble
+ * et sans deux lignes sur la même inscription.
+ */
+export function groupFamilyPayments<T extends GroupablePayment>(
+  payments: T[]
+): Array<FamilyPayment<T>> {
+  const groups: Array<FamilyPayment<T> & { key: string; lastCreatedAt: number }> = []
+  const byCreation = [...payments].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+
+  for (const payment of byCreation) {
+    const key = paymentKey(payment)
+    const createdAt = payment.createdAt.getTime()
+    const group = [...groups]
+      .reverse()
+      .find(
+        (candidate) =>
+          candidate.key === key &&
+          createdAt - candidate.lastCreatedAt <= SAME_PAYMENT_WINDOW_MS &&
+          !candidate.lines.some((line) => line.enrollmentId === payment.enrollmentId)
+      )
+
+    if (group) {
+      group.lines.push(payment)
+      group.amount = roundHalfUp(group.amount + Number(payment.amount))
+      group.lastCreatedAt = createdAt
+      continue
+    }
+
+    groups.push({
+      key,
+      lastCreatedAt: createdAt,
+      id: payment.id,
+      familyId: payment.familyId,
+      amount: roundHalfUp(Number(payment.amount)),
+      method: payment.method,
+      reference: payment.reference,
+      paidAt: payment.paidAt,
+      cashedAt: payment.cashedAt,
+      lines: [payment],
+    })
+  }
+
+  return groups
+    .sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime() || b.lastCreatedAt - a.lastCreatedAt)
+    .map(({ key: _key, lastCreatedAt: _lastCreatedAt, ...group }) => group)
 }

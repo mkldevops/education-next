@@ -53,7 +53,7 @@ export async function commitRecordPayment(scope: McpScope, input: Input) {
       const enrollments = await tx.enrollment.findMany({
         where: {
           schoolId,
-          status: 'ACTIVE',
+          status: { in: ['PENDING', 'ACTIVE'] },
           student: { person: { families: { some: { familyId: resolved.family.id } } } },
         },
         include: { payments: true },

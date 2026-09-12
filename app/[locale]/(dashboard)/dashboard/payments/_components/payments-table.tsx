@@ -12,9 +12,9 @@ import { formatCurrency } from '@/lib/decimal'
 
 export interface PaymentRow {
   id: string
-  enrollmentId: string
+  familyId: string
   familyName: string
-  studentName: string
+  students: string
   amount: number
   method: PaymentMethod
   reference: string | null
@@ -36,24 +36,24 @@ export function PaymentsTable({ payments, locale, isAdmin, periodName }: Props) 
     id: 'family',
     header: t('family'),
     accessorFn: (row) => row.familyName,
-    cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
+    cell: ({ row }) => (
+      <Link
+        href={`/dashboard/families/${row.original.familyId}`}
+        className="font-medium text-primary hover:text-primary-hover"
+      >
+        {row.original.familyName}
+      </Link>
+    ),
     enableSorting: true,
   }
 
   const columns: ColumnDef<PaymentRow>[] = [
     ...(isAdmin ? [familyColumn] : []),
     {
-      id: 'student',
-      header: t('student'),
-      accessorFn: (row) => row.studentName,
-      cell: ({ row }) => (
-        <Link
-          href={`/dashboard/enrollments/${row.original.enrollmentId}`}
-          className="font-medium text-primary hover:text-primary-hover"
-        >
-          {row.original.studentName}
-        </Link>
-      ),
+      id: 'students',
+      header: t('students'),
+      accessorFn: (row) => row.students,
+      cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
       enableSorting: true,
     },
     {

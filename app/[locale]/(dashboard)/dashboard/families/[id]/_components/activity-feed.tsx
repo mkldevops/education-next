@@ -1,5 +1,6 @@
 import { Card } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
+import { groupFamilyPayments } from '@/domain/payment'
 import type {
   ClassAssignment,
   ClassPeriod,
@@ -51,14 +52,19 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
 
   const activities: Activity[] = []
 
-  payments.forEach((payment) => {
+  groupFamilyPayments(payments).forEach((payment) => {
     activities.push({
       id: `payment-${payment.id}`,
       date: payment.paidAt,
       type: 'payment',
       title: t('activity.payment'),
-      description: `${formatCurrency(payment.amount, locale)} — ${payment.enrollment.plan.name}`,
-      student: `${payment.enrollment.student.person.name} ${payment.enrollment.student.person.lastname}`,
+      description: formatCurrency(payment.amount, locale),
+      student: payment.lines
+        .map(
+          (line) =>
+            `${line.enrollment.student.person.name} ${line.enrollment.student.person.lastname}`
+        )
+        .join(', '),
       color: 'bg-green-500',
     })
   })

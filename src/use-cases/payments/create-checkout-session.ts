@@ -16,14 +16,14 @@ export async function createCheckoutSession(input: Input) {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return 'notConfigured' as const
 
   const balance = await getFamilyBalance(input.schoolId, input.familyId)
-  if (balance.payableAmountInCents <= 0) return 'noBalance' as const
+  if (balance.remainingAmountInCents <= 0) return 'noBalance' as const
 
   const transaction = await db.paymentTransaction.create({
     data: {
       schoolId: input.schoolId,
       familyId: input.familyId,
       initiatedById: input.initiatedById,
-      amount: balance.payableBalance,
+      amount: balance.remainingBalance,
       currency: 'EUR',
       provider: 'STRIPE',
     },
@@ -40,7 +40,7 @@ export async function createCheckoutSession(input: Input) {
             quantity: 1,
             price_data: {
               currency: 'eur',
-              unit_amount: balance.payableAmountInCents,
+              unit_amount: balance.remainingAmountInCents,
               product_data: {
                 name: 'Frais de scolarité',
               },

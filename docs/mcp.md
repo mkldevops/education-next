@@ -198,7 +198,7 @@ Refusals a commit can return, as `{ "error": … }` with `isError`:
 | `notFound` | the class resolved by the preview no longer exists |
 | `classFull` | the class filled up between the preview and the commit |
 | `overpayment` | the amount now exceeds what the family still owes |
-| `noActiveEnrollments` | the family's enrollments are no longer `ACTIVE` |
+| `noPayableEnrollments` | the family has no `PENDING` or `ACTIVE` enrollment left to pay |
 | `refundExceedsPaid` | the refund now exceeds what was banked |
 | `staleDraft` | the split no longer matches the fresh balances; preview again |
 | `internalError` | anything unexpected, with the detail kept server-side |
@@ -206,6 +206,6 @@ Refusals a commit can return, as `{ "error": … }` with `isError`:
 A commit that refuses leaves the draft intact and unlocked: fix what the body names, or run the
 preview again, and no partial row was written.
 
-The two pairs do not chain: `enroll_family` creates enrollments as `PENDING`, and `record_payment`
-only pays `ACTIVE` ones, so a family just enrolled answers `noActiveEnrollments` until an admin
-validates the enrollment from the dashboard. Its deposit still goes through `enroll_family` itself.
+The two pairs chain: `enroll_family` creates enrollments as `PENDING`, and `record_payment` pays
+`PENDING` and `ACTIVE` ones alike, so a family just enrolled can record its next payment right away.
+A family owes one balance across its children and may settle it in several payments.
