@@ -1409,8 +1409,8 @@
         "description": "Ouvrez ou fermez les accès machine à l'instance.",
         "mcp": {
           "title": "Serveur MCP",
-          "description": "Autorise Claude et Codex à lire et à écrire les données de leur école via une clé API. Chaque administrateur crée ses clés depuis ses paramètres.",
-          "hint": "C'est une API d'écriture : elle reste fermée tant qu'elle n'est pas activée ici."
+          "description": "Autorise Claude et Codex à lire les données de leur école via une clé API. Chaque administrateur crée ses clés depuis ses paramètres.",
+          "hint": "Lecture seule pour l'instant, et fermée par défaut : la surface s'étendra à l'écriture."
         }
       }
     },

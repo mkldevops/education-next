@@ -333,15 +333,15 @@ existed.
 `McpApiKey` rows are created from the "API keys" tab of `/dashboard/settings`, which appears only for a
 school admin while the flag is on. The token is `edu_mcp_` plus 32 random bytes in base64url, **stored
 as SHA-256 only** and shown in clear exactly once. Unlike `Invitation.token` (short, single-use, mailed),
-an API key is durable and grants writes, so it must not exist in clear in the database. The 12-character
-`prefix` is the sole visual landmark of the list.
+an API key is durable and will carry write access, so it must not exist in clear in the database.
+The 12-character `prefix` is the sole visual landmark of the list.
 
 - Expiry is mandatory: 30, 90 or 365 days, 90 by default. A key without an end of life is not a key.
 - Revocation writes `revokedAt`; the row is never deleted, so the audit trail survives.
 - Five live keys per (user, school) pair.
 
 The table is **excluded from `TENANT_SCOPED_MODELS`** for the reason already written for `SchoolMember`:
-it is a discovery table, read by `tokenHash` before any school is known. Its single boundary is
+it is a discovery table, read by `keyHash` before any school is known. Its single boundary is
 `src/gateways/mcp-api-key-gateway.ts` — no fifth exception in `src/lib/db-unscoped.ts`.
 
 ### Route guards
@@ -358,7 +358,8 @@ addresses: the IP tier (120/min) only damps unauthenticated flooding, and **the 
 `POST` only; `GET` and `DELETE` answer `405`. The route **never reads a cookie** and never calls
 `auth.api.getSession()`, so it carries no ambient authority and a browser cannot set `Authorization`
 cross-origin — CSRF is impossible by construction rather than by `Origin` validation. That invariant is
-pinned by a test. `AuthInfo` carries the `keyId`, never the presented key, which the SDK could serialize
+pinned by a test. `AuthInfo` carries the key's public `prefix` as its `token`, the `keyId` as
+`clientId` and the resolved scope in `extra` — never the presented key, which the SDK could serialize
 into an error.
 
 ### Refusals

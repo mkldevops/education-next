@@ -17,6 +17,23 @@ function json(payload: unknown) {
 }
 
 /**
+ * Lecture d'outil avec frontière d'erreur.
+ *
+ * Un jet inattendu — `TenantScopeError`, une erreur Prisma qui recopie la requête et les
+ * colonnes, une erreur d'initialisation qui nomme l'hôte de la base — serait sérialisé
+ * jusqu'au client, donc jusqu'au contexte du fournisseur de modèle. Le détail reste dans
+ * les journaux du serveur, l'appelant ne reçoit qu'un refus fixe.
+ */
+async function read(tool: string, load: () => Promise<unknown>) {
+  try {
+    return json(await load())
+  } catch (error) {
+    console.error(`[mcp] ${tool}`, error)
+    return { ...json({ error: 'internalError' }), isError: true }
+  }
+}
+
+/**
  * Instance MCP d'une requête, close sur la portée déjà résolue.
  *
  * Le `schoolId` vient de la clé, jamais d'un argument d'outil : un identifiant d'école
@@ -36,7 +53,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
         "et il n'existe aucun moyen d'en viser une autre avec cette clé.",
       inputSchema: NO_ARGS,
     },
-    async () => json(await schoolGateway.findActiveById(schoolId))
+    async () => read('describe_school', () => schoolGateway.findActiveById(schoolId))
   )
 
   server.registerTool(
@@ -46,7 +63,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
       description: "Niveaux actifs de l'école, avec leur niveau suivant lorsqu'il est défini.",
       inputSchema: NO_ARGS,
     },
-    async () => json(await listLevels(schoolId))
+    async () => read('list_levels', () => listLevels(schoolId))
   )
 
   server.registerTool(
@@ -56,7 +73,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
       description: 'Années ou périodes scolaires actives, de la plus récente à la plus ancienne.',
       inputSchema: NO_ARGS,
     },
-    async () => json(await listPeriods(schoolId))
+    async () => read('list_periods', () => listPeriods(schoolId))
   )
 
   server.registerTool(
@@ -68,7 +85,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
         'une fiche papier se résout en identifiant de classe par cette liste.',
       inputSchema: NO_ARGS,
     },
-    async () => json(await listClassPeriods(schoolId))
+    async () => read('list_class_periods', () => listClassPeriods(schoolId))
   )
 
   server.registerTool(
@@ -78,7 +95,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
       description: 'Formules actives et leur montant, en centimes.',
       inputSchema: NO_ARGS,
     },
-    async () => json(await listPlans(schoolId))
+    async () => read('list_plans', () => listPlans(schoolId))
   )
 
   server.registerTool(
@@ -88,7 +105,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
       description: "Enseignants actifs de l'école.",
       inputSchema: NO_ARGS,
     },
-    async () => json(await listTeachers(schoolId))
+    async () => read('list_teachers', () => listTeachers(schoolId))
   )
 
   return server
