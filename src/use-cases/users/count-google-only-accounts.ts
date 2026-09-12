@@ -1,8 +1,9 @@
 import { userGateway } from '@/gateways/user-gateway'
 
 /**
- * Nombre de comptes dont Google est l'unique identifiant de connexion — utilisé par
- * `/dashboard/auth-settings` pour avertir avant de couper `google_sign_in_enabled`.
+ * Nombre de comptes dont Google est l'unique identifiant de connexion — utilisé par la
+ * section « Sign-in methods » de `/dashboard/config` pour avertir avant de couper
+ * `google_sign_in_enabled`.
  *
  * Ne tient pas compte d'une passkey éventuellement enregistrée : contrairement au mot
  * de passe, la connexion par passkey est elle-même gouvernée par un drapeau indépendant

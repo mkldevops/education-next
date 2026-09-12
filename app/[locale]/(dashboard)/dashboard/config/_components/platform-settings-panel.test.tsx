@@ -10,36 +10,44 @@ vi.mock('@/lib/toast', () => ({ toast: { error: vi.fn() } }))
 vi.mock('../../../_lib/platform-settings-actions', () => ({
   setGoogleSignInEnabledAction: vi.fn(),
   setPasskeySignInEnabledAction: vi.fn(),
+  setMcpEnabledAction: vi.fn(),
+  setSchoolSwitchEnabledAction: vi.fn(),
 }))
 
-import { AuthSettingsForm } from './auth-settings-form'
+import { PlatformSettingsPanel } from './platform-settings-panel'
 
 const baseProps = {
   googleEnabled: true,
   googleConfigured: true,
   passkeyEnabled: true,
+  mcpEnabled: false,
+  schoolSwitchEnabled: true,
   googleOnlyAccountCount: 0,
 }
 
-describe('AuthSettingsForm', () => {
+// Réglages rendus dans cet ordre par le panneau : Google, passkey (section « Sign-in
+// methods »), bascule d'école (section « Schools »), MCP (section « Integrations »).
+const [GOOGLE, PASSKEY] = [0, 1]
+
+describe('PlatformSettingsPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('disables Google with no confirmation when no account is Google-only', () => {
-    render(<AuthSettingsForm {...baseProps} googleOnlyAccountCount={0} />)
+    render(<PlatformSettingsPanel {...baseProps} googleOnlyAccountCount={0} />)
 
-    const [googleCheckbox] = screen.getAllByRole('checkbox')
-    fireEvent.click(googleCheckbox)
+    const checkboxes = screen.getAllByRole('checkbox')
+    fireEvent.click(checkboxes[GOOGLE])
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('requires confirmation naming the recovery path, with the count, before disabling Google', () => {
-    render(<AuthSettingsForm {...baseProps} googleOnlyAccountCount={2} />)
+    render(<PlatformSettingsPanel {...baseProps} googleOnlyAccountCount={2} />)
 
-    const [googleCheckbox] = screen.getAllByRole('checkbox')
-    fireEvent.click(googleCheckbox)
+    const checkboxes = screen.getAllByRole('checkbox')
+    fireEvent.click(checkboxes[GOOGLE])
 
     expect(screen.getByText('google.confirmDisable.description:{"count":2}')).toBeInTheDocument()
     expect(
@@ -49,10 +57,10 @@ describe('AuthSettingsForm', () => {
   })
 
   it('never requires confirmation for the passkey toggle, regardless of the Google count', () => {
-    render(<AuthSettingsForm {...baseProps} googleOnlyAccountCount={5} />)
+    render(<PlatformSettingsPanel {...baseProps} googleOnlyAccountCount={5} />)
 
-    const [, passkeyCheckbox] = screen.getAllByRole('checkbox')
-    fireEvent.click(passkeyCheckbox)
+    const checkboxes = screen.getAllByRole('checkbox')
+    fireEvent.click(checkboxes[PASSKEY])
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })

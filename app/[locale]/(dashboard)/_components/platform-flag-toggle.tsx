@@ -2,7 +2,6 @@
 
 import {
   Button,
-  Card,
   Dialog,
   DialogBody,
   DialogContent,
@@ -107,19 +106,36 @@ export function PlatformFlagToggle({
   const confirmDisableNow = () => commit(false, () => setConfirming(false))
 
   return (
-    <Card className="rounded border border-alabaster-700 p-6">
-      <h2 id={titleId} className="text-lg font-semibold text-graphite">
-        {title}
-      </h2>
-      <p id={descriptionId} className="mt-1 text-sm text-graphite-600">
-        {description}
-      </p>
-      {hint && (
-        <p id={hintId} className="mt-2 text-sm text-orange-600">
-          {hint}
+    <div className="flex items-start justify-between gap-6 px-6 py-5">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <h3 id={titleId} className="text-sm font-semibold text-graphite">
+            {title}
+          </h3>
+          <span
+            id={`${inputId}-state`}
+            className={
+              checked
+                ? 'rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700'
+                : 'rounded-full bg-alabaster-800 px-2 py-0.5 text-xs font-medium text-graphite-600'
+            }
+          >
+            {checked ? t('enabled') : t('disabled')}
+          </span>
+        </div>
+        <p id={descriptionId} className="mt-1 text-sm text-graphite-600">
+          {description}
         </p>
-      )}
-      <label htmlFor={inputId} className="mt-4 flex items-center gap-2 text-sm text-graphite">
+        {hint && (
+          <p id={hintId} className="mt-2 text-xs text-orange-600">
+            {hint}
+          </p>
+        )}
+      </div>
+      <label
+        htmlFor={inputId}
+        className="relative inline-flex shrink-0 cursor-pointer items-center"
+      >
         <input
           id={inputId}
           type="checkbox"
@@ -128,9 +144,10 @@ export function PlatformFlagToggle({
           onChange={(event) => onToggle(event.target.checked)}
           aria-labelledby={`${titleId} ${inputId}-state`}
           aria-describedby={hint ? `${descriptionId} ${hintId}` : descriptionId}
-          className="h-4 w-4 rounded border-alabaster"
+          className="peer sr-only"
         />
-        <span id={`${inputId}-state`}>{checked ? t('enabled') : t('disabled')}</span>
+        <span className="h-6 w-11 rounded-full bg-alabaster-700 ring-offset-2 transition-colors peer-checked:bg-emerald-600 peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-disabled:opacity-50" />
+        <span className="pointer-events-none absolute left-0.5 size-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
       </label>
       {confirming && confirmDisable && (
         <Dialog initialOpen>
@@ -142,7 +159,7 @@ export function PlatformFlagToggle({
           />
         </Dialog>
       )}
-    </Card>
+    </div>
   )
 }
 

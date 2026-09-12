@@ -47,7 +47,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
   }
 
   for (const [index, student] of data.students.entries()) {
-    if (validateStudentBirthday(new Date(student.birthday)) !== 'OK') {
+    if (student.birthday && validateStudentBirthday(new Date(student.birthday)) !== 'OK') {
       blockers.push({
         field: `students.${index}.birthday`,
         value: student.birthday,
@@ -213,7 +213,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     return [
       {
         ...student,
-        birthday: new Date(student.birthday).toISOString(),
+        birthday: student.birthday ? new Date(student.birthday).toISOString() : undefined,
         classPeriod: { id: classPeriod.id, name: classPeriod.name },
       },
     ]

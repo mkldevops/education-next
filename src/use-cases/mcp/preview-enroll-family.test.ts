@@ -194,6 +194,17 @@ describe('previewEnrollFamily', () => {
     expect(result.blockers.map((blocker) => blocker.reason)).toContain('birthdayNotInThePast')
   })
 
+  it('drafts a sheet that names neither sex, birthday nor parent', async () => {
+    const { sex: _sex, birthday: _birthday, ...student } = input.students[0]
+    const result = await previewEnrollFamily(scope, { ...input, parents: [], students: [student] })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.draftId).toBe('draft-1')
+    expect(result.plan?.parents).toEqual([])
+    expect(result.plan?.students[0].birthday).toBeUndefined()
+  })
+
   it('warns about an existing namesake without blocking the commit', async () => {
     searchFamilies.mockResolvedValue([{ id: 'family-9', name: 'Bouhahima' }])
     searchPersons.mockResolvedValue([

@@ -25,7 +25,7 @@ const isoDate = z.union([z.iso.date(), z.iso.datetime({ offset: true })])
 const mcpPersonSchema = z.object({
   name: z.string().trim().min(1).max(250),
   lastname: z.string().trim().min(1).max(250),
-  sex: z.enum(['MALE', 'FEMALE']),
+  sex: z.enum(['MALE', 'FEMALE']).optional(),
 })
 
 const mcpParentSchema = mcpPersonSchema.extend({
@@ -44,7 +44,7 @@ const mcpParentSchema = mcpPersonSchema.extend({
 const mcpStudentSchema = mcpPersonSchema.extend({
   // Un jour de calendrier, pas un instant : un horodatage décalé (`+02:00`) tomberait la
   // veille en UTC, là où le tableau de bord range la même date à minuit UTC.
-  birthday: z.iso.date(),
+  birthday: z.iso.date().optional(),
   birthplace: z.string().trim().max(250).optional(),
   className: z.string().trim().min(1).max(250),
 })
@@ -72,7 +72,7 @@ export const previewEnrollFamilySchema = z.object({
   familyName: z.string().trim().min(1).max(50),
   emergencyContactName: z.string().trim().max(250).optional(),
   emergencyContactPhone: z.string().trim().min(1).max(20).regex(phoneNumberFormat).optional(),
-  parents: z.array(mcpParentSchema).min(1).max(4),
+  parents: z.array(mcpParentSchema).max(4),
   students: z.array(mcpStudentSchema).min(1).max(10),
   planName: z.string().trim().min(1).max(50),
   discount: z.number().min(0).default(0),

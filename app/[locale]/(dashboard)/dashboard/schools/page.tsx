@@ -3,12 +3,10 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolGateway } from '@/gateways/school-gateway'
-import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 import { requirePlatformAdmin } from '../../_lib/auth-helper'
 import { platformPageMetadata } from '../../_lib/page-metadata'
 import { CreateSchoolDialog } from './_components/create-school-dialog'
 import { EditSchoolDialog } from './_components/edit-school-dialog'
-import { SchoolSwitchToggle } from './_components/school-switch-toggle'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -28,10 +26,7 @@ export default async function SchoolsPage({ params }: Props) {
 
   await requirePlatformAdmin()
 
-  const [schools, switchEnabled] = await Promise.all([
-    schoolGateway.listAll(),
-    isSchoolSwitchEnabled(),
-  ])
+  const schools = await schoolGateway.listAll()
   const activeCount = schools.filter((school) => school.isActive).length
 
   const columns: Column<(typeof schools)[number]>[] = [
@@ -107,9 +102,6 @@ export default async function SchoolsPage({ params }: Props) {
         <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         <CreateSchoolDialog />
       </div>
-
-      <SchoolSwitchToggle enabled={switchEnabled} />
-
       <Card className="rounded border border-alabaster-700">
         <DataTable
           data={schools}

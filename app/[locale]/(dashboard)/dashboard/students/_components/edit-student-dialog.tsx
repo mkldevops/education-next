@@ -19,7 +19,7 @@ import { updateStudentAction } from '../../../_lib/student-actions'
 interface EditStudentDialogProps {
   student: {
     id: string
-    birthday: Date | string
+    birthday: Date | string | null
     birthplace: string | null
     allergies: string | null
     healthNotes: string | null
@@ -53,14 +53,14 @@ function EditStudentForm({ student }: EditStudentDialogProps) {
   const tCreate = useTranslations('dashboard.pages.students.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
 
-  const birthdayStr = new Date(student.birthday).toISOString().split('T')[0]
+  const birthdayStr = student.birthday ? new Date(student.birthday).toISOString().split('T')[0] : ''
   const languages = Array.isArray(student.languagesAtHome)
     ? (student.languagesAtHome as string[]).join(', ')
     : ''
 
   const handleSubmit = onSubmit((formData) =>
     updateStudentAction(student.id, {
-      birthday: new Date(formData.get('birthday') as string),
+      birthday: formData.get('birthday') ? new Date(formData.get('birthday') as string) : null,
       birthplace: (formData.get('birthplace') as string) || undefined,
       allergies: (formData.get('allergies') as string) || undefined,
       healthNotes: (formData.get('healthNotes') as string) || undefined,
@@ -85,7 +85,6 @@ function EditStudentForm({ student }: EditStudentDialogProps) {
                 name="birthday"
                 type="date"
                 defaultValue={birthdayStr}
-                required
                 disabled={isPending}
               />
             </div>

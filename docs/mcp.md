@@ -16,7 +16,8 @@ reads as disabled by absence — live in
 
 Two switches, both required.
 
-1. A super-admin enables **MCP** on `/dashboard/integrations`. The platform flag `mcp_enabled` is
+1. A super-admin enables **MCP** in the Integrations section of `/dashboard/config`. The platform
+   flag `mcp_enabled` is
    **off by default**; while it is off, `POST /api/mcp` answers `503 {"error":"mcpDisabled"}` before
    reading any credential.
 2. A school admin creates a key in the **API keys** tab of `/dashboard/settings`. The tab exists
@@ -155,6 +156,9 @@ The class is named on each student, not once on the family. A family sheet routi
 children across classes — "C4 / C2 / F" on a single line — and a single class at the root would
 force the siblings into separate calls; each call creates a family, so the siblings would come back
 as duplicates. An unresolved label is a blocker naming the child: `students.2.className`.
+
+Sex and birthday may be omitted, and `parents` may be an empty array, when the sheet does not carry
+them.
 
 Dates are ISO strings, never anything else. A birthday is a day, `2018-04-02`. A payment date is a
 day or a timestamp with seconds and a zone, `2026-09-12T14:30:00Z` or `2026-09-12T14:30:00+02:00`.

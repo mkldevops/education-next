@@ -130,17 +130,23 @@ export default async function StudentDetailPage({ params }: Props) {
             <h1 className="truncate text-2xl font-bold text-graphite" title={fullName}>
               {fullName}
             </h1>
-            <p className="mt-1 text-sm text-graphite-600">
-              {t('age', { age })}
-              <span className="mx-2 text-graphite-800">·</span>
-              {formatDateLong(birthday, locale)}
-              {student.birthplace && (
-                <>
-                  <span className="mx-2 text-graphite-800">·</span>
-                  {student.birthplace}
-                </>
-              )}
-            </p>
+            {(birthday || student.birthplace) && (
+              <p className="mt-1 text-sm text-graphite-600">
+                {birthday && age !== null && (
+                  <>
+                    {t('age', { age })}
+                    <span className="mx-2 text-graphite-800">·</span>
+                    {formatDateLong(birthday, locale)}
+                  </>
+                )}
+                {student.birthplace && (
+                  <>
+                    {birthday && <span className="mx-2 text-graphite-800">·</span>}
+                    {student.birthplace}
+                  </>
+                )}
+              </p>
+            )}
           </div>
         </div>
         {isAdmin && (

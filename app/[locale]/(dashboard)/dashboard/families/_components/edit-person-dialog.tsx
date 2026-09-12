@@ -23,7 +23,7 @@ export interface EditablePerson {
   id: string
   name: string
   lastname: string
-  sex: 'MALE' | 'FEMALE'
+  sex: 'MALE' | 'FEMALE' | null
   email: string | null
   address: string | null
   postCode: string | null
@@ -73,7 +73,7 @@ function EditPersonForm({ familyId, person }: EditPersonDialogProps) {
       personId: person.id,
       name: formData.get('name') as string,
       lastname: formData.get('lastname') as string,
-      sex: formData.get('sex') as 'MALE' | 'FEMALE',
+      sex: optionalField(formData, 'sex') as 'MALE' | 'FEMALE' | null,
       relationType: formData.get('relationType') as RelationType,
       email: optionalField(formData, 'email'),
       address: optionalField(formData, 'address'),
@@ -117,10 +117,10 @@ function EditPersonForm({ familyId, person }: EditPersonDialogProps) {
               <Select
                 id="edit-person-sex"
                 name="sex"
-                required
-                defaultValue={person.sex}
+                defaultValue={person.sex ?? ''}
                 disabled={isPending}
               >
+                <option value="">{t('unspecified')}</option>
                 <option value="MALE">{t('male')}</option>
                 <option value="FEMALE">{t('female')}</option>
               </Select>

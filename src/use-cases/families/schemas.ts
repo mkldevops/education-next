@@ -5,7 +5,7 @@ const phoneNumberFormat = /^\+?[\d\s().-]{6,20}$/
 export const personInputSchema = z.object({
   name: z.string().min(1).max(250),
   lastname: z.string().min(1).max(250),
-  sex: z.enum(['MALE', 'FEMALE']),
+  sex: z.enum(['MALE', 'FEMALE']).optional(),
   email: z.email().max(250).optional(),
   address: z.string().max(250).optional(),
   postCode: z.string().max(10).optional(),
@@ -55,7 +55,7 @@ export const updateFamilyPersonSchema = z.object({
   personId: z.string().uuid(),
   name: z.string().min(1).max(250).optional(),
   lastname: z.string().min(1).max(250).optional(),
-  sex: z.enum(['MALE', 'FEMALE']).optional(),
+  sex: z.enum(['MALE', 'FEMALE']).nullish(),
   relationType: z.enum(['PARENT', 'TUTOR', 'GRANDPARENT', 'SIBLING', 'OTHER']).optional(),
   email: z.email().max(250).nullish(),
   address: z.string().max(250).nullish(),

@@ -151,9 +151,10 @@ cookie, then `router.refresh()` replays the dashboard in the new school. The act
 membership; the cookie is never trusted on the way back in.
 
 The switch can be closed platform-wide by the `school_switch_enabled` `PlatformSetting`, written from
-`/dashboard/schools` by a super-admin only. **Absence of the row reads as enabled** — the migration
-seeds nothing, so an existing installation keeps its switcher — and so does any unexpected value: an
-unreadable setting must not silently remove a working feature (`src/domain/platform-settings.ts`).
+the **Schools** section of `/dashboard/config` by a super-admin only. **Absence of the row reads as
+enabled** — the migration seeds nothing, so an existing installation keeps its switcher — and so does
+any unexpected value: an unreadable setting must not silently remove a working feature
+(`src/domain/platform-settings.ts`).
 
 The flag constrains **both** ways of changing school, because a cookie is an input and not a
 decision. `switchSchoolAction` refuses with `switchDisabled` **before** looking the target school up,
@@ -165,8 +166,12 @@ second read is where the cookie is already validated, so the flag is one more co
 school it may select rather than a mechanism bolted alongside; it is consulted only when the cookie
 would actually change the retained school.
 
-**A super-admin is never blocked** on either path: the flag governs the school-to-school move of
-ordinary members, not platform administration.
+**A super-admin is never blocked on the server**: the flag governs the school-to-school move of
+ordinary members, not platform administration. The sidebar head is the one exception, and it is a
+display rule: `layout.tsx` reads `isSchoolSwitchEnabled()` directly, so a super-admin who turns the
+setting off sees the switcher disappear from their own sidebar. The deep-link escape hatch stays
+open through `canSwitchSchool()` (`app/[locale]/(dashboard)/_lib/school-switch.ts`), which keeps the
+super-admin bypass.
 
 The flag changes nothing else. `getAuthorizedSchools()` is untouched, so deep-link resolution still
 names the other school; `_components/school-switch-prompt.tsx` keeps the screen and drops the button,
@@ -175,8 +180,9 @@ because hiding the resolution would leave the user in front of an unexplainable 
 ## Sign-in methods
 
 Email and password is the method this application always offers. The two alternatives are governed by
-`PlatformSetting` rows written from `/dashboard/auth-settings`, a **platform** surface open on
-`requirePlatformAdmin()` like `/dashboard/schools`:
+`PlatformSetting` rows written from the **Sign-in methods** section of `/dashboard/config`. That page
+is open on `requireSchoolAdmin()`, and the platform sections are rendered only when the caller is a
+super-admin; the write actions re-check `requirePlatformAdmin()`:
 
 - `google_sign_in_enabled` — the "Sign in with Google" button and Google account linking.
 - `passkey_sign_in_enabled` — passkey sign-in and the registration of new passkeys.
@@ -194,8 +200,9 @@ inert and why.
 
 `isGoogleSignInAvailable()` (`src/use-cases/platform-settings/`) combines both conditions for the
 pages that decide whether to render the button, `/login` and `/dashboard/settings`.
-`/dashboard/auth-settings` keeps `isGoogleSignInEnabled()` and `isGoogleConfigured` separate on
-purpose: the toggle reflects the setting alone, and the hint above explains when it is inert.
+The sign-in section of `/dashboard/config` keeps `isGoogleSignInEnabled()` and `isGoogleConfigured`
+separate on purpose: the toggle reflects the setting alone, and the hint above explains when it is
+inert.
 `app/api/auth/[...all]/route.ts` only checks the flag — an unconfigured environment already fails
 the redirect inside `betterAuth`, so the route does not need to test `isGoogleConfigured` too.
 
@@ -242,15 +249,14 @@ warning to Google/credential enrollment rather than to that other flag's current
 silently drifting when an unrelated toggle changes, and the recovery path below holds regardless of
 passkey enrollment.
 
-`/dashboard/auth-settings` requires an explicit confirmation naming that recovery path before the
-Google toggle goes enabled → disabled while the count is greater than zero
-(`PlatformFlagToggle`'s `confirmDisable`,
-`app/[locale]/(dashboard)/_components/platform-flag-toggle.tsx`). Re-enabling stays the original
-one-click toggle, and so does disabling when the count is zero — the confirmation is additive
-friction on top of the existing optimistic toggle, not a new toggle shape. The passkey toggle on
-this same page never receives it either, and neither do the two other `PlatformFlagToggle`
-instances elsewhere in the dashboard — MCP on `/dashboard/integrations`, the school switch on
-`/dashboard/schools`.
+`/dashboard/config` requires an explicit confirmation naming that recovery path before the Google
+toggle goes enabled → disabled while the count is greater than zero (`PlatformFlagToggle`'s
+`confirmDisable`, `app/[locale]/(dashboard)/_components/platform-flag-toggle.tsx`). Re-enabling
+stays the original one-click toggle, and so does disabling when the count is zero — the
+confirmation is additive friction on top of the existing optimistic toggle, not a new toggle shape.
+The passkey toggle in the same **Sign-in methods** section never receives it either, and neither do
+the school-switch toggle in **Schools** or the MCP toggle in **Integrations** — the two other
+sections of the same page.
 
 The recovery path itself needs no code: `/forgot-password` and `/reset-password` are public and read
 no platform flag. Better Auth's `resetPassword` handler creates the missing `credential` `Account`
@@ -357,8 +363,9 @@ Protocol. A photographed paper form becomes typed tool calls; **the image never 
 Vision happens in the agent, so the route is an ordinary typed API guarded like any other, not an
 upload endpoint. `docs/mcp.md` documents the client side.
 
-The whole surface is governed by a fourth `PlatformSetting` row, `mcp_enabled`, written from
-`/dashboard/integrations` (a **platform** page on `requirePlatformAdmin()`). It reads the opposite way
+The whole surface is governed by a fourth `PlatformSetting` row, `mcp_enabled`, written from the
+**Integrations** section of `/dashboard/config` (rendered for a super-admin only, written behind
+`requirePlatformAdmin()`). It reads the opposite way
 from the three sign-in flags: **absence of the row reads as disabled** (`readsAsOptedIn`,
 `src/domain/platform-settings.ts`). A write API for machines does not open itself on the deployment
 that ships its migration; only an affirmative value activates it. Like the three sign-in flags, the
@@ -528,8 +535,9 @@ siblings, since no single one is the one in excess.
 and a single unconvertible field makes that listing throw for **all** tools, read tools included: the
 server becomes unusable. Dates therefore enter as ISO strings (`src/use-cases/mcp/schemas.ts`) and
 become `Date` in the use case, after the `safeParse`. A payment date is a day or a zoned timestamp
-(`z.iso.datetime({ offset: true })`); **a birthday is a day only** (`z.iso.date()`), because an
-offset timestamp would land on the previous UTC day where the dashboard stores UTC midnight. A test in `src/mcp/server.test.ts` runs `z.toJSONSchema()` over every registered tool,
+(`z.iso.datetime({ offset: true })`); **a birthday, when given, is a day only** (`z.iso.date()`),
+because an offset timestamp would land on the previous UTC day where the dashboard stores UTC
+midnight. A test in `src/mcp/server.test.ts` runs `z.toJSONSchema()` over every registered tool,
 because the failure shows up nowhere but in production.
 
 The duplicate probe is not defensive politeness. Prisma has **no uniqueness on `Family(schoolId,
@@ -837,7 +845,13 @@ A student is **skipped**, with the reason reported, when:
   to already be linked to the family → `notFound` otherwise. Person fields, relation type and the
   primary phone number are written in one transaction; `phoneNumber: null` deactivates that number
   instead of deleting it, and the first active number is the one edited.
-- **A student's birthday must be in the past** → `validationError` (`src/domain/student.ts`).
+- **A person's sex and a student's birthday are optional** — `Person.sex` and `Student.birthday`
+  are nullable. A paper enrollment sheet often carries neither, and a required field forced the
+  operator to invent a value that then read as real data. A form left blank sends `undefined` on
+  create and `null` on update, which clears the column; age is simply not shown.
+- **A family may be created without any parent**, on the dashboard and through `enroll_family` alike.
+- **A student's birthday, when given, must be in the past** → `validationError`
+  (`src/domain/student.ts`).
 - **A student carrying a `PENDING` or `ACTIVE` enrollment cannot be archived**
   → `hasActiveEnrollments`.
 - **A family cannot be archived either while any of its students holds one** — same discriminant,
