@@ -375,6 +375,32 @@ infrastructure, not from the user's machine, so `x-forwarded-for` names a handfu
 addresses: the IP tier (120/min) only damps unauthenticated flooding, and **the real budget is the key's**
 (600/min), one user on one school.
 
+The IP tier is only worth its cost if its key cannot be chosen by the caller. `getClientIp`
+(`src/lib/rate-limit.ts`) therefore reads `x-forwarded-for` **from the right**, at
+`length - TRUSTED_PROXY_HOPS` (default `1`, accepted range `0..4`, and anything else — a stray
+space, `0x10`, `5` — falls back to that default): the last hops were appended by our own proxies,
+while everything before them was sent by the client. Reading the first entry let a caller rotate a
+forged prefix and mint one counter per imagined address, so the only pre-auth brake was optional.
+
+The guarantee holds **only if the count is exact**, and each counted proxy must *append* the peer
+address (nginx `$proxy_add_x_forwarded_for`). Declaring too few hops buckets every caller behind the
+outermost proxy together. Declaring too many is narrowed, not closed: a chain **shorter** than the
+declared hops did not traverse the announced proxies, so its entries are unattributable and the
+request falls into the single `unknown` bucket, but a caller who pads the chain up to that length
+moves the read index back into the part it writes itself. There is no safe direction to be wrong in.
+
+There is also **no `x-real-ip` fallback**: that scalar carries no hop count, and `next start` fills
+`x-forwarded-for` from the socket address when the header is absent
+(`next/dist/server/base-server.js`, `??=`), so the fallback would only ever have served a caller who
+sends an *empty* `x-forwarded-for` — the one case worth refusing.
+
+`TRUSTED_PROXY_HOPS=0` declares that no forwarding header is verifiable: every pre-auth request then
+shares one counter, so the passkey tier becomes 10 authentications per minute for the whole instance.
+
+The tracked-key cap evicts the **least recently used** key, refreshed on refused calls too: evicting
+by insertion order dropped an established client before a freshly forged address, and let a blocked
+key buy a new budget by getting itself evicted.
+
 `POST` only; `GET` and `DELETE` answer `405`. The route **never reads a cookie** and never calls
 `auth.api.getSession()`, so it carries no ambient authority and a browser cannot set `Authorization`
 cross-origin — CSRF is impossible by construction rather than by `Origin` validation. That invariant is
