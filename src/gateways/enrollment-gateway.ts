@@ -84,6 +84,40 @@ export const enrollmentGateway = {
       data: { discount, totalAmount },
     }),
 
+  /**
+   * Sonde du `preview_update_enrollment` MCP. Projection étroite : le modèle a besoin de
+   * reconnaître l'inscription, pas de lire la fiche de l'élève.
+   */
+  findOpenForMcp: (schoolId: string, filter: { id: string } | { name: string; lastname: string }) =>
+    db.enrollment.findMany({
+      where: {
+        schoolId,
+        status: { in: ['PENDING', 'ACTIVE'] },
+        ...('id' in filter
+          ? { id: filter.id }
+          : {
+              student: {
+                person: {
+                  name: { contains: filter.name, mode: 'insensitive' },
+                  lastname: { contains: filter.lastname, mode: 'insensitive' },
+                },
+              },
+            }),
+      },
+      select: {
+        id: true,
+        status: true,
+        discount: true,
+        totalAmount: true,
+        plan: { select: { id: true, name: true, amount: true } },
+        student: { select: { person: { select: { name: true, lastname: true } } } },
+        classAssignments: { select: { classPeriod: { select: { name: true } } } },
+        payments: { where: { isActive: true }, select: { amount: true } },
+      },
+      orderBy: [{ registeredAt: 'asc' }, { id: 'asc' }],
+      take: 10,
+    }),
+
   findPayableByFamily: (schoolId: string, familyId: string) =>
     db.enrollment.findMany({
       where: {

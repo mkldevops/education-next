@@ -27,6 +27,8 @@ const previewEnrollFamily = vi.fn()
 const commitEnrollFamily = vi.fn()
 const previewRecordPayment = vi.fn()
 const commitRecordPayment = vi.fn()
+const previewUpdateEnrollment = vi.fn()
+const commitUpdateEnrollment = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ McpServer: FakeMcpServer }))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
@@ -34,6 +36,8 @@ vi.mock('@/use-cases/mcp/preview-enroll-family', () => ({ previewEnrollFamily })
 vi.mock('@/use-cases/mcp/commit-enroll-family', () => ({ commitEnrollFamily }))
 vi.mock('@/use-cases/mcp/preview-record-payment', () => ({ previewRecordPayment }))
 vi.mock('@/use-cases/mcp/commit-record-payment', () => ({ commitRecordPayment }))
+vi.mock('@/use-cases/mcp/preview-update-enrollment', () => ({ previewUpdateEnrollment }))
+vi.mock('@/use-cases/mcp/commit-update-enrollment', () => ({ commitUpdateEnrollment }))
 
 const { buildMcpServer } = await import('./server')
 
@@ -64,7 +68,7 @@ beforeEach(() => {
 })
 
 describe('buildMcpServer', () => {
-  it('publishes the six reads and the two preview/commit pairs', () => {
+  it('publishes the six reads and the three preview/commit pairs', () => {
     expect([...build().keys()]).toEqual([
       'describe_school',
       'list_levels',
@@ -76,19 +80,29 @@ describe('buildMcpServer', () => {
       'commit_enroll_family',
       'preview_record_payment',
       'commit_record_payment',
+      'preview_update_enrollment',
+      'commit_update_enrollment',
     ])
   })
 
   it('declares previews as writers and commits as non-destructive and idempotent', () => {
     const tools = build()
 
-    for (const name of ['preview_enroll_family', 'preview_record_payment']) {
+    for (const name of [
+      'preview_enroll_family',
+      'preview_record_payment',
+      'preview_update_enrollment',
+    ]) {
       expect(tools.get(name)?.config.annotations).toMatchObject({
         readOnlyHint: false,
         idempotentHint: false,
       })
     }
-    for (const name of ['commit_enroll_family', 'commit_record_payment']) {
+    for (const name of [
+      'commit_enroll_family',
+      'commit_record_payment',
+      'commit_update_enrollment',
+    ]) {
       expect(tools.get(name)?.config.annotations).toMatchObject({
         destructiveHint: false,
         idempotentHint: true,

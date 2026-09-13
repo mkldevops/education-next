@@ -97,6 +97,28 @@ export const previewRecordPaymentSchema = z
     path: ['cashedAt'],
   })
 
+/**
+ * L'inscription se désigne par son identifiant, ou par l'élève qu'elle concerne.
+ *
+ * Le nom suffit dans le cas courant — un élève n'a qu'une inscription ouverte — et un
+ * homonyme ou une double inscription est un `blocker` qui rend les candidats, dont
+ * l'identifiant à renvoyer. Formule et remise sont chacune facultatives, pas les deux.
+ */
+export const previewUpdateEnrollmentSchema = z
+  .object({
+    enrollmentId: z.uuid().optional(),
+    studentName: z.string().trim().min(1).max(250).optional(),
+    studentLastname: z.string().trim().min(1).max(250).optional(),
+    planName: z.string().trim().min(1).max(50).optional(),
+    discount: z.number().min(0).optional(),
+  })
+  .refine(
+    (data) =>
+      data.enrollmentId !== undefined ||
+      (data.studentName !== undefined && data.studentLastname !== undefined)
+  )
+  .refine((data) => data.planName !== undefined || data.discount !== undefined)
+
 export const commitDraftSchema = z.object({
   draftId: z.uuid(),
   checksum: z.string().length(MCP_DRAFT_CHECKSUM_LENGTH),

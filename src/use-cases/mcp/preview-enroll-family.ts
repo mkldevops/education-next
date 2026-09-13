@@ -12,6 +12,7 @@ import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { personGateway } from '@/gateways/person-gateway'
 import { draftChecksum } from '@/lib/mcp-draft-crypto'
+import { matchByName } from './match-by-name'
 import type { McpScope } from './resolve-mcp-scope'
 import { previewEnrollFamilySchema } from './schemas'
 
@@ -20,18 +21,6 @@ import { previewEnrollFamilySchema } from './schemas'
 type Input = z.input<typeof previewEnrollFamilySchema>
 
 export const ENROLL_FAMILY_TOOL = 'enroll_family'
-
-/**
- * Résolution d'un libellé lu sur papier. L'égalité insensible à la casse d'abord, puis
- * une seule passe par sous-chaîne : « C4 » doit atteindre « C4 — Arabe débutant », mais
- * deux candidats restants sont une ambiguïté à rendre à l'humain, pas à trancher.
- */
-function matchByName<T extends { name: string }>(rows: T[], label: string): T[] {
-  const wanted = label.trim().toLowerCase()
-  const exact = rows.filter((row) => row.name.trim().toLowerCase() === wanted)
-  if (exact.length > 0) return exact
-  return rows.filter((row) => row.name.toLowerCase().includes(wanted))
-}
 
 export async function previewEnrollFamily(scope: McpScope, input: Input) {
   const parsed = previewEnrollFamilySchema.safeParse(input)

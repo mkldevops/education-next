@@ -120,13 +120,14 @@ side effect of a schema change.
 
 ## Writing: the preview/commit pairs
 
-Two pairs are shipped. `create_teacher` and `record_teacher_expense` are not — a teacher sheet and a
+Three pairs are shipped. `create_teacher` and `record_teacher_expense` are not — a teacher sheet and a
 teacher expense note still go through the dashboard.
 
 | Tool | Paper it matches | State |
 |---|---|---|
 | `enroll_family` | a full enrollment form: family, parents, students, enrollment, deposit | shipped |
 | `record_payment` | a receipt or payment slip | shipped |
+| `update_enrollment` | a correction: a child moved to another plan, a discount granted | shipped |
 | `create_teacher` | a teacher sheet | not shipped |
 | `record_teacher_expense` | a teacher expense note | not shipped |
 
@@ -202,13 +203,33 @@ Refusals a commit can return, as `{ "error": … }` with `isError`:
 | `draftExpired` | the thirty minutes ran out; run the preview again |
 | `checksumMismatch` | the checksum does not match the plan that was shown |
 | `commitInProgress` | a concurrent commit is still inside its transaction; retry |
-| `notFound` | the class resolved by the preview no longer exists |
+| `notFound` | the class resolved by the preview no longer exists, or the enrollment or plan it targets |
 | `classFull` | the class filled up between the preview and the commit |
 | `overpayment` | the amount now exceeds what the family still owes |
 | `noPayableEnrollments` | the family has no `PENDING` or `ACTIVE` enrollment left to pay |
 | `refundExceedsPaid` | the refund now exceeds what was banked |
-| `staleDraft` | the split no longer matches the fresh balances; preview again |
+| `staleDraft` | the split no longer matches the fresh balances, or the enrollment or plan changed; preview again |
+| `totalBelowPaid` | a payment banked since the preview exceeds the enrollment's new total |
 | `internalError` | anything unexpected, with the detail kept server-side |
+
+`update_enrollment` changes the plan, the discount, or both, on one `PENDING` or `ACTIVE`
+enrollment. The enrollment is named by `enrollmentId`, or by `studentName` and `studentLastname`;
+the plan by its label, like everywhere else. Without a `discount`, the enrollment keeps its own —
+moving to another plan never silently erases a discount already granted. The total is recomputed
+from the target plan's current price, and payments stay on the enrollment. The plan shows
+`before`, `after`, what was already `paid` and what `remaining` is left. Its blockers:
+
+| Reason | Cause |
+|---|---|
+| `notFound` / `ambiguousEnrollment` | no open enrollment, or several; `matches.enrollments` lists them with their `id` |
+| `unknownPlan` / `ambiguousPlan` | the plan label resolves to no plan, or several |
+| `discountExceedsPlan` | the discount is above the target plan |
+| `totalBelowPaid` | the new total is below what was already banked on the enrollment |
+| `noChange` | plan, discount and total are already those |
+
+Its commit refuses with `staleDraft` when the enrollment or the target plan's price moved since the
+preview, `notFound` when the enrollment is no longer open or the plan no longer active, and
+`totalBelowPaid` when a payment banked in between now exceeds the new total.
 
 A commit that refuses leaves the draft intact and unlocked: fix what the body names, or run the
 preview again, and no partial row was written.
