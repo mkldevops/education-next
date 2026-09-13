@@ -138,7 +138,8 @@ export function buildMcpServer(scope: McpScope): McpServer {
       title: 'Préparer une inscription de famille',
       description:
         "Résout une fiche d'inscription en plan écrit, sans rien créer. Classe et formule " +
-        'sont attendues en libellés. Rend un `draftId`, un `checksum`, le plan résolu, les ' +
+        "sont attendues en libellés, par élève ; sans formule, l'élève prend celle de la " +
+        'famille. Rend un `draftId`, un `checksum`, le plan résolu, les ' +
         'homonymes trouvés, des avertissements et des `blockers`. Un `blockers` non vide ' +
         'nomme le champ à corriger et interdit le commit.',
       inputSchema: previewEnrollFamilySchema,

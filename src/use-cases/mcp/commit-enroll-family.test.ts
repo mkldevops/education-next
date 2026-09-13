@@ -43,11 +43,11 @@ const resolved = {
       sex: 'FEMALE',
       birthday: '2018-04-02T00:00:00.000Z',
       classPeriod: { id: 'class-1', name: 'C4' },
+      plan: { id: 'plan-1', name: 'Tarif annuel', amount: 100 },
+      totalAmount: 100,
     },
   ],
-  plan: { id: 'plan-1', name: 'Tarif annuel', amount: 100 },
   discount: 0,
-  totalAmount: 100,
   payment: {
     amount: 100,
     method: 'CARD',
@@ -195,6 +195,8 @@ describe('commitEnrollFamily', () => {
               sex: 'MALE',
               birthday: '2016-01-10T00:00:00.000Z',
               classPeriod: { id: 'class-1', name: 'C4' },
+              plan: resolved.students[0].plan,
+              totalAmount: 100,
             },
           ],
         },
@@ -232,6 +234,8 @@ describe('commitEnrollFamily', () => {
             sex: 'MALE',
             birthday: '2016-01-10T00:00:00.000Z',
             classPeriod: { id: 'class-2', name: 'C2' },
+            plan: resolved.students[0].plan,
+            totalAmount: 100,
           },
         ],
       },
@@ -248,6 +252,41 @@ describe('commitEnrollFamily', () => {
     expect(tx.classAssignment.create.mock.calls.map((call) => call[0].data.classPeriodId)).toEqual([
       'class-1',
       'class-2',
+    ])
+  })
+
+  it('writes each enrollment on the plan and total its own student carries', async () => {
+    findById.mockResolvedValue({
+      keyId: 'key-1',
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [
+          resolved.students[0],
+          {
+            name: 'Manzil',
+            lastname: 'BEN',
+            classPeriod: { id: 'class-2', name: 'C2' },
+            plan: { id: 'plan-2', name: 'Forfait Grand élèves', amount: 90 },
+            totalAmount: 90,
+          },
+        ],
+      },
+    })
+    tx.person.create
+      .mockReset()
+      .mockResolvedValueOnce({ id: 'person-parent' })
+      .mockResolvedValueOnce({ id: 'person-student-1' })
+      .mockResolvedValueOnce({ id: 'person-student-2' })
+
+    await commitEnrollFamily(scope, input)
+
+    expect(
+      tx.enrollment.create.mock.calls.map(({ 0: { data } }) => [data.planId, data.totalAmount])
+    ).toEqual([
+      ['plan-1', 100],
+      ['plan-2', 90],
     ])
   })
 
@@ -268,6 +307,8 @@ describe('commitEnrollFamily', () => {
             sex: 'MALE',
             birthday: '2016-01-10T00:00:00.000Z',
             classPeriod: { id: 'class-2', name: 'C2' },
+            plan: resolved.students[0].plan,
+            totalAmount: 100,
           },
         ],
       },

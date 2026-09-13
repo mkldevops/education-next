@@ -47,6 +47,9 @@ const mcpStudentSchema = mcpPersonSchema.extend({
   birthday: z.iso.date().optional(),
   birthplace: z.string().trim().max(250).optional(),
   className: z.string().trim().min(1).max(250),
+  // Même raison que la classe : une fiche mêle un grand élève à 90 et un petit à 180. Sans
+  // libellé, l'élève prend la formule de la famille.
+  planName: z.string().trim().min(1).max(50).optional(),
 })
 
 const mcpPaymentSchema = z

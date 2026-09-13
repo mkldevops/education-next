@@ -80,7 +80,12 @@ describe('previewEnrollFamily', () => {
     expect(result.blockers).toEqual([])
     expect(result.draftId).toBe('draft-1')
     expect(result.plan?.students[0].classPeriod).toEqual({ id: 'class-1', name: 'C4' })
-    expect(result.plan?.plan).toEqual({ id: 'plan-1', name: 'Tarif annuel', amount: 100 })
+    expect(result.plan?.students[0].plan).toEqual({
+      id: 'plan-1',
+      name: 'Tarif annuel',
+      amount: 100,
+    })
+    expect(result.plan?.students[0].totalAmount).toBe(100)
     expect(createDraft).toHaveBeenCalledTimes(1)
   })
 
@@ -121,6 +126,77 @@ describe('previewEnrollFamily', () => {
     expect(result.plan?.payment?.allocation).toEqual([
       { studentIndex: 0, amount: 100 },
       { studentIndex: 1, amount: 100 },
+    ])
+  })
+
+  it('prices each sibling on the plan their own line names, the family plan otherwise', async () => {
+    listPlans.mockResolvedValue([
+      { id: 'plan-1', name: 'Tarif annuel', amount: 100 },
+      { id: 'plan-2', name: 'Forfait Grand élèves', amount: 50 },
+    ])
+
+    const result = await previewEnrollFamily(scope, {
+      ...input,
+      students: [input.students[0], { ...sibling, planName: 'Grand' }],
+      payment: { ...input.payment, amount: 150 },
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.plan?.students.map(({ plan, totalAmount }) => ({ plan, totalAmount }))).toEqual([
+      { plan: { id: 'plan-1', name: 'Tarif annuel', amount: 100 }, totalAmount: 100 },
+      { plan: { id: 'plan-2', name: 'Forfait Grand élèves', amount: 50 }, totalAmount: 50 },
+    ])
+    expect(result.plan?.payment?.allocation).toEqual([
+      { studentIndex: 0, amount: 100 },
+      { studentIndex: 1, amount: 50 },
+    ])
+  })
+
+  it('names the sibling whose plan label failed, not the family', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...input,
+      students: [input.students[0], { ...sibling, planName: 'Inconnu' }],
+      payment: { ...input.payment, amount: 200 },
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'students.1.planName', value: 'Inconnu', reason: 'unknownPlan' },
+    ])
+    expect(createDraft).not.toHaveBeenCalled()
+  })
+
+  it('blocks the family plan once, however many siblings fall back on it', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...input,
+      students: [input.students[0], sibling],
+      planName: 'Inconnu',
+      payment: undefined,
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'planName', value: 'Inconnu', reason: 'unknownPlan' },
+    ])
+  })
+
+  it('blocks a discount larger than the cheapest plan of the siblings', async () => {
+    listPlans.mockResolvedValue([
+      { id: 'plan-1', name: 'Tarif annuel', amount: 100 },
+      { id: 'plan-2', name: 'Forfait Grand élèves', amount: 50 },
+    ])
+
+    const result = await previewEnrollFamily(scope, {
+      ...input,
+      students: [input.students[0], { ...sibling, planName: 'Grand' }],
+      discount: 60,
+      payment: undefined,
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'discount', value: '60', reason: 'discountExceedsPlan' },
     ])
   })
 
