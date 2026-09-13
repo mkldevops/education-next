@@ -17,6 +17,7 @@ interface DialogContextType {
   open: boolean
   setOpen: (open: boolean) => void
   titleId: string
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
 const DialogStateContext = createContext<DialogContextType | null>(null)
@@ -36,17 +37,35 @@ function getFocusableElements(container: HTMLElement) {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
 }
 
+/**
+ * Un navigateur refuse silencieusement `focus()` sur un élément masqué (`display: none`), non
+ * connecté au document, ou désactivé : `document.activeElement` reste alors inchangé. C'est
+ * l'observable fiable, contrairement à `offsetParent` — toujours `null` en jsdom, indépendamment
+ * de toute mise en page réelle.
+ */
+function focusIfPossible(element: HTMLElement | null | undefined) {
+  if (!element) return false
+  element.focus()
+  return document.activeElement === element
+}
+
 export interface DialogProps {
   children: React.ReactNode
   initialOpen?: boolean
+  /**
+   * Cible de repli quand l'élément qui avait le focus à l'ouverture est devenu inaccessible à la
+   * fermeture — par exemple un déclencheur masqué en CSS parce que le menu qui le contient s'est
+   * refermé pendant que le dialogue était ouvert.
+   */
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
-export function Dialog({ children, initialOpen = false }: DialogProps) {
+export function Dialog({ children, initialOpen = false, restoreFocusRef }: DialogProps) {
   const [open, setOpen] = useState(initialOpen)
   const titleId = useId()
 
   return (
-    <DialogStateContext.Provider value={{ open, setOpen, titleId }}>
+    <DialogStateContext.Provider value={{ open, setOpen, titleId, restoreFocusRef }}>
       {children}
     </DialogStateContext.Provider>
   )
@@ -99,7 +118,7 @@ export interface DialogContentProps {
 }
 
 export function DialogContent({ children, className }: DialogContentProps) {
-  const { open, setOpen, titleId } = useDialog()
+  const { open, setOpen, titleId, restoreFocusRef } = useDialog()
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -110,9 +129,11 @@ export function DialogContent({ children, className }: DialogContentProps) {
     ;(firstFocusable ?? panel)?.focus()
 
     return () => {
-      previouslyFocused?.focus()
+      // L'élément qui avait le focus à l'ouverture a pu devenir inaccessible pendant que le
+      // dialogue était ouvert — par exemple masqué en CSS par le menu qui le contenait.
+      if (!focusIfPossible(previouslyFocused)) focusIfPossible(restoreFocusRef?.current)
     }
-  }, [open])
+  }, [open, restoreFocusRef])
 
   useEffect(() => {
     if (!open) return
