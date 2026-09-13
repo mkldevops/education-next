@@ -735,11 +735,14 @@
           "title": "Modifier le plan",
           "cancel": "Annuler",
           "submit": "Enregistrer",
+          "archive": "Archiver",
           "success": "Plan mis à jour",
+          "archiveSuccess": "Plan archivé",
           "error": "Erreur lors de la mise à jour",
           "errors": {
             "validationError": "Vérifiez les informations saisies",
-            "notFound": "Plan introuvable"
+            "notFound": "Plan introuvable",
+            "planInUse": "Des inscriptions en cours utilisent ce plan : changez-les de plan d'abord"
           }
         }
       },

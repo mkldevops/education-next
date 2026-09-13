@@ -775,6 +775,16 @@ Atomic in one `db.$transaction`: the capacity count, the enrollment, and the cla
 - Changing a plan's price does not retroactively change existing enrollments. Applying a discount
   does, because it recomputes from the plan.
 
+## Plans
+
+Owner: `src/use-cases/plans/`.
+
+- **A plan an open enrollment uses cannot be archived** → `planInUse`. Open means `PENDING` or
+  `ACTIVE`: those are still billed and still editable, so their plan must stay selectable. A
+  `COMPLETED` or `CANCELLED` enrollment keeps its archived plan — nested reads return it.
+- Archiving is a soft delete (`isActive: false`). Plan names are unique among active plans only, so
+  an archived duplicate frees its name.
+
 ## Payments
 
 Owner: `src/domain/payment.ts`, `src/use-cases/payments/`.
