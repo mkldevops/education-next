@@ -22,6 +22,7 @@ export async function createClassPeriodAction(data: Omit<CreateClassPeriodInput,
   const result = await createClassPeriod({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/classes')
+  revalidatePath('/dashboard/levels')
   return result
 }
 

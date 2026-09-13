@@ -1,12 +1,14 @@
-import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
+import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
+import { MAX_STUDENTS_PER_CLASS_CONFIG_KEY } from '@/lib/school-config-defaults'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateLevelDialog } from './_components/create-level-dialog'
-import { EditLevelDialog } from './_components/edit-level-dialog'
+import { LevelsTable } from './_components/levels-table'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -26,16 +28,32 @@ export default async function LevelsPage({ params }: Props) {
 
   const { schoolId } = await requireSchoolAdmin()
 
-  const levels = await db.level.findMany({
-    where: { schoolId, isActive: true },
-    include: {
-      nextLevel: true,
-      _count: {
-        select: { classPeriods: true },
+  const selectedPeriod = await getSelectedPeriod(schoolId)
+
+  const [levels, maxStudentsConfig] = await Promise.all([
+    db.level.findMany({
+      where: { schoolId, isActive: true },
+      include: {
+        nextLevel: true,
+        _count: { select: { classPeriods: true } },
+        // Classes du niveau sur la période sélectionnée : leur absence déclenche le bouton
+        // de génération. La liste est vide, jamais absente, quand aucune période n'est choisie.
+        classPeriods: {
+          where: selectedPeriod ? { periodId: selectedPeriod.id, isActive: true } : { id: '' },
+          select: { id: true, name: true },
+        },
       },
-    },
-    orderBy: { name: 'asc' },
-  })
+      orderBy: { name: 'asc' },
+    }),
+    db.config.findFirst({
+      where: { schoolId, name: MAX_STUDENTS_PER_CLASS_CONFIG_KEY, isActive: true },
+      select: { value: true },
+    }),
+  ])
+
+  const parsedCapacity = Number(maxStudentsConfig?.value)
+  const defaultCapacity =
+    Number.isInteger(parsedCapacity) && parsedCapacity > 0 ? parsedCapacity : 25
 
   const allLevelsForSelect = levels.map((l) => ({ id: l.id, name: l.name }))
 
@@ -45,40 +63,14 @@ export default async function LevelsPage({ params }: Props) {
 
   const chains = buildPromotionChains(levels)
 
-  const columns: Column<(typeof levels)[number]>[] = [
-    {
-      key: 'name',
-      header: t('name'),
-    },
-    {
-      key: 'nextLevel',
-      header: t('nextLevel'),
-      className: 'text-graphite',
-      render: (level) =>
-        level.nextLevel?.name ?? <span className="text-graphite-800">&mdash;</span>,
-    },
-    {
-      key: 'classes',
-      header: t('classes'),
-      className: 'text-graphite',
-      render: (level) => level._count.classPeriods,
-    },
-    {
-      key: 'actions',
-      header: t('actions'),
-      headerClassName: 'text-right',
-      className: 'text-right',
-      render: (level) => (
-        <EditLevelDialog
-          level={{ id: level.id, name: level.name }}
-          currentNextLevelId={level.nextLevelId}
-          allLevels={allLevelsForSelect}
-          takenNextLevelIds={takenNextLevelIds}
-          classPeriodCount={level._count.classPeriods}
-        />
-      ),
-    },
-  ]
+  const rows = levels.map((level) => ({
+    id: level.id,
+    name: level.name,
+    nextLevelId: level.nextLevelId,
+    nextLevelName: level.nextLevel?.name ?? null,
+    classCount: level._count.classPeriods,
+    currentClasses: level.classPeriods,
+  }))
 
   return (
     <div className="space-y-6">
@@ -111,14 +103,15 @@ export default async function LevelsPage({ params }: Props) {
         </Card>
       )}
 
-      <Card className="rounded border border-alabaster-700">
-        <DataTable
-          data={levels}
-          columns={columns}
-          getRowKey={(item) => item.id}
-          emptyMessage={t('noLevels')}
-        />
-      </Card>
+      <LevelsTable
+        levels={rows}
+        selectedPeriod={
+          selectedPeriod ? { id: selectedPeriod.id, name: selectedPeriod.name } : null
+        }
+        defaultCapacity={defaultCapacity}
+        allLevels={allLevelsForSelect}
+        takenNextLevelIds={takenNextLevelIds}
+      />
     </div>
   )
 }

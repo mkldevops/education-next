@@ -110,6 +110,7 @@ function CreateEnrollmentForm({
         classPeriodId: formData.get('classPeriodId') as string,
         discount: Number(formData.get('discount') || 0),
         canLeaveAlone: formData.get('canLeaveAlone') === 'on',
+        replaceExisting: formData.get('replaceExisting') === 'on',
       })
       if (typeof result === 'string') {
         toastActionError(t, result)
@@ -184,6 +185,13 @@ function CreateEnrollmentForm({
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="canLeaveAlone" className="rounded" />
             {t('canLeaveAlone')}
+          </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="replaceExisting" className="mt-0.5 rounded" />
+            <span>
+              {t('replaceExisting')}
+              <span className="block text-xs text-graphite-600">{t('replaceExistingHint')}</span>
+            </span>
           </label>
         </div>
       </DialogBody>

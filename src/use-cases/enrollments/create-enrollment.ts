@@ -8,7 +8,7 @@ import { studentGateway } from '@/gateways/student-gateway'
 import { db } from '@/lib/db'
 import { createEnrollmentSchema } from './schemas'
 
-type Input = z.infer<typeof createEnrollmentSchema>
+type Input = z.input<typeof createEnrollmentSchema>
 
 export async function createEnrollment(input: Input) {
   const parsed = createEnrollmentSchema.safeParse(input)
@@ -24,12 +24,13 @@ export async function createEnrollment(input: Input) {
   const classPeriod = await classPeriodGateway.findById(schoolId, parsed.data.classPeriodId)
   if (!classPeriod) return 'notFound' as const
 
-  const isDuplicate = await enrollmentGateway.findDuplicate(
+  const existing = await enrollmentGateway.findActiveInPeriod(
     schoolId,
     parsed.data.studentId,
     parsed.data.classPeriodId
   )
-  if (isDuplicate) return 'duplicateEnrollment' as const
+  if (existing && !parsed.data.replaceExisting) return 'duplicateEnrollment' as const
+  if (existing && existing._count.payments > 0) return 'existingEnrollmentPaid' as const
 
   const discount = parsed.data.discount ?? 0
   const planAmount = Number(plan.amount)
@@ -40,6 +41,17 @@ export async function createEnrollment(input: Input) {
   const totalAmount = calculateTotalAmount(planAmount, discount)
 
   const result = await db.$transaction(async (tx) => {
+    if (existing) {
+      await tx.classAssignment.updateMany({
+        where: { schoolId, enrollmentId: existing.id, endAt: null },
+        data: { endAt: new Date() },
+      })
+      await tx.enrollment.update({
+        where: { id_schoolId: { id: existing.id, schoolId } },
+        data: { status: 'CANCELLED' },
+      })
+    }
+
     const enrolledCount = await tx.classAssignment.count({
       where: {
         schoolId,

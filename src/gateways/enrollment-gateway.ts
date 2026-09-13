@@ -56,14 +56,18 @@ export const enrollmentGateway = {
       include: { plan: true },
     }),
 
-  findDuplicate: async (schoolId: string, studentId: string, classPeriodId: string) => {
+  /**
+   * Inscription en cours du même élève sur la **période** de cette classe, paiements actifs
+   * comptés : un remplacement ne doit jamais effacer une inscription déjà réglée.
+   */
+  findActiveInPeriod: async (schoolId: string, studentId: string, classPeriodId: string) => {
     const classPeriod = await db.classPeriod.findUnique({
       where: { id_schoolId: { id: classPeriodId, schoolId } },
       select: { periodId: true },
     })
-    if (!classPeriod) return false
+    if (!classPeriod) return null
 
-    const existing = await db.enrollment.findFirst({
+    return db.enrollment.findFirst({
       where: {
         schoolId,
         studentId,
@@ -74,8 +78,12 @@ export const enrollmentGateway = {
           },
         },
       },
+      select: {
+        id: true,
+        status: true,
+        _count: { select: { payments: { where: { isActive: true } } } },
+      },
     })
-    return existing !== null
   },
 
   updateDiscount: (schoolId: string, id: string, discount: number, totalAmount: number) =>

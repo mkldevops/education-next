@@ -169,7 +169,9 @@ export default async function TeachersPage({ params, searchParams }: Props) {
       </div>
 
       <Tabs
-        defaultIndex={Math.max(0, TAB_KEYS.indexOf(tab as (typeof TAB_KEYS)[number]))}
+        defaultIndex={
+          expensesEnabled ? Math.max(0, TAB_KEYS.indexOf(tab as (typeof TAB_KEYS)[number])) : 0
+        }
         tabs={[
           {
             label: t('tabs.teachers'),
@@ -184,30 +186,31 @@ export default async function TeachersPage({ params, searchParams }: Props) {
               </Card>
             ),
           },
-          {
-            label: t('tabs.expenses'),
-            content: (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm text-graphite-600">{t('expenses.descriptionText')}</p>
-                  {expensesEnabled && <CreateExpenseDialog teachers={teacherOptions} />}
-                </div>
-                {!expensesEnabled && (
-                  <div className="rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    {t('expenses.disabled')}
-                  </div>
-                )}
-                <Card className="rounded border border-alabaster-700">
-                  <DataTable
-                    data={expenses}
-                    columns={expenseColumns}
-                    getRowKey={(expense) => expense.id}
-                    emptyMessage={t('expenses.empty')}
-                  />
-                </Card>
-              </div>
-            ),
-          },
+          // La configuration `teacher_expenses_enabled` pilote la fonctionnalité entière :
+          // l'onglet disparaît au lieu d'ouvrir une vue qui n'annonce que son indisponibilité.
+          ...(expensesEnabled
+            ? [
+                {
+                  label: t('tabs.expenses'),
+                  content: (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm text-graphite-600">{t('expenses.descriptionText')}</p>
+                        <CreateExpenseDialog teachers={teacherOptions} />
+                      </div>
+                      <Card className="rounded border border-alabaster-700">
+                        <DataTable
+                          data={expenses}
+                          columns={expenseColumns}
+                          getRowKey={(expense) => expense.id}
+                          emptyMessage={t('expenses.empty')}
+                        />
+                      </Card>
+                    </div>
+                  ),
+                },
+              ]
+            : []),
         ]}
       />
     </div>

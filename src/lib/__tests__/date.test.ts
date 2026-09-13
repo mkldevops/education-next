@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDateLong, formatDateTime } from '../date'
+import { calculateAge, formatDate, formatDateLong, formatDateTime } from '../date'
 
 const VALUE = '2026-03-09T14:05:00.000Z'
 
@@ -23,5 +23,21 @@ describe('date formatting', () => {
   it('keeps date and time together in the timestamp form', () => {
     expect(formatDateTime(VALUE, 'fr-FR')).toContain('2026')
     expect(formatDateTime(VALUE, 'fr-FR')).toMatch(/\d{2}:\d{2}/)
+  })
+})
+
+describe('calculateAge', () => {
+  it('counts only birthdays already passed', () => {
+    expect(calculateAge('2016-01-12', '2026-01-12')).toBe(10)
+    expect(calculateAge('2016-01-12', '2026-01-11')).toBe(9)
+  })
+
+  it('ignores the year difference when the month is still ahead', () => {
+    expect(calculateAge('2016-12-31', '2026-01-01')).toBe(9)
+  })
+
+  it('handles a birthday on 29 February', () => {
+    expect(calculateAge('2016-02-29', '2026-02-28')).toBe(9)
+    expect(calculateAge('2016-02-29', '2026-03-01')).toBe(10)
   })
 })

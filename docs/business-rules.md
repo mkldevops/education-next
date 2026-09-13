@@ -798,6 +798,25 @@ Screens show what the family handed over instead: `groupFamilyPayments()` in
   to back stay two payments.
 - Enrollment pages still show the part that enrollment received.
 
+### Collection statistics
+
+`src/domain/payment-stats.ts` feeds the payments dashboard. It reads the **same perimeter as the
+family balance** — `PENDING` and `ACTIVE` enrollments, scoped to the selected period — so the
+announced figures cannot drift from what a family is asked to pay.
+
+| Figure | Rule |
+|---|---|
+| Due | Σ `totalAmount`, already net of discount |
+| Collected | Σ active payments of those enrollments |
+| Remaining | Σ `max(0, totalAmount - paid)`, floored per enrollment |
+| Collection rate | `(due - remaining) / due`, capped at 100 % |
+| Cheques to cash | `CHECK` payments without `cashedAt`; other methods are cashed on handover |
+
+- **A trend chart ends on the last payment**, not on today: a closed school year would otherwise be
+  displayed empty. Months without any payment stay in the series at zero.
+- **Follow-up lists a family, not an enrollment**, through `student.person.families`, the same link
+  used by the family balance. An enrollment attached to no family is owed by nobody and ignored.
+
 ### Refunds
 
 A negative amount distributes proportionally to what was **actually paid** on each enrollment.

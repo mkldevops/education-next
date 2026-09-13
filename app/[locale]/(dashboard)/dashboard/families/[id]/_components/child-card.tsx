@@ -18,6 +18,7 @@ import { formatCurrency } from '@/lib/decimal'
 import { ReassignClassDialog } from '../../../enrollments/_components/reassign-class-dialog'
 import { ActivateEnrollmentButton } from './activate-enrollment-button'
 import { EnrollButton } from './enroll-button'
+import { EnrollmentMenu } from './enrollment-menu'
 
 type StudentWithRelation = {
   person: Person & {
@@ -80,6 +81,16 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
             </p>
           )}
         </div>
+        {enrollments.length > 0 && (
+          <EnrollmentMenu
+            studentId={person.student.id}
+            enrollments={enrollments.map((enrollment) => ({
+              id: enrollment.id,
+              label: enrollment.classAssignments[0]?.classPeriod.name ?? enrollment.plan.name,
+              classPeriodId: enrollment.classAssignments[0]?.classPeriod.id ?? null,
+            }))}
+          />
+        )}
       </div>
 
       {person.student.allergies && (
@@ -122,11 +133,18 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-graphite-600">
-                    {currentAssignment
-                      ? `${t('childCard.class')}: ${currentAssignment.classPeriod.name} (${currentAssignment.classPeriod.level.name} — ${currentAssignment.classPeriod.period.name})`
-                      : t('childCard.noClass')}
-                  </span>
+                  {currentAssignment ? (
+                    // Le nom de la classe porte déjà niveau et période : les répéter entre
+                    // parenthèses n'ajoutait rien et noyait le lien.
+                    <Link
+                      href={`/dashboard/classes/${currentAssignment.classPeriod.id}`}
+                      className="text-xs font-medium text-primary hover:text-primary-hover hover:underline"
+                    >
+                      {currentAssignment.classPeriod.name}
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-graphite-600">{t('childCard.noClass')}</span>
+                  )}
                   {isAdmin && (
                     <ReassignClassDialog
                       enrollmentId={enrollment.id}
