@@ -39,13 +39,15 @@ interface EditLevelFormProps {
 interface EditLevelDialogProps extends EditLevelFormProps {
   /** `menuitem` quand le déclencheur est une entrée de menu, pour la navigation au clavier. */
   triggerRole?: React.AriaRole
+  /** Cible de repli du focus quand le déclencheur est devenu inaccessible à la fermeture. */
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
-export function EditLevelDialog({ triggerRole, ...props }: EditLevelDialogProps) {
+export function EditLevelDialog({ triggerRole, restoreFocusRef, ...props }: EditLevelDialogProps) {
   const t = useTranslations('dashboard.pages.levels.edit')
 
   return (
-    <Dialog>
+    <Dialog restoreFocusRef={restoreFocusRef}>
       <DialogTrigger>
         <Button variant="outline" size="sm" role={triggerRole}>
           {t('title')}

@@ -27,17 +27,23 @@ interface GenerateClassFormProps {
 interface GenerateClassDialogProps extends GenerateClassFormProps {
   /** `menuitem` quand le déclencheur est une entrée de menu, pour la navigation au clavier. */
   triggerRole?: React.AriaRole
+  /** Cible de repli du focus quand le déclencheur est devenu inaccessible à la fermeture. */
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
 /**
  * Ouvre la création d'une classe déjà remplie pour un niveau dépourvu de classe sur la période
  * courante : niveau et période sont imposés, seuls le nom et la capacité restent modifiables.
  */
-export function GenerateClassDialog({ triggerRole, ...props }: GenerateClassDialogProps) {
+export function GenerateClassDialog({
+  triggerRole,
+  restoreFocusRef,
+  ...props
+}: GenerateClassDialogProps) {
   const t = useTranslations('dashboard.pages.levels.generateClass')
 
   return (
-    <Dialog>
+    <Dialog restoreFocusRef={restoreFocusRef}>
       <DialogTrigger>
         <Button variant="outline" size="sm" role={triggerRole}>
           <CalendarPlus className="h-4 w-4" />

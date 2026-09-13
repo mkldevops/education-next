@@ -84,4 +84,45 @@ describe('DialogContent accessibility', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(document.activeElement).toBe(trigger)
   })
+
+  it('falls back to restoreFocusRef when the previously focused element became unfocusable', () => {
+    // Reproduit le cas réel : un déclencheur hébergé dans un menu masqué en CSS pendant que le
+    // dialogue reste ouvert. Un bouton désactivé refuse le focus comme un élément masqué le
+    // ferait, sans retirer le nœud de l'arbre React que le démontage doit encore gérer.
+    const fallback = document.createElement('button')
+    fallback.textContent = 'Fallback anchor'
+    document.body.appendChild(fallback)
+    const restoreFocusRef = { current: fallback }
+
+    render(
+      <Dialog restoreFocusRef={restoreFocusRef}>
+        <DialogTrigger>
+          <button type="button">Open</button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dialog title</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <input aria-label="First field" type="text" />
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+    )
+
+    const trigger = screen.getByRole('button', { name: 'Open' }) as HTMLButtonElement
+    trigger.focus()
+    fireEvent.click(trigger)
+
+    // Devient inaccessible pendant que le dialogue est ouvert, comme le ferait un panneau de
+    // menu masqué en CSS pendant que le déclencheur qu'il contient reste rendu.
+    trigger.disabled = true
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(fallback)
+
+    fallback.remove()
+  })
 })

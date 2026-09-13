@@ -3,7 +3,6 @@
 import { useMenu } from '@peaklab/ui'
 import { MoreHorizontal } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect } from 'react'
 import { EditLevelDialog } from './edit-level-dialog'
 import { GenerateClassDialog } from './generate-class-dialog'
 
@@ -21,6 +20,11 @@ type Props = {
  *
  * Le panneau est masqué en CSS plutôt que démonté : les dialogues vivent à l'intérieur, et les
  * retirer de l'arbre à la fermeture du menu fermerait aussi le dialogue qu'on vient d'ouvrir.
+ * Un dialogue ouvert masque le panneau dès qu'on clique dedans (portalé hors du conteneur, donc
+ * hors du clic « extérieur » du menu) : son déclencheur devient alors invisible pendant que le
+ * dialogue reste ouvert. `restoreFocusRef` donne à chaque dialogue une cible de repli — le
+ * bouton `⋯`, seul ancrage qui reste visible — pour quand il referme et que son propre
+ * déclencheur n'est plus focalisable.
  */
 export function LevelActionsMenu({
   level,
@@ -31,14 +35,6 @@ export function LevelActionsMenu({
 }: Props) {
   const t = useTranslations('dashboard.pages.levels')
   const { open, toggle, containerRef, triggerRef, menuRef } = useMenu()
-
-  // Le panneau se masque dès le premier clic dans un dialogue qu'il contient. `DialogContent`
-  // rendrait alors le focus à un bouton devenu `display: none`, un no-op qui renvoie le focus
-  // sur `<body>` : on le ramène sur le déclencheur, seul ancrage resté visible.
-  useEffect(() => {
-    if (open) return
-    if (menuRef.current?.contains(document.activeElement)) triggerRef.current?.focus()
-  }, [open, menuRef, triggerRef])
 
   return (
     <div className="relative flex justify-end" ref={containerRef}>
@@ -69,6 +65,7 @@ export function LevelActionsMenu({
             periodName={generateFor.name}
             defaultCapacity={defaultCapacity}
             triggerRole="menuitem"
+            restoreFocusRef={triggerRef}
           />
         )}
         <EditLevelDialog
@@ -78,6 +75,7 @@ export function LevelActionsMenu({
           takenNextLevelIds={takenNextLevelIds}
           classPeriodCount={level.classCount}
           triggerRole="menuitem"
+          restoreFocusRef={triggerRef}
         />
       </div>
     </div>
