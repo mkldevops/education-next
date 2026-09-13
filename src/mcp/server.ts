@@ -3,13 +3,16 @@ import { z } from 'zod'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
+import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
 import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
+import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
 import type { McpScope } from '@/use-cases/mcp/resolve-mcp-scope'
 import {
   commitDraftSchema,
   previewEnrollFamilySchema,
   previewRecordPaymentSchema,
+  previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
 
 const SERVER_INFO = { name: 'education', version: '1.0.0' }
@@ -201,6 +204,42 @@ export function buildMcpServer(scope: McpScope): McpServer {
       annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async (args) => write('commit_record_payment', () => commitRecordPayment(scope, args))
+  )
+
+  server.registerTool(
+    'preview_update_enrollment',
+    {
+      title: "Préparer la modification d'une inscription",
+      description:
+        "Change la formule et/ou la remise d'une inscription en attente ou active, sans rien " +
+        "écrire. L'inscription se désigne par son identifiant, ou par le prénom et le nom de " +
+        "l'élève ; la formule est attendue en libellé. Sans remise, l'inscription garde la " +
+        'sienne. Rend le passage « avant → après », le total recalculé et le reste à payer ; ' +
+        'plusieurs inscriptions candidates sont un `blocker` qui les liste.',
+      inputSchema: previewUpdateEnrollmentSchema,
+      // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
+      // en approbation automatique fabrique des lignes sans jamais demander.
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (args) => write('preview_update_enrollment', () => previewUpdateEnrollment(scope, args))
+  )
+
+  server.registerTool(
+    'commit_update_enrollment',
+    {
+      title: "Engager la modification d'une inscription",
+      description:
+        'Applique la formule, la remise et le total déjà prévisualisés. Les paiements restent ' +
+        "sur l'inscription. Rejouer le même `draftId` rend le résultat enregistré.",
+      inputSchema: commitDraftSchema,
+      annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async (args) => write('commit_update_enrollment', () => commitUpdateEnrollment(scope, args))
   )
 
   return server

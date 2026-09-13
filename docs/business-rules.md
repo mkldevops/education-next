@@ -611,13 +611,26 @@ leave an orphan family behind the first failure.
 | `draftExpired` | past the thirty minutes |
 | `checksumMismatch` | the checksum does not match the plan that was shown |
 | `commitInProgress` | a concurrent commit is still inside its transaction, and under 60 s old |
-| `notFound` | the class the preview resolved no longer exists |
+| `notFound` | the class the preview resolved no longer exists, or the enrollment or plan it targets |
 | `classFull` | the class filled up between the preview and the commit |
 | `overpayment` / `noPayableEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
-| `staleDraft` | the recomputed split no longer matches the validated one |
+| `staleDraft` | the recomputed split no longer matches the validated one, or the enrollment or plan changed |
+| `totalBelowPaid` | a payment banked since the preview exceeds the enrollment's new total |
 
 A refusal writes nothing and unlocks the draft, so the caller may fix the cause or preview again
 without waiting out the timeout.
+
+**A correction is its own pair.** `update_enrollment` (`src/use-cases/mcp/preview-update-enrollment.ts`)
+changes the plan and/or the discount of one `PENDING` or `ACTIVE` enrollment, so a child entered on
+the wrong plan is fixed without the dashboard. It applies the dashboard's money rule —
+`totalAmount = plan.amount - discount`, on the target plan's **current** price — and keeps the
+enrollment's discount when none is read, because changing plan must not silently erase one. Payments
+stay where they are. **The new total never falls below what the enrollment already banked** →
+`totalBelowPaid`, since a balance never goes negative and an overpayment nobody decided to refund
+must not appear. A request that changes nothing → `noChange`; several open enrollments for the
+student → `ambiguousEnrollment`, listed so the caller retries with `enrollmentId`. The commit
+compares the enrollment's current plan, discount and total to the validated `before`, and the target
+plan's price to the validated `after` → `staleDraft` when either moved.
 
 **The two pairs chain.** `enroll_family` creates its enrollments `PENDING`, and `record_payment`
 distributes across `PENDING` and `ACTIVE` ones alike — so a family enrolled through the MCP can pay
