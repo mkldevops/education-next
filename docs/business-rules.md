@@ -823,9 +823,10 @@ across that family's `PENDING` and `ACTIVE` enrollments**, proportionally to eac
 
 - **No enrollment left to pay** → `noPayableEnrollments`.
 - **More than the family owes** → `overpayment`. The sum of remaining balances is the ceiling.
-- **Rounding is absorbed by the last enrollment**: earlier parts are rounded half-up and capped at
-  their own remaining balance, and the last one takes `amount - alreadyDistributed`. The parts
-  always sum to exactly the amount received.
+- **Every part is a whole euro.** Each proportional share is floored, then the euros left over go
+  one by one to the first enrollments with room left: 100 € over three equal balances is
+  34 + 33 + 33, never 33.33 or 33 + 33 + 34. No part exceeds its remaining balance, only the cents
+  of a non-whole amount stay fractional, and the parts always sum to exactly the amount received.
 - **Zero is rejected** by the schema; a negative amount is a refund.
 - **Several payments are normal.** Each one is distributed against the balances left by the
   previous ones, until the family owes nothing.
@@ -864,6 +865,7 @@ announced figures cannot drift from what a family is asked to pay.
 ### Refunds
 
 A negative amount distributes proportionally to what was **actually paid** on each enrollment.
+The same whole-euro split applies.
 Refunding more than the family ever paid → `refundExceedsPaid`.
 
 ### Methods

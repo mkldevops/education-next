@@ -68,32 +68,14 @@ function distributePositivePayment(
     return { result: 'overpayment' }
   }
 
-  const distribution: Array<{ enrollmentId: string; amount: number }> = []
-  let totalDistributed = 0
-
-  for (let i = 0; i < enrollments.length; i++) {
-    const enrollment = enrollments[i]
-    const isLast = i === enrollments.length - 1
-
-    let part: number
-    if (isLast) {
-      part = amount - totalDistributed
-    } else {
-      const proportion = (enrollment.remainingBalance / totalRemaining) * amount
-      part = roundHalfUp(proportion)
-      part = Math.min(part, enrollment.remainingBalance)
-    }
-
-    distribution.push({
-      enrollmentId: enrollment.enrollmentId,
-      amount: part,
-    })
-    totalDistributed += part
-  }
+  const parts = splitInWholeUnits(
+    amount,
+    enrollments.map((e) => e.remainingBalance)
+  )
 
   return {
     result: 'OK',
-    distribution,
+    distribution: enrollments.map((e, i) => ({ enrollmentId: e.enrollmentId, amount: parts[i] })),
   }
 }
 
@@ -101,44 +83,48 @@ function distributeRefund(
   refundAmount: number,
   enrollments: EnrollmentBalance[]
 ): DistributionResult {
-  const enrollmentsWithPaid = enrollments.map((e) => ({
-    ...e,
-    paid: e.totalAmount - e.remainingBalance,
-  }))
-
-  const totalPaid = enrollmentsWithPaid.reduce((sum, e) => sum + e.paid, 0)
+  const paid = enrollments.map((e) => e.totalAmount - e.remainingBalance)
+  const totalPaid = paid.reduce((sum, p) => sum + p, 0)
 
   if (refundAmount > totalPaid) {
     return { result: 'refundExceedsPaid' }
   }
 
-  const distribution: Array<{ enrollmentId: string; amount: number }> = []
-  let totalDistributed = 0
-
-  for (let i = 0; i < enrollmentsWithPaid.length; i++) {
-    const enrollment = enrollmentsWithPaid[i]
-    const isLast = i === enrollmentsWithPaid.length - 1
-
-    let part: number
-    if (isLast) {
-      part = refundAmount - totalDistributed
-    } else {
-      const proportion = (enrollment.paid / totalPaid) * refundAmount
-      part = roundHalfUp(proportion)
-      part = Math.min(part, enrollment.paid)
-    }
-
-    distribution.push({
-      enrollmentId: enrollment.enrollmentId,
-      amount: -part,
-    })
-    totalDistributed += part
-  }
+  const parts = splitInWholeUnits(refundAmount, paid)
 
   return {
     result: 'OK',
-    distribution,
+    distribution: enrollments.map((e, i) => ({ enrollmentId: e.enrollmentId, amount: -parts[i] })),
   }
+}
+
+/**
+ * Chaque part est un nombre entier d'euros, au prorata de la capacité de chaque inscription.
+ *
+ * Les parts sont arrondies à l'entier inférieur, puis l'euro restant va aux premières
+ * inscriptions, une à une : 100 sur trois soldes égaux donne 34 + 33 + 33. Aucune part ne
+ * dépasse sa capacité, et seuls les centimes d'une somme non entière restent fractionnaires.
+ */
+function splitInWholeUnits(amount: number, capacities: number[]): number[] {
+  const total = capacities.reduce((sum, c) => sum + c, 0)
+  const parts = capacities.map((capacity) =>
+    total > 0 ? Math.min(Math.floor(roundHalfUp((capacity / total) * amount, 6)), capacity) : 0
+  )
+
+  let leftover = roundHalfUp(amount - parts.reduce((sum, p) => sum + p, 0))
+  while (leftover > 0) {
+    let moved = false
+    for (let i = 0; i < parts.length && leftover > 0; i++) {
+      const step = roundHalfUp(Math.min(1, leftover, capacities[i] - parts[i]))
+      if (step <= 0) continue
+      parts[i] = roundHalfUp(parts[i] + step)
+      leftover = roundHalfUp(leftover - step)
+      moved = true
+    }
+    if (!moved) break
+  }
+
+  return parts
 }
 
 type GroupablePayment = {

@@ -1,5 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
-import * as decimalModule from '@/lib/decimal'
+import { describe, expect, it } from 'vitest'
 import { distributePayment, type EnrollmentBalance } from '../payment'
 
 describe('payment distribution', () => {
@@ -90,28 +89,60 @@ describe('payment distribution', () => {
       expect(result).not.toHaveProperty('distribution')
     })
 
-    it('should use HALF_UP rounding for proportional distribution', () => {
-      const spy = vi.spyOn(decimalModule, 'roundHalfUp')
-
-      const enrollments: EnrollmentBalance[] = [
-        {
-          enrollmentId: 'e1',
-          remainingBalance: 50,
-          totalAmount: 100,
-          discount: 0,
-        },
-        {
-          enrollmentId: 'e2',
-          remainingBalance: 50,
-          totalAmount: 100,
-          discount: 0,
-        },
+    it('splits into whole euros, the extra euro going to the first enrollments', () => {
+      const three = [
+        { enrollmentId: 'e1', remainingBalance: 180, totalAmount: 180, discount: 0 },
+        { enrollmentId: 'e2', remainingBalance: 180, totalAmount: 180, discount: 0 },
+        { enrollmentId: 'e3', remainingBalance: 180, totalAmount: 180, discount: 0 },
       ]
 
-      distributePayment(100, enrollments)
+      expect(distributePayment(100, three)).toEqual({
+        result: 'OK',
+        distribution: [
+          { enrollmentId: 'e1', amount: 34 },
+          { enrollmentId: 'e2', amount: 33 },
+          { enrollmentId: 'e3', amount: 33 },
+        ],
+      })
+      expect(distributePayment(101, three)).toMatchObject({
+        distribution: [{ amount: 34 }, { amount: 34 }, { amount: 33 }],
+      })
+    })
 
-      expect(spy).toHaveBeenCalled()
-      spy.mockRestore()
+    it('keeps whole euros across unequal balances', () => {
+      const result = distributePayment(75, [
+        { enrollmentId: 'e1', remainingBalance: 90, totalAmount: 90, discount: 0 },
+        { enrollmentId: 'e2', remainingBalance: 90, totalAmount: 90, discount: 0 },
+        { enrollmentId: 'e3', remainingBalance: 180, totalAmount: 180, discount: 0 },
+      ])
+
+      expect(result).toMatchObject({
+        distribution: [{ amount: 19 }, { amount: 19 }, { amount: 37 }],
+      })
+    })
+
+    it('never gives the extra euro to an enrollment already paid off by its share', () => {
+      const result = distributePayment(3, [
+        { enrollmentId: 'e1', remainingBalance: 1, totalAmount: 90, discount: 0 },
+        { enrollmentId: 'e2', remainingBalance: 1, totalAmount: 90, discount: 0 },
+        { enrollmentId: 'e3', remainingBalance: 1, totalAmount: 90, discount: 0 },
+      ])
+
+      expect(result).toMatchObject({
+        distribution: [{ amount: 1 }, { amount: 1 }, { amount: 1 }],
+      })
+    })
+
+    it('leaves only the cents of a non-whole amount fractional', () => {
+      const result = distributePayment(100.5, [
+        { enrollmentId: 'e1', remainingBalance: 180, totalAmount: 180, discount: 0 },
+        { enrollmentId: 'e2', remainingBalance: 180, totalAmount: 180, discount: 0 },
+        { enrollmentId: 'e3', remainingBalance: 180, totalAmount: 180, discount: 0 },
+      ])
+
+      expect(result).toMatchObject({
+        distribution: [{ amount: 34 }, { amount: 33.5 }, { amount: 33 }],
+      })
     })
 
     it('should cap distribution to remaining balance', () => {
@@ -243,28 +274,16 @@ describe('payment distribution', () => {
       }
     })
 
-    it('should use HALF_UP rounding for proportional refund distribution', () => {
-      const spy = vi.spyOn(decimalModule, 'roundHalfUp')
+    it('splits a refund into whole euros too', () => {
+      const result = distributePayment(-100, [
+        { enrollmentId: 'e1', remainingBalance: 80, totalAmount: 180, discount: 0 },
+        { enrollmentId: 'e2', remainingBalance: 80, totalAmount: 180, discount: 0 },
+        { enrollmentId: 'e3', remainingBalance: 80, totalAmount: 180, discount: 0 },
+      ])
 
-      const enrollments: EnrollmentBalance[] = [
-        {
-          enrollmentId: 'e1',
-          remainingBalance: 0,
-          totalAmount: 100,
-          discount: 0,
-        },
-        {
-          enrollmentId: 'e2',
-          remainingBalance: 0,
-          totalAmount: 100,
-          discount: 0,
-        },
-      ]
-
-      distributePayment(-100, enrollments)
-
-      expect(spy).toHaveBeenCalled()
-      spy.mockRestore()
+      expect(result).toMatchObject({
+        distribution: [{ amount: -34 }, { amount: -33 }, { amount: -33 }],
+      })
     })
   })
 
