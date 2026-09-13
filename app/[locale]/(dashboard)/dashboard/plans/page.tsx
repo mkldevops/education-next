@@ -37,6 +37,13 @@ export default async function PlansPage({ params }: Props) {
     orderBy: { name: 'asc' },
   })
 
+  const openEnrollments = await db.enrollment.groupBy({
+    by: ['planId'],
+    where: { schoolId, isActive: true, status: { in: ['PENDING', 'ACTIVE'] } },
+    _count: true,
+  })
+  const openByPlan = new Map(openEnrollments.map((row) => [row.planId, row._count]))
+
   const columns: Column<(typeof plans)[0]>[] = [
     {
       key: 'name',
@@ -60,7 +67,10 @@ export default async function PlansPage({ params }: Props) {
       headerClassName: 'text-right',
       className: 'text-right',
       render: (plan) => (
-        <EditPlanDialog plan={{ id: plan.id, name: plan.name, amount: Number(plan.amount) }} />
+        <EditPlanDialog
+          plan={{ id: plan.id, name: plan.name, amount: Number(plan.amount) }}
+          openEnrollments={openByPlan.get(plan.id) ?? 0}
+        />
       ),
     },
   ]

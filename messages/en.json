@@ -735,11 +735,14 @@
           "title": "Edit Plan",
           "cancel": "Cancel",
           "submit": "Save",
+          "archive": "Archive",
           "success": "Plan updated",
+          "archiveSuccess": "Plan archived",
           "error": "Error updating plan",
           "errors": {
             "validationError": "Check the information you entered",
-            "notFound": "Plan not found"
+            "notFound": "Plan not found",
+            "planInUse": "Open enrollments use this plan: move them to another plan first"
           }
         }
       },

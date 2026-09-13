@@ -21,4 +21,13 @@ export const planGateway = {
     db.plan.findUnique({
       where: { id_schoolId: { id, schoolId } },
     }),
+
+  countOpenEnrollments: (schoolId: string, id: string) =>
+    db.enrollment.count({ where: { schoolId, planId: id, status: { in: ['PENDING', 'ACTIVE'] } } }),
+
+  deactivate: (schoolId: string, id: string) =>
+    db.plan.update({
+      where: { id_schoolId: { id, schoolId } },
+      data: { isActive: false },
+    }),
 }

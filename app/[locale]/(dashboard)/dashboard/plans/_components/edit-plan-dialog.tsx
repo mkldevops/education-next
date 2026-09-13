@@ -13,7 +13,7 @@ import {
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
-import { updatePlanAction } from '../../../_lib/plan-actions'
+import { deactivatePlanAction, updatePlanAction } from '../../../_lib/plan-actions'
 
 interface EditPlanDialogProps {
   plan: {
@@ -21,9 +21,10 @@ interface EditPlanDialogProps {
     name: string
     amount: number
   }
+  openEnrollments: number
 }
 
-export function EditPlanDialog({ plan }: EditPlanDialogProps) {
+export function EditPlanDialog(props: EditPlanDialogProps) {
   const t = useTranslations('dashboard.pages.plans.edit')
 
   return (
@@ -37,16 +38,16 @@ export function EditPlanDialog({ plan }: EditPlanDialogProps) {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <EditPlanForm plan={plan} />
+        <EditPlanForm {...props} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function EditPlanForm({ plan }: EditPlanDialogProps) {
+function EditPlanForm({ plan, openEnrollments }: EditPlanDialogProps) {
   const t = useTranslations('dashboard.pages.plans.edit')
   const tCreate = useTranslations('dashboard.pages.plans.create')
-  const { isPending, close, onSubmit } = useDialogForm(t)
+  const { isPending, close, run, onSubmit } = useDialogForm(t)
 
   const handleSubmit = onSubmit((formData) =>
     updatePlanAction(plan.id, {
@@ -54,6 +55,9 @@ function EditPlanForm({ plan }: EditPlanDialogProps) {
       amount: Number(formData.get('amount')),
     })
   )
+
+  const handleArchive = () =>
+    run(() => deactivatePlanAction(plan.id), { successKey: 'archiveSuccess' })
 
   return (
     <form onSubmit={handleSubmit}>
@@ -85,7 +89,18 @@ function EditPlanForm({ plan }: EditPlanDialogProps) {
           </div>
         </div>
       </DialogBody>
-      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
+      <DialogFormActions t={t} isPending={isPending} onCancel={close}>
+        <Button
+          type="button"
+          variant="destructive"
+          className="mr-auto"
+          onClick={handleArchive}
+          disabled={isPending || openEnrollments > 0}
+          title={openEnrollments > 0 ? t('errors.planInUse') : undefined}
+        >
+          {t('archive')}
+        </Button>
+      </DialogFormActions>
     </form>
   )
 }
