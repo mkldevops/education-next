@@ -3,6 +3,7 @@
 import { useMenu } from '@peaklab/ui'
 import { MoreHorizontal } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useEffect } from 'react'
 import { EditLevelDialog } from './edit-level-dialog'
 import { GenerateClassDialog } from './generate-class-dialog'
 
@@ -30,6 +31,14 @@ export function LevelActionsMenu({
 }: Props) {
   const t = useTranslations('dashboard.pages.levels')
   const { open, toggle, containerRef, triggerRef, menuRef } = useMenu()
+
+  // Le panneau se masque dès le premier clic dans un dialogue qu'il contient. `DialogContent`
+  // rendrait alors le focus à un bouton devenu `display: none`, un no-op qui renvoie le focus
+  // sur `<body>` : on le ramène sur le déclencheur, seul ancrage resté visible.
+  useEffect(() => {
+    if (open) return
+    if (menuRef.current?.contains(document.activeElement)) triggerRef.current?.focus()
+  }, [open, menuRef, triggerRef])
 
   return (
     <div className="relative flex justify-end" ref={containerRef}>
