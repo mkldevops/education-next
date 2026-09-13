@@ -37,11 +37,11 @@ const resolvedSchema = z.object({
       birthday: z.coerce.date().optional(),
       birthplace: z.string().optional(),
       classPeriod: z.object({ id: z.string(), name: z.string() }),
+      plan: z.object({ id: z.string(), name: z.string(), amount: z.number() }),
+      totalAmount: z.number(),
     })
   ),
-  plan: z.object({ id: z.string(), name: z.string(), amount: z.number() }),
   discount: z.number(),
-  totalAmount: z.number(),
   payment: z
     .object({
       amount: z.number(),
@@ -144,7 +144,14 @@ export async function commitEnrollFamily(scope: McpScope, input: Input) {
       }
 
       const students: Array<{ personId: string; studentId: string; enrollmentId: string }> = []
-      for (const { birthday, birthplace, classPeriod, ...person } of resolved.students) {
+      for (const {
+        birthday,
+        birthplace,
+        classPeriod,
+        plan,
+        totalAmount,
+        ...person
+      } of resolved.students) {
         const created = await tx.person.create({
           data: {
             ...person,
@@ -163,8 +170,8 @@ export async function commitEnrollFamily(scope: McpScope, input: Input) {
           data: {
             schoolId,
             studentId: student.id,
-            planId: resolved.plan.id,
-            totalAmount: resolved.totalAmount,
+            planId: plan.id,
+            totalAmount,
             discount: resolved.discount,
           },
           select: { id: true },

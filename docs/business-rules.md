@@ -530,6 +530,14 @@ Capacity is counted **per class visited** — three siblings spread over three c
 in each, two siblings sharing a class take two there — and a full class blocks each of its
 siblings, since no single one is the one in excess.
 
+**The plan is carried by the student too, with the family's as default.** A school prices older
+children on their own plan — 90 for a teenager next to a sibling at 180 — and one plan per call would
+split the family for the same reason as the class. A student's `planName` overrides the root one;
+each enrollment's `totalAmount` is computed from its own plan (`src/use-cases/mcp/preview-enroll-family.ts`),
+and the payment split follows those totals. An unresolved label the student carries blocks as
+`students.1.planName`, the root label as `planName` once. The discount is applied per enrollment, so
+a discount above the cheapest resolved plan → `discountExceedsPlan`.
+
 **No input schema may hold a type JSON Schema cannot express** — no `z.date()`, no
 `z.coerce.date()`, no `.transform()`. The SDK converts every `inputSchema` to answer `tools/list`,
 and a single unconvertible field makes that listing throw for **all** tools, read tools included: the

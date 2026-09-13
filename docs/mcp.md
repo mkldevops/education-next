@@ -157,6 +157,13 @@ children across classes — "C4 / C2 / F" on a single line — and a single clas
 force the siblings into separate calls; each call creates a family, so the siblings would come back
 as duplicates. An unresolved label is a blocker naming the child: `students.2.className`.
 
+The plan follows the same logic, with a default. `planName` at the root is the family's plan; a
+student may carry its own `planName` — an older child on a cheaper plan than its siblings — and each
+enrollment is then priced on the plan its student resolved. The resolved plan carries `plan` and
+`totalAmount` on every student, not once at the root. A label the student carries blocks as
+`students.1.planName`; the family's label blocks once as `planName`, however many children fall back
+on it. The discount applies to each enrollment, so it must fit the cheapest plan of the family.
+
 Sex and birthday may be omitted, and `parents` may be an empty array, when the sheet does not carry
 them.
 

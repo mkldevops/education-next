@@ -75,27 +75,46 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     return null
   })
 
-  const planMatches = matchByName(plans, data.planName)
-  if (planMatches.length !== 1) {
-    blockers.push({
-      field: 'planName',
-      value: data.planName,
-      reason: planMatches.length === 0 ? 'unknownPlan' : 'ambiguousPlan',
-    })
-  }
+  // Une formule par élève, résolue une fois par libellé : la fratrie qui partage la formule
+  // de la famille ne répète pas son blocage, et un libellé porté par un élève nomme l'enfant.
+  const planByLabel = new Map<string, (typeof plans)[number] | null>()
+  const studentPlans = data.students.map((student, index) => {
+    const label = student.planName ?? data.planName
+    const field = student.planName ? `students.${index}.planName` : 'planName'
+    const key = `${field}|${label}`
 
-  const plan = planMatches.length === 1 ? planMatches[0] : null
-  const planAmount = plan ? Number(plan.amount) : 0
+    if (!planByLabel.has(key)) {
+      const matches = matchByName(plans, label)
+      if (matches.length !== 1) {
+        blockers.push({
+          field,
+          value: label,
+          reason: matches.length === 0 ? 'unknownPlan' : 'ambiguousPlan',
+        })
+      }
+      planByLabel.set(key, matches.length === 1 ? matches[0] : null)
+    }
 
-  if (plan && validateDiscount(planAmount, data.discount) !== 'OK') {
+    return planByLabel.get(key) ?? null
+  })
+
+  const studentTotals = studentPlans.map((plan) =>
+    calculateTotalAmount(plan ? Number(plan.amount) : 0, data.discount)
+  )
+
+  // La remise vaut pour chaque inscription : elle doit tenir dans la formule la moins chère
+  // de la fratrie, et un seul blocage suffit à la corriger.
+  if (
+    studentPlans.some(
+      (plan) => plan && validateDiscount(Number(plan.amount), data.discount) !== 'OK'
+    )
+  ) {
     blockers.push({
       field: 'discount',
       value: String(data.discount),
       reason: 'discountExceedsPlan',
     })
   }
-
-  const totalAmount = calculateTotalAmount(planAmount, data.discount)
 
   // La capacité se juge par classe visée, pas par fratrie : deux enfants en C4 et un en
   // C2 ne prennent pas trois places en C4. Le commit refait ce compte dans sa
@@ -133,10 +152,10 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
   // La répartition est calculée ici, pas au commit : les inscriptions n'existent pas
   // encore, donc elle est indexée sur la position de l'élève dans la demande.
   let allocation: Array<{ studentIndex: number; amount: number }> = []
-  if (data.payment && plan) {
+  if (data.payment && studentPlans.every((plan) => plan !== null)) {
     const distribution = distributePayment(
       data.payment.amount,
-      data.students.map((_, index) => ({
+      studentTotals.map((totalAmount, index) => ({
         enrollmentId: String(index),
         totalAmount,
         discount: data.discount,
@@ -204,22 +223,25 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     })),
   }
 
-  // Chaque élève emporte sa classe dans le même élément : un filtre suivi d'un accès par
-  // index désalignerait élèves et classes au premier élève non résolu.
-  const students = data.students.flatMap(({ className, ...student }, index) => {
+  // Chaque élève emporte sa classe et sa formule dans le même élément : un filtre suivi d'un
+  // accès par index désalignerait élèves, classes et formules au premier élève non résolu.
+  const students = data.students.flatMap(({ className, planName, ...student }, index) => {
     const classPeriod = studentClasses[index]
-    if (!classPeriod) return []
+    const plan = studentPlans[index]
+    if (!classPeriod || !plan) return []
 
     return [
       {
         ...student,
         birthday: student.birthday ? new Date(student.birthday).toISOString() : undefined,
         classPeriod: { id: classPeriod.id, name: classPeriod.name },
+        plan: { id: plan.id, name: plan.name, amount: Number(plan.amount) },
+        totalAmount: studentTotals[index],
       },
     ]
   })
 
-  if (blockers.length > 0 || !plan || students.length !== data.students.length) {
+  if (blockers.length > 0 || students.length !== data.students.length) {
     return { draftId: null, checksum: null, plan: null, matches, warnings, blockers }
   }
 
@@ -233,9 +255,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     },
     parents: data.parents,
     students,
-    plan: { id: plan.id, name: plan.name, amount: planAmount },
     discount: data.discount,
-    totalAmount,
     payment: data.payment
       ? {
           amount: data.payment.amount,
