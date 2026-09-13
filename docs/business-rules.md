@@ -611,10 +611,11 @@ leave an orphan family behind the first failure.
 | `draftExpired` | past the thirty minutes |
 | `checksumMismatch` | the checksum does not match the plan that was shown |
 | `commitInProgress` | a concurrent commit is still inside its transaction, and under 60 s old |
-| `notFound` | the class the preview resolved no longer exists, or the enrollment or plan it targets |
+| `notFound` | the class the preview resolved no longer exists, or the family, member, enrollment or plan it targets |
 | `classFull` | the class filled up between the preview and the commit |
+| `duplicateEnrollment` | a member of the existing family was enrolled between the preview and the commit |
 | `overpayment` / `noPayableEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
-| `staleDraft` | the recomputed split no longer matches the validated one, or the enrollment or plan changed |
+| `staleDraft` | the recomputed split no longer matches the validated one, the enrollment or plan changed, or a member became a student |
 | `totalBelowPaid` | a payment banked since the preview exceeds the enrollment's new total |
 
 A refusal writes nothing and unlocks the draft, so the caller may fix the cause or preview again
@@ -631,6 +632,18 @@ must not appear. A request that changes nothing → `noChange`; several open enr
 student → `ambiguousEnrollment`, listed so the caller retries with `enrollmentId`. The commit
 compares the enrollment's current plan, discount and total to the validated `before`, and the target
 plan's price to the validated `after` → `staleDraft` when either moved.
+
+**An existing family is named by `familyId`, instead of `familyName`.** A child entered on the
+dashboard without an enrollment — a sibling added to the family, never enrolled — must not come back
+as a second student of the same name. Each student line is looked up among the family's non-parent
+members (`familyGateway.findMembersForMcp`), equality first then substring, like `matchByName` — a
+parent never becomes a student through a sheet line. A member found is enrolled as is, its name, sex and birthday left untouched; a line matching no member creates
+the child in that family. Two members for one line → `ambiguousStudent`; a member already holding a
+`PENDING` or `ACTIVE` enrollment → `duplicateEnrollment`; an unknown family → `notFound` on
+`familyId`. `familyId` excludes `familyName`, `parents` and the emergency contact → `validationError`,
+since the family already owns them. The commit rereads the family and each member before the first
+write (`src/use-cases/mcp/commit-enroll-family.ts`): archived family or member gone → `notFound`,
+a student created since → `staleDraft`, an enrollment opened since → `duplicateEnrollment`.
 
 **The two pairs chain.** `enroll_family` creates its enrollments `PENDING`, and `record_payment`
 distributes across `PENDING` and `ACTIVE` ones alike — so a family enrolled through the MCP can pay

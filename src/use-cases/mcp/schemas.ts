@@ -70,17 +70,32 @@ const mcpPaymentSchema = z
  * Une fiche papier porte « C4 » et « Tarif fratrie » ; un identifiant est exactement ce
  * qu'un modèle de vision fabrique. La résolution est le travail du `preview_*`, et son
  * échec est un `blocker` nommé, corrigeable sans redeviner tout le formulaire.
+ *
+ * `familyId` fait exception : il ne se lit pas sur la fiche, il revient d'un `matches`
+ * ou d'un `preview_record_payment`, et rattache les élèves à une famille déjà saisie.
  */
-export const previewEnrollFamilySchema = z.object({
-  familyName: z.string().trim().min(1).max(50),
-  emergencyContactName: z.string().trim().max(250).optional(),
-  emergencyContactPhone: z.string().trim().min(1).max(20).regex(phoneNumberFormat).optional(),
-  parents: z.array(mcpParentSchema).max(4),
-  students: z.array(mcpStudentSchema).min(1).max(10),
-  planName: z.string().trim().min(1).max(50),
-  discount: z.number().min(0).default(0),
-  payment: mcpPaymentSchema.optional(),
-})
+export const previewEnrollFamilySchema = z
+  .object({
+    familyId: z.uuid().optional(),
+    familyName: z.string().trim().min(1).max(50).optional(),
+    emergencyContactName: z.string().trim().max(250).optional(),
+    emergencyContactPhone: z.string().trim().min(1).max(20).regex(phoneNumberFormat).optional(),
+    parents: z.array(mcpParentSchema).max(4).default([]),
+    students: z.array(mcpStudentSchema).min(1).max(10),
+    planName: z.string().trim().min(1).max(50),
+    discount: z.number().min(0).default(0),
+    payment: mcpPaymentSchema.optional(),
+  })
+  .refine((data) => (data.familyId === undefined) !== (data.familyName === undefined))
+  // Une famille existante garde ses parents et ses contacts : les rattacher ici créerait
+  // en silence un second parent homonyme, que le dashboard sait mettre à jour.
+  .refine(
+    (data) =>
+      data.familyId === undefined ||
+      (data.parents.length === 0 &&
+        data.emergencyContactName === undefined &&
+        data.emergencyContactPhone === undefined)
+  )
 
 export const previewRecordPaymentSchema = z
   .object({

@@ -125,7 +125,7 @@ teacher expense note still go through the dashboard.
 
 | Tool | Paper it matches | State |
 |---|---|---|
-| `enroll_family` | a full enrollment form: family, parents, students, enrollment, deposit | shipped |
+| `enroll_family` | a full enrollment form: family, parents, students, enrollment, deposit — or, by `familyId`, children of a family already entered | shipped |
 | `record_payment` | a receipt or payment slip | shipped |
 | `update_enrollment` | a correction: a child moved to another plan, a discount granted | shipped |
 | `create_teacher` | a teacher sheet | not shipped |
@@ -165,8 +165,13 @@ enrollment is then priced on the plan its student resolved. The resolved plan ca
 `students.1.planName`; the family's label blocks once as `planName`, however many children fall back
 on it. The discount applies to each enrollment, so it must fit the cheapest plan of the family.
 
-Sex and birthday may be omitted, and `parents` may be an empty array, when the sheet does not carry
+Sex and birthday may be omitted, and `parents` may be empty or absent, when the sheet does not carry
 them.
+
+`familyId`, in place of `familyName`, enrolls children of a family already entered — its `id` comes
+from `matches` or from `preview_record_payment`. A line naming a member of that family enrolls that
+student instead of creating a namesake; a line naming nobody creates the child in the family. Parents
+and emergency contact are refused alongside it: the family already owns them.
 
 Dates are ISO strings, never anything else. A birthday is a day, `2018-04-02`. A payment date is a
 day or a timestamp with seconds and a zone, `2026-09-12T14:30:00Z` or `2026-09-12T14:30:00+02:00`.

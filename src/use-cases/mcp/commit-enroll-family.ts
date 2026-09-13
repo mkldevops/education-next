@@ -14,12 +14,15 @@ import { commitDraftSchema } from './schemas'
  * `safeParse` et évite d'ouvrir une transaction sur une forme qu'on ne sait plus écrire.
  */
 const resolvedSchema = z.object({
-  family: z.object({
-    name: z.string(),
-    emergencyContactName: z.string().optional(),
-    emergencyContactPhone: z.string().optional(),
-    createdById: z.string(),
-  }),
+  family: z.union([
+    z.object({ id: z.string(), name: z.string() }),
+    z.object({
+      name: z.string(),
+      emergencyContactName: z.string().optional(),
+      emergencyContactPhone: z.string().optional(),
+      createdById: z.string(),
+    }),
+  ]),
   parents: z.array(
     z.object({
       name: z.string(),
@@ -36,6 +39,8 @@ const resolvedSchema = z.object({
       sex: z.enum(['MALE', 'FEMALE']).optional(),
       birthday: z.coerce.date().optional(),
       birthplace: z.string().optional(),
+      personId: z.string().optional(),
+      studentId: z.string().optional(),
       classPeriod: z.object({ id: z.string(), name: z.string() }),
       plan: z.object({ id: z.string(), name: z.string(), amount: z.number() }),
       totalAmount: z.number(),
@@ -121,10 +126,52 @@ export async function commitEnrollFamily(scope: McpScope, input: Input) {
         }
       }
 
-      const family = await tx.family.create({
-        data: { ...resolved.family, schoolId },
-        select: { id: true },
-      })
+      // Une famille visée par son identifiant, et chaque membre retrouvé, sont relus avant
+      // la première écriture : une famille archivée ou un enfant inscrit depuis le preview
+      // refusent l'engagement au lieu d'ouvrir une seconde inscription.
+      const existingFamilyId = 'id' in resolved.family ? resolved.family.id : null
+      for (const student of resolved.students) {
+        if (!student.personId) continue
+        if (!existingFamilyId) return 'validationError' as const
+
+        const member = await tx.person.findFirst({
+          where: {
+            id: student.personId,
+            schoolId,
+            isActive: true,
+            families: { some: { familyId: existingFamilyId, relationType: { not: 'PARENT' } } },
+          },
+          select: {
+            student: {
+              select: {
+                id: true,
+                isActive: true,
+                enrollments: {
+                  where: { isActive: true, status: { in: ['PENDING', 'ACTIVE'] } },
+                  select: { id: true },
+                },
+              },
+            },
+          },
+        })
+        if (!member || (member.student && !member.student.isActive)) return 'notFound' as const
+        if ((member.student?.id ?? undefined) !== student.studentId) return 'staleDraft' as const
+        if (member.student && member.student.enrollments.length > 0) {
+          return 'duplicateEnrollment' as const
+        }
+      }
+
+      const family =
+        'id' in resolved.family
+          ? await tx.family.findFirst({
+              where: { id: resolved.family.id, schoolId, isActive: true },
+              select: { id: true },
+            })
+          : await tx.family.create({
+              data: { ...resolved.family, schoolId },
+              select: { id: true },
+            })
+      if (!family) return 'notFound' as const
 
       // Les créations imbriquées ne répètent pas `schoolId` : `FamilyPerson` et `PhoneNumber`
       // pointent la personne par la clé composite `(personId, schoolId)`, que Prisma remplit
@@ -147,24 +194,30 @@ export async function commitEnrollFamily(scope: McpScope, input: Input) {
       for (const {
         birthday,
         birthplace,
+        personId,
+        studentId,
         classPeriod,
         plan,
         totalAmount,
         ...person
       } of resolved.students) {
-        const created = await tx.person.create({
-          data: {
-            ...person,
-            schoolId,
-            families: { create: { familyId: family.id, relationType: 'OTHER' } },
-          },
-          select: { id: true },
-        })
+        const created = personId
+          ? { id: personId }
+          : await tx.person.create({
+              data: {
+                ...person,
+                schoolId,
+                families: { create: { familyId: family.id, relationType: 'OTHER' } },
+              },
+              select: { id: true },
+            })
 
-        const student = await tx.student.create({
-          data: { schoolId, personId: created.id, birthday, birthplace },
-          select: { id: true },
-        })
+        const student = studentId
+          ? { id: studentId }
+          : await tx.student.create({
+              data: { schoolId, personId: created.id, birthday, birthplace },
+              select: { id: true },
+            })
 
         const enrollment = await tx.enrollment.create({
           data: {

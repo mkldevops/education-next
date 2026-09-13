@@ -7,8 +7,8 @@ const release = vi.fn()
 const transaction = vi.fn()
 
 const tx = {
-  family: { create: vi.fn() },
-  person: { create: vi.fn() },
+  family: { create: vi.fn(), findFirst: vi.fn() },
+  person: { create: vi.fn(), findFirst: vi.fn() },
   student: { create: vi.fn() },
   enrollment: { create: vi.fn() },
   classPeriod: { findUnique: vi.fn() },
@@ -464,6 +464,88 @@ describe('commitEnrollFamily', () => {
     expect(await commitEnrollFamily(scope, input)).toBe('commitInProgress')
     expect(reclaim).toHaveBeenCalled()
     expect(transaction).not.toHaveBeenCalled()
+  })
+
+  describe('on an existing family', () => {
+    const attached = {
+      ...resolved,
+      family: { id: 'family-7', name: 'Chanrani / Ahamada' },
+      parents: [],
+      students: [
+        {
+          name: 'Mouhammad Djamil',
+          lastname: 'Ahamada',
+          personId: 'person-7',
+          studentId: 'student-7',
+          classPeriod: { id: 'class-1', name: 'C4' },
+          plan: { id: 'plan-1', name: 'Tarif annuel', amount: 100 },
+          totalAmount: 100,
+        },
+      ],
+      payment: null,
+    }
+
+    beforeEach(() => {
+      findById.mockResolvedValue({
+        keyId: 'key-1',
+        tool: 'enroll_family',
+        checksum: input.checksum,
+        resolved: attached,
+      })
+      tx.family.findFirst.mockResolvedValue({ id: 'family-7' })
+      tx.person.findFirst.mockResolvedValue({
+        student: { id: 'student-7', isActive: true, enrollments: [] },
+      })
+    })
+
+    it('enrolls the existing student without creating a family, person or student', async () => {
+      const result = await commitEnrollFamily(scope, input)
+
+      expect(tx.family.create).not.toHaveBeenCalled()
+      expect(tx.person.create).not.toHaveBeenCalled()
+      expect(tx.student.create).not.toHaveBeenCalled()
+      expect(tx.person.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: 'person-7',
+            schoolId: 'school-1',
+            families: { some: { familyId: 'family-7', relationType: { not: 'PARENT' } } },
+          }),
+        })
+      )
+      expect(tx.enrollment.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ studentId: 'student-7' }) })
+      )
+      expect(result).toMatchObject({ familyId: 'family-7', studentIds: ['student-7'] })
+    })
+
+    it('refuses a family archived since the preview', async () => {
+      tx.family.findFirst.mockResolvedValue(null)
+
+      expect(await commitEnrollFamily(scope, input)).toBe('notFound')
+      expect(tx.enrollment.create).not.toHaveBeenCalled()
+      expect(release).toHaveBeenCalledWith('school-1', input.draftId)
+    })
+
+    it('refuses a student enrolled since the preview', async () => {
+      tx.person.findFirst.mockResolvedValue({
+        student: { id: 'student-7', isActive: true, enrollments: [{ id: 'enr-9' }] },
+      })
+
+      expect(await commitEnrollFamily(scope, input)).toBe('duplicateEnrollment')
+      expect(tx.enrollment.create).not.toHaveBeenCalled()
+    })
+
+    it('refuses a member who left the family or became a student since the preview', async () => {
+      tx.person.findFirst.mockResolvedValueOnce(null)
+      expect(await commitEnrollFamily(scope, input)).toBe('notFound')
+
+      tx.person.findFirst.mockResolvedValueOnce({
+        student: { id: 'student-8', isActive: true, enrollments: [] },
+      })
+      expect(await commitEnrollFamily(scope, input)).toBe('staleDraft')
+      expect(tx.enrollment.create).not.toHaveBeenCalled()
+    })
   })
 
   it('rejects a malformed draft identifier without touching the lock', async () => {

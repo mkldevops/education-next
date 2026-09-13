@@ -86,6 +86,36 @@ export const familyGateway = {
    * Sonde de doublons du `preview_*` MCP. Projection volontairement étroite : le contexte
    * d'un modèle n'a besoin que d'un nom et d'un identifiant pour signaler une homonymie.
    */
+  findMembersForMcp: (schoolId: string, id: string) =>
+    db.family.findUnique({
+      where: { id_schoolId: { id, schoolId } },
+      select: {
+        id: true,
+        name: true,
+        persons: {
+          where: { relationType: { not: 'PARENT' }, person: { isActive: true } },
+          select: {
+            person: {
+              select: {
+                id: true,
+                name: true,
+                lastname: true,
+                student: {
+                  select: {
+                    id: true,
+                    enrollments: {
+                      where: { isActive: true, status: { in: ['PENDING', 'ACTIVE'] } },
+                      select: { id: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+
   searchByName: (schoolId: string, name: string) =>
     db.family.findMany({
       where: { schoolId, name: { contains: name, mode: 'insensitive' } },
