@@ -20,7 +20,38 @@ import { previewEnrollFamilySchema } from './schemas'
 // y est absent.
 type Input = z.input<typeof previewEnrollFamilySchema>
 
+type Family = NonNullable<Awaited<ReturnType<typeof familyGateway.findMembersForMcp>>>
+type Member = Family['persons'][number]['person']
+
 export const ENROLL_FAMILY_TOOL = 'enroll_family'
+
+type ResolvedStudent = {
+  name: string
+  lastname: string
+  sex?: 'MALE' | 'FEMALE'
+  birthday?: string
+  birthplace?: string
+  personId?: string
+  studentId?: string
+  classPeriod: { id: string; name: string }
+  plan: { id: string; name: string; amount: number }
+  totalAmount: number
+}
+
+const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
+const within = (a: string, b: string) => a.toLowerCase().includes(b.trim().toLowerCase())
+
+/**
+ * Un élève de la fiche retrouvé parmi les membres de la famille visée.
+ *
+ * Même règle que `matchByName` : l'égalité d'abord, puis la sous-chaîne — « Mouhammad »
+ * atteint « Mouhammad Djamil ». Deux candidats restent une ambiguïté rendue à l'humain.
+ */
+function findMembers(members: Member[], name: string, lastname: string) {
+  const exact = members.filter((row) => same(row.name, name) && same(row.lastname, lastname))
+  if (exact.length > 0) return exact
+  return members.filter((row) => within(row.name, name) && within(row.lastname, lastname))
+}
 
 export async function previewEnrollFamily(scope: McpScope, input: Input) {
   const parsed = previewEnrollFamilySchema.safeParse(input)
@@ -31,9 +62,43 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
   const blockers: McpFinding[] = []
   const warnings: McpFinding[] = []
 
-  if (validateFamilyName(data.familyName) !== 'OK') {
+  if (data.familyName !== undefined && validateFamilyName(data.familyName) !== 'OK') {
     blockers.push({ field: 'familyName', value: data.familyName, reason: 'invalidFamilyName' })
   }
+
+  // Rattacher à une famille existante réutilise ses élèves : l'enfant déjà saisi sans
+  // inscription reçoit la sienne, au lieu d'un second élève homonyme dans la même famille.
+  const family = data.familyId
+    ? await familyGateway.findMembersForMcp(schoolId, data.familyId)
+    : null
+  if (data.familyId && !family) {
+    blockers.push({ field: 'familyId', value: data.familyId, reason: 'notFound' })
+  }
+
+  const members = family?.persons.map((row) => row.person) ?? []
+  const studentMembers = data.students.map((student, index) => {
+    if (!family) return null
+
+    const found = findMembers(members, student.name, student.lastname)
+    if (found.length > 1) {
+      blockers.push({
+        field: `students.${index}`,
+        value: `${student.name} ${student.lastname}`,
+        reason: 'ambiguousStudent',
+      })
+      return null
+    }
+
+    const member = found[0] ?? null
+    if (member?.student && member.student.enrollments.length > 0) {
+      blockers.push({
+        field: `students.${index}`,
+        value: `${member.name} ${member.lastname}`,
+        reason: 'duplicateEnrollment',
+      })
+    }
+    return member
+  })
 
   for (const [index, student] of data.students.entries()) {
     if (student.birthday && validateStudentBirthday(new Date(student.birthday)) !== 'OK') {
@@ -166,10 +231,16 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     }
   }
 
-  const familyMatches = await familyGateway.searchByName(schoolId, data.familyName)
+  // La sonde de doublons ne regarde que ce qui sera créé : la famille désignée par son
+  // identifiant et ses membres retrouvés sont précisément ceux que l'humain a visés.
+  const familyMatches = data.familyName
+    ? await familyGateway.searchByName(schoolId, data.familyName)
+    : []
   const personMatches = await Promise.all(
-    data.students.map((student) =>
-      personGateway.searchByName(schoolId, student.name, student.lastname)
+    data.students.map((student, index) =>
+      studentMembers[index]
+        ? []
+        : personGateway.searchByName(schoolId, student.name, student.lastname)
     )
   )
 
@@ -214,21 +285,42 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
 
   // Chaque élève emporte sa classe et sa formule dans le même élément : un filtre suivi d'un
   // accès par index désalignerait élèves, classes et formules au premier élève non résolu.
-  const students = data.students.flatMap(({ className, planName, ...student }, index) => {
-    const classPeriod = studentClasses[index]
-    const plan = studentPlans[index]
-    if (!classPeriod || !plan) return []
+  const students = data.students.flatMap<ResolvedStudent>(
+    ({ className, planName, ...student }, index) => {
+      const classPeriod = studentClasses[index]
+      const plan = studentPlans[index]
+      if (!classPeriod || !plan) return []
 
-    return [
-      {
-        ...student,
-        birthday: student.birthday ? new Date(student.birthday).toISOString() : undefined,
+      const enrollment = {
         classPeriod: { id: classPeriod.id, name: classPeriod.name },
         plan: { id: plan.id, name: plan.name, amount: Number(plan.amount) },
         totalAmount: studentTotals[index],
-      },
-    ]
-  })
+      }
+
+      // Un membre retrouvé n'est pas réécrit : son nom est celui de la base, et le sexe ou la
+      // date lus sur la fiche ne remplacent pas en silence ce que le dashboard a saisi.
+      const member = studentMembers[index]
+      if (member) {
+        return [
+          {
+            name: member.name,
+            lastname: member.lastname,
+            personId: member.id,
+            studentId: member.student?.id,
+            ...enrollment,
+          },
+        ]
+      }
+
+      return [
+        {
+          ...student,
+          birthday: student.birthday ? new Date(student.birthday).toISOString() : undefined,
+          ...enrollment,
+        },
+      ]
+    }
+  )
 
   if (blockers.length > 0 || students.length !== data.students.length) {
     return { draftId: null, checksum: null, plan: null, matches, warnings, blockers }
@@ -236,12 +328,14 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
 
   const resolved = {
     tool: ENROLL_FAMILY_TOOL,
-    family: {
-      name: data.familyName,
-      emergencyContactName: data.emergencyContactName,
-      emergencyContactPhone: data.emergencyContactPhone,
-      createdById: scope.userId,
-    },
+    family: family
+      ? { id: family.id, name: family.name }
+      : {
+          name: data.familyName ?? '',
+          emergencyContactName: data.emergencyContactName,
+          emergencyContactPhone: data.emergencyContactPhone,
+          createdById: scope.userId,
+        },
     parents: data.parents,
     students,
     discount: data.discount,

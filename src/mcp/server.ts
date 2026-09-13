@@ -142,7 +142,9 @@ export function buildMcpServer(scope: McpScope): McpServer {
       description:
         "Résout une fiche d'inscription en plan écrit, sans rien créer. Classe et formule " +
         "sont attendues en libellés, par élève ; sans formule, l'élève prend celle de la " +
-        'famille. Rend un `draftId`, un `checksum`, le plan résolu, les ' +
+        'famille. `familyId` à la place de `familyName` rattache les élèves à une famille ' +
+        'existante : un élève déjà membre reçoit son inscription sans être recréé. Rend un ' +
+        '`draftId`, un `checksum`, le plan résolu, les ' +
         'homonymes trouvés, des avertissements et des `blockers`. Un `blockers` non vide ' +
         'nomme le champ à corriger et interdit le commit.',
       inputSchema: previewEnrollFamilySchema,
@@ -163,7 +165,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
     {
       title: 'Engager une inscription de famille',
       description:
-        "Crée la famille, ses parents, ses élèves, leurs inscriptions et l'encaissement du " +
+        "Crée la famille (ou reprend celle visée), ses parents, ses élèves, leurs inscriptions et l'encaissement du " +
         'plan déjà prévisualisé. Rejouer le même `draftId` rend le résultat enregistré au ' +
         "lieu de créer une seconde famille. Le brouillon expire au bout d'une demi-heure.",
       inputSchema: commitDraftSchema,

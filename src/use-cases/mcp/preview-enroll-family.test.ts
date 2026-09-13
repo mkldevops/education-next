@@ -5,13 +5,16 @@ const listPlans = vi.fn()
 const mcpReadGateway = { listClassPeriods, listPlans }
 const countEnrolled = vi.fn()
 const searchFamilies = vi.fn()
+const findMembers = vi.fn()
 const searchPersons = vi.fn()
 const findByReference = vi.fn()
 const createDraft = vi.fn()
 
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
 vi.mock('@/gateways/class-period-gateway', () => ({ classPeriodGateway: { countEnrolled } }))
-vi.mock('@/gateways/family-gateway', () => ({ familyGateway: { searchByName: searchFamilies } }))
+vi.mock('@/gateways/family-gateway', () => ({
+  familyGateway: { searchByName: searchFamilies, findMembersForMcp: findMembers },
+}))
 vi.mock('@/gateways/person-gateway', () => ({ personGateway: { searchByName: searchPersons } }))
 vi.mock('@/gateways/payment-gateway', () => ({ paymentGateway: { findByReference } }))
 vi.mock('@/gateways/mcp-draft-gateway', () => ({ mcpDraftGateway: { create: createDraft } }))
@@ -59,6 +62,7 @@ beforeEach(() => {
   listPlans.mockResolvedValue([{ id: 'plan-1', name: 'Tarif annuel', amount: 100 }])
   countEnrolled.mockResolvedValue(3)
   searchFamilies.mockResolvedValue([])
+  findMembers.mockResolvedValue(null)
   searchPersons.mockResolvedValue([])
   findByReference.mockResolvedValue([])
   createDraft.mockResolvedValue({ id: 'draft-1' })
@@ -486,6 +490,111 @@ describe('previewEnrollFamily', () => {
       ).toBe('validationError')
     }
   )
+
+  describe('on an existing family', () => {
+    const familyId = '22222222-2222-4222-8222-222222222222'
+    const member = (id: string, name: string, enrollments: Array<{ id: string }> = []) => ({
+      person: { id, name, lastname: 'Ahamada', student: { id: `student-${id}`, enrollments } },
+    })
+    const attach = {
+      familyId,
+      planName: 'Tarif annuel',
+      students: [{ name: 'Mouhammad', lastname: 'Ahamada', className: 'C4' }],
+    }
+
+    beforeEach(() => {
+      findMembers.mockResolvedValue({
+        id: familyId,
+        name: 'Chanrani / Ahamada',
+        persons: [member('person-1', 'Mouhammad Djamil'), member('person-2', 'Soilahoudine')],
+      })
+    })
+
+    it('enrolls the student already in the family instead of creating a namesake', async () => {
+      const result = await previewEnrollFamily(scope, attach)
+      assertPreview(result)
+
+      expect(result.blockers).toEqual([])
+      expect(findMembers).toHaveBeenCalledWith('school-1', familyId)
+      expect(result.plan?.family).toEqual({ id: familyId, name: 'Chanrani / Ahamada' })
+      expect(result.plan?.students[0]).toMatchObject({
+        name: 'Mouhammad Djamil',
+        personId: 'person-1',
+        studentId: 'student-person-1',
+        classPeriod: { id: 'class-1' },
+      })
+      expect(searchFamilies).not.toHaveBeenCalled()
+      expect(searchPersons).not.toHaveBeenCalled()
+    })
+
+    it('creates a sibling the family does not hold yet, and probes its namesakes', async () => {
+      const result = await previewEnrollFamily(scope, {
+        ...attach,
+        students: [{ name: 'Nour', lastname: 'Ahamada', className: 'C4' }],
+      })
+      assertPreview(result)
+
+      expect(result.plan?.students[0].personId).toBeUndefined()
+      expect(searchPersons).toHaveBeenCalledWith('school-1', 'Nour', 'Ahamada')
+    })
+
+    it('blocks a family the key cannot see', async () => {
+      findMembers.mockResolvedValue(null)
+
+      const result = await previewEnrollFamily(scope, attach)
+      assertPreview(result)
+
+      expect(result.blockers).toContainEqual({
+        field: 'familyId',
+        value: familyId,
+        reason: 'notFound',
+      })
+      expect(createDraft).not.toHaveBeenCalled()
+    })
+
+    it('blocks a member who already has an open enrollment', async () => {
+      findMembers.mockResolvedValue({
+        id: familyId,
+        name: 'Chanrani / Ahamada',
+        persons: [member('person-1', 'Mouhammad Djamil', [{ id: 'enr-1' }])],
+      })
+
+      const result = await previewEnrollFamily(scope, attach)
+      assertPreview(result)
+
+      expect(result.blockers).toEqual([
+        { field: 'students.0', value: 'Mouhammad Djamil Ahamada', reason: 'duplicateEnrollment' },
+      ])
+    })
+
+    it('refuses to choose between two members the line matches', async () => {
+      findMembers.mockResolvedValue({
+        id: familyId,
+        name: 'Chanrani / Ahamada',
+        persons: [member('person-1', 'Mouhammad Djamil'), member('person-3', 'Mouhammad Ali')],
+      })
+
+      const result = await previewEnrollFamily(scope, attach)
+      assertPreview(result)
+
+      expect(result.blockers).toEqual([
+        { field: 'students.0', value: 'Mouhammad Ahamada', reason: 'ambiguousStudent' },
+      ])
+    })
+
+    it('rejects a family named twice, or new parents on an existing one', async () => {
+      expect(await previewEnrollFamily(scope, { ...attach, familyName: 'Ahamada' })).toBe(
+        'validationError'
+      )
+      expect(
+        await previewEnrollFamily(scope, {
+          ...attach,
+          parents: [{ name: 'Anissa', lastname: 'Chanrani' }],
+        })
+      ).toBe('validationError')
+      expect(findMembers).not.toHaveBeenCalled()
+    })
+  })
 
   it('rejects malformed input before reading anything', async () => {
     expect(await previewEnrollFamily(scope, { ...input, students: [] })).toBe('validationError')
