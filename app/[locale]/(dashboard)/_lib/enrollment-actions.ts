@@ -18,7 +18,7 @@ import type {
 } from '@/use-cases/enrollments/schemas'
 import { requireSchoolAdmin } from './auth-helper'
 
-type CreateEnrollmentInput = Omit<z.infer<typeof createEnrollmentSchema>, 'schoolId'>
+type CreateEnrollmentInput = Omit<z.input<typeof createEnrollmentSchema>, 'schoolId'>
 type ActivateEnrollmentInput = Omit<z.infer<typeof enrollmentIdSchema>, 'schoolId'>
 type CompleteEnrollmentInput = Omit<z.infer<typeof enrollmentIdSchema>, 'schoolId'>
 type ReassignClassInput = Omit<z.infer<typeof reassignClassSchema>, 'schoolId'>
@@ -40,6 +40,7 @@ export async function activateEnrollmentAction(data: ActivateEnrollmentInput) {
   const result = await activateEnrollment({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
+  revalidatePath('/dashboard')
   return 'OK' as const
 }
 

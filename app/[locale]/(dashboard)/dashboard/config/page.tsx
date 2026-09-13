@@ -28,9 +28,7 @@ type Props = {
   params: Promise<{ locale: string }>
 }
 
-// automatic_promotion drives no feature (the promotion use case has no UI trigger), so it is
-// hidden from the admin page instead of exposing a setting that has no effect.
-const HIDDEN_CONFIG_NAMES = new Set(['automatic_promotion'])
+const AUTOMATIC_PROMOTION_CONFIG_KEY = 'automatic_promotion'
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
@@ -77,9 +75,9 @@ export default async function ConfigPage({ params }: Props) {
     createdAt: new Date(0),
     updatedAt: new Date(0),
   }))
-  const configs = [...dbConfigs, ...missingKnownConfigs]
-    .filter((config) => !HIDDEN_CONFIG_NAMES.has(config.name))
-    .sort((a, b) => a.name.localeCompare(b.name))
+  const configs = [...dbConfigs, ...missingKnownConfigs].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  )
   const knownConfig: Record<string, { label: string; description?: string }> = {
     [BRANDING_CONFIG_KEYS.logoUrl]: { label: t('known.logo') },
     [BRANDING_CONFIG_KEYS.faviconUrl]: { label: t('known.favicon') },
@@ -94,6 +92,10 @@ export default async function ConfigPage({ params }: Props) {
     [TEACHER_EXPENSES_CONFIG_KEY]: {
       label: t('known.teacherExpenses'),
       description: t('descriptions.teacherExpenses'),
+    },
+    [AUTOMATIC_PROMOTION_CONFIG_KEY]: {
+      label: t('known.automaticPromotion'),
+      description: t('descriptions.automaticPromotion'),
     },
   }
 

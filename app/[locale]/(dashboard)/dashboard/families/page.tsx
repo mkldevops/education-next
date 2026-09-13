@@ -4,6 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { calculateFamilyBalance } from '@/use-cases/payments/family-balance'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
 import { FamiliesDataTable, type FamilyRow } from './_components/families-data-table'
@@ -12,6 +13,9 @@ type Props = {
   params: Promise<{ locale: string }>
   searchParams: Promise<{ action?: string }>
 }
+
+/** Paiements listés dans le popover d'une ligne ; au-delà, un compteur prend le relais. */
+const PAYMENTS_PREVIEWED = 5
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
@@ -53,7 +57,16 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
                 select: {
                   enrollments: {
                     where: { status: { in: ['PENDING', 'ACTIVE'] } },
-                    select: { id: true },
+                    select: {
+                      id: true,
+                      status: true,
+                      totalAmount: true,
+                      discount: true,
+                      payments: {
+                        where: { isActive: true },
+                        select: { amount: true, method: true, paidAt: true, cashedAt: true },
+                      },
+                    },
                   },
                 },
               },
@@ -65,17 +78,32 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
     orderBy: { name: 'asc' },
   })
 
-  const familyRows: FamilyRow[] = families.map((family) => ({
-    id: family.id,
-    name: family.name,
-    emergencyContactName: family.emergencyContactName,
-    emergencyContactPhone: family.emergencyContactPhone,
-    studentCount: family.persons.filter((fp) => fp.person.student).length,
-    enrollmentCount: family.persons.reduce(
-      (sum, fp) => sum + (fp.person.student?.enrollments.length ?? 0),
-      0
-    ),
-  }))
+  const familyRows: FamilyRow[] = families.map((family) => {
+    const enrollments = family.persons.flatMap((fp) => fp.person.student?.enrollments ?? [])
+    const balance = calculateFamilyBalance(enrollments)
+    const payments = enrollments
+      .flatMap((enrollment) => enrollment.payments)
+      .sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime())
+
+    return {
+      id: family.id,
+      name: family.name,
+      emergencyContactName: family.emergencyContactName,
+      emergencyContactPhone: family.emergencyContactPhone,
+      studentCount: family.persons.filter((fp) => fp.person.student).length,
+      enrollmentCount: enrollments.length,
+      due: balance.totalAmount,
+      paid: balance.totalPaid,
+      remaining: balance.remainingBalance,
+      payments: payments.slice(0, PAYMENTS_PREVIEWED).map((payment) => ({
+        amount: Number(payment.amount),
+        method: payment.method,
+        paidAt: payment.paidAt,
+        cashedAt: payment.cashedAt,
+      })),
+      paymentCount: payments.length,
+    }
+  })
 
   return (
     <div className="space-y-6">

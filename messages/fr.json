@@ -140,6 +140,7 @@
     "table": {
       "student": "Élève",
       "plan": "Plan",
+      "class": "Classe",
       "status": "Statut",
       "payment": "Paiement",
       "date": "Date"
@@ -157,6 +158,20 @@
       "remainingBalance": "Solde de la famille",
       "scopeAll": "Toutes périodes",
       "scopePeriod": "Période {period}"
+    },
+    "insights": {
+      "remaining": "Reste à encaisser",
+      "familiesCount": "{count, plural, =0 {aucune famille} one {# famille} other {# familles}}",
+      "collectionTitle": "Encaissements de l'année",
+      "viewPayments": "Voir les encaissements",
+      "collected": "Encaissé",
+      "collectionRate": "Taux de recouvrement",
+      "noCollection": "Aucun encaissement sur ce périmètre",
+      "classFillTitle": "Remplissage des classes",
+      "viewClasses": "Voir les classes",
+      "noClasses": "Aucune classe sur cette période",
+      "levelsTitle": "Élèves par niveau",
+      "studentsCount": "{count, plural, =0 {aucun élève} one {# élève} other {# élèves}}"
     },
     "breadcrumbs": {
       "dashboard": "Tableau de bord",
@@ -211,6 +226,14 @@
         "emergencyContact": "Contact d'urgence",
         "students": "Élèves",
         "enrollments": "Inscriptions",
+        "noEmergencyContact": "Aucun contact",
+        "remaining": "Reste à payer",
+        "paymentsSummary": "{paid} réglés sur {due}",
+        "paymentDetails": "Derniers règlements",
+        "noPayments": "Aucun règlement enregistré",
+        "notCashed": "non encaissé",
+        "morePayments": "{count, plural, one {# règlement plus ancien} other {# règlements plus anciens}}",
+        "viewFamily": "Voir la fiche famille",
         "members": "Membres",
         "relation": "Relation",
         "authorizedPickup": "Personnes autorisées",
@@ -353,6 +376,9 @@
         "title": "Élèves",
         "name": "Nom",
         "birthday": "Date de naissance",
+        "age": "Âge",
+        "ageValue": "{age} ans",
+        "enroll": "Inscrire",
         "family": "Famille",
         "class": "Classe",
         "birthplace": "Lieu de naissance",
@@ -501,6 +527,8 @@
         "none": "Aucun",
         "noLevels": "Aucun niveau enregistré",
         "promotionChain": "Chaîne de progression",
+        "openPeriodOnly": "Uniquement les niveaux avec une classe en {period}",
+        "hiddenLevels": "({count} masqués)",
         "create": {
           "title": "Nouveau niveau",
           "name": "Nom",
@@ -531,6 +559,23 @@
             "levelInUse": "Des classes utilisent ce niveau : supprimez-les d'abord",
             "circularReference": "Cette progression créerait une boucle",
             "notFound": "Niveau introuvable",
+            "validationError": "Vérifiez les informations saisies"
+          }
+        },
+        "generateClass": {
+          "trigger": "Générer une classe",
+          "title": "Générer une classe pour {level}",
+          "description": "Aucune classe de {level} sur la période {period}. Elle sera créée sans enseignant ; affectez-le depuis la fiche de la classe.",
+          "name": "Nom de la classe",
+          "capacity": "Capacité",
+          "capacityHint": "Reprend la configuration max_students_per_class de l'école.",
+          "cancel": "Annuler",
+          "submit": "Générer",
+          "success": "Classe créée",
+          "error": "Erreur lors de la création de la classe",
+          "errors": {
+            "duplicateName": "Une classe porte déjà ce nom sur cette période",
+            "notFound": "Niveau ou période introuvable",
             "validationError": "Vérifiez les informations saisies"
           }
         }
@@ -611,16 +656,19 @@
           "noClassInPeriod": "Aucune classe sur la période sélectionnée. Créez une classe ou changez de période.",
           "discount": "Réduction (€)",
           "canLeaveAlone": "Autorisé à partir seul",
+          "replaceExisting": "Remplacer l'inscription existante de la période",
+          "replaceExistingHint": "L'inscription en cours est annulée puis recréée. Impossible si elle a déjà reçu un paiement.",
           "cancel": "Annuler",
           "submit": "Inscrire",
           "success": "Inscription créée",
           "error": "Erreur lors de l'inscription",
           "errors": {
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
-            "duplicateEnrollment": "Cet élève est déjà inscrit dans cette classe",
+            "duplicateEnrollment": "Cet élève a déjà une inscription sur cette période. Cochez « Remplacer l'inscription existante » pour la recréer.",
             "classFull": "Cette classe est complète",
             "notFound": "Élève, plan ou classe introuvable",
-            "validationError": "Vérifiez les informations saisies"
+            "validationError": "Vérifiez les informations saisies",
+            "existingEnrollmentPaid": "L'inscription existante a déjà reçu un paiement : remboursez-la ou annulez-la manuellement avant d'en recréer une."
           }
         },
         "drawer": {
@@ -666,6 +714,24 @@
         "pending": "En attente",
         "noPayments": "Aucun paiement enregistré",
         "noPaymentsInPeriod": "Aucun paiement sur la période {period}. Enregistrez un paiement ou changez de période.",
+        "stats": {
+          "due": "Total dû",
+          "collected": "Encaissé",
+          "remaining": "Reste à payer",
+          "uncashed": "Chèques à encaisser",
+          "collectionRate": "Taux de recouvrement",
+          "paymentsCount": "{count, plural, =0 {aucun paiement} one {# paiement} other {# paiements}}",
+          "outstandingEnrollments": "{outstanding, plural, =0 {aucune inscription non soldée} one {# inscription non soldée} other {# inscriptions non soldées}} sur {total}",
+          "uncashedCount": "{count, plural, =0 {aucun chèque en attente} one {# chèque remis} other {# chèques remis}}",
+          "monthlyTitle": "Évolution des encaissements",
+          "monthlySubtitle": "{months} derniers mois",
+          "methodsTitle": "Répartition par mode de paiement",
+          "outstandingTitle": "Familles à relancer",
+          "outstandingSubtitle": "Restant dû décroissant",
+          "outOf": "sur {amount}",
+          "noCollection": "Aucun encaissement sur ce périmètre",
+          "noOutstanding": "Toutes les familles sont à jour"
+        },
         "summary": {
           "remaining": "Solde restant",
           "upToDate": "À jour",
@@ -768,12 +834,14 @@
           "favicon": "Favicon",
           "maxStudentsPerClass": "Élèves maximum par classe",
           "teacherExpenses": "Notes de frais enseignants",
-          "themePrimary": "Couleur principale"
+          "themePrimary": "Couleur principale",
+          "automaticPromotion": "Promotion automatique"
         },
         "descriptions": {
           "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe.",
           "teacherExpenses": "Active la saisie des notes de frais des enseignants.",
-          "themePrimary": "Couleur principale de l'interface, au format hexadécimal."
+          "themePrimary": "Couleur principale de l'interface, au format hexadécimal.",
+          "automaticPromotion": "Promotion des élèves vers la période suivante. Aucun déclencheur dans l'interface à ce jour : le réglage est conservé mais reste sans effet."
         },
         "create": {
           "title": "Nouveau paramètre",
@@ -917,7 +985,6 @@
           "birthday": "Date de naissance",
           "allergies": "Allergies",
           "languages": "Langues",
-          "class": "Classe",
           "noClass": "Aucune classe",
           "assignClass": "Affecter une classe",
           "changeClass": "Changer de classe",
@@ -929,7 +996,14 @@
           "remaining": "{amount} restant",
           "age": "{age} ans",
           "paymentProgress": "Progression du paiement pour {plan}",
-          "activate": "Activer"
+          "activate": "Activer",
+          "menu": {
+            "label": "Actions de l'inscription",
+            "viewEnrollment": "Voir l'inscription",
+            "viewClass": "Voir la classe",
+            "viewStudent": "Voir l'élève",
+            "previousEnrollments": "Autres inscriptions"
+          }
         },
         "payments": {
           "amount": "Montant",
@@ -1388,7 +1462,6 @@
           "notPaid": "Non réglé",
           "empty": "Aucune note de frais",
           "descriptionText": "Notes de frais demandées par un enseignant : nourriture, goûter, achat de biens, matériel ou autre dépense.",
-          "disabled": "Activez la configuration teacher_expenses_enabled pour saisir les notes de frais.",
           "create": {
             "title": "Nouvelle note de frais",
             "teacher": "Enseignant",

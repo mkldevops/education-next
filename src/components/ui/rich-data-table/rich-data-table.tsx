@@ -17,7 +17,7 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown, ChevronsUpDown, ChevronUp } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { cn } from '@/components/ui/utils'
 
@@ -47,6 +47,13 @@ export interface RichDataTableProps<T> {
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50]
 
+/**
+ * Préférence partagée par toutes les tables : un choix fait sur une liste vaut pour les autres.
+ * Elle est lue après le premier rendu, jamais pendant, sinon le HTML serveur et le client
+ * divergeraient.
+ */
+const PAGE_SIZE_STORAGE_KEY = 'peaklab.table.pageSize'
+
 export function RichDataTable<T>({
   data,
   columns,
@@ -68,6 +75,15 @@ export function RichDataTable<T>({
     pageSize: initialPageSize,
   })
   const [columnVisibilityOpen, setColumnVisibilityOpen] = useState(false)
+
+  useEffect(() => {
+    if (!enablePagination) return
+    const stored = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY))
+    if (!pageSizeOptions.includes(stored)) return
+    setPagination((current) =>
+      current.pageSize === stored ? current : { pageIndex: 0, pageSize: stored }
+    )
+  }, [enablePagination, pageSizeOptions])
 
   const effectivePagination = enablePagination
     ? pagination
@@ -222,7 +238,11 @@ export function RichDataTable<T>({
             <span>{labels.rowsPerPage}</span>
             <select
               value={pagination.pageSize}
-              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              onChange={(e) => {
+                const size = Number(e.target.value)
+                window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(size))
+                table.setPageSize(size)
+              }}
               className="border border-alabaster-700 rounded px-2 py-1 text-sm bg-white"
             >
               {pageSizeOptions.map((size) => (

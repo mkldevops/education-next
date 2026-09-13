@@ -11,7 +11,7 @@ const classPeriodGatewayMock = {
   countEnrolled: vi.fn(),
 }
 const enrollmentGatewayMock = {
-  findDuplicate: vi.fn(),
+  findActiveInPeriod: vi.fn(),
 }
 const dbMock = {
   $transaction: vi.fn(),
@@ -48,7 +48,7 @@ describe('createEnrollment', () => {
     planGatewayMock.findById = vi.fn()
     classPeriodGatewayMock.findById = vi.fn()
     classPeriodGatewayMock.countEnrolled = vi.fn()
-    enrollmentGatewayMock.findDuplicate = vi.fn()
+    enrollmentGatewayMock.findActiveInPeriod = vi.fn()
     dbMock.$transaction = vi.fn(async (cb) => {
       const tx = {
         classAssignment: { count: vi.fn().mockResolvedValue(0), create: vi.fn() },
@@ -124,27 +124,107 @@ describe('createEnrollment', () => {
     expect(result).toBe('notFound')
   })
 
-  it('should fail with duplicate enrollment', async () => {
-    studentGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
-    planGatewayMock.findById.mockResolvedValue({
-      id: '550e8400-e29b-41d4-a716-446655440001',
-      amount: 100,
-    })
+  const validInput = {
+    schoolId,
+    studentId: '550e8400-e29b-41d4-a716-446655440000',
+    planId: '550e8400-e29b-41d4-a716-446655440001',
+    classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
+    discount: 0,
+    canLeaveAlone: false,
+  }
+
+  function mockValidReferences() {
+    studentGatewayMock.findById.mockResolvedValue({ id: validInput.studentId })
+    planGatewayMock.findById.mockResolvedValue({ id: validInput.planId, amount: 100 })
     classPeriodGatewayMock.findById.mockResolvedValue({
-      id: '550e8400-e29b-41d4-a716-446655440002',
+      id: validInput.classPeriodId,
       capacity: 10,
     })
-    enrollmentGatewayMock.findDuplicate.mockResolvedValue(true)
+  }
 
-    const result = await createEnrollment({
-      schoolId,
-      studentId: '550e8400-e29b-41d4-a716-446655440000',
-      planId: '550e8400-e29b-41d4-a716-446655440001',
-      classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
-      discount: 0,
-      canLeaveAlone: false,
+  it('should fail with duplicate enrollment', async () => {
+    mockValidReferences()
+    enrollmentGatewayMock.findActiveInPeriod.mockResolvedValue({
+      id: 'existing',
+      status: 'ACTIVE',
+      _count: { payments: 0 },
     })
 
-    expect(result).toBe('duplicateEnrollment')
+    expect(await createEnrollment(validInput)).toBe('duplicateEnrollment')
+  })
+
+  it('cancels the existing enrollment when the caller asks to replace it', async () => {
+    mockValidReferences()
+    enrollmentGatewayMock.findActiveInPeriod.mockResolvedValue({
+      id: 'existing',
+      status: 'ACTIVE',
+      _count: { payments: 0 },
+    })
+    const updateMany = vi.fn()
+    const update = vi.fn()
+    dbMock.$transaction = vi.fn(async (cb) =>
+      cb({
+        classAssignment: { updateMany, count: vi.fn().mockResolvedValue(0), create: vi.fn() },
+        enrollment: { update, create: vi.fn().mockResolvedValue({ id: 'created' }) },
+      })
+    )
+
+    const result = await createEnrollment({ ...validInput, replaceExisting: true })
+
+    expect(result).toEqual({ id: 'created' })
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { schoolId, enrollmentId: 'existing', endAt: null },
+      data: { endAt: expect.any(Date) },
+    })
+    expect(update).toHaveBeenCalledWith({
+      where: { id_schoolId: { id: 'existing', schoolId } },
+      data: { status: 'CANCELLED' },
+    })
+  })
+
+  it('rolls back the cancellation when the target class turns out to be full', async () => {
+    mockValidReferences()
+    enrollmentGatewayMock.findActiveInPeriod.mockResolvedValue({
+      id: 'existing',
+      status: 'ACTIVE',
+      _count: { payments: 0 },
+    })
+    const update = vi.fn()
+    // Une transaction interactive Prisma n'est validée que si le callback résout : `committed`
+    // reproduit cette sémantique, qu'un simple `cb(tx)` effacerait.
+    let committed = false
+    dbMock.$transaction = vi.fn(async (cb) => {
+      const result = await cb({
+        classAssignment: {
+          updateMany: vi.fn(),
+          count: vi.fn().mockResolvedValue(10),
+          create: vi.fn(),
+        },
+        enrollment: { update, create: vi.fn() },
+      })
+      committed = true
+      return result
+    })
+
+    const result = await createEnrollment({ ...validInput, replaceExisting: true })
+
+    expect(result).toBe('classFull')
+    // L'annulation a bien été écrite dans la transaction, mais celle-ci n'a jamais été validée :
+    // l'élève garde son inscription au lieu de se retrouver sans aucune.
+    expect(update).toHaveBeenCalled()
+    expect(committed).toBe(false)
+  })
+
+  it('refuses to replace an enrollment that already received a payment', async () => {
+    mockValidReferences()
+    enrollmentGatewayMock.findActiveInPeriod.mockResolvedValue({
+      id: 'existing',
+      status: 'ACTIVE',
+      _count: { payments: 1 },
+    })
+
+    expect(await createEnrollment({ ...validInput, replaceExisting: true })).toBe(
+      'existingEnrollmentPaid'
+    )
   })
 })

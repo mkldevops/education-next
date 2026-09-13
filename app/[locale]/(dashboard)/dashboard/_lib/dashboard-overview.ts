@@ -2,6 +2,7 @@ import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import type { SchoolScope } from '../../_lib/auth-helper'
+import { getSchoolInsights, type SchoolInsights } from './school-insights'
 
 /**
  * Compteurs, inscriptions récentes et solde parent d'une école, tous scopés par `scope`.
@@ -16,60 +17,73 @@ export async function getDashboardOverview(scope: SchoolScope) {
     : {}
   const familyScope = { some: scope.isAdmin ? {} : { familyId: scope.familyId } }
 
-  const [familyCount, studentCount, enrollmentCount, pendingPaymentCount, recentEnrollments] =
-    await Promise.all([
-      db.family.count({
-        where: {
-          schoolId: scope.schoolId,
-          isActive: true,
-          ...(scope.isAdmin ? {} : { id: scope.familyId }),
-        },
-      }),
-      db.student.count({
-        where: {
-          schoolId: scope.schoolId,
-          isActive: true,
-          person: { families: familyScope },
-        },
-      }),
-      db.enrollment.count({
-        where: {
-          schoolId: scope.schoolId,
-          status: { in: ['PENDING', 'ACTIVE'] },
-          isActive: true,
-          ...periodFilter,
-          student: { person: { families: familyScope } },
-        },
-      }),
-      db.enrollment.count({
-        where: {
-          schoolId: scope.schoolId,
-          status: 'PENDING',
-          isActive: true,
-          ...periodFilter,
-          student: { person: { families: familyScope } },
-        },
-      }),
-      db.enrollment.findMany({
-        where: {
-          schoolId: scope.schoolId,
-          isActive: true,
-          ...periodFilter,
-          ...(scope.isAdmin ? {} : { student: { person: { families: familyScope } } }),
-        },
-        include: {
-          student: {
-            include: {
-              person: true,
-            },
+  const [
+    familyCount,
+    studentCount,
+    enrollmentCount,
+    pendingPaymentCount,
+    recentEnrollments,
+    insights,
+  ] = await Promise.all([
+    db.family.count({
+      where: {
+        schoolId: scope.schoolId,
+        isActive: true,
+        ...(scope.isAdmin ? {} : { id: scope.familyId }),
+      },
+    }),
+    db.student.count({
+      where: {
+        schoolId: scope.schoolId,
+        isActive: true,
+        person: { families: familyScope },
+      },
+    }),
+    db.enrollment.count({
+      where: {
+        schoolId: scope.schoolId,
+        status: { in: ['PENDING', 'ACTIVE'] },
+        isActive: true,
+        ...periodFilter,
+        student: { person: { families: familyScope } },
+      },
+    }),
+    db.enrollment.count({
+      where: {
+        schoolId: scope.schoolId,
+        status: 'PENDING',
+        isActive: true,
+        ...periodFilter,
+        student: { person: { families: familyScope } },
+      },
+    }),
+    db.enrollment.findMany({
+      where: {
+        schoolId: scope.schoolId,
+        isActive: true,
+        ...periodFilter,
+        ...(scope.isAdmin ? {} : { student: { person: { families: familyScope } } }),
+      },
+      include: {
+        student: {
+          include: {
+            person: true,
           },
-          plan: true,
-          payments: true,
         },
-        orderBy: { registeredAt: 'desc' },
-        take: 5,
-      }),
-    ])
+        plan: true,
+        payments: true,
+        classAssignments: {
+          include: { classPeriod: { include: { level: true } } },
+          orderBy: { startAt: 'desc' },
+        },
+      },
+      orderBy: { registeredAt: 'desc' },
+      take: 5,
+    }),
+    scope.isAdmin
+      ? getSchoolInsights(scope.schoolId, selectedPeriod?.id ?? null)
+      : Promise.resolve<SchoolInsights | null>(null),
+  ])
 
   return {
     selectedPeriod,
@@ -79,5 +93,6 @@ export async function getDashboardOverview(scope: SchoolScope) {
     pendingPaymentCount,
     recentEnrollments,
     parentBalance: scope.isAdmin ? null : await getFamilyBalance(scope.schoolId, scope.familyId),
+    insights,
   }
 }

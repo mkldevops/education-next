@@ -7,6 +7,8 @@ export const createEnrollmentSchema = z.object({
   classPeriodId: z.string().uuid(),
   discount: z.number().min(0).default(0),
   canLeaveAlone: z.boolean().default(false),
+  /** Annule l'inscription en cours de la même période au lieu de refuser le doublon. */
+  replaceExisting: z.boolean().default(false),
 })
 
 export const enrollmentIdSchema = z.object({

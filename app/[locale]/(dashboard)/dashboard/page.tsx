@@ -1,5 +1,5 @@
 import { Card, type Column, DataTable, ProgressBar, StatusDot } from '@peaklab/ui'
-import { AlertCircle, TrendingUp, Users } from 'lucide-react'
+import { AlertCircle, TrendingUp, Users, Wallet } from 'lucide-react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { connection } from 'next/server'
@@ -12,8 +12,10 @@ import { formatCurrency } from '@/lib/decimal'
 import { getSchoolContext } from '@/lib/school-context'
 import { isStripeConfigured } from '@/lib/stripe'
 import { requireSchoolScope } from '../_lib/auth-helper'
+import { SchoolInsightsSection } from './_components/school-insights'
 import { UnlinkedParentNotice } from './_components/unlinked-parent-notice'
 import { getDashboardOverview } from './_lib/dashboard-overview'
+import { ActivateEnrollmentButton } from './families/[id]/_components/activate-enrollment-button'
 import { OnlinePaymentButton } from './families/[id]/_components/online-payment-button'
 
 type Props = {
@@ -60,6 +62,7 @@ export default async function DashboardPage({ params }: Props) {
     pendingPaymentCount,
     recentEnrollments,
     parentBalance,
+    insights,
   } = await getDashboardOverview(scope)
 
   const periodScope = selectedPeriod
@@ -72,9 +75,12 @@ export default async function DashboardPage({ params }: Props) {
       key: 'student',
       header: t('table.student'),
       render: (item) => (
-        <span className="font-medium">
+        <Link
+          href={`/dashboard/students/${item.student.id}`}
+          className="font-medium text-primary hover:text-primary-hover"
+        >
           {item.student.person.name} {item.student.person.lastname}
-        </span>
+        </Link>
       ),
     },
     {
@@ -82,6 +88,23 @@ export default async function DashboardPage({ params }: Props) {
       header: t('table.plan'),
       className: 'text-graphite-600',
       render: (item) => item.plan.name,
+    },
+    {
+      key: 'class',
+      header: t('table.class'),
+      className: 'text-graphite-600',
+      render: (item) => {
+        const current = item.classAssignments.find((assignment) => !assignment.endAt)
+        if (!current) return '—'
+        return (
+          <Link
+            href={`/dashboard/classes/${current.classPeriod.id}`}
+            className="text-primary hover:text-primary-hover"
+          >
+            {current.classPeriod.level.name}
+          </Link>
+        )
+      },
     },
     {
       key: 'status',
@@ -109,6 +132,19 @@ export default async function DashboardPage({ params }: Props) {
       className: 'text-graphite-600',
       render: (item) => formatDate(item.registeredAt, locale),
     },
+    ...(isAdmin
+      ? [
+          {
+            key: 'actions',
+            header: '',
+            className: 'text-right',
+            render: (item) =>
+              item.status === 'PENDING' ? (
+                <ActivateEnrollmentButton enrollmentId={item.id} />
+              ) : null,
+          } satisfies Column<(typeof recentEnrollments)[number]>,
+        ]
+      : []),
   ]
 
   return (
@@ -141,16 +177,20 @@ export default async function DashboardPage({ params }: Props) {
             : '-mt-14 grid gap-5 md:grid-cols-3'
         }
       >
-        {isAdmin && (
-          <Card className="rounded border border-alabaster-700 bg-white p-5">
+        {isAdmin && insights && (
+          <Card className="rounded border border-amber-200 bg-white p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-graphite-600">{t('stats.families')}</p>
-                <p className="mt-2 text-3xl font-bold text-graphite">{familyCount}</p>
-                <p className="mt-1 text-xs text-graphite-600">{t('stats.scopeAll')}</p>
+                <p className="text-sm font-medium text-graphite-600">{t('insights.remaining')}</p>
+                <p className="mt-2 text-3xl font-bold text-graphite">
+                  {formatCurrency(insights.payments.totals.remaining, locale)}
+                </p>
+                <p className="mt-1 text-xs text-graphite-600">
+                  {t('insights.familiesCount', { count: familyCount })}
+                </p>
               </div>
-              <div className="rounded bg-primary-light p-3">
-                <TrendingUp className="h-6 w-6 text-primary" />
+              <div className="rounded bg-amber-100 p-3">
+                <Wallet className="h-6 w-6 text-amber-600" />
               </div>
             </div>
           </Card>
@@ -211,6 +251,8 @@ export default async function DashboardPage({ params }: Props) {
           </Card>
         )}
       </div>
+
+      {insights && <SchoolInsightsSection insights={insights} locale={locale} />}
 
       <Card className="rounded border border-alabaster-700">
         <div className="flex items-center justify-between px-6 pt-6">

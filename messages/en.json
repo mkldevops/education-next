@@ -140,6 +140,7 @@
     "table": {
       "student": "Student",
       "plan": "Plan",
+      "class": "Class",
       "status": "Status",
       "payment": "Payment",
       "date": "Date"
@@ -157,6 +158,20 @@
       "remainingBalance": "Family balance",
       "scopeAll": "All periods",
       "scopePeriod": "{period} period"
+    },
+    "insights": {
+      "remaining": "Left to collect",
+      "familiesCount": "{count, plural, =0 {no family} one {# family} other {# families}}",
+      "collectionTitle": "Collection this year",
+      "viewPayments": "View payments",
+      "collected": "Collected",
+      "collectionRate": "Collection rate",
+      "noCollection": "No payment collected in this scope",
+      "classFillTitle": "Class fill",
+      "viewClasses": "View classes",
+      "noClasses": "No class in this period",
+      "levelsTitle": "Students per level",
+      "studentsCount": "{count, plural, =0 {no student} one {# student} other {# students}}"
     },
     "breadcrumbs": {
       "dashboard": "Dashboard",
@@ -211,6 +226,14 @@
         "emergencyContact": "Emergency Contact",
         "students": "Students",
         "enrollments": "Enrollments",
+        "noEmergencyContact": "No contact",
+        "remaining": "Remaining",
+        "paymentsSummary": "{paid} paid of {due}",
+        "paymentDetails": "Latest payments",
+        "noPayments": "No payment recorded",
+        "notCashed": "not cashed",
+        "morePayments": "{count, plural, one {# older payment} other {# older payments}}",
+        "viewFamily": "View family page",
         "members": "Members",
         "relation": "Relation",
         "authorizedPickup": "Authorized Pickup",
@@ -353,6 +376,9 @@
         "title": "Students",
         "name": "Name",
         "birthday": "Birthday",
+        "age": "Age",
+        "ageValue": "{age} yrs",
+        "enroll": "Enroll",
         "family": "Family",
         "class": "Class",
         "birthplace": "Birthplace",
@@ -501,6 +527,8 @@
         "none": "None",
         "noLevels": "No levels registered",
         "promotionChain": "Promotion Chain",
+        "openPeriodOnly": "Only levels with a class in {period}",
+        "hiddenLevels": "({count} hidden)",
         "create": {
           "title": "New Level",
           "name": "Name",
@@ -532,6 +560,23 @@
             "circularReference": "This progression would create a loop",
             "notFound": "Level not found",
             "validationError": "Check the information entered"
+          }
+        },
+        "generateClass": {
+          "trigger": "Generate a class",
+          "title": "Generate a class for {level}",
+          "description": "No {level} class exists for the {period} period. It will be created without a teacher; assign one from the class page.",
+          "name": "Class name",
+          "capacity": "Capacity",
+          "capacityHint": "Uses the school max_students_per_class setting.",
+          "cancel": "Cancel",
+          "submit": "Generate",
+          "success": "Class created",
+          "error": "Error while creating the class",
+          "errors": {
+            "duplicateName": "A class already has this name for this period",
+            "notFound": "Level or period not found",
+            "validationError": "Check the information you entered"
           }
         }
       },
@@ -611,16 +656,19 @@
           "noClassInPeriod": "No class in the selected period. Create a class or switch period.",
           "discount": "Discount (€)",
           "canLeaveAlone": "Can leave alone",
+          "replaceExisting": "Replace the existing enrollment for this period",
+          "replaceExistingHint": "The current enrollment is cancelled, then recreated. Not possible once it has received a payment.",
           "cancel": "Cancel",
           "submit": "Enroll",
           "success": "Enrollment created",
           "error": "Error creating enrollment",
           "errors": {
             "discountExceedsPlan": "The discount exceeds the plan amount",
-            "duplicateEnrollment": "This student is already enrolled in this class",
+            "duplicateEnrollment": "This student already has an enrollment for this period. Tick “Replace the existing enrollment” to recreate it.",
             "classFull": "This class is full",
             "notFound": "Student, plan or class not found",
-            "validationError": "Check the information you entered"
+            "validationError": "Check the information you entered",
+            "existingEnrollmentPaid": "The existing enrollment already received a payment: refund or cancel it manually before recreating one."
           }
         },
         "drawer": {
@@ -666,6 +714,24 @@
         "pending": "Pending",
         "noPayments": "No payments registered",
         "noPaymentsInPeriod": "No payment in period {period}. Record a payment or switch period.",
+        "stats": {
+          "due": "Total due",
+          "collected": "Collected",
+          "remaining": "Remaining",
+          "uncashed": "Cheques to cash",
+          "collectionRate": "Collection rate",
+          "paymentsCount": "{count, plural, =0 {no payment} one {# payment} other {# payments}}",
+          "outstandingEnrollments": "{outstanding, plural, =0 {no unsettled enrollment} one {# unsettled enrollment} other {# unsettled enrollments}} of {total}",
+          "uncashedCount": "{count, plural, =0 {no pending cheque} one {# cheque handed over} other {# cheques handed over}}",
+          "monthlyTitle": "Collection trend",
+          "monthlySubtitle": "Last {months} months",
+          "methodsTitle": "Breakdown by payment method",
+          "outstandingTitle": "Families to follow up",
+          "outstandingSubtitle": "Highest remaining first",
+          "outOf": "of {amount}",
+          "noCollection": "No payment collected in this scope",
+          "noOutstanding": "Every family is up to date"
+        },
         "summary": {
           "remaining": "Remaining balance",
           "upToDate": "Up to date",
@@ -768,12 +834,14 @@
           "favicon": "Favicon",
           "maxStudentsPerClass": "Maximum students per class",
           "teacherExpenses": "Teacher expense notes",
-          "themePrimary": "Primary color"
+          "themePrimary": "Primary color",
+          "automaticPromotion": "Automatic promotion"
         },
         "descriptions": {
           "maxStudentsPerClass": "Maximum number of students allowed in a class.",
           "teacherExpenses": "Enables recording teacher expense notes.",
-          "themePrimary": "Primary interface color, in hexadecimal format."
+          "themePrimary": "Primary interface color, in hexadecimal format.",
+          "automaticPromotion": "Promotes students to the next period. No trigger exists in the interface yet: the setting is kept but has no effect."
         },
         "create": {
           "title": "New Parameter",
@@ -917,7 +985,6 @@
           "birthday": "Birthday",
           "allergies": "Allergies",
           "languages": "Languages",
-          "class": "Class",
           "noClass": "No class",
           "assignClass": "Assign a class",
           "changeClass": "Change class",
@@ -929,7 +996,14 @@
           "remaining": "{amount} remaining",
           "age": "{age} years old",
           "paymentProgress": "Payment progress for {plan}",
-          "activate": "Activate"
+          "activate": "Activate",
+          "menu": {
+            "label": "Enrollment actions",
+            "viewEnrollment": "View enrollment",
+            "viewClass": "View class",
+            "viewStudent": "View student",
+            "previousEnrollments": "Other enrollments"
+          }
         },
         "payments": {
           "amount": "Amount",
@@ -1388,7 +1462,6 @@
           "notPaid": "Unpaid",
           "empty": "No expense note",
           "descriptionText": "Expense notes requested by a teacher: food, snacks, goods purchases, supplies, or another expense.",
-          "disabled": "Enable the teacher_expenses_enabled setting to record expense notes.",
           "create": {
             "title": "New expense note",
             "teacher": "Teacher",

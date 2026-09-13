@@ -31,6 +31,9 @@ export const resolveFamily = cache((id: string) =>
                     include: {
                       enrollments: {
                         where: { isActive: true },
+                        // La carte enfant nomme « l'inscription courante » la plus récente :
+                        // sans ordre explicite, Postgres rendait un premier élément arbitraire.
+                        orderBy: { registeredAt: 'desc' },
                         include: {
                           plan: true,
                           classAssignments: {

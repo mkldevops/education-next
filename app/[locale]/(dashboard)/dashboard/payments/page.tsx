@@ -6,7 +6,9 @@ import { groupFamilyPayments } from '@/domain/payment'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { getPaymentStats } from '@/use-cases/payments/payment-stats'
 import { requireSchoolScope } from '../../_lib/auth-helper'
+import { PaymentsOverview } from './_components/payments-overview'
 import { PaymentsTable } from './_components/payments-table'
 
 type Props = {
@@ -50,22 +52,25 @@ export default async function PaymentsPage({ params }: Props) {
       : {}),
   }
 
-  const payments = await db.payment.findMany({
-    where: whereClause,
-    include: {
-      family: true,
-      enrollment: {
-        include: {
-          student: {
-            include: {
-              person: true,
+  const [payments, stats] = await Promise.all([
+    db.payment.findMany({
+      where: whereClause,
+      include: {
+        family: true,
+        enrollment: {
+          include: {
+            student: {
+              include: {
+                person: true,
+              },
             },
           },
         },
       },
-    },
-    orderBy: { paidAt: 'desc' },
-  })
+      orderBy: { paidAt: 'desc' },
+    }),
+    getPaymentStats(scope.schoolId, selectedPeriodId),
+  ])
 
   const paymentRows = groupFamilyPayments(payments).map((payment) => ({
     id: payment.id,
@@ -93,6 +98,7 @@ export default async function PaymentsPage({ params }: Props) {
         ]}
       />
       <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
+      <PaymentsOverview stats={stats} locale={locale} periodName={selectedPeriod?.name ?? null} />
       <PaymentsTable
         payments={paymentRows}
         locale={locale}

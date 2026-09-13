@@ -2,9 +2,11 @@ import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { StudentsDataTable } from './_components/students-data-table'
+import { getStudentDialogData } from './[id]/_lib/student-detail'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -30,6 +32,7 @@ export default async function StudentsPage({ params }: Props) {
 
   const isAdmin = scope.isAdmin
   const whereFamilies = scope.isAdmin ? undefined : { some: { familyId: scope.familyId } }
+  const selectedPeriod = await getSelectedPeriod(scope.schoolId)
 
   const students = await db.student.findMany({
     where: {
@@ -48,12 +51,17 @@ export default async function StudentsPage({ params }: Props) {
         },
       },
       enrollments: {
-        where: { status: { in: ['PENDING', 'ACTIVE'] } },
+        where: {
+          status: { in: ['PENDING', 'ACTIVE'] },
+          ...(selectedPeriod
+            ? { classAssignments: { some: { classPeriod: { periodId: selectedPeriod.id } } } }
+            : {}),
+        },
         select: {
           classAssignments: {
             where: { endAt: null },
             select: {
-              classPeriod: { select: { name: true } },
+              classPeriod: { select: { level: { select: { name: true } } } },
             },
           },
         },
@@ -61,6 +69,14 @@ export default async function StudentsPage({ params }: Props) {
     },
     orderBy: { person: { lastname: 'asc' } },
   })
+
+  // Le dialogue d'inscription est monté une seule fois pour toute la table : plans et classes
+  // sont donc chargés ici, pas par ligne.
+  const { plans, classes } = await getStudentDialogData(
+    scope.schoolId,
+    isAdmin,
+    selectedPeriod?.id ?? null
+  )
 
   return (
     <div className="space-y-6">
@@ -71,7 +87,16 @@ export default async function StudentsPage({ params }: Props) {
         ]}
       />
       <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-      <StudentsDataTable data={students} locale={locale} isAdmin={isAdmin} />
+      <StudentsDataTable
+        data={students}
+        locale={locale}
+        isAdmin={isAdmin}
+        plans={plans.map((plan) => ({ id: plan.id, name: plan.name }))}
+        classes={classes.map((classPeriod) => ({
+          id: classPeriod.id,
+          name: `${classPeriod.name} (${classPeriod.level.name} — ${classPeriod.period.name})`,
+        }))}
+      />
     </div>
   )
 }

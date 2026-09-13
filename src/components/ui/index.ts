@@ -2,6 +2,8 @@
 
 // Balance Badge
 export { BalanceBadge, type BalanceBadgeProps } from './balance-badge'
+// Bar Chart
+export { BarChart, type BarChartPoint, type BarChartProps } from './bar-chart'
 // Breadcrumbs
 export { type BreadcrumbItem, Breadcrumbs } from './breadcrumbs'
 // Button
@@ -21,6 +23,8 @@ export {
   CardTitle,
   type CardTitleProps,
 } from './card'
+// Circle Progress
+export { CircleProgress, type CircleProgressProps } from './circle-progress'
 // Confirm Dialog
 export { ConfirmDialog, type ConfirmDialogProps } from './confirm-dialog'
 // Data Table

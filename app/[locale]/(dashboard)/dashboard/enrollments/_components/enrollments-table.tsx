@@ -65,6 +65,23 @@ export function EnrollmentsTable({
       id: 'status',
       header: t('status'),
       accessorFn: (row) => row.status,
+      cell: ({ row }) => <EnrollmentStatusBadge status={row.original.status} />,
+      enableSorting: true,
+    },
+    {
+      id: 'class',
+      header: t('class'),
+      accessorFn: (row) =>
+        row.classAssignments.find((a) => !a.endAt)?.classPeriod.level.name ?? '-',
+      cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
+      enableSorting: true,
+    },
+    {
+      id: 'totalAmount',
+      header: t('totalAmount'),
+      accessorFn: (row) => toNumber(row.totalAmount),
+      // Le montant dû et ce qu'il en reste se lisent ensemble : séparer les deux obligeait à
+      // faire l'aller-retour entre la colonne du statut et celle du total.
       cell: ({ row }) => {
         const remaining = calculateRemainingBalance(
           toNumber(row.original.totalAmount),
@@ -72,7 +89,9 @@ export function EnrollmentsTable({
         )
         return (
           <div className="flex flex-wrap items-center gap-2">
-            <EnrollmentStatusBadge status={row.original.status} />
+            <span className="text-graphite">
+              {formatCurrency(row.original.totalAmount, locale)}
+            </span>
             {remaining > 0 && (
               <BalanceBadge
                 label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
@@ -81,22 +100,6 @@ export function EnrollmentsTable({
           </div>
         )
       },
-      enableSorting: true,
-    },
-    {
-      id: 'class',
-      header: t('class'),
-      accessorFn: (row) => row.classAssignments.find((a) => !a.endAt)?.classPeriod.name ?? '-',
-      cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
-      enableSorting: true,
-    },
-    {
-      id: 'totalAmount',
-      header: t('totalAmount'),
-      accessorFn: (row) => toNumber(row.totalAmount),
-      cell: ({ row }) => (
-        <span className="text-graphite">{formatCurrency(row.original.totalAmount, locale)}</span>
-      ),
       enableSorting: true,
     },
   ]

@@ -62,6 +62,16 @@ export default async function StudentDetailPage({ params }: Props) {
 
   const { plans, classes } = await getStudentDialogData(student.schoolId, isAdmin, selectedPeriodId)
 
+  const isEnrolledInSelectedPeriod =
+    selectedPeriodId !== null &&
+    student.enrollments.some(
+      (enrollment) =>
+        (enrollment.status === 'PENDING' || enrollment.status === 'ACTIVE') &&
+        enrollment.classAssignments.some(
+          (assignment) => assignment.classPeriod.periodId === selectedPeriodId
+        )
+    )
+
   const {
     fullName,
     family,
@@ -224,7 +234,9 @@ export default async function StudentDetailPage({ params }: Props) {
         <div className="space-y-4 lg:col-span-2">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-graphite">{t('enrollments')}</h2>
-            {isAdmin && (
+            {/* Une inscription en cours par élève et par période : proposer un second bouton de
+                création n'ouvrirait qu'un formulaire refusé par `createEnrollment`. */}
+            {isAdmin && !isEnrolledInSelectedPeriod && (
               <CreateEnrollmentDialog
                 students={[{ id: student.id, name: fullName }]}
                 plans={plans.map((p) => ({ id: p.id, name: p.name }))}
