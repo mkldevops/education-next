@@ -28,7 +28,7 @@ interface Level {
   name: string
 }
 
-interface EditLevelDialogProps {
+interface EditLevelFormProps {
   level: Level
   currentNextLevelId: string | null
   allLevels: Level[]
@@ -36,13 +36,18 @@ interface EditLevelDialogProps {
   classPeriodCount: number
 }
 
-export function EditLevelDialog(props: EditLevelDialogProps) {
+interface EditLevelDialogProps extends EditLevelFormProps {
+  /** `menuitem` quand le déclencheur est une entrée de menu, pour la navigation au clavier. */
+  triggerRole?: React.AriaRole
+}
+
+export function EditLevelDialog({ triggerRole, ...props }: EditLevelDialogProps) {
   const t = useTranslations('dashboard.pages.levels.edit')
 
   return (
     <Dialog>
       <DialogTrigger>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" role={triggerRole}>
           {t('title')}
         </Button>
       </DialogTrigger>
@@ -62,7 +67,7 @@ function EditLevelForm({
   allLevels,
   takenNextLevelIds,
   classPeriodCount,
-}: EditLevelDialogProps) {
+}: EditLevelFormProps) {
   const t = useTranslations('dashboard.pages.levels.edit')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()

@@ -59,6 +59,7 @@ export function LevelActionsMenu({
             periodId={generateFor.id}
             periodName={generateFor.name}
             defaultCapacity={defaultCapacity}
+            triggerRole="menuitem"
           />
         )}
         <EditLevelDialog
@@ -67,6 +68,7 @@ export function LevelActionsMenu({
           allLevels={allLevels}
           takenNextLevelIds={takenNextLevelIds}
           classPeriodCount={level.classCount}
+          triggerRole="menuitem"
         />
       </div>
     </div>

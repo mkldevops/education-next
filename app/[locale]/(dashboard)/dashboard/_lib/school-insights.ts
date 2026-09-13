@@ -46,10 +46,15 @@ export async function getSchoolInsights(
         name: true,
         capacity: true,
         level: { select: { name: true } },
+        // Même définition d'une place occupée que le contrôle de capacité de `createEnrollment`
+        // et `classPeriodGateway.countEnrolled` : l'affectation encore ouverte. `ClassAssignment`
+        // est un historique, et une réaffectation laisse la ligne close derrière elle : sans
+        // `endAt: null`, un élève déplacé occuperait une place dans son ancienne classe comme
+        // dans la nouvelle.
         _count: {
           select: {
             classAssignments: {
-              where: { enrollment: { status: { in: ['PENDING', 'ACTIVE'] } } },
+              where: { endAt: null, enrollment: { status: { in: ['PENDING', 'ACTIVE'] } } },
             },
           },
         },

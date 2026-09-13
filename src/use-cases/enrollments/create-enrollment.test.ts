@@ -182,6 +182,39 @@ describe('createEnrollment', () => {
     })
   })
 
+  it('rolls back the cancellation when the target class turns out to be full', async () => {
+    mockValidReferences()
+    enrollmentGatewayMock.findActiveInPeriod.mockResolvedValue({
+      id: 'existing',
+      status: 'ACTIVE',
+      _count: { payments: 0 },
+    })
+    const update = vi.fn()
+    // Une transaction interactive Prisma n'est validée que si le callback résout : `committed`
+    // reproduit cette sémantique, qu'un simple `cb(tx)` effacerait.
+    let committed = false
+    dbMock.$transaction = vi.fn(async (cb) => {
+      const result = await cb({
+        classAssignment: {
+          updateMany: vi.fn(),
+          count: vi.fn().mockResolvedValue(10),
+          create: vi.fn(),
+        },
+        enrollment: { update, create: vi.fn() },
+      })
+      committed = true
+      return result
+    })
+
+    const result = await createEnrollment({ ...validInput, replaceExisting: true })
+
+    expect(result).toBe('classFull')
+    // L'annulation a bien été écrite dans la transaction, mais celle-ci n'a jamais été validée :
+    // l'élève garde son inscription au lieu de se retrouver sans aucune.
+    expect(update).toHaveBeenCalled()
+    expect(committed).toBe(false)
+  })
+
   it('refuses to replace an enrollment that already received a payment', async () => {
     mockValidReferences()
     enrollmentGatewayMock.findActiveInPeriod.mockResolvedValue({

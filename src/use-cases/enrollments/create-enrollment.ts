@@ -10,6 +10,14 @@ import { createEnrollmentSchema } from './schemas'
 
 type Input = z.input<typeof createEnrollmentSchema>
 
+/**
+ * Classe pleine détectée dans la transaction de remplacement.
+ *
+ * Un `return` laisse une transaction interactive Prisma se valider : il faut une exception pour
+ * annuler l'inscription précédente déjà passée en `CANCELLED` quelques lignes plus haut.
+ */
+class ClassFullError extends Error {}
+
 export async function createEnrollment(input: Input) {
   const parsed = createEnrollmentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
@@ -40,52 +48,57 @@ export async function createEnrollment(input: Input) {
 
   const totalAmount = calculateTotalAmount(planAmount, discount)
 
-  const result = await db.$transaction(async (tx) => {
-    if (existing) {
-      await tx.classAssignment.updateMany({
-        where: { schoolId, enrollmentId: existing.id, endAt: null },
-        data: { endAt: new Date() },
+  try {
+    const result = await db.$transaction(async (tx) => {
+      if (existing) {
+        await tx.classAssignment.updateMany({
+          where: { schoolId, enrollmentId: existing.id, endAt: null },
+          data: { endAt: new Date() },
+        })
+        await tx.enrollment.update({
+          where: { id_schoolId: { id: existing.id, schoolId } },
+          data: { status: 'CANCELLED' },
+        })
+      }
+
+      const enrolledCount = await tx.classAssignment.count({
+        where: {
+          schoolId,
+          classPeriodId: parsed.data.classPeriodId,
+          endAt: null,
+          enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
+        },
       })
-      await tx.enrollment.update({
-        where: { id_schoolId: { id: existing.id, schoolId } },
-        data: { status: 'CANCELLED' },
+
+      const capacityCheck = checkCapacity(classPeriod.capacity, enrolledCount)
+      if (capacityCheck !== 'OK') throw new ClassFullError(capacityCheck)
+
+      const enrollment = await tx.enrollment.create({
+        data: {
+          schoolId,
+          studentId: parsed.data.studentId,
+          planId: parsed.data.planId,
+          totalAmount,
+          discount: parsed.data.discount,
+          canLeaveAlone: parsed.data.canLeaveAlone,
+        },
       })
-    }
 
-    const enrolledCount = await tx.classAssignment.count({
-      where: {
-        schoolId,
-        classPeriodId: parsed.data.classPeriodId,
-        endAt: null,
-        enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
-      },
+      await tx.classAssignment.create({
+        data: {
+          schoolId,
+          enrollmentId: enrollment.id,
+          classPeriodId: parsed.data.classPeriodId,
+          startAt: new Date(),
+        },
+      })
+
+      return enrollment
     })
 
-    const capacityCheck = checkCapacity(classPeriod.capacity, enrolledCount)
-    if (capacityCheck !== 'OK') return capacityCheck
-
-    const enrollment = await tx.enrollment.create({
-      data: {
-        schoolId,
-        studentId: parsed.data.studentId,
-        planId: parsed.data.planId,
-        totalAmount,
-        discount: parsed.data.discount,
-        canLeaveAlone: parsed.data.canLeaveAlone,
-      },
-    })
-
-    await tx.classAssignment.create({
-      data: {
-        schoolId,
-        enrollmentId: enrollment.id,
-        classPeriodId: parsed.data.classPeriodId,
-        startAt: new Date(),
-      },
-    })
-
-    return enrollment
-  })
-
-  return result
+    return result
+  } catch (error) {
+    if (error instanceof ClassFullError) return 'classFull' as const
+    throw error
+  }
 }

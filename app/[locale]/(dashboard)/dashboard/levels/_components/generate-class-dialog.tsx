@@ -16,7 +16,7 @@ import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { createClassPeriodAction } from '../../../_lib/class-period-actions'
 
-interface GenerateClassDialogProps {
+interface GenerateClassFormProps {
   levelId: string
   levelName: string
   periodId: string
@@ -24,17 +24,22 @@ interface GenerateClassDialogProps {
   defaultCapacity: number
 }
 
+interface GenerateClassDialogProps extends GenerateClassFormProps {
+  /** `menuitem` quand le déclencheur est une entrée de menu, pour la navigation au clavier. */
+  triggerRole?: React.AriaRole
+}
+
 /**
  * Ouvre la création d'une classe déjà remplie pour un niveau dépourvu de classe sur la période
  * courante : niveau et période sont imposés, seuls le nom et la capacité restent modifiables.
  */
-export function GenerateClassDialog(props: GenerateClassDialogProps) {
+export function GenerateClassDialog({ triggerRole, ...props }: GenerateClassDialogProps) {
   const t = useTranslations('dashboard.pages.levels.generateClass')
 
   return (
     <Dialog>
       <DialogTrigger>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" role={triggerRole}>
           <CalendarPlus className="h-4 w-4" />
           {t('trigger')}
         </Button>
@@ -55,7 +60,7 @@ function GenerateClassForm({
   periodId,
   periodName,
   defaultCapacity,
-}: GenerateClassDialogProps) {
+}: GenerateClassFormProps) {
   const t = useTranslations('dashboard.pages.levels.generateClass')
   const { isPending, close, onSubmit } = useDialogForm(t)
 

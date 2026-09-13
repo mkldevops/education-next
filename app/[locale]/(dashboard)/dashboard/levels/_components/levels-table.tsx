@@ -50,7 +50,12 @@ export function LevelsTable({
     window.localStorage.setItem(FILTER_STORAGE_KEY, checked ? '1' : '0')
   }
 
-  const rows = openPeriodOnly ? levels.filter((level) => level.currentClasses.length > 0) : levels
+  // Sans période sélectionnée, aucune classe n'est chargée et la case à cocher n'est pas
+  // rendue : appliquer la préférence mémorisée viderait la table sans moyen de revenir.
+  const rows =
+    selectedPeriod && openPeriodOnly
+      ? levels.filter((level) => level.currentClasses.length > 0)
+      : levels
   const hiddenCount = levels.length - rows.length
 
   const columns: Column<LevelRow>[] = [
