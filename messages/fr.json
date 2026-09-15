@@ -1777,6 +1777,16 @@
       }
     }
   },
+  "publicEvents": {
+    "metadata": {
+      "title": "Événements — {schoolName}",
+      "description": "Réunions, sorties, fêtes et fermetures à venir à {schoolName}."
+    },
+    "title": "Événements",
+    "subtitle": "Les événements publics de {schoolName}.",
+    "empty": "Aucun événement public pour le moment.",
+    "subscribe": "Ajouter au calendrier"
+  },
   "settings": {
     "title": "Paramètres",
     "tabs": {

@@ -1,4 +1,4 @@
-import type { EventVisibility } from '@/generated/prisma/client'
+import type { EventStatus, EventVisibility } from '@/generated/prisma/client'
 
 export type EventViewer = 'PUBLIC' | 'MEMBER' | 'STAFF'
 
@@ -104,3 +104,24 @@ export function shiftEventToNextYear(input: { startAt: Date; endAt?: Date | null
 
 /** Au-delà, `add-event-image` refuse avec `'tooManyImages'`. */
 export const MAX_EVENT_IMAGES = 6
+
+/**
+ * Filtre défensif, appliqué EN PLUS de la requête Prisma qui pose déjà les mêmes bornes.
+ *
+ * Le commentaire du modèle `Event` rappelle que la route média (`/api/media/events/…`) ne
+ * vérifie ni la visibilité ni le statut d'un événement — sa seule protection est la clé
+ * d'objet non énumérable. Toute lecture qui alimente une surface publique (page publique,
+ * flux ICS) doit donc garantir elle-même qu'aucun événement MEMBERS/STAFF/DRAFT ne peut s'y
+ * glisser, même si la requête SQL en amont change un jour sans que ce filtre suive.
+ *
+ * `DRAFT` est le seul statut exclu : `CANCELLED` reste diffusé, barré, comme partout
+ * ailleurs dans l'application (cf. doctrine du modèle `Event`).
+ */
+export function filterVisibleEvents<T extends { visibility: EventVisibility; status: EventStatus }>(
+  events: T[],
+  visibilities: EventVisibility[]
+): T[] {
+  return events.filter(
+    (event) => visibilities.includes(event.visibility) && event.status !== 'DRAFT'
+  )
+}

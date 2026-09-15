@@ -65,8 +65,13 @@ export const schoolGateway = {
       },
     }),
 
+  // Sans appelant avant #326 : la résolution d'école par slug pour une surface publique
+  // (page événements, flux ICS) a besoin du nom en plus de l'identité.
   findBySlug: (slug: string) =>
-    db.school.findUnique({ where: { slug }, select: { id: true, isActive: true } }),
+    db.school.findUnique({
+      where: { slug },
+      select: { id: true, name: true, slug: true, isActive: true },
+    }),
 
   /**
    * L'école et ses réglages par défaut dans la même transaction : une école créée

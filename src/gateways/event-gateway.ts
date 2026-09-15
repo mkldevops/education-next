@@ -79,4 +79,27 @@ export const eventGateway = {
         )
       )
     }),
+
+  // Diffusion publique : visibilité PUBLIC uniquement, DRAFT jamais exposé — CANCELLED
+  // reste diffusé, barré côté rendu (cf. doctrine du modèle). `filterVisibleEvents`
+  // (domaine) rejoue ce même filtre en défense en profondeur chez l'appelant.
+  listPublic: (schoolId: string) =>
+    db.event.findMany({
+      where: { schoolId, visibility: 'PUBLIC', status: { in: ['PUBLISHED', 'CANCELLED'] } },
+      include: { images: { orderBy: { position: 'asc' } } },
+      orderBy: { startAt: 'asc' },
+    }),
+
+  // Bandeau J-x et carte « Prochains événements » du tableau de bord : visibilités du
+  // rôle appelant, à partir d'aujourd'hui (minuit UTC) pour rester borné.
+  listUpcoming: (schoolId: string, visibilities: EventVisibility[], from: Date) =>
+    db.event.findMany({
+      where: {
+        schoolId,
+        visibility: { in: visibilities },
+        status: { in: ['PUBLISHED', 'CANCELLED'] },
+        startAt: { gte: from },
+      },
+      orderBy: { startAt: 'asc' },
+    }),
 }
