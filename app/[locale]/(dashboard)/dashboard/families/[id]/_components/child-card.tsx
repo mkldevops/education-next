@@ -52,34 +52,19 @@ type Props = {
   familyId: string
   isAdmin: boolean
   classes: ClassOption[]
-  selectedPeriodId: string | null
+  /**
+   * Vrai quand l'élève n'a aucune inscription en cours sur la période sélectionnée, calculé
+   * par la page sur les mêmes critères que `createEnrollment` : une inscription terminée ou
+   * annulée n'empêche pas la réinscription, une inscription vivante oui.
+   */
+  canEnroll: boolean
 }
 
-export async function ChildCard({
-  student,
-  locale,
-  familyId,
-  isAdmin,
-  classes,
-  selectedPeriodId,
-}: Props) {
+export async function ChildCard({ student, locale, familyId, isAdmin, classes, canEnroll }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   const { person } = student
   const enrollments = person.student.enrollments
-
-  /* L'inscription reste proposée tant que l'élève n'a pas d'inscription vivante : une inscription
-     terminée ou annulée ne doit pas bloquer la réinscription. Avec une période sélectionnée, seule
-     celle-ci compte, comme sur la fiche élève (students/[id]/page.tsx) ; en vue « toutes périodes »,
-     faute de période cible, toute inscription vivante masque le bouton. */
-  const hasLiveEnrollment = enrollments.some(
-    (enrollment) =>
-      (enrollment.status === 'PENDING' || enrollment.status === 'ACTIVE') &&
-      (selectedPeriodId === null ||
-        enrollment.classAssignments.some(
-          (assignment) => assignment.classPeriod.periodId === selectedPeriodId
-        ))
-  )
 
   const birthday = person.student.birthday ? new Date(person.student.birthday) : null
   const age = birthday
@@ -209,9 +194,7 @@ export async function ChildCard({
         >
           {t('childCard.viewProfile')}
         </Link>
-        {isAdmin && !hasLiveEnrollment && (
-          <EnrollButton familyId={familyId} studentId={person.student.id} />
-        )}
+        {isAdmin && canEnroll && <EnrollButton familyId={familyId} studentId={person.student.id} />}
       </div>
     </Card>
   )
