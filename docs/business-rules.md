@@ -972,28 +972,34 @@ closes a function every school in service already owns. No migration is therefor
 writes `'false'` anywhere: a new school is created with the row at `'true'`
 (`SCHOOL_CONFIG_DEFAULTS`), an older school has no row and keeps its payments.
 
-The write surface is the **School settings** section of `/dashboard/config`, open to a school
-`ADMIN` through `setPaymentsEnabledAction`. It is deliberately **not** offered by the generic
-key/value editor of the same page: two screens for one value, one of which accepts any string,
-is the mistake `school_name` already taught. Disabling while the school holds a payment or a
-`PENDING` transaction requires a confirmation counting both (`paymentGateway.countFootprint`) —
-nothing is deleted, and everything reappears on re-enabling.
+The write surface is the row `payments_enabled` owns in the **School settings** panel of
+`/dashboard/config`, open to a school `ADMIN`. The closed key list (`SCHOOL_CONFIG_KEYS`) already
+renders one toggle per boolean and writes through `setConfigAction`, so no dedicated action exists:
+a second screen for one value, accepting any string, is the mistake `school_name` already taught.
 
-**A school flag with a dedicated toggle leaves the generic editor.** `dedicatedToggleKeys` in
-`config/page.tsx` keeps `payments_enabled` and `teacher_expenses_enabled` out of the `configs` list
-feeding the `DataTable`, because the raw `EditConfigDialog` writes an arbitrary string straight to
-the row and would walk past the confirmation. `teacher_expenses_enabled` therefore also gained its
-toggle (`setTeacherExpensesEnabledAction`, confirmation counting `teacherGateway.countExpenses`)
-rather than staying editable twice. Its verdict now reads through
+**Two flags confirm before cutting**, because they make already-recorded state invisible:
+`payments_enabled` counts payments and `PENDING` transactions (`paymentGateway.countFootprint`),
+and `teacher_expenses_enabled` counts recorded notes (`teacherGateway.countExpenses`). Nothing is
+deleted, and everything reappears on re-enabling. `FlagToggle` takes that confirmation as an
+optional prop, so a row without a footprint keeps the one-click behaviour.
+
+`setConfigAction` revalidates the whole layout, not just its page: branding, theme and the
+navigation flags (`payments_enabled`, `events_enabled`) change the shape of the sidebar and the
+dashboard, so leaving them cached would show a state the administrator just contradicted.
+
+`teacher_expenses_enabled` also lost its two divergent raw reads — a `db.config.findFirst` outside
+the gateway, hence outside the tenant guard, and a hand-rolled `!== 'true'`. Both now read through
 `isTeacherExpensesEnabled(schoolId)`, the single opt-in reading shared by `/dashboard/teachers` and
-`createTeacherExpense`. Any school flag added later belongs to the panel and to that list.
+`createTeacherExpense`.
 
 Every callable boundary answers `paymentsDisabled` before reading or writing anything:
 `recordPayment`, `createCheckoutSession`, `applyDiscount`, `setEnrollmentPlan`, `createPlan`,
 `updatePlan`, `deactivatePlan`, and the four money tools of the MCP. The verdict belongs to the
 use-case; pages and components only mirror it. `/dashboard/payments` and `/dashboard/plans` answer
-`notFound()`, and the sidebar drops both entries through `resolveNavItems`, which now takes
-`paymentsEnabled` alongside the role.
+`notFound()`, and the sidebar drops both entries through the `feature` mechanism of
+`resolveNavItems`: `payments` and `plans` declare `feature: 'payments'`, read from
+`NavScope.features` beside `events`. A flag that closes a navigation surface belongs there rather
+than in a bespoke filter.
 
 **The Stripe webhook never reads the flag.** A transaction can only exist if the session was opened
 while payments were on; by the time the webhook lands the money is captured at the provider, so

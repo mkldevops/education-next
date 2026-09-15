@@ -12,7 +12,7 @@ import { FlagToggle } from './flag-toggle'
 
 const baseProps = { title: 'MCP', description: 'desc', enabled: false }
 
-describe('PlatformFlagToggle', () => {
+describe('FlagToggle', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -78,7 +78,7 @@ describe('PlatformFlagToggle', () => {
   })
 })
 
-describe('PlatformFlagToggle with confirmDisable', () => {
+describe('FlagToggle with confirmDisable', () => {
   const confirmDisable = {
     title: 'Disable Google?',
     description: '2 accounts would lose access',
@@ -138,7 +138,7 @@ describe('PlatformFlagToggle with confirmDisable', () => {
   })
 })
 
-describe('PlatformFlagToggle confirmDisable dismissal', () => {
+describe('FlagToggle confirmDisable dismissal', () => {
   const confirmDisable = {
     title: 'Disable Google?',
     description: '2 accounts would lose access',
@@ -172,7 +172,7 @@ describe('PlatformFlagToggle confirmDisable dismissal', () => {
   })
 })
 
-describe('PlatformFlagToggle confirmDisable checkbox consistency', () => {
+describe('FlagToggle confirmDisable checkbox consistency', () => {
   const confirmDisable = {
     title: 'Disable Google?',
     description: '2 accounts would lose access',
