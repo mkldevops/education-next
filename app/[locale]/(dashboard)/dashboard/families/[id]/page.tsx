@@ -213,6 +213,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 familyId={family.id}
                 isAdmin={isAdmin}
                 classes={classOptions}
+                selectedPeriodId={selectedPeriodId}
               />
             ),
           },

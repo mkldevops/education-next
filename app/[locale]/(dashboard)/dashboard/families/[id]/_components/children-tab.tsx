@@ -46,6 +46,7 @@ type Props = {
   familyId: string
   isAdmin: boolean
   classes: ClassOption[]
+  selectedPeriodId: string | null
 }
 
 export async function ChildrenTab({
@@ -56,6 +57,7 @@ export async function ChildrenTab({
   familyId,
   isAdmin,
   classes,
+  selectedPeriodId,
 }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
@@ -81,6 +83,7 @@ export async function ChildrenTab({
               familyId={familyId}
               isAdmin={isAdmin}
               classes={classes}
+              selectedPeriodId={selectedPeriodId}
             />
           ))}
         </div>

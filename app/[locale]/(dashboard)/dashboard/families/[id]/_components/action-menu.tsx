@@ -13,13 +13,7 @@ type Props = {
   canRecordPayment: boolean
 }
 
-type FamilyAction =
-  | 'addPayment'
-  | 'addStudent'
-  | 'addEnrollment'
-  | 'editFamily'
-  | 'archiveFamily'
-  | 'deleteFamily'
+type FamilyAction = 'addPayment' | 'addStudent' | 'editFamily' | 'archiveFamily' | 'deleteFamily'
 
 type FamilyActionItem = {
   key: string
