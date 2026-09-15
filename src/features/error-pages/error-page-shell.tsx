@@ -41,17 +41,17 @@ const iconByAction: Record<ErrorActionIcon, LucideIcon> = {
 const toneClasses: Record<ErrorTone, { accent: string; background: string; text: string }> = {
   danger: {
     accent: 'border-red-200 bg-red-50 text-red-700',
-    background: 'from-red-50 via-white to-alabaster-900',
+    background: 'from-red-50 via-white to-background',
     text: 'text-red-700',
   },
   muted: {
-    accent: 'border-yale-blue-900 bg-yale-blue-900/60 text-yale-blue-500',
-    background: 'from-yale-blue-900/50 via-white to-alabaster-900',
-    text: 'text-yale-blue-500',
+    accent: 'border-primary-light bg-primary-light text-primary-hover',
+    background: 'from-primary-light/50 via-white to-background',
+    text: 'text-primary',
   },
   warning: {
     accent: 'border-amber-200 bg-amber-50 text-amber-700',
-    background: 'from-amber-50 via-white to-alabaster-900',
+    background: 'from-amber-50 via-white to-background',
     text: 'text-amber-700',
   },
 }

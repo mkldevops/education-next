@@ -7,9 +7,11 @@ import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import { PAYMENTS_ENABLED_CONFIG_KEY } from '@/lib/payment-config'
 import type { SchoolConfigKey } from '@/lib/school-config'
 import { TEACHER_EXPENSES_CONFIG_KEY } from '@/lib/teacher-expense-config'
+import { isThemeColorKey, type ThemeColors } from '@/lib/theme-palettes'
 import { FlagToggle } from '../../../_components/flag-toggle'
 import { setConfigAction } from '../../../_lib/config-actions'
 import { EditConfigDialog } from './edit-config-dialog'
+import { ThemePaletteEditor } from './theme-palette-editor'
 
 export type SchoolSetting = {
   name: SchoolConfigKey
@@ -32,7 +34,8 @@ async function saveFlag(name: SchoolConfigKey, enabled: boolean) {
 
 /**
  * Liste fermée des réglages d'école, présentée comme les réglages plateforme : une ligne par
- * réglage, un interrupteur pour un booléen, une modale pour les autres valeurs.
+ * réglage, un interrupteur pour un booléen, une modale pour les autres valeurs, et un nuancier
+ * commun pour les quatre couleurs du thème.
  *
  * Deux drapeaux demandent une confirmation avant coupure, parce qu'ils rendent invisible un
  * état déjà saisi : les paiements et les notes de frais. Le comptage vient du serveur pour
@@ -41,6 +44,12 @@ async function saveFlag(name: SchoolConfigKey, enabled: boolean) {
 export function SchoolSettingsPanel({ settings, paymentFootprint, teacherExpenseCount }: Props) {
   const t = useTranslations('dashboard.pages.config')
   const { payments, pendingTransactions } = paymentFootprint
+  const themeColors: Partial<ThemeColors> = Object.fromEntries(
+    settings.flatMap((setting) =>
+      isThemeColorKey(setting.name) ? [[setting.name, setting.value]] : []
+    )
+  )
+  let themeRendered = false
 
   const confirmDisableFor = (name: SchoolConfigKey) => {
     const confirmation = (key: string, values: Record<string, number>) => ({
@@ -67,6 +76,13 @@ export function SchoolSettingsPanel({ settings, paymentFootprint, teacherExpense
       </div>
       <Card className="divide-y divide-alabaster-700 rounded border border-alabaster-700 p-0">
         {settings.map((setting) => {
+          // Les couleurs du thème partagent un nuancier, rendu à la place de la première.
+          if (isThemeColorKey(setting.name)) {
+            if (themeRendered) return null
+            themeRendered = true
+            return <ThemePaletteEditor key="theme" colors={themeColors} />
+          }
+
           const label = t(`settings.${setting.name}.label`)
           const description = t(`settings.${setting.name}.description`)
 
@@ -119,13 +135,6 @@ function SettingValue({
 
   return (
     <div className="flex min-w-0 items-center gap-3 text-sm text-graphite">
-      {setting.valueType === 'COLOR' && (
-        <span
-          aria-hidden
-          className="size-5 shrink-0 rounded border border-alabaster-700"
-          style={{ backgroundColor: setting.value }}
-        />
-      )}
       {setting.name === BRANDING_CONFIG_KEYS.logoUrl && (
         // biome-ignore lint/performance/noImgElement: config URLs are dynamic
         <img

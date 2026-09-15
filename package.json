@@ -60,6 +60,7 @@
     "next-intl": "^4.14.2",
     "pg": "^8.23.0",
     "react": "^19.2.8",
+    "react-colorful": "5.8.1",
     "react-dom": "^19.2.8",
     "resend": "^6.25.0",
     "sharp": "^0.35.4",

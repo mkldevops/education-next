@@ -874,22 +874,6 @@
             "label": "Logo",
             "description": "Affiché dans la barre latérale et sur la page de connexion. Le favicon est généré à partir de ce logo."
           },
-          "theme_primary": {
-            "label": "Couleur principale",
-            "description": "Couleur principale de l'interface, au format hexadécimal."
-          },
-          "theme_primary_hover": {
-            "label": "Couleur principale au survol",
-            "description": "Teinte des boutons survolés. Dérivée de la couleur principale tant qu'elle n'est pas posée."
-          },
-          "theme_primary_light": {
-            "label": "Couleur principale claire",
-            "description": "Fonds et accents légers. Dérivée de la couleur principale tant qu'elle n'est pas posée."
-          },
-          "theme_background": {
-            "label": "Couleur de fond",
-            "description": "Fond des pages. Blanc tant qu'elle n'est pas posée."
-          },
           "max_students_per_class": {
             "label": "Élèves maximum par classe",
             "description": "Nombre maximal d'élèves autorisés dans une classe."
@@ -923,10 +907,57 @@
             "description": "Active toute la fonctionnalité Événements ; l'entrée de menu disparaît quand ce réglage est désactivé."
           }
         },
+        "theme": {
+          "title": "Couleurs du thème",
+          "description": "Cliquez sur une couleur pour l'ajuster ou partez d'une palette prête. Rien n'est appliqué avant l'enregistrement.",
+          "auto": "Auto",
+          "editRole": "Modifier la couleur « {role} »",
+          "hex": "Code hexadécimal",
+          "eyedropper": "Prélever une couleur à l'écran",
+          "presets": "Palettes prêtes",
+          "reset": "Annuler les modifications",
+          "submit": "Enregistrer les couleurs",
+          "saving": "Enregistrement…",
+          "success": "Couleurs du thème mises à jour",
+          "error": "Erreur lors de la mise à jour des couleurs",
+          "errors": {
+            "validationError": "Aucune couleur à enregistrer",
+            "invalidConfigValue": "Une couleur n'est pas au format hexadécimal"
+          },
+          "roles": {
+            "theme_primary": {
+              "label": "Principale",
+              "description": "Boutons, liens et éléments actifs."
+            },
+            "theme_primary_hover": {
+              "label": "Survol",
+              "description": "Teinte des boutons survolés. Dérivée de la couleur principale tant qu'elle n'est pas posée."
+            },
+            "theme_primary_light": {
+              "label": "Claire",
+              "description": "Fonds et accents légers. Dérivée de la couleur principale tant qu'elle n'est pas posée."
+            },
+            "theme_background": {
+              "label": "Fond",
+              "description": "Fond des pages du tableau de bord, derrière les cartes. Gris très clair tant qu'elle n'est pas posée."
+            }
+          },
+          "palettes": {
+            "teal": "Sarcelle",
+            "lagoon": "Lagune",
+            "slate": "Ardoise",
+            "midnight": "Minuit",
+            "ocean": "Océan",
+            "desert": "Désert",
+            "olive": "Olivier",
+            "burgundy": "Bordeaux",
+            "forest": "Forêt",
+            "amethyst": "Améthyste"
+          }
+        },
         "edit": {
           "title": "Modifier",
           "value": "Valeur",
-          "colorPlaceholder": "#3c6e71",
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Paramètre mis à jour",

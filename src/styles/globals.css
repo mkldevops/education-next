@@ -68,7 +68,7 @@
   --color-success: var(--theme-success, #10b981);
 
   --color-text: var(--theme-text, #353535);
-  --color-background: var(--theme-background, #ffffff);
+  --color-background: var(--theme-background, #f7f7f7);
   --color-muted: var(--theme-muted, #d9d9d9);
   --color-border: var(--theme-border, #d9d9d9);
 
@@ -83,7 +83,6 @@
   --theme-accent: #539a9e;
   --theme-success: #10b981;
   --theme-text: #353535;
-  --theme-background: #ffffff;
   --theme-muted: #d9d9d9;
   --theme-border: #d9d9d9;
 }
@@ -94,7 +93,7 @@
   }
 
   body {
-    @apply bg-white text-graphite antialiased;
+    @apply bg-background text-graphite antialiased;
   }
 }
 
