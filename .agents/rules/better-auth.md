@@ -41,6 +41,13 @@ import { signIn, signOut, useSession } from '@/lib/auth-client'
 
 Do not import `@/lib/auth`, `@/lib/db`, or other server infrastructure into a `'use client'` module.
 
+## Impersonation
+
+`src/lib/impersonation.ts` reimplements the Better Auth admin impersonation routes against
+`User.isSuperAdmin`. Do not install the upstream `admin` plugin: it authorizes through a `role`
+column this schema deliberately lacks, and would expose user creation, role, ban and hard-delete
+routes that bypass the invitation, role and soft-deletion rules.
+
 ## Intentional Public Flows
 
 Invitation acceptance and the passkey authentication option/verification stages are intentionally

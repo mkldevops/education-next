@@ -60,3 +60,28 @@ export function checkDeletion(
   if (relatedRecords > 0) return 'hasRelatedRecords'
   return 'OK'
 }
+
+export type ImpersonationFailure =
+  | 'notSuperAdmin'
+  | 'alreadyImpersonating'
+  | 'cannotTargetSelf'
+  | 'targetIsSuperAdmin'
+  | 'targetInactive'
+
+/**
+ * Un super-admin emprunte l'identité d'un compte ordinaire, jamais celle d'un pair : la
+ * session empruntée porterait les mêmes droits et brouillerait seulement la trace.
+ * L'emprunt ne s'imbrique pas, le cookie de retour ne garde qu'une session d'origine.
+ */
+export function checkImpersonation(
+  actor: ManagedUser,
+  target: ManagedUser,
+  isImpersonating: boolean
+): 'OK' | ImpersonationFailure {
+  if (!actor.isSuperAdmin || !actor.isActive) return 'notSuperAdmin'
+  if (isImpersonating) return 'alreadyImpersonating'
+  if (actor.id === target.id) return 'cannotTargetSelf'
+  if (target.isSuperAdmin) return 'targetIsSuperAdmin'
+  if (!target.isActive) return 'targetInactive'
+  return 'OK'
+}

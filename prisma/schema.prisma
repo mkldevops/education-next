@@ -151,10 +151,14 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  /// Super-admin à l'origine d'une session empruntée, posé par le plugin `impersonation`.
+  impersonatedBy String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([impersonatedBy])
 }
 
 model Account {

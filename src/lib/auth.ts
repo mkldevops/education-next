@@ -1,7 +1,9 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { userGateway } from '@/gateways/user-gateway'
 import { db } from '@/lib/db'
 import { sendEmail } from '@/lib/email'
+import { impersonation } from '@/lib/impersonation'
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -41,6 +43,7 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: 'education-next',
   },
+  plugins: [impersonation({ findUser: (id) => userGateway.findManaged(id) })],
   trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'],
 })
 
