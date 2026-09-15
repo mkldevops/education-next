@@ -10,7 +10,6 @@ export const studentGateway = {
       birthplace?: string
       previousSchool?: string
       healthNotes?: string
-      languagesAtHome?: Prisma.InputJsonValue
       snackAuthorization?: boolean
       allergies?: string
     }

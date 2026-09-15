@@ -177,7 +177,6 @@ export default async function StudentDetailPage({ params }: Props) {
                 birthplace: student.birthplace,
                 allergies: student.allergies,
                 healthNotes: student.healthNotes,
-                languagesAtHome: student.languagesAtHome,
                 snackAuthorization: student.snackAuthorization,
               }}
             />

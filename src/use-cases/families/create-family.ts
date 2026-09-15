@@ -3,7 +3,7 @@ import { validateFamilyName } from '@/domain/family'
 import { familyGateway } from '@/gateways/family-gateway'
 import { createFamilySchema } from './schemas'
 
-type Input = z.infer<typeof createFamilySchema> & { createdById: string }
+type Input = z.input<typeof createFamilySchema> & { createdById: string }
 
 export async function createFamily(input: Input) {
   const parsed = createFamilySchema.safeParse(input)

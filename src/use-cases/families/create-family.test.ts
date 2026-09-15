@@ -143,6 +143,35 @@ describe('createFamily', () => {
     )
   })
 
+  it('should create family with no language spoken at home by default', async () => {
+    await createFamily({
+      schoolId: 'school-1',
+      name: 'Garcia Family',
+      parents: [],
+      createdById: '550e8400-e29b-41d4-a716-446655440000',
+    })
+
+    expect(familyGatewayMock.createWithParents).toHaveBeenCalledWith(
+      'school-1',
+      expect.objectContaining({ languagesAtHome: [] })
+    )
+  })
+
+  it('should create family with the languages spoken at home', async () => {
+    await createFamily({
+      schoolId: 'school-1',
+      name: 'Garcia Family',
+      languagesAtHome: ['Espagnol', 'Français'],
+      parents: [],
+      createdById: '550e8400-e29b-41d4-a716-446655440000',
+    })
+
+    expect(familyGatewayMock.createWithParents).toHaveBeenCalledWith(
+      'school-1',
+      expect.objectContaining({ languagesAtHome: ['Espagnol', 'Français'] })
+    )
+  })
+
   it('should fail validation when the emergency contact phone has an invalid format', async () => {
     const result = await createFamily({
       schoolId: 'school-1',

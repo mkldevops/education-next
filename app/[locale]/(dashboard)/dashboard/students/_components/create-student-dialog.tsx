@@ -76,11 +76,6 @@ function CreateStudentForm({ familyId }: { familyId: string }) {
           birthplace: (formData.get('birthplace') as string) || undefined,
           allergies: (formData.get('allergies') as string) || undefined,
           healthNotes: (formData.get('healthNotes') as string) || undefined,
-          languagesAtHome:
-            (formData.get('languagesAtHome') as string)
-              ?.split(',')
-              .map((l) => l.trim())
-              .filter(Boolean) ?? [],
           snackAuthorization: formData.get('snackAuthorization') === 'on',
         },
       }),
@@ -144,15 +139,6 @@ function CreateStudentForm({ familyId }: { familyId: string }) {
           <div className="space-y-2">
             <Label htmlFor="student-health">{t('healthNotes')}</Label>
             <Textarea id="student-health" name="healthNotes" disabled={isPending} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="student-languages">{t('languages')}</Label>
-            <Input
-              id="student-languages"
-              name="languagesAtHome"
-              placeholder={t('languagesPlaceholder')}
-              disabled={isPending}
-            />
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="snackAuthorization" className="rounded" />

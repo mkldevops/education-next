@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { languagesOf } from '@/domain/family'
 import { enrollmentBalances } from '@/domain/payment'
 import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
@@ -124,8 +125,6 @@ export function deriveStudentDetail(student: StudentDetail) {
         student.enrollments.filter((e) => e.status === 'PENDING' || e.status === 'ACTIVE')
       ).reduce((sum, balance) => sum + balance.remainingBalance, 0)
     ),
-    languagesAtHome: Array.isArray(student.languagesAtHome)
-      ? student.languagesAtHome.join(', ')
-      : '',
+    languagesAtHome: languagesOf(student.person.families[0]?.family.languagesAtHome).join(', '),
   }
 }

@@ -22,6 +22,7 @@ export async function updateFamily(input: Input) {
     emergencyContactName: parsed.data.emergencyContactName,
     emergencyContactPhone: parsed.data.emergencyContactPhone,
     authorizedPickup: parsed.data.authorizedPickup,
+    languagesAtHome: parsed.data.languagesAtHome,
   })
 
   return updated

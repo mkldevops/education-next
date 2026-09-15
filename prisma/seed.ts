@@ -167,6 +167,7 @@ async function seedSchoolContent(fixture: SchoolFixture) {
       name: fixture.familyName,
       emergencyContactName: `${fixture.parentFirstName} ${fixture.parentLastName}`,
       emergencyContactPhone: '06 12 34 56 78',
+      languagesAtHome: ['Français'],
       createdById,
     },
   })
@@ -201,7 +202,6 @@ async function seedSchoolContent(fixture: SchoolFixture) {
       personId: childPerson.id,
       birthday: new Date('2018-04-12'),
       birthplace: 'Paris',
-      languagesAtHome: ['fr'],
       snackAuthorization: true,
     },
   })
@@ -349,6 +349,7 @@ async function seed() {
         name: familyLabel,
         emergencyContactName: 'Karim Benali',
         emergencyContactPhone: '06 55 44 33 22',
+        languagesAtHome: ['Français', 'Arabe'],
         createdById: adminId,
       },
     })
@@ -370,7 +371,6 @@ async function seed() {
         schoolId,
         personId: child.id,
         birthday: new Date('2019-09-20'),
-        languagesAtHome: ['fr', 'ar'],
       },
     })
   }

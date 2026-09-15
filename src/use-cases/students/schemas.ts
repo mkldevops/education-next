@@ -6,7 +6,6 @@ const studentInputSchema = z.object({
   birthplace: z.string().max(250).optional(),
   previousSchool: z.string().max(250).optional(),
   healthNotes: z.string().optional(),
-  languagesAtHome: z.array(z.string()).default([]),
   snackAuthorization: z.boolean().default(false),
   allergies: z.string().max(250).optional(),
 })

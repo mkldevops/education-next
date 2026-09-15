@@ -17,6 +17,7 @@ import {
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
+import { languagesOf, parseLanguagesAtHome } from '@/domain/family'
 import { toast, toastActionError } from '@/lib/toast'
 import { updateFamilySchema } from '@/use-cases/families/schemas'
 import { updateFamilyAction } from '../../../_lib/family-actions'
@@ -28,6 +29,7 @@ interface EditFamilyDialogProps {
     emergencyContactName: string | null
     emergencyContactPhone: string | null
     authorizedPickup: string | null
+    languagesAtHome: unknown
   }
   defaultOpen?: boolean
   redirectTo?: string
@@ -80,6 +82,7 @@ function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
       emergencyContactName: clearable('emergencyContactName'),
       emergencyContactPhone: clearable('emergencyContactPhone'),
       authorizedPickup: clearable('authorizedPickup'),
+      languagesAtHome: parseLanguagesAtHome(formData.get('languagesAtHome') as string),
     })
     if (!parsed.success) {
       const invalidPhone = parsed.error.issues.some(
@@ -146,6 +149,16 @@ function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
               id="edit-pickup"
               name="authorizedPickup"
               defaultValue={family.authorizedPickup ?? ''}
+              disabled={isPending}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-languages">{tCreate('languagesAtHome')}</Label>
+            <Input
+              id="edit-languages"
+              name="languagesAtHome"
+              defaultValue={languagesOf(family.languagesAtHome).join(', ')}
+              placeholder={tCreate('languagesAtHomePlaceholder')}
               disabled={isPending}
             />
           </div>

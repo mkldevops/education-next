@@ -236,6 +236,7 @@ describe('updateFamily', () => {
         emergencyContactName: null,
         emergencyContactPhone: null,
         authorizedPickup: null,
+        languagesAtHome: undefined,
       }
     )
   })
@@ -260,7 +261,27 @@ describe('updateFamily', () => {
         emergencyContactName: undefined,
         emergencyContactPhone: undefined,
         authorizedPickup: undefined,
+        languagesAtHome: undefined,
       }
+    )
+  })
+
+  it('should replace the languages spoken at home', async () => {
+    familyGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      name: 'Family Name',
+    })
+
+    await updateFamily({
+      schoolId: 'school-1',
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      languagesAtHome: ['Français', 'Arabe'],
+    })
+
+    expect(familyGatewayMock.update).toHaveBeenCalledWith(
+      'school-1',
+      '550e8400-e29b-41d4-a716-446655440000',
+      expect.objectContaining({ languagesAtHome: ['Français', 'Arabe'] })
     )
   })
 

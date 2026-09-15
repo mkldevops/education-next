@@ -200,6 +200,7 @@ model Family {
   emergencyContactName  String?  @db.VarChar(250)
   emergencyContactPhone String?  @db.VarChar(20)
   authorizedPickup      String?  @db.Text
+  languagesAtHome       Json     @default("[]")
   createdById           String
   isActive              Boolean  @default(true)
   createdAt             DateTime @default(now())
@@ -280,7 +281,6 @@ model Student {
   birthplace         String?  @db.VarChar(250)
   previousSchool     String?  @db.VarChar(250)
   healthNotes        String?  @db.Text
-  languagesAtHome    Json     @default("[]")
   snackAuthorization Boolean  @default(false)
   allergies          String?  @db.VarChar(250)
   isActive           Boolean  @default(true)

@@ -2,6 +2,8 @@ import { z } from 'zod'
 
 const phoneNumberFormat = /^\+?[\d\s().-]{6,20}$/
 
+const languagesAtHomeSchema = z.array(z.string().trim().min(1).max(50)).max(20)
+
 export const personInputSchema = z.object({
   name: z.string().min(1).max(250),
   lastname: z.string().min(1).max(250),
@@ -24,6 +26,7 @@ export const createFamilySchema = z.object({
   emergencyContactName: z.string().max(250).optional(),
   emergencyContactPhone: z.string().min(1).max(20).regex(phoneNumberFormat).optional(),
   authorizedPickup: z.string().optional(),
+  languagesAtHome: languagesAtHomeSchema.default([]),
   parents: z.array(parentInputSchema),
   address: z.string().max(250).optional(),
   postCode: z.string().max(10).optional(),
@@ -39,6 +42,7 @@ export const updateFamilySchema = z.object({
   emergencyContactName: z.string().max(250).nullish(),
   emergencyContactPhone: z.string().min(1).max(20).regex(phoneNumberFormat).nullish(),
   authorizedPickup: z.string().nullish(),
+  languagesAtHome: languagesAtHomeSchema.optional(),
 })
 
 export const addPersonToFamilySchema = z.object({
