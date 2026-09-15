@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "education": {
+      "type": "http",
+      "url": "https://marseille.msadawaheri.fr/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${EDUCATION_MCP_TOKEN}"
+      }
+    }
+  }
+}
