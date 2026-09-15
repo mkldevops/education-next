@@ -1682,6 +1682,15 @@
       "stop": "Back to my account",
       "stopping": "Returning…",
       "error": "Returning to your account failed, please sign in again"
+    },
+    "eventAnnouncement": {
+      "message": "{title} — {date}",
+      "dismiss": "Dismiss the banner"
+    },
+    "upcomingEvents": {
+      "title": "Upcoming events",
+      "manage": "Manage",
+      "empty": "No upcoming event"
     }
   },
   "schools": {

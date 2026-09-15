@@ -6,6 +6,7 @@ const authMock = { api: { getSession: vi.fn() } }
 const getSchoolContextMock = vi.fn()
 const requireSchoolScopeMock = vi.fn()
 const isPaymentsEnabledMock = vi.fn()
+const isEventsEnabledMock = vi.fn()
 const getDashboardOverviewMock = vi.fn()
 const isStripeConfiguredMock = vi.fn(() => true)
 
@@ -29,6 +30,9 @@ vi.mock('@/lib/school-context', () => ({ getSchoolContext: getSchoolContextMock 
 vi.mock('@/lib/stripe', () => ({ isStripeConfigured: isStripeConfiguredMock }))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
+}))
+vi.mock('@/use-cases/events/is-events-enabled', () => ({
+  isEventsEnabled: isEventsEnabledMock,
 }))
 vi.mock('../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
 vi.mock('./_lib/dashboard-overview', () => ({ getDashboardOverview: getDashboardOverviewMock }))
@@ -90,6 +94,7 @@ const overview = (paymentsEnabled: boolean, isAdmin: boolean) => ({
 beforeEach(() => {
   vi.clearAllMocks()
   isStripeConfiguredMock.mockReturnValue(true)
+  isEventsEnabledMock.mockResolvedValue(false)
   schoolGatewayMock.findActiveById.mockResolvedValue({ id: 'school-1', name: 'Al-Nour' })
   authMock.api.getSession.mockResolvedValue({ user: { name: 'Jane', email: 'jane@example.com' } })
 })

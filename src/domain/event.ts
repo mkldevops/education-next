@@ -125,3 +125,27 @@ export function filterVisibleEvents<T extends { visibility: EventVisibility; sta
     (event) => visibilities.includes(event.visibility) && event.status !== 'DRAFT'
   )
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Bandeau J-x : l'événement PUBLISHED le plus proche dont la fenêtre d'annonce est
+ * ouverte. `announceDaysBefore` porte cette fenêtre par événement — `null` signifie
+ * « aucune annonce » (cf. commentaire du modèle `Event`) : un événement qui ne porte pas
+ * ce champ n'est jamais choisi, quelle que soit sa proximité dans le temps. `CANCELLED`
+ * est exclu : le bandeau annonce un événement à venir, il n'a pas vocation à publier une
+ * annulation. Un événement déjà commencé (`startAt <= now`) n'est plus « à venir ».
+ */
+export function selectAnnouncedEvent<
+  T extends { status: EventStatus; startAt: Date; announceDaysBefore: number | null },
+>(events: T[], now: Date): T | null {
+  const eligible = events.filter((event) => {
+    if (event.status !== 'PUBLISHED' || event.announceDaysBefore === null) return false
+    const opensAt = event.startAt.getTime() - event.announceDaysBefore * DAY_MS
+    return event.startAt.getTime() > now.getTime() && opensAt <= now.getTime()
+  })
+
+  if (eligible.length === 0) return null
+
+  return eligible.reduce((nearest, event) => (event.startAt < nearest.startAt ? event : nearest))
+}

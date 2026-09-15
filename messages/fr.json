@@ -1682,6 +1682,15 @@
       "stop": "Revenir à mon compte",
       "stopping": "Retour…",
       "error": "Le retour à votre compte a échoué, reconnectez-vous"
+    },
+    "eventAnnouncement": {
+      "message": "{title} — {date}",
+      "dismiss": "Masquer le bandeau"
+    },
+    "upcomingEvents": {
+      "title": "Prochains événements",
+      "manage": "Gérer",
+      "empty": "Aucun événement à venir"
     }
   },
   "schools": {
