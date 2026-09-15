@@ -91,8 +91,10 @@ export const eventGateway = {
     }),
 
   // Bandeau J-x et carte « Prochains événements » du tableau de bord : visibilités du
-  // rôle appelant, à partir d'aujourd'hui (minuit UTC) pour rester borné.
-  listUpcoming: (schoolId: string, visibilities: EventVisibility[], from: Date) =>
+  // rôle appelant, à partir d'aujourd'hui (minuit UTC) pour rester borné. `take` plafonne
+  // le lot ramené — la carte n'en affiche qu'une poignée, et le bandeau n'a besoin que du
+  // plus proche parmi eux.
+  listUpcoming: (schoolId: string, visibilities: EventVisibility[], from: Date, take?: number) =>
     db.event.findMany({
       where: {
         schoolId,
@@ -101,5 +103,6 @@ export const eventGateway = {
         startAt: { gte: from },
       },
       orderBy: { startAt: 'asc' },
+      ...(take !== undefined ? { take } : {}),
     }),
 }

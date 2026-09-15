@@ -161,6 +161,7 @@ describe('selectAnnouncedEvent', () => {
     id: '1',
     status: 'PUBLISHED' as const,
     startAt: new Date('2026-09-20T00:00:00.000Z'),
+    allDay: false,
   }
 
   it('returns null when no event carries an announcement window', () => {
@@ -178,7 +179,7 @@ describe('selectAnnouncedEvent', () => {
     })
   })
 
-  it('ignores an event that has already started', () => {
+  it('ignores a timed event that has already started', () => {
     const started = { ...base, startAt: now, announceDaysBefore: 10 }
     expect(selectAnnouncedEvent([started], now)).toBeNull()
   })
@@ -187,6 +188,38 @@ describe('selectAnnouncedEvent', () => {
     expect(
       selectAnnouncedEvent([{ ...base, status: 'CANCELLED', announceDaysBefore: 10 }], now)
     ).toBeNull()
+  })
+
+  it('keeps an all-day event announced through its entire start day, not just until its own UTC midnight', () => {
+    const allDayEvent = {
+      id: 'allday',
+      status: 'PUBLISHED' as const,
+      startAt: new Date('2026-09-10T00:00:00.000Z'),
+      announceDaysBefore: 10,
+      allDay: true,
+    }
+
+    expect(selectAnnouncedEvent([allDayEvent], new Date('2026-09-10T00:00:00.000Z'))?.id).toBe(
+      'allday'
+    )
+    expect(selectAnnouncedEvent([allDayEvent], new Date('2026-09-10T07:00:00.000Z'))?.id).toBe(
+      'allday'
+    )
+    expect(selectAnnouncedEvent([allDayEvent], new Date('2026-09-10T18:00:00.000Z'))?.id).toBe(
+      'allday'
+    )
+  })
+
+  it('drops an all-day event the day after it starts', () => {
+    const allDayEvent = {
+      id: 'allday',
+      status: 'PUBLISHED' as const,
+      startAt: new Date('2026-09-10T00:00:00.000Z'),
+      announceDaysBefore: 10,
+      allDay: true,
+    }
+
+    expect(selectAnnouncedEvent([allDayEvent], new Date('2026-09-11T00:00:00.000Z'))).toBeNull()
   })
 
   it('picks the nearest eligible event among several', () => {

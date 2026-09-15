@@ -1,5 +1,9 @@
 const FOLD_LIMIT = 75
 const DAY_MS = 24 * 60 * 60 * 1000
+// 2020-01-01T00:00:00Z : toute date `updatedAt` de l'application lui est postérieure, donc
+// SEQUENCE reste positive ; repousse le dépassement de l'INTEGER 32 bits signé de la RFC
+// (2 147 483 647 s) de 1970 à environ 2088, loin de la portée de cette application.
+const ICS_SEQUENCE_EPOCH_MS = Date.UTC(2020, 0, 1)
 
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
@@ -112,11 +116,18 @@ function buildVEventLines(schoolSlug: string, event: IcsEvent, now: Date): strin
   if (event.location) lines.push(icsLine('LOCATION', escapeIcsText(event.location)))
 
   lines.push(icsLine('STATUS', event.status === 'CANCELLED' ? 'CANCELLED' : 'CONFIRMED'))
-  // SEQUENCE dérivée de `updatedAt` (époque en secondes) : monotone croissante tant que
-  // l'horloge ne recule pas, donc chaque modification l'augmente sans compteur séparé à
-  // faire persister. `LAST-MODIFIED` porte la même information au format RFC attendu par
-  // les clients qui l'utilisent plutôt que SEQUENCE pour détecter une mise à jour.
-  lines.push(icsLine('SEQUENCE', String(Math.floor(event.updatedAt.getTime() / 1000))))
+  // SEQUENCE dérivée de `updatedAt`, en secondes depuis une époque fixe du projet — pas
+  // l'époque Unix 1970, dont les secondes dépasseraient l'INTEGER 32 bits signé de la RFC
+  // (2 147 483 647) le 2038-01-19 ; un client qui stocke SEQUENCE ainsi repasserait en
+  // négatif et ignorerait alors toute édition ultérieure. Reste monotone croissante tant
+  // que l'horloge ne recule pas, donc chaque modification l'augmente sans compteur séparé
+  // à faire persister.
+  lines.push(
+    icsLine(
+      'SEQUENCE',
+      String(Math.floor((event.updatedAt.getTime() - ICS_SEQUENCE_EPOCH_MS) / 1000))
+    )
+  )
   lines.push(icsLine('LAST-MODIFIED', formatIcsDateTimeUtc(event.updatedAt)))
   lines.push(icsLine('END', 'VEVENT'))
 
@@ -139,7 +150,6 @@ export function buildEventsIcsFeed(
     icsLine('VERSION', '2.0'),
     icsLine('PRODID', '-//education-next//events//FR'),
     icsLine('CALSCALE', 'GREGORIAN'),
-    icsLine('METHOD', 'PUBLISH'),
     // Extension `X-WR-CALNAME`, non normative mais largement reconnue (Apple Calendar,
     // Google Calendar, Outlook) : sans elle, le calendrier importé porte un nom générique
     // illisible au lieu du nom de l'école.

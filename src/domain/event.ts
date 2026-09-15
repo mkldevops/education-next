@@ -134,15 +134,32 @@ const DAY_MS = 24 * 60 * 60 * 1000
  * « aucune annonce » (cf. commentaire du modèle `Event`) : un événement qui ne porte pas
  * ce champ n'est jamais choisi, quelle que soit sa proximité dans le temps. `CANCELLED`
  * est exclu : le bandeau annonce un événement à venir, il n'a pas vocation à publier une
- * annulation. Un événement déjà commencé (`startAt <= now`) n'est plus « à venir ».
+ * annulation.
+ *
+ * Un événement `allDay` est stocké à minuit UTC (`normalizeEventDates`) : le comparer
+ * strictement à `now` ferait disparaître le bandeau à 00:00 UTC le jour même de
+ * l'événement, exactement quand il compte le plus — et désynchroniserait ce choix de
+ * `listUpcomingEvents`, qui plafonne sa propre borne au début du jour UTC pour que « today »
+ * y reste inclus. Un `allDay` reste donc annoncé tant que le jour UTC courant n'a pas
+ * dépassé son `startAt` ; un événement horodaté garde la comparaison stricte à l'instant.
  */
 export function selectAnnouncedEvent<
-  T extends { status: EventStatus; startAt: Date; announceDaysBefore: number | null },
+  T extends {
+    status: EventStatus
+    startAt: Date
+    announceDaysBefore: number | null
+    allDay: boolean
+  },
 >(events: T[], now: Date): T | null {
+  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+
   const eligible = events.filter((event) => {
     if (event.status !== 'PUBLISHED' || event.announceDaysBefore === null) return false
     const opensAt = event.startAt.getTime() - event.announceDaysBefore * DAY_MS
-    return event.startAt.getTime() > now.getTime() && opensAt <= now.getTime()
+    const hasNotPassed = event.allDay
+      ? event.startAt.getTime() >= todayStart.getTime()
+      : event.startAt.getTime() > now.getTime()
+    return hasNotPassed && opensAt <= now.getTime()
   })
 
   if (eligible.length === 0) return null
