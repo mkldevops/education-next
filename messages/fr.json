@@ -1682,6 +1682,15 @@
       "stop": "Revenir à mon compte",
       "stopping": "Retour…",
       "error": "Le retour à votre compte a échoué, reconnectez-vous"
+    },
+    "eventAnnouncement": {
+      "message": "{title} — {date}",
+      "dismiss": "Masquer le bandeau"
+    },
+    "upcomingEvents": {
+      "title": "Prochains événements",
+      "manage": "Gérer",
+      "empty": "Aucun événement à venir"
     }
   },
   "schools": {
@@ -1776,6 +1785,16 @@
         "description": "Autorise les membres à changer d'école depuis la barre latérale. Éteint, le sélecteur disparaît de la barre latérale, super-admin compris."
       }
     }
+  },
+  "publicEvents": {
+    "metadata": {
+      "title": "Événements — {schoolName}",
+      "description": "Réunions, sorties, fêtes et fermetures à venir à {schoolName}."
+    },
+    "title": "Événements",
+    "subtitle": "Les événements publics de {schoolName}.",
+    "empty": "Aucun événement public pour le moment.",
+    "subscribe": "Ajouter au calendrier"
   },
   "settings": {
     "title": "Paramètres",

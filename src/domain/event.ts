@@ -1,4 +1,4 @@
-import type { EventVisibility } from '@/generated/prisma/client'
+import type { EventStatus, EventVisibility } from '@/generated/prisma/client'
 
 export type EventViewer = 'PUBLIC' | 'MEMBER' | 'STAFF'
 
@@ -104,3 +104,65 @@ export function shiftEventToNextYear(input: { startAt: Date; endAt?: Date | null
 
 /** Au-delà, `add-event-image` refuse avec `'tooManyImages'`. */
 export const MAX_EVENT_IMAGES = 6
+
+/**
+ * Filtre défensif, appliqué EN PLUS de la requête Prisma qui pose déjà les mêmes bornes.
+ *
+ * Le commentaire du modèle `Event` rappelle que la route média (`/api/media/events/…`) ne
+ * vérifie ni la visibilité ni le statut d'un événement — sa seule protection est la clé
+ * d'objet non énumérable. Toute lecture qui alimente une surface publique (page publique,
+ * flux ICS) doit donc garantir elle-même qu'aucun événement MEMBERS/STAFF/DRAFT ne peut s'y
+ * glisser, même si la requête SQL en amont change un jour sans que ce filtre suive.
+ *
+ * `DRAFT` est le seul statut exclu : `CANCELLED` reste diffusé, barré, comme partout
+ * ailleurs dans l'application (cf. doctrine du modèle `Event`).
+ */
+export function filterVisibleEvents<T extends { visibility: EventVisibility; status: EventStatus }>(
+  events: T[],
+  visibilities: EventVisibility[]
+): T[] {
+  return events.filter(
+    (event) => visibilities.includes(event.visibility) && event.status !== 'DRAFT'
+  )
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Bandeau J-x : l'événement PUBLISHED le plus proche dont la fenêtre d'annonce est
+ * ouverte. `announceDaysBefore` porte cette fenêtre par événement — `null` signifie
+ * « aucune annonce » (cf. commentaire du modèle `Event`) : un événement qui ne porte pas
+ * ce champ n'est jamais choisi, quelle que soit sa proximité dans le temps. `CANCELLED`
+ * est exclu : le bandeau annonce un événement à venir, il n'a pas vocation à publier une
+ * annulation.
+ *
+ * Un événement `allDay` est stocké à minuit UTC (`normalizeEventDates`) : le comparer
+ * strictement à `now` ferait disparaître le bandeau à 00:00 UTC le jour même de
+ * l'événement, exactement quand il compte le plus — et désynchroniserait ce choix de
+ * `listAnnounceableEvents`, qui plafonne sa propre borne au début du jour UTC pour que
+ * « today » y reste inclus. Un `allDay` reste donc annoncé tant que le jour UTC courant n'a
+ * pas dépassé son `startAt` ; un événement horodaté garde la comparaison stricte à l'instant.
+ */
+export function selectAnnouncedEvent<
+  T extends {
+    status: EventStatus
+    startAt: Date
+    announceDaysBefore: number | null
+    allDay: boolean
+  },
+>(events: T[], now: Date): T | null {
+  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+
+  const eligible = events.filter((event) => {
+    if (event.status !== 'PUBLISHED' || event.announceDaysBefore === null) return false
+    const opensAt = event.startAt.getTime() - event.announceDaysBefore * DAY_MS
+    const hasNotPassed = event.allDay
+      ? event.startAt.getTime() >= todayStart.getTime()
+      : event.startAt.getTime() > now.getTime()
+    return hasNotPassed && opensAt <= now.getTime()
+  })
+
+  if (eligible.length === 0) return null
+
+  return eligible.reduce((nearest, event) => (event.startAt < nearest.startAt ? event : nearest))
+}

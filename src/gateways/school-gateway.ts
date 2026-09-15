@@ -65,8 +65,14 @@ export const schoolGateway = {
       },
     }),
 
+  // Le `select` gagne `name` et `slug` pour la page publique et le flux ICS (#326) ; les
+  // appelants préexistants (`create-school.ts`, `update-school.ts`) ne lisaient que `id`
+  // et `isActive` pour détecter un slug déjà pris.
   findBySlug: (slug: string) =>
-    db.school.findUnique({ where: { slug }, select: { id: true, isActive: true } }),
+    db.school.findUnique({
+      where: { slug },
+      select: { id: true, name: true, slug: true, isActive: true },
+    }),
 
   /**
    * L'école et ses réglages par défaut dans la même transaction : une école créée

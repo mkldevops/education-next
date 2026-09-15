@@ -1233,13 +1233,20 @@ email — interpolate `{schoolName}` instead of naming one school in the source 
 
 ## Events
 
-Owner: `src/domain/event.ts`, `src/use-cases/events/`, `src/gateways/event-gateway.ts`.
+Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`,
+`src/gateways/event-gateway.ts`.
 
 - **Gated by the school setting `events_enabled`** (`src/lib/events-config.ts`), off by default.
-  Three enforcement points read the same flag: the sidebar entry
-  (`src/features/dashboard/sidebar-items.ts`), the dashboard page (`notFound()` when it is off), and
+  Five enforcement points read the same flag, independently: the sidebar entry
+  (`src/features/dashboard/sidebar-items.ts`), the dashboard page (`notFound()` when it is off),
   every use-case in `src/use-cases/events/` — after `safeParse` rejects malformed input
-  (`'validationError'`), before anything else. Once it exists, the public event listing is a fourth.
+  (`'validationError'`), before anything else — `listPublicEvents` (public page and ICS feed, both
+  answer `notFound`/404), and `isEventsEnabled` (`src/use-cases/events/is-events-enabled.ts`, the
+  dashboard J-x banner and the "Prochains événements" card). `isEventsEnabled` is the one reader with
+  fail-closed semantics spelled out explicitly in code: unlike `isPaymentsEnabled`
+  (`readsAsEnabled` — absence of a row reads as enabled), an events flag that has never been written
+  reads as **disabled**, matching `EVENTS_CONFIG_DEFAULT.value = 'false'` and every use-case's own
+  `config?.value !== 'true'` check.
 - **Visibility is an ordered scale, not a set of independent tags**: `PUBLIC ⊂ MEMBERS ⊂ STAFF`
   (`EventVisibility`, `prisma/schema.prisma`). `visibleEventVisibilities()` (`src/domain/event.ts`)
   turns a viewer into the list of visibilities it may read, which replaces a viewer × category
@@ -1310,10 +1317,71 @@ Owner: `src/domain/event.ts`, `src/use-cases/events/`, `src/gateways/event-gatew
 - **The media route does not consult `EventVisibility` or `EventStatus`.** Confidentiality of an
   event's bytes rests entirely on the object key being unguessable (two independent UUIDv4s), not on
   the visibility chosen for the event — a `DRAFT` or `STAFF`-only image is served to an
-  unauthenticated request that already holds its key, with a one-year immutable cache header. This is
-  survivable today because nothing outside the admin screen ever renders that key. It stops being
-  survivable the day #326's public event listing ships: that surface must either filter which events
-  it links images for, or the route must start checking visibility itself.
+  unauthenticated request that already holds its key, with a one-year immutable cache header. This
+  stayed survivable once the public event listing shipped (#326) because that surface is what
+  filters which events it links images for, rather than the route gaining a visibility check: only a
+  `PUBLIC`/`PUBLISHED`-or-`CANCELLED` event's cover ever reaches a public page or the Open Graph
+  image, enforced twice — the projection query, and `filterVisibleEvents` (`src/domain/event.ts`)
+  replaying the same visibility/status bound as a defense-in-depth filter on the result, so a future
+  bug in the query alone cannot leak a `MEMBERS`/`STAFF`/`DRAFT` event's image key.
+- **Public listing and ICS feed share one projection**, `listPublicEvents`
+  (`src/use-cases/events/list-public-events.ts`, memoised with `React.cache()` so
+  `generateMetadata` and the page body cost one query): visibility `PUBLIC`, status `PUBLISHED` or
+  `CANCELLED` — never `DRAFT` — of an active school whose slug resolves and whose `events_enabled`
+  is on; anything else is `'notFound'`/`'notConfigured'`, both rendered as a plain 404 by the public
+  page (`app/[locale]/ecole/[slug]/evenements/page.tsx`) and the ICS route
+  (`app/api/schools/[slug]/events.ics/route.ts`) alike — the doctrine of hiding a disabled feature
+  rather than announcing its unavailability extends to these two public, unauthenticated surfaces.
+  `CANCELLED` is included, struck through like the admin table: the same "stays visible" doctrine
+  applies to a public visitor who bookmarked the page, and to a calendar already subscribed to the
+  feed. **In mono-school deployments**, `/[locale]/evenements` looks up every active school
+  (`schoolGateway.listActive()`) and issues a 308 to the single result's canonical
+  `/ecole/<slug>/evenements` — the same bypass doctrine as the sidebar's school switcher, transposed
+  to a public route that carries no session to read a membership list from. Zero or several active
+  schools answer `notFound()`: no multi-school landing page exists yet.
+- **The ICS feed is a pure serializer** (`buildEventsIcsFeed`, `src/domain/event-ics.ts`), fed by the
+  route handler and independently unit-tested — no database or request object crosses into that
+  module. `allDay` emits `DTSTART;VALUE=DATE`; RFC 5545 makes that value's `DTEND` **exclusive**,
+  while `endAt` is stored **inclusive** (`normalizeEventDates`), so a multi-day all-day event's
+  `DTEND` is always the stored `endAt` plus one day — omitted entirely for a single-day event, which
+  is where RFC 5545's implicit one-day default already lands correctly. A timed event emits UTC
+  instants instead. `UID` is `<id>@<school-slug>`: stable across edits, so a calendar client updates
+  the existing entry instead of duplicating it. `SEQUENCE` is `updatedAt` in whole seconds since the
+  epoch — monotonically increasing with every edit as long as two edits of the same event don't land
+  in the same second, which a human editing a form never does. `STATUS:CANCELLED` mirrors the
+  `CANCELLED` doctrine into the feed: the entry is kept and struck through by the calendar client,
+  never removed. Text properties are escaped and lines are folded per RFC 5545 §3.1/§3.3.11, folding
+  on UTF-8 octet boundaries rather than UTF-16 code units so an accented character is never split
+  across a fold.
+- **The J-x banner reuses `Event.announceDaysBefore`** rather than a fixed window:
+  `selectAnnouncedEvent` (`src/domain/event.ts`) picks the nearest `PUBLISHED` event whose window
+  (`startAt` minus `announceDaysBefore` days) has opened and which hasn't started yet; an event with
+  `announceDaysBefore: null` is never selected, honouring the admin's explicit "no announcement"
+  choice recorded on the field since phase 1. `CANCELLED` is excluded — the banner announces what is
+  coming, it does not publish a cancellation. The banner and the read-only "Prochains événements"
+  card (`(dashboard)/dashboard/_components/upcoming-events-card.tsx`) both live on the **dashboard**,
+  not the public page: `EventAnnouncementBanner` renders in `(dashboard)/layout.tsx` next to
+  `ImpersonationBanner`, visible to every connected member — `STAFF` viewer scope
+  (`visibleEventVisibilities`) for an admin/super-admin, `MEMBER` scope for a parent — because
+  `/dashboard/events` stays admin-only; these two surfaces are what let a parent see events at all
+  without it. Dismissal is client-side and keyed `event-dismissed:<id>:<updatedAt>` in
+  `localStorage`: editing the event changes `updatedAt`, so the key changes and the banner
+  reappears — an id alone would leave a stale dismissal covering an edited announcement.
+- **The banner and the card read through two different, purpose-scoped queries, not one shared
+  fetch.** An earlier revision had both call `listUpcomingEvents` with a shared `take` limit so the
+  two would deduplicate into a single request within a render; that broke the banner silently on any
+  school whose calendar carries more than `take` upcoming rows before reaching the one event whose
+  announcement window was actually open — `selectAnnouncedEvent` needs the nearest `PUBLISHED` event
+  with a non-null `announceDaysBefore`, a materially smaller set than "every upcoming event" the card
+  wants, so a limit sized for the card's display could exhaust itself on rows the banner could never
+  select in the first place. `listAnnounceableEvents` (`src/use-cases/events/list-announceable-events.ts`)
+  now feeds the banner from `eventGateway.listAnnounceable`, which filters `status: 'PUBLISHED'` and
+  `announceDaysBefore: { not: null }` in the SQL `where` itself — before `take` is applied, not after
+  — so the limit only ever counts rows the banner could actually choose. `listUpcomingEvents`
+  (`src/use-cases/events/list-upcoming-events.ts`) keeps serving the card alone, unfiltered by
+  `announceDaysBefore`, capped only for its own bounded display. Neither is memoised with
+  `React.cache()` anymore: that was only ever justified by the two surfaces sharing one call, which
+  no longer holds now that they read different rows.
 
 ## Invitations
 
@@ -1416,6 +1484,17 @@ Real holes, verified against the running application. Not aspirations.
   `/dashboard/users` works around it with a `key` that remounts the table when a filter changes, at
   the cost of losing the search and sort on each change. The four other tables pass a constant list,
   so they are exposed only once a parent-driven filter is added to them.
+- **`Event.startAt`/`endAt` reads shift by the server's local UTC offset when the Node process does
+  not run with `TZ=UTC`** — verified against this app's own Prisma setup (`@prisma/adapter-pg`),
+  reading a `TIMESTAMP(3)` (no time zone) column. A raw `pg.Client` reading the same row returns the
+  stored wall-clock digits verbatim; a `db.event.findFirst()` through the app's Prisma client, run on
+  a process whose OS time zone is e.g. `Africa/Cairo` (UTC+3), returns an instant three hours later —
+  enough to cross midnight and change the UTC calendar day `getUTCDate()` reads, exactly the bug
+  `normalizeEventDates` (`src/domain/event.ts`) exists to prevent. Docker/CI default to `TZ=UTC`,
+  where this is a no-op, which is presumably why it has not surfaced before. A developer seeding or
+  testing event dates locally on a non-UTC machine will see wrong days without any error. Reproduced
+  and isolated while verifying #326's ICS feed; fixing it (forcing `TZ=UTC` on the Next.js process,
+  or moving the affected columns to `TIMESTAMPTZ`) was out of that issue's scope.
 
 ## Surfacing a rule in the UI
 

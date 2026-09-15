@@ -12,9 +12,11 @@ import { formatCurrency } from '@/lib/decimal'
 import { getSchoolContext } from '@/lib/school-context'
 import { isStripeConfigured } from '@/lib/stripe'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
 import { requireSchoolScope } from '../_lib/auth-helper'
 import { SchoolInsightsSection } from './_components/school-insights'
 import { UnlinkedParentNotice } from './_components/unlinked-parent-notice'
+import { UpcomingEventsCard } from './_components/upcoming-events-card'
 import { getDashboardOverview } from './_lib/dashboard-overview'
 import { ActivateEnrollmentButton } from './families/[id]/_components/activate-enrollment-button'
 import { OnlinePaymentButton } from './families/[id]/_components/online-payment-button'
@@ -50,8 +52,11 @@ export default async function DashboardPage({ params }: Props) {
   }
 
   const scope = await requireSchoolScope()
-  const paymentsEnabled = await isPaymentsEnabled(scope.schoolId)
-  const activeSchool = await schoolGateway.findActiveById(scope.schoolId)
+  const [paymentsEnabled, eventsEnabled, activeSchool] = await Promise.all([
+    isPaymentsEnabled(scope.schoolId),
+    isEventsEnabled(scope.schoolId),
+    schoolGateway.findActiveById(scope.schoolId),
+  ])
   const schoolName = activeSchool?.name ?? ''
 
   const isAdmin = scope.isAdmin
@@ -263,6 +268,15 @@ export default async function DashboardPage({ params }: Props) {
       </div>
 
       {insights && <SchoolInsightsSection insights={insights} locale={locale} />}
+
+      {eventsEnabled && (
+        <UpcomingEventsCard
+          schoolId={scope.schoolId}
+          viewer={isAdmin ? 'STAFF' : 'MEMBER'}
+          locale={locale}
+          canManage={isAdmin}
+        />
+      )}
 
       <Card className="rounded border border-alabaster-700">
         <div className="flex items-center justify-between px-6 pt-6">

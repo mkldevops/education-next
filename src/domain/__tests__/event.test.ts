@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  filterVisibleEvents,
   normalizeEventDates,
+  selectAnnouncedEvent,
   shiftEventToNextYear,
   slugifyEventTitle,
   validateEventRange,
@@ -128,5 +130,112 @@ describe('shiftEventToNextYear', () => {
     const { startAt } = shiftEventToNextYear({ startAt: new Date('2028-02-29T00:00:00.000Z') })
 
     expect(startAt).toEqual(new Date('2029-02-28T00:00:00.000Z'))
+  })
+})
+
+describe('filterVisibleEvents', () => {
+  const event = { id: '1', visibility: 'PUBLIC' as const, status: 'PUBLISHED' as const }
+
+  it('keeps an event whose visibility is in the allowed list', () => {
+    expect(filterVisibleEvents([event], ['PUBLIC'])).toEqual([event])
+  })
+
+  it('drops an event whose visibility is outside the allowed list', () => {
+    expect(filterVisibleEvents([{ ...event, visibility: 'MEMBERS' }], ['PUBLIC'])).toEqual([])
+  })
+
+  it('drops a DRAFT event regardless of visibility', () => {
+    expect(filterVisibleEvents([{ ...event, status: 'DRAFT' }], ['PUBLIC'])).toEqual([])
+  })
+
+  it('keeps a CANCELLED event: it stays diffused, not archived', () => {
+    expect(filterVisibleEvents([{ ...event, status: 'CANCELLED' }], ['PUBLIC'])).toEqual([
+      { ...event, status: 'CANCELLED' },
+    ])
+  })
+})
+
+describe('selectAnnouncedEvent', () => {
+  const now = new Date('2026-09-10T00:00:00.000Z')
+  const base = {
+    id: '1',
+    status: 'PUBLISHED' as const,
+    startAt: new Date('2026-09-20T00:00:00.000Z'),
+    allDay: false,
+  }
+
+  it('returns null when no event carries an announcement window', () => {
+    expect(selectAnnouncedEvent([{ ...base, announceDaysBefore: null }], now)).toBeNull()
+  })
+
+  it('returns null when the window has not opened yet', () => {
+    expect(selectAnnouncedEvent([{ ...base, announceDaysBefore: 3 }], now)).toBeNull()
+  })
+
+  it('picks an event once its announcement window has opened', () => {
+    expect(selectAnnouncedEvent([{ ...base, announceDaysBefore: 10 }], now)).toEqual({
+      ...base,
+      announceDaysBefore: 10,
+    })
+  })
+
+  it('ignores a timed event that has already started', () => {
+    const started = { ...base, startAt: now, announceDaysBefore: 10 }
+    expect(selectAnnouncedEvent([started], now)).toBeNull()
+  })
+
+  it('ignores a CANCELLED event: the banner announces what is coming, not a cancellation', () => {
+    expect(
+      selectAnnouncedEvent([{ ...base, status: 'CANCELLED', announceDaysBefore: 10 }], now)
+    ).toBeNull()
+  })
+
+  it('keeps an all-day event announced through its entire start day, not just until its own UTC midnight', () => {
+    const allDayEvent = {
+      id: 'allday',
+      status: 'PUBLISHED' as const,
+      startAt: new Date('2026-09-10T00:00:00.000Z'),
+      announceDaysBefore: 10,
+      allDay: true,
+    }
+
+    expect(selectAnnouncedEvent([allDayEvent], new Date('2026-09-10T00:00:00.000Z'))?.id).toBe(
+      'allday'
+    )
+    expect(selectAnnouncedEvent([allDayEvent], new Date('2026-09-10T07:00:00.000Z'))?.id).toBe(
+      'allday'
+    )
+    expect(selectAnnouncedEvent([allDayEvent], new Date('2026-09-10T18:00:00.000Z'))?.id).toBe(
+      'allday'
+    )
+  })
+
+  it('drops an all-day event the day after it starts', () => {
+    const allDayEvent = {
+      id: 'allday',
+      status: 'PUBLISHED' as const,
+      startAt: new Date('2026-09-10T00:00:00.000Z'),
+      announceDaysBefore: 10,
+      allDay: true,
+    }
+
+    expect(selectAnnouncedEvent([allDayEvent], new Date('2026-09-11T00:00:00.000Z'))).toBeNull()
+  })
+
+  it('picks the nearest eligible event among several', () => {
+    const far = {
+      ...base,
+      id: 'far',
+      startAt: new Date('2026-10-20T00:00:00.000Z'),
+      announceDaysBefore: 60,
+    }
+    const near = {
+      ...base,
+      id: 'near',
+      startAt: new Date('2026-09-15T00:00:00.000Z'),
+      announceDaysBefore: 10,
+    }
+
+    expect(selectAnnouncedEvent([far, near], now)?.id).toBe('near')
   })
 })

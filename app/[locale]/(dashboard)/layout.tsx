@@ -2,7 +2,12 @@ import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
-import { DashboardHeader, ImpersonationBanner, Sidebar } from '@/features/dashboard'
+import {
+  DashboardHeader,
+  EventAnnouncementBanner,
+  ImpersonationBanner,
+  Sidebar,
+} from '@/features/dashboard'
 import { localizedHref } from '@/i18n/localized-href'
 import { auth } from '@/lib/auth'
 import { getBrandingConfig } from '@/lib/branding'
@@ -77,6 +82,9 @@ export default async function DashboardLayout({ children, params }: Props) {
         <div className="sticky top-0 z-10">
           <Suspense fallback={null}>
             <ImpersonationBanner />
+          </Suspense>
+          <Suspense fallback={null}>
+            <EventAnnouncementBanner />
           </Suspense>
           <Suspense fallback={<header className="h-16" />}>
             <DashboardHeader />
