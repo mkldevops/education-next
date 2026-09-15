@@ -1668,7 +1668,7 @@
       "description": "Manage your personal information",
       "name": "Name",
       "email": "Email",
-      "emailHint": "Email cannot be changed",
+      "emailHint": "Your sign-in address, changed from the Account tab",
       "save": "Save",
       "success": "Profile updated successfully"
     },
@@ -1696,7 +1696,13 @@
     },
     "account": {
       "title": "Account",
-      "description": "Your account information"
+      "description": "Your account information",
+      "changeEmail": {
+        "hint": "A confirmation link is sent to your current address. The account address only changes once that link is followed.",
+        "newEmail": "New email address",
+        "submit": "Change address",
+        "sent": "Check your inbox: the confirmation was sent to your current address."
+      }
     },
     "logout": {
       "title": "Logout",
@@ -1734,7 +1740,8 @@
       "sessionRevokeFailed": "Failed to revoke session",
       "linkFailed": "Failed to connect Google account",
       "unlinkFailed": "Failed to disconnect Google account",
-      "logoutFailed": "Could not sign you out, please try again"
+      "logoutFailed": "Could not sign you out, please try again",
+      "emailChangeFailed": "Could not start the email change"
     },
     "passkey": {
       "title": "Passkeys",
@@ -1857,7 +1864,23 @@
       "heading": "You have been invited to join {schoolName}",
       "body": "You have been invited to join {schoolName} on the platform.",
       "cta": "Open my invitation",
-      "expiry": "This link expires in 48 hours."
+      "expiry": "This link expires in 48 hours.",
+      "footer": "Automated message sent by {schoolName}. If you were not expecting this invitation, you can ignore this email."
+    },
+    "invitationReminder": {
+      "subject": "Reminder: your invitation to join {schoolName}",
+      "heading": "Your invitation to {schoolName} is waiting",
+      "body": "Your invitation to join {schoolName} has not been used yet. The previous link has been replaced, so only this one works.",
+      "cta": "Open my invitation",
+      "expiry": "This new link expires in 48 hours.",
+      "footer": "Automated message sent by {schoolName}. If you were not expecting this invitation, you can ignore this email."
+    },
+    "passwordChanged": {
+      "subject": "Your password was changed",
+      "heading": "Your password was changed",
+      "body": "The password for your account was just changed. No action is needed if you made this change.",
+      "notice": "Your other open sessions remain active.",
+      "footer": "Automated message. If you did not make this change, reset your password immediately and contact an administrator."
     }
   }
 }

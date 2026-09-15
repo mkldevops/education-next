@@ -6,6 +6,7 @@ export {
   verifyPasskeyRegistration,
 } from './passkey-actions'
 export {
+  changeEmailAction,
   changePasswordAction,
   deleteProfileAction,
   revokeSessionAction,

@@ -4,7 +4,7 @@ import { Button, Card, Input, Label } from '@peaklab/ui'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
-import { deleteProfileAction } from '@/actions'
+import { changeEmailAction, deleteProfileAction } from '@/actions'
 import { GoogleIcon } from '@/features/auth'
 import { useRouter as useI18nRouter } from '@/i18n/routing'
 import { linkSocial, signOut, unlinkAccount } from '@/lib/auth-client'
@@ -27,6 +27,10 @@ export function AccountSection({ email, linkedAccounts, googleEnabled = false }:
   const i18nRouter = useI18nRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  // État séparé de `error` : ce dernier est affiché par la zone de danger pour
+  // toute valeur non nulle, un échec du formulaire d'adresse s'y serait donc
+  // aussi affiché.
+  const [emailError, setEmailError] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const locale = useLocale()
@@ -91,17 +95,55 @@ export function AccountSection({ email, linkedAccounts, googleEnabled = false }:
     })
   }
 
+  const handleChangeEmail = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const newEmail = new FormData(form).get('newEmail')
+    if (typeof newEmail !== 'string') return
+
+    setEmailError(false)
+    startTransition(async () => {
+      const result = await changeEmailAction({ newEmail })
+      if (!result.success) {
+        setEmailError(true)
+        return
+      }
+      form.reset()
+      toast.success(t('account.changeEmail.sent'))
+    })
+  }
+
   return (
     <div className="space-y-6">
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-graphite">{t('account.title')}</h2>
         <p className="mt-1 text-sm text-graphite-600">{t('account.description')}</p>
 
-        <div className="mt-6 max-w-md">
-          <Label htmlFor="account-email">{t('profile.email')}</Label>
-          <Input id="account-email" type="email" defaultValue={email} disabled className="mt-1" />
-          <p className="mt-1 text-xs text-graphite-600">{t('profile.emailHint')}</p>
-        </div>
+        <form onSubmit={handleChangeEmail} className="mt-6 max-w-md space-y-3">
+          <div>
+            <Label htmlFor="account-email">{t('profile.email')}</Label>
+            <Input id="account-email" type="email" defaultValue={email} disabled className="mt-1" />
+          </div>
+
+          <div>
+            <Label htmlFor="account-new-email">{t('account.changeEmail.newEmail')}</Label>
+            <Input
+              id="account-new-email"
+              name="newEmail"
+              type="email"
+              required
+              autoComplete="email"
+              className="mt-1"
+            />
+            <p className="mt-1 text-xs text-graphite-600">{t('account.changeEmail.hint')}</p>
+          </div>
+
+          {emailError && <p className="text-sm text-red-600">{t('errors.emailChangeFailed')}</p>}
+
+          <Button type="submit" size="sm" disabled={isPending}>
+            {isPending ? '...' : t('account.changeEmail.submit')}
+          </Button>
+        </form>
       </Card>
 
       {(googleEnabled || googleAccount) && (

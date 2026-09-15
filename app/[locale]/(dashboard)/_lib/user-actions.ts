@@ -100,10 +100,39 @@ export async function changePlatformLevelAction(input: unknown) {
 export async function updateUserAction(input: unknown) {
   await requirePlatformAdmin()
 
-  const result = await updateUser(
-    input as { id: string; name?: string | null; email?: string; emailVerified?: boolean }
-  )
+  const payload = input as {
+    id: string
+    name?: string | null
+    email?: string
+    emailVerified?: boolean
+  }
+  const before = await userGateway.findManaged(payload.id)
+
+  // Seul chemin qui écrit une adresse de connexion que personne n'a prouvée :
+  // l'admin la saisit. Les comptes créés par invitation ou par
+  // `createUserAction` partent d'une adresse déjà prouvée, d'où l'absence
+  // d'envoi à l'inscription (`emailVerification.sendOnSignUp` reste faux).
+  //
+  // La case « email vérifié » du formulaire ne peut pas arbitrer : elle est
+  // pré-cochée depuis la valeur stockée et renvoyée telle quelle, donc un admin
+  // qui remplace l'adresse d'un compte déjà vérifié la resoumettrait à `true`
+  // sans y avoir touché. Le drapeau est forcé à faux avec la nouvelle adresse :
+  // il décrirait sinon une adresse qui n'a jamais été confirmée.
+  const newEmail = payload.email?.toLowerCase()
+  const emailChanged = Boolean(newEmail && before && newEmail !== before.email.toLowerCase())
+
+  const result = await updateUser(emailChanged ? { ...payload, emailVerified: false } : payload)
+  // `updateUser` rend la ligne mise à jour, ou un code d'échec sous forme de chaîne.
   if (typeof result === 'string') return result
+
+  if (emailChanged && newEmail) {
+    try {
+      await auth.api.sendVerificationEmail({ body: { email: newEmail } })
+    } catch {
+      // Le compte porte déjà la nouvelle adresse : un envoi manqué ne doit pas
+      // faire échouer la mise à jour, l'admin peut la resoumettre.
+    }
+  }
 
   revalidatePath(USERS_PATH)
   return 'OK' as const

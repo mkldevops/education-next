@@ -114,6 +114,7 @@ export async function resendInvitationAction(input: { id: string }) {
     token,
     locale: invitation.locale,
     schoolName: school.name,
+    variant: 'reminder',
   })
   if (sent !== 'OK') return 'emailError'
 

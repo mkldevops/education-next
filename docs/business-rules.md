@@ -687,6 +687,41 @@ The `/dashboard/users` drawer is the single management surface. Its guards live 
   Auth reset email; the user chooses their own password. It refuses an archived account.
 - **Assigning `SUPER_ADMIN` is reserved to a super admin** (`canAssignRole`), so the policy holds
   even if the use case is ever reached by another caller.
+- **An address changed by an administrator is re-verified, and loses its verified flag.**
+  `updateUserAction` compares the stored address with the submitted one; when they differ it forces
+  `emailVerified: false` into the update and calls `auth.api.sendVerificationEmail` on the new
+  address. The « email vérifié » checkbox of the drawer cannot arbitrate this: it is pre-checked
+  from the stored value and resubmitted untouched, so keying the decision on it would silently skip
+  re-verification for exactly the accounts that were already verified, and leave the flag
+  describing an address nobody ever confirmed. This is the only path that writes a sign-in address
+  nobody has proven access to — an invited account received its token on that address, and
+  `createUserAction` marks `emailVerified` itself — which is why no verification mail is sent on
+  sign-up (`emailVerification.sendOnSignUp` is false). A failed send never fails the update: the
+  account already carries the new address.
+- **A user changes their own address through a confirmation on the old one.** `changeEmailAction`
+  (`/dashboard/settings`, Account tab) calls `auth.api.changeEmail`; `User.email` is only rewritten
+  once the link mailed to the **current** address is followed, so a hijacked session cannot move the
+  account to an attacker's address. Better Auth answers success without mailing anything when the
+  target address already exists, deliberately: the form must not become an account-existence oracle,
+  and the screen shows the same "check your inbox" message either way.
+
+### Transactional e-mail
+
+Every message is rendered by the shared layout in `src/lib/email-template.ts` — table markup, inline
+styles, Outlook VML button, hidden preheader, plain-text twin — and carries the school palette of
+`src/lib/theme.ts`. Values interpolated into the HTML are escaped and link targets restricted to
+`http(s)`, because school names and URLs reach the template from user input.
+
+- **School-signed messages** name the school as sender: invitation (`emails.invitation`) and its
+  resend, which uses the distinct `emails.invitationReminder` copy — `resendInvitationAction` issues
+  a new token, so the reminder must say the previous link no longer works.
+- **Platform-signed messages** go through `sendPlatformEmail` (`src/lib/platform-email.ts`) and are
+  branded « Education »: password reset, address verification, address-change confirmation. Their
+  Better Auth callbacks receive no request locale and no school context — an account may belong to
+  several schools — so their copy is French in source rather than translated.
+- **A password change notifies its owner.** `changePasswordAction` mails `emails.passwordChanged`
+  after the change succeeded. The send is deliberately not part of the result: the password is
+  already replaced, and reporting a mail failure would invite the user to change it twice.
 
 ### Impersonation
 
