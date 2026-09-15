@@ -301,6 +301,26 @@
             "validationError": "Vérifiez les informations saisies"
           }
         },
+        "delete": {
+          "title": "Supprimer définitivement la famille",
+          "description": "Cette action est irréversible : le dossier et tout ce qui lui est rattaché seront effacés de la base. Pour seulement masquer la famille, archivez-la.",
+          "impact": {
+            "members": "{count, plural, =0 {Aucun membre} one {# membre} other {# membres}}",
+            "students": "{count, plural, =0 {Aucun élève} one {# élève} other {# élèves}}",
+            "enrollments": "{count, plural, =0 {Aucune inscription} one {# inscription} other {# inscriptions}}",
+            "payments": "{count, plural, =0 {Aucun règlement} one {# règlement} other {# règlements}}"
+          },
+          "confirmationLabel": "Saisissez {name} pour confirmer",
+          "confirm": "Supprimer définitivement",
+          "cancel": "Annuler",
+          "success": "Famille supprimée",
+          "error": "Erreur lors de la suppression",
+          "errors": {
+            "confirmationMismatch": "Le nom saisi ne correspond pas à celui de la famille",
+            "notFound": "Famille introuvable",
+            "validationError": "Vérifiez les informations saisies"
+          }
+        },
         "addPerson": {
           "title": "Ajouter un membre",
           "firstname": "Prénom",
@@ -920,7 +940,6 @@
           "manage": "Actions",
           "edit": "Modifier",
           "delete": "Supprimer",
-          "deleteUnavailable": "La suppression définitive n'est pas encore disponible",
           "archive": "Archiver",
           "addChild": "Ajouter un enfant",
           "addEnrollment": "Nouvelle inscription",
