@@ -857,9 +857,6 @@
             "notFound": "Plan not found",
             "planInUse": "Open enrollments use this plan: move them to another plan first"
           }
-        },
-        "unpriced": {
-          "label": "No plan"
         }
       },
       "config": {

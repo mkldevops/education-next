@@ -857,9 +857,6 @@
             "notFound": "Plan introuvable",
             "planInUse": "Des inscriptions en cours utilisent ce plan : changez-les de plan d'abord"
           }
-        },
-        "unpriced": {
-          "label": "Sans tarif"
         }
       },
       "config": {

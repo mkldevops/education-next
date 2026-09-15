@@ -1009,8 +1009,10 @@ Machine access closes by **omission**: `McpScope` carries `paymentsEnabled`
 (`resolve-mcp-scope.ts`, the single read for a request, which keeps `buildMcpServer` synchronous),
 and `list_plans`, `preview_record_payment`, `commit_record_payment`, `preview_update_enrollment`
 and `commit_update_enrollment` are not declared at all. A tool that is absent does not mislead the
-agent into promising a collection it cannot make. The four money use-cases still refuse on their
-own, which is what stops a draft prepared before the cut from being committed after it.
+agent into promising a collection it cannot make. Those four money use-cases still refuse on their
+own, and `commitEnrollFamily` — declared whatever the flag, since enrolling stays open — refuses the
+money part of its draft, which is what stops a draft prepared before the cut from being committed
+after it.
 
 #### Enrolling without money
 
@@ -1022,9 +1024,20 @@ one `Plan` row named `__unpriced__` at `amount: 0`, created **on demand** by
 never carries the row. `totalAmount` and `discount` are written at zero, an explicit `planId` or a
 non-zero discount is refused, and `createEnrollmentSchema.planId` is optional for that reason.
 
+**Three write paths, one rule.** `createEnrollment`, `createEnrolledStudent` (the *Add a student*
+dialog of the family page, which enrolls in the same gesture) and the MCP `enroll_family` commit all
+refuse an explicit `planId` or a non-zero discount while payments are off, and all resolve the
+reserved plan **inside** their transaction so a full class rolls it back. `commitEnrollFamily`
+refuses only the **money part** of a stored draft (`paymentsDisabled`, lock released): enrolling
+stays open, which is the point of the flag, but an amount or a payment decided before the cut has no
+screen left to show it.
+
 The reserved row is excluded from every catalogue and selector read, cannot be archived
-(`unpricedPlan`), and cannot be recreated by hand under the same name. **The stored name never
-reaches a screen**: the displayed label comes from `messages/*.json`.
+(`unpricedPlan`), cannot be created by hand under that name — and `updatePlan` refuses it **in both
+directions**: renaming an ordinary plan into it would hide that plan from every catalogue with no
+way back, and let `ensureUnpriced` adopt its amount, so an enrollment meant to be unpriced would be
+born priced; renaming the reserved row out would have a second one created at the next cut.
+**The stored name never reaches a screen**: the displayed label comes from `messages/*.json`.
 
 Re-enabling exposes those enrollments as *needing a plan*, and `setEnrollmentPlan`
 (`src/use-cases/enrollments/set-enrollment-plan.ts`) prices them against the plan's **current**

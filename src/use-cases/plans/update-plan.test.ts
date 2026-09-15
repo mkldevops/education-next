@@ -23,8 +23,13 @@ class PlanGatewaySpy {
     return {} as never
   }
 
+  planToFind: { id: string; name: string } = {
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    name: 'Tarif annuel',
+  }
+
   async findById() {
-    return {} as never
+    return this.planToFind as never
   }
 
   async list() {
@@ -199,6 +204,33 @@ describe('updatePlan', () => {
 
     // THEN
     expect(result).toBe('paymentsDisabled')
+    expect(gateway.updatedData).toBeNull()
+  })
+
+  // Renommer une formule ordinaire en formule réservée la retire de tous les catalogues et
+  // de l'archivage — plus aucune ligne à cliquer — puis `ensureUnpriced` adopte son montant,
+  // donc une inscription « sans tarif » naîtrait tarifée.
+  it('refuses to rename an ordinary plan into the reserved one', async () => {
+    const result = await updatePlan(
+      { schoolId, id: '123e4567-e89b-12d3-a456-426614174000', name: '__unpriced__' },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(result).toBe('unpricedPlan')
+    expect(gateway.updatedData).toBeNull()
+  })
+
+  it('refuses to touch the reserved plan itself, which would reprice it', async () => {
+    gateway.planToFind = { id: '123e4567-e89b-12d3-a456-426614174111', name: '__unpriced__' }
+
+    const result = await updatePlan(
+      { schoolId, id: '123e4567-e89b-12d3-a456-426614174111', amount: 980 },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(result).toBe('unpricedPlan')
     expect(gateway.updatedData).toBeNull()
   })
 })

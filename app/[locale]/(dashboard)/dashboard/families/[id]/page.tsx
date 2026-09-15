@@ -159,6 +159,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               familyId={family.id}
               plans={plans.map((p) => ({ id: p.id, name: p.name }))}
               classes={classOptions}
+              paymentsEnabled={paymentsEnabled}
               defaultOpen={action === 'addStudent'}
               showTrigger={false}
             />

@@ -24,7 +24,9 @@ export const createStudentSchema = z.object({
  * n'a aucune inscription à remplacer, donc `replaceExisting` n'a pas de sens ici.
  */
 const newStudentEnrollmentSchema = z.object({
-  planId: z.string().uuid(),
+  // Facultatif pour la même raison que `createEnrollmentSchema.planId` : une école qui a
+  // coupé les paiements inscrit sans formule, et le use case restaure l'obligation drapeau actif.
+  planId: z.string().uuid().optional(),
   classPeriodId: z.string().uuid(),
   discount: z.number().min(0).default(0),
   canLeaveAlone: z.boolean().default(false),

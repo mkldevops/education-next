@@ -31,6 +31,8 @@ interface CreateStudentDialogProps {
   /** Plans et classes de la période sélectionnée : vides, l'inscription n'est pas proposée. */
   plans?: Option[]
   classes?: Option[]
+  /** Faux, l'inscription immédiate se fait sans formule ni remise. */
+  paymentsEnabled: boolean
   defaultOpen?: boolean
   redirectTo?: string
   showTrigger?: boolean
@@ -40,6 +42,7 @@ export function CreateStudentDialog({
   familyId,
   plans = [],
   classes = [],
+  paymentsEnabled,
   defaultOpen = false,
   redirectTo,
   showTrigger = true,
@@ -62,7 +65,12 @@ export function CreateStudentDialog({
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreateStudentForm familyId={familyId} plans={plans} classes={classes} />
+        <CreateStudentForm
+          familyId={familyId}
+          plans={plans}
+          classes={classes}
+          paymentsEnabled={paymentsEnabled}
+        />
       </DialogContent>
     </Dialog>
   )
@@ -72,15 +80,19 @@ function CreateStudentForm({
   familyId,
   plans,
   classes,
+  paymentsEnabled,
 }: {
   familyId: string
   plans: Option[]
   classes: Option[]
+  paymentsEnabled: boolean
 }) {
   const t = useTranslations('dashboard.pages.students.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
-  const canEnroll = plans.length > 0 && classes.length > 0
+  // Sans formule à choisir, l'inscription reste possible hors drapeau : seule la classe
+  // est nécessaire.
+  const canEnroll = classes.length > 0 && (!paymentsEnabled || plans.length > 0)
   const [enroll, setEnroll] = useState(canEnroll)
 
   const handleSubmit = onSubmit(
@@ -104,9 +116,15 @@ function CreateStudentForm({
         ...(enroll && canEnroll
           ? {
               enrollment: {
-                planId: formData.get('planId') as string,
+                // Hors drapeau les deux champs n'existent pas : les omettre laisse le use
+                // case résoudre la formule réservée et écrire zéro (FR-017).
+                ...(paymentsEnabled
+                  ? {
+                      planId: formData.get('planId') as string,
+                      discount: Number(formData.get('discount') || 0),
+                    }
+                  : {}),
                 classPeriodId: formData.get('classPeriodId') as string,
-                discount: Number(formData.get('discount') || 0),
                 canLeaveAlone: formData.get('canLeaveAlone') === 'on',
               },
             }
@@ -195,16 +213,20 @@ function CreateStudentForm({
               enroll && (
                 <>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="student-plan">{t('selectPlan')}</Label>
-                      <Select id="student-plan" name="planId" required disabled={isPending}>
-                        {plans.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
+                    {/* Ni formule ni remise quand l'école ne tarife pas : le use case les
+                        refuserait, et les proposer ferait croire à un choix. */}
+                    {paymentsEnabled && (
+                      <div className="space-y-2">
+                        <Label htmlFor="student-plan">{t('selectPlan')}</Label>
+                        <Select id="student-plan" name="planId" required disabled={isPending}>
+                          {plans.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="student-class">{t('selectClass')}</Label>
                       <Select id="student-class" name="classPeriodId" required disabled={isPending}>
@@ -216,18 +238,20 @@ function CreateStudentForm({
                       </Select>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="student-discount">{t('discount')}</Label>
-                    <Input
-                      id="student-discount"
-                      name="discount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      defaultValue="0"
-                      disabled={isPending}
-                    />
-                  </div>
+                  {paymentsEnabled && (
+                    <div className="space-y-2">
+                      <Label htmlFor="student-discount">{t('discount')}</Label>
+                      <Input
+                        id="student-discount"
+                        name="discount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        defaultValue="0"
+                        disabled={isPending}
+                      />
+                    </div>
+                  )}
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="canLeaveAlone" className="rounded" />
                     {t('canLeaveAlone')}

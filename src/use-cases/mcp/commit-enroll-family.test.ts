@@ -600,4 +600,45 @@ describe('commitEnrollFamily', () => {
     )
     expect(tx.payment.create).not.toHaveBeenCalled()
   })
+
+  // FR-024 : le brouillon a été préparé drapeau actif, l'école a coupé entre-temps. Il porte
+  // un encaissement et des totaux tarifés que plus aucun écran ne restituerait.
+  it('refuses a money-carrying draft once the school cut payments off', async () => {
+    const result = await commitEnrollFamily({ ...scope, paymentsEnabled: false }, input)
+
+    expect(result).toBe('paymentsDisabled')
+    expect(transaction).not.toHaveBeenCalled()
+    // Rendu et non consommé : les paiements revenus, le brouillon reste engageable.
+    expect(release).toHaveBeenCalledWith('school-1', input.draftId)
+  })
+
+  // La contrepartie : inscrire sans argent reste ouvert drapeau coupé, sinon le drapeau
+  // fermerait la fonction qu'il est censé rendre possible.
+  it('still commits an unpriced draft while payments are off', async () => {
+    findById.mockResolvedValue({
+      keyId: 'key-1',
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [
+          {
+            ...resolved.students[0],
+            plan: { id: 'plan-unpriced', name: '__unpriced__', amount: 0 },
+            totalAmount: 0,
+          },
+        ],
+        payment: null,
+      },
+    })
+
+    const result = await commitEnrollFamily({ ...scope, paymentsEnabled: false }, input)
+
+    expect(result).not.toBe('paymentsDisabled')
+    expect(tx.enrollment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ planId: 'plan-unpriced', totalAmount: 0 }),
+      })
+    )
+  })
 })
