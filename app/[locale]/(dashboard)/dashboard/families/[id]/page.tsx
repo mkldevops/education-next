@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
+import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
@@ -70,8 +71,6 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
   ])
 
-  const { plans, classes } = await getFamilyDialogData(family.schoolId, isAdmin, selectedPeriodId)
-
   const {
     students,
     allEnrollments,
@@ -84,6 +83,24 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     totalPaid,
     remainingBalance,
   } = deriveFamilyDetail(family, familyBalance, studentId)
+
+  /* Le bouton « Inscrire » de la carte enfant se juge sur les mêmes données que
+     `createEnrollment`, jamais sur les affectations affichées : celles-ci sont filtrées sur
+     `endAt: null` et masqueraient l'inscription d'un élève réaffecté vers une autre période.
+
+     Sans période sélectionnée — une école sans aucune période active — il n'y a pas de cible :
+     `getFamilyDialogData` ne rend alors aucune classe, le dialogue est insoumettable et le
+     bouton inerte. Ne pas élargir cette branche en « tout le monde peut s'inscrire ». */
+  const [{ plans, classes }, studentsEnrolledInSelectedPeriod] = await Promise.all([
+    getFamilyDialogData(family.schoolId, isAdmin, selectedPeriodId),
+    isAdmin && selectedPeriodId !== null
+      ? enrollmentGateway.findStudentIdsEnrolledInPeriod(
+          family.schoolId,
+          students.map((s) => s.person.student.id),
+          selectedPeriodId
+        )
+      : new Set<string>(),
+  ])
 
   const classOptions = classes.map((c) => ({
     id: c.id,
@@ -213,6 +230,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 familyId={family.id}
                 isAdmin={isAdmin}
                 classes={classOptions}
+                studentsEnrolledInSelectedPeriod={studentsEnrolledInSelectedPeriod}
               />
             ),
           },

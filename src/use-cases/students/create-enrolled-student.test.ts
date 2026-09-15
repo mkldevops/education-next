@@ -34,7 +34,7 @@ const input = (overrides: Record<string, unknown> = {}) => ({
   schoolId,
   familyId,
   person: { name: 'Laylah', lastname: 'Hamada Sidi', sex: 'FEMALE' as const },
-  student: { birthday: new Date('2018-04-02'), languagesAtHome: [], snackAuthorization: false },
+  student: { birthday: new Date('2018-04-02'), snackAuthorization: false },
   enrollment: { planId, classPeriodId },
   ...overrides,
 })
@@ -81,6 +81,62 @@ describe('createEnrolledStudent', () => {
       expect.objectContaining({
         data: expect.objectContaining({ enrollmentId: 'enrollment-1', classPeriodId }),
       })
+    )
+  })
+
+  it('scopes every lookup to the caller school', async () => {
+    // WHEN
+    await createEnrolledStudent(input())
+
+    // THEN
+    expect(tx.family.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: familyId, schoolId, isActive: true } })
+    )
+    expect(tx.plan.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: planId, schoolId, isActive: true } })
+    )
+    expect(tx.classPeriod.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: classPeriodId, schoolId, isActive: true } })
+    )
+  })
+
+  it('counts the occupied seats of the school with the same predicate as createEnrollment', async () => {
+    // WHEN
+    await createEnrolledStudent(input())
+
+    // THEN
+    expect(tx.classAssignment.count).toHaveBeenCalledWith({
+      where: {
+        schoolId,
+        classPeriodId,
+        endAt: null,
+        enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
+      },
+    })
+  })
+
+  it('accepts a discount equal to the plan amount and bills nothing', async () => {
+    // WHEN
+    const result = await createEnrolledStudent(
+      input({ enrollment: { planId, classPeriodId, discount: 180 } })
+    )
+
+    // THEN
+    expect(result).toEqual({ studentId: 'student-1', enrollmentId: 'enrollment-1' })
+    expect(tx.enrollment.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ totalAmount: 0, discount: 180 }) })
+    )
+  })
+
+  it('carries the leave-alone authorization onto the enrollment', async () => {
+    // WHEN
+    await createEnrolledStudent(
+      input({ enrollment: { planId, classPeriodId, canLeaveAlone: true } })
+    )
+
+    // THEN
+    expect(tx.enrollment.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ canLeaveAlone: true }) })
     )
   })
 
@@ -140,11 +196,7 @@ describe('createEnrolledStudent', () => {
     // WHEN
     const result = await createEnrolledStudent(
       input({
-        student: {
-          birthday: new Date(Date.now() + 86_400_000),
-          languagesAtHome: [],
-          snackAuthorization: false,
-        },
+        student: { birthday: new Date(Date.now() + 86_400_000), snackAuthorization: false },
       })
     )
 

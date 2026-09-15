@@ -52,9 +52,15 @@ type Props = {
   familyId: string
   isAdmin: boolean
   classes: ClassOption[]
+  /**
+   * Vrai quand l'élève n'a aucune inscription en cours sur la période sélectionnée, calculé
+   * par la page sur les mêmes critères que `createEnrollment` : une inscription terminée ou
+   * annulée n'empêche pas la réinscription, une inscription vivante oui.
+   */
+  canEnroll: boolean
 }
 
-export async function ChildCard({ student, locale, familyId, isAdmin, classes }: Props) {
+export async function ChildCard({ student, locale, familyId, isAdmin, classes, canEnroll }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   const { person } = student
@@ -188,9 +194,7 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
         >
           {t('childCard.viewProfile')}
         </Link>
-        {isAdmin && enrollments.length === 0 && (
-          <EnrollButton familyId={familyId} studentId={person.student.id} />
-        )}
+        {isAdmin && canEnroll && <EnrollButton familyId={familyId} studentId={person.student.id} />}
       </div>
     </Card>
   )

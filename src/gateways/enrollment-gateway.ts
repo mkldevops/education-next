@@ -57,6 +57,38 @@ export const enrollmentGateway = {
     }),
 
   /**
+   * Élèves déjà porteurs d'une inscription en cours sur cette période, mêmes critères que
+   * `findActiveInPeriod` — statut vivant et affectation de la période, fermée ou non.
+   *
+   * Les affectations closes comptent : `reassignClass` ferme l'affectation d'origine sans
+   * toucher au statut, donc les ignorer laisserait croire la période libre et ouvrirait un
+   * formulaire que `createEnrollment` refuse avec `duplicateEnrollment`.
+   *
+   * À ne pas confondre avec `findEnrolledStudentIds`, même requête mais `COMPLETED` compris :
+   * la promotion saute les élèves déjà promus, alors qu'ici une inscription terminée laisse la
+   * réinscription ouverte, comme pour `findActiveInPeriod`.
+   */
+  findStudentIdsEnrolledInPeriod: async (
+    schoolId: string,
+    studentIds: string[],
+    periodId: string
+  ) => {
+    if (studentIds.length === 0) return new Set<string>()
+
+    const rows = await db.enrollment.findMany({
+      where: {
+        schoolId,
+        studentId: { in: studentIds },
+        status: { in: ['PENDING', 'ACTIVE'] },
+        classAssignments: { some: { classPeriod: { periodId } } },
+      },
+      select: { studentId: true },
+    })
+
+    return new Set(rows.map((row) => row.studentId))
+  },
+
+  /**
    * Inscription en cours du même élève sur la **période** de cette classe, paiements actifs
    * comptés : un remplacement ne doit jamais effacer une inscription déjà réglée.
    */
