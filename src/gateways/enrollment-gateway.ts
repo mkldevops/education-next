@@ -63,6 +63,10 @@ export const enrollmentGateway = {
    * Les affectations closes comptent : `reassignClass` ferme l'affectation d'origine sans
    * toucher au statut, donc les ignorer laisserait croire la période libre et ouvrirait un
    * formulaire que `createEnrollment` refuse avec `duplicateEnrollment`.
+   *
+   * À ne pas confondre avec `findEnrolledStudentIds`, même requête mais `COMPLETED` compris :
+   * la promotion saute les élèves déjà promus, alors qu'ici une inscription terminée laisse la
+   * réinscription ouverte, comme pour `findActiveInPeriod`.
    */
   findStudentIdsEnrolledInPeriod: async (
     schoolId: string,

@@ -18,7 +18,6 @@ const databaseUrl = process.env.DATABASE_URL
 
 let raw: PrismaClient
 let schoolId: string
-let adminId: string
 let planId: string
 let levelId: string
 let periodId: string
@@ -71,12 +70,6 @@ describe.skipIf(!databaseUrl)('findStudentIdsEnrolledInPeriod sur base réelle',
       data: { name: `gw ${suffix}`, slug: `gw-${suffix}` },
     })
     schoolId = school.id
-
-    const admin = await raw.user.create({
-      data: { email: `admin-${suffix}@gw.test`, name: 'admin gw' },
-    })
-    adminId = admin.id
-
     const [plan, level, period, otherPeriod] = await Promise.all([
       raw.plan.create({ data: { schoolId, name: 'Plein', amount: 100 } }),
       raw.level.create({ data: { schoolId, name: 'CP' } }),
@@ -127,7 +120,6 @@ describe.skipIf(!databaseUrl)('findStudentIdsEnrolledInPeriod sur base réelle',
     await raw.student.deleteMany({ where: { schoolId } })
     await raw.person.deleteMany({ where: { schoolId } })
     await raw.school.delete({ where: { id: schoolId } })
-    await raw.user.delete({ where: { id: adminId } })
     await raw.$disconnect()
   }, 60_000)
 

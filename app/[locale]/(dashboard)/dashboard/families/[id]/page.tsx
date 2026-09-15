@@ -71,8 +71,6 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
   ])
 
-  const { plans, classes } = await getFamilyDialogData(family.schoolId, isAdmin, selectedPeriodId)
-
   const {
     students,
     allEnrollments,
@@ -86,22 +84,28 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     remainingBalance,
   } = deriveFamilyDetail(family, familyBalance, studentId)
 
-  const classOptions = classes.map((c) => ({
-    id: c.id,
-    name: `${c.name} (${c.level.name} — ${c.period.name})`,
-  }))
-
   /* Le bouton « Inscrire » de la carte enfant se juge sur les mêmes données que
      `createEnrollment`, jamais sur les affectations affichées : celles-ci sont filtrées sur
-     `endAt: null` et masqueraient l'inscription d'un élève réaffecté vers une autre période. */
-  const studentsEnrolledInSelectedPeriod =
+     `endAt: null` et masqueraient l'inscription d'un élève réaffecté vers une autre période.
+
+     Sans période sélectionnée — une école sans aucune période active — il n'y a pas de cible :
+     `getFamilyDialogData` ne rend alors aucune classe, le dialogue est insoumettable et le
+     bouton inerte. Ne pas élargir cette branche en « tout le monde peut s'inscrire ». */
+  const [{ plans, classes }, studentsEnrolledInSelectedPeriod] = await Promise.all([
+    getFamilyDialogData(family.schoolId, isAdmin, selectedPeriodId),
     isAdmin && selectedPeriodId !== null
-      ? await enrollmentGateway.findStudentIdsEnrolledInPeriod(
+      ? enrollmentGateway.findStudentIdsEnrolledInPeriod(
           family.schoolId,
           students.map((s) => s.person.student.id),
           selectedPeriodId
         )
-      : new Set<string>()
+      : new Set<string>(),
+  ])
+
+  const classOptions = classes.map((c) => ({
+    id: c.id,
+    name: `${c.name} (${c.level.name} — ${c.period.name})`,
+  }))
 
   return (
     <div className="space-y-6">
