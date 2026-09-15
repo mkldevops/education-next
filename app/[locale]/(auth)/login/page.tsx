@@ -3,6 +3,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { LoginForm } from '@/features/auth'
 import { redirect } from '@/i18n/routing'
+import { getBrandingConfig, resolveBrandingSchoolId } from '@/lib/branding'
 import { getSchoolContext } from '@/lib/school-context'
 import { isGoogleSignInAvailable } from '@/use-cases/platform-settings/is-google-sign-in-available'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
@@ -31,10 +32,13 @@ export default async function LoginPage({ params }: Props) {
     redirect({ href: '/dashboard', locale })
   }
 
-  const [t, googleEnabled, passkeyEnabled] = await Promise.all([
+  // Sans session, l'école vient du cookie posé par le dashboard : celle de la dernière visite.
+  const brandingSchoolId = await resolveBrandingSchoolId()
+  const [t, googleEnabled, passkeyEnabled, branding] = await Promise.all([
     getTranslations('auth.login'),
     isGoogleSignInAvailable(),
     isPasskeySignInEnabled(),
+    brandingSchoolId ? getBrandingConfig(brandingSchoolId) : null,
   ])
 
   return (
@@ -42,6 +46,14 @@ export default async function LoginPage({ params }: Props) {
       <div className="w-full max-w-md">
         <div className="overflow-hidden rounded bg-white shadow-lg">
           <div className="bg-[var(--color-primary)] px-8 py-6 text-center">
+            {branding?.logoUrl && (
+              // biome-ignore lint/performance/noImgElement: config URLs are dynamic
+              <img
+                src={branding.logoUrl}
+                alt={branding.schoolName}
+                className="mx-auto mb-4 h-16 w-auto max-w-full rounded bg-white object-contain p-2"
+              />
+            )}
             <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
             <p className="mt-1 text-sm text-white/80">{t('subtitle')}</p>
           </div>

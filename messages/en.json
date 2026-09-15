@@ -851,58 +851,49 @@
           "schools": "Schools",
           "schoolsDescription": "Settings governing every school on this instance."
         },
-        "name": "Name",
-        "value": "Value",
-        "type": "Type",
-        "actions": "Actions",
-        "noConfig": "No configuration registered",
         "notConfigured": "Not configured",
-        "booleanTrue": "Yes",
-        "booleanFalse": "No",
-        "known": {
-          "logo": "Logo",
-          "favicon": "Favicon",
-          "maxStudentsPerClass": "Maximum students per class",
-          "teacherExpenses": "Teacher expense notes",
-          "themePrimary": "Primary color",
-          "automaticPromotion": "Automatic promotion",
-          "events": "Events"
-        },
-        "descriptions": {
-          "maxStudentsPerClass": "Maximum number of students allowed in a class.",
-          "teacherExpenses": "Enables recording teacher expense notes.",
-          "themePrimary": "Primary interface color, in hexadecimal format.",
-          "automaticPromotion": "Promotes students to the next period. No trigger exists in the interface yet: the setting is kept but has no effect.",
-          "events": "Enables the entire Events feature; the menu entry disappears when this setting is off."
-        },
-        "create": {
-          "title": "New Parameter",
-          "name": "Parameter Name",
-          "valueType": "Value Type",
-          "value": "Value",
-          "types": {
-            "TEXT": "Text",
-            "NUMBER": "Number",
-            "BOOLEAN": "Boolean",
-            "COLOR": "Color"
+        "settings": {
+          "logo_url": {
+            "label": "Logo",
+            "description": "Shown in the sidebar and on the sign-in page. The favicon is generated from this logo."
           },
-          "enabled": "Enabled",
-          "cancel": "Cancel",
-          "submit": "Create",
-          "success": "Parameter created",
-          "error": "Error creating parameter",
-          "errors": {
-            "validationError": "Check the information you entered",
-            "notFound": "Setting not found",
-            "invalidConfigValue": "The value does not match the selected type"
+          "theme_primary": {
+            "label": "Primary color",
+            "description": "Primary interface color, in hexadecimal format."
+          },
+          "theme_primary_hover": {
+            "label": "Primary hover color",
+            "description": "Shade of hovered buttons. Derived from the primary color until set."
+          },
+          "theme_primary_light": {
+            "label": "Light primary color",
+            "description": "Light backgrounds and accents. Derived from the primary color until set."
+          },
+          "theme_background": {
+            "label": "Background color",
+            "description": "Page background. White until set."
+          },
+          "max_students_per_class": {
+            "label": "Maximum students per class",
+            "description": "Maximum number of students allowed in a class."
+          },
+          "teacher_expenses_enabled": {
+            "label": "Teacher expense notes",
+            "description": "Enables recording teacher expense notes."
+          },
+          "automatic_promotion": {
+            "label": "Automatic promotion",
+            "description": "Promotes students to the next period. No trigger exists in the interface yet: the setting is kept but has no effect."
+          },
+          "events_enabled": {
+            "label": "Events",
+            "description": "Enables the entire Events feature; the menu entry disappears when this setting is off."
           }
         },
         "edit": {
           "title": "Edit",
           "value": "Value",
           "colorPlaceholder": "#3c6e71",
-          "true": "True",
-          "false": "False",
           "cancel": "Cancel",
           "submit": "Save",
           "success": "Parameter updated",
@@ -1899,12 +1890,6 @@
     "TRANSFER": "Transfer",
     "CHECK": "Check",
     "STRIPE": "Stripe"
-  },
-  "configValueType": {
-    "TEXT": "Text",
-    "NUMBER": "Number",
-    "BOOLEAN": "Boolean",
-    "COLOR": "Color"
   },
   "eventCategory": {
     "MEETING": "Meeting",

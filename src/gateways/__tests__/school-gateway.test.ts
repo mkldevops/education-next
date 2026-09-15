@@ -161,7 +161,6 @@ describe('schoolGateway.create', () => {
     const [args] = tx.config.createMany.mock.calls[0]
     expect(args.data.map((config: { name: string }) => config.name)).toEqual([
       'logo_url',
-      'favicon_url',
       'teacher_expenses_enabled',
       'events_enabled',
       'max_students_per_class',

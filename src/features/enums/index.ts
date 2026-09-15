@@ -1,5 +1,4 @@
 export {
-  ConfigValueTypeLabel,
   EnrollmentStatusBadge,
   EventCategoryLabel,
   EventStatusBadge,

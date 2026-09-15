@@ -1041,8 +1041,16 @@ where financial history is destroyed rather than archived.
 `src/use-cases/config/set-config.ts`. Values are stored as strings with a declared type, **scoped to
 one school**.
 
-- `NUMBER` must parse as a number, `BOOLEAN` must be exactly `'true'` or `'false'`, otherwise
-  → `invalidConfigValue`. `TEXT` and `COLOR` accept anything.
+- **Only enumerated keys are writable.** `SchoolConfigKey` (`src/lib/school-config.ts`) lists them;
+  any other name → `validationError`, and `/dashboard/config` offers no free-form creation. A free
+  name was read by no code and only suggested it governed something. Rows left under an unknown
+  name stay in the database but are neither displayed nor writable.
+- **The type is fixed by the key** (`SCHOOL_CONFIG_VALUE_TYPES`), never chosen by the caller.
+- `NUMBER` must parse as a number, `BOOLEAN` must be exactly `'true'` or `'false'`, `COLOR` must be a
+  hex color (it is injected into the layout `<style>`), otherwise → `invalidConfigValue`. `TEXT`
+  accepts anything.
+- The screen shows one row per key, in declaration order: a toggle for a `BOOLEAN`, an edit dialog
+  otherwise. A key without a row shows its `SCHOOL_CONFIG_DEFAULTS` value, else *not configured*.
 - `@@unique([schoolId, name])` is a **partial** index, restricted to `isActive: true`. An archived
   entry therefore never reserves its name, and `configGateway.get` is deterministic.
 - **A partial unique cannot be used as a write selector.** Prisma emits the `schoolId_name` selector
@@ -1054,8 +1062,8 @@ one school**.
 - Consumed today: `max_students_per_class` (default class capacity),
   `teacher_expenses_enabled` (enables generic teacher expense notes,
   `src/lib/teacher-expense-config.ts`), `events_enabled` (enables the Events feature, off by
-  default, `src/lib/events-config.ts`), `logo_url` and `favicon_url`
-  (`src/lib/branding-config.ts`), and `theme_primary`, `theme_primary_hover`,
+  default, `src/lib/events-config.ts`), `logo_url` (`src/lib/branding-config.ts`), and
+  `theme_primary`, `theme_primary_hover`,
   `theme_primary_light`, `theme_background` (`src/components/theme-provider.tsx`).
 - **The school name is no longer a `Config` entry.** It lives on `School.name`, the single source of
   truth; keeping the old `school_name` key would have let two screens edit two different names. The
@@ -1065,12 +1073,28 @@ one school**.
 
 `src/use-cases/media/upload-branding-image.ts`, `src/gateways/storage-gateway.ts`.
 
-`logo_url` and `favicon_url` accept either a URL typed by hand or a file uploaded to the object
-store. Both end up as a plain string in `Config`, so an external URL keeps working.
+`logo_url` accepts either a URL typed by hand or a file uploaded to the object store. It ends up as a
+plain string in `Config`, so an external URL keeps working.
+
+- **There is one image setting, not two.** `app/icon.tsx` generates the favicon from the logo, fitted
+  into its square without distortion, and `app/manifest.ts` lists the logo as the app icon. Without a
+  logo the favicon is the platform default.
+- **The favicon inlines the logo** (`src/lib/branding-icon.ts`). `next/og` refuses a relative source,
+  and an uploaded logo is a relative `/api/media/…` path: it is resolved against
+  `NEXT_PUBLIC_APP_URL`, never against the client-supplied `Host` header, which would make the server
+  fetch a host of the caller's choosing. A missing logo, a failed fetch, or a format the renderer
+  cannot draw (ICO) falls back to the default favicon instead of failing the request. A `favicon_url` row left by an older installation stays in
+  the database but is read by nothing: a second setting would let the tab icon drift from the logo.
+- **The logo is shown in the sidebar and in the header of `/login`.**
 
 - Uploading requires an admin.
 - **Accepted types**: PNG, JPEG, WebP, SVG, ICO. Anything else → `unsupportedType`.
 - **1 MB maximum**, and an empty file is refused → `fileTooLarge` / `emptyFile`.
+- **The size is checked in the form before sending**, against the same `MAX_BRANDING_IMAGE_BYTES`
+  (`src/lib/branding-config.ts`). Past the Server Actions body limit Next.js throws before the action
+  can answer, so a server-only check surfaced as a runtime error instead of `fileTooLarge`.
+  `next.config.ts` raises that limit, because a 1 MB file plus its multipart envelope exceeds the
+  1 MB default.
 - The object is stored under `branding/<schoolId>/<uuid>.<ext>`; the caller never chooses the key,
   so an upload cannot overwrite another one, and one school cannot reach another's assets.
 - Configuration is `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, optionally
@@ -1092,8 +1116,16 @@ its membership was revoked: `getSchoolContext()` then falls back to the first me
 cookie-only resolution would paint school A's dashboard with the default theme. The theme follows the
 school actually on screen.
 
-The cookie remains the fallback, for surfaces that may be requested without a session — `app/icon.tsx`
-and `app/manifest.ts`. With neither signal, the platform default applies. The theme itself is read in
+The cookie remains the fallback, for surfaces that may be requested without a session — `app/icon.tsx`,
+`app/manifest.ts` and `/login`. With neither signal, the platform default applies.
+
+**The login page is dressed as the last school displayed.** The dashboard layout compares the cookie
+with the school on screen and, when they differ, mounts `RememberActiveSchool`, which calls
+`rememberActiveSchoolAction` — a Server Component cannot write a cookie. The action takes no input:
+it writes the school of the already validated `getSchoolContext()`, so it can neither open a school
+the caller does not hold nor bypass the switch flag. After logout, `/login` shows that school's logo
+and theme. A first visit on a device has no cookie and gets the platform identity. An impersonation
+rewrites the cookie to the impersonated account's school, which the login page then shows. The theme itself is read in
 `app/[locale]/layout.tsx`, **above** the dashboard, which is why a cookie is needed at all: a column
 on `Session` would be unreadable there.
 

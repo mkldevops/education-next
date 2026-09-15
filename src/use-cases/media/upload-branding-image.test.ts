@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { MAX_BRANDING_IMAGE_BYTES, uploadBrandingImage } from './upload-branding-image'
+import { MAX_BRANDING_IMAGE_BYTES } from '@/lib/branding-config'
+import { uploadBrandingImage } from './upload-branding-image'
 
 const storage = {
   put: vi.fn(),

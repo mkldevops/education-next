@@ -3,6 +3,7 @@
 import { Button, Input } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useRef, useState, useTransition } from 'react'
+import { MAX_BRANDING_IMAGE_BYTES } from '@/lib/branding-config'
 import { toast, toastActionError } from '@/lib/toast'
 import { uploadBrandingImageAction } from '../../../_lib/media-actions'
 
@@ -20,6 +21,14 @@ export function ImageValueField({ id, name, defaultValue, disabled }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = (file: File) => {
+    // Au-delà de la limite de corps des Server Actions, Next.js lève une erreur avant que
+    // l'action ne puisse répondre `fileTooLarge` : le contrôle doit précéder l'envoi.
+    if (file.size > MAX_BRANDING_IMAGE_BYTES) {
+      toastActionError(t, 'fileTooLarge')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     const formData = new FormData()
     formData.append('file', file)
 
