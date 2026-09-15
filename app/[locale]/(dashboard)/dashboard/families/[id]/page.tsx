@@ -136,6 +136,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 emergencyContactName: family.emergencyContactName,
                 emergencyContactPhone: family.emergencyContactPhone,
                 authorizedPickup: family.authorizedPickup,
+                languagesAtHome: family.languagesAtHome,
               }}
               defaultOpen={action === 'editFamily'}
               redirectTo={`/dashboard/families/${family.id}`}

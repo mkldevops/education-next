@@ -100,16 +100,6 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes }:
         </div>
       )}
 
-      {Array.isArray(person.student.languagesAtHome) &&
-        person.student.languagesAtHome.length > 0 && (
-          <div className="mb-3 p-2 bg-primary-light/50 rounded border border-primary/20">
-            <p className="text-xs font-medium text-primary">{t('childCard.languages')}</p>
-            <p className="text-xs text-graphite-600 mt-0.5">
-              {person.student.languagesAtHome.join(', ')}
-            </p>
-          </div>
-        )}
-
       <div className="space-y-2 mt-auto mb-4 pb-4 border-b border-alabaster-700">
         {enrollments.length > 0 ? (
           enrollments.map((enrollment) => {

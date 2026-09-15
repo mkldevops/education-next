@@ -950,6 +950,11 @@ A student is **skipped**, with the reason reported, when:
   operator to invent a value that then read as real data. A form left blank sends `undefined` on
   create and `null` on update, which clears the column; age is simply not shown.
 - **A family may be created without any parent**, on the dashboard and through `enroll_family` alike.
+- **Languages spoken at home belong to the family, not the student**, and are always optional.
+  `Family.languagesAtHome` is a JSON list of free-text names, at most 20 entries of 50 characters
+  (`src/use-cases/families/schemas.ts`). The form takes a comma-separated list; blanks and duplicates
+  are dropped (`parseLanguagesAtHome`, `src/domain/family.ts`) and an emptied field clears the list.
+  A student's page shows the languages of its family. `enroll_family` does not set them.
 - **A student's birthday, when given, must be in the past** → `validationError`
   (`src/domain/student.ts`).
 - **A student carrying a `PENDING` or `ACTIVE` enrollment cannot be archived**

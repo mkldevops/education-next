@@ -114,7 +114,7 @@ describe('createStudent', () => {
       schoolId: 'school-1',
       familyId: 'invalid-uuid',
       person: { name: '', lastname: '', sex: 'MALE' as const },
-      student: { birthday: new Date(), languagesAtHome: [], snackAuthorization: false },
+      student: { birthday: new Date(), snackAuthorization: false },
     }
 
     // WHEN
@@ -136,7 +136,7 @@ describe('createStudent', () => {
       schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174001',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
+      student: { birthday: new Date('2010-01-01'), snackAuthorization: false },
     }
 
     // WHEN
@@ -157,7 +157,7 @@ describe('createStudent', () => {
       schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2050-01-01'), languagesAtHome: [], snackAuthorization: false },
+      student: { birthday: new Date('2050-01-01'), snackAuthorization: false },
     }
 
     // WHEN
@@ -178,7 +178,7 @@ describe('createStudent', () => {
       schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
+      student: { birthday: new Date('2010-01-01'), snackAuthorization: false },
     }
 
     // WHEN
@@ -199,7 +199,7 @@ describe('createStudent', () => {
       schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'Ylias', lastname: 'Youssouf' },
-      student: { languagesAtHome: [], snackAuthorization: false },
+      student: { snackAuthorization: false },
     }
 
     // WHEN
@@ -221,7 +221,7 @@ describe('createStudent', () => {
       schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'Ylias', lastname: 'Youssouf' },
-      student: { birthday: null, languagesAtHome: [], snackAuthorization: false },
+      student: { birthday: null, snackAuthorization: false },
     }
 
     // WHEN
@@ -248,7 +248,7 @@ describe('createStudent', () => {
         sex: 'FEMALE' as const,
         email: 'jane@example.com',
       },
-      student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
+      student: { birthday: new Date('2010-01-01'), snackAuthorization: false },
     }
 
     // WHEN
@@ -276,7 +276,6 @@ describe('createStudent', () => {
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
       student: {
         birthday: new Date('2010-01-01'),
-        languagesAtHome: ['French', 'Arabic'],
         snackAuthorization: true,
         birthplace: 'Paris',
         allergies: 'Peanuts',
@@ -294,7 +293,6 @@ describe('createStudent', () => {
     // THEN
     expect(studentGateway.createdData).toMatchObject({
       birthday: new Date('2010-01-01'),
-      languagesAtHome: ['French', 'Arabic'],
       snackAuthorization: true,
       birthplace: 'Paris',
       allergies: 'Peanuts',
@@ -307,7 +305,7 @@ describe('createStudent', () => {
       schoolId: 'school-1',
       familyId: '123e4567-e89b-12d3-a456-426614174000',
       person: { name: 'John', lastname: 'Doe', sex: 'MALE' as const },
-      student: { birthday: new Date('2010-01-01'), languagesAtHome: [], snackAuthorization: false },
+      student: { birthday: new Date('2010-01-01'), snackAuthorization: false },
     }
 
     // WHEN

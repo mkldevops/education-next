@@ -8,6 +8,7 @@ export const familyGateway = {
       emergencyContactName?: string
       emergencyContactPhone?: string
       authorizedPickup?: string
+      languagesAtHome?: string[]
       createdById: string
       parents: Array<{
         name: string
@@ -47,6 +48,7 @@ export const familyGateway = {
       emergencyContactName?: string | null
       emergencyContactPhone?: string | null
       authorizedPickup?: string | null
+      languagesAtHome?: string[]
     }
   ) =>
     db.family.update({

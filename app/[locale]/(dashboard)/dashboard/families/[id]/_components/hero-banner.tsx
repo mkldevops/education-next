@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server'
+import { languagesOf } from '@/domain/family'
 import type { Family } from '@/generated/prisma/client'
 import { ActionMenu } from './action-menu'
 
@@ -22,6 +23,7 @@ export async function HeroBanner({
   children,
 }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
+  const languagesAtHome = languagesOf(family.languagesAtHome)
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -39,6 +41,9 @@ export async function HeroBanner({
           <span>
             {enrollmentsCount} {t('hero.enrollments')}
           </span>
+          {languagesAtHome.length > 0 && (
+            <span>{t('hero.languagesAtHome', { languages: languagesAtHome.join(', ') })}</span>
+          )}
           <span className="text-graphite-700">{t('scopeAll')}</span>
         </div>
       </div>

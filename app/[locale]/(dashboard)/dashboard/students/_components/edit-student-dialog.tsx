@@ -23,7 +23,6 @@ interface EditStudentDialogProps {
     birthplace: string | null
     allergies: string | null
     healthNotes: string | null
-    languagesAtHome: unknown
     snackAuthorization: boolean
   }
 }
@@ -54,9 +53,6 @@ function EditStudentForm({ student }: EditStudentDialogProps) {
   const { isPending, close, onSubmit } = useDialogForm(t)
 
   const birthdayStr = student.birthday ? new Date(student.birthday).toISOString().split('T')[0] : ''
-  const languages = Array.isArray(student.languagesAtHome)
-    ? (student.languagesAtHome as string[]).join(', ')
-    : ''
 
   const handleSubmit = onSubmit((formData) =>
     updateStudentAction(student.id, {
@@ -64,11 +60,6 @@ function EditStudentForm({ student }: EditStudentDialogProps) {
       birthplace: (formData.get('birthplace') as string) || undefined,
       allergies: (formData.get('allergies') as string) || undefined,
       healthNotes: (formData.get('healthNotes') as string) || undefined,
-      languagesAtHome:
-        (formData.get('languagesAtHome') as string)
-          ?.split(',')
-          .map((l) => l.trim())
-          .filter(Boolean) ?? [],
       snackAuthorization: formData.get('snackAuthorization') === 'on',
     })
   )
@@ -99,26 +90,15 @@ function EditStudentForm({ student }: EditStudentDialogProps) {
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-allergies">{tCreate('allergies')}</Label>
-              <Input
-                id="edit-allergies"
-                name="allergies"
-                defaultValue={student.allergies ?? ''}
-                maxLength={250}
-                disabled={isPending}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-languages">{tCreate('languages')}</Label>
-              <Input
-                id="edit-languages"
-                name="languagesAtHome"
-                defaultValue={languages}
-                disabled={isPending}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-allergies">{tCreate('allergies')}</Label>
+            <Input
+              id="edit-allergies"
+              name="allergies"
+              defaultValue={student.allergies ?? ''}
+              maxLength={250}
+              disabled={isPending}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-health">{tCreate('healthNotes')}</Label>

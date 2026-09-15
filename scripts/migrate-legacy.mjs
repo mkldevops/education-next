@@ -333,8 +333,8 @@ async function main() {
       const person = personById.get(s.person_id)
       const birthday = person?.birthday || new Date('2010-01-01')
       await pgClient.query(
-        `INSERT INTO "Student" (id, "schoolId", "personId", birthday, birthplace, "previousSchool", "healthNotes", "languagesAtHome", "snackAuthorization", "isActive", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        `INSERT INTO "Student" (id, "schoolId", "personId", birthday, birthplace, "previousSchool", "healthNotes", "snackAuthorization", "isActive", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           id,
           SCHOOL_ID,
@@ -343,7 +343,6 @@ async function main() {
           trunc(person?.birthplace, 250),
           trunc(s.last_school, 250),
           s.remarks_health,
-          '[]',
           !!s.let_alone,
           !!s.enable,
           ts(s.created_at),

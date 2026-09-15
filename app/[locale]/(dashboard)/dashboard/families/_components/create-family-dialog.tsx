@@ -16,6 +16,7 @@ import {
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect } from 'react'
+import { parseLanguagesAtHome } from '@/domain/family'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
@@ -74,6 +75,7 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
       emergencyContactName: (formData.get('emergencyContactName') as string) || undefined,
       emergencyContactPhone: (formData.get('emergencyContactPhone') as string) || undefined,
       authorizedPickup: (formData.get('authorizedPickup') as string) || undefined,
+      languagesAtHome: parseLanguagesAtHome(formData.get('languagesAtHome') as string),
       parents: [],
     }
 
@@ -141,6 +143,17 @@ function CreateFamilyForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
               id="authorizedPickup"
               name="authorizedPickup"
               placeholder={t('authorizedPickupPlaceholder')}
+              disabled={isPending}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="languagesAtHome">{t('languagesAtHome')}</Label>
+            <Input
+              id="languagesAtHome"
+              name="languagesAtHome"
+              type="text"
+              placeholder={t('languagesAtHomePlaceholder')}
               disabled={isPending}
             />
           </div>

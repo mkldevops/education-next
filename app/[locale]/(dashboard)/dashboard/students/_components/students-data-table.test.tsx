@@ -28,7 +28,6 @@ const baseStudent: Omit<StudentRow, 'id' | 'birthday' | 'person'> = {
   birthplace: null,
   previousSchool: null,
   healthNotes: null,
-  languagesAtHome: [],
   snackAuthorization: false,
   allergies: null,
   isActive: true,
