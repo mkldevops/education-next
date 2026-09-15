@@ -403,13 +403,22 @@
           "languages": "Languages at Home",
           "languagesPlaceholder": "French, Arabic",
           "snackAuthorization": "Snack Authorization",
+          "enrollNow": "Enroll in a class right away",
+          "enrollUnavailable": "No plan or no class in the selected period: the student will be created without an enrollment.",
+          "selectPlan": "Pricing plan",
+          "selectClass": "Class",
+          "discount": "Discount (€)",
+          "canLeaveAlone": "Can leave alone",
           "submit": "Create",
           "cancel": "Cancel",
           "success": "Student added successfully",
+          "successEnrolled": "Student added and enrolled",
           "error": "Error creating student",
           "errors": {
             "validationError": "Check the information you entered",
-            "notFound": "Family not found"
+            "notFound": "Family, plan or class not found",
+            "discountExceedsPlan": "The discount exceeds the plan amount",
+            "classFull": "This class is full"
           }
         },
         "edit": {
@@ -916,7 +925,6 @@
           "pay": "Record a collection",
           "payUnavailable": "This family has no outstanding balance",
           "newStudent": "Add a student",
-          "newEnrollment": "Enroll a student",
           "manage": "Actions",
           "edit": "Edit",
           "delete": "Delete",

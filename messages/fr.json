@@ -403,13 +403,22 @@
           "languages": "Langues à la maison",
           "languagesPlaceholder": "Français, Arabe",
           "snackAuthorization": "Autorisation goûter",
+          "enrollNow": "Inscrire dans une classe dès maintenant",
+          "enrollUnavailable": "Aucun plan ou aucune classe sur la période sélectionnée : l'élève sera créé sans inscription.",
+          "selectPlan": "Plan tarifaire",
+          "selectClass": "Classe",
+          "discount": "Réduction (€)",
+          "canLeaveAlone": "Autorisé à partir seul",
           "submit": "Créer",
           "cancel": "Annuler",
           "success": "Élève ajouté avec succès",
+          "successEnrolled": "Élève ajouté et inscrit",
           "error": "Erreur lors de la création",
           "errors": {
             "validationError": "Vérifiez les informations saisies",
-            "notFound": "Famille introuvable"
+            "notFound": "Famille, plan ou classe introuvable",
+            "discountExceedsPlan": "La réduction dépasse le montant du plan",
+            "classFull": "Cette classe est complète"
           }
         },
         "edit": {
@@ -916,7 +925,6 @@
           "pay": "Enregistrer un règlement",
           "payUnavailable": "Cette famille n'a aucun solde à régler",
           "newStudent": "Ajouter un élève",
-          "newEnrollment": "Inscrire un élève",
           "manage": "Actions",
           "edit": "Modifier",
           "delete": "Supprimer",

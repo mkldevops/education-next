@@ -126,6 +126,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             />
             <CreateStudentDialog
               familyId={family.id}
+              plans={plans.map((p) => ({ id: p.id, name: p.name }))}
+              classes={classOptions}
               defaultOpen={action === 'addStudent'}
               showTrigger={false}
             />
