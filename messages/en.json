@@ -1283,7 +1283,11 @@
           "confirmationMismatch": "The confirmation email does not match",
           "emailError": "The email could not be sent",
           "lastAdmin": "Cannot do this: this member is the school’s last administrator",
-          "selfDeactivation": "You cannot deactivate your own account"
+          "selfDeactivation": "You cannot deactivate your own account",
+          "notSuperAdmin": "Only a super admin can impersonate an account",
+          "alreadyImpersonating": "Return to your own account before impersonating another one",
+          "targetIsSuperAdmin": "A super admin cannot be impersonated",
+          "targetInactive": "An archived account cannot be impersonated"
         },
         "invitations": {
           "title": "Pending invitations",
@@ -1359,7 +1363,9 @@
         "removeMember": "Remove",
         "removeMemberWarning": "This member will lose access to this school's data. Their platform account will not be deleted.",
         "memberRemoved": "Member removed from the school",
-        "close": "Close"
+        "close": "Close",
+        "impersonate": "Sign in as this user",
+        "impersonating": "Signing in…"
       },
       "superAdmins": {
         "title": "Super administrators",
@@ -1522,6 +1528,12 @@
       "enabled": "Enabled",
       "disabled": "Disabled",
       "error": "The setting could not be saved, please try again"
+    },
+    "impersonation": {
+      "label": "You are acting as {user}",
+      "stop": "Back to my account",
+      "stopping": "Returning…",
+      "error": "Returning to your account failed, please sign in again"
     }
   },
   "schools": {

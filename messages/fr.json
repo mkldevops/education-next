@@ -1283,7 +1283,11 @@
           "confirmationMismatch": "L'email de confirmation ne correspond pas",
           "emailError": "L'e-mail n'a pas pu être envoyé",
           "lastAdmin": "Impossible : ce membre est le dernier administrateur de l’école",
-          "selfDeactivation": "Vous ne pouvez pas désactiver votre propre compte"
+          "selfDeactivation": "Vous ne pouvez pas désactiver votre propre compte",
+          "notSuperAdmin": "Seul un super-administrateur peut emprunter l'identité d'un compte",
+          "alreadyImpersonating": "Revenez d'abord à votre compte avant d'emprunter une autre identité",
+          "targetIsSuperAdmin": "Impossible d'emprunter l'identité d'un super-administrateur",
+          "targetInactive": "Impossible d'emprunter l'identité d'un compte archivé"
         },
         "invitations": {
           "title": "Invitations en attente",
@@ -1359,7 +1363,9 @@
         "removeMember": "Retirer",
         "removeMemberWarning": "Ce membre perdra l'accès aux données de cette école. Son compte plateforme ne sera pas supprimé.",
         "memberRemoved": "Membre retiré de l’école",
-        "close": "Fermer"
+        "close": "Fermer",
+        "impersonate": "Se connecter en tant que",
+        "impersonating": "Connexion…"
       },
       "superAdmins": {
         "title": "Super-administrateurs",
@@ -1522,6 +1528,12 @@
       "enabled": "Activée",
       "disabled": "Désactivée",
       "error": "Le réglage n'a pas pu être enregistré, réessayez"
+    },
+    "impersonation": {
+      "label": "Vous agissez en tant que {user}",
+      "stop": "Revenir à mon compte",
+      "stopping": "Retour…",
+      "error": "Le retour à votre compte a échoué, reconnectez-vous"
     }
   },
   "schools": {

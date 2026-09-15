@@ -3,6 +3,7 @@ import {
   type Actor,
   checkDeactivation,
   checkDeletion,
+  checkImpersonation,
   checkPlatformLevelChange,
   checkReactivation,
   isLastActiveSuperAdmin,
@@ -109,6 +110,44 @@ describe('user domain', () => {
 
     it('allows deleting an archived user with no history', () => {
       expect(checkDeletion(superAdmin, target({ isActive: false }), 0)).toBe('OK')
+    })
+  })
+
+  describe('checkImpersonation', () => {
+    const actor = target({ id: superAdmin.id, isSuperAdmin: true })
+
+    it('allows a super admin to impersonate an ordinary account', () => {
+      expect(checkImpersonation(actor, target(), false)).toBe('OK')
+    })
+
+    it('rejects an actor without the platform level', () => {
+      expect(checkImpersonation(target({ id: superAdmin.id }), target(), false)).toBe(
+        'notSuperAdmin'
+      )
+    })
+
+    it('rejects an archived super admin', () => {
+      expect(checkImpersonation({ ...actor, isActive: false }, target(), false)).toBe(
+        'notSuperAdmin'
+      )
+    })
+
+    it('rejects a nested impersonation', () => {
+      expect(checkImpersonation(actor, target(), true)).toBe('alreadyImpersonating')
+    })
+
+    it('rejects impersonating yourself', () => {
+      expect(checkImpersonation(actor, actor, false)).toBe('cannotTargetSelf')
+    })
+
+    it('rejects impersonating another super admin', () => {
+      expect(checkImpersonation(actor, target({ isSuperAdmin: true }), false)).toBe(
+        'targetIsSuperAdmin'
+      )
+    })
+
+    it('rejects impersonating an archived account', () => {
+      expect(checkImpersonation(actor, target({ isActive: false }), false)).toBe('targetInactive')
     })
   })
 })

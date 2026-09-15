@@ -11,6 +11,7 @@ import {
 } from '../../../_lib/user-actions'
 import { DeleteUserDialog } from './delete-user-dialog'
 import { EditUserDialog } from './edit-user-dialog'
+import { ImpersonateUserButton } from './impersonate-user-button'
 import { LinkFamilyDialog } from './link-family-dialog'
 import type { UserDetail } from './use-user-detail'
 import { Section } from './user-detail-sections'
@@ -71,6 +72,10 @@ export function UserPlatformActions({
         <div className="flex flex-wrap gap-2">
           <EditUserDialog user={user} />
           <LinkFamilyDialog userId={user.id} families={unlinkedFamilies} />
+          <ImpersonateUserButton
+            userId={user.id}
+            disabled={isPending || isSelf || user.isSuperAdmin || !user.isActive}
+          />
           <Button
             variant="outline"
             size="sm"

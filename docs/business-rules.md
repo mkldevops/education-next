@@ -688,6 +688,28 @@ The `/dashboard/users` drawer is the single management surface. Its guards live 
 - **Assigning `SUPER_ADMIN` is reserved to a super admin** (`canAssignRole`), so the policy holds
   even if the use case is ever reached by another caller.
 
+### Impersonation
+
+A super admin can sign in as another account from the drawer (« Se connecter en tant que ») to see
+exactly what that user sees. The mechanism is the Better Auth `admin` plugin's, rebuilt without its
+roles in `src/lib/impersonation.ts`; the guard is `checkImpersonation` in `src/domain/user.ts`.
+
+- **The right is read from `User.isSuperAdmin`, in the database**, for both the actor and the target.
+  Only `/admin/impersonate-user` and `/admin/stop-impersonating` exist; no other `/admin/*` route of
+  the upstream plugin is exposed.
+- **Refusals:** an actor that is not an active super admin (`notSuperAdmin`), an impersonation
+  started from an impersonated session (`alreadyImpersonating`), yourself (`cannotTargetSelf`),
+  another super admin (`targetIsSuperAdmin`), an archived account (`targetInactive`).
+- **The borrowed session lasts one hour** and carries `Session.impersonatedBy`. The original session
+  token is kept in the signed `admin_session` cookie; stopping deletes the borrowed session and
+  restores the original one only if it still belongs to `impersonatedBy`.
+- **Authorization follows the target.** `getSchoolContext()` resolves the borrowed session like any
+  other: an impersonated parent is confined to their family, the admin's `active_school` cookie is
+  honoured only if the target may use that school.
+- **Writes are attributed to the target.** Nothing is blocked while impersonating; a mutation made
+  then is recorded as the target's own (`createdBy`, `paymentInitiatedBy`). The dashboard shows a
+  banner with « Revenir à mon compte » for the whole borrowed session.
+
 ## Periods
 
 Owner: `src/domain/period.ts`, `src/use-cases/periods/`.
