@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const EVENT_CATEGORIES = [
+export const EVENT_CATEGORIES = [
   'MEETING',
   'TERM_START',
   'OUTING',
@@ -10,7 +10,7 @@ const EVENT_CATEGORIES = [
   'OTHER',
 ] as const
 
-const EVENT_VISIBILITIES = ['PUBLIC', 'MEMBERS', 'STAFF'] as const
+export const EVENT_VISIBILITIES = ['PUBLIC', 'MEMBERS', 'STAFF'] as const
 
 const EVENT_STATUSES = ['DRAFT', 'PUBLISHED', 'CANCELLED'] as const
 

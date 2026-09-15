@@ -1,11 +1,13 @@
-import { Breadcrumbs, Card, type Column, DataTable, EmptyState } from '@peaklab/ui'
-import { CalendarHeart } from 'lucide-react'
+import { Breadcrumbs, buttonVariants, Card, type Column, DataTable, EmptyState } from '@peaklab/ui'
+import { CalendarHeart, Printer } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { shiftEventToNextYear } from '@/domain/event'
 import { EventCategoryLabel, EventStatusBadge, EventVisibilityLabel } from '@/features/enums'
 import type { EventCategory } from '@/generated/prisma/client'
+import { Link } from '@/i18n/routing'
 import { formatEventDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
@@ -13,6 +15,7 @@ import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { ArchiveEventDialog } from './_components/archive-event-dialog'
 import { CreateEventDialog } from './_components/create-event-dialog'
+import { DuplicateEventDialog } from './_components/duplicate-event-dialog'
 import { EditEventDialog } from './_components/edit-event-dialog'
 import { EVENT_CATEGORY_VALUES } from './_components/event-enum-values'
 import { EventsFilters } from './_components/events-filters'
@@ -151,8 +154,23 @@ export default async function EventsPage({ params, searchParams }: Props) {
       headerClassName: 'text-right',
       className: 'text-right',
       render: (event) => (
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <EditEventDialog event={event} />
+          <DuplicateEventDialog
+            eventId={event.id}
+            title={event.title}
+            nextStartLabel={formatEventDate(
+              { allDay: event.allDay, ...shiftEventToNextYear(event) },
+              locale
+            )}
+          />
+          <Link
+            href={`/dashboard/events/${event.id}/affiche`}
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+          >
+            <Printer className="h-4 w-4" />
+            {t('poster.trigger')}
+          </Link>
           <ArchiveEventDialog eventId={event.id} />
         </div>
       ),

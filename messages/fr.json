@@ -1588,6 +1588,22 @@
           "description": "L'événement ne sera plus visible ni modifiable. Cette action est réversible uniquement par le support.",
           "confirm": "Archiver"
         },
+        "duplicate": {
+          "trigger": "Dupliquer",
+          "title": "Dupliquer l'événement",
+          "description": "Un brouillon sera créé pour le {date}, avec la même catégorie et la même visibilité. Les images ne sont pas copiées.",
+          "titleHint": "Deux événements actifs ne peuvent pas porter le même titre : ajoutez par exemple l'année.",
+          "cancel": "Annuler",
+          "submit": "Créer le brouillon"
+        },
+        "poster": {
+          "trigger": "Affiche",
+          "title": "Affiche de l'événement",
+          "back": "Retour aux événements",
+          "print": "Imprimer",
+          "hint": "Format A4 — Ctrl+P produit la même page.",
+          "cancelled": "Annulé"
+        },
         "images": {
           "add": "Ajouter une image",
           "remove": "Supprimer",
@@ -1617,7 +1633,8 @@
           "updated": "Événement mis à jour",
           "archived": "Événement archivé",
           "imageAdded": "Image ajoutée",
-          "imageRemoved": "Image supprimée"
+          "imageRemoved": "Image supprimée",
+          "duplicated": "Brouillon créé pour l'année suivante"
         }
       },
       "authSettings": {

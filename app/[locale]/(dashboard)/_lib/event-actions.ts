@@ -6,6 +6,7 @@ import type { z } from 'zod'
 import { addEventImage } from '@/use-cases/events/add-event-image'
 import { archiveEvent } from '@/use-cases/events/archive-event'
 import { createEvent } from '@/use-cases/events/create-event'
+import { duplicateEvent } from '@/use-cases/events/duplicate-event'
 import { removeEventImage } from '@/use-cases/events/remove-event-image'
 import type { createEventSchema, updateEventSchema } from '@/use-cases/events/schemas'
 import { updateEvent } from '@/use-cases/events/update-event'
@@ -29,6 +30,14 @@ export async function updateEventAction(
 ) {
   const { schoolId } = await requireSchoolAdmin()
   const result = await updateEvent({ ...data, id, schoolId })
+  if (typeof result === 'string') return result
+  revalidatePath('/dashboard/events')
+  return result
+}
+
+export async function duplicateEventAction(id: string, title: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await duplicateEvent({ schoolId, id, title })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/events')
   return result

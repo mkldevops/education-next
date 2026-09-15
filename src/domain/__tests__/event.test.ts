@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   normalizeEventDates,
+  shiftEventToNextYear,
   slugifyEventTitle,
   validateEventRange,
   visibleEventVisibilities,
@@ -94,5 +95,38 @@ describe('normalizeEventDates', () => {
 
     expect(result.startAt).toBe(startAt)
     expect(result.endAt).toBe(endAt)
+  })
+})
+
+describe('shiftEventToNextYear', () => {
+  it('moves an all-day event to the same day of the following year', () => {
+    expect(shiftEventToNextYear({ startAt: new Date('2026-12-03T00:00:00.000Z') })).toEqual({
+      startAt: new Date('2027-12-03T00:00:00.000Z'),
+      endAt: null,
+    })
+  })
+
+  it('keeps the wall-clock time of a timed event', () => {
+    const { startAt } = shiftEventToNextYear({ startAt: new Date('2026-09-01T18:30:00.000Z') })
+
+    expect(startAt).toEqual(new Date('2027-09-01T18:30:00.000Z'))
+  })
+
+  it('preserves the duration between start and end', () => {
+    expect(
+      shiftEventToNextYear({
+        startAt: new Date('2027-02-26T00:00:00.000Z'),
+        endAt: new Date('2027-03-02T00:00:00.000Z'),
+      })
+    ).toEqual({
+      startAt: new Date('2028-02-26T00:00:00.000Z'),
+      endAt: new Date('2028-03-01T00:00:00.000Z'),
+    })
+  })
+
+  it('lands a 29 February on the 28th rather than in March', () => {
+    const { startAt } = shiftEventToNextYear({ startAt: new Date('2028-02-29T00:00:00.000Z') })
+
+    expect(startAt).toEqual(new Date('2029-02-28T00:00:00.000Z'))
   })
 })

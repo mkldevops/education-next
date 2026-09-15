@@ -1281,6 +1281,29 @@ Owner: `src/domain/event.ts`, `src/use-cases/events/`, `src/gateways/event-gatew
   share no message: the use-case discriminant means "the feature is off", the storage one means
   "there is no S3", and collapsing them told an administrator whose setting was on that events were
   not enabled.
+- **Yearly duplication replaces a recurrence rule** (`duplicateEvent`,
+  `src/use-cases/events/duplicate-event.ts`). A school calendar is carried over by hand each year
+  (weekday, holidays), so an RRULE would produce dates to fix one by one. `shiftEventToNextYear`
+  (`src/domain/event.ts`) moves the start to the same UTC day next year — a 29 February lands on the
+  28th — and keeps the start-to-end duration. The copy is created through `createEvent`, so it passes
+  the same flag, range and slug checks: it is always `DRAFT`, keeps category, visibility, texts,
+  location and announcement delay, and never copies images (last year's poster carries its date).
+  The title is an input of the duplicate dialog, prefilled with the source title: an unchanged title
+  hits `'slugTaken'`, which the admin fixes in the form, never through a suffix. The source is never
+  written.
+- **The printable poster lives outside the dashboard layout**
+  (`app/[locale]/(print)/dashboard/events/[id]/affiche/page.tsx`), so no sidebar or header reaches
+  the print. It requires a school admin and `events_enabled` (`notFound()` otherwise, like the list),
+  and renders a fixed 210 × 297 mm sheet with `@page { size: A4; margin: 0 }`; the sheet clips its
+  own overflow, so a long description can never spill onto a second page. The school logo appears
+  there as a faint watermark — on a poster it signs the document, in a list it would hinder reading.
+  No PDF is generated server-side: the browser's print dialog produces the same page.
+- **`create_event` on the MCP server is an adapter of `createEvent`**
+  (`src/use-cases/mcp/create-event.ts`), not a second implementation. The tool is declared whether or
+  not `events_enabled` is on, and a disabled school gets the server action's own `'notConfigured'`.
+  It accepts no `status` — a dictated event is born `DRAFT` and published from the dashboard — and
+  its dates are a day or a zone-less wall-clock time: an offset would be an instant, not the hour
+  read on a flyer.
 - **Both `Event` and `EventImage` are tenant-scoped** (`src/lib/tenant-guard.ts`); `Event` is also
   soft-deleted through the shared extension (`src/lib/db.ts`), so an archived event disappears from
   every top-level read without a filter written by hand.

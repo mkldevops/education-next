@@ -29,6 +29,7 @@ const previewRecordPayment = vi.fn()
 const commitRecordPayment = vi.fn()
 const previewUpdateEnrollment = vi.fn()
 const commitUpdateEnrollment = vi.fn()
+const createEventFromMcp = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ McpServer: FakeMcpServer }))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
@@ -38,6 +39,7 @@ vi.mock('@/use-cases/mcp/preview-record-payment', () => ({ previewRecordPayment 
 vi.mock('@/use-cases/mcp/commit-record-payment', () => ({ commitRecordPayment }))
 vi.mock('@/use-cases/mcp/preview-update-enrollment', () => ({ previewUpdateEnrollment }))
 vi.mock('@/use-cases/mcp/commit-update-enrollment', () => ({ commitUpdateEnrollment }))
+vi.mock('@/use-cases/mcp/create-event', () => ({ createEventFromMcp }))
 
 const { buildMcpServer } = await import('./server')
 
@@ -69,7 +71,7 @@ beforeEach(() => {
 })
 
 describe('buildMcpServer', () => {
-  it('publishes the six reads and the three preview/commit pairs when payments are enabled', () => {
+  it('publishes the six reads, create_event and the three preview/commit pairs when payments are enabled', () => {
     expect([...build().keys()]).toEqual([
       'describe_school',
       'list_levels',
@@ -79,6 +81,7 @@ describe('buildMcpServer', () => {
       'list_teachers',
       'preview_enroll_family',
       'commit_enroll_family',
+      'create_event',
       'preview_record_payment',
       'commit_record_payment',
       'preview_update_enrollment',
@@ -95,6 +98,7 @@ describe('buildMcpServer', () => {
       'list_teachers',
       'preview_enroll_family',
       'commit_enroll_family',
+      'create_event',
     ])
   })
 
@@ -165,6 +169,17 @@ describe('buildMcpServer', () => {
 
     expect(result?.isError).toBe(true)
     expect(payload(result as never)).toEqual({ error: 'checksumMismatch' })
+  })
+
+  it('hands create_event to its use case with the key scope and surfaces notConfigured', async () => {
+    createEventFromMcp.mockResolvedValue('notConfigured')
+    const args = { title: 'Fête', category: 'CELEBRATION', startAt: '2026-12-03' }
+
+    const result = await build().get('create_event')?.handler(args)
+
+    expect(createEventFromMcp).toHaveBeenCalledWith(scope, args)
+    expect(result?.isError).toBe(true)
+    expect(payload(result as never)).toEqual({ error: 'notConfigured' })
   })
 
   it('hides an unexpected throw behind a fixed refusal, never its message', async () => {

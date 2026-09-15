@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { MCP_DRAFT_CHECKSUM_LENGTH } from '@/domain/mcp-draft'
 import { MCP_KEY_LIFETIMES_DAYS } from '@/domain/mcp-key'
+import { EVENT_CATEGORIES, EVENT_VISIBILITIES } from '@/use-cases/events/schemas'
 
 export const createMcpApiKeySchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -137,4 +138,27 @@ export const previewUpdateEnrollmentSchema = z
 export const commitDraftSchema = z.object({
   draftId: z.uuid(),
   checksum: z.string().length(MCP_DRAFT_CHECKSUM_LENGTH),
+})
+
+/**
+ * Un événement se stocke en heure murale de l'école, exprimée en UTC (`src/lib/date.ts`) :
+ * un horodatage avec décalage (`+02:00`) serait un instant, pas une heure lue sur une
+ * affiche, et déplacerait la réunion. Seuls le jour et l'heure sans fuseau sont admis.
+ *
+ * Pas de `status` : un événement dicté naît brouillon et se publie depuis le tableau de
+ * bord, après relecture humaine, comme un plan d'inscription avant son commit.
+ */
+const eventWallClock = z.union([z.iso.date(), z.iso.datetime({ local: true })])
+
+export const mcpCreateEventSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  summary: z.string().trim().max(280).optional(),
+  description: z.string().trim().max(5000).optional(),
+  category: z.enum(EVENT_CATEGORIES),
+  visibility: z.enum(EVENT_VISIBILITIES).optional(),
+  allDay: z.boolean().optional(),
+  startAt: eventWallClock,
+  endAt: eventWallClock.optional(),
+  location: z.string().trim().max(250).optional(),
+  announceDaysBefore: z.number().int().nonnegative().optional(),
 })
