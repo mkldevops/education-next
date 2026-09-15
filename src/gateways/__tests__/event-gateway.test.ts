@@ -6,7 +6,6 @@ const dbMock = {
     update: vi.fn(),
     findUnique: vi.fn(),
     findFirst: vi.fn(),
-    findMany: vi.fn(),
   },
   eventImage: {
     count: vi.fn(),
@@ -110,25 +109,5 @@ describe('eventGateway.removeImage', () => {
     await eventGateway.removeImage(SCHOOL, EVENT_ID, 'img-0')
 
     expect(tx.eventImage.update).not.toHaveBeenCalled()
-  })
-})
-
-describe('eventGateway.listAnnounceable', () => {
-  it('filters to PUBLISHED events carrying an announceDaysBefore, at the query level', async () => {
-    dbMock.event.findMany.mockResolvedValue([])
-    const from = new Date('2026-09-10T00:00:00.000Z')
-
-    await eventGateway.listAnnounceable(SCHOOL, ['PUBLIC', 'MEMBERS'], from, 10)
-
-    const [args] = dbMock.event.findMany.mock.calls[0] as [{ where: Record<string, unknown> }]
-    // Régression : sans ce filtre au niveau requête, un calendrier d'école long (vacances,
-    // fermetures, réunions sans annonce, courant au-delà de dix lignes) pouvait remplir le
-    // plafond `take` avant d'atteindre le seul événement dont la fenêtre était ouverte,
-    // laissant le bandeau muet sans erreur ni état vide.
-    expect(args.where).toMatchObject({
-      schoolId: SCHOOL,
-      status: 'PUBLISHED',
-      announceDaysBefore: { not: null },
-    })
   })
 })

@@ -139,9 +139,9 @@ const DAY_MS = 24 * 60 * 60 * 1000
  * Un événement `allDay` est stocké à minuit UTC (`normalizeEventDates`) : le comparer
  * strictement à `now` ferait disparaître le bandeau à 00:00 UTC le jour même de
  * l'événement, exactement quand il compte le plus — et désynchroniserait ce choix de
- * `listUpcomingEvents`, qui plafonne sa propre borne au début du jour UTC pour que « today »
- * y reste inclus. Un `allDay` reste donc annoncé tant que le jour UTC courant n'a pas
- * dépassé son `startAt` ; un événement horodaté garde la comparaison stricte à l'instant.
+ * `listAnnounceableEvents`, qui plafonne sa propre borne au début du jour UTC pour que
+ * « today » y reste inclus. Un `allDay` reste donc annoncé tant que le jour UTC courant n'a
+ * pas dépassé son `startAt` ; un événement horodaté garde la comparaison stricte à l'instant.
  */
 export function selectAnnouncedEvent<
   T extends {

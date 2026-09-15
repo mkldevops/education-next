@@ -1367,6 +1367,21 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   without it. Dismissal is client-side and keyed `event-dismissed:<id>:<updatedAt>` in
   `localStorage`: editing the event changes `updatedAt`, so the key changes and the banner
   reappears — an id alone would leave a stale dismissal covering an edited announcement.
+- **The banner and the card read through two different, purpose-scoped queries, not one shared
+  fetch.** An earlier revision had both call `listUpcomingEvents` with a shared `take` limit so the
+  two would deduplicate into a single request within a render; that broke the banner silently on any
+  school whose calendar carries more than `take` upcoming rows before reaching the one event whose
+  announcement window was actually open — `selectAnnouncedEvent` needs the nearest `PUBLISHED` event
+  with a non-null `announceDaysBefore`, a materially smaller set than "every upcoming event" the card
+  wants, so a limit sized for the card's display could exhaust itself on rows the banner could never
+  select in the first place. `listAnnounceableEvents` (`src/use-cases/events/list-announceable-events.ts`)
+  now feeds the banner from `eventGateway.listAnnounceable`, which filters `status: 'PUBLISHED'` and
+  `announceDaysBefore: { not: null }` in the SQL `where` itself — before `take` is applied, not after
+  — so the limit only ever counts rows the banner could actually choose. `listUpcomingEvents`
+  (`src/use-cases/events/list-upcoming-events.ts`) keeps serving the card alone, unfiltered by
+  `announceDaysBefore`, capped only for its own bounded display. Neither is memoised with
+  `React.cache()` anymore: that was only ever justified by the two surfaces sharing one call, which
+  no longer holds now that they read different rows.
 
 ## Invitations
 
