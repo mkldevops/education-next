@@ -1196,7 +1196,9 @@ plain string in `Config`, so an external URL keeps working.
 - **The size is checked in the form before sending**, against the same `MAX_BRANDING_IMAGE_BYTES`
   (`src/lib/branding-config.ts`). Past the Server Actions body limit Next.js throws before the action
   can answer, so a server-only check surfaced as a runtime error instead of `fileTooLarge`.
-  `next.config.ts` raises that limit to 11 MB: a 10 MB file plus its multipart envelope.
+  `next.config.ts` raises that limit to 11 MB: a 10 MB file plus its multipart envelope. It raises
+  `experimental.proxyClientMaxBodySize` to 11 MB too: past its 10 MB default, the body handed on
+  after `proxy.ts` is silently truncated.
 - The object is stored under `branding/<schoolId>/<uuid>.webp`; the caller never chooses the key,
   so an upload cannot overwrite another one, and one school cannot reach another's assets.
 - Configuration is `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, optionally
@@ -1313,7 +1315,8 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   dropped — a phone photo keeps its orientation but not its location. An undecodable file →
   `'invalidImage'`, nothing stored. Images uploaded before this rule keep their original format.
 - **The dialog never sends a file over 10 MB**: it skips it with a « dépasse 10 Mo » toast and sends
-  the others. Next.js enforces `experimental.serverActions.bodySizeLimit` (11 MB, `next.config.ts`)
+  the others. Next.js enforces `experimental.serverActions.bodySizeLimit` and
+  `experimental.proxyClientMaxBodySize` (both 11 MB, `next.config.ts`)
   on a server action's entire body, attachment included, before the action runs; an oversized
   request surfaced as an opaque 500 instead of the typed refusal. An action that throws anyway ends
   the batch with an « envoi a échoué » toast. The object is stored under
