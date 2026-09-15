@@ -11,6 +11,7 @@ import type {
 } from '@/generated/prisma/client'
 import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 
 type EnrollmentWithRelation = Enrollment & {
   plan: Plan
@@ -35,6 +36,8 @@ type Props = {
   enrollments: EnrollmentWithRelation[]
   payments: PaymentWithRelation[]
   locale: string
+  /** Faux quand l'école a désactivé les paiements : ni versement, ni formule dans le fil. */
+  paymentsEnabled: boolean
 }
 
 type Activity = {
@@ -47,12 +50,12 @@ type Activity = {
   color: string
 }
 
-export async function ActivityFeed({ enrollments, payments, locale }: Props) {
+export async function ActivityFeed({ enrollments, payments, locale, paymentsEnabled }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   const activities: Activity[] = []
 
-  groupFamilyPayments(payments).forEach((payment) => {
+  groupFamilyPayments(paymentsEnabled ? payments : []).forEach((payment) => {
     activities.push({
       id: `payment-${payment.id}`,
       date: payment.paidAt,
@@ -75,7 +78,8 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
       date: enrollment.registeredAt,
       type: 'enrollment',
       title: t('activity.enrollment'),
-      description: enrollment.plan.name,
+      description:
+        paymentsEnabled && enrollment.plan.name !== UNPRICED_PLAN_NAME ? enrollment.plan.name : '',
       student: enrollment.studentName,
       color: 'bg-blue-500',
     })
@@ -115,7 +119,11 @@ export async function ActivityFeed({ enrollments, payments, locale }: Props) {
           <div className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${activity.color}`} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-graphite">{activity.title}</p>
-            <p className="text-xs text-graphite-600 mt-0.5 line-clamp-2">{activity.description}</p>
+            {activity.description && (
+              <p className="text-xs text-graphite-600 mt-0.5 line-clamp-2">
+                {activity.description}
+              </p>
+            )}
             {activity.student && (
               <p className="text-xs font-medium text-graphite mt-0.5">{activity.student}</p>
             )}

@@ -941,14 +941,15 @@
           "upload": "Upload an image",
           "uploading": "Uploading…",
           "uploaded": "Image uploaded",
-          "hint": "PNG, JPEG, WebP, SVG or ICO — 1 MB maximum",
+          "hint": "PNG, JPEG, WebP or SVG — 10 MB maximum, converted to WebP",
           "urlPlaceholder": "https://… or upload a file",
           "preview": "Preview",
           "error": "Something went wrong",
           "errors": {
             "invalidInput": "No file received",
-            "unsupportedType": "Unsupported format: use PNG, JPEG, WebP, SVG or ICO",
-            "fileTooLarge": "File too large: 1 MB maximum",
+            "unsupportedType": "Unsupported format: use PNG, JPEG, WebP or SVG",
+            "fileTooLarge": "File too large: 10 MB maximum",
+            "invalidImage": "Unreadable or corrupted image",
             "emptyFile": "The file is empty",
             "notConfigured": "Image storage is not configured on this server"
           }
@@ -1570,7 +1571,6 @@
           "location": "Location",
           "announceDays": "Announcement days",
           "announceDaysHint": "The banner appears this many days before the event. Leave empty for no announcement.",
-          "images": "Images",
           "alt": "Alt text"
         },
         "columns": {
@@ -1582,6 +1582,7 @@
           "actions": "Actions"
         },
         "empty": "No event registered",
+        "emptyInPeriod": "No events in the {period} period",
         "archive": {
           "trigger": "Archive",
           "title": "Archive this event?",
@@ -1605,14 +1606,20 @@
           "cancelled": "Cancelled"
         },
         "images": {
-          "add": "Add an image",
+          "add": "Add images",
           "remove": "Remove",
-          "cover": "Cover image",
-          "hint": "Up to 6 images, PNG, JPEG or WebP, 4 MB each.",
-          "none": "No image"
+          "cover": "Cover",
+          "hint": "PNG, JPEG or WebP, 10 MB per image, converted to WebP. The cover illustrates the poster and the public page.",
+          "none": "No image",
+          "trigger": "Images ({count})",
+          "title": "Images for “{title}”",
+          "counter": "{count} / {max}",
+          "setCover": "Set as cover",
+          "altHint": "Describes the image for screen readers. Applied to every image added.",
+          "tooManySelected": "{count, plural, one {One slot left: only the first image is added} other {# slots left: only the first # images are added}}",
+          "tooLarge": "{count, plural, one {One image exceeds 10 MB and is not added} other {# images exceed 10 MB and are not added}}"
         },
         "filters": {
-          "year": "Year",
           "category": "Category",
           "all": "All"
         },
@@ -1624,7 +1631,9 @@
           "invalidDateRange": "The end date must be after the start date",
           "tooManyImages": "6 images maximum per event",
           "unsupportedType": "Unsupported image format",
-          "fileTooLarge": "Image too large (4 MB maximum)",
+          "fileTooLarge": "Image too large (10 MB maximum)",
+          "invalidImage": "Unreadable or corrupted image",
+          "unexpected": "Upload failed, try again",
           "emptyFile": "The file is empty",
           "storageNotConfigured": "Image storage is not configured on this server"
         },
@@ -1634,7 +1643,16 @@
           "archived": "Event archived",
           "imageAdded": "Image added",
           "imageRemoved": "Image removed",
-          "duplicated": "Draft created for next year"
+          "duplicated": "Draft created for next year",
+          "coverChanged": "Cover updated"
+        },
+        "publicLink": {
+          "view": "View public page",
+          "preview": "Preview page",
+          "copy": "Copy public link",
+          "copied": "Link copied",
+          "copiedPrivate": "Link copied. The page stays private until the event is public and published.",
+          "copyFailed": "Could not copy the link"
         }
       },
       "authSettings": {
@@ -2037,5 +2055,16 @@
       "notice": "Your other open sessions remain active.",
       "footer": "Automated message. If you did not make this change, reset your password immediately and contact an administrator."
     }
+  },
+  "publicEvent": {
+    "preview": {
+      "title": "Preview.",
+      "description": "This page is hidden from the public ({status}, {visibility}).",
+      "back": "Back to events"
+    },
+    "cancelled": "Cancelled",
+    "date": "Date",
+    "location": "Location",
+    "gallery": "Photos"
   }
 }

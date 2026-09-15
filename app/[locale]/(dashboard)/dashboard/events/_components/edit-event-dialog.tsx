@@ -13,16 +13,11 @@ import {
   Select,
   Textarea,
 } from '@peaklab/ui'
+import { Pencil } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
-import type {
-  Event,
-  EventCategory,
-  EventImage,
-  EventStatus,
-  EventVisibility,
-} from '@/generated/prisma/client'
+import type { Event, EventCategory, EventStatus, EventVisibility } from '@/generated/prisma/client'
 import { parseEventInputValue, toEventInputValue } from '@/lib/date'
 import { updateEventAction } from '../../../_lib/event-actions'
 import {
@@ -30,7 +25,6 @@ import {
   EVENT_STATUS_VALUES,
   EVENT_VISIBILITY_VALUES,
 } from './event-enum-values'
-import { EventImagesField } from './event-images-field'
 
 type EditableEvent = Pick<
   Event,
@@ -46,21 +40,27 @@ type EditableEvent = Pick<
   | 'endAt'
   | 'location'
   | 'announceDaysBefore'
-> & {
-  images: Pick<EventImage, 'id' | 'storageKey' | 'alt' | 'position'>[]
-}
+>
 
 type Props = {
   event: EditableEvent
 }
 
-export function EditEventDialog({ event }: Props) {
+type EditEventDialogProps = Props & {
+  /** `menuitem` quand le déclencheur est une entrée de menu, pour la navigation au clavier. */
+  triggerRole?: React.AriaRole
+  /** Cible de repli du focus quand le déclencheur est devenu inaccessible à la fermeture. */
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
+}
+
+export function EditEventDialog({ event, triggerRole, restoreFocusRef }: EditEventDialogProps) {
   const tEdit = useTranslations('dashboard.pages.events.edit')
 
   return (
-    <Dialog>
+    <Dialog restoreFocusRef={restoreFocusRef}>
       <DialogTrigger>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" role={triggerRole}>
+          <Pencil className="h-4 w-4" />
           {tEdit('trigger')}
         </Button>
       </DialogTrigger>
@@ -255,10 +255,6 @@ function EditEventForm({ event }: Props) {
               disabled={isPending}
             />
             <p className="text-xs text-graphite-600">{t('fields.announceDaysHint')}</p>
-          </div>
-          <div className="space-y-2 border-t border-alabaster-700 pt-4">
-            <Label>{t('fields.images')}</Label>
-            <EventImagesField eventId={event.id} images={event.images} />
           </div>
         </div>
       </DialogBody>

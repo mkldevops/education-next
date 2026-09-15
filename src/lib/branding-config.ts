@@ -11,5 +11,8 @@ export const BRANDING_CONFIG_DEFAULTS = [
   },
 ] as const
 
-/** Partagé avec le formulaire : un fichier trop lourd est refusé avant de partir vers le serveur. */
-export const MAX_BRANDING_IMAGE_BYTES = 1024 * 1024
+/**
+ * Taille du fichier reçu, avant sa conversion en WebP. Partagé avec le formulaire : un fichier
+ * trop lourd est refusé avant de partir vers le serveur.
+ */
+export const MAX_BRANDING_IMAGE_BYTES = 10 * 1024 * 1024

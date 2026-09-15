@@ -166,3 +166,62 @@ export function selectAnnouncedEvent<
 
   return eligible.reduce((nearest, event) => (event.startAt < nearest.startAt ? event : nearest))
 }
+
+/**
+ * Taille du fichier reçu, avant sa conversion en WebP. Partagée avec le dialogue : au-delà
+ * de la limite de corps des Server Actions, Next.js coupe la requête avant que l'action ne
+ * puisse répondre `fileTooLarge`, le contrôle doit donc précéder l'envoi.
+ */
+export const MAX_EVENT_IMAGE_BYTES = 10 * 1024 * 1024
+
+export type EventPageAccess = 'public' | 'preview' | 'hidden'
+
+/**
+ * Accès à la page publique d'un événement.
+ *
+ * Seul un événement `PUBLIC` et sorti du brouillon s'affiche hors session. Un événement
+ * annulé reste lisible, comme dans les listes : un lien déjà partagé doit annoncer
+ * l'annulation plutôt que tomber sur une 404. Tout le reste n'est ouvert qu'à un
+ * administrateur de l'école, en aperçu.
+ */
+export function resolveEventPageAccess(
+  event: { visibility: EventVisibility; status: EventStatus },
+  viewerIsSchoolAdmin: boolean
+): EventPageAccess {
+  if (event.visibility === 'PUBLIC' && event.status !== 'DRAFT') return 'public'
+  return viewerIsSchoolAdmin ? 'preview' : 'hidden'
+}
+
+/**
+ * Nouvel ordre des images quand `imageId` devient la couverture : elle passe en tête, les
+ * autres gardent leur ordre relatif. `null` si l'image n'appartient pas à la liste.
+ */
+export function reorderImagesForCover<T extends { id: string }>(
+  images: T[],
+  imageId: string
+): T[] | null {
+  const cover = images.find((image) => image.id === imageId)
+  if (!cover) return null
+  return [cover, ...images.filter((image) => image.id !== imageId)]
+}
+
+/** Chemin, sans préfixe de langue, de la page publique d'un événement. */
+export function eventPublicPath(schoolSlug: string, eventSlug: string): string {
+  return `/ecole/${schoolSlug}/evenements/${eventSlug}`
+}
+
+export type EventPeriodBounds = { from: Date; until: Date }
+
+/**
+ * Bornes d'une période scolaire pour filtrer ses événements. `Period.endAt` est un jour
+ * inclus : la borne haute exclusive est le minuit UTC du lendemain, sinon une réunion le
+ * soir du dernier jour sortirait de la liste. Un événement y figure dès qu'il chevauche la
+ * période — des vacances commencées fin août restent visibles en septembre.
+ */
+export function eventPeriodBounds(period: { startAt: Date; endAt: Date }): EventPeriodBounds {
+  const { endAt } = period
+  return {
+    from: period.startAt,
+    until: new Date(Date.UTC(endAt.getUTCFullYear(), endAt.getUTCMonth(), endAt.getUTCDate() + 1)),
+  }
+}

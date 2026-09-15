@@ -1,4 +1,4 @@
-import { Card, type Column, DataTable, ProgressBar, StatusDot } from '@peaklab/ui'
+import { Card, type Column, DataTable, ProgressBar, StatusBadge, StatusDot } from '@peaklab/ui'
 import { AlertCircle, TrendingUp, Users, Wallet } from 'lucide-react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
@@ -9,6 +9,7 @@ import { Link } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { getSchoolContext } from '@/lib/school-context'
 import { isStripeConfigured } from '@/lib/stripe'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -40,6 +41,7 @@ export default async function DashboardPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard')
   const tStatus = await getTranslations('status')
+  const tEnrollments = await getTranslations('dashboard.pages.enrollments')
 
   const session = await auth.api.getSession({ headers: await headers() })
 
@@ -90,12 +92,21 @@ export default async function DashboardPage({ params }: Props) {
         </Link>
       ),
     },
-    {
-      key: 'plan',
-      header: t('table.plan'),
-      className: 'text-graphite-600',
-      render: (item) => item.plan.name,
-    },
+    ...(paymentsEnabled
+      ? [
+          {
+            key: 'plan',
+            header: t('table.plan'),
+            className: 'text-graphite-600',
+            render: (item: (typeof recentEnrollments)[number]) =>
+              item.plan.name === UNPRICED_PLAN_NAME ? (
+                <StatusBadge status="amber" label={tEnrollments('unpriced.badge')} />
+              ) : (
+                item.plan.name
+              ),
+          },
+        ]
+      : []),
     {
       key: 'class',
       header: t('table.class'),

@@ -10,8 +10,6 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 vi.mock('../../../_lib/event-actions', () => ({
   updateEventAction: (id: string, input: unknown) => updateEventAction(id, input),
-  removeEventImageAction: vi.fn(),
-  uploadEventImageAction: vi.fn(),
 }))
 
 import { EditEventDialog } from './edit-event-dialog'
@@ -26,7 +24,6 @@ const baseEvent = {
   status: 'DRAFT' as const,
   location: null,
   announceDaysBefore: null,
-  images: [],
 }
 
 function openDialog(event: Parameters<typeof EditEventDialog>[0]['event']) {

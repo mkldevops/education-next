@@ -123,6 +123,8 @@ describe('DashboardPage, admin', () => {
 
     expect(screen.queryByText('insights.remaining')).not.toBeInTheDocument()
     expect(screen.queryByText('table.payment')).not.toBeInTheDocument()
+    expect(screen.queryByText('table.plan')).not.toBeInTheDocument()
+    expect(screen.queryByText('Standard')).not.toBeInTheDocument()
     expect(screen.getByTestId('school-insights')).toHaveTextContent('no-stats')
     // Le reste du tableau de bord n'est pas affecté.
     expect(screen.getByText('Alice Dupont')).toBeInTheDocument()
@@ -136,6 +138,7 @@ describe('DashboardPage, admin', () => {
 
     expect(screen.getByText('insights.remaining')).toBeInTheDocument()
     expect(screen.getByText('table.payment')).toBeInTheDocument()
+    expect(screen.getByText('table.plan')).toBeInTheDocument()
     expect(screen.getByTestId('school-insights')).toHaveTextContent('has-stats')
   })
 })

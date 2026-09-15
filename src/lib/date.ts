@@ -48,71 +48,37 @@ type EventDateInput = {
  * conteneur) tandis que la saisie prendrait celui du navigateur : un administrateur à Paris
  * verrait 18:00 pour une réunion enregistrée à 20:00, et chaque enregistrement sans
  * modification décalerait l'instant de son décalage horaire.
- *
- * Une plage dont les deux bornes tombent le même jour n'affiche la date qu'une fois.
  */
-function isSameUtcDay(a: Date, b: Date): boolean {
-  return (
-    a.getUTCFullYear() === b.getUTCFullYear() &&
-    a.getUTCMonth() === b.getUTCMonth() &&
-    a.getUTCDate() === b.getUTCDate()
-  )
+function formatEventRange(
+  event: EventDateInput,
+  locale: string,
+  dateStyle: 'medium' | 'full'
+): string {
+  const { allDay, startAt, endAt } = event
+  const format = new Intl.DateTimeFormat(locale, {
+    dateStyle,
+    ...(allDay ? {} : { timeStyle: 'short' }),
+    timeZone: 'UTC',
+  })
+
+  return endAt ? format.formatRange(startAt, endAt) : format.format(startAt)
 }
 
+/**
+ * Libellé compact d'un tableau. `formatRange` applique les conventions de la locale : une plage
+ * sur un seul mois ne répète ni le mois ni l'année (« 10–12 mars 2026 »), un même jour n'affiche
+ * la date qu'une fois (« 10 mars 2026, 09:00 – 10:30 »).
+ */
 export function formatEventDate(event: EventDateInput, locale: string): string {
-  const { allDay, startAt, endAt } = event
-
-  const sameUtcDay = endAt && isSameUtcDay(startAt, endAt)
-
-  if (allDay) {
-    const options = { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' } as const
-    const startLabel = startAt.toLocaleDateString(locale, options)
-
-    if (!endAt || sameUtcDay) return startLabel
-
-    return `${startLabel} – ${endAt.toLocaleDateString(locale, options)}`
-  }
-
-  const full = { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' } as const
-  const startLabel = startAt.toLocaleString(locale, full)
-  if (!endAt) return startLabel
-
-  if (sameUtcDay) {
-    const time = { timeStyle: 'short', timeZone: 'UTC' } as const
-    return `${startLabel} – ${endAt.toLocaleString(locale, time)}`
-  }
-
-  return `${startLabel} – ${endAt.toLocaleString(locale, full)}`
+  return formatEventRange(event, locale, 'medium')
 }
 
 /**
  * Date « en clair » d'une affiche : jour de semaine et mois en toutes lettres, lisibles de
- * loin. Même convention UTC que `formatEventDate`, pour la même raison.
+ * loin (« jeudi 3 décembre 2026 à 18:00 »). Même convention UTC que `formatEventDate`.
  */
 export function formatEventPosterDate(event: EventDateInput, locale: string): string {
-  const { allDay, startAt, endAt } = event
-  const day = {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  } as const
-  const time = { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' } as const
-
-  const startDay = startAt.toLocaleDateString(locale, day)
-
-  if (allDay) {
-    if (!endAt || isSameUtcDay(startAt, endAt)) return startDay
-    return `${startDay} – ${endAt.toLocaleDateString(locale, day)}`
-  }
-
-  const start = `${startDay}, ${startAt.toLocaleTimeString(locale, time)}`
-  if (!endAt) return start
-  if (isSameUtcDay(startAt, endAt)) return `${start} – ${endAt.toLocaleTimeString(locale, time)}`
-
-  const endDay = endAt.toLocaleDateString(locale, day)
-  return `${start} – ${endDay}, ${endAt.toLocaleTimeString(locale, time)}`
+  return formatEventRange(event, locale, 'full')
 }
 
 const INPUT_DATE_LENGTH = 10

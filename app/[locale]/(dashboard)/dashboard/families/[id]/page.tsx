@@ -242,6 +242,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 isAdmin={isAdmin}
                 classes={classOptions}
                 studentsEnrolledInSelectedPeriod={studentsEnrolledInSelectedPeriod}
+                paymentsEnabled={paymentsEnabled}
               />
             ),
           },
@@ -260,6 +261,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 enrollments={allEnrollments}
                 payments={family.payments}
                 locale={locale}
+                paymentsEnabled={paymentsEnabled}
               />
             ),
           },

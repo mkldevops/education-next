@@ -1,28 +1,27 @@
-import { Breadcrumbs, buttonVariants, Card, type Column, DataTable, EmptyState } from '@peaklab/ui'
-import { CalendarHeart, Printer } from 'lucide-react'
+import { Breadcrumbs, Card, type Column, DataTable, EmptyState } from '@peaklab/ui'
+import { CalendarHeart } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { shiftEventToNextYear } from '@/domain/event'
+import { eventPeriodBounds, shiftEventToNextYear } from '@/domain/event'
+import { getSelectedPeriod } from '@/features/dashboard/period'
 import { EventCategoryLabel, EventStatusBadge, EventVisibilityLabel } from '@/features/enums'
+import { schoolGateway } from '@/gateways/school-gateway'
 import type { EventCategory } from '@/generated/prisma/client'
-import { Link } from '@/i18n/routing'
 import { formatEventDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
-import { ArchiveEventDialog } from './_components/archive-event-dialog'
 import { CreateEventDialog } from './_components/create-event-dialog'
-import { DuplicateEventDialog } from './_components/duplicate-event-dialog'
-import { EditEventDialog } from './_components/edit-event-dialog'
+import { EventActionsMenu } from './_components/event-actions-menu'
 import { EVENT_CATEGORY_VALUES } from './_components/event-enum-values'
 import { EventsFilters } from './_components/events-filters'
 
 type Props = {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ year?: string; category?: string }>
+  searchParams: Promise<{ category?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -33,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function EventsPage({ params, searchParams }: Props) {
   await connection()
   const { locale } = await params
-  const { year, category } = await searchParams
+  const { category } = await searchParams
   setRequestLocale(locale)
 
   const { schoolId } = await requireSchoolAdmin()
@@ -46,6 +45,9 @@ export default async function EventsPage({ params, searchParams }: Props) {
   // écran qui n'annonce que son indisponibilité (cf. teachers/page.tsx).
   if (eventsConfig?.value !== 'true') notFound()
 
+  const school = await schoolGateway.findActiveById(schoolId)
+  if (!school) notFound()
+
   const t = await getTranslations('dashboard.pages.events')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
@@ -53,38 +55,29 @@ export default async function EventsPage({ params, searchParams }: Props) {
     category && (EVENT_CATEGORY_VALUES as string[]).includes(category)
       ? (category as EventCategory)
       : undefined
-  const selectedYear = year && /^\d{4}$/.test(year) ? Number(year) : undefined
+  // La liste suit la période choisie dans l'en-tête, comme classes et paiements. Une école
+  // sans période voit tous ses événements plutôt qu'une liste vide inexplicable.
+  const selectedPeriod = await getSelectedPeriod(schoolId)
+  const bounds = selectedPeriod ? eventPeriodBounds(selectedPeriod) : null
 
-  // Les filtres année/catégorie sont appliqués ici, côté serveur, jamais recalculés dans
-  // le navigateur : `RichDataTable` n'aurait pas cette garantie sur sa prop `data`, donc
-  // cette liste utilise le `DataTable` simple, sans état client.
-  const [allEvents, events] = await Promise.all([
-    db.event.findMany({
-      where: { schoolId, isActive: true },
-      select: { startAt: true },
-    }),
-    db.event.findMany({
-      where: {
-        schoolId,
-        isActive: true,
-        ...(selectedCategory ? { category: selectedCategory } : {}),
-        ...(selectedYear
-          ? {
-              startAt: {
-                gte: new Date(Date.UTC(selectedYear, 0, 1)),
-                lt: new Date(Date.UTC(selectedYear + 1, 0, 1)),
-              },
-            }
-          : {}),
-      },
-      include: { images: { orderBy: { position: 'asc' } } },
-      orderBy: { startAt: 'asc' },
-    }),
-  ])
-
-  const years = Array.from(new Set(allEvents.map((event) => event.startAt.getUTCFullYear()))).sort(
-    (a, b) => b - a
-  )
+  // Période et catégorie sont appliquées ici, côté serveur, jamais recalculées dans le
+  // navigateur : `RichDataTable` n'aurait pas cette garantie sur sa prop `data`, donc cette
+  // liste utilise le `DataTable` simple, sans état client.
+  const events = await db.event.findMany({
+    where: {
+      schoolId,
+      isActive: true,
+      ...(selectedCategory ? { category: selectedCategory } : {}),
+      ...(bounds
+        ? {
+            startAt: { lt: bounds.until },
+            OR: [{ endAt: { gte: bounds.from } }, { endAt: null, startAt: { gte: bounds.from } }],
+          }
+        : {}),
+    },
+    include: { images: { orderBy: { position: 'asc' } } },
+    orderBy: { startAt: 'asc' },
+  })
 
   // `events` est trié par `startAt` croissant : deux événements du même mois sont donc
   // toujours adjacents, ce qui rend un index de recherche superflu ici.
@@ -154,25 +147,14 @@ export default async function EventsPage({ params, searchParams }: Props) {
       headerClassName: 'text-right',
       className: 'text-right',
       render: (event) => (
-        <div className="flex flex-wrap justify-end gap-2">
-          <EditEventDialog event={event} />
-          <DuplicateEventDialog
-            eventId={event.id}
-            title={event.title}
-            nextStartLabel={formatEventDate(
-              { allDay: event.allDay, ...shiftEventToNextYear(event) },
-              locale
-            )}
-          />
-          <Link
-            href={`/dashboard/events/${event.id}/affiche`}
-            className={buttonVariants({ variant: 'outline', size: 'sm' })}
-          >
-            <Printer className="h-4 w-4" />
-            {t('poster.trigger')}
-          </Link>
-          <ArchiveEventDialog eventId={event.id} />
-        </div>
+        <EventActionsMenu
+          event={event}
+          schoolSlug={school.slug}
+          nextStartLabel={formatEventDate(
+            { allDay: event.allDay, ...shiftEventToNextYear(event) },
+            locale
+          )}
+        />
       ),
     },
   ]
@@ -193,10 +175,13 @@ export default async function EventsPage({ params, searchParams }: Props) {
         <CreateEventDialog />
       </div>
 
-      <EventsFilters years={years} />
+      <EventsFilters />
 
       {events.length === 0 ? (
-        <EmptyState icon={CalendarHeart} title={t('empty')} />
+        <EmptyState
+          icon={CalendarHeart}
+          title={selectedPeriod ? t('emptyInPeriod', { period: selectedPeriod.name }) : t('empty')}
+        />
       ) : (
         <div className="space-y-6">
           {groups.map((group) => (
