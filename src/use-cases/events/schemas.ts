@@ -18,7 +18,7 @@ export const createEventSchema = z.object({
   schoolId: z.string().min(1),
   title: z.string().trim().min(1).max(120),
   summary: z.string().trim().max(280).nullish(),
-  description: z.string().trim().nullish(),
+  description: z.string().trim().max(5000).nullish(),
   category: z.enum(EVENT_CATEGORIES),
   visibility: z.enum(EVENT_VISIBILITIES).optional(),
   status: z.enum(EVENT_STATUSES).optional(),

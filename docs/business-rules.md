@@ -1081,10 +1081,10 @@ email — interpolate `{schoolName}` instead of naming one school in the source 
 Owner: `src/domain/event.ts`, `src/use-cases/events/`, `src/gateways/event-gateway.ts`.
 
 - **Gated by the school setting `events_enabled`** (`src/lib/events-config.ts`), off by default.
-  Four enforcement points read the same flag: the sidebar entry
-  (`src/features/dashboard/sidebar-items.ts`), the dashboard page (`notFound()` when it is off), every
-  use-case in `src/use-cases/events/` (`'notConfigured'` before any other check), and — once it
-  exists — the public event listing.
+  Three enforcement points read the same flag: the sidebar entry
+  (`src/features/dashboard/sidebar-items.ts`), the dashboard page (`notFound()` when it is off), and
+  every use-case in `src/use-cases/events/` — after `safeParse` rejects malformed input
+  (`'validationError'`), before anything else. Once it exists, the public event listing is a fourth.
 - **Visibility is an ordered scale, not a set of independent tags**: `PUBLIC ⊂ MEMBERS ⊂ STAFF`
   (`EventVisibility`, `prisma/schema.prisma`). `visibleEventVisibilities()` (`src/domain/event.ts`)
   turns a viewer into the list of visibilities it may read, which replaces a viewer × category
@@ -1114,17 +1114,28 @@ Owner: `src/domain/event.ts`, `src/use-cases/events/`, `src/gateways/event-gatew
 - **Upload accepts PNG, JPEG and WebP only — no SVG**, unlike branding images: an event image is
   content shown to families, not an operator-controlled asset, so active SVG markup is refused
   outright (`'unsupportedType'`). The limit is 4 MB (`'fileTooLarge'`) and an empty file is refused
-  (`'emptyFile'`) (`MAX_EVENT_IMAGE_BYTES`, `src/use-cases/media/upload-event-image.ts`). The object
-  is stored under `events/<schoolId>/<uuid>.<ext>` and served through `GET /api/media/events/…`, the
-  same public-but-unenumerable route as `branding/`. Without the object-store configuration, the
-  upload use-case answers `'notConfigured'` rather than crashing, exactly like branding — but
-  `uploadEventImageAction` **renames it `'storageNotConfigured'`**
-  (`app/[locale]/(dashboard)/_lib/event-actions.ts`). The two conditions share no message: the
-  use-case discriminant means "the feature is off", the storage one means "there is no S3", and
-  collapsing them told an administrator whose setting was on that events were not enabled.
+  (`'emptyFile'`) (`MAX_EVENT_IMAGE_BYTES`, `src/use-cases/media/upload-event-image.ts`). Reaching it
+  requires `experimental.serverActions.bodySizeLimit` in `next.config.ts` to exceed 4 MB plus the
+  multipart envelope: Next's own default for a server action's entire body — attachment included —
+  is 1 MB, which would otherwise cut the request before the use-case ever runs and surface an opaque
+  500 instead of the typed refusal. The object is stored under `events/<schoolId>/<uuid>.<ext>` and
+  served through `GET /api/media/events/…`, the same public-but-unenumerable route as `branding/`.
+  Without the object-store configuration, the upload use-case answers `'notConfigured'` rather than
+  crashing, exactly like branding — but `uploadEventImageAction` **renames it
+  `'storageNotConfigured'`** (`app/[locale]/(dashboard)/_lib/event-actions.ts`). The two conditions
+  share no message: the use-case discriminant means "the feature is off", the storage one means
+  "there is no S3", and collapsing them told an administrator whose setting was on that events were
+  not enabled.
 - **Both `Event` and `EventImage` are tenant-scoped** (`src/lib/tenant-guard.ts`); `Event` is also
   soft-deleted through the shared extension (`src/lib/db.ts`), so an archived event disappears from
   every top-level read without a filter written by hand.
+- **The media route does not consult `EventVisibility` or `EventStatus`.** Confidentiality of an
+  event's bytes rests entirely on the object key being unguessable (two independent UUIDv4s), not on
+  the visibility chosen for the event — a `DRAFT` or `STAFF`-only image is served to an
+  unauthenticated request that already holds its key, with a one-year immutable cache header. This is
+  survivable today because nothing outside the admin screen ever renders that key. It stops being
+  survivable the day #326's public event listing ships: that surface must either filter which events
+  it links images for, or the route must start checking visibility itself.
 
 ## Invitations
 

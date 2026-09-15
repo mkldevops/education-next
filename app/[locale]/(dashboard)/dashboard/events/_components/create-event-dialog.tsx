@@ -18,6 +18,7 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import type { EventCategory, EventVisibility } from '@/generated/prisma/client'
+import { parseEventInputValue, toEventInputValue } from '@/lib/date'
 import { createEventAction } from '../../../_lib/event-actions'
 import { EVENT_CATEGORY_VALUES, EVENT_VISIBILITY_VALUES } from './event-enum-values'
 
@@ -49,6 +50,8 @@ function CreateEventForm() {
   const tVisibility = useTranslations('eventVisibility')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const [allDay, setAllDay] = useState(true)
+  const [startAt, setStartAt] = useState('')
+  const [endAt, setEndAt] = useState('')
 
   const handleSubmit = onSubmit(
     (formData) => {
@@ -62,8 +65,8 @@ function CreateEventForm() {
         category: formData.get('category') as EventCategory,
         visibility: formData.get('visibility') as EventVisibility,
         allDay,
-        startAt: new Date(formData.get('startAt') as string),
-        endAt: endAtValue ? new Date(endAtValue) : null,
+        startAt: parseEventInputValue(formData.get('startAt') as string),
+        endAt: endAtValue ? parseEventInputValue(endAtValue) : null,
         location: (formData.get('location') as string) || null,
         announceDaysBefore: announceDaysValue ? Number(announceDaysValue) : null,
       })
@@ -110,7 +113,15 @@ function CreateEventForm() {
             <input
               type="checkbox"
               checked={allDay}
-              onChange={(e) => setAllDay(e.target.checked)}
+              onChange={(e) => {
+                const nextAllDay = e.target.checked
+                setAllDay(nextAllDay)
+                // La valeur saisie n'est pas valide pour le nouveau type : sans conversion
+                // explicite, React réécrit `type` puis le navigateur vide le champ.
+                if (startAt)
+                  setStartAt(toEventInputValue(parseEventInputValue(startAt), nextAllDay))
+                if (endAt) setEndAt(toEventInputValue(parseEventInputValue(endAt), nextAllDay))
+              }}
               disabled={isPending}
               className="h-4 w-4 rounded border-alabaster"
             />
@@ -123,6 +134,8 @@ function CreateEventForm() {
                 id="event-start-at"
                 name="startAt"
                 type={allDay ? 'date' : 'datetime-local'}
+                value={startAt}
+                onChange={(e) => setStartAt(e.target.value)}
                 required
                 disabled={isPending}
               />
@@ -133,6 +146,8 @@ function CreateEventForm() {
                 id="event-end-at"
                 name="endAt"
                 type={allDay ? 'date' : 'datetime-local'}
+                value={endAt}
+                onChange={(e) => setEndAt(e.target.value)}
                 disabled={isPending}
               />
             </div>

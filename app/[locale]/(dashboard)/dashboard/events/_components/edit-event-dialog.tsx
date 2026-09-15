@@ -23,6 +23,7 @@ import type {
   EventStatus,
   EventVisibility,
 } from '@/generated/prisma/client'
+import { parseEventInputValue, toEventInputValue } from '@/lib/date'
 import { updateEventAction } from '../../../_lib/event-actions'
 import {
   EVENT_CATEGORY_VALUES,
@@ -53,18 +54,6 @@ type Props = {
   event: EditableEvent
 }
 
-// `date` attend AAAA-MM-JJ en UTC (un événement journée entière est stocké à minuit
-// UTC) ; `datetime-local` attend l'heure murale locale, sans fuseau, donc les
-// composants locaux de `value` plutôt que ses équivalents UTC.
-function toInputDateValue(value: Date, allDay: boolean): string {
-  if (allDay) return value.toISOString().slice(0, 10)
-
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(
-    value.getHours()
-  )}:${pad(value.getMinutes())}`
-}
-
 export function EditEventDialog({ event }: Props) {
   const tEdit = useTranslations('dashboard.pages.events.edit')
 
@@ -93,10 +82,13 @@ function EditEventForm({ event }: Props) {
   const tStatus = useTranslations('eventStatus')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const [allDay, setAllDay] = useState(event.allDay)
+  const [startAt, setStartAt] = useState(() => toEventInputValue(event.startAt, event.allDay))
+  const [endAt, setEndAt] = useState(() =>
+    event.endAt ? toEventInputValue(event.endAt, event.allDay) : ''
+  )
 
   const handleSubmit = onSubmit(
     (formData) => {
-      const endAtValue = formData.get('endAt') as string
       const announceDaysValue = formData.get('announceDaysBefore') as string
 
       return updateEventAction(event.id, {
@@ -107,8 +99,8 @@ function EditEventForm({ event }: Props) {
         visibility: formData.get('visibility') as EventVisibility,
         status: formData.get('status') as EventStatus,
         allDay,
-        startAt: new Date(formData.get('startAt') as string),
-        endAt: endAtValue ? new Date(endAtValue) : null,
+        startAt: parseEventInputValue(startAt),
+        endAt: endAt ? parseEventInputValue(endAt) : null,
         location: (formData.get('location') as string) || null,
         announceDaysBefore: announceDaysValue ? Number(announceDaysValue) : null,
       })
@@ -183,7 +175,15 @@ function EditEventForm({ event }: Props) {
             <input
               type="checkbox"
               checked={allDay}
-              onChange={(e) => setAllDay(e.target.checked)}
+              onChange={(e) => {
+                const nextAllDay = e.target.checked
+                setAllDay(nextAllDay)
+                // La valeur affichée n'est pas valide pour le nouveau type : sans conversion
+                // explicite, un changement de `type` vide le champ au lieu de le repositionner.
+                if (startAt)
+                  setStartAt(toEventInputValue(parseEventInputValue(startAt), nextAllDay))
+                if (endAt) setEndAt(toEventInputValue(parseEventInputValue(endAt), nextAllDay))
+              }}
               disabled={isPending}
               className="h-4 w-4 rounded border-alabaster"
             />
@@ -196,7 +196,8 @@ function EditEventForm({ event }: Props) {
                 id="edit-event-start-at"
                 name="startAt"
                 type={allDay ? 'date' : 'datetime-local'}
-                defaultValue={toInputDateValue(event.startAt, allDay)}
+                value={startAt}
+                onChange={(e) => setStartAt(e.target.value)}
                 required
                 disabled={isPending}
               />
@@ -207,7 +208,8 @@ function EditEventForm({ event }: Props) {
                 id="edit-event-end-at"
                 name="endAt"
                 type={allDay ? 'date' : 'datetime-local'}
-                defaultValue={event.endAt ? toInputDateValue(event.endAt, allDay) : undefined}
+                value={endAt}
+                onChange={(e) => setEndAt(e.target.value)}
                 disabled={isPending}
               />
             </div>

@@ -14,6 +14,14 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  experimental: {
+    // Le défaut de Next est 1 Mo pour le corps COMPLET d'une action serveur, pièce jointe
+    // comprise. Sans ce relèvement, un envoi d'image dépassant ce plafond est coupé avant
+    // que l'action soit invoquée : l'appelant reçoit un 500 opaque au lieu du refus typé
+    // `fileTooLarge`, et les limites annoncées (4 Mo pour un événement, 1 Mo pour une image
+    // de marque) sont inatteignables. La marge couvre l'enveloppe multipart.
+    serverActions: { bodySizeLimit: '5mb' },
+  },
   async redirects() {
     return [{ source: '/:locale/signin', destination: '/:locale/login', permanent: true }]
   },
