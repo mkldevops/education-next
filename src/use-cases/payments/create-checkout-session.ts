@@ -1,5 +1,7 @@
+import { configGateway } from '@/gateways/config-gateway'
 import { db } from '@/lib/db'
 import { getStripeClient } from '@/lib/stripe'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from './family-balance'
 
 type Input = {
@@ -11,7 +13,9 @@ type Input = {
   appUrl: string
 }
 
-export async function createCheckoutSession(input: Input) {
+export async function createCheckoutSession(input: Input, configGw = configGateway) {
+  if (!(await isPaymentsEnabled(input.schoolId, configGw))) return 'paymentsDisabled' as const
+
   const stripe = getStripeClient()
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return 'notConfigured' as const
 

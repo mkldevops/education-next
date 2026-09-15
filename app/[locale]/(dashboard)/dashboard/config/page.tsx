@@ -2,6 +2,8 @@ import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { paymentGateway } from '@/gateways/payment-gateway'
+import { teacherGateway } from '@/gateways/teacher-gateway'
 import { db } from '@/lib/db'
 import { SCHOOL_CONFIG_KEYS, SCHOOL_CONFIG_VALUE_TYPES } from '@/lib/school-config'
 import { SCHOOL_CONFIG_DEFAULTS } from '@/lib/school-config-defaults'
@@ -48,10 +50,16 @@ export default async function ConfigPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.config')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const dbConfigs = await db.config.findMany({
-    where: { schoolId, isActive: true, name: { in: SCHOOL_CONFIG_KEYS } },
-    select: { name: true, value: true },
-  })
+  // Les deux comptages ne servent qu'aux confirmations de coupure, mais partent avec la
+  // lecture des réglages : un aller-retour séquentiel pour un nombre affiché serait gratuit.
+  const [dbConfigs, paymentFootprint, teacherExpenseCount] = await Promise.all([
+    db.config.findMany({
+      where: { schoolId, isActive: true, name: { in: SCHOOL_CONFIG_KEYS } },
+      select: { name: true, value: true },
+    }),
+    paymentGateway.countFootprint(schoolId),
+    teacherGateway.countExpenses(schoolId),
+  ])
   const storedValues = new Map(dbConfigs.map((config) => [config.name, config.value]))
   const defaultValues = new Map<string, string>(
     SCHOOL_CONFIG_DEFAULTS.map((config) => [config.name, config.value])
@@ -76,7 +84,11 @@ export default async function ConfigPage({ params }: Props) {
         <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
       </div>
 
-      <SchoolSettingsPanel settings={settings} />
+      <SchoolSettingsPanel
+        settings={settings}
+        paymentFootprint={paymentFootprint}
+        teacherExpenseCount={teacherExpenseCount}
+      />
 
       {isSuperAdmin && (
         <PlatformSettingsPanel

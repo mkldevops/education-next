@@ -34,6 +34,7 @@ export type FamilyRow = {
 
 type Props = {
   data: FamilyRow[]
+  paymentsEnabled: boolean
 }
 
 function EmergencyContactCell({ family }: { family: FamilyRow }) {
@@ -158,7 +159,7 @@ function RemainingCell({ family }: { family: FamilyRow }) {
   )
 }
 
-export function FamiliesDataTable({ data }: Props) {
+export function FamiliesDataTable({ data, paymentsEnabled }: Props) {
   const t = useTranslations('dashboard.pages.families')
 
   const columns: ColumnDef<FamilyRow>[] = [
@@ -184,13 +185,17 @@ export function FamiliesDataTable({ data }: Props) {
       cell: ({ row }) => <EmergencyContactCell family={row.original} />,
       enableSorting: true,
     },
-    {
-      id: 'remaining',
-      header: t('remaining'),
-      accessorFn: (row) => row.remaining,
-      cell: ({ row }) => <RemainingCell family={row.original} />,
-      enableSorting: true,
-    },
+    ...(paymentsEnabled
+      ? [
+          {
+            id: 'remaining',
+            header: t('remaining'),
+            accessorFn: (row) => row.remaining,
+            cell: ({ row }) => <RemainingCell family={row.original} />,
+            enableSorting: true,
+          } satisfies ColumnDef<FamilyRow>,
+        ]
+      : []),
     {
       id: 'studentCount',
       header: t('students'),

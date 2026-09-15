@@ -10,11 +10,18 @@ import { requireSchoolAdmin } from './auth-helper'
 type SetConfigInput = z.infer<typeof setConfigSchema>
 type GetConfigInput = z.infer<typeof getConfigSchema>
 
+/**
+ * Seule écriture d'un réglage d'école, quel que soit le réglage : la liste fermée de
+ * `/dashboard/config` la rend suffisante. La revalidation porte sur tout le layout et pas
+ * seulement la page — la marque, le thème et les drapeaux de navigation (`payments_enabled`,
+ * `events_enabled`) changent la forme de la barre latérale et du tableau de bord, donc les
+ * laisser en cache afficherait un état que l'administrateur vient de contredire.
+ */
 export async function setConfigAction(data: Omit<SetConfigInput, 'schoolId'>) {
   const { schoolId } = await requireSchoolAdmin()
   const result = await setConfig({ ...data, schoolId })
   if (typeof result === 'string') return result
-  revalidatePath('/dashboard/config')
+  revalidatePath('/', 'layout')
   return result
 }
 

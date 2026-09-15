@@ -1,11 +1,13 @@
 import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { groupFamilyPayments } from '@/domain/payment'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getPaymentStats } from '@/use-cases/payments/payment-stats'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { PaymentsOverview } from './_components/payments-overview'
@@ -32,6 +34,8 @@ export default async function PaymentsPage({ params }: Props) {
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const scope = await requireSchoolScope()
+
+  if (!(await isPaymentsEnabled(scope.schoolId))) notFound()
 
   if (!scope.isAdmin) {
     redirect({ href: `/dashboard/families/${scope.familyId}`, locale })

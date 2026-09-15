@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 
 type Props = {
   familyId: string
+  paymentsEnabled: boolean
   canRecordPayment: boolean
 }
 
@@ -25,7 +26,7 @@ type FamilyActionItem = {
   title?: string
 }
 
-export function ActionMenu({ familyId, canRecordPayment }: Props) {
+export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment }: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.actions')
   const router = useRouter()
 
@@ -37,14 +38,21 @@ export function ActionMenu({ familyId, canRecordPayment }: Props) {
   )
 
   const primaryActions: FamilyActionItem[] = [
-    {
-      key: 'pay',
-      label: t('pay'),
-      icon: CreditCard,
-      action: 'addPayment',
-      disabled: !canRecordPayment,
-      title: canRecordPayment ? undefined : t('payUnavailable'),
-    },
+    // `paymentsEnabled` retire l'action : école sans gestion d'argent, pas de « payer »
+    // du tout. `canRecordPayment` ne fait que la désactiver — rien à devoir, l'action
+    // reste visible pour rester découvrable une fois un solde ouvert.
+    ...(paymentsEnabled
+      ? [
+          {
+            key: 'pay',
+            label: t('pay'),
+            icon: CreditCard,
+            action: 'addPayment' as const,
+            disabled: !canRecordPayment,
+            title: canRecordPayment ? undefined : t('payUnavailable'),
+          },
+        ]
+      : []),
     {
       key: 'newStudent',
       label: t('newStudent'),

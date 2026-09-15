@@ -27,7 +27,7 @@ export type NavItemConfig = {
   /** Surface plateforme : réservée à `isSuperAdmin`, qu'aucun rôle d'école ne couvre. */
   platformOnly?: true
   /** Surface pilotée par un réglage d'école ; `canView` la ferme quand il est éteint. */
-  feature?: 'events'
+  feature?: 'events' | 'payments'
 }
 
 const gestionItems: NavItemConfig[] = [
@@ -35,7 +35,7 @@ const gestionItems: NavItemConfig[] = [
   { href: '/dashboard/families', icon: Users, key: 'families' },
   { href: '/dashboard/students', icon: GraduationCap, key: 'students' },
   { href: '/dashboard/enrollments', icon: ClipboardList, key: 'enrollments' },
-  { href: '/dashboard/payments', icon: CreditCard, key: 'payments' },
+  { href: '/dashboard/payments', icon: CreditCard, key: 'payments', feature: 'payments' },
   {
     href: '/dashboard/events',
     icon: CalendarHeart,
@@ -50,7 +50,13 @@ const configItems: NavItemConfig[] = [
   { href: '/dashboard/levels', icon: Layers, key: 'levels', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/classes', icon: BookOpen, key: 'classes', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/teachers', icon: UserRoundCheck, key: 'teachers', requiredRoles: ['ADMIN'] },
-  { href: '/dashboard/plans', icon: Wallet, key: 'plans', requiredRoles: ['ADMIN'] },
+  {
+    href: '/dashboard/plans',
+    icon: Wallet,
+    key: 'plans',
+    requiredRoles: ['ADMIN'],
+    feature: 'payments',
+  },
   { href: '/dashboard/config', icon: Wrench, key: 'config', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/users', icon: Shield, key: 'users', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/schools', icon: Building2, key: 'schools', platformOnly: true },
@@ -65,7 +71,7 @@ export type NavScope = {
   role: SchoolRole | null
   isSuperAdmin: boolean
   familyId?: string
-  features: { events: boolean }
+  features: { events: boolean; payments: boolean }
 }
 
 export type VisibleNavItems = {

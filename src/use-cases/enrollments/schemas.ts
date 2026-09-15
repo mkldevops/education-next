@@ -3,7 +3,9 @@ import { z } from 'zod'
 export const createEnrollmentSchema = z.object({
   schoolId: z.string().min(1),
   studentId: z.string().uuid(),
-  planId: z.string().uuid(),
+  // Facultatif : coupure des paiements, la formule réservée est résolue côté serveur
+  // (FR-017). Un appelant qui en fournit une malgré tout est refusé, pas ignoré.
+  planId: z.string().uuid().optional(),
   classPeriodId: z.string().uuid(),
   discount: z.number().min(0).default(0),
   canLeaveAlone: z.boolean().default(false),
@@ -26,6 +28,12 @@ export const applyDiscountSchema = z.object({
   schoolId: z.string().min(1),
   enrollmentId: z.string().uuid(),
   discount: z.number().min(0),
+})
+
+export const setEnrollmentPlanSchema = z.object({
+  schoolId: z.string().min(1),
+  enrollmentId: z.string().uuid(),
+  planId: z.string().uuid(),
 })
 
 export const promoteStudentsSchema = z.object({

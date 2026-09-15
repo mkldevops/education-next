@@ -1,6 +1,6 @@
 'use client'
 
-import { BalanceBadge, RichDataTable, Select } from '@peaklab/ui'
+import { BalanceBadge, RichDataTable, Select, StatusBadge } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
@@ -9,6 +9,7 @@ import { EnrollmentStatusBadge } from '@/features/enums'
 import { useTableLabels } from '@/features/tables'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { formatCurrency, toNumber } from '@/lib/decimal'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import type { EnrollmentDrawerData } from './enrollment-drawer'
 import { EnrollmentDrawer } from './enrollment-drawer'
 
@@ -16,6 +17,8 @@ interface Props {
   enrollments: EnrollmentDrawerData[]
   isAdmin: boolean
   availableClasses: Array<{ id: string; name: string }>
+  availablePlans: Array<{ id: string; name: string }>
+  paymentsEnabled: boolean
   locale: string
   periodName: string | null
 }
@@ -26,6 +29,8 @@ export function EnrollmentsTable({
   enrollments,
   isAdmin,
   availableClasses,
+  availablePlans,
+  paymentsEnabled,
   locale,
   periodName,
 }: Props) {
@@ -42,66 +47,80 @@ export function EnrollmentsTable({
       ? enrollments
       : enrollments.filter((enrollment) => enrollment.status === statusFilter)
 
-  const columns: ColumnDef<EnrollmentDrawerData>[] = [
-    {
-      id: 'student',
-      header: t('student'),
-      accessorFn: (row) => `${row.student.person.name} ${row.student.person.lastname}`,
-      cell: ({ row }) => (
-        <span className="font-medium text-primary">
-          {row.original.student.person.name} {row.original.student.person.lastname}
-        </span>
+  const studentColumn: ColumnDef<EnrollmentDrawerData> = {
+    id: 'student',
+    header: t('student'),
+    accessorFn: (row) => `${row.student.person.name} ${row.student.person.lastname}`,
+    cell: ({ row }) => (
+      <span className="font-medium text-primary">
+        {row.original.student.person.name} {row.original.student.person.lastname}
+      </span>
+    ),
+    enableSorting: true,
+  }
+
+  const planColumn: ColumnDef<EnrollmentDrawerData> = {
+    id: 'plan',
+    header: t('plan'),
+    accessorFn: (row) => row.plan.name,
+    cell: ({ getValue }) =>
+      getValue() === UNPRICED_PLAN_NAME ? (
+        <StatusBadge status="amber" label={t('unpriced.badge')} />
+      ) : (
+        <span className="text-graphite">{getValue() as string}</span>
       ),
-      enableSorting: true,
+    enableSorting: true,
+  }
+
+  const statusColumn: ColumnDef<EnrollmentDrawerData> = {
+    id: 'status',
+    header: t('status'),
+    accessorFn: (row) => row.status,
+    cell: ({ row }) => <EnrollmentStatusBadge status={row.original.status} />,
+    enableSorting: true,
+  }
+
+  const classColumn: ColumnDef<EnrollmentDrawerData> = {
+    id: 'class',
+    header: t('class'),
+    accessorFn: (row) => row.classAssignments.find((a) => !a.endAt)?.classPeriod.level.name ?? '-',
+    cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
+    enableSorting: true,
+  }
+
+  const totalAmountColumn: ColumnDef<EnrollmentDrawerData> = {
+    id: 'totalAmount',
+    header: t('totalAmount'),
+    accessorFn: (row) => toNumber(row.totalAmount),
+    // Le montant dû et ce qu'il en reste se lisent ensemble : séparer les deux obligeait à
+    // faire l'aller-retour entre la colonne du statut et celle du total.
+    cell: ({ row }) => {
+      const remaining = calculateRemainingBalance(
+        toNumber(row.original.totalAmount),
+        row.original.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
+      )
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-graphite">{formatCurrency(row.original.totalAmount, locale)}</span>
+          {remaining > 0 && (
+            <BalanceBadge
+              label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
+            />
+          )}
+        </div>
+      )
     },
-    {
-      id: 'plan',
-      header: t('plan'),
-      accessorFn: (row) => row.plan.name,
-      cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
-      enableSorting: true,
-    },
-    {
-      id: 'status',
-      header: t('status'),
-      accessorFn: (row) => row.status,
-      cell: ({ row }) => <EnrollmentStatusBadge status={row.original.status} />,
-      enableSorting: true,
-    },
-    {
-      id: 'class',
-      header: t('class'),
-      accessorFn: (row) =>
-        row.classAssignments.find((a) => !a.endAt)?.classPeriod.level.name ?? '-',
-      cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
-      enableSorting: true,
-    },
-    {
-      id: 'totalAmount',
-      header: t('totalAmount'),
-      accessorFn: (row) => toNumber(row.totalAmount),
-      // Le montant dû et ce qu'il en reste se lisent ensemble : séparer les deux obligeait à
-      // faire l'aller-retour entre la colonne du statut et celle du total.
-      cell: ({ row }) => {
-        const remaining = calculateRemainingBalance(
-          toNumber(row.original.totalAmount),
-          row.original.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
-        )
-        return (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-graphite">
-              {formatCurrency(row.original.totalAmount, locale)}
-            </span>
-            {remaining > 0 && (
-              <BalanceBadge
-                label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
-              />
-            )}
-          </div>
-        )
-      },
-      enableSorting: true,
-    },
+    enableSorting: true,
+  }
+
+  // Formule, statut, classe : administratif, toujours affiché. Formule et montant total
+  // disparaissent drapeau coupé (FR-015) — rien à tarifer n'a rien à montrer.
+  const columns: ColumnDef<EnrollmentDrawerData>[] = [
+    studentColumn,
+    ...(paymentsEnabled ? [planColumn] : []),
+    statusColumn,
+    classColumn,
+    ...(paymentsEnabled ? [totalAmountColumn] : []),
   ]
 
   const labels = useTableLabels()
@@ -144,6 +163,8 @@ export function EnrollmentsTable({
         onOpenChange={setDrawerOpen}
         isAdmin={isAdmin}
         availableClasses={availableClasses}
+        availablePlans={availablePlans}
+        paymentsEnabled={paymentsEnabled}
         locale={locale}
       />
     </>

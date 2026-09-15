@@ -4,8 +4,10 @@ import { Card } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import type { ConfigValueType } from '@/generated/prisma/client'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
+import { PAYMENTS_ENABLED_CONFIG_KEY } from '@/lib/payment-config'
 import type { SchoolConfigKey } from '@/lib/school-config'
-import { PlatformFlagToggle } from '../../../_components/platform-flag-toggle'
+import { TEACHER_EXPENSES_CONFIG_KEY } from '@/lib/teacher-expense-config'
+import { FlagToggle } from '../../../_components/flag-toggle'
 import { setConfigAction } from '../../../_lib/config-actions'
 import { EditConfigDialog } from './edit-config-dialog'
 
@@ -13,6 +15,14 @@ export type SchoolSetting = {
   name: SchoolConfigKey
   value: string
   valueType: ConfigValueType
+}
+
+type Props = {
+  settings: SchoolSetting[]
+  /** Ce que couper les paiements va masquer : paiements enregistrés et transactions en attente. */
+  paymentFootprint: { payments: number; pendingTransactions: number }
+  /** Notes de frais déjà saisies, que la coupure rendrait inatteignables. */
+  teacherExpenseCount: number
 }
 
 async function saveFlag(name: SchoolConfigKey, enabled: boolean) {
@@ -23,9 +33,31 @@ async function saveFlag(name: SchoolConfigKey, enabled: boolean) {
 /**
  * Liste fermée des réglages d'école, présentée comme les réglages plateforme : une ligne par
  * réglage, un interrupteur pour un booléen, une modale pour les autres valeurs.
+ *
+ * Deux drapeaux demandent une confirmation avant coupure, parce qu'ils rendent invisible un
+ * état déjà saisi : les paiements et les notes de frais. Le comptage vient du serveur pour
+ * que la confirmation énumère au lieu de laisser l'administrateur deviner.
  */
-export function SchoolSettingsPanel({ settings }: { settings: SchoolSetting[] }) {
+export function SchoolSettingsPanel({ settings, paymentFootprint, teacherExpenseCount }: Props) {
   const t = useTranslations('dashboard.pages.config')
+  const { payments, pendingTransactions } = paymentFootprint
+
+  const confirmDisableFor = (name: SchoolConfigKey) => {
+    const confirmation = (key: string, values: Record<string, number>) => ({
+      title: t(`settings.${key}.confirmDisable.title`),
+      description: t(`settings.${key}.confirmDisable.description`, values),
+      confirmLabel: t(`settings.${key}.confirmDisable.confirm`),
+      cancelLabel: t(`settings.${key}.confirmDisable.cancel`),
+    })
+
+    if (name === PAYMENTS_ENABLED_CONFIG_KEY && (payments > 0 || pendingTransactions > 0)) {
+      return confirmation(name, { payments, pendingTransactions })
+    }
+    if (name === TEACHER_EXPENSES_CONFIG_KEY && teacherExpenseCount > 0) {
+      return confirmation(name, { expenses: teacherExpenseCount })
+    }
+    return undefined
+  }
 
   return (
     <section className="space-y-3">
@@ -40,12 +72,13 @@ export function SchoolSettingsPanel({ settings }: { settings: SchoolSetting[] })
 
           if (setting.valueType === 'BOOLEAN') {
             return (
-              <PlatformFlagToggle
+              <FlagToggle
                 key={setting.name}
                 title={label}
                 description={description}
                 enabled={setting.value === 'true'}
                 onSave={(enabled) => saveFlag(setting.name, enabled)}
+                confirmDisable={confirmDisableFor(setting.name)}
               />
             )
           }

@@ -87,6 +87,18 @@ export async function commitEnrollFamily(scope: McpScope, input: Input) {
     return 'validationError' as const
   }
 
+  // FR-024, mais pas le refus global de ses jumeaux : inscrire reste ouvert quand l'école
+  // ne tarife pas, c'est l'objet même du drapeau. Seule la part monétaire du brouillon est
+  // refusée — un encaissement ou un total non nul décidés avant la coupure n'ont plus
+  // aucun écran pour les restituer. Le verrou est rendu, le brouillon reste engageable si
+  // les paiements reviennent.
+  const carriesMoney =
+    resolved.payment !== null || resolved.students.some((student) => student.totalAmount !== 0)
+  if (!scope.paymentsEnabled && carriesMoney) {
+    await releaseDraft(schoolId, draftId)
+    return 'paymentsDisabled' as const
+  }
+
   // Une seule transaction, avec des appels `tx.*` directs : aucune passerelle n'accepte
   // un client injecté, et enchaîner les use cases laisserait une famille orpheline au
   // premier échec. Précédent du dépôt : `create-enrollment.ts`.

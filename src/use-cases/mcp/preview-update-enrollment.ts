@@ -31,6 +31,9 @@ function describe(enrollment: Candidate) {
 export async function previewUpdateEnrollment(scope: McpScope, input: Input) {
   const parsed = previewUpdateEnrollmentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  // Défense en profondeur : l'outil n'est déjà pas déclaré quand le drapeau est coupé,
+  // mais un appel direct par nom ne doit ni lire une inscription ni proposer de brouillon.
+  if (!scope.paymentsEnabled) return 'paymentsDisabled' as const
   const { schoolId } = scope
   const data = parsed.data
 

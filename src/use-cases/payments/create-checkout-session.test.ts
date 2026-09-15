@@ -9,10 +9,14 @@ const dbMock = {
 const sessionsCreateMock = vi.fn()
 const getStripeClientMock = vi.fn()
 const getFamilyBalanceMock = vi.fn()
+const configGatewayMock = {
+  get: vi.fn(),
+}
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/lib/stripe', () => ({ getStripeClient: getStripeClientMock }))
 vi.mock('./family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
+vi.mock('@/gateways/config-gateway', () => ({ configGateway: configGatewayMock }))
 
 const { createCheckoutSession } = await import('./create-checkout-session')
 
@@ -43,10 +47,18 @@ describe('createCheckoutSession', () => {
       id: 'cs_test_1',
       url: 'https://checkout.stripe.test/session',
     })
+    configGatewayMock.get.mockResolvedValue({ value: 'true' })
   })
 
   afterEach(() => {
     vi.unstubAllEnvs()
+  })
+
+  it('refuses to create a checkout session when payments are disabled', async () => {
+    configGatewayMock.get.mockResolvedValue({ value: 'false' })
+
+    expect(await createCheckoutSession(input)).toBe('paymentsDisabled')
+    expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
   })
 
   it('returns a controlled error when Stripe is not configured', async () => {

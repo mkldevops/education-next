@@ -30,6 +30,7 @@ const scope = {
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
+  paymentsEnabled: true,
 }
 
 const resolved = {
@@ -566,5 +567,78 @@ describe('commitEnrollFamily', () => {
     expect(await commitEnrollFamily(scope, input)).toBe('validationError')
     expect(transaction).not.toHaveBeenCalled()
     expect(release).toHaveBeenCalledWith('school-1', input.draftId)
+  })
+
+  // Le brouillon posé pendant une coupure des paiements porte la formule réservée et des
+  // montants nuls, sans bloc `payment` : le schéma du brouillon résolu doit l'accepter
+  // sans relâcher la validation du cas nominal couvert par les autres tests.
+  it('writes an unpriced draft with zero amounts and no payment', async () => {
+    findById.mockResolvedValue({
+      keyId: 'key-1',
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [
+          {
+            ...resolved.students[0],
+            plan: { id: 'plan-unpriced', name: '__unpriced__', amount: 0 },
+            totalAmount: 0,
+          },
+        ],
+        payment: null,
+      },
+    })
+
+    const result = await commitEnrollFamily(scope, input)
+
+    expect(result).not.toBe('validationError')
+    expect(tx.enrollment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ planId: 'plan-unpriced', totalAmount: 0 }),
+      })
+    )
+    expect(tx.payment.create).not.toHaveBeenCalled()
+  })
+
+  // FR-024 : le brouillon a été préparé drapeau actif, l'école a coupé entre-temps. Il porte
+  // un encaissement et des totaux tarifés que plus aucun écran ne restituerait.
+  it('refuses a money-carrying draft once the school cut payments off', async () => {
+    const result = await commitEnrollFamily({ ...scope, paymentsEnabled: false }, input)
+
+    expect(result).toBe('paymentsDisabled')
+    expect(transaction).not.toHaveBeenCalled()
+    // Rendu et non consommé : les paiements revenus, le brouillon reste engageable.
+    expect(release).toHaveBeenCalledWith('school-1', input.draftId)
+  })
+
+  // La contrepartie : inscrire sans argent reste ouvert drapeau coupé, sinon le drapeau
+  // fermerait la fonction qu'il est censé rendre possible.
+  it('still commits an unpriced draft while payments are off', async () => {
+    findById.mockResolvedValue({
+      keyId: 'key-1',
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [
+          {
+            ...resolved.students[0],
+            plan: { id: 'plan-unpriced', name: '__unpriced__', amount: 0 },
+            totalAmount: 0,
+          },
+        ],
+        payment: null,
+      },
+    })
+
+    const result = await commitEnrollFamily({ ...scope, paymentsEnabled: false }, input)
+
+    expect(result).not.toBe('paymentsDisabled')
+    expect(tx.enrollment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ planId: 'plan-unpriced', totalAmount: 0 }),
+      })
+    )
   })
 })

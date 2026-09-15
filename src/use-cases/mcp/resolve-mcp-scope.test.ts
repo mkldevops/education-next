@@ -19,12 +19,14 @@ const findByHash = vi.fn()
 const findPlatformLevel = vi.fn()
 const findActiveById = vi.fn()
 const findMembership = vi.fn()
+const checkPaymentsEnabled = vi.fn()
 
 const deps = {
   keyGw: { findByHash },
   userGw: { findPlatformLevel },
   schoolGw: { findActiveById },
   memberGw: { findMembership },
+  checkPaymentsEnabled,
 }
 
 const resolve = (key: string | null) => resolveMcpScope(key, deps)
@@ -35,6 +37,7 @@ beforeEach(() => {
   findPlatformLevel.mockResolvedValue({ id: 'user-1', isSuperAdmin: false })
   findActiveById.mockResolvedValue({ id: 'school-1', name: 'École', slug: 'ecole' })
   findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', role: 'ADMIN' })
+  checkPaymentsEnabled.mockResolvedValue(true)
 })
 
 describe('resolveMcpScope', () => {
@@ -67,8 +70,17 @@ describe('resolveMcpScope', () => {
         userId: 'user-1',
         schoolId: 'school-1',
         isSuperAdmin: false,
+        paymentsEnabled: true,
       },
     })
+  })
+
+  it('carries the payments flag resolved once for the request, whichever way it reads', async () => {
+    checkPaymentsEnabled.mockResolvedValue(false)
+
+    expect(await resolve(presented)).toMatchObject({ scope: { paymentsEnabled: false } })
+    expect(checkPaymentsEnabled).toHaveBeenCalledTimes(1)
+    expect(checkPaymentsEnabled).toHaveBeenCalledWith('school-1')
   })
 
   it('refuses an unknown key the same way as a malformed one', async () => {

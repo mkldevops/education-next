@@ -4,6 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { calculateFamilyBalance } from '@/use-cases/payments/family-balance'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
@@ -35,6 +36,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const scope = await requireSchoolScope()
+  const paymentsEnabled = await isPaymentsEnabled(scope.schoolId)
 
   if (!scope.isAdmin) {
     redirect({ href: `/dashboard/families/${scope.familyId}`, locale })
@@ -117,7 +119,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
         <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
         {isAdmin && <CreateFamilyDialog defaultOpen={action === 'create'} />}
       </div>
-      <FamiliesDataTable data={familyRows} />
+      <FamiliesDataTable data={familyRows} paymentsEnabled={paymentsEnabled} />
     </div>
   )
 }

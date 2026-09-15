@@ -11,6 +11,7 @@ import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { personGateway } from '@/gateways/person-gateway'
+import { planGateway } from '@/gateways/plan-gateway'
 import { draftChecksum } from '@/lib/mcp-draft-crypto'
 import { matchByName } from './match-by-name'
 import type { McpScope } from './resolve-mcp-scope'
@@ -56,11 +57,24 @@ function findMembers(members: Member[], name: string, lastname: string) {
 export async function previewEnrollFamily(scope: McpScope, input: Input) {
   const parsed = previewEnrollFamilySchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
-  const { schoolId } = scope
+  const { schoolId, paymentsEnabled } = scope
   const data = parsed.data
+
+  // Drapeau actif : le libellé de formule reste obligatoire, comme avant l'introduction
+  // du drapeau — seule la coupure le rend facultatif (FR-023).
+  if (paymentsEnabled && data.planName === undefined) return 'validationError' as const
 
   const blockers: McpFinding[] = []
   const warnings: McpFinding[] = []
+
+  // Drapeau coupé : aucun encaissement ne doit être préparé, même déjà rempli sur la fiche.
+  if (!paymentsEnabled && data.payment) {
+    blockers.push({
+      field: 'payment',
+      value: String(data.payment.amount),
+      reason: 'paymentsDisabled',
+    })
+  }
 
   if (data.familyName !== undefined && validateFamilyName(data.familyName) !== 'OK') {
     blockers.push({ field: 'familyName', value: data.familyName, reason: 'invalidFamilyName' })
@@ -110,10 +124,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     }
   }
 
-  const [classPeriods, plans] = await Promise.all([
-    mcpReadGateway.listClassPeriods(schoolId),
-    mcpReadGateway.listPlans(schoolId),
-  ])
+  const classPeriods = await mcpReadGateway.listClassPeriods(schoolId)
 
   // Une classe par élève : la fratrie se répartit couramment sur plusieurs classes, et
   // l'échec de résolution doit nommer l'enfant concerné, pas la famille entière.
@@ -129,28 +140,45 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     return null
   })
 
-  // Une formule par élève, résolue une fois par libellé : la fratrie qui partage la formule
-  // de la famille ne répète pas son blocage, et un libellé porté par un élève nomme l'enfant.
-  const planByLabel = new Map<string, (typeof plans)[number] | null>()
-  const studentPlans = data.students.map((student, index) => {
-    const label = student.planName ?? data.planName
-    const field = student.planName ? `students.${index}.planName` : 'planName'
-    const key = `${field}|${label}`
+  // Une formule par élève. Drapeau actif : résolue une fois par libellé, pour que la
+  // fratrie qui partage la formule de la famille ne répète pas son blocage, et qu'un
+  // libellé porté par un élève nomme l'enfant. Drapeau coupé : tout libellé est ignoré et
+  // chaque élève prend la formule réservée « sans tarif » de l'école, créée à la demande,
+  // jamais catalogable ni sélectionnable.
+  let studentPlans: Array<{ id: string; name: string; amount: number } | null>
 
-    if (!planByLabel.has(key)) {
-      const matches = matchByName(plans, label)
-      if (matches.length !== 1) {
-        blockers.push({
-          field,
-          value: label,
-          reason: matches.length === 0 ? 'unknownPlan' : 'ambiguousPlan',
-        })
+  if (paymentsEnabled) {
+    const plans = await mcpReadGateway.listPlans(schoolId)
+    const planByLabel = new Map<string, { id: string; name: string; amount: number } | null>()
+
+    studentPlans = data.students.map((student, index) => {
+      const label = student.planName ?? (data.planName as string)
+      const field = student.planName ? `students.${index}.planName` : 'planName'
+      const key = `${field}|${label}`
+
+      if (!planByLabel.has(key)) {
+        const matches = matchByName(plans, label)
+        if (matches.length !== 1) {
+          blockers.push({
+            field,
+            value: label,
+            reason: matches.length === 0 ? 'unknownPlan' : 'ambiguousPlan',
+          })
+        }
+        const match = matches.length === 1 ? matches[0] : null
+        planByLabel.set(
+          key,
+          match ? { id: match.id, name: match.name, amount: Number(match.amount) } : null
+        )
       }
-      planByLabel.set(key, matches.length === 1 ? matches[0] : null)
-    }
 
-    return planByLabel.get(key) ?? null
-  })
+      return planByLabel.get(key) ?? null
+    })
+  } else {
+    const unpriced = await planGateway.ensureUnpriced(schoolId)
+    const reserved = { id: unpriced.id, name: unpriced.name, amount: Number(unpriced.amount) }
+    studentPlans = data.students.map(() => reserved)
+  }
 
   const studentTotals = studentPlans.map((plan) =>
     calculateTotalAmount(plan ? Number(plan.amount) : 0, data.discount)
@@ -206,7 +234,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
   // La répartition est calculée ici, pas au commit : les inscriptions n'existent pas
   // encore, donc elle est indexée sur la position de l'élève dans la demande.
   let allocation: Array<{ studentIndex: number; amount: number }> = []
-  if (data.payment && studentPlans.every((plan) => plan !== null)) {
+  if (paymentsEnabled && data.payment && studentPlans.every((plan) => plan !== null)) {
     const distribution = distributePayment(
       data.payment.amount,
       studentTotals.map((totalAmount, index) => ({
@@ -258,7 +286,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
     }
   }
 
-  if (data.payment?.reference) {
+  if (paymentsEnabled && data.payment?.reference) {
     const sameReference = await paymentGateway.findByReference(schoolId, data.payment.reference)
     if (sameReference.length > 0) {
       warnings.push({

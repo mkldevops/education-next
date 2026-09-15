@@ -5,8 +5,17 @@ const dbMock = {
   $transaction: vi.fn(),
 }
 
+const isPaymentsEnabled = vi.fn(async () => true)
+const ensureUnpriced = vi.fn(async () => ({ id: 'plan-unpriced' }))
+
 vi.mock('@/lib/db', () => ({
   db: dbMock,
+}))
+vi.mock('@/use-cases/config/is-payments-enabled', () => ({
+  isPaymentsEnabled: () => isPaymentsEnabled(),
+}))
+vi.mock('@/gateways/plan-gateway', () => ({
+  planGateway: { ensureUnpriced },
 }))
 
 // Import dynamique volontaire, comme `create-enrollment.test.ts` : le module lit `db` à
@@ -51,6 +60,7 @@ describe('createEnrolledStudent', () => {
       student: { create: vi.fn().mockResolvedValue({ id: 'student-1' }) },
       enrollment: { create: vi.fn().mockResolvedValue({ id: 'enrollment-1' }) },
     }
+    isPaymentsEnabled.mockResolvedValue(true)
     dbMock.$transaction = vi.fn(async (cb: (client: Tx) => unknown) => cb(tx))
   })
 
@@ -212,6 +222,50 @@ describe('createEnrolledStudent', () => {
     )
 
     // THEN
+    expect(result).toBe('validationError')
+    expect(dbMock.$transaction).not.toHaveBeenCalled()
+  })
+
+  // Le dialogue « Ajouter un élève » de la fiche famille passe par ici. Sans ce refus, une
+  // école qui a coupé les paiements créait une inscription tarifée qu'aucun écran ne montre
+  // et qu'aucun geste ne peut solder.
+  it('refuses an explicit plan while payments are off', async () => {
+    isPaymentsEnabled.mockResolvedValue(false)
+
+    const result = await createEnrolledStudent(input({ enrollment: { planId, classPeriodId } }))
+
+    expect(result).toBe('paymentsDisabled')
+    expect(dbMock.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('refuses a non-zero discount while payments are off', async () => {
+    isPaymentsEnabled.mockResolvedValue(false)
+
+    const result = await createEnrolledStudent(
+      input({ enrollment: { classPeriodId, discount: 50 } })
+    )
+
+    expect(result).toBe('paymentsDisabled')
+    expect(dbMock.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('enrolls on the reserved plan at zero while payments are off', async () => {
+    isPaymentsEnabled.mockResolvedValue(false)
+
+    const result = await createEnrolledStudent(input({ enrollment: { classPeriodId } }))
+
+    expect(result).toEqual({ studentId: 'student-1', enrollmentId: 'enrollment-1' })
+    expect(tx.plan.findFirst).not.toHaveBeenCalled()
+    expect(tx.enrollment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ planId: 'plan-unpriced', totalAmount: 0, discount: 0 }),
+      })
+    )
+  })
+
+  it('requires a plan while payments are on', async () => {
+    const result = await createEnrolledStudent(input({ enrollment: { classPeriodId } }))
+
     expect(result).toBe('validationError')
     expect(dbMock.$transaction).not.toHaveBeenCalled()
   })

@@ -125,6 +125,27 @@ export const enrollmentGateway = {
     }),
 
   /**
+   * Inscription ouverte ciblée par l'affectation de formule dashboard
+   * (`setEnrollmentPlan`). Statut filtré dans la lecture plutôt que vérifié après coup :
+   * une inscription `COMPLETED` ou `CANCELLED` ne se distingue pas d'une inscription
+   * inexistante, comme `findOpenForMcp`.
+   */
+  findOpenById: (schoolId: string, id: string) =>
+    db.enrollment.findFirst({
+      where: { schoolId, id, status: { in: ['PENDING', 'ACTIVE'] } },
+      include: {
+        payments: { where: { isActive: true }, select: { amount: true } },
+      },
+    }),
+
+  /** Affecte une formule et le total recalculé qui va avec ; la remise ne bouge pas. */
+  assignPlan: (schoolId: string, id: string, planId: string, totalAmount: number) =>
+    db.enrollment.update({
+      where: { id_schoolId: { id, schoolId } },
+      data: { planId, totalAmount },
+    }),
+
+  /**
    * Sonde du `preview_update_enrollment` MCP. Projection étroite : le modèle a besoin de
    * reconnaître l'inscription, pas de lire la fiche de l'élève.
    */

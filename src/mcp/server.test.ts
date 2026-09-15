@@ -47,11 +47,12 @@ const scope = {
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
+  paymentsEnabled: true,
 }
 
-const build = () => {
+const build = (overrides: Partial<typeof scope> = {}) => {
   registered.clear()
-  buildMcpServer(scope)
+  buildMcpServer({ ...scope, ...overrides })
   return registered
 }
 
@@ -68,7 +69,7 @@ beforeEach(() => {
 })
 
 describe('buildMcpServer', () => {
-  it('publishes the six reads and the three preview/commit pairs', () => {
+  it('publishes the six reads and the three preview/commit pairs when payments are enabled', () => {
     expect([...build().keys()]).toEqual([
       'describe_school',
       'list_levels',
@@ -82,6 +83,18 @@ describe('buildMcpServer', () => {
       'commit_record_payment',
       'preview_update_enrollment',
       'commit_update_enrollment',
+    ])
+  })
+
+  it('omits the five money tools when the school has turned payments off', () => {
+    expect([...build({ paymentsEnabled: false }).keys()]).toEqual([
+      'describe_school',
+      'list_levels',
+      'list_periods',
+      'list_class_periods',
+      'list_teachers',
+      'preview_enroll_family',
+      'commit_enroll_family',
     ])
   })
 

@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import { configGateway } from '@/gateways/config-gateway'
 import { teacherGateway } from '@/gateways/teacher-gateway'
-import { TEACHER_EXPENSES_CONFIG_KEY } from '@/lib/teacher-expense-config'
+import { isTeacherExpensesEnabled } from '@/use-cases/config/is-teacher-expenses-enabled'
 import { createTeacherExpenseSchema } from './schemas'
 
 type Input = z.infer<typeof createTeacherExpenseSchema>
@@ -15,8 +15,8 @@ export async function createTeacherExpense(
   if (!parsed.success) return 'validationError' as const
 
   const { schoolId, ...data } = parsed.data
-  const config = await configGw.get(schoolId, TEACHER_EXPENSES_CONFIG_KEY)
-  if (config?.value !== 'true') return 'notConfigured' as const
+  const enabled = await isTeacherExpensesEnabled(schoolId, configGw)
+  if (!enabled) return 'notConfigured' as const
 
   const teacher = await teacherGw.findById(schoolId, data.teacherId)
   if (!teacher) return 'notFound' as const

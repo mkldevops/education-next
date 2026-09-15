@@ -4,6 +4,7 @@ import { schoolGateway } from '@/gateways/school-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { userGateway } from '@/gateways/user-gateway'
 import { hashMcpKey } from '@/lib/mcp-key-crypto'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 
 /**
  * Portée d'un appelant machine, calquée sur `SchoolContext` **moins la variante
@@ -12,10 +13,28 @@ import { hashMcpKey } from '@/lib/mcp-key-crypto'
  * L'autorisation d'un parent a la forme d'un `familyId`, pas d'un `schoolId` : l'admettre
  * créerait un second mécanisme de cantonnement à côté du garde tenant. Le MCP n'ouvre que
  * l'administration d'école.
+ *
+ * `paymentsEnabled` est résolu une fois ici, jamais relu par `buildMcpServer` ni par un
+ * use case : c'est le seul endroit qui consulte `isPaymentsEnabled` pour le MCP, ce qui
+ * garde la construction du serveur synchrone et la décision stable pour toute la requête.
  */
 export type McpScope =
-  | { keyId: string; keyPrefix: string; userId: string; schoolId: string; isSuperAdmin: true }
-  | { keyId: string; keyPrefix: string; userId: string; schoolId: string; isSuperAdmin: false }
+  | {
+      keyId: string
+      keyPrefix: string
+      userId: string
+      schoolId: string
+      isSuperAdmin: true
+      paymentsEnabled: boolean
+    }
+  | {
+      keyId: string
+      keyPrefix: string
+      userId: string
+      schoolId: string
+      isSuperAdmin: false
+      paymentsEnabled: boolean
+    }
 
 export type McpScopeResult =
   | { status: 'OK'; scope: McpScope }
@@ -24,13 +43,14 @@ export type McpScopeResult =
 
 /**
  * Dépendances décrites par ce dont ce use case a besoin, pas par le type complet de
- * chaque passerelle : un test injecte quatre fonctions au lieu de quatre objets entiers.
+ * chaque passerelle : un test injecte des fonctions ciblées au lieu d'objets entiers.
  */
 type Deps = {
   keyGw?: Pick<typeof mcpApiKeyGateway, 'findByHash'>
   userGw?: Pick<typeof userGateway, 'findPlatformLevel'>
   schoolGw?: Pick<typeof schoolGateway, 'findActiveById'>
   memberGw?: Pick<typeof schoolMemberGateway, 'findMembership'>
+  checkPaymentsEnabled?: (schoolId: string) => Promise<boolean>
 }
 
 /**
@@ -47,12 +67,13 @@ type Deps = {
  */
 export async function resolveMcpScope(
   presentedKey: string | null,
-  { keyGw, userGw, schoolGw, memberGw }: Deps = {}
+  { keyGw, userGw, schoolGw, memberGw, checkPaymentsEnabled }: Deps = {}
 ): Promise<McpScopeResult> {
   const keys = keyGw ?? mcpApiKeyGateway
   const users = userGw ?? userGateway
   const schools = schoolGw ?? schoolGateway
   const members = memberGw ?? schoolMemberGateway
+  const readPaymentsEnabled = checkPaymentsEnabled ?? isPaymentsEnabled
 
   // Forme vérifiée avant tout accès base : une chaîne quelconque ne doit pas coûter
   // une requête.
@@ -66,7 +87,11 @@ export async function resolveMcpScope(
   const user = await users.findPlatformLevel(key.userId)
   if (!user) return { status: 'forbidden' }
 
-  const school = await schools.findActiveById(key.schoolId)
+  // Indépendants l'un de l'autre : le drapeau se lit par école, pas par droit d'accès.
+  const [school, paymentsEnabled] = await Promise.all([
+    schools.findActiveById(key.schoolId),
+    readPaymentsEnabled(key.schoolId),
+  ])
   if (!school) return { status: 'forbidden' }
 
   const scope = {
@@ -76,10 +101,12 @@ export async function resolveMcpScope(
     schoolId: key.schoolId,
   }
 
-  if (user.isSuperAdmin) return { status: 'OK', scope: { ...scope, isSuperAdmin: true } }
+  if (user.isSuperAdmin) {
+    return { status: 'OK', scope: { ...scope, isSuperAdmin: true, paymentsEnabled } }
+  }
 
   const membership = await members.findMembership(key.userId, key.schoolId)
   if (membership?.role !== 'ADMIN') return { status: 'forbidden' }
 
-  return { status: 'OK', scope: { ...scope, isSuperAdmin: false } }
+  return { status: 'OK', scope: { ...scope, isSuperAdmin: false, paymentsEnabled } }
 }

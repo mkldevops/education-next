@@ -18,6 +18,9 @@ export const RECORD_PAYMENT_TOOL = 'record_payment'
 export async function previewRecordPayment(scope: McpScope, input: Input) {
   const parsed = previewRecordPaymentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  // Défense en profondeur : l'outil n'est déjà pas déclaré quand le drapeau est coupé,
+  // mais un appel direct par nom ne doit ni lire une famille ni proposer de brouillon.
+  if (!scope.paymentsEnabled) return 'paymentsDisabled' as const
   const { schoolId } = scope
   const data = parsed.data
 

@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { db } from '@/lib/db'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import type { FamilyBalance } from '@/use-cases/payments/family-balance'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
 
@@ -105,7 +106,7 @@ export async function getFamilyDialogData(
 
   const [plans, classes] = await Promise.all([
     db.plan.findMany({
-      where: { schoolId, isActive: true },
+      where: { schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
       orderBy: { name: 'asc' },
     }),
     db.classPeriod.findMany({

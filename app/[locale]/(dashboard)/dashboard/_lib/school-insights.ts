@@ -15,7 +15,8 @@ export type LevelFill = {
 }
 
 export type SchoolInsights = {
-  payments: PaymentStats
+  /** `null` quand le drapeau paiements est coupé : aucun chiffre d'encaissement à lire. */
+  payments: PaymentStats | null
   classes: ClassFill[]
   levels: LevelFill[]
 }
@@ -31,10 +32,11 @@ export type SchoolInsights = {
  */
 export async function getSchoolInsights(
   schoolId: string,
-  periodId: string | null
+  periodId: string | null,
+  paymentsEnabled: boolean
 ): Promise<SchoolInsights> {
   const [payments, classPeriods] = await Promise.all([
-    getPaymentStats(schoolId, periodId),
+    paymentsEnabled ? getPaymentStats(schoolId, periodId) : Promise.resolve(null),
     db.classPeriod.findMany({
       where: {
         schoolId,

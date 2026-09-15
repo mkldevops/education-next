@@ -3,6 +3,7 @@ import { languagesOf } from '@/domain/family'
 import { enrollmentBalances } from '@/domain/payment'
 import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
 
 /**
@@ -83,7 +84,7 @@ export async function getStudentDialogData(
 
   const [plans, classes] = await Promise.all([
     db.plan.findMany({
-      where: { schoolId, isActive: true },
+      where: { schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
       orderBy: { name: 'asc' },
     }),
     db.classPeriod.findMany({

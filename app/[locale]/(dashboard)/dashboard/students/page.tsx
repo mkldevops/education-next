@@ -4,6 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { StudentsDataTable } from './_components/students-data-table'
 import { getStudentDialogData } from './[id]/_lib/student-detail'
@@ -33,6 +34,8 @@ export default async function StudentsPage({ params }: Props) {
   const isAdmin = scope.isAdmin
   const whereFamilies = scope.isAdmin ? undefined : { some: { familyId: scope.familyId } }
   const selectedPeriod = await getSelectedPeriod(scope.schoolId)
+
+  const paymentsEnabled = await isPaymentsEnabled(scope.schoolId)
 
   const students = await db.student.findMany({
     where: {
@@ -96,6 +99,7 @@ export default async function StudentsPage({ params }: Props) {
           id: classPeriod.id,
           name: `${classPeriod.name} (${classPeriod.level.name} — ${classPeriod.period.name})`,
         }))}
+        paymentsEnabled={paymentsEnabled}
       />
     </div>
   )

@@ -2,7 +2,9 @@ import type { z } from 'zod'
 import { checkCapacity } from '@/domain/class-period'
 import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { validateStudentBirthday } from '@/domain/student'
+import { planGateway } from '@/gateways/plan-gateway'
 import { db } from '@/lib/db'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { createEnrolledStudentSchema } from './schemas'
 
 type Input = z.input<typeof createEnrolledStudentSchema>
@@ -21,6 +23,17 @@ export async function createEnrolledStudent(input: Input) {
   if (!parsed.success) return 'validationError' as const
   const { schoolId, familyId, person, student, enrollment } = parsed.data
 
+  const paymentsEnabled = await isPaymentsEnabled(schoolId)
+
+  // Mêmes deux contrôles que `createEnrollment`, pour la même raison : le schéma laisse
+  // `planId` facultatif pour la coupure, donc l'obligation est restaurée ici drapeau actif,
+  // et une formule ou une remise explicites pendant une coupure trahissent un appelant qui
+  // ignore le drapeau — les tarifer en silence est pire que refuser (FR-017).
+  if (paymentsEnabled && enrollment.planId === undefined) return 'validationError' as const
+  if (!paymentsEnabled && (enrollment.planId !== undefined || enrollment.discount !== 0)) {
+    return 'paymentsDisabled' as const
+  }
+
   if (student.birthday) {
     const birthdayCheck = validateStudentBirthday(student.birthday)
     if (birthdayCheck !== 'OK') return birthdayCheck
@@ -33,11 +46,17 @@ export async function createEnrolledStudent(input: Input) {
     })
     if (!family) return 'notFound' as const
 
-    const plan = await tx.plan.findFirst({
-      where: { id: enrollment.planId, schoolId, isActive: true },
-      select: { amount: true },
-    })
-    if (!plan) return 'notFound' as const
+    // La formule n'est résolue que drapeau actif : hors drapeau, la formule réservée est
+    // créée dans cette transaction, donc elle repart avec le rollback si la classe s'avère
+    // pleine plus bas. Même ordre que `create-enrollment.ts`.
+    const planId = paymentsEnabled ? enrollment.planId : undefined
+    const plan = planId
+      ? await tx.plan.findFirst({
+          where: { id: planId, schoolId, isActive: true },
+          select: { amount: true },
+        })
+      : null
+    if (planId && !plan) return 'notFound' as const
 
     const classPeriod = await tx.classPeriod.findFirst({
       where: { id: enrollment.classPeriodId, schoolId, isActive: true },
@@ -45,9 +64,15 @@ export async function createEnrolledStudent(input: Input) {
     })
     if (!classPeriod) return 'notFound' as const
 
-    const planAmount = Number(plan.amount)
-    const discountCheck = validateDiscount(planAmount, enrollment.discount)
-    if (discountCheck !== 'OK') return discountCheck
+    // Formule réservée de montant nul et remise déjà refusée non nulle hors drapeau
+    // (FR-017) : `totalAmount` reste 0 sans repasser par `calculateTotalAmount`.
+    let totalAmount = 0
+    if (plan) {
+      const planAmount = Number(plan.amount)
+      const discountCheck = validateDiscount(planAmount, enrollment.discount)
+      if (discountCheck !== 'OK') return discountCheck
+      totalAmount = calculateTotalAmount(planAmount, enrollment.discount)
+    }
 
     // Même prédicat et même place dans la transaction que `create-enrollment.ts` : la place
     // est recomptée avant la première écriture, donc deux ajouts simultanés ne passent pas
@@ -82,8 +107,8 @@ export async function createEnrolledStudent(input: Input) {
       data: {
         schoolId,
         studentId: createdStudent.id,
-        planId: enrollment.planId,
-        totalAmount: calculateTotalAmount(planAmount, enrollment.discount),
+        planId: planId ?? (await planGateway.ensureUnpriced(schoolId, tx)).id,
+        totalAmount,
         discount: enrollment.discount,
         canLeaveAlone: enrollment.canLeaveAlone,
       },

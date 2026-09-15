@@ -24,6 +24,7 @@ type Props = {
   enrolledChildren: number
   totalEnrollments: number
   activeEnrollments: number
+  paymentsEnabled: boolean
   totalPaid: number
   remainingBalance: number
   totalDue: number
@@ -39,6 +40,7 @@ export async function OverviewTab({
   enrolledChildren,
   totalEnrollments,
   activeEnrollments,
+  paymentsEnabled,
   totalPaid,
   remainingBalance,
   totalDue,
@@ -48,7 +50,13 @@ export async function OverviewTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div
+        className={
+          paymentsEnabled
+            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
+            : 'grid grid-cols-1 md:grid-cols-2 gap-4'
+        }
+      >
         <KPICard label={t('kpis.enrolledChildren')} value={enrolledChildren} icon={Users} />
         <KPICard
           label={t('kpis.totalEnrollments')}
@@ -56,20 +64,28 @@ export async function OverviewTab({
           subValue={`${activeEnrollments} ${t('kpis.active')}`}
           icon={BookOpen}
         />
-        <KPICard
-          label={t('kpis.totalPaid')}
-          value={formatCurrency(totalPaid, locale)}
-          icon={CircleCheck}
-          color="green"
-        />
-        <KPICard
-          label={t('kpis.remainingBalance')}
-          value={formatCurrency(remainingBalance, locale)}
-          icon={remainingBalance > 0 ? TriangleAlert : CircleCheck}
-          color={remainingBalance > 0 ? 'amber' : 'green'}
-        />
+        {paymentsEnabled && (
+          <>
+            <KPICard
+              label={t('kpis.totalPaid')}
+              value={formatCurrency(totalPaid, locale)}
+              icon={CircleCheck}
+              color="green"
+            />
+            <KPICard
+              label={t('kpis.remainingBalance')}
+              value={formatCurrency(remainingBalance, locale)}
+              icon={remainingBalance > 0 ? TriangleAlert : CircleCheck}
+              color={remainingBalance > 0 ? 'amber' : 'green'}
+            />
+          </>
+        )}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div
+        className={
+          paymentsEnabled ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'grid grid-cols-1 gap-6'
+        }
+      >
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-graphite mb-4">{t('sections.parentsTitle')}</h2>
           <ParentsSection
@@ -79,27 +95,31 @@ export async function OverviewTab({
             linkedEmails={linkedEmails}
           />
         </Card>
-        <Card className="p-6">
-          <div className="mb-4 flex items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold text-graphite">{t('sections.financialTitle')}</h2>
-            <span className="text-xs text-graphite-700">{t('scopeAll')}</span>
-          </div>
-          <FinancialSummary
-            totalDue={totalDue}
-            totalPaid={totalPaid}
-            totalDiscount={totalDiscount}
-            remainingBalance={remainingBalance}
-          />
-          {!isAdmin && (
-            <div className="mt-5 border-t border-alabaster-700 pt-5">
-              <OnlinePaymentButton
-                amount={remainingBalance}
-                configured={isStripeConfigured()}
-                locale={locale}
-              />
+        {paymentsEnabled && (
+          <Card className="p-6">
+            <div className="mb-4 flex items-baseline justify-between gap-2">
+              <h2 className="text-lg font-semibold text-graphite">
+                {t('sections.financialTitle')}
+              </h2>
+              <span className="text-xs text-graphite-700">{t('scopeAll')}</span>
             </div>
-          )}
-        </Card>
+            <FinancialSummary
+              totalDue={totalDue}
+              totalPaid={totalPaid}
+              totalDiscount={totalDiscount}
+              remainingBalance={remainingBalance}
+            />
+            {!isAdmin && (
+              <div className="mt-5 border-t border-alabaster-700 pt-5">
+                <OnlinePaymentButton
+                  amount={remainingBalance}
+                  configured={isStripeConfigured()}
+                  locale={locale}
+                />
+              </div>
+            )}
+          </Card>
+        )}
       </div>
     </div>
   )

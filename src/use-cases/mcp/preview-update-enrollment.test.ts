@@ -16,6 +16,7 @@ const scope = {
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
+  paymentsEnabled: true,
 }
 
 const basic = { id: 'plan-basic', name: 'Forfait Basic 2026/2027', amount: '180' }
@@ -69,6 +70,14 @@ describe('previewUpdateEnrollment', () => {
       'school-1',
       expect.objectContaining({ tool: 'update_enrollment', keyId: 'key-1' })
     )
+  })
+
+  it('refuses without reading an enrollment or proposing a draft when payments are disabled', async () => {
+    const result = await previewUpdateEnrollment({ ...scope, paymentsEnabled: false }, input)
+
+    expect(result).toBe('paymentsDisabled')
+    expect(findOpenForMcp).not.toHaveBeenCalled()
+    expect(createDraft).not.toHaveBeenCalled()
   })
 
   it('searches the enrollment by student name, or by identifier when given', async () => {

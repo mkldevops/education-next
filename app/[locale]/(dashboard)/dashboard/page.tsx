@@ -11,6 +11,7 @@ import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolContext } from '@/lib/school-context'
 import { isStripeConfigured } from '@/lib/stripe'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolScope } from '../_lib/auth-helper'
 import { SchoolInsightsSection } from './_components/school-insights'
 import { UnlinkedParentNotice } from './_components/unlinked-parent-notice'
@@ -49,6 +50,7 @@ export default async function DashboardPage({ params }: Props) {
   }
 
   const scope = await requireSchoolScope()
+  const paymentsEnabled = await isPaymentsEnabled(scope.schoolId)
   const activeSchool = await schoolGateway.findActiveById(scope.schoolId)
   const schoolName = activeSchool?.name ?? ''
 
@@ -63,7 +65,7 @@ export default async function DashboardPage({ params }: Props) {
     recentEnrollments,
     parentBalance,
     insights,
-  } = await getDashboardOverview(scope)
+  } = await getDashboardOverview(scope, paymentsEnabled)
 
   const periodScope = selectedPeriod
     ? t('stats.scopePeriod', { period: selectedPeriod.name })
@@ -116,16 +118,20 @@ export default async function DashboardPage({ params }: Props) {
         />
       ),
     },
-    {
-      key: 'payment',
-      header: t('table.payment'),
-      render: (item) => {
-        const finalAmount = Number(item.totalAmount)
-        const totalPaid = item.payments.reduce((sum, p) => sum + Number(p.amount), 0)
-        const ratio = finalAmount > 0 ? (totalPaid / finalAmount) * 100 : 0
-        return <ProgressBar value={ratio} />
-      },
-    },
+    ...(paymentsEnabled
+      ? [
+          {
+            key: 'payment',
+            header: t('table.payment'),
+            render: (item) => {
+              const finalAmount = Number(item.totalAmount)
+              const totalPaid = (item.payments ?? []).reduce((sum, p) => sum + Number(p.amount), 0)
+              const ratio = finalAmount > 0 ? (totalPaid / finalAmount) * 100 : 0
+              return <ProgressBar value={ratio} />
+            },
+          } satisfies Column<(typeof recentEnrollments)[number]>,
+        ]
+      : []),
     {
       key: 'date',
       header: t('table.date'),
@@ -146,6 +152,14 @@ export default async function DashboardPage({ params }: Props) {
         ]
       : []),
   ]
+
+  const statsGridClassName = isAdmin
+    ? paymentsEnabled
+      ? '-mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4'
+      : '-mt-14 grid gap-5 md:grid-cols-3'
+    : paymentsEnabled
+      ? '-mt-14 grid gap-5 md:grid-cols-3'
+      : '-mt-14 grid gap-5 md:grid-cols-2'
 
   return (
     <div className="space-y-8">
@@ -170,14 +184,8 @@ export default async function DashboardPage({ params }: Props) {
         )}
       </div>
 
-      <div
-        className={
-          isAdmin
-            ? '-mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4'
-            : '-mt-14 grid gap-5 md:grid-cols-3'
-        }
-      >
-        {isAdmin && insights && (
+      <div className={statsGridClassName}>
+        {isAdmin && insights?.payments && (
           <Card className="rounded border border-amber-200 bg-white p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -235,20 +243,22 @@ export default async function DashboardPage({ params }: Props) {
             </div>
           </Card>
         ) : (
-          <Card className="rounded border border-amber-200 bg-white p-5">
-            <p className="text-sm font-medium text-graphite-600">{t('stats.remainingBalance')}</p>
-            <p className="mt-2 text-3xl font-bold text-graphite">
-              {formatCurrency(parentBalance?.remainingBalance ?? 0, locale)}
-            </p>
-            <p className="mt-1 text-xs text-graphite-600">{t('stats.scopeAll')}</p>
-            <div className="mt-4">
-              <OnlinePaymentButton
-                amount={parentBalance?.remainingBalance ?? 0}
-                configured={isStripeConfigured()}
-                locale={locale}
-              />
-            </div>
-          </Card>
+          paymentsEnabled && (
+            <Card className="rounded border border-amber-200 bg-white p-5">
+              <p className="text-sm font-medium text-graphite-600">{t('stats.remainingBalance')}</p>
+              <p className="mt-2 text-3xl font-bold text-graphite">
+                {formatCurrency(parentBalance?.remainingBalance ?? 0, locale)}
+              </p>
+              <p className="mt-1 text-xs text-graphite-600">{t('stats.scopeAll')}</p>
+              <div className="mt-4">
+                <OnlinePaymentButton
+                  amount={parentBalance?.remainingBalance ?? 0}
+                  configured={isStripeConfigured()}
+                  locale={locale}
+                />
+              </div>
+            </Card>
+          )
         )}
       </div>
 

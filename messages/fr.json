@@ -699,7 +699,8 @@
             "notFound": "Élève, plan ou classe introuvable",
             "validationError": "Vérifiez les informations saisies",
             "existingEnrollmentPaid": "L'inscription existante a déjà reçu un paiement : remboursez-la ou annulez-la manuellement avant d'en recréer une."
-          }
+          },
+          "replaceExistingHintNoPayments": "L'inscription en cours est annulée puis recréée."
         },
         "drawer": {
           "title": "Détail de l'inscription",
@@ -717,6 +718,22 @@
           "classAssignments": "Affectations de classe",
           "payments": "Paiements",
           "openFullPage": "Voir la fiche complète"
+        },
+        "unpriced": {
+          "badge": "À tarifer"
+        },
+        "setPlan": {
+          "title": "Affecter une formule",
+          "selectPlan": "Formule tarifaire",
+          "submit": "Affecter",
+          "cancel": "Annuler",
+          "errors": {
+            "totalBelowPaid": "Le total obtenu serait inférieur au montant déjà payé sur cette inscription.",
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école.",
+            "validationError": "Vérifiez les informations saisies.",
+            "notFound": "Inscription ou formule introuvable.",
+            "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif."
+          }
         }
       },
       "promotion": {
@@ -877,9 +894,25 @@
             "label": "Élèves maximum par classe",
             "description": "Nombre maximal d'élèves autorisés dans une classe."
           },
+          "payments_enabled": {
+            "label": "Gestion des paiements",
+            "description": "Désactivez si votre structure ne gère que les inscriptions et encaisse ailleurs. Les inscriptions deviennent alors purement administratives, sans formule ni montant.",
+            "confirmDisable": {
+              "title": "Désactiver la gestion des paiements ?",
+              "description": "{payments, plural, =0 {Aucun paiement enregistré} one {# paiement enregistré} other {# paiements enregistrés}} et {pendingTransactions, plural, =0 {aucune transaction en attente} one {# transaction en attente} other {# transactions en attente}} deviendront invisibles. Rien n'est supprimé : tout réapparaît si vous réactivez la fonction.",
+              "confirm": "Désactiver les paiements",
+              "cancel": "Annuler"
+            }
+          },
           "teacher_expenses_enabled": {
             "label": "Notes de frais enseignants",
-            "description": "Active la saisie des notes de frais des enseignants."
+            "description": "Active la saisie des notes de frais des enseignants.",
+            "confirmDisable": {
+              "title": "Désactiver les notes de frais ?",
+              "description": "{expenses, plural, =0 {Aucune note de frais ne deviendra inatteignable} one {# note de frais saisie deviendra inatteignable} other {# notes de frais saisies deviendront inatteignables}}. Rien n'est supprimé : tout réapparaît si vous réactivez la fonction.",
+              "confirm": "Désactiver les notes de frais",
+              "cancel": "Annuler"
+            }
           },
           "automatic_promotion": {
             "label": "Promotion automatique",

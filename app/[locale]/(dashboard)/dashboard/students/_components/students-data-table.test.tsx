@@ -83,6 +83,7 @@ describe('StudentsDataTable', () => {
         isAdmin={false}
         plans={[]}
         classes={[]}
+        paymentsEnabled={true}
       />
     )
 
@@ -109,7 +110,14 @@ describe('StudentsDataTable', () => {
 
   it('reveals the exact birth date on click', () => {
     render(
-      <StudentsDataTable data={[studentA]} locale="fr" isAdmin={false} plans={[]} classes={[]} />
+      <StudentsDataTable
+        data={[studentA]}
+        locale="fr"
+        isAdmin={false}
+        plans={[]}
+        classes={[]}
+        paymentsEnabled={true}
+      />
     )
 
     expect(screen.queryByText('05/03/2018')).not.toBeInTheDocument()

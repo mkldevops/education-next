@@ -74,11 +74,11 @@ describe('mcpReadGateway', () => {
     })
   })
 
-  it('publishes plans with their amount', async () => {
+  it('publishes plans with their amount, excluding the reserved unpriced plan from the catalog', async () => {
     await mcpReadGateway.listPlans(SCHOOL)
 
     expect(dbMock.plan.findMany).toHaveBeenCalledWith({
-      where: { schoolId: SCHOOL, isActive: true },
+      where: { schoolId: SCHOOL, isActive: true, name: { not: '__unpriced__' } },
       select: { id: true, name: true, amount: true },
       orderBy: { name: 'asc' },
     })

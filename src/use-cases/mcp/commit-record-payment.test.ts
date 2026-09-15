@@ -25,6 +25,7 @@ const scope = {
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
+  paymentsEnabled: true,
 }
 
 const resolved = {
@@ -91,6 +92,14 @@ describe('commitRecordPayment', () => {
       amount: 180,
       paymentIds: ['payment-1', 'payment-2'],
     })
+  })
+
+  it('refuses without claiming the draft when payments are disabled, even a pre-cutoff one', async () => {
+    const result = await commitRecordPayment({ ...scope, paymentsEnabled: false }, input)
+
+    expect(result).toBe('paymentsDisabled')
+    expect(claim).not.toHaveBeenCalled()
+    expect(transaction).not.toHaveBeenCalled()
   })
 
   it('pays enrollments still awaiting validation', async () => {

@@ -8,18 +8,18 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
 vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ refresh }) }))
 vi.mock('@/lib/toast', () => ({ toast: { error: (message: string) => toastError(message) } }))
 
-import { PlatformFlagToggle } from './platform-flag-toggle'
+import { FlagToggle } from './flag-toggle'
 
 const baseProps = { title: 'MCP', description: 'desc', enabled: false }
 
-describe('PlatformFlagToggle', () => {
+describe('FlagToggle', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('confirms the optimistic toggle once the write succeeds', async () => {
     const onSave = vi.fn(async () => 'OK' as const)
-    render(<PlatformFlagToggle {...baseProps} onSave={onSave} />)
+    render(<FlagToggle {...baseProps} onSave={onSave} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
 
@@ -32,7 +32,7 @@ describe('PlatformFlagToggle', () => {
 
   it('rolls back the optimistic toggle when the write is typed-refused', async () => {
     const onSave = vi.fn(async () => 'unexpected')
-    render(<PlatformFlagToggle {...baseProps} onSave={onSave} />)
+    render(<FlagToggle {...baseProps} onSave={onSave} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
 
@@ -48,7 +48,7 @@ describe('PlatformFlagToggle', () => {
     const onSave = vi.fn(async () => {
       throw new Error('network down')
     })
-    render(<PlatformFlagToggle {...baseProps} onSave={onSave} />)
+    render(<FlagToggle {...baseProps} onSave={onSave} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
 
@@ -60,7 +60,7 @@ describe('PlatformFlagToggle', () => {
 
   it('associates only the description via aria-describedby when there is no hint', () => {
     const onSave = vi.fn()
-    render(<PlatformFlagToggle {...baseProps} onSave={onSave} />)
+    render(<FlagToggle {...baseProps} onSave={onSave} />)
 
     const checkbox = screen.getByRole('checkbox')
     const description = screen.getByText(baseProps.description)
@@ -69,7 +69,7 @@ describe('PlatformFlagToggle', () => {
 
   it('associates both the description and the hint via aria-describedby when a hint is present', () => {
     const onSave = vi.fn()
-    render(<PlatformFlagToggle {...baseProps} hint="be careful" onSave={onSave} />)
+    render(<FlagToggle {...baseProps} hint="be careful" onSave={onSave} />)
 
     const checkbox = screen.getByRole('checkbox')
     const description = screen.getByText(baseProps.description)
@@ -78,7 +78,7 @@ describe('PlatformFlagToggle', () => {
   })
 })
 
-describe('PlatformFlagToggle with confirmDisable', () => {
+describe('FlagToggle with confirmDisable', () => {
   const confirmDisable = {
     title: 'Disable Google?',
     description: '2 accounts would lose access',
@@ -92,9 +92,7 @@ describe('PlatformFlagToggle with confirmDisable', () => {
 
   it('opens a confirmation instead of saving when currently enabled', () => {
     const onSave = vi.fn(async () => 'OK' as const)
-    render(
-      <PlatformFlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />
-    )
+    render(<FlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
 
@@ -105,9 +103,7 @@ describe('PlatformFlagToggle with confirmDisable', () => {
 
   it('commits the disable and refreshes once the admin confirms', async () => {
     const onSave = vi.fn(async () => 'OK' as const)
-    render(
-      <PlatformFlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />
-    )
+    render(<FlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
     fireEvent.click(screen.getByRole('button', { name: confirmDisable.confirmLabel }))
@@ -119,9 +115,7 @@ describe('PlatformFlagToggle with confirmDisable', () => {
 
   it('rolls back the checkbox and never saves when the admin cancels', () => {
     const onSave = vi.fn(async () => 'OK' as const)
-    render(
-      <PlatformFlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />
-    )
+    render(<FlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
     fireEvent.click(screen.getByRole('button', { name: confirmDisable.cancelLabel }))
@@ -134,12 +128,7 @@ describe('PlatformFlagToggle with confirmDisable', () => {
   it('enables with a single click even when confirmDisable is supplied', async () => {
     const onSave = vi.fn(async () => 'OK' as const)
     render(
-      <PlatformFlagToggle
-        {...baseProps}
-        enabled={false}
-        onSave={onSave}
-        confirmDisable={confirmDisable}
-      />
+      <FlagToggle {...baseProps} enabled={false} onSave={onSave} confirmDisable={confirmDisable} />
     )
 
     fireEvent.click(screen.getByRole('checkbox'))
@@ -149,7 +138,7 @@ describe('PlatformFlagToggle with confirmDisable', () => {
   })
 })
 
-describe('PlatformFlagToggle confirmDisable dismissal', () => {
+describe('FlagToggle confirmDisable dismissal', () => {
   const confirmDisable = {
     title: 'Disable Google?',
     description: '2 accounts would lose access',
@@ -167,9 +156,7 @@ describe('PlatformFlagToggle confirmDisable dismissal', () => {
   // rouvre plus jamais : couper Google devient silencieusement impossible.
   it('rolls back and stays reopenable when the confirmation is dismissed via Escape', () => {
     const onSave = vi.fn(async () => 'OK' as const)
-    render(
-      <PlatformFlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />
-    )
+    render(<FlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -185,7 +172,7 @@ describe('PlatformFlagToggle confirmDisable dismissal', () => {
   })
 })
 
-describe('PlatformFlagToggle confirmDisable checkbox consistency', () => {
+describe('FlagToggle confirmDisable checkbox consistency', () => {
   const confirmDisable = {
     title: 'Disable Google?',
     description: '2 accounts would lose access',
@@ -202,9 +189,7 @@ describe('PlatformFlagToggle confirmDisable checkbox consistency', () => {
   // réussie laissait la case cochée alors que le réglage venait d'être désactivé.
   it('reflects the persisted value once a retry succeeds after a failed attempt', async () => {
     const onSave = vi.fn().mockResolvedValueOnce('unexpected').mockResolvedValueOnce('OK')
-    render(
-      <PlatformFlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />
-    )
+    render(<FlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
     fireEvent.click(screen.getByRole('button', { name: confirmDisable.confirmLabel }))
@@ -212,7 +197,9 @@ describe('PlatformFlagToggle confirmDisable checkbox consistency', () => {
     await waitFor(() => expect(screen.getByRole('checkbox')).toBeChecked())
     expect(screen.getByRole('dialog')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: confirmDisable.confirmLabel }))
+    // `findBy` et non `getBy` : pendant la transition le bouton porte `...`, donc le
+    // retrouver par son libellé est aussi ce qui atteste que l'écriture refusée est finie.
+    fireEvent.click(await screen.findByRole('button', { name: confirmDisable.confirmLabel }))
 
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(screen.getByRole('checkbox')).not.toBeChecked())
@@ -230,9 +217,7 @@ describe('PlatformFlagToggle confirmDisable checkbox consistency', () => {
           resolveSave = resolve
         })
     )
-    render(
-      <PlatformFlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />
-    )
+    render(<FlagToggle {...baseProps} enabled onSave={onSave} confirmDisable={confirmDisable} />)
 
     fireEvent.click(screen.getByRole('checkbox'))
     fireEvent.click(screen.getByRole('button', { name: confirmDisable.confirmLabel }))

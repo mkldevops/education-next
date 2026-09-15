@@ -24,57 +24,60 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
     maximumFractionDigits: 1,
   })
 
-  const chart = payments.monthly.map((point) => {
-    const date = new Date(`${point.month}-01T00:00:00`)
+  const chart =
+    payments?.monthly.map((point) => {
+      const date = new Date(`${point.month}-01T00:00:00`)
 
-    return {
-      label: monthLabel.format(date),
-      value: point.amount,
-      caption: `${monthCaption.format(date)} · ${formatCurrency(point.amount, locale)}`,
-    }
-  })
+      return {
+        label: monthLabel.format(date),
+        value: point.amount,
+        caption: `${monthCaption.format(date)} · ${formatCurrency(point.amount, locale)}`,
+      }
+    }) ?? []
 
   return (
     <div className="space-y-5">
-      <Card className="p-6">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-lg font-semibold text-graphite">{t('collectionTitle')}</h2>
-          <Link
-            href="/dashboard/payments"
-            className="text-sm font-medium text-primary hover:text-primary-hover"
-          >
-            {t('viewPayments')}
-          </Link>
-        </div>
-        <dl className="mt-4 grid gap-4 sm:grid-cols-3">
-          <div>
-            <dt className="text-xs text-graphite-600">{t('collected')}</dt>
-            <dd className="text-xl font-bold text-graphite">
-              {formatCurrency(payments.totals.collected, locale)}
-            </dd>
+      {payments && (
+        <Card className="p-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-lg font-semibold text-graphite">{t('collectionTitle')}</h2>
+            <Link
+              href="/dashboard/payments"
+              className="text-sm font-medium text-primary hover:text-primary-hover"
+            >
+              {t('viewPayments')}
+            </Link>
           </div>
-          <div>
-            <dt className="text-xs text-graphite-600">{t('remaining')}</dt>
-            <dd className="text-xl font-bold text-graphite">
-              {formatCurrency(payments.totals.remaining, locale)}
-            </dd>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div>
+              <dt className="text-xs text-graphite-600">{t('collected')}</dt>
+              <dd className="text-xl font-bold text-graphite">
+                {formatCurrency(payments.totals.collected, locale)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-graphite-600">{t('remaining')}</dt>
+              <dd className="text-xl font-bold text-graphite">
+                {formatCurrency(payments.totals.remaining, locale)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-graphite-600">{t('collectionRate')}</dt>
+              <dd className="mt-2">
+                <ProgressBar value={payments.totals.collectionRate} />
+              </dd>
+            </div>
+          </dl>
+          <div className="mt-6">
+            <BarChart
+              data={chart}
+              formatValue={(value) => (value > 0 ? compact.format(value) : '—')}
+              emptyMessage={t('noCollection')}
+              height={140}
+            />
           </div>
-          <div>
-            <dt className="text-xs text-graphite-600">{t('collectionRate')}</dt>
-            <dd className="mt-2">
-              <ProgressBar value={payments.totals.collectionRate} />
-            </dd>
-          </div>
-        </dl>
-        <div className="mt-6">
-          <BarChart
-            data={chart}
-            formatValue={(value) => (value > 0 ? compact.format(value) : '—')}
-            emptyMessage={t('noCollection')}
-            height={140}
-          />
-        </div>
-      </Card>
+        </Card>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card className="p-6">
