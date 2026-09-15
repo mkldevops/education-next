@@ -1144,6 +1144,20 @@ one school**.
   accepts anything.
 - The screen shows one row per key, in declaration order: a toggle for a `BOOLEAN`, an edit dialog
   otherwise. A key without a row shows its `SCHOOL_CONFIG_DEFAULTS` value, else *not configured*.
+- **The four theme colors share one palette editor** (`THEME_COLOR_KEYS`, `src/lib/theme-palettes.ts`)
+  instead of four rows. Each swatch opens a picker; ten ready-made palettes fill all four at once.
+  Nothing is written before *Save*, which calls `setThemeColorsAction` → `setThemeColors` with **only
+  the changed colors**, so a derived token never set keeps following the primary color. The colors
+  are validated together and written in one transaction (`configGateway.setMany`): one invalid hex
+  writes nothing. Every preset keeps white text at AA (4.5:1) on primary and hover, and 3:1 between
+  primary and its light and background colors, and hover text at AA on light; `theme-palettes.test.ts`
+  enforces it.
+  The presets list is collapsed by default and names the palette the draft matches.
+- **Each theme color has a visible use.** Primary: default buttons, links, active nav item. Hover:
+  button hover, the active nav gradient, hovered text of outline/ghost buttons and nav items. Light:
+  outline/ghost button and nav item hover backgrounds, light badges; with primary, the 404 error page
+  accent. Background: every page behind the white cards — `body`, the dashboard layout, the error
+  page gradients (`bg-background`) — `#f7f7f7` until set, the look before it was themable.
 - `@@unique([schoolId, name])` is a **partial** index, restricted to `isActive: true`. An archived
   entry therefore never reserves its name, and `configGateway.get` is deterministic.
 - **A partial unique cannot be used as a write selector.** Prisma emits the `schoolId_name` selector

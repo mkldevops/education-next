@@ -74,7 +74,7 @@ export default async function DashboardLayout({ children, params }: Props) {
   const { locale } = await params
 
   return (
-    <div className="flex min-h-screen bg-alabaster-900">
+    <div className="flex min-h-screen bg-background">
       <Suspense fallback={<div className="hidden w-64 bg-white md:block" />}>
         <DashboardSidebarServer locale={locale} />
       </Suspense>

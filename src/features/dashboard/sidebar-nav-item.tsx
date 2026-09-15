@@ -69,8 +69,8 @@ export function NavItem({
         'flex items-center rounded transition-all duration-150',
         expanded ? 'gap-3 px-3 py-2' : 'size-11 justify-center',
         active
-          ? 'bg-gradient-to-br from-primary to-primary/70 text-white shadow-lg shadow-primary/25'
-          : 'text-graphite-600 hover:bg-alabaster-900 hover:text-graphite'
+          ? 'bg-gradient-to-br from-primary to-primary-hover text-white shadow-lg shadow-primary/25'
+          : 'text-graphite-600 hover:bg-primary-light hover:text-primary-hover'
       )}
     >
       <Icon size={20} className="shrink-0" />

@@ -874,22 +874,6 @@
             "label": "Logo",
             "description": "Shown in the sidebar and on the sign-in page. The favicon is generated from this logo."
           },
-          "theme_primary": {
-            "label": "Primary color",
-            "description": "Primary interface color, in hexadecimal format."
-          },
-          "theme_primary_hover": {
-            "label": "Primary hover color",
-            "description": "Shade of hovered buttons. Derived from the primary color until set."
-          },
-          "theme_primary_light": {
-            "label": "Light primary color",
-            "description": "Light backgrounds and accents. Derived from the primary color until set."
-          },
-          "theme_background": {
-            "label": "Background color",
-            "description": "Page background. White until set."
-          },
           "max_students_per_class": {
             "label": "Maximum students per class",
             "description": "Maximum number of students allowed in a class."
@@ -923,10 +907,57 @@
             "description": "Enables the entire Events feature; the menu entry disappears when this setting is off."
           }
         },
+        "theme": {
+          "title": "Theme colors",
+          "description": "Click a color to adjust it or start from a ready-made palette. Nothing is applied until you save.",
+          "auto": "Auto",
+          "editRole": "Edit the “{role}” color",
+          "hex": "Hex code",
+          "eyedropper": "Pick a color from the screen",
+          "presets": "Ready-made palettes",
+          "reset": "Discard changes",
+          "submit": "Save colors",
+          "saving": "Saving…",
+          "success": "Theme colors updated",
+          "error": "Error updating colors",
+          "errors": {
+            "validationError": "No color to save",
+            "invalidConfigValue": "A color is not a valid hexadecimal value"
+          },
+          "roles": {
+            "theme_primary": {
+              "label": "Primary",
+              "description": "Buttons, links and active elements."
+            },
+            "theme_primary_hover": {
+              "label": "Hover",
+              "description": "Hovered button shade. Derived from the primary color until it is set."
+            },
+            "theme_primary_light": {
+              "label": "Light",
+              "description": "Light backgrounds and accents. Derived from the primary color until it is set."
+            },
+            "theme_background": {
+              "label": "Background",
+              "description": "Dashboard page background, behind the cards. Very light gray until it is set."
+            }
+          },
+          "palettes": {
+            "teal": "Teal",
+            "lagoon": "Lagoon",
+            "slate": "Slate",
+            "midnight": "Midnight",
+            "ocean": "Ocean",
+            "desert": "Desert",
+            "olive": "Olive",
+            "burgundy": "Burgundy",
+            "forest": "Forest",
+            "amethyst": "Amethyst"
+          }
+        },
         "edit": {
           "title": "Edit",
           "value": "Value",
-          "colorPlaceholder": "#3c6e71",
           "cancel": "Cancel",
           "submit": "Save",
           "success": "Parameter updated",
