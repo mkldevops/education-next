@@ -6,6 +6,7 @@ import { personGateway } from '@/gateways/person-gateway'
 import { addPersonToFamily } from '@/use-cases/families/add-person-to-family'
 import { createFamily } from '@/use-cases/families/create-family'
 import { deactivateFamily } from '@/use-cases/families/deactivate-family'
+import { deleteFamily } from '@/use-cases/families/delete-family'
 import { linkUserToFamily } from '@/use-cases/families/link-user-to-family'
 import type {
   addPersonToFamilySchema,
@@ -51,6 +52,23 @@ export async function deactivateFamilyAction(id: string) {
   const result = await deactivateFamily({ schoolId, id })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/families')
+  return 'OK' as const
+}
+
+/**
+ * Suppression définitive. Elle touche les élèves, les inscriptions et les règlements,
+ * donc toutes les listes construites sur eux sont réinvalidées, pas seulement celle
+ * des familles.
+ */
+export async function deleteFamilyAction(id: string, confirmation: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await deleteFamily({ schoolId, id, confirmation })
+  if (result !== 'OK') return result
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/families')
+  revalidatePath('/dashboard/students', 'layout')
+  revalidatePath('/dashboard/enrollments')
+  revalidatePath('/dashboard/payments')
   return 'OK' as const
 }
 

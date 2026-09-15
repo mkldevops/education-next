@@ -22,7 +22,13 @@ type Props = {
   canRecordPayment: boolean
 }
 
-type FamilyAction = 'addPayment' | 'addStudent' | 'addEnrollment' | 'editFamily' | 'archiveFamily'
+type FamilyAction =
+  | 'addPayment'
+  | 'addStudent'
+  | 'addEnrollment'
+  | 'editFamily'
+  | 'archiveFamily'
+  | 'deleteFamily'
 
 type FamilyActionItem = {
   key: string
@@ -80,17 +86,16 @@ export function ActionMenu({ familyId, canEnroll, canRecordPayment }: Props) {
       action: 'editFamily',
     },
     {
-      key: 'delete',
-      label: t('delete'),
-      icon: Trash2,
-      disabled: true,
-      title: t('deleteUnavailable'),
-    },
-    {
       key: 'archive',
       label: t('archive'),
       icon: Archive,
       action: 'archiveFamily',
+    },
+    {
+      key: 'delete',
+      label: t('delete'),
+      icon: Trash2,
+      action: 'deleteFamily',
       danger: true,
     },
   ]

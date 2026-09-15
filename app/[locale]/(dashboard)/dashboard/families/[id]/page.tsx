@@ -14,6 +14,7 @@ import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enr
 import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
 import { CreateStudentDialog } from '../../students/_components/create-student-dialog'
 import { DeactivateFamilyButton } from '../_components/deactivate-family-button'
+import { DeleteFamilyDialog } from '../_components/delete-family-dialog'
 import { EditFamilyDialog } from '../_components/edit-family-dialog'
 import { ActivityTab } from './_components/activity-tab'
 import { ChildrenTab } from './_components/children-tab'
@@ -144,6 +145,19 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             <DeactivateFamilyButton
               familyId={family.id}
               defaultOpen={action === 'archiveFamily'}
+              redirectTo={`/dashboard/families/${family.id}`}
+              showTrigger={false}
+            />
+            <DeleteFamilyDialog
+              familyId={family.id}
+              familyName={family.name}
+              impact={{
+                members: family.persons.length,
+                students: students.length,
+                enrollments: allEnrollments.length,
+                payments: family.payments.length,
+              }}
+              defaultOpen={action === 'deleteFamily'}
               redirectTo={`/dashboard/families/${family.id}`}
               showTrigger={false}
             />

@@ -935,6 +935,28 @@ A student is **skipped**, with the reason reported, when:
 - **A family cannot be archived either while any of its students holds one** — same discriminant,
   counted across every person linked to the family.
 
+### Deleting a family for good
+
+Archiving hides a family; `src/use-cases/families/delete-family.ts` erases it. The action is open to
+a school `ADMIN` and to a super admin (`requireSchoolAdmin`), and is the only place in the product
+where financial history is destroyed rather than archived.
+
+- **The family name must be retyped**, compared trimmed and case-insensitively → `confirmationMismatch`.
+  Same barrier as `deleteUser`, which asks for the account's email.
+- **No archive prerequisite**, unlike a user deletion: an archived family is invisible to `db`, so
+  requiring one first would make the record unreachable. `findByIdIncludingArchived` reads through
+  `dbArchived` so both states can be deleted.
+- **`familyGateway.deleteWithRelated` runs the whole graph in one transaction.** `Payment`,
+  `PaymentTransaction`, `Enrollment` and `ClassAssignment` point at the family with `Restrict`, so
+  nothing is cascaded by the database: each table is emptied explicitly, leaf first. `UserFamily`,
+  `FamilyPerson` and `PhoneNumber` are `Cascade` and go with their parent. `PaymentProviderEvent` is
+  `SET NULL`, so the Stripe journal survives, detached.
+- **A person linked to another family survives**, along with their student and enrollments: only the
+  link to the deleted family goes. Their invitations survive too — only a person actually deleted
+  has theirs removed, because `Invitation.person` is `Restrict`.
+- **The transaction reads through `dbArchived`.** An archived payment or person is invisible to `db`
+  but its foreign key blocks the deletion just the same.
+
 ## Configuration
 
 `src/use-cases/config/set-config.ts`. Values are stored as strings with a declared type, **scoped to
