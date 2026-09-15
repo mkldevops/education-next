@@ -946,16 +946,22 @@ where financial history is destroyed rather than archived.
 - **No archive prerequisite**, unlike a user deletion: an archived family is invisible to `db`, so
   requiring one first would make the record unreachable. `findByIdIncludingArchived` reads through
   `dbArchived` so both states can be deleted.
-- **`familyGateway.deleteWithRelated` runs the whole graph in one transaction.** `Payment`,
-  `PaymentTransaction`, `Enrollment` and `ClassAssignment` point at the family with `Restrict`, so
-  nothing is cascaded by the database: each table is emptied explicitly, leaf first. `UserFamily`,
-  `FamilyPerson` and `PhoneNumber` are `Cascade` and go with their parent. `PaymentProviderEvent` is
-  `SET NULL`, so the Stripe journal survives, detached.
+- **`familyGateway.deleteWithRelated` runs the whole graph in one transaction.** Nothing is cascaded
+  by the database along that path: `Payment.family` and `PaymentTransaction.family` are `Restrict`,
+  and so are the next links — `Enrollment.student`, `ClassAssignment.enrollment`, `Invitation.person`.
+  Each table is therefore emptied explicitly, leaf first. What is `Cascade` — `UserFamily`,
+  `FamilyPerson`, `PhoneNumber`, `Invitation.family` — goes with its parent, and
+  `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives, detached.
 - **A person linked to another family survives**, along with their student and enrollments: only the
   link to the deleted family goes. Their invitations survive too — only a person actually deleted
   has theirs removed, because `Invitation.person` is `Restrict`.
-- **The transaction reads through `dbArchived`.** An archived payment or person is invisible to `db`
-  but its foreign key blocks the deletion just the same.
+- **The transaction reads through `dbArchived`.** An archived payment, person, student or enrollment
+  is invisible to `db` but its foreign key blocks the deletion just the same.
+- **The confirmation dialog counts what the deletion will take, not what the page shows.**
+  `familyGateway.countDeletionImpact` and `deleteWithRelated` share one `resolveDeletionScope`
+  traversal, so the preview includes archived rows and excludes the shared persons that survive.
+  Deriving it from the page's own read would have announced zero students while erasing an
+  archived one.
 
 ## Configuration
 
@@ -1096,9 +1102,10 @@ Two consequences worth knowing:
 
 `src/lib/db.ts` exposes that path as **`dbArchived`**: the same connection without the soft-delete
 filter, but **still carrying the tenant guard**. Dropping both at once would have made a whole
-administration surface invisible to the guard. Its only consumer is `src/gateways/user-gateway.ts`,
-which powers super-admin user management: the list can show archived accounts, and `reactivateUser`
-can restore one.
+administration surface invisible to the guard. It has two consumers, with distinct rights:
+`src/gateways/user-gateway.ts` reads and restores archived accounts for super-admin user management,
+and `src/gateways/family-gateway.ts` reads **and permanently deletes** through it — a family
+deletion must see the archived rows whose foreign keys would otherwise block it.
 
 Counting what blocks a permanent account deletion is a separate case and does **not** go through
 `dbArchived`. The question — has this account created anything, anywhere on the platform? — has no

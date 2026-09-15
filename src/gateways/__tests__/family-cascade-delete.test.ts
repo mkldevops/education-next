@@ -18,6 +18,7 @@ const databaseUrl = process.env.DATABASE_URL
 
 let raw: PrismaClient
 let fixture: Awaited<ReturnType<typeof seed>>
+let impact: Awaited<ReturnType<typeof familyGateway.countDeletionImpact>>
 
 async function seed(suffix: string) {
   const school = await raw.school.create({
@@ -65,8 +66,8 @@ async function seed(suffix: string) {
     },
   })
 
-  // Parent propre à la famille cible, déjà archivé : invisible à `db`, mais sa clé
-  // étrangère bloque tout autant la suppression.
+  // Parent propre à la famille cible, archivé. `FamilyPerson` n'ayant pas d'`isActive`,
+  // c'est l'élève et l'inscription archivés plus bas qui rendent `dbArchived` décisif.
   const ownParent = await raw.person.create({
     data: { schoolId, name: 'Marie', lastname: 'Cible', isActive: false },
   })
@@ -94,9 +95,25 @@ async function seed(suffix: string) {
   await raw.familyPerson.create({
     data: { schoolId, familyId: target.id, personId: child.id, relationType: 'SIBLING' },
   })
-  const student = await raw.student.create({ data: { schoolId, personId: child.id } })
+  // Élève archivé, portant une inscription active et une archivée. Sous `db`, ces deux
+  // lectures manqueraient leur cible et laisseraient des lignes dont `Enrollment.student`
+  // et `Student.person`, en `Restrict`, feraient échouer la suppression. C'est ce que
+  // `dbArchived` achète, et rien d'autre ne le prouve ici.
+  const student = await raw.student.create({
+    data: { schoolId, personId: child.id, isActive: false },
+  })
   const enrollment = await raw.enrollment.create({
     data: { schoolId, studentId: student.id, planId: plan.id, status: 'ACTIVE', totalAmount: 100 },
+  })
+  const archivedEnrollment = await raw.enrollment.create({
+    data: {
+      schoolId,
+      studentId: student.id,
+      planId: plan.id,
+      status: 'CANCELLED',
+      totalAmount: 40,
+      isActive: false,
+    },
   })
   const classAssignment = await raw.classAssignment.create({
     data: { schoolId, enrollmentId: enrollment.id, classPeriodId: classPeriod.id },
@@ -185,6 +202,7 @@ async function seed(suffix: string) {
     child,
     student,
     enrollment,
+    archivedEnrollment,
     classAssignment,
     transaction,
     providerEvent,
@@ -237,6 +255,7 @@ describe.skipIf(!databaseUrl)('familyGateway.deleteWithRelated sur base réelle'
   beforeAll(async () => {
     raw = createUnguardedArchivedClient()
     fixture = await seed(Date.now().toString(36))
+    impact = await familyGateway.countDeletionImpact(fixture.school.id, fixture.target.id)
     await familyGateway.deleteWithRelated(fixture.school.id, fixture.target.id)
   }, 60_000)
 
@@ -271,6 +290,18 @@ describe.skipIf(!databaseUrl)('familyGateway.deleteWithRelated sur base réelle'
     ).resolves.toBeNull()
     await expect(
       raw.classAssignment.findUnique({ where: { id: fixture.classAssignment.id } })
+    ).resolves.toBeNull()
+  })
+
+  it("compte l'impact sur le même ensemble que la suppression, archives comprises", () => {
+    // 2 personnes propres sur 3 rattachées — la partagée survit ; 1 élève archivé ;
+    // ses 2 inscriptions, dont une archivée ; le règlement de la famille.
+    expect(impact).toEqual({ members: 2, students: 1, enrollments: 2, payments: 1 })
+  })
+
+  it("efface l'inscription archivée, que la page ne montre pas", async () => {
+    await expect(
+      raw.enrollment.findUnique({ where: { id: fixture.archivedEnrollment.id } })
     ).resolves.toBeNull()
   })
 

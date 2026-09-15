@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
+import { familyGateway } from '@/gateways/family-gateway'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
@@ -61,9 +62,12 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   const family = resolution.resource
   const isAdmin = isActiveSchoolAdmin(context)
 
-  const [selectedPeriodId, familyBalance] = await Promise.all([
+  // `countDeletionImpact` n'est pas dérivable de `family` : la page lit par `db`, filtrée
+  // sur `isActive`, alors que la suppression emporte aussi les lignes archivées.
+  const [selectedPeriodId, familyBalance, deletionImpact] = await Promise.all([
     getSelectedPeriodId(family.schoolId),
     getFamilyBalance(family.schoolId, family.id),
+    isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
   ])
 
   const { plans, classes } = await getFamilyDialogData(family.schoolId, isAdmin, selectedPeriodId)
@@ -148,19 +152,16 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               redirectTo={`/dashboard/families/${family.id}`}
               showTrigger={false}
             />
-            <DeleteFamilyDialog
-              familyId={family.id}
-              familyName={family.name}
-              impact={{
-                members: family.persons.length,
-                students: students.length,
-                enrollments: allEnrollments.length,
-                payments: family.payments.length,
-              }}
-              defaultOpen={action === 'deleteFamily'}
-              redirectTo={`/dashboard/families/${family.id}`}
-              showTrigger={false}
-            />
+            {deletionImpact && (
+              <DeleteFamilyDialog
+                familyId={family.id}
+                familyName={family.name}
+                impact={deletionImpact}
+                defaultOpen={action === 'deleteFamily'}
+                redirectTo={`/dashboard/families/${family.id}`}
+                showTrigger={false}
+              />
+            )}
           </>
         )}
       </HeroBanner>
