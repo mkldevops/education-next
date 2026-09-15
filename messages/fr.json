@@ -1643,7 +1643,7 @@
       "description": "Gérez vos informations personnelles",
       "name": "Nom",
       "email": "Email",
-      "emailHint": "L'email ne peut pas être modifié",
+      "emailHint": "Votre adresse de connexion, modifiable depuis l'onglet Compte",
       "save": "Enregistrer",
       "success": "Profil mis à jour avec succès"
     },
@@ -1671,7 +1671,13 @@
     },
     "account": {
       "title": "Compte",
-      "description": "Informations de votre compte"
+      "description": "Informations de votre compte",
+      "changeEmail": {
+        "hint": "Un lien de confirmation est envoyé à votre adresse actuelle. L'adresse du compte ne change qu'après validation de ce lien.",
+        "newEmail": "Nouvelle adresse email",
+        "submit": "Changer d'adresse",
+        "sent": "Vérifiez votre boîte : la confirmation part sur votre adresse actuelle."
+      }
     },
     "logout": {
       "title": "Déconnexion",
@@ -1709,7 +1715,8 @@
       "sessionRevokeFailed": "Impossible de révoquer la session",
       "linkFailed": "Impossible de connecter le compte Google",
       "unlinkFailed": "Impossible de déconnecter le compte Google",
-      "logoutFailed": "Impossible de vous déconnecter, réessayez"
+      "logoutFailed": "Impossible de vous déconnecter, réessayez",
+      "emailChangeFailed": "Impossible de lancer le changement d'adresse"
     },
     "passkey": {
       "title": "Clés de sécurité (Passkeys)",
@@ -1832,7 +1839,23 @@
       "heading": "Vous avez été invité(e) à rejoindre {schoolName}",
       "body": "Vous avez été invité(e) à rejoindre {schoolName} sur la plateforme.",
       "cta": "Ouvrir mon invitation",
-      "expiry": "Ce lien expire dans 48 heures."
+      "expiry": "Ce lien expire dans 48 heures.",
+      "footer": "Message automatique envoyé par {schoolName}. Si vous n'attendiez pas cette invitation, ignorez cet email."
+    },
+    "invitationReminder": {
+      "subject": "Rappel : votre invitation à rejoindre {schoolName}",
+      "heading": "Votre invitation à {schoolName} vous attend",
+      "body": "Votre invitation à rejoindre {schoolName} n'a pas encore été utilisée. Le lien précédent a été remplacé : seul celui-ci est valable.",
+      "cta": "Ouvrir mon invitation",
+      "expiry": "Ce nouveau lien expire dans 48 heures.",
+      "footer": "Message automatique envoyé par {schoolName}. Si vous n'attendiez pas cette invitation, ignorez cet email."
+    },
+    "passwordChanged": {
+      "subject": "Votre mot de passe a été modifié",
+      "heading": "Votre mot de passe a été modifié",
+      "body": "Le mot de passe de votre compte vient d'être changé. Aucune action n'est nécessaire si vous êtes à l'origine de ce changement.",
+      "notice": "Vos autres sessions ouvertes restent actives.",
+      "footer": "Message automatique. Si vous n'êtes pas à l'origine de ce changement, réinitialisez immédiatement votre mot de passe et contactez un administrateur."
     }
   }
 }

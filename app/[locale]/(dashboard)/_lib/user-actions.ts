@@ -100,10 +100,31 @@ export async function changePlatformLevelAction(input: unknown) {
 export async function updateUserAction(input: unknown) {
   await requirePlatformAdmin()
 
-  const result = await updateUser(
-    input as { id: string; name?: string | null; email?: string; emailVerified?: boolean }
-  )
+  const payload = input as {
+    id: string
+    name?: string | null
+    email?: string
+    emailVerified?: boolean
+  }
+  const before = await userGateway.findManaged(payload.id)
+
+  const result = await updateUser(payload)
   if (typeof result === 'string') return result
+
+  // Seul chemin qui laisse une adresse de connexion non prouvée : l'admin la
+  // saisit, personne n'a démontré y avoir accès. Les comptes créés par
+  // invitation ou par `createUserAction` sont déjà vérifiés, d'où l'absence
+  // d'envoi à l'inscription (`emailVerification.sendOnSignUp` reste faux).
+  const newEmail = payload.email?.toLowerCase()
+  const emailChanged = Boolean(newEmail && before && newEmail !== before.email.toLowerCase())
+  if (emailChanged && payload.emailVerified !== true && newEmail) {
+    try {
+      await auth.api.sendVerificationEmail({ body: { email: newEmail } })
+    } catch {
+      // Le compte porte déjà la nouvelle adresse : un envoi manqué ne doit pas
+      // faire échouer la mise à jour, l'admin peut la resoumettre.
+    }
+  }
 
   revalidatePath(USERS_PATH)
   return 'OK' as const
