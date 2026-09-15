@@ -6,6 +6,8 @@ import { DashboardHeader, ImpersonationBanner, Sidebar } from '@/features/dashbo
 import { localizedHref } from '@/i18n/localized-href'
 import { auth } from '@/lib/auth'
 import { getBrandingConfig } from '@/lib/branding'
+import { db } from '@/lib/db'
+import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
 import { getAuthorizedSchools, getSchoolContext } from '@/lib/school-context'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 
@@ -21,14 +23,19 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
   // La tête de la barre latérale suit le drapeau seul, super-admin compris : le réglage
   // vit sur `/dashboard/config`, l'éteindre doit se voir immédiatement chez celui qui
   // l'écrit. L'issue de secours des liens profonds reste ouverte par `canSwitchSchool()`.
-  const [branding, session, schools, switchAllowed] = await Promise.all([
+  const [branding, session, schools, switchAllowed, eventsConfig] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
     getAuthorizedSchools(),
     isSchoolSwitchEnabled(),
+    db.config.findFirst({
+      where: { schoolId: context.schoolId, name: EVENTS_CONFIG_KEY, isActive: true },
+      select: { value: true },
+    }),
   ])
 
   const userName = session?.user.name || session?.user.email || undefined
+  const eventsEnabled = eventsConfig?.value === 'true'
 
   return (
     <Sidebar
@@ -41,6 +48,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
       schools={schools}
       activeSchoolId={context.schoolId}
       canSwitchSchool={switchAllowed}
+      eventsEnabled={eventsEnabled}
     />
   )
 }

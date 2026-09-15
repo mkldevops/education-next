@@ -64,6 +64,39 @@ enum SchoolRole {
   PARENT
 }
 
+// Nature de l'événement : purement présentationnelle (icône, couleur, filtre).
+// La confidentialité vit dans `EventVisibility`, jamais ici : un axe unique évite
+// qu'un admin croie restreindre l'audience en choisissant une catégorie.
+enum EventCategory {
+  MEETING
+  TERM_START
+  OUTING
+  HOLIDAY
+  CLOSURE
+  CELEBRATION
+  OTHER
+}
+
+// Échelle ORDONNÉE, du plus large au plus restreint : PUBLIC ⊂ MEMBERS ⊂ STAFF.
+// `src/domain/event.ts` la traduit en une liste de visibilités lisibles par un
+// lecteur donné, ce qui remplace une matrice audience × catégorie.
+//
+// Aucune valeur `TEACHER` : `Teacher` ne porte pas de compte et `SchoolRole` n'a que
+// `ADMIN` et `PARENT`, donc une audience enseignant serait inatteignable.
+enum EventVisibility {
+  PUBLIC
+  MEMBERS
+  STAFF
+}
+
+// `CANCELLED` n'est pas un archivage : une sortie annulée reste affichée, barrée.
+// Les familles ont déjà organisé leur journée autour d'elle.
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
 // ─── Tenant ─────────────────────────────────────────────────────────────────
 
 model School {
@@ -99,6 +132,8 @@ model School {
   teacherExpenses     TeacherExpense[]
   mcpApiKeys          McpApiKey[]
   mcpDrafts           McpDraft[]
+  events              Event[]
+  eventImages         EventImage[]
 }
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
@@ -698,4 +733,64 @@ model McpDraft {
   @@unique([id, schoolId])
   @@index([schoolId])
   @@index([expiresAt])
+}
+
+/// Événement de la vie de l'école : réunion, rentrée, sortie, vacances, fermeture,
+/// festivité. Piloté par le réglage d'école `events_enabled`.
+///
+/// `allDay` impose une convention de stockage : minuit UTC, et un formatage forcé en
+/// UTC (`formatEventDate`). Sans elle, une journée entière s'affiche la veille pour un
+/// lecteur à l'ouest de Greenwich.
+model Event {
+  id                 String          @id @default(uuid())
+  schoolId           String
+  title              String          @db.VarChar(120)
+  slug               String          @db.VarChar(140)
+  summary            String?         @db.VarChar(280)
+  description        String?         @db.Text
+  category           EventCategory
+  visibility         EventVisibility @default(MEMBERS)
+  status             EventStatus     @default(DRAFT)
+  allDay             Boolean         @default(true)
+  startAt            DateTime
+  endAt              DateTime?
+  location           String?         @db.VarChar(250)
+  // `null` : aucune annonce. Sinon le bandeau paraît J-n avant `startAt`.
+  announceDaysBefore Int?
+  isActive           Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  school School       @relation(fields: [schoolId], references: [id])
+  images EventImage[]
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, slug], where: { isActive: true })
+  @@index([schoolId])
+  @@index([schoolId, startAt])
+  @@index([schoolId, status, visibility, startAt])
+}
+
+/// Image d'un événement. `position = 0` EST l'image principale : une colonne
+/// `coverImageId` sur `Event` rendrait représentable une couverture pointant vers
+/// l'image d'un autre événement.
+///
+/// Sans `isActive`, volontairement : le soft-delete ne filtre que la racine d'une
+/// requête, donc une image archivée remonterait par `include`. Elle est supprimée pour
+/// de bon ; l'objet laissé dans le bucket suit la règle déjà admise pour `branding/`.
+model EventImage {
+  id         String   @id @default(uuid())
+  schoolId   String
+  eventId    String
+  storageKey String   @db.VarChar(250)
+  alt        String?  @db.VarChar(250)
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  school School @relation(fields: [schoolId], references: [id])
+  event  Event  @relation(fields: [eventId, schoolId], references: [id, schoolId], onDelete: Cascade)
+
+  @@unique([id, schoolId])
+  @@index([eventId])
+  @@index([schoolId])
 }

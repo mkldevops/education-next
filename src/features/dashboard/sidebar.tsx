@@ -23,6 +23,7 @@ type SidebarProps = {
   schools?: AuthorizedSchool[]
   activeSchoolId?: string
   canSwitchSchool: boolean
+  eventsEnabled?: boolean
 }
 
 export function Sidebar({
@@ -35,6 +36,7 @@ export function Sidebar({
   schools = [],
   activeSchoolId,
   canSwitchSchool,
+  eventsEnabled = false,
 }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const platform = useTranslations('metadata')
@@ -44,7 +46,12 @@ export function Sidebar({
   // Repli sur l'identité plateforme, jamais sur `company` : ce namespace décrit
   // l'exploitant de la plateforme, pas une école affichée.
   const displayName = schoolName || platform('platformTitle')
-  const items = resolveNavItems({ role, isSuperAdmin, familyId })
+  const items = resolveNavItems({
+    role,
+    isSuperAdmin,
+    familyId,
+    features: { events: eventsEnabled },
+  })
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'

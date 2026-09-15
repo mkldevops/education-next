@@ -1,1 +1,8 @@
-export { ConfigValueTypeLabel, EnrollmentStatusBadge, PaymentMethodLabel } from './enum-labels'
+export {
+  ConfigValueTypeLabel,
+  EnrollmentStatusBadge,
+  EventCategoryLabel,
+  EventStatusBadge,
+  EventVisibilityLabel,
+  PaymentMethodLabel,
+} from './enum-labels'
