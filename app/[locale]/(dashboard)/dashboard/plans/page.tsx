@@ -1,9 +1,12 @@
 import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreatePlanDialog } from './_components/create-plan-dialog'
@@ -27,8 +30,10 @@ export default async function PlansPage({ params }: Props) {
 
   const { schoolId } = await requireSchoolAdmin()
 
+  if (!(await isPaymentsEnabled(schoolId))) notFound()
+
   const plans = await db.plan.findMany({
-    where: { schoolId, isActive: true },
+    where: { schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
     include: {
       _count: {
         select: { enrollments: true },

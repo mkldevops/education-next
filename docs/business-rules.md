@@ -250,8 +250,8 @@ silently drifting when an unrelated toggle changes, and the recovery path below 
 passkey enrollment.
 
 `/dashboard/config` requires an explicit confirmation naming that recovery path before the Google
-toggle goes enabled → disabled while the count is greater than zero (`PlatformFlagToggle`'s
-`confirmDisable`, `app/[locale]/(dashboard)/_components/platform-flag-toggle.tsx`). Re-enabling
+toggle goes enabled → disabled while the count is greater than zero (`FlagToggle`'s
+`confirmDisable`, `app/[locale]/(dashboard)/_components/flag-toggle.tsx`). Re-enabling
 stays the original one-click toggle, and so does disabling when the count is zero — the
 confirmation is additive friction on top of the existing optimistic toggle, not a new toggle shape.
 The passkey toggle in the same **Sign-in methods** section never receives it either, and neither do
@@ -957,6 +957,74 @@ the checkout flow, not by the form.
   a transaction already `SUCCEEDED` → `duplicate`; `payment_status !== 'paid'` → `notPaid`;
   a different amount → `amountMismatch`; a different currency → `currencyMismatch`.
 
+### Activating payments per school
+
+`payments_enabled` (`src/lib/payment-config.ts`) is a **school** `Config` row, not a
+`PlatformSetting`: a structure that only registers pupils and collects money elsewhere decides for
+itself, and the school next door is unaffected. It reads through `isPaymentsEnabled(schoolId)`
+(`src/use-cases/config/is-payments-enabled.ts`), memoised per render like the platform flags, and
+scoped by `schoolId`, so the tenant guard covers it.
+
+**Absence of the row reads as enabled** (`readsAsEnabled`, `src/domain/feature-flags.ts`, shared
+with the platform flags), and so does an unexpected value. This is the opposite reading of
+`teacher_expenses_enabled`, which is an opt-in because it opens a function nobody had; this one
+closes a function every school in service already owns. No migration is therefore needed, and none
+writes `'false'` anywhere: a new school is created with the row at `'true'`
+(`SCHOOL_CONFIG_DEFAULTS`), an older school has no row and keeps its payments.
+
+The write surface is the **School settings** section of `/dashboard/config`, open to a school
+`ADMIN` through `setPaymentsEnabledAction`. It is deliberately **not** offered by the generic
+key/value editor of the same page: two screens for one value, one of which accepts any string,
+is the mistake `school_name` already taught. Disabling while the school holds a payment or a
+`PENDING` transaction requires a confirmation counting both (`paymentGateway.countFootprint`) —
+nothing is deleted, and everything reappears on re-enabling.
+
+**A school flag with a dedicated toggle leaves the generic editor.** `dedicatedToggleKeys` in
+`config/page.tsx` keeps `payments_enabled` and `teacher_expenses_enabled` out of the `configs` list
+feeding the `DataTable`, because the raw `EditConfigDialog` writes an arbitrary string straight to
+the row and would walk past the confirmation. `teacher_expenses_enabled` therefore also gained its
+toggle (`setTeacherExpensesEnabledAction`, confirmation counting `teacherGateway.countExpenses`)
+rather than staying editable twice. Its verdict now reads through
+`isTeacherExpensesEnabled(schoolId)`, the single opt-in reading shared by `/dashboard/teachers` and
+`createTeacherExpense`. Any school flag added later belongs to the panel and to that list.
+
+Every callable boundary answers `paymentsDisabled` before reading or writing anything:
+`recordPayment`, `createCheckoutSession`, `applyDiscount`, `setEnrollmentPlan`, `createPlan`,
+`updatePlan`, `deactivatePlan`, and the four money tools of the MCP. The verdict belongs to the
+use-case; pages and components only mirror it. `/dashboard/payments` and `/dashboard/plans` answer
+`notFound()`, and the sidebar drops both entries through `resolveNavItems`, which now takes
+`paymentsEnabled` alongside the role.
+
+**The Stripe webhook never reads the flag.** A transaction can only exist if the session was opened
+while payments were on; by the time the webhook lands the money is captured at the provider, so
+refusing would strand a real payment with no row. Idempotence already frames the rest.
+
+Machine access closes by **omission**: `McpScope` carries `paymentsEnabled`
+(`resolve-mcp-scope.ts`, the single read for a request, which keeps `buildMcpServer` synchronous),
+and `list_plans`, `preview_record_payment`, `commit_record_payment`, `preview_update_enrollment`
+and `commit_update_enrollment` are not declared at all. A tool that is absent does not mislead the
+agent into promising a collection it cannot make. The four money use-cases still refuse on their
+own, which is what stops a draft prepared before the cut from being committed after it.
+
+#### Enrolling without money
+
+`Enrollment.planId` is `NOT NULL` behind a composite foreign key, and `plan.name` is read by the
+list, the detail, the drawer, the promotion and four MCP use-cases. Rather than propagate a null
+case through all of them, a school that enrolls while payments are off gets a **reserved plan**:
+one `Plan` row named `__unpriced__` at `amount: 0`, created **on demand** by
+`planGateway.ensureUnpriced()` at the first such enrollment — a school that never disables payments
+never carries the row. `totalAmount` and `discount` are written at zero, an explicit `planId` or a
+non-zero discount is refused, and `createEnrollmentSchema.planId` is optional for that reason.
+
+The reserved row is excluded from every catalogue and selector read, cannot be archived
+(`unpricedPlan`), and cannot be recreated by hand under the same name. **The stored name never
+reaches a screen**: the displayed label comes from `messages/*.json`.
+
+Re-enabling exposes those enrollments as *needing a plan*, and `setEnrollmentPlan`
+(`src/use-cases/enrollments/set-enrollment-plan.ts`) prices them against the plan's **current**
+amount minus the discount they already carry, refusing `totalBelowPaid` on the same rule as the
+MCP `update_enrollment` path. Without it the flag would create a state the UI could not repair.
+
 ## Promotion
 
 Owner: `src/domain/promotion.ts`, `src/use-cases/enrollments/promote-students.ts`.
@@ -1062,8 +1130,9 @@ one school**.
 - Consumed today: `max_students_per_class` (default class capacity),
   `teacher_expenses_enabled` (enables generic teacher expense notes,
   `src/lib/teacher-expense-config.ts`), `events_enabled` (enables the Events feature, off by
-  default, `src/lib/events-config.ts`), `logo_url` (`src/lib/branding-config.ts`), and
-  `theme_primary`, `theme_primary_hover`,
+  default, `src/lib/events-config.ts`), `payments_enabled` (governs every money surface of the
+  school, `src/lib/payment-config.ts`, detailed under *Activating payments per school*),
+  `logo_url` (`src/lib/branding-config.ts`), and `theme_primary`, `theme_primary_hover`,
   `theme_primary_light`, `theme_background` (`src/components/theme-provider.tsx`).
 - **The school name is no longer a `Config` entry.** It lives on `School.name`, the single source of
   truth; keeping the old `school_name` key would have let two screens edit two different names. The

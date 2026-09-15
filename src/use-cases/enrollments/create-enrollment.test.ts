@@ -5,7 +5,9 @@ const studentGatewayMock = {
 }
 const planGatewayMock = {
   findById: vi.fn(),
+  ensureUnpriced: vi.fn(),
 }
+const isPaymentsEnabledMock = vi.fn()
 const classPeriodGatewayMock = {
   findById: vi.fn(),
   countEnrolled: vi.fn(),
@@ -33,6 +35,10 @@ vi.mock('@/gateways/enrollment-gateway', () => ({
   enrollmentGateway: enrollmentGatewayMock,
 }))
 
+vi.mock('@/use-cases/config/is-payments-enabled', () => ({
+  isPaymentsEnabled: isPaymentsEnabledMock,
+}))
+
 vi.mock('@/lib/db', () => ({
   db: dbMock,
 }))
@@ -44,8 +50,9 @@ const schoolId = '550e8400-e29b-41d4-a716-446655440099'
 describe('createEnrollment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    studentGatewayMock.findById = vi.fn()
     planGatewayMock.findById = vi.fn()
+    planGatewayMock.ensureUnpriced = vi.fn()
+    isPaymentsEnabledMock.mockResolvedValue(true)
     classPeriodGatewayMock.findById = vi.fn()
     classPeriodGatewayMock.countEnrolled = vi.fn()
     enrollmentGatewayMock.findActiveInPeriod = vi.fn()
@@ -226,5 +233,87 @@ describe('createEnrollment', () => {
     expect(await createEnrollment({ ...validInput, replaceExisting: true })).toBe(
       'existingEnrollmentPaid'
     )
+  })
+
+  it('requires a planId when payments are enabled, even though the schema allows omitting it', async () => {
+    const result = await createEnrollment({
+      schoolId,
+      studentId: '550e8400-e29b-41d4-a716-446655440000',
+      classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
+      discount: 0,
+      canLeaveAlone: false,
+    })
+
+    expect(result).toBe('validationError')
+    expect(studentGatewayMock.findById).not.toHaveBeenCalled()
+  })
+
+  describe('with payments disabled', () => {
+    const disabledInput = {
+      schoolId,
+      studentId: '550e8400-e29b-41d4-a716-446655440000',
+      classPeriodId: '550e8400-e29b-41d4-a716-446655440002',
+      canLeaveAlone: false,
+    }
+    const reservedPlan = {
+      id: '550e8400-e29b-41d4-a716-446655440009',
+      name: '__unpriced__',
+      amount: 0,
+    }
+
+    beforeEach(() => {
+      isPaymentsEnabledMock.mockResolvedValue(false)
+      studentGatewayMock.findById.mockResolvedValue({ id: disabledInput.studentId })
+      classPeriodGatewayMock.findById.mockResolvedValue({
+        id: disabledInput.classPeriodId,
+        capacity: 10,
+      })
+      planGatewayMock.ensureUnpriced.mockResolvedValue(reservedPlan)
+    })
+
+    it('resolves the reserved plan inside the open transaction and writes null amounts', async () => {
+      const create = vi.fn().mockResolvedValue({ id: 'created' })
+      dbMock.$transaction = vi.fn(async (cb) =>
+        cb({
+          classAssignment: { count: vi.fn().mockResolvedValue(0), create: vi.fn() },
+          enrollment: { create },
+        })
+      )
+
+      const result = await createEnrollment(disabledInput)
+
+      expect(result).toEqual({ id: 'created' })
+      expect(planGatewayMock.findById).not.toHaveBeenCalled()
+      expect(planGatewayMock.ensureUnpriced).toHaveBeenCalledWith(schoolId, expect.anything())
+      expect(create).toHaveBeenCalledWith({
+        data: {
+          schoolId,
+          studentId: disabledInput.studentId,
+          planId: reservedPlan.id,
+          totalAmount: 0,
+          discount: 0,
+          canLeaveAlone: false,
+        },
+      })
+    })
+
+    it('refuses with paymentsDisabled when the caller supplies an explicit plan, without writing', async () => {
+      const result = await createEnrollment({
+        ...disabledInput,
+        planId: '550e8400-e29b-41d4-a716-446655440001',
+      })
+
+      expect(result).toBe('paymentsDisabled')
+      expect(studentGatewayMock.findById).not.toHaveBeenCalled()
+      expect(dbMock.$transaction).not.toHaveBeenCalled()
+    })
+
+    it('refuses with paymentsDisabled when the caller supplies a non-zero discount, without writing', async () => {
+      const result = await createEnrollment({ ...disabledInput, discount: 15 })
+
+      expect(result).toBe('paymentsDisabled')
+      expect(studentGatewayMock.findById).not.toHaveBeenCalled()
+      expect(dbMock.$transaction).not.toHaveBeenCalled()
+    })
   })
 })

@@ -163,9 +163,15 @@ describe('schoolGateway.create', () => {
       'logo_url',
       'teacher_expenses_enabled',
       'events_enabled',
+      'payments_enabled',
       'max_students_per_class',
       'theme_primary',
     ])
+    // Une école neuve encaisse comme toutes les autres : le drapeau naît à `true`, et
+    // aucune migration ne vient poser `false` sur une école existante.
+    expect(args.data).toContainEqual(
+      expect.objectContaining({ name: 'payments_enabled', value: 'true' })
+    )
     expect(args.data.every((config: { schoolId: string }) => config.schoolId === 'school-1')).toBe(
       true
     )

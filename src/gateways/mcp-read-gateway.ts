@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 
 /**
  * Projections publiées par les outils de lecture MCP, et seule frontière de ces lectures.
@@ -63,9 +64,11 @@ export const mcpReadGateway = {
       orderBy: { name: 'asc' },
     }),
 
+  // La formule réservée « sans tarif » (FR-019) n'est jamais catalogable : un agent MCP
+  // ne doit jamais pouvoir la proposer ni la sélectionner par nom.
   listPlans: (schoolId: string) =>
     db.plan.findMany({
-      where: { schoolId, isActive: true },
+      where: { schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
       select: { id: true, name: true, amount: true },
       orderBy: { name: 'asc' },
     }),

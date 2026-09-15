@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { readsAsEnabled, readsAsOptedIn } from '@/domain/platform-settings'
+import { readsAsEnabled, readsAsOptedIn } from '@/domain/feature-flags'
 import { getPlatformSetting } from './get-platform-setting'
 
 /**

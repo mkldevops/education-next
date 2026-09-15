@@ -16,6 +16,7 @@ import { UserMenu } from './sidebar-user-menu'
 type SidebarProps = {
   role: SchoolRole | null
   isSuperAdmin: boolean
+  paymentsEnabled: boolean
   familyId?: string
   logoUrl?: string
   schoolName?: string
@@ -29,6 +30,7 @@ type SidebarProps = {
 export function Sidebar({
   role,
   isSuperAdmin,
+  paymentsEnabled,
   familyId,
   logoUrl,
   schoolName,
@@ -50,7 +52,7 @@ export function Sidebar({
     role,
     isSuperAdmin,
     familyId,
-    features: { events: eventsEnabled },
+    features: { events: eventsEnabled, payments: paymentsEnabled },
   })
 
   const isActive = (href: string) => {

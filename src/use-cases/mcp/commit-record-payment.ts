@@ -31,6 +31,9 @@ type Input = z.infer<typeof commitDraftSchema>
 export async function commitRecordPayment(scope: McpScope, input: Input) {
   const parsed = commitDraftSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  // Défense en profondeur : refuse même un brouillon préparé avant la coupure (FR-024),
+  // sans le réclamer — un `claimDraft` marquerait un brouillon désormais inengageable.
+  if (!scope.paymentsEnabled) return 'paymentsDisabled' as const
   const { schoolId } = scope
   const { draftId, checksum } = parsed.data
 

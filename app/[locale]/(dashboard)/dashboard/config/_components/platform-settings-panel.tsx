@@ -2,7 +2,7 @@
 
 import { Card } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { PlatformFlagToggle } from '../../../_components/platform-flag-toggle'
+import { FlagToggle } from '../../../_components/flag-toggle'
 import {
   setGoogleSignInEnabledAction,
   setMcpEnabledAction,
@@ -39,7 +39,7 @@ export function PlatformSettingsPanel({
   return (
     <>
       <Section title={tAuth('title')} description={tAuth('description')}>
-        <PlatformFlagToggle
+        <FlagToggle
           title={tAuth('google.title')}
           description={tAuth('google.description')}
           hint={googleConfigured ? undefined : tAuth('google.notConfigured')}
@@ -58,7 +58,7 @@ export function PlatformSettingsPanel({
               : undefined
           }
         />
-        <PlatformFlagToggle
+        <FlagToggle
           title={tAuth('passkey.title')}
           description={tAuth('passkey.description')}
           enabled={passkeyEnabled}
@@ -67,7 +67,7 @@ export function PlatformSettingsPanel({
       </Section>
 
       <Section title={t('sections.schools')} description={t('sections.schoolsDescription')}>
-        <PlatformFlagToggle
+        <FlagToggle
           title={tSwitch('title')}
           description={tSwitch('description')}
           enabled={schoolSwitchEnabled}
@@ -76,7 +76,7 @@ export function PlatformSettingsPanel({
       </Section>
 
       <Section title={tIntegrations('title')} description={tIntegrations('description')}>
-        <PlatformFlagToggle
+        <FlagToggle
           title={tIntegrations('mcp.title')}
           description={tIntegrations('mcp.description')}
           hint={tIntegrations('mcp.hint')}

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { updatePlan } from './update-plan'
 
 type PlanGw = Parameters<typeof updatePlan>[1]
+type ConfigGw = Parameters<typeof updatePlan>[2]
 
 const schoolId = '00000000-0000-0000-0000-000000000001'
 
@@ -31,11 +32,21 @@ class PlanGatewaySpy {
   }
 }
 
+class ConfigGatewaySpy {
+  configToReturn: { value: string } | null = { value: 'true' }
+
+  async get() {
+    return this.configToReturn
+  }
+}
+
 describe('updatePlan', () => {
   let gateway: PlanGatewaySpy
+  let configGateway: ConfigGatewaySpy
 
   beforeEach(() => {
     gateway = new PlanGatewaySpy()
+    configGateway = new ConfigGatewaySpy()
   })
 
   it('fails validation when id is invalid', async () => {
@@ -43,7 +54,11 @@ describe('updatePlan', () => {
     const input = { schoolId, id: 'invalid-uuid', name: 'Updated Plan' }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as PlanGw)
+    const result = await updatePlan(
+      input,
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
 
     // THEN
     expect(result).toBe('validationError')
@@ -54,7 +69,11 @@ describe('updatePlan', () => {
     const input = { schoolId, id: '123e4567-e89b-12d3-a456-426614174000', name: '' }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as PlanGw)
+    const result = await updatePlan(
+      input,
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
 
     // THEN
     expect(result).toBe('validationError')
@@ -65,7 +84,11 @@ describe('updatePlan', () => {
     const input = { schoolId, id: '123e4567-e89b-12d3-a456-426614174000', amount: 0 }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as PlanGw)
+    const result = await updatePlan(
+      input,
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
 
     // THEN
     expect(result).toBe('validationError')
@@ -80,7 +103,11 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as PlanGw)
+    const result = await updatePlan(
+      input,
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
 
     // THEN
     expect(result).toHaveProperty('id', '123e4567-e89b-12d3-a456-426614174000')
@@ -95,7 +122,11 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as PlanGw)
+    const result = await updatePlan(
+      input,
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
 
     // THEN
     expect(result).toHaveProperty('id', '123e4567-e89b-12d3-a456-426614174000')
@@ -111,7 +142,11 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    const result = await updatePlan(input, gateway as unknown as PlanGw)
+    const result = await updatePlan(
+      input,
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
 
     // THEN
     expect(result).toHaveProperty('id', '123e4567-e89b-12d3-a456-426614174000')
@@ -126,7 +161,7 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    await updatePlan(input, gateway as unknown as PlanGw)
+    await updatePlan(input, gateway as unknown as PlanGw, configGateway as unknown as ConfigGw)
 
     // THEN
     expect(gateway.updatedData).not.toHaveProperty('id')
@@ -143,10 +178,27 @@ describe('updatePlan', () => {
     }
 
     // WHEN
-    await updatePlan(input, gateway as unknown as PlanGw)
+    await updatePlan(input, gateway as unknown as PlanGw, configGateway as unknown as ConfigGw)
 
     // THEN
     expect(gateway.updatedSchoolId).toBe(schoolId)
     expect(gateway.updatedId).toBe(planId)
+  })
+
+  it('refuses to update a plan when payments are disabled', async () => {
+    // GIVEN
+    configGateway.configToReturn = { value: 'false' }
+    const input = { schoolId, id: '123e4567-e89b-12d3-a456-426614174000', name: 'Updated Plan' }
+
+    // WHEN
+    const result = await updatePlan(
+      input,
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    // THEN
+    expect(result).toBe('paymentsDisabled')
+    expect(gateway.updatedData).toBeNull()
   })
 })

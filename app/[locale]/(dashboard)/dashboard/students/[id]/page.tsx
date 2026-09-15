@@ -9,6 +9,7 @@ import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
@@ -58,6 +59,8 @@ export default async function StudentDetailPage({ params }: Props) {
   const student = resolution.resource
   const isAdmin = isActiveSchoolAdmin(context)
 
+  const paymentsEnabled = await isPaymentsEnabled(student.schoolId)
+
   const selectedPeriodId = isAdmin ? await getSelectedPeriodId(student.schoolId) : null
 
   const { plans, classes } = await getStudentDialogData(student.schoolId, isAdmin, selectedPeriodId)
@@ -97,19 +100,25 @@ export default async function StudentDetailPage({ params }: Props) {
     },
   ].filter((row): row is { label: string; value: string } => Boolean(row.value))
 
+  // Les trois cartes monétaires ne survivent pas à la coupure : une école qui n'encaisse
+  // pas ici n'annonce ni dû, ni payé, ni reste. Le compte d'inscriptions reste.
   const kpis = [
     { label: t('kpis.activeEnrollments'), value: String(activeEnrollments.length) },
-    { label: t('kpis.totalDue'), value: formatCurrency(totalDue, locale) },
-    {
-      label: t('kpis.totalPaid'),
-      value: formatCurrency(totalPaid, locale),
-      tone: totalPaid > 0 ? 'emerald' : undefined,
-    },
-    {
-      label: t('kpis.remaining'),
-      value: formatCurrency(remaining, locale),
-      tone: remaining > 0 ? 'amber' : undefined,
-    },
+    ...(paymentsEnabled
+      ? [
+          { label: t('kpis.totalDue'), value: formatCurrency(totalDue, locale) },
+          {
+            label: t('kpis.totalPaid'),
+            value: formatCurrency(totalPaid, locale),
+            tone: totalPaid > 0 ? 'emerald' : undefined,
+          },
+          {
+            label: t('kpis.remaining'),
+            value: formatCurrency(remaining, locale),
+            tone: remaining > 0 ? 'amber' : undefined,
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -243,13 +252,18 @@ export default async function StudentDetailPage({ params }: Props) {
                   id: c.id,
                   name: `${c.name} (${c.level.name} — ${c.period.name})`,
                 }))}
+                paymentsEnabled={paymentsEnabled}
                 defaultStudentId={student.id}
                 redirectTo={`/dashboard/students/${student.id}`}
                 triggerSize="sm"
               />
             )}
           </div>
-          <EnrollmentList enrollments={student.enrollments} locale={locale} />
+          <EnrollmentList
+            enrollments={student.enrollments}
+            locale={locale}
+            paymentsEnabled={paymentsEnabled}
+          />
         </div>
 
         <div className="space-y-4">

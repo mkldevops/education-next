@@ -7,6 +7,7 @@ import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
@@ -25,12 +26,12 @@ import { OverviewTab } from './_components/overview-tab'
 import { PaymentsTab } from './_components/payments-tab'
 import { deriveFamilyDetail, getFamilyDialogData, resolveFamily } from './_lib/family-detail'
 
+type TabKey = 'overview' | 'children' | 'payments' | 'activity'
+
 type Props = {
   params: Promise<{ locale: string; id: string }>
   searchParams: Promise<{ action?: string; studentId?: string; payment?: string; tab?: string }>
 }
-
-const TAB_KEYS = ['overview', 'children', 'payments', 'activity'] as const
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, locale } = await params
@@ -62,6 +63,10 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   const family = resolution.resource
   const isAdmin = isActiveSchoolAdmin(context)
+  const paymentsEnabled = await isPaymentsEnabled(family.schoolId)
+  const TAB_KEYS: TabKey[] = paymentsEnabled
+    ? ['overview', 'children', 'payments', 'activity']
+    : ['overview', 'children', 'activity']
 
   // `countDeletionImpact` n'est pas dérivable de `family` : la page lit par `db`, filtrée
   // sur `isActive`, alors que la suppression emporte aussi les lignes archivées.
@@ -122,6 +127,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         membersCount={family.persons.length}
         studentsCount={students.length}
         enrollmentsCount={allEnrollments.length}
+        paymentsEnabled={paymentsEnabled}
         remainingBalance={remainingBalance}
         showActions={isAdmin}
       >
@@ -134,18 +140,21 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               }))}
               plans={plans.map((p) => ({ id: p.id, name: p.name }))}
               classes={classOptions}
+              paymentsEnabled={paymentsEnabled}
               defaultOpen={action === 'addEnrollment'}
               defaultStudentId={scopedStudentId}
               redirectTo={`/dashboard/families/${family.id}`}
               showTrigger={false}
             />
-            <RecordPaymentDialog
-              families={[{ id: family.id, name: family.name }]}
-              remainingAmount={remainingBalance}
-              defaultOpen={action === 'addPayment'}
-              redirectTo={`/dashboard/families/${family.id}`}
-              showTrigger={false}
-            />
+            {paymentsEnabled && (
+              <RecordPaymentDialog
+                families={[{ id: family.id, name: family.name }]}
+                remainingAmount={remainingBalance}
+                defaultOpen={action === 'addPayment'}
+                redirectTo={`/dashboard/families/${family.id}`}
+                showTrigger={false}
+              />
+            )}
             <CreateStudentDialog
               familyId={family.id}
               plans={plans.map((p) => ({ id: p.id, name: p.name }))}
@@ -198,7 +207,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
       )}
 
       <Tabs
-        defaultIndex={Math.max(0, TAB_KEYS.indexOf(tab as (typeof TAB_KEYS)[number]))}
+        defaultIndex={Math.max(0, TAB_KEYS.indexOf(tab as TabKey))}
         tabs={[
           {
             label: t('tabs.overview'),
@@ -212,6 +221,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 enrolledChildren={enrolledChildren}
                 totalEnrollments={allEnrollments.length}
                 activeEnrollments={activeEnrollments}
+                paymentsEnabled={paymentsEnabled}
                 totalPaid={totalPaid}
                 remainingBalance={remainingBalance}
                 totalDue={totalAmount}
@@ -234,10 +244,14 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               />
             ),
           },
-          {
-            label: t('tabs.payments'),
-            content: <PaymentsTab payments={family.payments} locale={locale} />,
-          },
+          ...(paymentsEnabled
+            ? [
+                {
+                  label: t('tabs.payments'),
+                  content: <PaymentsTab payments={family.payments} locale={locale} />,
+                },
+              ]
+            : []),
           {
             label: t('tabs.activity'),
             content: (

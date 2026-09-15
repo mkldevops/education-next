@@ -5,7 +5,11 @@ const keys = (items: { key: string }[]) => items.map((item) => item.key)
 
 describe('resolveNavItems', () => {
   it('hides admin-only configuration from a caller without a school role', () => {
-    const items = resolveNavItems({ role: null, isSuperAdmin: false, features: { events: false } })
+    const items = resolveNavItems({
+      role: null,
+      isSuperAdmin: false,
+      features: { events: false, payments: true },
+    })
 
     expect(items.config).toEqual([])
     expect(keys(items.gestion)).toContain('payments')
@@ -15,7 +19,7 @@ describe('resolveNavItems', () => {
     const items = resolveNavItems({
       role: 'ADMIN',
       isSuperAdmin: false,
-      features: { events: false },
+      features: { events: false, payments: true },
     })
 
     expect(keys(items.config)).toEqual([
@@ -33,7 +37,11 @@ describe('resolveNavItems', () => {
   })
 
   it('exposes the platform pages to a super admin only', () => {
-    const items = resolveNavItems({ role: null, isSuperAdmin: true, features: { events: false } })
+    const items = resolveNavItems({
+      role: null,
+      isSuperAdmin: true,
+      features: { events: false, payments: true },
+    })
 
     expect(keys(items.config)).toContain('schools')
     expect(items.config.find((item) => item.key === 'schools')?.href).toBe('/dashboard/schools')
@@ -47,7 +55,7 @@ describe('resolveNavItems', () => {
       role: 'PARENT',
       isSuperAdmin: false,
       familyId: 'family-1',
-      features: { events: false },
+      features: { events: false, payments: true },
     })
 
     expect(keys(items.config)).not.toContain('schools')
@@ -60,7 +68,7 @@ describe('resolveNavItems', () => {
       role: 'PARENT',
       isSuperAdmin: false,
       familyId: 'family-1',
-      features: { events: false },
+      features: { events: false, payments: true },
     })
 
     expect(keys(items.gestion)).toEqual(['dashboard', 'myFamily'])
@@ -72,7 +80,7 @@ describe('resolveNavItems', () => {
     const items = resolveNavItems({
       role: 'PARENT',
       isSuperAdmin: false,
-      features: { events: false },
+      features: { events: false, payments: true },
     })
 
     expect(items.gestion[1].href).toBe('/dashboard/families')
@@ -82,12 +90,12 @@ describe('resolveNavItems', () => {
     const enabled = resolveNavItems({
       role: 'ADMIN',
       isSuperAdmin: false,
-      features: { events: true },
+      features: { events: true, payments: true },
     })
     const disabled = resolveNavItems({
       role: 'ADMIN',
       isSuperAdmin: false,
-      features: { events: false },
+      features: { events: false, payments: true },
     })
 
     expect(keys(enabled.gestion)).toContain('events')
@@ -95,7 +103,11 @@ describe('resolveNavItems', () => {
   })
 
   it('hides the events entry from a super admin when the feature flag is disabled', () => {
-    const items = resolveNavItems({ role: null, isSuperAdmin: true, features: { events: false } })
+    const items = resolveNavItems({
+      role: null,
+      isSuperAdmin: true,
+      features: { events: false, payments: true },
+    })
 
     expect(keys(items.gestion)).not.toContain('events')
   })
@@ -105,9 +117,69 @@ describe('resolveNavItems', () => {
       role: 'PARENT',
       isSuperAdmin: false,
       familyId: 'family-1',
-      features: { events: true },
+      features: { events: true, payments: true },
     })
 
     expect(keys(items.gestion)).not.toContain('events')
+  })
+})
+
+describe('resolveNavItems payments flag', () => {
+  const scope = (payments: boolean) => ({ events: false, payments })
+
+  it('shows payments and plans to an admin when payments are enabled', () => {
+    const items = resolveNavItems({
+      role: 'ADMIN',
+      isSuperAdmin: false,
+      features: scope(true),
+    })
+
+    expect(keys(items.gestion)).toContain('payments')
+    expect(keys(items.config)).toContain('plans')
+  })
+
+  it('hides payments and plans from an admin when payments are disabled', () => {
+    const items = resolveNavItems({
+      role: 'ADMIN',
+      isSuperAdmin: false,
+      features: scope(false),
+    })
+
+    expect(keys(items.gestion)).not.toContain('payments')
+    expect(keys(items.config)).not.toContain('plans')
+  })
+
+  it('shows payments and plans to a super admin when payments are enabled', () => {
+    const items = resolveNavItems({ role: null, isSuperAdmin: true, features: scope(true) })
+
+    expect(keys(items.gestion)).toContain('payments')
+    expect(keys(items.config)).toContain('plans')
+  })
+
+  it('hides payments and plans from a super admin when payments are disabled', () => {
+    const items = resolveNavItems({ role: null, isSuperAdmin: true, features: scope(false) })
+
+    expect(keys(items.gestion)).not.toContain('payments')
+    expect(keys(items.config)).not.toContain('plans')
+  })
+
+  it('never offers payments or plans to a parent, flag on or off', () => {
+    const enabled = resolveNavItems({
+      role: 'PARENT',
+      isSuperAdmin: false,
+      features: scope(true),
+      familyId: 'family-1',
+    })
+    const disabled = resolveNavItems({
+      role: 'PARENT',
+      isSuperAdmin: false,
+      features: scope(false),
+      familyId: 'family-1',
+    })
+
+    for (const items of [enabled, disabled]) {
+      expect(keys(items.gestion)).not.toContain('payments')
+      expect(keys(items.config)).not.toContain('plans')
+    }
   })
 })

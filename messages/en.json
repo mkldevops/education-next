@@ -699,7 +699,8 @@
             "notFound": "Student, plan or class not found",
             "validationError": "Check the information you entered",
             "existingEnrollmentPaid": "The existing enrollment already received a payment: refund or cancel it manually before recreating one."
-          }
+          },
+          "replaceExistingHintNoPayments": "The current enrollment is cancelled, then recreated."
         },
         "drawer": {
           "title": "Enrollment Details",
@@ -717,6 +718,22 @@
           "classAssignments": "Class Assignments",
           "payments": "Payments",
           "openFullPage": "Open full page"
+        },
+        "unpriced": {
+          "badge": "Needs a plan"
+        },
+        "setPlan": {
+          "title": "Assign a plan",
+          "selectPlan": "Pricing plan",
+          "submit": "Assign",
+          "cancel": "Cancel",
+          "errors": {
+            "totalBelowPaid": "The resulting total would fall below what has already been paid on this enrollment.",
+            "paymentsDisabled": "Payment management is turned off for this school.",
+            "validationError": "Check the submitted details.",
+            "notFound": "Enrollment or plan not found.",
+            "unpricedPlan": "That plan is reserved for enrollments without a price."
+          }
         }
       },
       "promotion": {
@@ -840,6 +857,9 @@
             "notFound": "Plan not found",
             "planInUse": "Open enrollments use this plan: move them to another plan first"
           }
+        },
+        "unpriced": {
+          "label": "No plan"
         }
       },
       "config": {
@@ -877,9 +897,25 @@
             "label": "Maximum students per class",
             "description": "Maximum number of students allowed in a class."
           },
+          "payments_enabled": {
+            "label": "Payment management",
+            "description": "Turn off if your organisation only handles enrollments and collects money elsewhere. Enrollments then become purely administrative, with no plan and no amount.",
+            "confirmDisable": {
+              "title": "Turn off payment management?",
+              "description": "{payments, plural, =0 {No recorded payment} one {# recorded payment} other {# recorded payments}} and {pendingTransactions, plural, =0 {no pending transaction} one {# pending transaction} other {# pending transactions}} will become invisible. Nothing is deleted: everything reappears if you turn the feature back on.",
+              "confirm": "Turn off payments",
+              "cancel": "Cancel"
+            }
+          },
           "teacher_expenses_enabled": {
             "label": "Teacher expense notes",
-            "description": "Enables recording teacher expense notes."
+            "description": "Enables recording teacher expense notes.",
+            "confirmDisable": {
+              "title": "Turn off teacher expense notes?",
+              "description": "{expenses, plural, =0 {No expense note becomes unreachable} one {# recorded expense note becomes unreachable} other {# recorded expense notes become unreachable}}. Nothing is deleted: everything reappears if you turn the feature back on.",
+              "confirm": "Turn off expense notes",
+              "cancel": "Cancel"
+            }
           },
           "automatic_promotion": {
             "label": "Automatic promotion",

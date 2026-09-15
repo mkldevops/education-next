@@ -15,7 +15,9 @@ import type {
   enrollmentIdSchema,
   promoteStudentsSchema,
   reassignClassSchema,
+  setEnrollmentPlanSchema,
 } from '@/use-cases/enrollments/schemas'
+import { setEnrollmentPlan } from '@/use-cases/enrollments/set-enrollment-plan'
 import { requireSchoolAdmin } from './auth-helper'
 
 type CreateEnrollmentInput = Omit<z.input<typeof createEnrollmentSchema>, 'schoolId'>
@@ -24,6 +26,7 @@ type CompleteEnrollmentInput = Omit<z.infer<typeof enrollmentIdSchema>, 'schoolI
 type ReassignClassInput = Omit<z.infer<typeof reassignClassSchema>, 'schoolId'>
 type ApplyDiscountInput = Omit<z.infer<typeof applyDiscountSchema>, 'schoolId'>
 type PromoteStudentsInput = Omit<z.infer<typeof promoteStudentsSchema>, 'schoolId'>
+type SetEnrollmentPlanInput = Omit<z.infer<typeof setEnrollmentPlanSchema>, 'schoolId'>
 
 export async function createEnrollmentAction(data: CreateEnrollmentInput) {
   const { schoolId } = await requireSchoolAdmin()
@@ -71,6 +74,14 @@ export async function reassignClassAction(data: ReassignClassInput) {
 export async function applyDiscountAction(data: ApplyDiscountInput) {
   const { schoolId } = await requireSchoolAdmin()
   const result = await applyDiscount({ ...data, schoolId })
+  if (result !== 'OK') return result
+  revalidatePath('/dashboard/enrollments')
+  return 'OK' as const
+}
+
+export async function setEnrollmentPlanAction(data: SetEnrollmentPlanInput) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await setEnrollmentPlan({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
   return 'OK' as const

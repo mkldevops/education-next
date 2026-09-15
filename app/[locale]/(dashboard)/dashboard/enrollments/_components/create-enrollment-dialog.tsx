@@ -32,6 +32,7 @@ interface CreateEnrollmentDialogProps {
   students: Option[]
   plans: Option[]
   classes: Option[]
+  paymentsEnabled: boolean
   defaultOpen?: boolean
   defaultStudentId?: string
   redirectTo?: string
@@ -43,6 +44,7 @@ export function CreateEnrollmentDialog({
   students,
   plans,
   classes,
+  paymentsEnabled,
   defaultOpen = false,
   defaultStudentId,
   redirectTo,
@@ -70,6 +72,7 @@ export function CreateEnrollmentDialog({
           students={students}
           plans={plans}
           classes={classes}
+          paymentsEnabled={paymentsEnabled}
           defaultOpen={defaultOpen}
           defaultStudentId={defaultStudentId}
           redirectTo={redirectTo}
@@ -83,6 +86,7 @@ function CreateEnrollmentForm({
   students,
   plans,
   classes,
+  paymentsEnabled,
   defaultOpen = false,
   defaultStudentId,
   redirectTo,
@@ -102,11 +106,14 @@ function CreateEnrollmentForm({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
+    // Absent quand le sélecteur de formule est masqué (paiements coupés) : `createEnrollment`
+    // résout alors la formule réservée elle-même, un `planId` explicite serait refusé.
+    const planId = formData.get('planId')
 
     startTransition(async () => {
       const result = await createEnrollmentAction({
         studentId: formData.get('studentId') as string,
-        planId: formData.get('planId') as string,
+        planId: planId ? (planId as string) : undefined,
         classPeriodId: formData.get('classPeriodId') as string,
         discount: Number(formData.get('discount') || 0),
         canLeaveAlone: formData.get('canLeaveAlone') === 'on',
@@ -121,6 +128,25 @@ function CreateEnrollmentForm({
       }
     })
   }
+
+  const classSelect = (
+    <div className="space-y-2">
+      <Label htmlFor="enroll-class">{t('selectClass')}</Label>
+      <Select
+        id="enroll-class"
+        name="classPeriodId"
+        required
+        disabled={isPending || classes.length === 0}
+      >
+        {classes.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </Select>
+      {classes.length === 0 && <p className="text-xs text-amber-700">{t('noClassInPeriod')}</p>}
+    </div>
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -140,48 +166,37 @@ function CreateEnrollmentForm({
               </Select>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="enroll-plan">{t('selectPlan')}</Label>
-              <Select id="enroll-plan" name="planId" required disabled={isPending}>
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </Select>
+          {paymentsEnabled ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="enroll-plan">{t('selectPlan')}</Label>
+                <Select id="enroll-plan" name="planId" required disabled={isPending}>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              {classSelect}
             </div>
+          ) : (
+            classSelect
+          )}
+          {paymentsEnabled && (
             <div className="space-y-2">
-              <Label htmlFor="enroll-class">{t('selectClass')}</Label>
-              <Select
-                id="enroll-class"
-                name="classPeriodId"
-                required
-                disabled={isPending || classes.length === 0}
-              >
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
-              {classes.length === 0 && (
-                <p className="text-xs text-amber-700">{t('noClassInPeriod')}</p>
-              )}
+              <Label htmlFor="enroll-discount">{t('discount')}</Label>
+              <Input
+                id="enroll-discount"
+                name="discount"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue="0"
+                disabled={isPending}
+              />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="enroll-discount">{t('discount')}</Label>
-            <Input
-              id="enroll-discount"
-              name="discount"
-              type="number"
-              step="0.01"
-              min="0"
-              defaultValue="0"
-              disabled={isPending}
-            />
-          </div>
+          )}
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="canLeaveAlone" className="rounded" />
             {t('canLeaveAlone')}
@@ -190,7 +205,9 @@ function CreateEnrollmentForm({
             <input type="checkbox" name="replaceExisting" className="mt-0.5 rounded" />
             <span>
               {t('replaceExisting')}
-              <span className="block text-xs text-graphite-600">{t('replaceExistingHint')}</span>
+              <span className="block text-xs text-graphite-600">
+                {t(paymentsEnabled ? 'replaceExistingHint' : 'replaceExistingHintNoPayments')}
+              </span>
             </span>
           </label>
         </div>

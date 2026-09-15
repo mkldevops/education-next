@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { useRouter } from '@/i18n/routing'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { toast, toastActionError } from '@/lib/toast'
 import {
   activateEnrollmentAction,
@@ -13,6 +14,7 @@ import {
 } from '../../../../_lib/enrollment-actions'
 import { ApplyDiscountDialog } from '../../_components/apply-discount-dialog'
 import { ReassignClassDialog } from '../../_components/reassign-class-dialog'
+import { SetEnrollmentPlanDialog } from '../../_components/set-enrollment-plan-dialog'
 
 interface Props {
   enrollmentId: string
@@ -21,6 +23,9 @@ interface Props {
   currentClassId: string | null
   availableClasses: Array<{ id: string; name: string }>
   currentDiscount: number
+  paymentsEnabled: boolean
+  planName: string
+  availablePlans: Array<{ id: string; name: string }>
 }
 
 export function EnrollmentActions({
@@ -30,6 +35,9 @@ export function EnrollmentActions({
   currentClassId,
   availableClasses,
   currentDiscount,
+  paymentsEnabled,
+  planName,
+  availablePlans,
 }: Props) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.actions')
   const router = useRouter()
@@ -103,7 +111,12 @@ export function EnrollmentActions({
             currentClassId={currentClassId}
             classes={availableClasses}
           />
-          <ApplyDiscountDialog enrollmentId={enrollmentId} currentDiscount={currentDiscount} />
+          {paymentsEnabled && (
+            <ApplyDiscountDialog enrollmentId={enrollmentId} currentDiscount={currentDiscount} />
+          )}
+          {paymentsEnabled && planName === UNPRICED_PLAN_NAME && availablePlans.length > 0 && (
+            <SetEnrollmentPlanDialog enrollmentId={enrollmentId} plans={availablePlans} />
+          )}
         </>
       )}
     </div>

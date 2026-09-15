@@ -67,4 +67,18 @@ export const paymentGateway = {
     })
     return Number(result._sum.amount ?? 0)
   },
+
+  /**
+   * Ce que la désactivation des paiements va rendre invisible. Les deux comptages
+   * partent ensemble pour que la confirmation énumère, au lieu de laisser
+   * l'administrateur deviner.
+   */
+  countFootprint: async (schoolId: string) => {
+    const [payments, pendingTransactions] = await Promise.all([
+      db.payment.count({ where: { schoolId } }),
+      db.paymentTransaction.count({ where: { schoolId, status: 'PENDING' } }),
+    ])
+
+    return { payments, pendingTransactions }
+  },
 }

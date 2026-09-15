@@ -33,6 +33,7 @@ type Props = {
   isAdmin: boolean
   plans: Option[]
   classes: Option[]
+  paymentsEnabled: boolean
 }
 
 /**
@@ -74,7 +75,14 @@ function AgeCell({ birthday, locale }: { birthday: Date | null; locale: string }
   )
 }
 
-export function StudentsDataTable({ data, locale, isAdmin, plans, classes }: Props) {
+export function StudentsDataTable({
+  data,
+  locale,
+  isAdmin,
+  plans,
+  classes,
+  paymentsEnabled,
+}: Props) {
   const t = useTranslations('dashboard.pages.students')
   // Un seul dialogue pour toute la table : `key` le remonte à chaque élève choisi, ce qui
   // réinitialise le formulaire sans le dupliquer sur chaque ligne.
@@ -182,6 +190,7 @@ export function StudentsDataTable({ data, locale, isAdmin, plans, classes }: Pro
           ]}
           plans={plans}
           classes={classes}
+          paymentsEnabled={paymentsEnabled}
           defaultStudentId={enrollStudent.id}
           defaultOpen
           showTrigger={false}

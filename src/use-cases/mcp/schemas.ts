@@ -82,7 +82,7 @@ export const previewEnrollFamilySchema = z
     emergencyContactPhone: z.string().trim().min(1).max(20).regex(phoneNumberFormat).optional(),
     parents: z.array(mcpParentSchema).max(4).default([]),
     students: z.array(mcpStudentSchema).min(1).max(10),
-    planName: z.string().trim().min(1).max(50),
+    planName: z.string().trim().min(1).max(50).optional(),
     discount: z.number().min(0).default(0),
     payment: mcpPaymentSchema.optional(),
   })

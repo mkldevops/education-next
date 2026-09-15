@@ -1,6 +1,7 @@
 import type { ConfigValueType } from '@/generated/prisma/client'
 import { BRANDING_CONFIG_KEYS } from './branding-config'
 import { EVENTS_CONFIG_KEY } from './events-config'
+import { PAYMENTS_ENABLED_CONFIG_KEY } from './payment-config'
 import {
   MAX_STUDENTS_PER_CLASS_CONFIG_KEY,
   THEME_PRIMARY_CONFIG_KEY,
@@ -18,6 +19,7 @@ export const SchoolConfigKey = {
   ThemePrimaryLight: 'theme_primary_light',
   ThemeBackground: 'theme_background',
   MaxStudentsPerClass: MAX_STUDENTS_PER_CLASS_CONFIG_KEY,
+  PaymentsEnabled: PAYMENTS_ENABLED_CONFIG_KEY,
   TeacherExpensesEnabled: TEACHER_EXPENSES_CONFIG_KEY,
   AutomaticPromotion: 'automatic_promotion',
   EventsEnabled: EVENTS_CONFIG_KEY,
@@ -34,6 +36,7 @@ export const SCHOOL_CONFIG_VALUE_TYPES: Record<SchoolConfigKey, ConfigValueType>
   [SchoolConfigKey.ThemeBackground]: 'COLOR',
   [SchoolConfigKey.MaxStudentsPerClass]: 'NUMBER',
   [SchoolConfigKey.TeacherExpensesEnabled]: 'BOOLEAN',
+  [SchoolConfigKey.PaymentsEnabled]: 'BOOLEAN',
   [SchoolConfigKey.AutomaticPromotion]: 'BOOLEAN',
   [SchoolConfigKey.EventsEnabled]: 'BOOLEAN',
 }

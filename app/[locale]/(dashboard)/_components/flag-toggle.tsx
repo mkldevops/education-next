@@ -39,17 +39,10 @@ type Props = {
 
 /**
  * La case reflète l'état optimiste et revient en arrière si l'écriture est refusée : le
- * réglage gouverne toute l'instance, afficher un état non enregistré serait pire que
- * l'attente.
+ * réglage gouverne toute une instance ou toute une école, afficher un état non
+ * enregistré serait pire que l'attente.
  */
-export function PlatformFlagToggle({
-  title,
-  description,
-  hint,
-  enabled,
-  onSave,
-  confirmDisable,
-}: Props) {
+export function FlagToggle({ title, description, hint, enabled, onSave, confirmDisable }: Props) {
   const t = useTranslations('dashboard.platformFlag')
   const router = useRouter()
   const inputId = useId()

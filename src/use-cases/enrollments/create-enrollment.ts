@@ -6,6 +6,7 @@ import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
 import { studentGateway } from '@/gateways/student-gateway'
 import { db } from '@/lib/db'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { createEnrollmentSchema } from './schemas'
 
 type Input = z.input<typeof createEnrollmentSchema>
@@ -23,11 +24,30 @@ export async function createEnrollment(input: Input) {
   if (!parsed.success) return 'validationError' as const
   const { schoolId } = parsed.data
 
+  const paymentsEnabled = await isPaymentsEnabled(schoolId)
+
+  // Le schéma rend `planId` facultatif pour laisser passer une coupure des paiements ;
+  // drapeau actif, l'obligation que `z.string().uuid()` portait seule auparavant est
+  // restaurée ici, au même point du flux que l'échec de schéma qu'elle remplace.
+  if (paymentsEnabled && parsed.data.planId === undefined) return 'validationError' as const
+
+  // Une formule explicite ou une remise non nulle pendant une coupure trahit un appelant
+  // qui ignore le drapeau : refuser plutôt que tarifer en silence une école qui a coupé
+  // les paiements (FR-017).
+  if (!paymentsEnabled && (parsed.data.planId !== undefined || parsed.data.discount !== 0)) {
+    return 'paymentsDisabled' as const
+  }
+
   const student = await studentGateway.findById(schoolId, parsed.data.studentId)
   if (!student) return 'notFound' as const
 
-  const plan = await planGateway.findById(schoolId, parsed.data.planId)
-  if (!plan) return 'notFound' as const
+  // `null` hors drapeau : la formule réservée n'est résolue que dans la transaction plus
+  // bas, pour repartir avec le rollback si la classe s'avère pleine (`ensureUnpriced` ne
+  // doit pas laisser une ligne orpheline sans inscription qui la justifie).
+  const plan = paymentsEnabled
+    ? await planGateway.findById(schoolId, parsed.data.planId as string)
+    : null
+  if (paymentsEnabled && !plan) return 'notFound' as const
 
   const classPeriod = await classPeriodGateway.findById(schoolId, parsed.data.classPeriodId)
   if (!classPeriod) return 'notFound' as const
@@ -41,15 +61,25 @@ export async function createEnrollment(input: Input) {
   if (existing && existing._count.payments > 0) return 'existingEnrollmentPaid' as const
 
   const discount = parsed.data.discount ?? 0
-  const planAmount = Number(plan.amount)
 
-  const discountCheck = validateDiscount(planAmount, discount)
-  if (discountCheck !== 'OK') return discountCheck
-
-  const totalAmount = calculateTotalAmount(planAmount, discount)
+  // La formule réservée est de montant nul, et la remise a déjà été refusée non nulle
+  // plus haut hors drapeau (FR-017) : `totalAmount` reste 0 sans repasser par
+  // `calculateTotalAmount`. `if (plan)` narrowe proprement sans assertion : `plan` n'est
+  // non nul qu'après le contrôle `notFound` ci-dessus, drapeau actif.
+  let totalAmount = 0
+  if (plan) {
+    const planAmount = Number(plan.amount)
+    const discountCheck = validateDiscount(planAmount, discount)
+    if (discountCheck !== 'OK') return discountCheck
+    totalAmount = calculateTotalAmount(planAmount, discount)
+  }
 
   try {
     const result = await db.$transaction(async (tx) => {
+      // Résolue ici plutôt qu'avant l'ouverture de la transaction : une création (première
+      // coupure de l'école) repart avec le rollback si la classe s'avère pleine plus bas.
+      const planId = plan ? plan.id : (await planGateway.ensureUnpriced(schoolId, tx)).id
+
       if (existing) {
         await tx.classAssignment.updateMany({
           where: { schoolId, enrollmentId: existing.id, endAt: null },
@@ -77,7 +107,7 @@ export async function createEnrollment(input: Input) {
         data: {
           schoolId,
           studentId: parsed.data.studentId,
-          planId: parsed.data.planId,
+          planId,
           totalAmount,
           discount: parsed.data.discount,
           canLeaveAlone: parsed.data.canLeaveAlone,

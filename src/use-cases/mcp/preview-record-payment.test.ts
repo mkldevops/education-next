@@ -21,6 +21,7 @@ const scope = {
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
+  paymentsEnabled: true,
 }
 
 const family = { id: '22222222-2222-4222-8222-222222222222', name: 'Madi' }
@@ -75,6 +76,15 @@ describe('previewRecordPayment', () => {
     expect(findFamilyById).toHaveBeenCalledWith('school-1', family.id)
     expect(searchFamilies).not.toHaveBeenCalled()
     expect(result.draftId).toBe('draft-2')
+  })
+
+  it('refuses without reading a family or proposing a draft when payments are disabled', async () => {
+    const result = await previewRecordPayment({ ...scope, paymentsEnabled: false }, input)
+
+    expect(result).toBe('paymentsDisabled')
+    expect(findFamilyById).not.toHaveBeenCalled()
+    expect(searchFamilies).not.toHaveBeenCalled()
+    expect(createDraft).not.toHaveBeenCalled()
   })
 
   it('stamps the draft with the record tool, so the other commit cannot claim it', async () => {

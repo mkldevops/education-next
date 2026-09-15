@@ -9,6 +9,7 @@ const findMembers = vi.fn()
 const searchPersons = vi.fn()
 const findByReference = vi.fn()
 const createDraft = vi.fn()
+const ensureUnpriced = vi.fn()
 
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
 vi.mock('@/gateways/class-period-gateway', () => ({ classPeriodGateway: { countEnrolled } }))
@@ -18,6 +19,7 @@ vi.mock('@/gateways/family-gateway', () => ({
 vi.mock('@/gateways/person-gateway', () => ({ personGateway: { searchByName: searchPersons } }))
 vi.mock('@/gateways/payment-gateway', () => ({ paymentGateway: { findByReference } }))
 vi.mock('@/gateways/mcp-draft-gateway', () => ({ mcpDraftGateway: { create: createDraft } }))
+vi.mock('@/gateways/plan-gateway', () => ({ planGateway: { ensureUnpriced } }))
 
 const { previewEnrollFamily } = await import('./preview-enroll-family')
 
@@ -27,6 +29,7 @@ const scope = {
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
+  paymentsEnabled: true,
 }
 
 const input = {
@@ -66,6 +69,7 @@ beforeEach(() => {
   searchPersons.mockResolvedValue([])
   findByReference.mockResolvedValue([])
   createDraft.mockResolvedValue({ id: 'draft-1' })
+  ensureUnpriced.mockResolvedValue({ id: 'plan-unpriced', name: '__unpriced__', amount: 0 })
 })
 
 // Un `return` silencieux ferait passer le test sans rien vérifier le jour où le preview
@@ -596,8 +600,50 @@ describe('previewEnrollFamily', () => {
     })
   })
 
+  it('requires a plan label while payments are enabled, unchanged from before the flag', async () => {
+    const { planName: _planName, ...withoutPlanName } = input
+
+    expect(await previewEnrollFamily(scope, withoutPlanName)).toBe('validationError')
+    expect(listClassPeriods).not.toHaveBeenCalled()
+  })
+
   it('rejects malformed input before reading anything', async () => {
     expect(await previewEnrollFamily(scope, { ...input, students: [] })).toBe('validationError')
     expect(listClassPeriods).not.toHaveBeenCalled()
+  })
+
+  describe('when the school has turned payments off', () => {
+    const disabled = { ...scope, paymentsEnabled: false }
+
+    it('drops the plan label, resolves the reserved plan and announces no amount', async () => {
+      const { planName: _planName, payment: _payment, ...withoutMoney } = input
+
+      const result = await previewEnrollFamily(disabled, withoutMoney)
+      assertPreview(result)
+
+      expect(result.blockers).toEqual([])
+      expect(ensureUnpriced).toHaveBeenCalledWith('school-1')
+      expect(listPlans).not.toHaveBeenCalled()
+      expect(result.plan?.students[0].plan).toEqual({
+        id: 'plan-unpriced',
+        name: '__unpriced__',
+        amount: 0,
+      })
+      expect(result.plan?.students[0].totalAmount).toBe(0)
+      expect(result.plan?.payment).toBeNull()
+    })
+
+    it('refuses a payment block attached to the request', async () => {
+      const { planName: _planName, ...withoutPlan } = input
+
+      const result = await previewEnrollFamily(disabled, withoutPlan)
+      assertPreview(result)
+
+      expect(result.blockers).toEqual([
+        { field: 'payment', value: '100', reason: 'paymentsDisabled' },
+      ])
+      expect(result.draftId).toBeNull()
+      expect(createDraft).not.toHaveBeenCalled()
+    })
   })
 })

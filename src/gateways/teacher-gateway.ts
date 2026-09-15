@@ -51,4 +51,10 @@ export const teacherGateway = {
       include: { teacher: true },
       orderBy: { requestedAt: 'desc' },
     }),
+
+  /**
+   * Ce que la désactivation des notes de frais va rendre inatteignable. Rien n'est
+   * supprimé : la confirmation énumère pour que l'administrateur décide en connaissance.
+   */
+  countExpenses: (schoolId: string) => db.teacherExpense.count({ where: { schoolId } }),
 }

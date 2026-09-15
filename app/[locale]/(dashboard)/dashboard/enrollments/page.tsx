@@ -4,6 +4,8 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { EnrollmentsTable } from './_components/enrollments-table'
 
@@ -32,6 +34,8 @@ export default async function EnrollmentsPage({ params }: Props) {
   const selectedPeriod = await getSelectedPeriod(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
+  const paymentsEnabled = await isPaymentsEnabled(scope.schoolId)
+
   const isAdmin = scope.isAdmin
 
   const whereStudent = scope.isAdmin
@@ -55,6 +59,15 @@ export default async function EnrollmentsPage({ params }: Props) {
         orderBy: { name: 'asc' },
       })
     : []
+
+  const availablePlans =
+    isAdmin && paymentsEnabled
+      ? await db.plan.findMany({
+          where: { schoolId: scope.schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
+          select: { id: true, name: true },
+          orderBy: { name: 'asc' },
+        })
+      : []
 
   const enrollments = await db.enrollment.findMany({
     where: {
@@ -119,8 +132,10 @@ export default async function EnrollmentsPage({ params }: Props) {
         enrollments={serializableEnrollments}
         isAdmin={isAdmin}
         availableClasses={availableClasses}
+        availablePlans={availablePlans}
         locale={locale}
         periodName={selectedPeriod?.name ?? null}
+        paymentsEnabled={paymentsEnabled}
       />
     </div>
   )

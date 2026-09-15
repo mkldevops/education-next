@@ -11,6 +11,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  StatusBadge,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
@@ -20,6 +21,7 @@ import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
 import { Link, useRouter } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { type DecimalLike, formatCurrency, toNumber } from '@/lib/decimal'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { toast, toastActionError } from '@/lib/toast'
 import {
   activateEnrollmentAction,
@@ -28,6 +30,7 @@ import {
 } from '../../../_lib/enrollment-actions'
 import { ApplyDiscountDialog } from './apply-discount-dialog'
 import { ReassignClassDialog } from './reassign-class-dialog'
+import { SetEnrollmentPlanDialog } from './set-enrollment-plan-dialog'
 
 interface ClassAssignment {
   id: string
@@ -74,6 +77,8 @@ interface Props {
   onOpenChange: (open: boolean) => void
   isAdmin: boolean
   availableClasses: Array<{ id: string; name: string }>
+  availablePlans: Array<{ id: string; name: string }>
+  paymentsEnabled: boolean
   locale: string
 }
 
@@ -83,9 +88,12 @@ export function EnrollmentDrawer({
   onOpenChange,
   isAdmin,
   availableClasses,
+  availablePlans,
+  paymentsEnabled,
   locale,
 }: Props) {
   const t = useTranslations('dashboard.pages.enrollments.drawer')
+  const tEnrollments = useTranslations('dashboard.pages.enrollments')
   const tDetails = useTranslations('dashboard.pages.enrollmentDetails')
   const tActions = useTranslations('dashboard.pages.enrollmentDetails.actions')
   const router = useRouter()
@@ -138,15 +146,23 @@ export function EnrollmentDrawer({
         <DrawerBody className="space-y-6">
           <div className="space-y-4 rounded border border-alabaster-700 p-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-sm font-medium text-graphite-600">{t('plan')}</p>
-                <p className="mt-1 text-sm text-graphite">{enrollment.plan.name}</p>
-              </div>
+              {paymentsEnabled && (
+                <div>
+                  <p className="text-sm font-medium text-graphite-600">{t('plan')}</p>
+                  <p className="mt-1 text-sm text-graphite">
+                    {enrollment.plan.name === UNPRICED_PLAN_NAME ? (
+                      <StatusBadge status="amber" label={tEnrollments('unpriced.badge')} />
+                    ) : (
+                      enrollment.plan.name
+                    )}
+                  </p>
+                </div>
+              )}
               <div>
                 <p className="text-sm font-medium text-graphite-600">{t('status')}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <EnrollmentStatusBadge status={enrollment.status} />
-                  {remaining > 0 && (
+                  {paymentsEnabled && remaining > 0 && (
                     <BalanceBadge
                       label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
                     />
@@ -193,42 +209,56 @@ export function EnrollmentDrawer({
                     currentClassId={currentClassId}
                     classes={availableClasses}
                   />
-                  <ApplyDiscountDialog enrollmentId={enrollment.id} currentDiscount={discountNum} />
+                  {paymentsEnabled && (
+                    <ApplyDiscountDialog
+                      enrollmentId={enrollment.id}
+                      currentDiscount={discountNum}
+                    />
+                  )}
+                  {paymentsEnabled &&
+                    enrollment.plan.name === UNPRICED_PLAN_NAME &&
+                    availablePlans.length > 0 && (
+                      <SetEnrollmentPlanDialog
+                        enrollmentId={enrollment.id}
+                        plans={availablePlans}
+                      />
+                    )}
                 </>
               )}
             </div>
           </div>
 
-          <div>
-            <h3 className="mb-3 text-base font-semibold text-graphite">{t('pricing')}</h3>
-            <div className="space-y-2 rounded border border-alabaster-700 p-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-graphite-600">{t('totalAmount')}</span>
-                <span className="font-medium text-graphite">
-                  {formatCurrency(totalAmountNum, locale)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-graphite-600">{t('discount')}</span>
-                <span className="font-medium text-graphite">
-                  {formatCurrency(-discountNum, locale)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-graphite-600">{t('totalPaid')}</span>
-                <span className="font-medium text-graphite">
-                  {formatCurrency(totalPaid, locale)}
-                </span>
-              </div>
-              <div className="flex justify-between border-t pt-2 text-sm font-semibold">
-                <span className="text-graphite">{t('remaining')}</span>
-                <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
-                  {formatCurrency(remaining, locale)}
-                </span>
+          {paymentsEnabled && (
+            <div>
+              <h3 className="mb-3 text-base font-semibold text-graphite">{t('pricing')}</h3>
+              <div className="space-y-2 rounded border border-alabaster-700 p-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-graphite-600">{t('totalAmount')}</span>
+                  <span className="font-medium text-graphite">
+                    {formatCurrency(totalAmountNum, locale)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-graphite-600">{t('discount')}</span>
+                  <span className="font-medium text-graphite">
+                    {formatCurrency(-discountNum, locale)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-graphite-600">{t('totalPaid')}</span>
+                  <span className="font-medium text-graphite">
+                    {formatCurrency(totalPaid, locale)}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-2 text-sm font-semibold">
+                  <span className="text-graphite">{t('remaining')}</span>
+                  <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
+                    {formatCurrency(remaining, locale)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-
+          )}
           {enrollment.classAssignments.length > 0 && (
             <div>
               <h3 className="mb-3 text-base font-semibold text-graphite">
@@ -269,7 +299,7 @@ export function EnrollmentDrawer({
             </div>
           )}
 
-          {enrollment.payments.length > 0 && (
+          {paymentsEnabled && enrollment.payments.length > 0 && (
             <div>
               <h3 className="mb-3 text-base font-semibold text-graphite">{t('payments')}</h3>
               <div className="overflow-x-auto rounded border border-alabaster-700">

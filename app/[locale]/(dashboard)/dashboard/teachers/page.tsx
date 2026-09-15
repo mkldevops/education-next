@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
-import { TEACHER_EXPENSES_CONFIG_KEY } from '@/lib/teacher-expense-config'
+import { isTeacherExpensesEnabled } from '@/use-cases/config/is-teacher-expenses-enabled'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateExpenseDialog } from './_components/create-expense-dialog'
@@ -34,7 +34,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.teachers')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const [teachers, expenses, expenseConfig] = await Promise.all([
+  const [teachers, expenses, expensesEnabled] = await Promise.all([
     db.teacher.findMany({
       where: { schoolId, isActive: true },
       include: {
@@ -50,17 +50,13 @@ export default async function TeachersPage({ params, searchParams }: Props) {
       include: { teacher: true },
       orderBy: { requestedAt: 'desc' },
     }),
-    db.config.findFirst({
-      where: { schoolId, name: TEACHER_EXPENSES_CONFIG_KEY, isActive: true },
-      select: { value: true },
-    }),
+    isTeacherExpensesEnabled(schoolId),
   ])
 
   const teacherOptions = teachers.map((teacher) => ({
     id: teacher.id,
     name: `${teacher.lastName} ${teacher.firstName}`,
   }))
-  const expensesEnabled = expenseConfig?.value === 'true'
 
   const teacherColumns: Column<(typeof teachers)[0]>[] = [
     {

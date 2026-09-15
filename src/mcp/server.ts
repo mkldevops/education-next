@@ -113,17 +113,19 @@ export function buildMcpServer(scope: McpScope): McpServer {
     async () => read('list_class_periods', () => mcpReadGateway.listClassPeriods(schoolId))
   )
 
-  server.registerTool(
-    'list_plans',
-    {
-      title: 'Formules tarifaires',
-      description:
-        'Formules actives et leur montant. Le montant est une valeur décimale rendue en ' +
-        "chaîne, dans la devise de l'école — jamais des centimes.",
-      inputSchema: NO_ARGS,
-    },
-    async () => read('list_plans', () => mcpReadGateway.listPlans(schoolId))
-  )
+  if (scope.paymentsEnabled) {
+    server.registerTool(
+      'list_plans',
+      {
+        title: 'Formules tarifaires',
+        description:
+          'Formules actives et leur montant. Le montant est une valeur décimale rendue en ' +
+          "chaîne, dans la devise de l'école — jamais des centimes.",
+        inputSchema: NO_ARGS,
+      },
+      async () => read('list_plans', () => mcpReadGateway.listPlans(schoolId))
+    )
+  }
 
   server.registerTool(
     'list_teachers',
@@ -174,75 +176,81 @@ export function buildMcpServer(scope: McpScope): McpServer {
     async (args) => write('commit_enroll_family', () => commitEnrollFamily(scope, args))
   )
 
-  server.registerTool(
-    'preview_record_payment',
-    {
-      title: 'Préparer un encaissement',
-      description:
-        'Résout la famille, ventile le montant sur ses inscriptions actives et rend la ' +
-        'répartition sans rien écrire. La famille se désigne par son identifiant ou par ' +
-        'son nom ; un nom qui vise plusieurs familles est un `blocker`.',
-      inputSchema: previewRecordPaymentSchema,
-      // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
-      // en approbation automatique fabrique des lignes sans jamais demander.
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
+  // Les cinq outils d'argent ci-dessous ne se déclarent pas quand l'école a coupé les
+  // paiements : un outil absent ne trompe pas l'agent, alors qu'un outil déclaré qui
+  // refuserait systématiquement l'inviterait à insister ou à mal lire le refus. C'est le
+  // mécanisme premier ; les use cases eux-mêmes refusent aussi, en défense en profondeur.
+  if (scope.paymentsEnabled) {
+    server.registerTool(
+      'preview_record_payment',
+      {
+        title: 'Préparer un encaissement',
+        description:
+          'Résout la famille, ventile le montant sur ses inscriptions actives et rend la ' +
+          'répartition sans rien écrire. La famille se désigne par son identifiant ou par ' +
+          'son nom ; un nom qui vise plusieurs familles est un `blocker`.',
+        inputSchema: previewRecordPaymentSchema,
+        // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
+        // en approbation automatique fabrique des lignes sans jamais demander.
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
       },
-    },
-    async (args) => write('preview_record_payment', () => previewRecordPayment(scope, args))
-  )
+      async (args) => write('preview_record_payment', () => previewRecordPayment(scope, args))
+    )
 
-  server.registerTool(
-    'commit_record_payment',
-    {
-      title: 'Engager un encaissement',
-      description:
-        'Écrit les paiements de la répartition déjà prévisualisée. Rejouer le même ' +
-        '`draftId` rend le résultat enregistré au lieu de doubler le versement.',
-      inputSchema: commitDraftSchema,
-      annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
-    },
-    async (args) => write('commit_record_payment', () => commitRecordPayment(scope, args))
-  )
-
-  server.registerTool(
-    'preview_update_enrollment',
-    {
-      title: "Préparer la modification d'une inscription",
-      description:
-        "Change la formule et/ou la remise d'une inscription en attente ou active, sans rien " +
-        "écrire. L'inscription se désigne par son identifiant, ou par le prénom et le nom de " +
-        "l'élève ; la formule est attendue en libellé. Sans remise, l'inscription garde la " +
-        'sienne. Rend le passage « avant → après », le total recalculé et le reste à payer ; ' +
-        'plusieurs inscriptions candidates sont un `blocker` qui les liste.',
-      inputSchema: previewUpdateEnrollmentSchema,
-      // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
-      // en approbation automatique fabrique des lignes sans jamais demander.
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
+    server.registerTool(
+      'commit_record_payment',
+      {
+        title: 'Engager un encaissement',
+        description:
+          'Écrit les paiements de la répartition déjà prévisualisée. Rejouer le même ' +
+          '`draftId` rend le résultat enregistré au lieu de doubler le versement.',
+        inputSchema: commitDraftSchema,
+        annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
       },
-    },
-    async (args) => write('preview_update_enrollment', () => previewUpdateEnrollment(scope, args))
-  )
+      async (args) => write('commit_record_payment', () => commitRecordPayment(scope, args))
+    )
 
-  server.registerTool(
-    'commit_update_enrollment',
-    {
-      title: "Engager la modification d'une inscription",
-      description:
-        'Applique la formule, la remise et le total déjà prévisualisés. Les paiements restent ' +
-        "sur l'inscription. Rejouer le même `draftId` rend le résultat enregistré.",
-      inputSchema: commitDraftSchema,
-      annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
-    },
-    async (args) => write('commit_update_enrollment', () => commitUpdateEnrollment(scope, args))
-  )
+    server.registerTool(
+      'preview_update_enrollment',
+      {
+        title: "Préparer la modification d'une inscription",
+        description:
+          "Change la formule et/ou la remise d'une inscription en attente ou active, sans rien " +
+          "écrire. L'inscription se désigne par son identifiant, ou par le prénom et le nom de " +
+          "l'élève ; la formule est attendue en libellé. Sans remise, l'inscription garde la " +
+          'sienne. Rend le passage « avant → après », le total recalculé et le reste à payer ; ' +
+          'plusieurs inscriptions candidates sont un `blocker` qui les liste.',
+        inputSchema: previewUpdateEnrollmentSchema,
+        // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
+        // en approbation automatique fabrique des lignes sans jamais demander.
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
+      },
+      async (args) => write('preview_update_enrollment', () => previewUpdateEnrollment(scope, args))
+    )
+
+    server.registerTool(
+      'commit_update_enrollment',
+      {
+        title: "Engager la modification d'une inscription",
+        description:
+          'Applique la formule, la remise et le total déjà prévisualisés. Les paiements ' +
+          "restent sur l'inscription. Rejouer le même `draftId` rend le résultat enregistré.",
+        inputSchema: commitDraftSchema,
+        annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
+      },
+      async (args) => write('commit_update_enrollment', () => commitUpdateEnrollment(scope, args))
+    )
+  }
 
   return server
 }

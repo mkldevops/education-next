@@ -1,4 +1,4 @@
-import { BalanceBadge, Breadcrumbs, Card } from '@peaklab/ui'
+import { BalanceBadge, Breadcrumbs, Card, StatusBadge } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
@@ -10,7 +10,9 @@ import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency, toNumber } from '@/lib/decimal'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../_lib/deep-link'
@@ -83,6 +85,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const { locale, id } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.enrollmentDetails')
+  const tEnrollments = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const context = await requireSchoolSession()
@@ -100,6 +103,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
   const enrollment = resolution.resource
   const isAdmin = isActiveSchoolAdmin(context)
+  const paymentsEnabled = await isPaymentsEnabled(enrollment.schoolId)
 
   const availableClasses = isAdmin
     ? await db.classPeriod.findMany({
@@ -108,6 +112,19 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         orderBy: { name: 'asc' },
       })
     : []
+
+  const availablePlans =
+    isAdmin && paymentsEnabled
+      ? await db.plan.findMany({
+          where: {
+            schoolId: enrollment.schoolId,
+            isActive: true,
+            name: { not: UNPRICED_PLAN_NAME },
+          },
+          select: { id: true, name: true },
+          orderBy: { name: 'asc' },
+        })
+      : []
 
   const totalAmount = Number(enrollment.totalAmount)
   const discount = Number(enrollment.discount)
@@ -156,21 +173,32 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           currentClassId={currentClassId}
           availableClasses={availableClasses}
           currentDiscount={discount}
+          paymentsEnabled={paymentsEnabled}
+          planName={enrollment.plan.name}
+          availablePlans={availablePlans}
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className={paymentsEnabled ? 'grid gap-6 lg:grid-cols-2' : 'grid gap-6'}>
         <Card className="p-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-graphite-600">{t('plan')}</p>
-              <p className="mt-1 text-sm text-graphite">{enrollment.plan.name}</p>
-            </div>
+            {paymentsEnabled && (
+              <div>
+                <p className="text-sm font-medium text-graphite-600">{t('plan')}</p>
+                <p className="mt-1 text-sm text-graphite">
+                  {enrollment.plan.name === UNPRICED_PLAN_NAME ? (
+                    <StatusBadge status="amber" label={tEnrollments('unpriced.badge')} />
+                  ) : (
+                    enrollment.plan.name
+                  )}
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-sm font-medium text-graphite-600">{t('status')}</p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <EnrollmentStatusBadge status={enrollment.status} />
-                {remaining > 0 && (
+                {paymentsEnabled && remaining > 0 && (
                   <BalanceBadge
                     label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
                   />
@@ -190,31 +218,37 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           </div>
         </Card>
 
-        <Card className="p-6">
-          <h2 className="mb-4 text-base font-semibold text-graphite">{t('pricing')}</h2>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-graphite-600">{t('totalAmount')}</span>
-              <span className="font-medium text-graphite">
-                {formatCurrency(totalAmount, locale)}
-              </span>
+        {paymentsEnabled && (
+          <Card className="p-6">
+            <h2 className="mb-4 text-base font-semibold text-graphite">{t('pricing')}</h2>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-graphite-600">{t('totalAmount')}</span>
+                <span className="font-medium text-graphite">
+                  {formatCurrency(totalAmount, locale)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-graphite-600">{t('discount')}</span>
+                <span className="font-medium text-graphite">
+                  {formatCurrency(-discount, locale)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-graphite-600">{t('totalPaid')}</span>
+                <span className="font-medium text-graphite">
+                  {formatCurrency(totalPaid, locale)}
+                </span>
+              </div>
+              <div className="flex justify-between border-t pt-2 text-sm font-semibold">
+                <span className="text-graphite">{t('remaining')}</span>
+                <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
+                  {formatCurrency(remaining, locale)}
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-graphite-600">{t('discount')}</span>
-              <span className="font-medium text-graphite">{formatCurrency(-discount, locale)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-graphite-600">{t('totalPaid')}</span>
-              <span className="font-medium text-graphite">{formatCurrency(totalPaid, locale)}</span>
-            </div>
-            <div className="flex justify-between border-t pt-2 text-sm font-semibold">
-              <span className="text-graphite">{t('remaining')}</span>
-              <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
-                {formatCurrency(remaining, locale)}
-              </span>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
       </div>
 
       <Card className="p-6">
@@ -254,43 +288,47 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         )}
       </Card>
 
-      <Card className="p-6">
-        <h2 className="mb-4 text-base font-semibold text-graphite">{t('payments')}</h2>
-        {enrollment.payments.length === 0 ? (
-          <p className="text-sm text-graphite-600">-</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b text-xs font-medium uppercase tracking-wider text-graphite-600">
-                  <th className="pb-2 text-left">{t('paymentTable.amount')}</th>
-                  <th className="pb-2 text-left">{t('paymentTable.method')}</th>
-                  <th className="pb-2 text-left">{t('paymentTable.reference')}</th>
-                  <th className="pb-2 text-left">{t('paymentTable.paidAt')}</th>
-                  <th className="pb-2 text-left">{t('paymentTable.cashedAt')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {enrollment.payments.map((p) => (
-                  <tr key={p.id} className="text-sm">
-                    <td className="py-3 pr-4 font-medium text-graphite">
-                      {formatCurrency(p.amount, locale)}
-                    </td>
-                    <td className="py-3 pr-4 text-graphite-600">
-                      <PaymentMethodLabel method={p.method} />
-                    </td>
-                    <td className="py-3 pr-4 text-graphite-600">{p.reference ?? '-'}</td>
-                    <td className="py-3 pr-4 text-graphite-600">{formatDate(p.paidAt, locale)}</td>
-                    <td className="py-3 text-graphite-600">
-                      {p.cashedAt ? formatDate(p.cashedAt, locale) : '-'}
-                    </td>
+      {paymentsEnabled && (
+        <Card className="p-6">
+          <h2 className="mb-4 text-base font-semibold text-graphite">{t('payments')}</h2>
+          {enrollment.payments.length === 0 ? (
+            <p className="text-sm text-graphite-600">-</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b text-xs font-medium uppercase tracking-wider text-graphite-600">
+                    <th className="pb-2 text-left">{t('paymentTable.amount')}</th>
+                    <th className="pb-2 text-left">{t('paymentTable.method')}</th>
+                    <th className="pb-2 text-left">{t('paymentTable.reference')}</th>
+                    <th className="pb-2 text-left">{t('paymentTable.paidAt')}</th>
+                    <th className="pb-2 text-left">{t('paymentTable.cashedAt')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                </thead>
+                <tbody className="divide-y">
+                  {enrollment.payments.map((p) => (
+                    <tr key={p.id} className="text-sm">
+                      <td className="py-3 pr-4 font-medium text-graphite">
+                        {formatCurrency(p.amount, locale)}
+                      </td>
+                      <td className="py-3 pr-4 text-graphite-600">
+                        <PaymentMethodLabel method={p.method} />
+                      </td>
+                      <td className="py-3 pr-4 text-graphite-600">{p.reference ?? '-'}</td>
+                      <td className="py-3 pr-4 text-graphite-600">
+                        {formatDate(p.paidAt, locale)}
+                      </td>
+                      <td className="py-3 text-graphite-600">
+                        {p.cashedAt ? formatDate(p.cashedAt, locale) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   )
 }

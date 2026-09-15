@@ -9,6 +9,9 @@ const enrollmentGatewayMock = {
 const paymentGatewayMock = {
   createInTransaction: vi.fn(),
 }
+const configGatewayMock = {
+  get: vi.fn(),
+}
 
 vi.mock('@/gateways/family-gateway', () => ({
   familyGateway: familyGatewayMock,
@@ -22,6 +25,10 @@ vi.mock('@/gateways/payment-gateway', () => ({
   paymentGateway: paymentGatewayMock,
 }))
 
+vi.mock('@/gateways/config-gateway', () => ({
+  configGateway: configGatewayMock,
+}))
+
 const { recordPayment } = await import('./record-payment')
 
 const schoolId = '550e8400-e29b-41d4-a716-446655440099'
@@ -32,6 +39,7 @@ describe('recordPayment', () => {
     familyGatewayMock.findById = vi.fn()
     enrollmentGatewayMock.findPayableByFamily = vi.fn()
     paymentGatewayMock.createInTransaction = vi.fn()
+    configGatewayMock.get = vi.fn().mockResolvedValue({ value: 'true' })
   })
 
   it('should fail validation with invalid input', async () => {
@@ -69,6 +77,22 @@ describe('recordPayment', () => {
     })
 
     expect(result).toBe('validationError')
+  })
+
+  it('should refuse to record a payment when payments are disabled', async () => {
+    configGatewayMock.get.mockResolvedValue({ value: 'false' })
+
+    const result = await recordPayment({
+      schoolId,
+      familyId: '550e8400-e29b-41d4-a716-446655440000',
+      amount: 100,
+      method: 'CASH',
+      paidAt: new Date(),
+    })
+
+    expect(result).toBe('paymentsDisabled')
+    expect(familyGatewayMock.findById).not.toHaveBeenCalled()
+    expect(paymentGatewayMock.createInTransaction).not.toHaveBeenCalled()
   })
 
   it('should fail with family not found', async () => {

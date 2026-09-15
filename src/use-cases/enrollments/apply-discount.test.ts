@@ -4,9 +4,16 @@ const enrollmentGatewayMock = {
   findById: vi.fn(),
   updateDiscount: vi.fn(),
 }
+const configGatewayMock = {
+  get: vi.fn(),
+}
 
 vi.mock('@/gateways/enrollment-gateway', () => ({
   enrollmentGateway: enrollmentGatewayMock,
+}))
+
+vi.mock('@/gateways/config-gateway', () => ({
+  configGateway: configGatewayMock,
 }))
 
 const { applyDiscount } = await import('./apply-discount')
@@ -18,6 +25,7 @@ describe('applyDiscount', () => {
     vi.clearAllMocks()
     enrollmentGatewayMock.findById = vi.fn()
     enrollmentGatewayMock.updateDiscount = vi.fn()
+    configGatewayMock.get = vi.fn().mockResolvedValue({ value: 'true' })
   })
 
   it('should fail validation with invalid input', async () => {
@@ -38,6 +46,20 @@ describe('applyDiscount', () => {
     })
 
     expect(result).toBe('validationError')
+  })
+
+  it('should refuse to apply a discount when payments are disabled', async () => {
+    configGatewayMock.get.mockResolvedValue({ value: 'false' })
+
+    const result = await applyDiscount({
+      schoolId,
+      enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
+      discount: 10,
+    })
+
+    expect(result).toBe('paymentsDisabled')
+    expect(enrollmentGatewayMock.findById).not.toHaveBeenCalled()
+    expect(enrollmentGatewayMock.updateDiscount).not.toHaveBeenCalled()
   })
 
   it('should fail with enrollment not found', async () => {

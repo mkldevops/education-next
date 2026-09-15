@@ -25,6 +25,7 @@ const scope = {
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
+  paymentsEnabled: true,
 }
 
 const resolved = {
@@ -78,6 +79,14 @@ describe('commitUpdateEnrollment', () => {
       where: { id: input.draftId, schoolId: 'school-1' },
       data: { result },
     })
+  })
+
+  it('refuses without claiming the draft when payments are disabled, even a pre-cutoff one', async () => {
+    const result = await commitUpdateEnrollment({ ...scope, paymentsEnabled: false }, input)
+
+    expect(result).toBe('paymentsDisabled')
+    expect(claim).not.toHaveBeenCalled()
+    expect(transaction).not.toHaveBeenCalled()
   })
 
   it('refuses an enrollment changed since the preview', async () => {
