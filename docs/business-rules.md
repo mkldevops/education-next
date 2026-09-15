@@ -687,10 +687,14 @@ The `/dashboard/users` drawer is the single management surface. Its guards live 
   Auth reset email; the user chooses their own password. It refuses an archived account.
 - **Assigning `SUPER_ADMIN` is reserved to a super admin** (`canAssignRole`), so the policy holds
   even if the use case is ever reached by another caller.
-- **An address changed by an administrator is re-verified.** `updateUserAction` compares the stored
-  address with the submitted one and, when it changed without `emailVerified: true` being sent
-  explicitly, calls `auth.api.sendVerificationEmail`. This is the only path that writes a sign-in
-  address nobody has proven access to — an invited account received its token on that address, and
+- **An address changed by an administrator is re-verified, and loses its verified flag.**
+  `updateUserAction` compares the stored address with the submitted one; when they differ it forces
+  `emailVerified: false` into the update and calls `auth.api.sendVerificationEmail` on the new
+  address. The « email vérifié » checkbox of the drawer cannot arbitrate this: it is pre-checked
+  from the stored value and resubmitted untouched, so keying the decision on it would silently skip
+  re-verification for exactly the accounts that were already verified, and leave the flag
+  describing an address nobody ever confirmed. This is the only path that writes a sign-in address
+  nobody has proven access to — an invited account received its token on that address, and
   `createUserAction` marks `emailVerified` itself — which is why no verification mail is sent on
   sign-up (`emailVerification.sendOnSignUp` is false). A failed send never fails the update: the
   account already carries the new address.

@@ -85,17 +85,23 @@ export async function changePasswordAction(data: {
 
   // Notification de sécurité, émise après coup : le mot de passe est déjà changé,
   // un échec d'envoi ne doit donc pas faire croire à l'appelant que l'opération a
-  // échoué et l'inciter à recommencer.
-  const session = await auth.api.getSession({ headers: requestHeaders })
-  if (session?.user?.email) {
-    const t = await getTranslations('emails.passwordChanged')
-    await sendPlatformEmail(session.user.email, t('subject'), {
-      preheader: t('body'),
-      heading: t('heading'),
-      paragraphs: [t('body')],
-      notice: t('notice'),
-      footer: t('footer'),
-    })
+  // échoué et l'inciter à recommencer. `getEmailConfig` lève sur une variable
+  // d'environnement manquante, et l'exception traverserait le Server Action : le
+  // `catch` est ce qui rend la promesse du commentaire.
+  try {
+    const session = await auth.api.getSession({ headers: requestHeaders })
+    if (session?.user?.email) {
+      const t = await getTranslations('emails.passwordChanged')
+      await sendPlatformEmail(session.user.email, t('subject'), {
+        preheader: t('body'),
+        heading: t('heading'),
+        paragraphs: [t('body')],
+        notice: t('notice'),
+        footer: t('footer'),
+      })
+    }
+  } catch {
+    // Sans notification, mais le mot de passe est bien remplacé.
   }
 
   return { success: true, data: null }
