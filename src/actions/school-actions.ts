@@ -7,7 +7,11 @@ import { schoolGateway } from '@/gateways/school-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { ACTIVE_SCHOOL_COOKIE } from '@/lib/school-context'
+import {
+  ACTIVE_SCHOOL_COOKIE,
+  ACTIVE_SCHOOL_COOKIE_OPTIONS,
+  getSchoolContext,
+} from '@/lib/school-context'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 
 /**
@@ -48,14 +52,27 @@ export async function switchSchoolAction(schoolId: string) {
   }
 
   const cookieStore = await cookies()
-  cookieStore.set(ACTIVE_SCHOOL_COOKIE, parsed.data, {
-    path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-  })
+  cookieStore.set(ACTIVE_SCHOOL_COOKIE, parsed.data, ACTIVE_SCHOOL_COOKIE_OPTIONS)
 
   // Le rendu de l'école précédente doit disparaître entièrement, layout inclus.
   revalidatePath('/', 'layout')
+  return 'OK' as const
+}
+
+/**
+ * Mémorise l'école réellement affichée, pour habiller la page de connexion après une
+ * déconnexion : sans session, le logo et le thème ne peuvent venir que de ce cookie.
+ *
+ * Aucune entrée : l'école vient du contexte déjà validé, jamais de l'appelant, donc
+ * l'action ne peut ni ouvrir une école non autorisée ni contourner le drapeau de bascule.
+ */
+export async function rememberActiveSchoolAction() {
+  const context = await getSchoolContext()
+  if (!context) return 'unauthenticated' as const
+
+  const cookieStore = await cookies()
+  if (cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId) {
+    cookieStore.set(ACTIVE_SCHOOL_COOKIE, context.schoolId, ACTIVE_SCHOOL_COOKIE_OPTIONS)
+  }
   return 'OK' as const
 }

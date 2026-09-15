@@ -17,20 +17,20 @@ function getIconType(src: string) {
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const schoolId = await resolveBrandingSchoolId()
-  const { faviconUrl } = schoolId ? await getBrandingConfig(schoolId) : { faviconUrl: undefined }
-  const faviconType = faviconUrl ? getIconType(faviconUrl) : undefined
-  const configuredFavicon: NonNullable<MetadataRoute.Manifest['icons']> = faviconUrl
+  const { logoUrl } = schoolId ? await getBrandingConfig(schoolId) : { logoUrl: undefined }
+  const logoType = logoUrl ? getIconType(logoUrl) : undefined
+  const schoolLogo: NonNullable<MetadataRoute.Manifest['icons']> = logoUrl
     ? [
         {
-          src: faviconUrl,
+          src: logoUrl,
           sizes: 'any',
           purpose: 'any' as const,
-          ...(faviconType ? { type: faviconType } : {}),
+          ...(logoType ? { type: logoType } : {}),
         },
       ]
     : []
   const icons: NonNullable<MetadataRoute.Manifest['icons']> = [
-    ...configuredFavicon,
+    ...schoolLogo,
     {
       src: '/icon-192x192.png',
       sizes: '192x192',

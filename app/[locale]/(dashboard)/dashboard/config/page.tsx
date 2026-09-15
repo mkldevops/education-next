@@ -1,19 +1,11 @@
-import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
+import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import type { ReactNode } from 'react'
-import { ConfigValueTypeLabel } from '@/features/enums'
-import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import { db } from '@/lib/db'
-import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
-import {
-  MAX_STUDENTS_PER_CLASS_CONFIG_KEY,
-  SCHOOL_CONFIG_DEFAULTS,
-  THEME_PRIMARY_CONFIG_KEY,
-} from '@/lib/school-config-defaults'
+import { SCHOOL_CONFIG_KEYS, SCHOOL_CONFIG_VALUE_TYPES } from '@/lib/school-config'
+import { SCHOOL_CONFIG_DEFAULTS } from '@/lib/school-config-defaults'
 import { isGoogleConfigured } from '@/lib/social-providers'
-import { TEACHER_EXPENSES_CONFIG_KEY } from '@/lib/teacher-expense-config'
 import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-sign-in-enabled'
 import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
@@ -21,15 +13,12 @@ import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-s
 import { countGoogleOnlyAccounts } from '@/use-cases/users/count-google-only-accounts'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
-import { CreateConfigDialog } from './_components/create-config-dialog'
-import { EditConfigDialog } from './_components/edit-config-dialog'
 import { PlatformSettingsPanel } from './_components/platform-settings-panel'
+import { type SchoolSetting, SchoolSettingsPanel } from './_components/school-settings-panel'
 
 type Props = {
   params: Promise<{ locale: string }>
 }
-
-const AUTOMATIC_PROMOTION_CONFIG_KEY = 'automatic_promotion'
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
@@ -44,7 +33,7 @@ export default async function ConfigPage({ params }: Props) {
   const { schoolId, isSuperAdmin } = await requireSchoolAdmin()
 
   // Les réglages plateforme ne sont lus que pour un super-admin : la page reste ouverte
-  // à un ADMIN d'école, qui n'en voit que la table de configuration de son école.
+  // à un ADMIN d'école, qui n'en voit que les réglages de son école.
   const [googleEnabled, passkeyEnabled, mcpEnabled, schoolSwitchEnabled, googleOnlyAccountCount] =
     isSuperAdmin
       ? await Promise.all([
@@ -60,122 +49,19 @@ export default async function ConfigPage({ params }: Props) {
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const dbConfigs = await db.config.findMany({
-    where: { schoolId, isActive: true },
-    orderBy: { name: 'asc' },
+    where: { schoolId, isActive: true, name: { in: SCHOOL_CONFIG_KEYS } },
+    select: { name: true, value: true },
   })
-
-  const configuredNames = new Set(dbConfigs.map((config) => config.name))
-  // Repli pour les écoles antérieures au backfill : la liste reste la même qu'à la création.
-  const missingKnownConfigs = SCHOOL_CONFIG_DEFAULTS.filter(
-    (config) => !configuredNames.has(config.name)
-  ).map((config) => ({
-    ...config,
-    id: `default-${config.name}`,
-    schoolId,
-    isActive: true,
-    createdAt: new Date(0),
-    updatedAt: new Date(0),
-  }))
-  const configs = [...dbConfigs, ...missingKnownConfigs].sort((a, b) =>
-    a.name.localeCompare(b.name)
+  const storedValues = new Map(dbConfigs.map((config) => [config.name, config.value]))
+  const defaultValues = new Map<string, string>(
+    SCHOOL_CONFIG_DEFAULTS.map((config) => [config.name, config.value])
   )
-  const knownConfig: Record<string, { label: string; description?: string }> = {
-    [BRANDING_CONFIG_KEYS.logoUrl]: { label: t('known.logo') },
-    [BRANDING_CONFIG_KEYS.faviconUrl]: { label: t('known.favicon') },
-    [MAX_STUDENTS_PER_CLASS_CONFIG_KEY]: {
-      label: t('known.maxStudentsPerClass'),
-      description: t('descriptions.maxStudentsPerClass'),
-    },
-    [THEME_PRIMARY_CONFIG_KEY]: {
-      label: t('known.themePrimary'),
-      description: t('descriptions.themePrimary'),
-    },
-    [TEACHER_EXPENSES_CONFIG_KEY]: {
-      label: t('known.teacherExpenses'),
-      description: t('descriptions.teacherExpenses'),
-    },
-    [AUTOMATIC_PROMOTION_CONFIG_KEY]: {
-      label: t('known.automaticPromotion'),
-      description: t('descriptions.automaticPromotion'),
-    },
-    [EVENTS_CONFIG_KEY]: {
-      label: t('known.events'),
-      description: t('descriptions.events'),
-    },
-  }
-
-  const columns: Array<Column<(typeof configs)[0]>> = [
-    {
-      key: 'name',
-      header: t('name'),
-      className: 'font-medium text-graphite',
-      render: (config): ReactNode => {
-        const known = knownConfig[config.name]
-
-        if (!known) return config.name
-
-        return (
-          <div className="space-y-1">
-            <span>{known.label}</span>
-            <div className="text-xs font-normal text-graphite-600">{config.name}</div>
-            {known.description && (
-              <div className="text-xs font-normal text-graphite-600">{known.description}</div>
-            )}
-          </div>
-        )
-      },
-    },
-    {
-      key: 'value',
-      header: t('value'),
-      className: 'text-graphite break-words',
-      render: (config): ReactNode => {
-        if (config.valueType === 'BOOLEAN') {
-          return config.value === 'true' ? t('booleanTrue') : t('booleanFalse')
-        }
-
-        return config.value ? (
-          <div className="flex min-w-0 items-center gap-3">
-            {(config.name === BRANDING_CONFIG_KEYS.logoUrl ||
-              config.name === BRANDING_CONFIG_KEYS.faviconUrl) && (
-              // biome-ignore lint/performance/noImgElement: config URLs are dynamic
-              <img
-                src={config.value}
-                alt=""
-                className="size-8 shrink-0 rounded border border-alabaster-700 object-contain"
-              />
-            )}
-            <span className="min-w-0 break-all">{config.value}</span>
-          </div>
-        ) : (
-          <span className="text-graphite-600">{t('notConfigured')}</span>
-        )
-      },
-    },
-    {
-      key: 'valueType',
-      header: t('type'),
-      className: 'text-graphite',
-      render: (config): ReactNode => (
-        <span className="inline-flex rounded-full bg-alabaster-800 px-2 py-1 text-xs font-medium text-graphite">
-          <ConfigValueTypeLabel valueType={config.valueType} />
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: t('actions'),
-      render: (config): ReactNode => (
-        <EditConfigDialog
-          config={{
-            name: config.name,
-            value: config.value,
-            valueType: config.valueType,
-          }}
-        />
-      ),
-    },
-  ]
+  // Une ligne par clé connue : une école antérieure au backfill voit les mêmes réglages.
+  const settings: SchoolSetting[] = SCHOOL_CONFIG_KEYS.map((name) => ({
+    name,
+    value: storedValues.get(name) ?? defaultValues.get(name) ?? '',
+    valueType: SCHOOL_CONFIG_VALUE_TYPES[name],
+  }))
 
   return (
     <div className="space-y-8">
@@ -190,23 +76,7 @@ export default async function ConfigPage({ params }: Props) {
         <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
       </div>
 
-      <section className="space-y-3">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-graphite">{t('sections.school')}</h2>
-            <p className="mt-1 text-sm text-graphite-600">{t('sections.schoolDescription')}</p>
-          </div>
-          <CreateConfigDialog />
-        </div>
-        <Card className="rounded border border-alabaster-700">
-          <DataTable
-            data={configs}
-            columns={columns}
-            getRowKey={(config) => config.id}
-            emptyMessage={t('noConfig')}
-          />
-        </Card>
-      </section>
+      <SchoolSettingsPanel settings={settings} />
 
       {isSuperAdmin && (
         <PlatformSettingsPanel

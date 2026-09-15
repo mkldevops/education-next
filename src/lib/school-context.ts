@@ -9,6 +9,13 @@ import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-s
 
 export const ACTIVE_SCHOOL_COOKIE = 'active_school'
 
+export const ACTIVE_SCHOOL_COOKIE_OPTIONS = {
+  path: '/',
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+} as const
+
 /**
  * École active de la requête, déjà validée.
  *

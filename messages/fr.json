@@ -851,58 +851,49 @@
           "schools": "Écoles",
           "schoolsDescription": "Réglages qui gouvernent toutes les écoles de l'instance."
         },
-        "name": "Nom",
-        "value": "Valeur",
-        "type": "Type",
-        "actions": "Actions",
-        "noConfig": "Aucune configuration enregistrée",
         "notConfigured": "Non configuré",
-        "booleanTrue": "Oui",
-        "booleanFalse": "Non",
-        "known": {
-          "logo": "Logo",
-          "favicon": "Favicon",
-          "maxStudentsPerClass": "Élèves maximum par classe",
-          "teacherExpenses": "Notes de frais enseignants",
-          "themePrimary": "Couleur principale",
-          "automaticPromotion": "Promotion automatique",
-          "events": "Événements"
-        },
-        "descriptions": {
-          "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe.",
-          "teacherExpenses": "Active la saisie des notes de frais des enseignants.",
-          "themePrimary": "Couleur principale de l'interface, au format hexadécimal.",
-          "automaticPromotion": "Promotion des élèves vers la période suivante. Aucun déclencheur dans l'interface à ce jour : le réglage est conservé mais reste sans effet.",
-          "events": "Active toute la fonctionnalité Événements ; l'entrée de menu disparaît quand ce réglage est désactivé."
-        },
-        "create": {
-          "title": "Nouveau paramètre",
-          "name": "Nom du paramètre",
-          "valueType": "Type de valeur",
-          "value": "Valeur",
-          "types": {
-            "TEXT": "Texte",
-            "NUMBER": "Nombre",
-            "BOOLEAN": "Booléen",
-            "COLOR": "Couleur"
+        "settings": {
+          "logo_url": {
+            "label": "Logo",
+            "description": "Affiché dans la barre latérale et sur la page de connexion. Le favicon est généré à partir de ce logo."
           },
-          "enabled": "Activé",
-          "cancel": "Annuler",
-          "submit": "Créer",
-          "success": "Paramètre créé",
-          "error": "Erreur lors de la création",
-          "errors": {
-            "validationError": "Vérifiez les informations saisies",
-            "notFound": "Paramètre introuvable",
-            "invalidConfigValue": "La valeur ne correspond pas au type choisi"
+          "theme_primary": {
+            "label": "Couleur principale",
+            "description": "Couleur principale de l'interface, au format hexadécimal."
+          },
+          "theme_primary_hover": {
+            "label": "Couleur principale au survol",
+            "description": "Teinte des boutons survolés. Dérivée de la couleur principale tant qu'elle n'est pas posée."
+          },
+          "theme_primary_light": {
+            "label": "Couleur principale claire",
+            "description": "Fonds et accents légers. Dérivée de la couleur principale tant qu'elle n'est pas posée."
+          },
+          "theme_background": {
+            "label": "Couleur de fond",
+            "description": "Fond des pages. Blanc tant qu'elle n'est pas posée."
+          },
+          "max_students_per_class": {
+            "label": "Élèves maximum par classe",
+            "description": "Nombre maximal d'élèves autorisés dans une classe."
+          },
+          "teacher_expenses_enabled": {
+            "label": "Notes de frais enseignants",
+            "description": "Active la saisie des notes de frais des enseignants."
+          },
+          "automatic_promotion": {
+            "label": "Promotion automatique",
+            "description": "Promotion des élèves vers la période suivante. Aucun déclencheur dans l'interface à ce jour : le réglage est conservé mais reste sans effet."
+          },
+          "events_enabled": {
+            "label": "Événements",
+            "description": "Active toute la fonctionnalité Événements ; l'entrée de menu disparaît quand ce réglage est désactivé."
           }
         },
         "edit": {
           "title": "Modifier",
           "value": "Valeur",
           "colorPlaceholder": "#3c6e71",
-          "true": "Vrai",
-          "false": "Faux",
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Paramètre mis à jour",
@@ -1899,12 +1890,6 @@
     "TRANSFER": "Virement",
     "CHECK": "Chèque",
     "STRIPE": "Stripe"
-  },
-  "configValueType": {
-    "TEXT": "Texte",
-    "NUMBER": "Nombre",
-    "BOOLEAN": "Booléen",
-    "COLOR": "Couleur"
   },
   "eventCategory": {
     "MEETING": "Réunion",

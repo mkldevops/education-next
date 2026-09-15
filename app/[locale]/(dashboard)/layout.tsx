@@ -1,4 +1,4 @@
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
@@ -8,8 +8,9 @@ import { auth } from '@/lib/auth'
 import { getBrandingConfig } from '@/lib/branding'
 import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
-import { getAuthorizedSchools, getSchoolContext } from '@/lib/school-context'
+import { ACTIVE_SCHOOL_COOKIE, getAuthorizedSchools, getSchoolContext } from '@/lib/school-context'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
+import { RememberActiveSchool } from './_components/remember-active-school'
 
 type Props = {
   children: React.ReactNode
@@ -23,7 +24,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
   // La tête de la barre latérale suit le drapeau seul, super-admin compris : le réglage
   // vit sur `/dashboard/config`, l'éteindre doit se voir immédiatement chez celui qui
   // l'écrit. L'issue de secours des liens profonds reste ouverte par `canSwitchSchool()`.
-  const [branding, session, schools, switchAllowed, eventsConfig] = await Promise.all([
+  const [branding, session, schools, switchAllowed, eventsConfig, cookieStore] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
     getAuthorizedSchools(),
@@ -32,24 +33,30 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
       where: { schoolId: context.schoolId, name: EVENTS_CONFIG_KEY, isActive: true },
       select: { value: true },
     }),
+    cookies(),
   ])
+  // La page de connexion n'a pas de session : elle s'habille de l'école désignée par ce cookie.
+  const rememberSchool = cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId
 
   const userName = session?.user.name || session?.user.email || undefined
   const eventsEnabled = eventsConfig?.value === 'true'
 
   return (
-    <Sidebar
-      role={context.role}
-      isSuperAdmin={context.isSuperAdmin}
-      familyId={context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined}
-      logoUrl={branding.logoUrl}
-      schoolName={branding.schoolName}
-      userName={userName}
-      schools={schools}
-      activeSchoolId={context.schoolId}
-      canSwitchSchool={switchAllowed}
-      eventsEnabled={eventsEnabled}
-    />
+    <>
+      {rememberSchool && <RememberActiveSchool />}
+      <Sidebar
+        role={context.role}
+        isSuperAdmin={context.isSuperAdmin}
+        familyId={context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined}
+        logoUrl={branding.logoUrl}
+        schoolName={branding.schoolName}
+        userName={userName}
+        schools={schools}
+        activeSchoolId={context.schoolId}
+        canSwitchSchool={switchAllowed}
+        eventsEnabled={eventsEnabled}
+      />
+    </>
   )
 }
 

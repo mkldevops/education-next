@@ -1,6 +1,5 @@
 import { storageGateway } from '@/gateways/storage-gateway'
-
-export const MAX_BRANDING_IMAGE_BYTES = 1024 * 1024
+import { MAX_BRANDING_IMAGE_BYTES } from '@/lib/branding-config'
 
 const ALLOWED_BRANDING_IMAGE_TYPES: Record<string, string> = {
   'image/png': 'png',

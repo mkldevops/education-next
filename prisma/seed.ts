@@ -250,7 +250,6 @@ async function seedSchoolContent(fixture: SchoolFixture) {
       },
       { schoolId, name: 'theme_primary', value: fixture.themePrimary, valueType: 'COLOR' },
       { schoolId, name: 'logo_url', value: '', valueType: 'TEXT' },
-      { schoolId, name: 'favicon_url', value: '', valueType: 'TEXT' },
       {
         schoolId,
         name: 'teacher_expenses_enabled',

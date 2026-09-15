@@ -6,12 +6,14 @@ const findActiveByIdMock = vi.fn()
 const findMembershipMock = vi.fn()
 const isSchoolSwitchEnabledMock = vi.fn()
 const cookieSetMock = vi.fn()
+const cookieGetMock = vi.fn()
+const getSchoolContextMock = vi.fn()
 const revalidatePathMock = vi.fn()
 
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }))
 vi.mock('next/headers', () => ({
   headers: async () => new Headers(),
-  cookies: async () => ({ set: cookieSetMock }),
+  cookies: async () => ({ set: cookieSetMock, get: cookieGetMock }),
 }))
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: getSessionMock } } }))
 vi.mock('@/lib/db', () => ({ db: { user: { findUnique: findUniqueUserMock } } }))
@@ -25,7 +27,12 @@ vi.mock('@/use-cases/platform-settings/is-school-switch-enabled', () => ({
   isSchoolSwitchEnabled: isSchoolSwitchEnabledMock,
 }))
 
-const { switchSchoolAction } = await import('./school-actions')
+vi.mock('@/lib/school-context', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/school-context')>()),
+  getSchoolContext: getSchoolContextMock,
+}))
+
+const { rememberActiveSchoolAction, switchSchoolAction } = await import('./school-actions')
 
 const SCHOOL_ID = '11111111-1111-4111-8111-111111111111'
 
@@ -99,5 +106,30 @@ describe('switchSchoolAction, flag disabled', () => {
 
     expect(await switchSchoolAction(SCHOOL_ID)).toBe('OK')
     expect(cookieSetMock).toHaveBeenCalledWith('active_school', SCHOOL_ID, expect.anything())
+  })
+})
+
+describe('rememberActiveSchoolAction', () => {
+  it('writes the displayed school when the cookie names another one', async () => {
+    getSchoolContextMock.mockResolvedValue({ schoolId: SCHOOL_ID })
+    cookieGetMock.mockReturnValue({ value: 'other-school' })
+
+    expect(await rememberActiveSchoolAction()).toBe('OK')
+    expect(cookieSetMock).toHaveBeenCalledWith('active_school', SCHOOL_ID, expect.anything())
+  })
+
+  it('leaves an up-to-date cookie untouched', async () => {
+    getSchoolContextMock.mockResolvedValue({ schoolId: SCHOOL_ID })
+    cookieGetMock.mockReturnValue({ value: SCHOOL_ID })
+
+    expect(await rememberActiveSchoolAction()).toBe('OK')
+    expect(cookieSetMock).not.toHaveBeenCalled()
+  })
+
+  it('writes nothing without a school context', async () => {
+    getSchoolContextMock.mockResolvedValue(null)
+
+    expect(await rememberActiveSchoolAction()).toBe('unauthenticated')
+    expect(cookieSetMock).not.toHaveBeenCalled()
   })
 })

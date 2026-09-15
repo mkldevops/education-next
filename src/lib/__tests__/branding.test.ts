@@ -3,38 +3,26 @@ import { resolveBrandingConfig } from '@/lib/branding'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 
 describe('resolveBrandingConfig', () => {
-  it('uses favicon_url when configured', () => {
+  it('returns the configured logo', () => {
     const branding = resolveBrandingConfig([
       { name: BRANDING_CONFIG_KEYS.logoUrl, value: '/logo.png' },
-      { name: BRANDING_CONFIG_KEYS.faviconUrl, value: '/favicon.ico' },
     ])
 
-    expect(branding).toEqual({
-      logoUrl: '/logo.png',
-      faviconUrl: '/favicon.ico',
-    })
+    expect(branding).toEqual({ logoUrl: '/logo.png' })
   })
 
-  it('uses the logo as favicon fallback', () => {
+  it('ignores a legacy favicon_url row: the favicon always comes from the logo', () => {
     const branding = resolveBrandingConfig([
       { name: BRANDING_CONFIG_KEYS.logoUrl, value: '/logo.png' },
+      { name: 'favicon_url', value: '/favicon.ico' },
     ])
 
-    expect(branding).toEqual({
-      logoUrl: '/logo.png',
-      faviconUrl: '/logo.png',
-    })
+    expect(branding).toEqual({ logoUrl: '/logo.png' })
   })
 
   it('ignores empty branding values', () => {
-    const branding = resolveBrandingConfig([
-      { name: BRANDING_CONFIG_KEYS.logoUrl, value: '   ' },
-      { name: BRANDING_CONFIG_KEYS.faviconUrl, value: '' },
-    ])
+    const branding = resolveBrandingConfig([{ name: BRANDING_CONFIG_KEYS.logoUrl, value: '   ' }])
 
-    expect(branding).toEqual({
-      logoUrl: undefined,
-      faviconUrl: undefined,
-    })
+    expect(branding).toEqual({ logoUrl: undefined })
   })
 })

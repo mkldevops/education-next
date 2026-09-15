@@ -15,12 +15,8 @@ function findConfigValue(
 }
 
 export function resolveBrandingConfig(configs: Array<{ name: string; value: string }>) {
-  const logoUrl = findConfigValue(configs, BRANDING_CONFIG_KEYS.logoUrl)
-  const faviconUrl = findConfigValue(configs, BRANDING_CONFIG_KEYS.faviconUrl) || logoUrl
-
   return {
-    logoUrl,
-    faviconUrl,
+    logoUrl: findConfigValue(configs, BRANDING_CONFIG_KEYS.logoUrl),
   }
 }
 

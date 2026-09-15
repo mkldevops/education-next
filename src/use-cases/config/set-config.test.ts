@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { setConfig } from './set-config'
 
 type ConfigGw = Parameters<typeof setConfig>[1]
+type Input = Parameters<typeof setConfig>[0]
 
 const SCHOOL_ID = 'school-1'
 
@@ -30,195 +31,116 @@ describe('setConfig', () => {
     gateway = new ConfigGatewaySpy()
   })
 
-  it('fails validation when name is empty', async () => {
-    // GIVEN
-    const input = { schoolId: SCHOOL_ID, name: '', value: 'test', valueType: 'TEXT' as const }
+  const run = (input: Input) => setConfig(input, gateway as unknown as ConfigGw)
 
+  it('refuses a name outside the known school settings', async () => {
     // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
-
-    // THEN
-    expect(result).toBe('validationError')
-  })
-
-  it('fails validation when value type is invalid', async () => {
-    // GIVEN
-    const input = {
+    const result = await run({
       schoolId: SCHOOL_ID,
-      name: 'test.config',
-      value: 'test',
-      valueType: 'INVALID' as never,
-    }
-
-    // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
-
-    // THEN
-    expect(result).toBe('validationError')
-  })
-
-  it('fails when NUMBER type has non-numeric value', async () => {
-    // GIVEN
-    const input = {
-      schoolId: SCHOOL_ID,
-      name: 'max.users',
-      value: 'not-a-number',
-      valueType: 'NUMBER' as const,
-    }
-
-    // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
-
-    // THEN
-    expect(result).toBe('invalidConfigValue')
-  })
-
-  it('fails when BOOLEAN type has invalid value', async () => {
-    // GIVEN
-    const input = {
-      schoolId: SCHOOL_ID,
-      name: 'enable.feature',
-      value: 'yes',
-      valueType: 'BOOLEAN' as const,
-    }
-
-    // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
-
-    // THEN
-    expect(result).toBe('invalidConfigValue')
-  })
-
-  it('sets TEXT config', async () => {
-    // GIVEN
-    const input = {
-      schoolId: SCHOOL_ID,
-      name: 'app.name',
-      value: 'Education Next',
-      valueType: 'TEXT' as const,
-    }
-
-    // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
-
-    // THEN
-    expect(result).toHaveProperty('name', 'app.name')
-  })
-
-  it('sets NUMBER config with integer', async () => {
-    // GIVEN
-    const input = {
-      schoolId: SCHOOL_ID,
-      name: 'max.users',
-      value: '100',
-      valueType: 'NUMBER' as const,
-    }
-
-    // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
-
-    // THEN
-    expect(result).toHaveProperty('name', 'max.users')
-  })
-
-  it('sets NUMBER config with decimal', async () => {
-    // GIVEN
-    const input = {
-      schoolId: SCHOOL_ID,
-      name: 'app.pi',
-      value: '3.14159',
-      valueType: 'NUMBER' as const,
-    }
-
-    // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
-
-    // THEN
-    expect(result).toHaveProperty('name', 'app.pi')
-  })
-
-  it('sets BOOLEAN config to true', async () => {
-    // GIVEN
-    const input = {
-      schoolId: SCHOOL_ID,
-      name: 'enable.notifications',
+      name: 'favicon_url' as never,
       value: 'true',
-      valueType: 'BOOLEAN' as const,
-    }
-
-    // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
+    })
 
     // THEN
-    expect(result).toHaveProperty('name', 'enable.notifications')
+    expect(result).toBe('validationError')
+    expect(gateway.setData).toBeNull()
   })
 
-  it('sets BOOLEAN config to false', async () => {
-    // GIVEN
-    const input = {
-      schoolId: SCHOOL_ID,
-      name: 'enable.notifications',
-      value: 'false',
-      valueType: 'BOOLEAN' as const,
-    }
-
+  it('fails validation when name is empty', async () => {
     // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
+    const result = await run({ schoolId: SCHOOL_ID, name: '' as never, value: 'test' })
 
     // THEN
-    expect(result).toHaveProperty('name', 'enable.notifications')
+    expect(result).toBe('validationError')
   })
 
-  it('calls gateway with correct data', async () => {
-    // GIVEN
-    const input = {
-      schoolId: SCHOOL_ID,
-      name: 'test.setting',
-      value: 'test-value',
-      valueType: 'TEXT' as const,
-    }
-
+  it('fails when a NUMBER setting has a non-numeric value', async () => {
     // WHEN
-    await setConfig(input, gateway as unknown as ConfigGw)
+    const result = await run({
+      schoolId: SCHOOL_ID,
+      name: 'max_students_per_class',
+      value: 'not-a-number',
+    })
 
     // THEN
-    expect(gateway.setData).toMatchObject({
-      name: 'test.setting',
-      value: 'test-value',
+    expect(result).toBe('invalidConfigValue')
+  })
+
+  it('fails when a BOOLEAN setting has an invalid value', async () => {
+    // WHEN
+    const result = await run({
+      schoolId: SCHOOL_ID,
+      name: 'teacher_expenses_enabled',
+      value: 'yes',
+    })
+
+    // THEN
+    expect(result).toBe('invalidConfigValue')
+  })
+
+  it('stores the value type declared for the key, not one chosen by the caller', async () => {
+    // WHEN
+    await run({
+      schoolId: SCHOOL_ID,
+      name: 'max_students_per_class',
+      value: '25',
       valueType: 'TEXT',
+    } as Input)
+
+    // THEN
+    expect(gateway.setData).toEqual({
+      name: 'max_students_per_class',
+      value: '25',
+      valueType: 'NUMBER',
     })
   })
 
+  it('sets a TEXT setting', async () => {
+    // WHEN
+    const result = await run({
+      schoolId: SCHOOL_ID,
+      name: 'logo_url',
+      value: 'https://example.com/logo.png',
+    })
+
+    // THEN
+    expect(result).toHaveProperty('valueType', 'TEXT')
+  })
+
+  it('sets a NUMBER setting with a decimal', async () => {
+    // WHEN
+    const result = await run({ schoolId: SCHOOL_ID, name: 'max_students_per_class', value: '3.5' })
+
+    // THEN
+    expect(result).toHaveProperty('value', '3.5')
+  })
+
+  it.each(['true', 'false'])('sets a BOOLEAN setting to %s', async (value) => {
+    // WHEN
+    const result = await run({ schoolId: SCHOOL_ID, name: 'automatic_promotion', value })
+
+    // THEN
+    expect(result).toMatchObject({ value, valueType: 'BOOLEAN' })
+  })
+
   it('refuses a color that escapes the style rule', async () => {
-    // GIVEN
-    const input = {
+    // WHEN
+    const result = await run({
       schoolId: SCHOOL_ID,
       name: 'theme_primary',
       value: '#fff; } body { display: none } :root {',
-      valueType: 'COLOR' as const,
-    }
-
-    // WHEN
-    const result = await setConfig(input, gateway as unknown as ConfigGw)
+    })
 
     // THEN
     expect(result).toBe('invalidConfigValue')
     expect(gateway.setData).toBeNull()
   })
 
-  it('accepts an hexadecimal color', async () => {
-    // GIVEN
-    const input = {
-      schoolId: SCHOOL_ID,
-      name: 'theme_primary',
-      value: '#3c6e71',
-      valueType: 'COLOR' as const,
-    }
-
+  it('accepts an hexadecimal color on a derived theme token', async () => {
     // WHEN
-    await setConfig(input, gateway as unknown as ConfigGw)
+    await run({ schoolId: SCHOOL_ID, name: 'theme_primary_hover', value: '#30595b' })
 
     // THEN
-    expect(gateway.setData).toMatchObject({ value: '#3c6e71' })
+    expect(gateway.setData).toMatchObject({ value: '#30595b', valueType: 'COLOR' })
   })
 })

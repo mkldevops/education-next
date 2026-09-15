@@ -13,22 +13,23 @@ import {
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
+import type { ConfigValueType } from '@/generated/prisma/client'
 import { useRouter } from '@/i18n/routing'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
+import type { SchoolConfigKey } from '@/lib/school-config'
 import { setConfigAction } from '../../../_lib/config-actions'
 import { ImageValueField } from './image-value-field'
 
-const IMAGE_CONFIG_NAMES: string[] = [BRANDING_CONFIG_KEYS.logoUrl, BRANDING_CONFIG_KEYS.faviconUrl]
-
 interface EditConfigDialogProps {
   config: {
-    name: string
+    name: SchoolConfigKey
     value: string
-    valueType: 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'COLOR'
+    valueType: ConfigValueType
   }
+  label: string
 }
 
-export function EditConfigDialog({ config }: EditConfigDialogProps) {
+export function EditConfigDialog({ config, label }: EditConfigDialogProps) {
   const t = useTranslations('dashboard.pages.config.edit')
 
   return (
@@ -41,7 +42,7 @@ export function EditConfigDialog({ config }: EditConfigDialogProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {t('title')} — {config.name}
+            {t('title')} — {label}
           </DialogTitle>
         </DialogHeader>
         <EditConfigForm config={config} />
@@ -50,26 +51,17 @@ export function EditConfigDialog({ config }: EditConfigDialogProps) {
   )
 }
 
-function EditConfigForm({ config }: EditConfigDialogProps) {
+function EditConfigForm({ config }: Pick<EditConfigDialogProps, 'config'>) {
   const t = useTranslations('dashboard.pages.config.edit')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
 
   const handleSubmit = onSubmit(
-    (formData) => {
-      const value =
-        config.valueType === 'BOOLEAN'
-          ? formData.get('value')
-            ? 'true'
-            : 'false'
-          : (formData.get('value') as string)
-
-      return setConfigAction({
+    (formData) =>
+      setConfigAction({
         name: config.name,
-        value,
-        valueType: config.valueType,
-      })
-    },
+        value: formData.get('value') as string,
+      }),
     { onSuccess: () => router.refresh() }
   )
 
@@ -79,25 +71,13 @@ function EditConfigForm({ config }: EditConfigDialogProps) {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="edit-config-value">{t('value')}</Label>
-            {IMAGE_CONFIG_NAMES.includes(config.name) ? (
+            {config.name === BRANDING_CONFIG_KEYS.logoUrl ? (
               <ImageValueField
                 id="edit-config-value"
                 name="value"
                 defaultValue={config.value}
                 disabled={isPending}
               />
-            ) : config.valueType === 'BOOLEAN' ? (
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  id="edit-config-value"
-                  name="value"
-                  type="checkbox"
-                  defaultChecked={config.value === 'true'}
-                  disabled={isPending}
-                  className="h-4 w-4 rounded border-alabaster"
-                />
-                {config.value === 'true' ? t('true') : t('false')}
-              </label>
             ) : config.valueType === 'COLOR' ? (
               <div className="flex items-center gap-3">
                 <input
