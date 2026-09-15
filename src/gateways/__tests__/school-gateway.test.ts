@@ -163,6 +163,7 @@ describe('schoolGateway.create', () => {
       'logo_url',
       'favicon_url',
       'teacher_expenses_enabled',
+      'events_enabled',
       'max_students_per_class',
       'theme_primary',
     ])

@@ -29,10 +29,10 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 
 ## Multi-school
 
-Every business row belongs to exactly one `School`. Nineteen models carry `schoolId NOT NULL`:
+Every business row belongs to exactly one `School`. Twenty-one models carry `schoolId NOT NULL`:
 `Family`, `UserFamily`, `Person`, `FamilyPerson`, `Student`, `PhoneNumber`, `Config`, `Level`,
 `Period`, `ClassPeriod`, `ClassPeriodTeacher`, `Enrollment`, `ClassAssignment`, `Payment`,
-`PaymentTransaction`, `Plan`, `Invitation`, `Teacher`, `TeacherExpense`.
+`PaymentTransaction`, `Plan`, `Invitation`, `Teacher`, `TeacherExpense`, `Event`, `EventImage`.
 
 `PaymentProviderEvent` is the one business model left unscoped, deliberately: its
 `paymentTransactionId` is nullable, so an unmatched provider event has no derivable school. It is a
@@ -1018,7 +1018,8 @@ one school**.
   written through: those gateways address rows by `id_schoolId`, which is a total unique.
 - Consumed today: `max_students_per_class` (default class capacity),
   `teacher_expenses_enabled` (enables generic teacher expense notes,
-  `src/lib/teacher-expense-config.ts`), `logo_url` and `favicon_url`
+  `src/lib/teacher-expense-config.ts`), `events_enabled` (enables the Events feature, off by
+  default, `src/lib/events-config.ts`), `logo_url` and `favicon_url`
   (`src/lib/branding-config.ts`), and `theme_primary`, `theme_primary_hover`,
   `theme_primary_light`, `theme_background` (`src/components/theme-provider.tsx`).
 - **The school name is no longer a `Config` entry.** It lives on `School.name`, the single source of
@@ -1074,6 +1075,56 @@ the neutral platform title `metadata.platformTitle`, not an operator name: the d
 `app/[locale]/layout.tsx`, and the sidebar head in `src/features/dashboard/sidebar.tsx`. Strings that
 address the reader inside a school — greeting, welcome card, unlinked-parent notice, invitation
 email — interpolate `{schoolName}` instead of naming one school in the source text.
+
+## Events
+
+Owner: `src/domain/event.ts`, `src/use-cases/events/`, `src/gateways/event-gateway.ts`.
+
+- **Gated by the school setting `events_enabled`** (`src/lib/events-config.ts`), off by default.
+  Four enforcement points read the same flag: the sidebar entry
+  (`src/features/dashboard/sidebar-items.ts`), the dashboard page (`notFound()` when it is off), every
+  use-case in `src/use-cases/events/` (`'notConfigured'` before any other check), and — once it
+  exists — the public event listing.
+- **Visibility is an ordered scale, not a set of independent tags**: `PUBLIC ⊂ MEMBERS ⊂ STAFF`
+  (`EventVisibility`, `prisma/schema.prisma`). `visibleEventVisibilities()` (`src/domain/event.ts`)
+  turns a viewer into the list of visibilities it may read, which replaces a viewer × category
+  matrix. There is no `TEACHER` audience: `Teacher` carries no account of its own, and `SchoolRole`
+  only has `ADMIN` and `PARENT`, so a teacher-only visibility would be unreachable by anyone.
+- **`EventCategory` is purely presentational** — icon, color, filter — and never restricts who can
+  see an event. Confidentiality lives exclusively in `EventVisibility`; keeping the two axes separate
+  avoids an admin believing that picking a category narrows the audience.
+- **`CANCELLED` is not an archival state.** A cancelled event stays visible, shown struck through —
+  families have already organized their day around it. Archiving instead sets `Event.isActive` to
+  `false`, and only that hides the event.
+- **The slug is unique per school, scoped to active events** — `@@unique([schoolId, slug], where: {
+  isActive: true })`. A collision is refused outright (`'slugTaken'`), never resolved by appending a
+  suffix: a silently renamed slug would break a link already shared with families.
+- **`allDay` fixes a storage and display convention.** An all-day event stores `startAt`/`endAt` at
+  UTC midnight (`normalizeEventDates`, `src/domain/event.ts`), and `formatEventDate`
+  (`src/lib/date.ts`) forces `timeZone: 'UTC'` when rendering it. Without both, a whole day would
+  render as the previous day for any reader west of Greenwich.
+- **`EventImage.position === 0` is the cover image.** There is no `coverImageId` column on `Event`:
+  that would let a cover point at another event's image. `EventImage` carries no `isActive` either,
+  deliberately — the soft-delete extension (`src/lib/db.ts`) only filters the root of a query, so an
+  archived image would still surface through `event.images` via `include`. Removal is real, and
+  `removeEventImage` renumbers the remaining `position`s to `0..n-1` inside one transaction so the
+  cover invariant never gaps.
+- **Six images per event, enforced server-side** (`MAX_EVENT_IMAGES`, `src/domain/event.ts`):
+  `addEventImage` refuses a seventh with `'tooManyImages'`.
+- **Upload accepts PNG, JPEG and WebP only — no SVG**, unlike branding images: an event image is
+  content shown to families, not an operator-controlled asset, so active SVG markup is refused
+  outright (`'unsupportedType'`). The limit is 4 MB (`'fileTooLarge'`) and an empty file is refused
+  (`'emptyFile'`) (`MAX_EVENT_IMAGE_BYTES`, `src/use-cases/media/upload-event-image.ts`). The object
+  is stored under `events/<schoolId>/<uuid>.<ext>` and served through `GET /api/media/events/…`, the
+  same public-but-unenumerable route as `branding/`. Without the object-store configuration, the
+  upload use-case answers `'notConfigured'` rather than crashing, exactly like branding — but
+  `uploadEventImageAction` **renames it `'storageNotConfigured'`**
+  (`app/[locale]/(dashboard)/_lib/event-actions.ts`). The two conditions share no message: the
+  use-case discriminant means "the feature is off", the storage one means "there is no S3", and
+  collapsing them told an administrator whose setting was on that events were not enabled.
+- **Both `Event` and `EventImage` are tenant-scoped** (`src/lib/tenant-guard.ts`); `Event` is also
+  soft-deleted through the shared extension (`src/lib/db.ts`), so an archived event disappears from
+  every top-level read without a filter written by hand.
 
 ## Invitations
 

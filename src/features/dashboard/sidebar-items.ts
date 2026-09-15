@@ -3,6 +3,7 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
+  CalendarHeart,
   ClipboardList,
   CreditCard,
   GraduationCap,
@@ -25,6 +26,8 @@ export type NavItemConfig = {
   requiredRoles?: SchoolRole[]
   /** Surface plateforme : réservée à `isSuperAdmin`, qu'aucun rôle d'école ne couvre. */
   platformOnly?: true
+  /** Surface pilotée par un réglage d'école ; `canView` la ferme quand il est éteint. */
+  feature?: 'events'
 }
 
 const gestionItems: NavItemConfig[] = [
@@ -33,6 +36,13 @@ const gestionItems: NavItemConfig[] = [
   { href: '/dashboard/students', icon: GraduationCap, key: 'students' },
   { href: '/dashboard/enrollments', icon: ClipboardList, key: 'enrollments' },
   { href: '/dashboard/payments', icon: CreditCard, key: 'payments' },
+  {
+    href: '/dashboard/events',
+    icon: CalendarHeart,
+    key: 'events',
+    requiredRoles: ['ADMIN'],
+    feature: 'events',
+  },
 ]
 
 const configItems: NavItemConfig[] = [
@@ -55,6 +65,7 @@ export type NavScope = {
   role: SchoolRole | null
   isSuperAdmin: boolean
   familyId?: string
+  features: { events: boolean }
 }
 
 export type VisibleNavItems = {
@@ -63,8 +74,16 @@ export type VisibleNavItems = {
   bottom: NavItemConfig[]
 }
 
-export function resolveNavItems({ role, isSuperAdmin, familyId }: NavScope): VisibleNavItems {
+export function resolveNavItems({
+  role,
+  isSuperAdmin,
+  familyId,
+  features,
+}: NavScope): VisibleNavItems {
   const canView = (item: NavItemConfig) => {
+    // Contrôlé avant tout le reste : un drapeau d'école éteint ferme la surface même à
+    // un super-admin, exactement comme la tête de la barre latérale suit la marque seule.
+    if (item.feature && !features[item.feature]) return false
     // Contrôlé avant `requiredRoles` : un `ADMIN` d'école ne doit jamais hériter d'une
     // surface plateforme au motif qu'elle n'exige aucun rôle d'école.
     if (item.platformOnly) return isSuperAdmin
@@ -88,5 +107,9 @@ export function resolveNavItems({ role, isSuperAdmin, familyId }: NavScope): Vis
     }
   }
 
-  return { gestion: gestionItems, config: configItems.filter(canView), bottom: bottomItems }
+  return {
+    gestion: gestionItems.filter(canView),
+    config: configItems.filter(canView),
+    bottom: bottomItems,
+  }
 }

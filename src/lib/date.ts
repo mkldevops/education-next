@@ -32,3 +32,48 @@ export function calculateAge(birthday: DateInput, at: DateInput = new Date()) {
   }
   return age
 }
+
+type EventDateInput = {
+  allDay: boolean
+  startAt: Date
+  endAt?: Date | null
+}
+
+/**
+ * Un événement `allDay` est stocké à minuit UTC (`normalizeEventDates`, côté domaine). Le
+ * formater sans fuseau forcé lirait l'instant dans le fuseau du lecteur et afficherait la
+ * veille à l'ouest de Greenwich : `timeZone: 'UTC'` fait relire le même quantième que
+ * celui stocké, quel que soit le lecteur.
+ *
+ * Une plage dont les deux bornes tombent le même jour n'affiche la date qu'une fois.
+ */
+export function formatEventDate(event: EventDateInput, locale: string): string {
+  const { allDay, startAt, endAt } = event
+
+  if (allDay) {
+    const options = { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' } as const
+    const startLabel = startAt.toLocaleDateString(locale, options)
+
+    const sameUtcDay =
+      endAt &&
+      startAt.getUTCFullYear() === endAt.getUTCFullYear() &&
+      startAt.getUTCMonth() === endAt.getUTCMonth() &&
+      startAt.getUTCDate() === endAt.getUTCDate()
+    if (!endAt || sameUtcDay) return startLabel
+
+    return `${startLabel} – ${endAt.toLocaleDateString(locale, options)}`
+  }
+
+  const startLabel = startAt.toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
+  if (!endAt) return startLabel
+
+  const sameLocalDay =
+    startAt.getFullYear() === endAt.getFullYear() &&
+    startAt.getMonth() === endAt.getMonth() &&
+    startAt.getDate() === endAt.getDate()
+  if (sameLocalDay) {
+    return `${startLabel} – ${endAt.toLocaleTimeString(locale, { timeStyle: 'short' })}`
+  }
+
+  return `${startLabel} – ${endAt.toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })}`
+}

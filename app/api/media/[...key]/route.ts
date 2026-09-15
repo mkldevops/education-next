@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { storageGateway } from '@/gateways/storage-gateway'
 
-const ALLOWED_KEY_PATTERN = /^branding\/[^/]+\/[^/]+$/
+// Route publique : les clés sont des UUID non énumérables (`<uuid>.<ext>`), l'absence
+// d'authentification n'expose donc aucune image par essai d'URL.
+const ALLOWED_KEY_PATTERN = /^(branding|events)\/[^/]+\/[^/]+$/
 
 export async function GET(_request: NextRequest, context: { params: Promise<{ key: string[] }> }) {
   const { key } = await context.params

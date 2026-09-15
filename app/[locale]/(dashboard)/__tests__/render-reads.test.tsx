@@ -237,6 +237,7 @@ async function seedSchool(label: string, suffix: string) {
         value: 'true',
         valueType: 'BOOLEAN',
       },
+      { schoolId: school.id, name: 'events_enabled', value: 'true', valueType: 'BOOLEAN' },
     ],
   })
   await raw.teacherExpense.create({
@@ -452,6 +453,12 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
 
     it('teachers', async () => {
       const { default: Page, generateMetadata } = await import('../dashboard/teachers/page')
+      await generateMetadata({ params: params(), searchParams: Promise.resolve({}) })
+      await Page({ params: params(), searchParams: Promise.resolve({}) })
+    })
+
+    it('events', async () => {
+      const { default: Page, generateMetadata } = await import('../dashboard/events/page')
       await generateMetadata({ params: params(), searchParams: Promise.resolve({}) })
       await Page({ params: params(), searchParams: Promise.resolve({}) })
     })

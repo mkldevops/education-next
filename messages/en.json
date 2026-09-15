@@ -188,6 +188,7 @@
       "users": "Users",
       "schools": "Schools",
       "teachers": "Teachers",
+      "events": "Events",
       "superAdmins": "Super admins"
     },
     "sidebar": {
@@ -217,6 +218,7 @@
       "account": "My account",
       "schools": "Schools",
       "teachers": "Teachers",
+      "events": "Events",
       "superAdmins": "Super admins"
     },
     "pages": {
@@ -863,13 +865,15 @@
           "maxStudentsPerClass": "Maximum students per class",
           "teacherExpenses": "Teacher expense notes",
           "themePrimary": "Primary color",
-          "automaticPromotion": "Automatic promotion"
+          "automaticPromotion": "Automatic promotion",
+          "events": "Events"
         },
         "descriptions": {
           "maxStudentsPerClass": "Maximum number of students allowed in a class.",
           "teacherExpenses": "Enables recording teacher expense notes.",
           "themePrimary": "Primary interface color, in hexadecimal format.",
-          "automaticPromotion": "Promotes students to the next period. No trigger exists in the interface yet: the setting is kept but has no effect."
+          "automaticPromotion": "Promotes students to the next period. No trigger exists in the interface yet: the setting is kept but has no effect.",
+          "events": "Enables the entire Events feature; the menu entry disappears when this setting is off."
         },
         "create": {
           "title": "New Parameter",
@@ -1514,6 +1518,84 @@
           }
         }
       },
+      "events": {
+        "title": "Events",
+        "description": "Meetings, first days, outings, holidays, closures and celebrations for the school.",
+        "create": {
+          "trigger": "New event",
+          "title": "New event",
+          "cancel": "Cancel",
+          "submit": "Create"
+        },
+        "edit": {
+          "trigger": "Edit",
+          "title": "Edit event",
+          "cancel": "Cancel",
+          "submit": "Save"
+        },
+        "fields": {
+          "title": "Title",
+          "summary": "Summary",
+          "description": "Description",
+          "category": "Category",
+          "visibility": "Visibility",
+          "status": "Status",
+          "allDay": "All day",
+          "startAt": "Start",
+          "endAt": "End",
+          "location": "Location",
+          "announceDays": "Announcement days",
+          "announceDaysHint": "The banner appears this many days before the event. Leave empty for no announcement.",
+          "images": "Images",
+          "alt": "Alt text"
+        },
+        "columns": {
+          "event": "Event",
+          "date": "Date",
+          "category": "Category",
+          "visibility": "Visibility",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "empty": "No event registered",
+        "archive": {
+          "trigger": "Archive",
+          "title": "Archive this event?",
+          "description": "The event will no longer be visible or editable. Only support can reverse this action.",
+          "confirm": "Archive"
+        },
+        "images": {
+          "add": "Add an image",
+          "remove": "Remove",
+          "cover": "Cover image",
+          "hint": "Up to 6 images, PNG, JPEG or WebP, 4 MB each.",
+          "none": "No image"
+        },
+        "filters": {
+          "year": "Year",
+          "category": "Category",
+          "all": "All"
+        },
+        "errors": {
+          "validationError": "Check the information you entered",
+          "notConfigured": "Events are not enabled",
+          "notFound": "Event not found",
+          "slugTaken": "An event already uses this title: rename it",
+          "invalidDateRange": "The end date must be after the start date",
+          "tooManyImages": "6 images maximum per event",
+          "unsupportedType": "Unsupported image format",
+          "fileTooLarge": "Image too large (4 MB maximum)",
+          "emptyFile": "The file is empty",
+          "storageNotConfigured": "Image storage is not configured on this server"
+        },
+        "success": {
+          "created": "Event created",
+          "updated": "Event updated",
+          "archived": "Event archived",
+          "imageAdded": "Image added",
+          "imageRemoved": "Image removed"
+        }
+      },
       "authSettings": {
         "title": "Sign-in methods",
         "description": "Choose the methods offered on this instance sign-in page. Email and password always remain available.",
@@ -1816,6 +1898,25 @@
     "NUMBER": "Number",
     "BOOLEAN": "Boolean",
     "COLOR": "Color"
+  },
+  "eventCategory": {
+    "MEETING": "Meeting",
+    "TERM_START": "Term start",
+    "OUTING": "Outing",
+    "HOLIDAY": "Holiday",
+    "CLOSURE": "Closure",
+    "CELEBRATION": "Celebration",
+    "OTHER": "Other"
+  },
+  "eventVisibility": {
+    "PUBLIC": "Public",
+    "MEMBERS": "Families and staff",
+    "STAFF": "Staff only"
+  },
+  "eventStatus": {
+    "DRAFT": "Draft",
+    "PUBLISHED": "Published",
+    "CANCELLED": "Cancelled"
   },
   "errors": {
     "unauthorized": "You must be logged in to perform this action",

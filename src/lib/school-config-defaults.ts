@@ -1,4 +1,5 @@
 import { BRANDING_CONFIG_DEFAULTS } from './branding-config'
+import { EVENTS_CONFIG_DEFAULT } from './events-config'
 import { TEACHER_EXPENSES_CONFIG_DEFAULT } from './teacher-expense-config'
 
 export const MAX_STUDENTS_PER_CLASS_CONFIG_KEY = 'max_students_per_class'
@@ -15,6 +16,7 @@ export const THEME_PRIMARY_CONFIG_KEY = 'theme_primary'
 export const SCHOOL_CONFIG_DEFAULTS = [
   ...BRANDING_CONFIG_DEFAULTS,
   TEACHER_EXPENSES_CONFIG_DEFAULT,
+  EVENTS_CONFIG_DEFAULT,
   { name: MAX_STUDENTS_PER_CLASS_CONFIG_KEY, value: '30', valueType: 'NUMBER' },
   { name: THEME_PRIMARY_CONFIG_KEY, value: '#3c6e71', valueType: 'COLOR' },
 ] as const

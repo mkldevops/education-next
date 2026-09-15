@@ -18,6 +18,8 @@ const prisma = unscopedDbForDataScripts()
  * vers `Family` et `User`, et bloquaient donc la suppression des écoles.
  */
 async function purge() {
+  await prisma.eventImage.deleteMany()
+  await prisma.event.deleteMany()
   await prisma.paymentProviderEvent.deleteMany()
   await prisma.payment.deleteMany()
   await prisma.paymentTransaction.deleteMany()
@@ -254,6 +256,65 @@ async function seedSchoolContent(fixture: SchoolFixture) {
         name: 'teacher_expenses_enabled',
         value: 'false',
         valueType: 'BOOLEAN',
+      },
+      { schoolId, name: 'events_enabled', value: 'true', valueType: 'BOOLEAN' },
+    ],
+  })
+
+  // Quatre événements couvrant les trois visibilités et un brouillon : l'écran est
+  // observable dès le seed, et l'isolation par école reste vérifiable.
+  const day = 24 * 60 * 60 * 1000
+  const atUtcMidnight = (offsetDays: number) => {
+    const date = new Date(Date.now() + offsetDays * day)
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+  }
+
+  await prisma.event.createMany({
+    data: [
+      {
+        schoolId,
+        title: 'Réunion de rentrée',
+        slug: 'reunion-de-rentree',
+        summary: 'Présentation de l’équipe et du programme de l’année.',
+        category: 'MEETING',
+        visibility: 'MEMBERS',
+        status: 'PUBLISHED',
+        allDay: false,
+        startAt: new Date(atUtcMidnight(2).getTime() + 18 * 60 * 60 * 1000),
+        endAt: new Date(atUtcMidnight(2).getTime() + 20 * 60 * 60 * 1000),
+        location: 'Salle polyvalente',
+        announceDaysBefore: 7,
+      },
+      {
+        schoolId,
+        title: 'Fête de fin d’année',
+        slug: 'fete-de-fin-d-annee',
+        summary: 'Spectacle des élèves, ouvert à tous.',
+        category: 'CELEBRATION',
+        visibility: 'PUBLIC',
+        status: 'PUBLISHED',
+        startAt: atUtcMidnight(45),
+        announceDaysBefore: 14,
+      },
+      {
+        schoolId,
+        title: 'Vacances d’automne',
+        slug: 'vacances-d-automne',
+        category: 'HOLIDAY',
+        visibility: 'PUBLIC',
+        status: 'PUBLISHED',
+        startAt: atUtcMidnight(20),
+        endAt: atUtcMidnight(34),
+      },
+      {
+        schoolId,
+        title: 'Conseil pédagogique',
+        slug: 'conseil-pedagogique',
+        category: 'MEETING',
+        visibility: 'STAFF',
+        status: 'DRAFT',
+        allDay: false,
+        startAt: new Date(atUtcMidnight(10).getTime() + 9 * 60 * 60 * 1000),
       },
     ],
   })

@@ -188,6 +188,7 @@
       "users": "Utilisateurs",
       "schools": "Écoles",
       "teachers": "Enseignants",
+      "events": "Événements",
       "superAdmins": "Super-admins"
     },
     "sidebar": {
@@ -217,6 +218,7 @@
       "account": "Mon compte",
       "schools": "Écoles",
       "teachers": "Enseignants",
+      "events": "Événements",
       "superAdmins": "Super-admins"
     },
     "pages": {
@@ -863,13 +865,15 @@
           "maxStudentsPerClass": "Élèves maximum par classe",
           "teacherExpenses": "Notes de frais enseignants",
           "themePrimary": "Couleur principale",
-          "automaticPromotion": "Promotion automatique"
+          "automaticPromotion": "Promotion automatique",
+          "events": "Événements"
         },
         "descriptions": {
           "maxStudentsPerClass": "Nombre maximal d'élèves autorisés dans une classe.",
           "teacherExpenses": "Active la saisie des notes de frais des enseignants.",
           "themePrimary": "Couleur principale de l'interface, au format hexadécimal.",
-          "automaticPromotion": "Promotion des élèves vers la période suivante. Aucun déclencheur dans l'interface à ce jour : le réglage est conservé mais reste sans effet."
+          "automaticPromotion": "Promotion des élèves vers la période suivante. Aucun déclencheur dans l'interface à ce jour : le réglage est conservé mais reste sans effet.",
+          "events": "Active toute la fonctionnalité Événements ; l'entrée de menu disparaît quand ce réglage est désactivé."
         },
         "create": {
           "title": "Nouveau paramètre",
@@ -1514,6 +1518,84 @@
           }
         }
       },
+      "events": {
+        "title": "Événements",
+        "description": "Réunions, rentrées, sorties, vacances, fermetures et festivités de l'école.",
+        "create": {
+          "trigger": "Nouvel événement",
+          "title": "Nouvel événement",
+          "cancel": "Annuler",
+          "submit": "Créer"
+        },
+        "edit": {
+          "trigger": "Modifier",
+          "title": "Modifier l'événement",
+          "cancel": "Annuler",
+          "submit": "Enregistrer"
+        },
+        "fields": {
+          "title": "Titre",
+          "summary": "Résumé",
+          "description": "Description",
+          "category": "Catégorie",
+          "visibility": "Visibilité",
+          "status": "Statut",
+          "allDay": "Toute la journée",
+          "startAt": "Début",
+          "endAt": "Fin",
+          "location": "Lieu",
+          "announceDays": "Jours d'annonce",
+          "announceDaysHint": "Le bandeau paraît ce nombre de jours avant l'événement. Laissez vide pour ne pas l'annoncer.",
+          "images": "Images",
+          "alt": "Texte alternatif"
+        },
+        "columns": {
+          "event": "Événement",
+          "date": "Date",
+          "category": "Catégorie",
+          "visibility": "Visibilité",
+          "status": "Statut",
+          "actions": "Actions"
+        },
+        "empty": "Aucun événement enregistré",
+        "archive": {
+          "trigger": "Archiver",
+          "title": "Archiver l'événement ?",
+          "description": "L'événement ne sera plus visible ni modifiable. Cette action est réversible uniquement par le support.",
+          "confirm": "Archiver"
+        },
+        "images": {
+          "add": "Ajouter une image",
+          "remove": "Supprimer",
+          "cover": "Image principale",
+          "hint": "6 images maximum, au format PNG, JPEG ou WebP, 4 Mo par image.",
+          "none": "Aucune image"
+        },
+        "filters": {
+          "year": "Année",
+          "category": "Catégorie",
+          "all": "Toutes"
+        },
+        "errors": {
+          "validationError": "Vérifiez les informations saisies",
+          "notConfigured": "Les événements ne sont pas activés",
+          "notFound": "Événement introuvable",
+          "slugTaken": "Un événement porte déjà ce titre : renommez-le",
+          "invalidDateRange": "La date de fin doit être postérieure à la date de début",
+          "tooManyImages": "6 images maximum par événement",
+          "unsupportedType": "Format d'image non pris en charge",
+          "fileTooLarge": "Image trop volumineuse (4 Mo maximum)",
+          "emptyFile": "Le fichier est vide",
+          "storageNotConfigured": "Le stockage d'images n'est pas configuré sur ce serveur"
+        },
+        "success": {
+          "created": "Événement créé",
+          "updated": "Événement mis à jour",
+          "archived": "Événement archivé",
+          "imageAdded": "Image ajoutée",
+          "imageRemoved": "Image supprimée"
+        }
+      },
       "authSettings": {
         "title": "Méthodes de connexion",
         "description": "Choisissez les méthodes proposées sur la page de connexion de l'instance. L'e-mail et le mot de passe restent toujours disponibles.",
@@ -1816,6 +1898,25 @@
     "NUMBER": "Nombre",
     "BOOLEAN": "Booléen",
     "COLOR": "Couleur"
+  },
+  "eventCategory": {
+    "MEETING": "Réunion",
+    "TERM_START": "Rentrée",
+    "OUTING": "Sortie scolaire",
+    "HOLIDAY": "Vacances",
+    "CLOSURE": "Fermeture",
+    "CELEBRATION": "Festivités",
+    "OTHER": "Autre"
+  },
+  "eventVisibility": {
+    "PUBLIC": "Public",
+    "MEMBERS": "Familles et équipe",
+    "STAFF": "Équipe uniquement"
+  },
+  "eventStatus": {
+    "DRAFT": "Brouillon",
+    "PUBLISHED": "Publié",
+    "CANCELLED": "Annulé"
   },
   "errors": {
     "unauthorized": "Vous devez être connecté pour effectuer cette action",

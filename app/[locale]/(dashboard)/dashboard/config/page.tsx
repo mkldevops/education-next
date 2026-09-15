@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { ConfigValueTypeLabel } from '@/features/enums'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import { db } from '@/lib/db'
+import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
 import {
   MAX_STUDENTS_PER_CLASS_CONFIG_KEY,
   SCHOOL_CONFIG_DEFAULTS,
@@ -96,6 +97,10 @@ export default async function ConfigPage({ params }: Props) {
     [AUTOMATIC_PROMOTION_CONFIG_KEY]: {
       label: t('known.automaticPromotion'),
       description: t('descriptions.automaticPromotion'),
+    },
+    [EVENTS_CONFIG_KEY]: {
+      label: t('known.events'),
+      description: t('descriptions.events'),
     },
   }
 
