@@ -22,6 +22,7 @@ export interface ConfirmDialogProps {
   cancelLabel?: string
   onConfirm: () => Promise<void> | void
   variant?: 'destructive' | 'default'
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
 function ConfirmDialogContent({
@@ -31,7 +32,7 @@ function ConfirmDialogContent({
   cancelLabel = 'Cancel',
   onConfirm,
   variant = 'destructive',
-}: Omit<ConfirmDialogProps, 'trigger'>) {
+}: Omit<ConfirmDialogProps, 'trigger' | 'restoreFocusRef'>) {
   const { setOpen } = useDialog()
   const [pending, startTransition] = useTransition()
 
@@ -65,9 +66,9 @@ function ConfirmDialogContent({
   )
 }
 
-export function ConfirmDialog({ trigger, ...props }: ConfirmDialogProps) {
+export function ConfirmDialog({ trigger, restoreFocusRef, ...props }: ConfirmDialogProps) {
   return (
-    <Dialog>
+    <Dialog restoreFocusRef={restoreFocusRef}>
       <DialogTrigger>{trigger}</DialogTrigger>
       <ConfirmDialogContent {...props} />
     </Dialog>

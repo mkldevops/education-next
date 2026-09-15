@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  eventPeriodBounds,
+  eventPublicPath,
   filterVisibleEvents,
   normalizeEventDates,
+  reorderImagesForCover,
+  resolveEventPageAccess,
   selectAnnouncedEvent,
   shiftEventToNextYear,
   slugifyEventTitle,
@@ -237,5 +241,89 @@ describe('selectAnnouncedEvent', () => {
     }
 
     expect(selectAnnouncedEvent([far, near], now)?.id).toBe('near')
+  })
+})
+
+describe('resolveEventPageAccess', () => {
+  it('opens a published public event to anyone', () => {
+    expect(resolveEventPageAccess({ visibility: 'PUBLIC', status: 'PUBLISHED' }, false)).toBe(
+      'public'
+    )
+  })
+
+  it('keeps a cancelled public event readable so a shared link announces the cancellation', () => {
+    expect(resolveEventPageAccess({ visibility: 'PUBLIC', status: 'CANCELLED' }, false)).toBe(
+      'public'
+    )
+  })
+
+  it('hides a draft from anonymous visitors even when it is public', () => {
+    expect(resolveEventPageAccess({ visibility: 'PUBLIC', status: 'DRAFT' }, false)).toBe('hidden')
+  })
+
+  it('hides members-only and staff events from anonymous visitors', () => {
+    expect(resolveEventPageAccess({ visibility: 'MEMBERS', status: 'PUBLISHED' }, false)).toBe(
+      'hidden'
+    )
+    expect(resolveEventPageAccess({ visibility: 'STAFF', status: 'PUBLISHED' }, false)).toBe(
+      'hidden'
+    )
+  })
+
+  it('lets a school admin preview what the public cannot see', () => {
+    expect(resolveEventPageAccess({ visibility: 'MEMBERS', status: 'DRAFT' }, true)).toBe('preview')
+  })
+
+  it('shows a public event to an admin as the public sees it', () => {
+    expect(resolveEventPageAccess({ visibility: 'PUBLIC', status: 'PUBLISHED' }, true)).toBe(
+      'public'
+    )
+  })
+})
+
+describe('reorderImagesForCover', () => {
+  const images = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+
+  it('moves the chosen image first and keeps the others in order', () => {
+    expect(reorderImagesForCover(images, 'c')).toEqual([{ id: 'c' }, { id: 'a' }, { id: 'b' }])
+  })
+
+  it('keeps the order when the image is already the cover', () => {
+    expect(reorderImagesForCover(images, 'a')).toEqual(images)
+  })
+
+  it('returns null for an image outside the list', () => {
+    expect(reorderImagesForCover(images, 'z')).toBeNull()
+  })
+})
+
+describe('eventPublicPath', () => {
+  it('nests the event under its school', () => {
+    expect(eventPublicPath('ecole-du-centre', 'kermesse')).toBe(
+      '/ecole/ecole-du-centre/evenements/kermesse'
+    )
+  })
+})
+
+describe('eventPeriodBounds', () => {
+  it('keeps the whole last day of the period', () => {
+    const bounds = eventPeriodBounds({
+      startAt: new Date('2026-09-01T00:00:00.000Z'),
+      endAt: new Date('2027-07-03T00:00:00.000Z'),
+    })
+
+    expect(bounds).toEqual({
+      from: new Date('2026-09-01T00:00:00.000Z'),
+      until: new Date('2027-07-04T00:00:00.000Z'),
+    })
+  })
+
+  it('rolls over the end of a month and a year', () => {
+    const { until } = eventPeriodBounds({
+      startAt: new Date('2026-01-01T00:00:00.000Z'),
+      endAt: new Date('2026-12-31T00:00:00.000Z'),
+    })
+
+    expect(until).toEqual(new Date('2027-01-01T00:00:00.000Z'))
   })
 })

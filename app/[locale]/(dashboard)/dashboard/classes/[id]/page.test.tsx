@@ -12,6 +12,7 @@ const dbMock = {
 const authMock = { api: { getSession: vi.fn() } }
 const schoolMemberGatewayMock = { listAuthorizedSchools: vi.fn() }
 const platformSettingGatewayMock = { get: vi.fn(), set: vi.fn() }
+const isPaymentsEnabledMock = vi.fn()
 
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next/headers', () => ({
@@ -36,6 +37,9 @@ vi.mock('@/i18n/routing', () => ({
 }))
 vi.mock('@/actions/school-actions', () => ({ switchSchoolAction: vi.fn() }))
 vi.mock('@/lib/db', () => ({ db: dbMock }))
+vi.mock('@/use-cases/config/is-payments-enabled', () => ({
+  isPaymentsEnabled: isPaymentsEnabledMock,
+}))
 vi.mock('@/lib/auth', () => ({ auth: authMock }))
 vi.mock('@/gateways/school-member-gateway', () => ({
   schoolMemberGateway: schoolMemberGatewayMock,
@@ -58,6 +62,7 @@ const membership = (school: typeof AL_NOUR) => ({
 })
 
 beforeEach(() => {
+  isPaymentsEnabledMock.mockResolvedValue(true)
   vi.clearAllMocks()
   cookieStore.get.mockReturnValue({ value: AL_NOUR.id })
   authMock.api.getSession.mockResolvedValue({ user: { id: 'user-1' } })
@@ -141,5 +146,42 @@ describe('ClassDetailPage, ressource dans l’école active', () => {
     // La carte ne doit pas prétendre qu'il n'y a aucun enseignant alors qu'une
     // affectation désactivée est listée juste en dessous.
     expect(screen.queryByText('noTeachers')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    [false, false],
+    [true, true],
+  ])('shows the plan column only when payments are enabled (%s)', async (enabled, visible) => {
+    isPaymentsEnabledMock.mockResolvedValue(enabled)
+    dbMock.classPeriod.findFirst.mockResolvedValue({
+      id: 'class-1',
+      schoolId: AL_NOUR.id,
+      name: 'CP-A',
+      capacity: 20,
+      level: { name: 'CP' },
+      period: { name: '2026-2027' },
+      classAssignments: [
+        {
+          id: 'assignment-1',
+          startAt: new Date('2026-09-15'),
+          enrollment: {
+            id: 'enrollment-1',
+            status: 'ACTIVE',
+            plan: { name: '__unpriced__' },
+            student: { id: 'student-1', person: { name: 'Yasmine', lastname: 'Benali' } },
+          },
+        },
+      ],
+      teachers: [],
+    })
+    dbMock.teacher.findMany.mockResolvedValue([])
+    dbMock.classPeriodTeacher.findMany.mockResolvedValue([])
+
+    render(await ClassDetailPage({ params: Promise.resolve({ locale: 'fr', id: 'class-1' }) }))
+
+    expect(screen.getByText('ACTIVE')).toBeInTheDocument()
+    expect(screen.queryByText('__unpriced__')).not.toBeInTheDocument()
+    expect(screen.queryByText('plan') !== null).toBe(visible)
+    expect(screen.queryByText('unpriced.badge') !== null).toBe(visible)
   })
 })

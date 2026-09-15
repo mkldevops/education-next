@@ -113,7 +113,7 @@ describe('formatEventDate', () => {
     expect(label).toBe('Mar 10, 2026')
   })
 
-  it('shows an all-day range spanning midnight UTC without shifting either bound', () => {
+  it('shows an all-day range within one month without repeating the month or shifting a bound', () => {
     process.env.TZ = 'Pacific/Honolulu'
 
     const label = formatEventDate(
@@ -125,7 +125,7 @@ describe('formatEventDate', () => {
       'fr-FR'
     )
 
-    expect(label).toBe('10 mars 2026 – 12 mars 2026')
+    expect(label).toBe('10–12 mars 2026')
   })
 
   it('shows a single-day all-day event once, not as a repeated range', () => {
@@ -226,7 +226,18 @@ describe('formatEventPosterDate', () => {
       'fr-FR'
     )
 
-    expect(label).toBe('jeudi 3 décembre 2026, 18:00 – 20:30')
+    expect(label).toBe('jeudi 3 décembre 2026, 18:00\u2009–\u200920:30')
+  })
+
+  it('joins the start time with the locale connector when the event has no end', () => {
+    const start = new Date('2026-12-03T18:00:00.000Z')
+
+    expect(formatEventPosterDate({ allDay: false, startAt: start }, 'fr-FR')).toBe(
+      'jeudi 3 décembre 2026 à 18:00'
+    )
+    expect(formatEventPosterDate({ allDay: false, startAt: start }, 'en-US')).toMatch(
+      /^Thursday, December 3, 2026 at 6:00\sPM$/
+    )
   })
 
   it('names both days of a multi-day all-day event', () => {
@@ -239,6 +250,6 @@ describe('formatEventPosterDate', () => {
       'fr-FR'
     )
 
-    expect(label).toBe('jeudi 3 décembre 2026 – samedi 5 décembre 2026')
+    expect(label).toBe('jeudi 3\u2009–\u2009samedi 5 décembre 2026')
   })
 })

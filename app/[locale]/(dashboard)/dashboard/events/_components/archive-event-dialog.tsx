@@ -8,9 +8,13 @@ import { archiveEventAction } from '../../../_lib/event-actions'
 
 type Props = {
   eventId: string
+  /** `menuitem` quand le déclencheur est une entrée de menu, pour la navigation au clavier. */
+  triggerRole?: React.AriaRole
+  /** Cible de repli du focus quand le déclencheur est devenu inaccessible à la fermeture. */
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
-export function ArchiveEventDialog({ eventId }: Props) {
+export function ArchiveEventDialog({ eventId, triggerRole, restoreFocusRef }: Props) {
   const t = useTranslations('dashboard.pages.events')
   const tCommon = useTranslations('common')
 
@@ -26,7 +30,7 @@ export function ArchiveEventDialog({ eventId }: Props) {
   return (
     <ConfirmDialog
       trigger={
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" role={triggerRole}>
           <Archive className="h-4 w-4" />
           {t('archive.trigger')}
         </Button>
@@ -36,6 +40,7 @@ export function ArchiveEventDialog({ eventId }: Props) {
       confirmLabel={t('archive.confirm')}
       cancelLabel={tCommon('cancel')}
       onConfirm={handleConfirm}
+      restoreFocusRef={restoreFocusRef}
     />
   )
 }

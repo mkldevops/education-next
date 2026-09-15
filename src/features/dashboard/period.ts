@@ -6,6 +6,8 @@ import { db } from '@/lib/db'
 export type SelectedPeriod = {
   id: string
   name: string
+  startAt: Date
+  endAt: Date
 }
 
 /**
@@ -23,7 +25,7 @@ export async function getSelectedPeriod(schoolId: string): Promise<SelectedPerio
   if (parsed.success) {
     const period = await db.period.findFirst({
       where: { id: parsed.data, schoolId, isActive: true },
-      select: { id: true, name: true },
+      select: { id: true, name: true, startAt: true, endAt: true },
     })
     if (period) return period
   }
@@ -49,7 +51,9 @@ export async function getSelectedPeriod(schoolId: string): Promise<SelectedPerio
   }))
 
   const selected = selectDefaultPeriod(candidates, new Date())
-  return selected ? { id: selected.id, name: selected.name } : null
+  return selected
+    ? { id: selected.id, name: selected.name, startAt: selected.startAt, endAt: selected.endAt }
+    : null
 }
 
 export async function getSelectedPeriodId(schoolId: string): Promise<string | null> {

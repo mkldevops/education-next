@@ -9,6 +9,7 @@ import { createEvent } from '@/use-cases/events/create-event'
 import { duplicateEvent } from '@/use-cases/events/duplicate-event'
 import { removeEventImage } from '@/use-cases/events/remove-event-image'
 import type { createEventSchema, updateEventSchema } from '@/use-cases/events/schemas'
+import { setEventCover } from '@/use-cases/events/set-event-cover'
 import { updateEvent } from '@/use-cases/events/update-event'
 import { uploadEventImage } from '@/use-cases/media/upload-event-image'
 import { requireSchoolAdmin } from './auth-helper'
@@ -99,6 +100,14 @@ export async function uploadEventImageAction(formData: FormData) {
 export async function removeEventImageAction(eventId: string, imageId: string) {
   const { schoolId } = await requireSchoolAdmin()
   const result = await removeEventImage({ schoolId, eventId, imageId })
+  if (typeof result === 'string') return result
+  revalidatePath('/dashboard/events')
+  return result
+}
+
+export async function setEventCoverAction(eventId: string, imageId: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await setEventCover({ schoolId, eventId, imageId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/events')
   return result

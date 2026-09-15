@@ -48,6 +48,12 @@ export const eventGateway = {
 
   findBySlug: (schoolId: string, slug: string) => db.event.findFirst({ where: { schoolId, slug } }),
 
+  findBySlugWithImages: (schoolId: string, slug: string) =>
+    db.event.findFirst({
+      where: { schoolId, slug },
+      include: { images: { orderBy: { position: 'asc' } } },
+    }),
+
   countImages: (schoolId: string, eventId: string) =>
     db.eventImage.count({ where: { schoolId, eventId } }),
 
@@ -122,5 +128,26 @@ export const eventGateway = {
       },
       orderBy: { startAt: 'asc' },
       take,
+    }),
+
+  // Positions réécrites dans une seule transaction : un lecteur ne voit jamais deux
+  // couvertures ni un trou, et seules les lignes dont la position change sont touchées.
+  reorderImages: (schoolId: string, eventId: string, orderedImageIds: string[]) =>
+    db.$transaction(async (tx) => {
+      const images = await tx.eventImage.findMany({ where: { schoolId, eventId } })
+      const byId = new Map(images.map((image) => [image.id, image]))
+
+      return Promise.all(
+        orderedImageIds.map((imageId, position) => {
+          const image = byId.get(imageId)
+          if (!image) throw new Error(`Image ${imageId} does not belong to event ${eventId}`)
+          return image.position === position
+            ? image
+            : tx.eventImage.update({
+                where: { id_schoolId: { id: imageId, schoolId } },
+                data: { position },
+              })
+        })
+      )
     }),
 }

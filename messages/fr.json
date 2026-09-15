@@ -941,14 +941,15 @@
           "upload": "Téléverser une image",
           "uploading": "Envoi…",
           "uploaded": "Image téléversée",
-          "hint": "PNG, JPEG, WebP, SVG ou ICO — 1 Mo maximum",
+          "hint": "PNG, JPEG, WebP ou SVG — 10 Mo maximum, converti en WebP",
           "urlPlaceholder": "https://… ou téléversez un fichier",
           "preview": "Aperçu",
           "error": "Une erreur est survenue",
           "errors": {
             "invalidInput": "Aucun fichier reçu",
-            "unsupportedType": "Format non pris en charge : utilisez PNG, JPEG, WebP, SVG ou ICO",
-            "fileTooLarge": "Fichier trop lourd : 1 Mo maximum",
+            "unsupportedType": "Format non pris en charge : utilisez PNG, JPEG, WebP ou SVG",
+            "fileTooLarge": "Fichier trop lourd : 10 Mo maximum",
+            "invalidImage": "Image illisible ou corrompue",
             "emptyFile": "Le fichier est vide",
             "notConfigured": "Le stockage d'images n'est pas configuré sur ce serveur"
           }
@@ -1570,7 +1571,6 @@
           "location": "Lieu",
           "announceDays": "Jours d'annonce",
           "announceDaysHint": "Le bandeau paraît ce nombre de jours avant l'événement. Laissez vide pour ne pas l'annoncer.",
-          "images": "Images",
           "alt": "Texte alternatif"
         },
         "columns": {
@@ -1582,6 +1582,7 @@
           "actions": "Actions"
         },
         "empty": "Aucun événement enregistré",
+        "emptyInPeriod": "Aucun événement sur la période {period}",
         "archive": {
           "trigger": "Archiver",
           "title": "Archiver l'événement ?",
@@ -1605,14 +1606,20 @@
           "cancelled": "Annulé"
         },
         "images": {
-          "add": "Ajouter une image",
+          "add": "Ajouter des images",
           "remove": "Supprimer",
-          "cover": "Image principale",
-          "hint": "6 images maximum, au format PNG, JPEG ou WebP, 4 Mo par image.",
-          "none": "Aucune image"
+          "cover": "Couverture",
+          "hint": "PNG, JPEG ou WebP, 10 Mo par image, converties en WebP. La couverture illustre l'affiche et la page publique.",
+          "none": "Aucune image",
+          "trigger": "Images ({count})",
+          "title": "Images de « {title} »",
+          "counter": "{count} / {max}",
+          "setCover": "Mettre en couverture",
+          "altHint": "Décrit l'image pour les lecteurs d'écran. Appliqué à chaque image ajoutée.",
+          "tooManySelected": "{count, plural, one {Une seule place restante : seule la première image est ajoutée} other {# places restantes : seules les # premières images sont ajoutées}}",
+          "tooLarge": "{count, plural, one {Une image dépasse 10 Mo et n'est pas ajoutée} other {# images dépassent 10 Mo et ne sont pas ajoutées}}"
         },
         "filters": {
-          "year": "Année",
           "category": "Catégorie",
           "all": "Toutes"
         },
@@ -1624,7 +1631,9 @@
           "invalidDateRange": "La date de fin doit être postérieure à la date de début",
           "tooManyImages": "6 images maximum par événement",
           "unsupportedType": "Format d'image non pris en charge",
-          "fileTooLarge": "Image trop volumineuse (4 Mo maximum)",
+          "fileTooLarge": "Image trop volumineuse (10 Mo maximum)",
+          "invalidImage": "Image illisible ou corrompue",
+          "unexpected": "L'envoi a échoué, réessayez",
           "emptyFile": "Le fichier est vide",
           "storageNotConfigured": "Le stockage d'images n'est pas configuré sur ce serveur"
         },
@@ -1634,7 +1643,16 @@
           "archived": "Événement archivé",
           "imageAdded": "Image ajoutée",
           "imageRemoved": "Image supprimée",
-          "duplicated": "Brouillon créé pour l'année suivante"
+          "duplicated": "Brouillon créé pour l'année suivante",
+          "coverChanged": "Couverture mise à jour"
+        },
+        "publicLink": {
+          "view": "Voir la page publique",
+          "preview": "Aperçu de la page",
+          "copy": "Copier le lien public",
+          "copied": "Lien copié",
+          "copiedPrivate": "Lien copié. La page reste privée tant que l'événement n'est pas public et publié.",
+          "copyFailed": "Impossible de copier le lien"
         }
       },
       "authSettings": {
@@ -2037,5 +2055,16 @@
       "notice": "Vos autres sessions ouvertes restent actives.",
       "footer": "Message automatique. Si vous n'êtes pas à l'origine de ce changement, réinitialisez immédiatement votre mot de passe et contactez un administrateur."
     }
+  },
+  "publicEvent": {
+    "preview": {
+      "title": "Aperçu.",
+      "description": "Page invisible du public ({status}, {visibility}).",
+      "back": "Retour aux événements"
+    },
+    "cancelled": "Annulé",
+    "date": "Date",
+    "location": "Lieu",
+    "gallery": "Photos"
   }
 }

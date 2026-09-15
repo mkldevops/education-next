@@ -22,13 +22,26 @@ type Props = {
   nextStartLabel: string
 }
 
-export function DuplicateEventDialog({ eventId, title, nextStartLabel }: Props) {
+type DuplicateEventDialogProps = Props & {
+  /** `menuitem` quand le déclencheur est une entrée de menu, pour la navigation au clavier. */
+  triggerRole?: React.AriaRole
+  /** Cible de repli du focus quand le déclencheur est devenu inaccessible à la fermeture. */
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
+}
+
+export function DuplicateEventDialog({
+  eventId,
+  title,
+  nextStartLabel,
+  triggerRole,
+  restoreFocusRef,
+}: DuplicateEventDialogProps) {
   const tDuplicate = useTranslations('dashboard.pages.events.duplicate')
 
   return (
-    <Dialog>
+    <Dialog restoreFocusRef={restoreFocusRef}>
       <DialogTrigger>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" role={triggerRole}>
           <CopyPlus className="h-4 w-4" />
           {tDuplicate('trigger')}
         </Button>

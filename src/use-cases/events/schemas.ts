@@ -46,3 +46,9 @@ export const removeEventImageSchema = z.object({
   eventId: z.uuid(),
   imageId: z.uuid(),
 })
+
+export const setEventCoverSchema = z.object({
+  schoolId: z.string().min(1),
+  eventId: z.uuid(),
+  imageId: z.uuid(),
+})

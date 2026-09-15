@@ -8,7 +8,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
 import { getBrandingConfig, resolveBrandingSchoolId } from '@/lib/branding'
-import { db } from '@/lib/db'
+import { getThemeConfigs } from '@/lib/theme-configs'
 import '@/styles/globals.css'
 
 type Props = {
@@ -65,23 +65,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   const [messages, themeConfigs] = await Promise.all([
     getMessages(),
-    schoolId
-      ? db.config.findMany({
-          where: {
-            schoolId,
-            name: {
-              in: [
-                'theme_primary',
-                'theme_primary_hover',
-                'theme_primary_light',
-                'theme_background',
-              ],
-            },
-            isActive: true,
-          },
-          select: { name: true, value: true },
-        })
-      : Promise.resolve([]),
+    schoolId ? getThemeConfigs(schoolId) : Promise.resolve([]),
   ])
 
   return (

@@ -972,6 +972,12 @@ closes a function every school in service already owns. No migration is therefor
 writes `'false'` anywhere: a new school is created with the row at `'true'`
 (`SCHOOL_CONFIG_DEFAULTS`), an older school has no row and keeps its payments.
 
+With payments off, no surface names a plan: the dashboard's recent enrollments and the class roster
+drop their plan column, the family page's child card shows neither the plan, nor the paid/due
+amounts, nor the progress bar (`child-card.tsx`), and its activity feed drops payments and plan names
+(`activity-feed.tsx`); only enrollment status and class remain. With payments
+on, the reserved `__unpriced__` plan renders as the « À tarifer » badge, never under its stored name.
+
 The write surface is the row `payments_enabled` owns in the **School settings** panel of
 `/dashboard/config`, open to a school `ADMIN`. The closed key list (`SCHOOL_CONFIG_KEYS`) already
 renders one toggle per boolean and writes through `setConfigAction`, so no dedicated action exists:
@@ -1171,19 +1177,29 @@ plain string in `Config`, so an external URL keeps working.
   and an uploaded logo is a relative `/api/media/…` path: it is resolved against
   `NEXT_PUBLIC_APP_URL`, never against the client-supplied `Host` header, which would make the server
   fetch a host of the caller's choosing. A missing logo, a failed fetch, or a format the renderer
-  cannot draw (ICO) falls back to the default favicon instead of failing the request. A `favicon_url` row left by an older installation stays in
-  the database but is read by nothing: a second setting would let the tab icon drift from the logo.
+  cannot draw (ICO) falls back to the default favicon instead of failing the request. **A WebP logo is
+  converted to PNG first**: `next/og` crashes on WebP, the format of every uploaded logo, rather than
+  skipping it. A `favicon_url` row left by an older installation stays in the database but is read by
+  nothing: a second setting would let the tab icon drift from the logo.
 - **The logo is shown in the sidebar and in the header of `/login`.**
 
 - Uploading requires an admin.
-- **Accepted types**: PNG, JPEG, WebP, SVG, ICO. Anything else → `unsupportedType`.
-- **1 MB maximum**, and an empty file is refused → `fileTooLarge` / `emptyFile`.
+- **Accepted types**: PNG, JPEG, WebP, SVG. Anything else → `unsupportedType`. ICO is no longer
+  accepted: sharp cannot decode it, and the favicon is generated from the logo anyway.
+- **10 MB maximum for the received file**, and an empty file is refused → `fileTooLarge` /
+  `emptyFile`.
+- **Every uploaded image is stored as WebP** (`src/lib/image-optimizer.ts`), whatever format was
+  sent: the logo is shrunk to 512 px on its longest side (never enlarged), quality 90. An SVG is
+  rasterized, which also strips any active markup. The EXIF orientation is applied, then all
+  metadata is dropped. A file sharp cannot decode → `invalidImage`, and nothing is stored. A URL
+  typed by hand is kept as is. Logos uploaded before this rule keep their original format.
 - **The size is checked in the form before sending**, against the same `MAX_BRANDING_IMAGE_BYTES`
   (`src/lib/branding-config.ts`). Past the Server Actions body limit Next.js throws before the action
   can answer, so a server-only check surfaced as a runtime error instead of `fileTooLarge`.
-  `next.config.ts` raises that limit, because a 1 MB file plus its multipart envelope exceeds the
-  1 MB default.
-- The object is stored under `branding/<schoolId>/<uuid>.<ext>`; the caller never chooses the key,
+  `next.config.ts` raises that limit to 11 MB: a 10 MB file plus its multipart envelope. It raises
+  `experimental.proxyClientMaxBodySize` to 11 MB too: past its 10 MB default, the body handed on
+  after `proxy.ts` is silently truncated.
+- The object is stored under `branding/<schoolId>/<uuid>.webp`; the caller never chooses the key,
   so an upload cannot overwrite another one, and one school cannot reach another's assets.
 - Configuration is `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, optionally
   `S3_REGION` and `S3_FORCE_PATH_STYLE`. Path style is the default, which is what MinIO expects.
@@ -1246,7 +1262,9 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   fail-closed semantics spelled out explicitly in code: unlike `isPaymentsEnabled`
   (`readsAsEnabled` — absence of a row reads as enabled), an events flag that has never been written
   reads as **disabled**, matching `EVENTS_CONFIG_DEFAULT.value = 'false'` and every use-case's own
-  `config?.value !== 'true'` check.
+  `config?.value !== 'true'` check. The public event page
+  (`app/[locale]/ecole/[slug]/evenements/[eventSlug]/page.tsx`) reads it too and answers `notFound()`
+  like the dashboard.
 - **Visibility is an ordered scale, not a set of independent tags**: `PUBLIC ⊂ MEMBERS ⊂ STAFF`
   (`EventVisibility`, `prisma/schema.prisma`). `visibleEventVisibilities()` (`src/domain/event.ts`)
   turns a viewer into the list of visibilities it may read, which replaces a viewer × category
@@ -1264,23 +1282,45 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
 - **`allDay` fixes a storage and display convention.** An all-day event stores `startAt`/`endAt` at
   UTC midnight (`normalizeEventDates`, `src/domain/event.ts`), and `formatEventDate`
   (`src/lib/date.ts`) forces `timeZone: 'UTC'` when rendering it. Without both, a whole day would
-  render as the previous day for any reader west of Greenwich.
+  render as the previous day for any reader west of Greenwich. Both formatters go through
+  `Intl.DateTimeFormat#formatRange`, so each locale joins a range its own way (« 10–12 mars 2026 »,
+  « jeudi 3 décembre 2026 à 18:00 ») instead of a hand-built `start – end` string.
+- **The dashboard list follows the period selected in the header** (`getSelectedPeriod`), like
+  classes and payments; there is no year filter. An event is listed when it overlaps the period:
+  it starts before the day after `Period.endAt` (an inclusive day, `eventPeriodBounds`) and ends —
+  or, without an end, starts — on or after `Period.startAt`. A school without any period sees all
+  its events.
 - **`EventImage.position === 0` is the cover image.** There is no `coverImageId` column on `Event`:
   that would let a cover point at another event's image. `EventImage` carries no `isActive` either,
   deliberately — the soft-delete extension (`src/lib/db.ts`) only filters the root of a query, so an
   archived image would still surface through `event.images` via `include`. Removal is real, and
   `removeEventImage` renumbers the remaining `position`s to `0..n-1` inside one transaction so the
-  cover invariant never gaps.
+  cover invariant never gaps. `setEventCover` makes another image the cover: `reorderImagesForCover`
+  (`src/domain/event.ts`) moves it first and keeps the others in their relative order, and
+  `eventGateway.reorderImages` rewrites the positions in one transaction, so no reader ever sees two
+  covers.
 - **Six images per event, enforced server-side** (`MAX_EVENT_IMAGES`, `src/domain/event.ts`):
-  `addEventImage` refuses a seventh with `'tooManyImages'`.
+  `addEventImage` refuses a seventh with `'tooManyImages'`. Images are managed in their own dialog,
+  not in the edit form: an image is saved the moment it is uploaded, while the form waits for
+  « Enregistrer », and mixing both let an admin believe cancelling the form undid an upload. The
+  dialog accepts several files but sends them **one after the other** — parallel uploads would each
+  read the count before the others land and could cross the limit together — and stops at the first
+  refusal.
 - **Upload accepts PNG, JPEG and WebP only — no SVG**, unlike branding images: an event image is
   content shown to families, not an operator-controlled asset, so active SVG markup is refused
-  outright (`'unsupportedType'`). The limit is 4 MB (`'fileTooLarge'`) and an empty file is refused
-  (`'emptyFile'`) (`MAX_EVENT_IMAGE_BYTES`, `src/use-cases/media/upload-event-image.ts`). Reaching it
-  requires `experimental.serverActions.bodySizeLimit` in `next.config.ts` to exceed 4 MB plus the
-  multipart envelope: Next's own default for a server action's entire body — attachment included —
-  is 1 MB, which would otherwise cut the request before the use-case ever runs and surface an opaque
-  500 instead of the typed refusal. The object is stored under `events/<schoolId>/<uuid>.<ext>` and
+  outright (`'unsupportedType'`). The received file may weigh up to 10 MB (`'fileTooLarge'`) and an
+  empty file is refused (`'emptyFile'`) (`MAX_EVENT_IMAGE_BYTES`, `src/domain/event.ts`).
+- **Every event image is stored as WebP**, like the logo (`src/lib/image-optimizer.ts`): shrunk to
+  2000 px on its longest side (never enlarged), quality 80, EXIF orientation applied then metadata
+  dropped — a phone photo keeps its orientation but not its location. An undecodable file →
+  `'invalidImage'`, nothing stored. Images uploaded before this rule keep their original format.
+- **The dialog never sends a file over 10 MB**: it skips it with a « dépasse 10 Mo » toast and sends
+  the others. Next.js enforces `experimental.serverActions.bodySizeLimit` and
+  `experimental.proxyClientMaxBodySize` (both 11 MB, `next.config.ts`)
+  on a server action's entire body, attachment included, before the action runs; an oversized
+  request surfaced as an opaque 500 instead of the typed refusal. An action that throws anyway ends
+  the batch with an « envoi a échoué » toast. The object is stored under
+  `events/<schoolId>/<uuid>.webp` and
   served through `GET /api/media/events/…`, the same public-but-unenumerable route as `branding/`.
   Without the object-store configuration, the upload use-case answers `'notConfigured'` rather than
   crashing, exactly like branding — but `uploadEventImageAction` **renames it
@@ -1305,6 +1345,27 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   own overflow, so a long description can never spill onto a second page. The school logo appears
   there as a faint watermark — on a poster it signs the document, in a list it would hinder reading.
   No PDF is generated server-side: the browser's print dialog produces the same page.
+- **Row actions live in one « ⋯ » menu** (`event-actions-menu.tsx`), built like `LevelActionsMenu`:
+  the panel is hidden in CSS rather than unmounted, so closing the menu never closes a dialog opened
+  from it, and each dialog restores focus to the « ⋯ » button.
+- **The public page of an event is `/[locale]/ecole/<schoolSlug>/evenements/<eventSlug>`**
+  (`app/[locale]/ecole/[slug]/evenements/[eventSlug]/page.tsx`), reachable without a session —
+  `proxy.ts` only protects `/dashboard`, `/settings` and `/profile`. `resolveEventPageAccess`
+  (`src/domain/event.ts`) decides who reads it:
+  - `public` — `PUBLIC` visibility and not `DRAFT`. A `CANCELLED` event stays readable, struck
+    through, for the same reason it stays in lists: a link already shared must announce the
+    cancellation, not answer a 404.
+  - `preview` — anything else, for a signed-in admin **of that school** (`getAuthorizedSchools()`,
+    per-school `isAdmin`; a super admin covers every school). The page carries a banner naming the
+    status and visibility, and `robots: noindex` with no Open Graph data.
+  - `hidden` — anything else, for everyone else: `notFound()`, exactly like an inactive school, a
+    disabled `events_enabled`, an archived event or an unknown slug. The page never says why.
+  The session is only read when the event is not public, so an anonymous visitor costs no role
+  resolution. A public page exposes `generateMetadata` Open Graph data (title, summary, cover). It is
+  themed with **the event's school**, not the visitor's: the root layout themes from the session or
+  the `active_school` cookie, often absent here, so the page renders its own `ThemeProvider` after it.
+  The « Copier le lien public » menu entry copies the absolute URL whatever the status, but warns
+  when the page is not public yet, since the link would 404 for its recipients.
 - **`create_event` on the MCP server is an adapter of `createEvent`**
   (`src/use-cases/mcp/create-event.ts`), not a second implementation. The tool is declared whether or
   not `events_enabled` is on, and a disabled school gets the server action's own `'notConfigured'`.
@@ -1382,6 +1443,9 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   `announceDaysBefore`, capped only for its own bounded display. Neither is memoised with
   `React.cache()` anymore: that was only ever justified by the two surfaces sharing one call, which
   no longer holds now that they read different rows.
+- **The per-event public page** (`app/[locale]/ecole/[slug]/evenements/[eventSlug]/page.tsx`) goes
+  through `resolveEventPageAccess` before rendering any key: an anonymous visitor only ever receives
+  the image keys of a `PUBLIC`, non-`DRAFT` event; everything else is an admin-only preview or a 404.
 
 ## Invitations
 

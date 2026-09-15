@@ -1,4 +1,4 @@
-import { Breadcrumbs, Card } from '@peaklab/ui'
+import { Breadcrumbs, Card, StatusBadge } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
@@ -9,6 +9,8 @@ import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { resolveDeepLink } from '../../../_lib/deep-link'
@@ -71,6 +73,7 @@ export default async function ClassDetailPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.classDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
+  const tEnrollments = await getTranslations('dashboard.pages.enrollments')
 
   await requireSchoolSession()
   const resolution = await resolveClass(id)
@@ -86,13 +89,14 @@ export default async function ClassDetailPage({ params }: Props) {
     )
 
   const classPeriod = resolution.resource
-  const [teachers, inactiveTeacherAssignments] = await Promise.all([
+  const [teachers, inactiveTeacherAssignments, paymentsEnabled] = await Promise.all([
     db.teacher.findMany({
       where: { schoolId: classPeriod.schoolId, isActive: true },
       select: { id: true, firstName: true, lastName: true },
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     }),
     classPeriodGateway.listInactiveTeacherAssignments(classPeriod.schoolId, classPeriod.id),
+    isPaymentsEnabled(classPeriod.schoolId),
   ])
   const teacherOptions = teachers.map((teacher) => ({
     id: teacher.id,
@@ -240,7 +244,7 @@ export default async function ClassDetailPage({ params }: Props) {
               <thead className="bg-alabaster-900">
                 <tr className="text-xs font-medium uppercase tracking-wide text-graphite-600">
                   <th className="px-4 py-3">{t('student')}</th>
-                  <th className="px-4 py-3">{t('plan')}</th>
+                  {paymentsEnabled && <th className="px-4 py-3">{t('plan')}</th>}
                   <th className="px-4 py-3">{t('status')}</th>
                   <th className="px-4 py-3">{t('since')}</th>
                   <th className="px-4 py-3 text-right">{t('enrollment')}</th>
@@ -257,7 +261,15 @@ export default async function ClassDetailPage({ params }: Props) {
                         {row.studentName}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-graphite">{row.planName}</td>
+                    {paymentsEnabled && (
+                      <td className="px-4 py-3 text-graphite">
+                        {row.planName === UNPRICED_PLAN_NAME ? (
+                          <StatusBadge status="amber" label={tEnrollments('unpriced.badge')} />
+                        ) : (
+                          row.planName
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <EnrollmentStatusBadge status={row.status} />
                     </td>

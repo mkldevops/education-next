@@ -1,4 +1,4 @@
-import { buttonVariants, Card } from '@peaklab/ui'
+import { buttonVariants, Card, StatusBadge } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import type {
@@ -15,6 +15,7 @@ import type {
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
+import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { ReassignClassDialog } from '../../../enrollments/_components/reassign-class-dialog'
 import { ActivateEnrollmentButton } from './activate-enrollment-button'
 import { EnrollButton } from './enroll-button'
@@ -58,10 +59,21 @@ type Props = {
    * annulée n'empêche pas la réinscription, une inscription vivante oui.
    */
   canEnroll: boolean
+  /** Faux quand l'école a désactivé les paiements : ni formule, ni montant, ni progression. */
+  paymentsEnabled: boolean
 }
 
-export async function ChildCard({ student, locale, familyId, isAdmin, classes, canEnroll }: Props) {
+export async function ChildCard({
+  student,
+  locale,
+  familyId,
+  isAdmin,
+  classes,
+  canEnroll,
+  paymentsEnabled,
+}: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
+  const tEnrollments = await getTranslations('dashboard.pages.enrollments')
 
   const { person } = student
   const enrollments = person.student.enrollments
@@ -92,7 +104,11 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes, c
             studentId={person.student.id}
             enrollments={enrollments.map((enrollment) => ({
               id: enrollment.id,
-              label: enrollment.classAssignments[0]?.classPeriod.name ?? enrollment.plan.name,
+              label:
+                enrollment.classAssignments[0]?.classPeriod.name ??
+                (paymentsEnabled && enrollment.plan.name !== UNPRICED_PLAN_NAME
+                  ? enrollment.plan.name
+                  : t('childCard.noClass')),
               classPeriodId: enrollment.classAssignments[0]?.classPeriod.id ?? null,
             }))}
           />
@@ -119,7 +135,15 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes, c
             return (
               <div key={enrollment.id} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-medium text-graphite">{enrollment.plan.name}</p>
+                  {paymentsEnabled ? (
+                    enrollment.plan.name === UNPRICED_PLAN_NAME ? (
+                      <StatusBadge status="amber" label={tEnrollments('unpriced.badge')} />
+                    ) : (
+                      <p className="text-xs font-medium text-graphite">{enrollment.plan.name}</p>
+                    )
+                  ) : (
+                    <span />
+                  )}
                   <div className="flex items-center gap-2">
                     <EnrollmentStatusBadge status={enrollment.status} />
                     {isAdmin && enrollment.status === 'PENDING' && (
@@ -153,30 +177,34 @@ export async function ChildCard({ student, locale, familyId, isAdmin, classes, c
                   )}
                 </div>
 
-                <div
-                  role="progressbar"
-                  aria-valuenow={Math.round(paidPercentage)}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={t('childCard.paymentProgress', { plan: enrollment.plan.name })}
-                  className="w-full bg-alabaster-700 rounded-full h-2 overflow-hidden"
-                >
-                  <div
-                    className="bg-gradient-to-r from-primary to-primary/70 h-full rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(paidPercentage, 100)}%` }}
-                  />
-                </div>
+                {paymentsEnabled && (
+                  <>
+                    <div
+                      role="progressbar"
+                      aria-valuenow={Math.round(paidPercentage)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={t('childCard.paymentProgress', { plan: enrollment.plan.name })}
+                      className="w-full bg-alabaster-700 rounded-full h-2 overflow-hidden"
+                    >
+                      <div
+                        className="bg-gradient-to-r from-primary to-primary/70 h-full rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(paidPercentage, 100)}%` }}
+                      />
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-graphite-600">
-                    {formatCurrency(totalPaid, locale)} / {formatCurrency(totalAmount, locale)}
-                  </span>
-                  {remaining > 0 && (
-                    <span className="text-xs font-medium text-amber-600">
-                      {t('childCard.remaining', { amount: formatCurrency(remaining, locale) })}
-                    </span>
-                  )}
-                </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-graphite-600">
+                        {formatCurrency(totalPaid, locale)} / {formatCurrency(totalAmount, locale)}
+                      </span>
+                      {remaining > 0 && (
+                        <span className="text-xs font-medium text-amber-600">
+                          {t('childCard.remaining', { amount: formatCurrency(remaining, locale) })}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )
           })

@@ -33,7 +33,9 @@ export function ImageValueField({ id, name, defaultValue, disabled }: Props) {
     formData.append('file', file)
 
     startUpload(async () => {
-      const result = await uploadBrandingImageAction(formData)
+      const result = await uploadBrandingImageAction(formData).catch(() => ({
+        result: 'unexpected' as const,
+      }))
       if (result.result === 'OK') {
         setValue(result.url)
         toast.success(t('uploaded'))
@@ -60,7 +62,7 @@ export function ImageValueField({ id, name, defaultValue, disabled }: Props) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
           className="sr-only"
           id={`${id}-file`}
           disabled={disabled || isUploading}
