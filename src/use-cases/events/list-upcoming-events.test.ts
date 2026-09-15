@@ -47,19 +47,11 @@ describe('listUpcomingEvents', () => {
     expect(from?.toISOString()).toBe('2026-09-10T00:00:00.000Z')
   })
 
-  it('caps the fetch to a bounded batch by default, so the banner and the card can share one query', async () => {
+  it('bounds the fetch to a reasonable batch instead of fetching every upcoming event', async () => {
     const { gw, listUpcoming } = fakeGateway()
 
     await listUpcomingEvents('school-1', 'STAFF', gw, new Date('2026-09-10T12:00:00Z'))
 
     expect(listUpcoming.mock.calls[0]?.[3]).toBe(10)
-  })
-
-  it('accepts an explicit take override', async () => {
-    const { gw, listUpcoming } = fakeGateway()
-
-    await listUpcomingEvents('school-1', 'STAFF', gw, new Date('2026-09-10T12:00:00Z'), 3)
-
-    expect(listUpcoming.mock.calls[0]?.[3]).toBe(3)
   })
 })

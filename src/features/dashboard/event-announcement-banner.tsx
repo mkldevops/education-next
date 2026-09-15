@@ -3,7 +3,7 @@ import { selectAnnouncedEvent } from '@/domain/event'
 import { formatEventDate } from '@/lib/date'
 import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
-import { listUpcomingEvents } from '@/use-cases/events/list-upcoming-events'
+import { listAnnounceableEvents } from '@/use-cases/events/list-announceable-events'
 import { EventAnnouncementBannerClient } from './event-announcement-banner-client'
 
 /**
@@ -22,7 +22,7 @@ export async function EventAnnouncementBanner() {
   if (!enabled) return null
 
   const viewer = isActiveSchoolAdmin(context) ? 'STAFF' : 'MEMBER'
-  const events = await listUpcomingEvents(context.schoolId, viewer)
+  const events = await listAnnounceableEvents(context.schoolId, viewer)
   const announced = selectAnnouncedEvent(events, new Date())
   if (!announced) return null
 

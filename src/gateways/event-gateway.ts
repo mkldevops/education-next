@@ -90,10 +90,9 @@ export const eventGateway = {
       orderBy: { startAt: 'asc' },
     }),
 
-  // Bandeau J-x et carte « Prochains événements » du tableau de bord : visibilités du
-  // rôle appelant, à partir d'aujourd'hui (minuit UTC) pour rester borné. `take` plafonne
-  // le lot ramené — la carte n'en affiche qu'une poignée, et le bandeau n'a besoin que du
-  // plus proche parmi eux.
+  // Carte « Prochains événements » du tableau de bord : visibilités du rôle appelant, à
+  // partir d'aujourd'hui (minuit UTC), `take` pour rester borné — la carte n'en affiche
+  // qu'une poignée.
   listUpcoming: (schoolId: string, visibilities: EventVisibility[], from: Date, take?: number) =>
     db.event.findMany({
       where: {
@@ -104,5 +103,24 @@ export const eventGateway = {
       },
       orderBy: { startAt: 'asc' },
       ...(take !== undefined ? { take } : {}),
+    }),
+
+  // Bandeau J-x exclusivement : seul un événement PUBLISHED dont `announceDaysBefore`
+  // n'est pas `null` peut jamais être choisi par `selectAnnouncedEvent`. Filtrer les deux
+  // ici, avant `take`, garantit que le plafond ne porte que sur des lignes réellement
+  // sélectionnables — un long calendrier d'école (vacances, fermetures, réunions) sans
+  // annonce sur la plupart de ses lignes ne peut donc plus remplir le lot avant d'atteindre
+  // le seul événement qui compte.
+  listAnnounceable: (schoolId: string, visibilities: EventVisibility[], from: Date, take: number) =>
+    db.event.findMany({
+      where: {
+        schoolId,
+        visibility: { in: visibilities },
+        status: 'PUBLISHED',
+        announceDaysBefore: { not: null },
+        startAt: { gte: from },
+      },
+      orderBy: { startAt: 'asc' },
+      take,
     }),
 }
