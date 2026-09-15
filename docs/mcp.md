@@ -118,6 +118,25 @@ resolving a paper form needs an identity, not a way to contact anyone. Every col
 `src/gateways/mcp-read-gateway.ts`, so widening the surface is an edit to that file, not a
 side effect of a schema change.
 
+## Creating an event
+
+`create_event` turns a dictated or photographed announcement into an event, in one call — there is no
+preview/commit pair, because the event is born `DRAFT` and nobody sees it until an admin publishes it
+from `/dashboard/events`. The tool accepts no `status`.
+
+| Field | Shape |
+|---|---|
+| `title`, `category` | required; `category` is `MEETING`, `TERM_START`, `OUTING`, `HOLIDAY`, `CLOSURE`, `CELEBRATION` or `OTHER` |
+| `startAt`, `endAt` | a day, `2026-12-03`, or a wall-clock time **without zone**, `2026-12-03T18:00` |
+| `allDay` | optional; absent, a day-only `startAt` means all day and a time does not |
+| `visibility` | optional, `PUBLIC`, `MEMBERS` (default) or `STAFF` |
+| `summary`, `description`, `location`, `announceDaysBefore` | optional |
+
+It runs the dashboard's own `createEvent`, so refusals are the dashboard's: `notConfigured` when the
+school has not enabled events, `slugTaken` when an active event already has that title,
+`invalidDateRange`, `validationError`. The result publishes `id`, `slug`, `title`, `category`,
+`visibility`, `status`, `allDay`, `startAt`, `endAt`, `location`.
+
 ## Writing: the preview/commit pairs
 
 Three pairs are shipped. `create_teacher` and `record_teacher_expense` are not — a teacher sheet and a

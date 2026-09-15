@@ -4,12 +4,14 @@ import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
 import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
+import { createEventFromMcp } from '@/use-cases/mcp/create-event'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
 import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
 import type { McpScope } from '@/use-cases/mcp/resolve-mcp-scope'
 import {
   commitDraftSchema,
+  mcpCreateEventSchema,
   previewEnrollFamilySchema,
   previewRecordPaymentSchema,
   previewUpdateEnrollmentSchema,
@@ -174,6 +176,31 @@ export function buildMcpServer(scope: McpScope): McpServer {
       annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async (args) => write('commit_enroll_family', () => commitEnrollFamily(scope, args))
+  )
+
+  // Déclaré même quand `events_enabled` est éteint, à l'inverse des outils d'argent : le
+  // refus `notConfigured` de `createEvent` est ici le contrat, identique à celui de l'action
+  // serveur, et lire le drapeau ici rendrait la construction du serveur asynchrone.
+  server.registerTool(
+    'create_event',
+    {
+      title: 'Créer un événement',
+      description:
+        "Crée un événement de l'école, toujours en brouillon : la publication se fait depuis " +
+        'le tableau de bord. `startAt` et `endAt` sont un jour (`2026-12-03`) ou une heure ' +
+        'murale sans fuseau (`2026-12-03T18:00`) — jamais de décalage. Sans `allDay`, un jour ' +
+        'seul vaut journée entière. Refus typés : `notConfigured` (événements désactivés dans ' +
+        "l'école), `slugTaken` (un événement actif porte déjà ce titre : le renommer, par " +
+        "exemple avec l'année), `invalidDateRange`, `validationError`.",
+      inputSchema: mcpCreateEventSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (args) => write('create_event', () => createEventFromMcp(scope, args))
   )
 
   // Les cinq outils d'argent ci-dessous ne se déclarent pas quand l'école a coupé les

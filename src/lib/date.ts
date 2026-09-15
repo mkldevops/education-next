@@ -51,14 +51,18 @@ type EventDateInput = {
  *
  * Une plage dont les deux bornes tombent le même jour n'affiche la date qu'une fois.
  */
+function isSameUtcDay(a: Date, b: Date): boolean {
+  return (
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate()
+  )
+}
+
 export function formatEventDate(event: EventDateInput, locale: string): string {
   const { allDay, startAt, endAt } = event
 
-  const sameUtcDay =
-    endAt &&
-    startAt.getUTCFullYear() === endAt.getUTCFullYear() &&
-    startAt.getUTCMonth() === endAt.getUTCMonth() &&
-    startAt.getUTCDate() === endAt.getUTCDate()
+  const sameUtcDay = endAt && isSameUtcDay(startAt, endAt)
 
   if (allDay) {
     const options = { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' } as const
@@ -79,6 +83,36 @@ export function formatEventDate(event: EventDateInput, locale: string): string {
   }
 
   return `${startLabel} – ${endAt.toLocaleString(locale, full)}`
+}
+
+/**
+ * Date « en clair » d'une affiche : jour de semaine et mois en toutes lettres, lisibles de
+ * loin. Même convention UTC que `formatEventDate`, pour la même raison.
+ */
+export function formatEventPosterDate(event: EventDateInput, locale: string): string {
+  const { allDay, startAt, endAt } = event
+  const day = {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  } as const
+  const time = { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' } as const
+
+  const startDay = startAt.toLocaleDateString(locale, day)
+
+  if (allDay) {
+    if (!endAt || isSameUtcDay(startAt, endAt)) return startDay
+    return `${startDay} – ${endAt.toLocaleDateString(locale, day)}`
+  }
+
+  const start = `${startDay}, ${startAt.toLocaleTimeString(locale, time)}`
+  if (!endAt) return start
+  if (isSameUtcDay(startAt, endAt)) return `${start} – ${endAt.toLocaleTimeString(locale, time)}`
+
+  const endDay = endAt.toLocaleDateString(locale, day)
+  return `${start} – ${endDay}, ${endAt.toLocaleTimeString(locale, time)}`
 }
 
 const INPUT_DATE_LENGTH = 10

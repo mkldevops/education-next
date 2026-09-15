@@ -1588,6 +1588,22 @@
           "description": "The event will no longer be visible or editable. Only support can reverse this action.",
           "confirm": "Archive"
         },
+        "duplicate": {
+          "trigger": "Duplicate",
+          "title": "Duplicate event",
+          "description": "A draft will be created on {date}, with the same category and visibility. Images are not copied.",
+          "titleHint": "Two active events cannot share a title: add the year, for instance.",
+          "cancel": "Cancel",
+          "submit": "Create draft"
+        },
+        "poster": {
+          "trigger": "Poster",
+          "title": "Event poster",
+          "back": "Back to events",
+          "print": "Print",
+          "hint": "A4 format — Ctrl+P produces the same page.",
+          "cancelled": "Cancelled"
+        },
         "images": {
           "add": "Add an image",
           "remove": "Remove",
@@ -1617,7 +1633,8 @@
           "updated": "Event updated",
           "archived": "Event archived",
           "imageAdded": "Image added",
-          "imageRemoved": "Image removed"
+          "imageRemoved": "Image removed",
+          "duplicated": "Draft created for next year"
         }
       },
       "authSettings": {

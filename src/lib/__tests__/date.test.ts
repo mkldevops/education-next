@@ -5,6 +5,7 @@ import {
   formatDateLong,
   formatDateTime,
   formatEventDate,
+  formatEventPosterDate,
   parseEventInputValue,
   toEventInputValue,
 } from '../date'
@@ -188,5 +189,56 @@ describe('formatEventDate', () => {
 
     expect(label.match(/mars 2026/g)).toHaveLength(2)
     expect(label).toMatch(/10 mars 2026.*09:00.*12 mars 2026.*10:30/)
+  })
+})
+
+describe('formatEventPosterDate', () => {
+  const originalTz = process.env.TZ
+
+  afterEach(() => {
+    if (originalTz === undefined) {
+      delete process.env.TZ
+    } else {
+      process.env.TZ = originalTz
+    }
+  })
+
+  it('spells out weekday and month of an all-day event on its stored UTC day', () => {
+    process.env.TZ = 'America/Los_Angeles'
+
+    const label = formatEventPosterDate(
+      { allDay: true, startAt: new Date(Date.UTC(2026, 11, 3)), endAt: null },
+      'fr-FR'
+    )
+
+    expect(label).toBe('jeudi 3 décembre 2026')
+  })
+
+  it('adds the wall-clock hours of a timed event on a single day', () => {
+    process.env.TZ = 'Europe/Paris'
+
+    const label = formatEventPosterDate(
+      {
+        allDay: false,
+        startAt: new Date('2026-12-03T18:00:00.000Z'),
+        endAt: new Date('2026-12-03T20:30:00.000Z'),
+      },
+      'fr-FR'
+    )
+
+    expect(label).toBe('jeudi 3 décembre 2026, 18:00 – 20:30')
+  })
+
+  it('names both days of a multi-day all-day event', () => {
+    const label = formatEventPosterDate(
+      {
+        allDay: true,
+        startAt: new Date(Date.UTC(2026, 11, 3)),
+        endAt: new Date(Date.UTC(2026, 11, 5)),
+      },
+      'fr-FR'
+    )
+
+    expect(label).toBe('jeudi 3 décembre 2026 – samedi 5 décembre 2026')
   })
 })

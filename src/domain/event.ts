@@ -70,5 +70,37 @@ export function normalizeEventDates<
   }
 }
 
+function addOneUtcYear(value: Date): Date {
+  const year = value.getUTCFullYear() + 1
+  const month = value.getUTCMonth()
+  // Un 29 février n'existe pas l'année suivante : `setUTCFullYear` le reporterait au
+  // 1er mars, donc dans un autre mois. Le dernier jour du même mois reste plus proche.
+  const lastDayOfMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+
+  const shifted = new Date(value)
+  shifted.setUTCFullYear(year, month, Math.min(value.getUTCDate(), lastDayOfMonth))
+  return shifted
+}
+
+/**
+ * Reconduction annuelle, qui remplace délibérément une règle de récurrence : le calendrier
+ * scolaire se réajuste chaque année à la main (jour de semaine, vacances), une RRULE
+ * produirait des dates fausses à corriger une par une.
+ *
+ * Seul le début est décalé d'un an ; la fin garde son écart avec le début, pour qu'une
+ * sortie de trois jours reste une sortie de trois jours.
+ */
+export function shiftEventToNextYear(input: { startAt: Date; endAt?: Date | null }): {
+  startAt: Date
+  endAt: Date | null
+} {
+  const startAt = addOneUtcYear(input.startAt)
+  const endAt = input.endAt
+    ? new Date(startAt.getTime() + (input.endAt.getTime() - input.startAt.getTime()))
+    : null
+
+  return { startAt, endAt }
+}
+
 /** Au-delà, `add-event-image` refuse avec `'tooManyImages'`. */
 export const MAX_EVENT_IMAGES = 6
