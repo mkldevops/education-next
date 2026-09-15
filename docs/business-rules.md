@@ -802,6 +802,17 @@ Atomic in one `db.$transaction`: the capacity count, the enrollment, and the cla
 - **Capacity is re-counted inside the transaction**, not before it, so two concurrent enrollments
   cannot both pass the check → `classFull`.
 
+### Creating an already enrolled student
+
+« Ajouter un élève » in a family enrolls the child in the same gesture when the enrollment
+section is kept ticked: `src/use-cases/students/create-enrolled-student.ts` writes the person,
+the family link, the student, the enrollment and the class assignment in **one**
+`db.$transaction`, with the same capacity re-count. A refusal — `notFound`,
+`discountExceedsPlan`, `classFull` — happens before the first write, so no student is left
+behind without an enrollment. Untick the section (or have no plan or no class in the selected
+period) and `createStudentAction` falls back to `create-student.ts`, which only attaches the
+child to the family.
+
 ### Money
 
 - `totalAmount = plan.amount - discount`, computed at creation and recomputed on every discount

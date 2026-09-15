@@ -1,0 +1,104 @@
+import type { z } from 'zod'
+import { checkCapacity } from '@/domain/class-period'
+import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
+import { validateStudentBirthday } from '@/domain/student'
+import { db } from '@/lib/db'
+import { createEnrolledStudentSchema } from './schemas'
+
+type Input = z.input<typeof createEnrolledStudentSchema>
+
+/**
+ * Crée l'élève et son inscription en un seul geste, pour que l'ajout d'un enfant dans une
+ * famille n'oblige plus à rouvrir un second dialogue d'inscription.
+ *
+ * Une seule `db.$transaction` avec des appels `tx.*` directs : aucune passerelle n'accepte de
+ * client injecté, et enchaîner `createStudent` puis `createEnrollment` laisserait un élève sans
+ * inscription derrière le premier refus — une classe pleine suffirait. Précédents du dépôt :
+ * `create-enrollment.ts` et `commit-enroll-family.ts`.
+ */
+export async function createEnrolledStudent(input: Input) {
+  const parsed = createEnrolledStudentSchema.safeParse(input)
+  if (!parsed.success) return 'validationError' as const
+  const { schoolId, familyId, person, student, enrollment } = parsed.data
+
+  if (student.birthday) {
+    const birthdayCheck = validateStudentBirthday(student.birthday)
+    if (birthdayCheck !== 'OK') return birthdayCheck
+  }
+
+  return db.$transaction(async (tx) => {
+    const family = await tx.family.findFirst({
+      where: { id: familyId, schoolId, isActive: true },
+      select: { id: true },
+    })
+    if (!family) return 'notFound' as const
+
+    const plan = await tx.plan.findFirst({
+      where: { id: enrollment.planId, schoolId, isActive: true },
+      select: { amount: true },
+    })
+    if (!plan) return 'notFound' as const
+
+    const classPeriod = await tx.classPeriod.findFirst({
+      where: { id: enrollment.classPeriodId, schoolId, isActive: true },
+      select: { capacity: true },
+    })
+    if (!classPeriod) return 'notFound' as const
+
+    const planAmount = Number(plan.amount)
+    const discountCheck = validateDiscount(planAmount, enrollment.discount)
+    if (discountCheck !== 'OK') return discountCheck
+
+    // Même prédicat et même place dans la transaction que `create-enrollment.ts` : la place
+    // est recomptée avant la première écriture, donc deux ajouts simultanés ne passent pas
+    // tous les deux et aucune personne n'est créée pour rien.
+    const enrolledCount = await tx.classAssignment.count({
+      where: {
+        schoolId,
+        classPeriodId: enrollment.classPeriodId,
+        endAt: null,
+        enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
+      },
+    })
+    if (checkCapacity(classPeriod.capacity, enrolledCount) !== 'OK') return 'classFull' as const
+
+    // La création imbriquée de `FamilyPerson` ne répète pas `schoolId` : Prisma le remplit
+    // depuis la personne parente et le refuse en argument. Précédent : `personGateway.createWithFamily`.
+    const createdPerson = await tx.person.create({
+      data: {
+        ...person,
+        schoolId,
+        families: { create: { familyId: family.id, relationType: 'OTHER' } },
+      },
+      select: { id: true },
+    })
+
+    const createdStudent = await tx.student.create({
+      data: { ...student, schoolId, personId: createdPerson.id },
+      select: { id: true },
+    })
+
+    const createdEnrollment = await tx.enrollment.create({
+      data: {
+        schoolId,
+        studentId: createdStudent.id,
+        planId: enrollment.planId,
+        totalAmount: calculateTotalAmount(planAmount, enrollment.discount),
+        discount: enrollment.discount,
+        canLeaveAlone: enrollment.canLeaveAlone,
+      },
+      select: { id: true },
+    })
+
+    await tx.classAssignment.create({
+      data: {
+        schoolId,
+        enrollmentId: createdEnrollment.id,
+        classPeriodId: enrollment.classPeriodId,
+        startAt: new Date(),
+      },
+    })
+
+    return { studentId: createdStudent.id, enrollmentId: createdEnrollment.id }
+  })
+}

@@ -2,15 +2,7 @@
 
 import { Button, useMenu } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
-import {
-  Archive,
-  BookPlus,
-  CreditCard,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  UserPlus,
-} from 'lucide-react'
+import { Archive, CreditCard, MoreHorizontal, Pencil, Trash2, UserPlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useCallback } from 'react'
 import { useRouter } from '@/i18n/routing'
@@ -18,7 +10,6 @@ import { cn } from '@/lib/utils'
 
 type Props = {
   familyId: string
-  canEnroll: boolean
   canRecordPayment: boolean
 }
 
@@ -40,7 +31,7 @@ type FamilyActionItem = {
   title?: string
 }
 
-export function ActionMenu({ familyId, canEnroll, canRecordPayment }: Props) {
+export function ActionMenu({ familyId, canRecordPayment }: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.actions')
   const router = useRouter()
 
@@ -66,16 +57,6 @@ export function ActionMenu({ familyId, canEnroll, canRecordPayment }: Props) {
       icon: UserPlus,
       action: 'addStudent',
     },
-    ...(canEnroll
-      ? [
-          {
-            key: 'newEnrollment',
-            label: t('newEnrollment'),
-            icon: BookPlus,
-            action: 'addEnrollment' as const,
-          },
-        ]
-      : []),
   ]
 
   const managementActions: FamilyActionItem[] = [

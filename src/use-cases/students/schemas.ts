@@ -17,6 +17,23 @@ export const createStudentSchema = z.object({
   student: studentInputSchema,
 })
 
+/**
+ * Inscription optionnelle demandée en même temps que la création de l'élève.
+ *
+ * Volontairement plus étroit que `createEnrollmentSchema` : un élève qui vient d'être créé
+ * n'a aucune inscription à remplacer, donc `replaceExisting` n'a pas de sens ici.
+ */
+const newStudentEnrollmentSchema = z.object({
+  planId: z.string().uuid(),
+  classPeriodId: z.string().uuid(),
+  discount: z.number().min(0).default(0),
+  canLeaveAlone: z.boolean().default(false),
+})
+
+export const createEnrolledStudentSchema = createStudentSchema.extend({
+  enrollment: newStudentEnrollmentSchema,
+})
+
 export const updateStudentSchema = z
   .object({
     schoolId: z.string().min(1),
