@@ -33,6 +33,7 @@ export function AttendancePanel({
 }) {
   const [session, setSession] = useState<Session | null>(null)
   const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
   const today = new Date().toISOString().slice(0, 10)
   const counts = session?.entries.reduce(
     (all, entry) => {
@@ -45,6 +46,7 @@ export function AttendancePanel({
     startTransition(async () => {
       const result = await openAttendanceAction({ classPeriodId, occurredOn: today })
       if (typeof result !== 'string') setSession(result)
+      else setError(result)
     })
   const setEntry = (entryId: string, status: Entry['status']) =>
     startTransition(async () => {
@@ -57,6 +59,7 @@ export function AttendancePanel({
             entry.id === entryId ? { ...entry, status } : entry
           ),
         })
+      else setError(result)
     })
   const allPresent = () =>
     startTransition(async () => {
@@ -69,12 +72,18 @@ export function AttendancePanel({
             entry.status === 'NOT_RECORDED' ? { ...entry, status: 'PRESENT' } : entry
           ),
         })
+      else setError(result)
     })
   return (
     <div className="mx-auto max-w-lg space-y-4">
       <h1 className="text-2xl font-bold">
         {labels.title} — {className}
       </h1>
+      {error && (
+        <p role="alert" className="text-sm text-red-700">
+          {error}
+        </p>
+      )}
       {!session ? (
         <Button onClick={open} disabled={pending}>
           {labels.start}
@@ -82,6 +91,7 @@ export function AttendancePanel({
       ) : (
         <>
           <Card className="space-y-3 p-4">
+            <p className="text-sm font-medium">{session.status}</p>
             <p>
               {labels.present}: {counts?.PRESENT} · {labels.absent}: {counts?.ABSENT} ·{' '}
               {labels.unrecorded}: {counts?.NOT_RECORDED}
@@ -114,8 +124,10 @@ export function AttendancePanel({
           <Button
             onClick={() =>
               startTransition(async () => {
-                if (session && (await validateAttendanceAction({ sessionId: session.id })) === 'OK')
-                  setSession({ ...session, status: 'VALIDATED' })
+                if (!session) return
+                const result = await validateAttendanceAction({ sessionId: session.id })
+                if (result === 'OK') setSession({ ...session, status: 'VALIDATED' })
+                else setError(result)
               })
             }
             disabled={pending}
