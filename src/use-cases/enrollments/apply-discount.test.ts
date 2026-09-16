@@ -227,6 +227,17 @@ describe('applyDiscount', () => {
     ).toBe('totalBelowPaid')
   })
 
+  it('refuses a final amount with more than two decimal places', async () => {
+    expect(
+      await applyDiscount({
+        schoolId,
+        enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
+        totalAmount: 240.001,
+      })
+    ).toBe('validationError')
+    expect(enrollmentGatewayMock.findById).not.toHaveBeenCalled()
+  })
+
   it('should handle discount equal to plan amount', async () => {
     enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',

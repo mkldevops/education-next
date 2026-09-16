@@ -101,11 +101,11 @@ export async function previewUpdateEnrollment(scope: McpScope, input: Input) {
 
   if (data.totalAmount !== undefined) {
     const pricing = pricingFromTotalAmount(plan.amount, data.totalAmount)
-    if (pricing === 'totalAmountExceedsPlan') {
+    if (typeof pricing === 'string') {
       blockers.push({
         field: 'totalAmount',
         value: String(data.totalAmount),
-        reason: 'totalAmountExceedsPlan',
+        reason: pricing,
       })
       return nothing
     }

@@ -29,6 +29,10 @@ export function calculateTotalAmount(planAmount: number, discount: number): numb
   return planAmount - discount
 }
 
+export function isCurrencyAmount(amount: number): boolean {
+  return Number.isFinite(amount) && Math.abs(amount * 100 - Math.round(amount * 100)) < 1e-8
+}
+
 /**
  * Le montant à payer est l'entrée utilisateur; la remise reste le format de persistance.
  * Garder cette conversion ici évite que les formulaires, les actions et MCP divergent.
@@ -36,7 +40,8 @@ export function calculateTotalAmount(planAmount: number, discount: number): numb
 export function pricingFromTotalAmount(
   planAmount: number,
   totalAmount: number
-): { discount: number; totalAmount: number } | 'totalAmountExceedsPlan' {
+): { discount: number; totalAmount: number } | 'totalAmountExceedsPlan' | 'invalidCurrencyAmount' {
+  if (!isCurrencyAmount(totalAmount)) return 'invalidCurrencyAmount'
   if (totalAmount > planAmount) return 'totalAmountExceedsPlan'
   return { totalAmount, discount: planAmount - totalAmount }
 }

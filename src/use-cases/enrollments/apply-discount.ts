@@ -25,7 +25,7 @@ export async function applyDiscount(input: Input, configGw = configGateway) {
   let totalAmount = calculateTotalAmount(planAmount, discount)
   if (parsed.data.totalAmount !== undefined) {
     const pricing = pricingFromTotalAmount(planAmount, parsed.data.totalAmount)
-    if (pricing === 'totalAmountExceedsPlan') return pricing
+    if (typeof pricing === 'string') return pricing
     discount = pricing.discount
     totalAmount = pricing.totalAmount
   } else {

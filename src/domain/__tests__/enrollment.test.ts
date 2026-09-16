@@ -58,6 +58,10 @@ describe('enrollment domain', () => {
     it('refuses an amount due above the plan amount', () => {
       expect(pricingFromTotalAmount(300, 300.01)).toBe('totalAmountExceedsPlan')
     })
+
+    it('refuses a value with more than two decimal places', () => {
+      expect(pricingFromTotalAmount(300, 240.001)).toBe('invalidCurrencyAmount')
+    })
   })
 
   describe('calculateRemainingBalance', () => {

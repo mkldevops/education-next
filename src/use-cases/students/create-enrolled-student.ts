@@ -72,7 +72,7 @@ export async function createEnrolledStudent(input: Input) {
       const planAmount = Number(plan.amount)
       if (enrollment.totalAmount !== undefined) {
         const pricing = pricingFromTotalAmount(planAmount, enrollment.totalAmount)
-        if (pricing === 'totalAmountExceedsPlan') return pricing
+        if (typeof pricing === 'string') return pricing
         discount = pricing.discount
         totalAmount = pricing.totalAmount
       } else {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isCurrencyAmount } from '@/domain/enrollment'
 import { personInputSchema } from '../families/schemas'
 
 const studentInputSchema = z.object({
@@ -28,7 +29,7 @@ const newStudentEnrollmentSchema = z.object({
   // coupé les paiements inscrit sans formule, et le use case restaure l'obligation drapeau actif.
   planId: z.string().uuid().optional(),
   classPeriodId: z.string().uuid(),
-  totalAmount: z.number().min(0).optional(),
+  totalAmount: z.number().min(0).refine(isCurrencyAmount).optional(),
   discount: z.number().min(0).default(0),
   canLeaveAlone: z.boolean().default(false),
 })

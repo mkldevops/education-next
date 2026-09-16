@@ -95,6 +95,8 @@ function CreateStudentForm({
   // est nécessaire.
   const canEnroll = classes.length > 0 && (!paymentsEnabled || plans.length > 0)
   const [enroll, setEnroll] = useState(canEnroll)
+  const [planId, setPlanId] = useState(plans[0]?.id ?? '')
+  const [totalAmount, setTotalAmount] = useState(plans[0]?.amount ?? 0)
 
   const handleSubmit = onSubmit(
     (formData) =>
@@ -121,8 +123,8 @@ function CreateStudentForm({
                 // case résoudre la formule réservée et écrire zéro (FR-017).
                 ...(paymentsEnabled
                   ? {
-                      planId: formData.get('planId') as string,
-                      totalAmount: Number(formData.get('totalAmount')),
+                      planId,
+                      totalAmount,
                     }
                   : {}),
                 classPeriodId: formData.get('classPeriodId') as string,
@@ -219,7 +221,18 @@ function CreateStudentForm({
                     {paymentsEnabled && (
                       <div className="space-y-2">
                         <Label htmlFor="student-plan">{t('selectPlan')}</Label>
-                        <Select id="student-plan" name="planId" required disabled={isPending}>
+                        <Select
+                          id="student-plan"
+                          name="planId"
+                          required
+                          disabled={isPending}
+                          value={planId}
+                          onChange={(event) => {
+                            const selected = plans.find((plan) => plan.id === event.target.value)
+                            setPlanId(event.target.value)
+                            setTotalAmount(selected?.amount ?? 0)
+                          }}
+                        >
                           {plans.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.name}
@@ -248,7 +261,8 @@ function CreateStudentForm({
                         type="number"
                         step="0.01"
                         min="0"
-                        defaultValue={plans[0]?.amount ?? 0}
+                        value={totalAmount}
+                        onChange={(event) => setTotalAmount(Number(event.target.value))}
                         disabled={isPending}
                       />
                     </div>
