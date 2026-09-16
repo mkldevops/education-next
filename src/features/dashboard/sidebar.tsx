@@ -27,6 +27,7 @@ type SidebarProps = {
   canSwitchSchool: boolean
   classScheduleEnabled?: boolean
   eventsEnabled?: boolean
+  attendanceEnabled?: boolean
 }
 
 export function Sidebar({
@@ -43,6 +44,7 @@ export function Sidebar({
   canSwitchSchool,
   classScheduleEnabled = false,
   eventsEnabled = false,
+  attendanceEnabled = false,
 }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const platform = useTranslations('metadata')
@@ -61,6 +63,7 @@ export function Sidebar({
       classSchedule: classScheduleEnabled,
       events: eventsEnabled,
       payments: paymentsEnabled,
+      attendance: attendanceEnabled,
     },
   })
 

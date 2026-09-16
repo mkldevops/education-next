@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
-import { requireSchoolSession, requireTeacher } from './auth-helper'
+import { requireSchoolAdmin, requireSchoolSession, requireTeacher } from './auth-helper'
 
 const openSchema = z.object({
   classPeriodId: z.uuid(),
@@ -18,6 +18,12 @@ const updateSchema = z.object({
   status: z.enum(['NOT_RECORDED', 'PRESENT', 'ABSENT']),
 })
 const sessionSchema = z.object({ sessionId: z.uuid() })
+const cancellationSchema = z.object({ sessionId: z.uuid(), cancelled: z.boolean() })
+const cancelOccurrenceSchema = z.object({
+  classPeriodId: z.uuid(),
+  classScheduleSlotId: z.uuid(),
+  occurredOn: z.coerce.date(),
+})
 
 async function canOperateClass(classPeriodId: string) {
   const context = await requireSchoolSession()
@@ -76,6 +82,18 @@ export async function openAttendanceAction(input: unknown) {
       },
       include: { enrollment: { include: { student: { include: { person: true } } } } },
     })
+    const existing = await tx.attendanceSession.findUnique({
+      where: {
+        schoolId_classPeriodId_occurredOn_occurrenceKey: {
+          schoolId: actor.schoolId,
+          classPeriodId: parsed.data.classPeriodId,
+          occurredOn,
+          occurrenceKey,
+        },
+      },
+      select: { status: true },
+    })
+    if (existing?.status === 'CANCELLED') return 'sessionCancelled' as const
     return tx.attendanceSession.upsert({
       where: {
         schoolId_classPeriodId_occurredOn_occurrenceKey: {
@@ -106,6 +124,7 @@ export async function openAttendanceAction(input: unknown) {
       include: { entries: { orderBy: { studentName: 'asc' } } },
     })
   })
+  if (session === 'sessionCancelled') return session
   revalidatePath('/dashboard/my-classes')
   return session
 }
@@ -171,5 +190,66 @@ export async function validateAttendanceAction(input: unknown) {
     data: { status: 'VALIDATED', validatedAt: new Date(), updatedById: actor.userId },
   })
   if (updated.count !== 1) return 'notFound' as const
+  return 'OK' as const
+}
+
+export async function setAttendanceCancellationAction(input: {
+  sessionId: string
+  cancelled: boolean
+}) {
+  const parsed = cancellationSchema.safeParse(input)
+  if (!parsed.success) return 'validationError' as const
+  const admin = await requireSchoolAdmin()
+  const result = await db.attendanceSession.updateMany({
+    where: { id: parsed.data.sessionId, schoolId: admin.schoolId },
+    data: { status: parsed.data.cancelled ? 'CANCELLED' : 'DRAFT', updatedById: admin.userId },
+  })
+  if (result.count !== 1) return 'notFound' as const
+  revalidatePath('/dashboard/attendance')
+  return 'OK' as const
+}
+
+export async function cancelAttendanceOccurrenceAction(input: unknown) {
+  const parsed = cancelOccurrenceSchema.safeParse(input)
+  if (!parsed.success) return 'validationError' as const
+  const admin = await requireSchoolAdmin()
+  const slot = await db.classScheduleSlot.findFirst({
+    where: {
+      id: parsed.data.classScheduleSlotId,
+      schoolId: admin.schoolId,
+      classPeriodId: parsed.data.classPeriodId,
+    },
+    select: { id: true },
+  })
+  if (!slot) return 'notFound' as const
+  const occurredOn = new Date(
+    Date.UTC(
+      parsed.data.occurredOn.getUTCFullYear(),
+      parsed.data.occurredOn.getUTCMonth(),
+      parsed.data.occurredOn.getUTCDate()
+    )
+  )
+  await db.attendanceSession.upsert({
+    where: {
+      schoolId_classPeriodId_occurredOn_occurrenceKey: {
+        schoolId: admin.schoolId,
+        classPeriodId: parsed.data.classPeriodId,
+        occurredOn,
+        occurrenceKey: slot.id,
+      },
+    },
+    update: { status: 'CANCELLED', updatedById: admin.userId },
+    create: {
+      schoolId: admin.schoolId,
+      classPeriodId: parsed.data.classPeriodId,
+      classScheduleSlotId: slot.id,
+      occurrenceKey: slot.id,
+      occurredOn,
+      status: 'CANCELLED',
+      createdById: admin.userId,
+      updatedById: admin.userId,
+    },
+  })
+  revalidatePath('/dashboard/attendance')
   return 'OK' as const
 }

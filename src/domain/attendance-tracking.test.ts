@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { expectedAttendance } from './attendance-tracking'
 
 describe('expectedAttendance', () => {
+  it('excludes a cancelled slot occurrence', () => {
+    const date = new Date('2026-01-05T00:00:00.000Z')
+    expect(
+      expectedAttendance(
+        date,
+        [{ id: 'a', classPeriodId: 'class-a', weekday: 1 }],
+        [{ classPeriodId: 'class-a', occurrenceKey: 'a', status: 'CANCELLED' }]
+      )
+    ).toEqual([])
+  })
   it('returns no missing call without a matching slot and honors exclusions', () => {
     const date = new Date('2026-09-16T00:00:00Z')
     expect(

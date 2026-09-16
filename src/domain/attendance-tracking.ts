@@ -6,7 +6,11 @@ export type ExpectedAttendance = {
 }
 
 type Slot = { id: string; classPeriodId: string; weekday: number }
-type Session = { classPeriodId: string; occurrenceKey: string; status: 'DRAFT' | 'VALIDATED' }
+type Session = {
+  classPeriodId: string
+  occurrenceKey: string
+  status: 'DRAFT' | 'VALIDATED' | 'CANCELLED'
+}
 
 /** School convention: occurrences use the calendar date selected by the school (UTC date at V1). */
 export function expectedAttendance(
@@ -16,7 +20,15 @@ export function expectedAttendance(
   excludedSlotIds: ReadonlySet<string> = new Set()
 ): ExpectedAttendance[] {
   return slots
-    .filter((slot) => slot.weekday === date.getUTCDay() && !excludedSlotIds.has(slot.id))
+    .filter(
+      (slot) =>
+        slot.weekday === date.getUTCDay() &&
+        !excludedSlotIds.has(slot.id) &&
+        sessions.find(
+          (session) =>
+            session.classPeriodId === slot.classPeriodId && session.occurrenceKey === slot.id
+        )?.status !== 'CANCELLED'
+    )
     .map((slot) => {
       const session = sessions.find(
         (candidate) =>

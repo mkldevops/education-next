@@ -27,7 +27,7 @@ export type NavItemConfig = {
   /** Surface plateforme : réservée à `isSuperAdmin`, qu'aucun rôle d'école ne couvre. */
   platformOnly?: true
   /** Surface pilotée par un réglage d'école ; `canView` la ferme quand il est éteint. */
-  feature?: 'classSchedule' | 'events' | 'payments'
+  feature?: 'classSchedule' | 'events' | 'payments' | 'attendance'
 }
 
 const gestionItems: NavItemConfig[] = [
@@ -36,6 +36,7 @@ const gestionItems: NavItemConfig[] = [
   { href: '/dashboard/students', icon: GraduationCap, key: 'students' },
   { href: '/dashboard/enrollments', icon: ClipboardList, key: 'enrollments' },
   { href: '/dashboard/payments', icon: CreditCard, key: 'payments', feature: 'payments' },
+  { href: '/dashboard/attendance', icon: ClipboardList, key: 'attendance', feature: 'attendance' },
   {
     href: '/dashboard/events',
     icon: CalendarHeart,
@@ -78,7 +79,7 @@ export type NavScope = {
   isSuperAdmin: boolean
   familyId?: string
   hasTeacherCapability?: boolean
-  features: { classSchedule?: boolean; events: boolean; payments: boolean }
+  features: { classSchedule?: boolean; events: boolean; payments: boolean; attendance?: boolean }
 }
 
 export type VisibleNavItems = {
@@ -129,7 +130,12 @@ export function resolveNavItems({
 
   if (role === 'TEACHER') {
     return {
-      gestion: [{ href: '/dashboard/my-classes', icon: BookOpen, key: 'myClasses' }],
+      gestion: [
+        { href: '/dashboard/my-classes', icon: BookOpen, key: 'myClasses' },
+        ...(features.attendance
+          ? [{ href: '/dashboard/attendance', icon: ClipboardList, key: 'attendance' }]
+          : []),
+      ],
       config: [],
       bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }],
     }

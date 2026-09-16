@@ -33,6 +33,7 @@ enum EnrollmentStatus {
 enum AttendanceSessionStatus {
   DRAFT
   VALIDATED
+  CANCELLED
 }
 
 enum AttendanceEntryStatus {

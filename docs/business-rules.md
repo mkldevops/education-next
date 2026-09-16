@@ -829,6 +829,8 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 - A logical occurrence is unique by school, class, date and a non-null occurrence key (`adhoc` or the schedule-slot id). Opening is an atomic upsert; its roster snapshots active class assignments at that date.
 - Entries remain `NOT_RECORDED`, `PRESENT` or `ABSENT`; **All present** changes only the first state. A validated session can be corrected and records the latest author and timestamp.
 - ADMIN may operate school classes. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
+- Tracking derives expected occurrences from weekly slots for the selected **UTC calendar date** (the explicit V1 school-time convention). A slot absent from that day's planning creates no missing call.
+- Closures, cancellations and one-off timetable exceptions are represented as excluded slot ids before occurrence generation. They therefore suppress an expected occurrence rather than displaying a false `NOT_STARTED` state.
 
 ## Enrollments
 

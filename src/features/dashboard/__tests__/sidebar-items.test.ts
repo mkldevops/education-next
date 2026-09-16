@@ -4,6 +4,26 @@ import { resolveNavItems } from '../sidebar-items'
 const keys = (items: { key: string }[]) => items.map((item) => item.key)
 
 describe('resolveNavItems', () => {
+  it('shows attendance only when enabled for an admin and teacher', () => {
+    const admin = resolveNavItems({
+      role: 'ADMIN',
+      isSuperAdmin: false,
+      features: { events: false, payments: true, attendance: true },
+    })
+    const teacher = resolveNavItems({
+      role: 'TEACHER',
+      isSuperAdmin: false,
+      features: { events: false, payments: true, attendance: true },
+    })
+    const disabled = resolveNavItems({
+      role: 'TEACHER',
+      isSuperAdmin: false,
+      features: { events: false, payments: true, attendance: false },
+    })
+    expect(keys(admin.gestion)).toContain('attendance')
+    expect(keys(teacher.gestion)).toContain('attendance')
+    expect(keys(disabled.gestion)).not.toContain('attendance')
+  })
   it('hides admin-only configuration from a caller without a school role', () => {
     const items = resolveNavItems({
       role: null,

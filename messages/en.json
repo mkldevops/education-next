@@ -190,6 +190,7 @@
       "teachers": "Teachers",
       "events": "Events",
       "planning": "Schedule",
+      "attendance": "Attendance tracking",
       "superAdmins": "Super admins"
     },
     "sidebar": {
@@ -1533,6 +1534,15 @@
       },
       "attendance": {
         "title": "Attendance",
+        "trackingTitle": "Attendance tracking",
+        "empty": "No attendance is expected for this day.",
+        "filters": "Filters",
+        "notStarted": "Not started",
+        "inProgress": "In progress",
+        "validated": "Validated",
+        "cancel": "Cancel session",
+        "restore": "Restore session",
+        "sessionCancelled": "This session is cancelled.",
         "start": "Start attendance",
         "allPresent": "Mark all present",
         "draft": "Draft",
