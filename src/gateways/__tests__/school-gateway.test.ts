@@ -163,6 +163,7 @@ describe('schoolGateway.create', () => {
       'logo_url',
       'teacher_expenses_enabled',
       'events_enabled',
+      'attendance_enabled',
       'class_schedule_enabled',
       'class_schedule_teacher_overlap_allowed',
       'class_schedule_visibility',

@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { readsAsOptedIn } from '@/domain/feature-flags'
+import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { requireTeacher } from '../../../../_lib/auth-helper'
 import { AttendancePanel } from './_components/attendance-panel'
@@ -14,6 +16,11 @@ export default async function AttendancePage({
   const { locale, id } = await params
   setRequestLocale(locale)
   const { schoolId, teacherId } = await requireTeacher()
+  const attendanceConfig = await db.config.findFirst({
+    where: { schoolId, name: ATTENDANCE_ENABLED_CONFIG_KEY },
+    select: { value: true },
+  })
+  if (!readsAsOptedIn(attendanceConfig?.value)) notFound()
   const classPeriod = await db.classPeriod.findFirst({
     where: { id, schoolId, teachers: { some: { teacherId } } },
     select: { id: true, name: true },

@@ -900,6 +900,10 @@
               "cancel": "Cancel"
             }
           },
+          "attendance_enabled": {
+            "label": "Attendance",
+            "description": "Enables class attendance recording."
+          },
           "automatic_promotion": {
             "label": "Automatic promotion",
             "description": "Promotes students to the next period. No trigger exists in the interface yet: the setting is kept but has no effect."

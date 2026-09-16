@@ -901,6 +901,10 @@
               "cancel": "Annuler"
             }
           },
+          "attendance_enabled": {
+            "label": "Appel",
+            "description": "Active la saisie des appels de classe."
+          },
           "automatic_promotion": {
             "label": "Promotion automatique",
             "description": "Promotion des élèves vers la période suivante. Aucun déclencheur dans l'interface à ce jour : le réglage est conservé mais reste sans effet."

@@ -1,3 +1,4 @@
+import { ATTENDANCE_ENABLED_CONFIG_KEY } from './attendance-config'
 import { BRANDING_CONFIG_DEFAULTS } from './branding-config'
 import { CLASS_SCHEDULE_CONFIG_DEFAULTS } from './class-schedule-config'
 import { EVENTS_CONFIG_DEFAULT } from './events-config'
@@ -19,6 +20,7 @@ export const SCHOOL_CONFIG_DEFAULTS = [
   ...BRANDING_CONFIG_DEFAULTS,
   TEACHER_EXPENSES_CONFIG_DEFAULT,
   EVENTS_CONFIG_DEFAULT,
+  { name: ATTENDANCE_ENABLED_CONFIG_KEY, value: 'false', valueType: 'BOOLEAN' },
   ...CLASS_SCHEDULE_CONFIG_DEFAULTS,
   // À `'true'` : une école neuve encaisse comme toutes les autres. Aucune migration ne
   // sème la ligne sur une école existante — l'absence vaut activé.

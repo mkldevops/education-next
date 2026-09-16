@@ -46,6 +46,17 @@ export async function openAttendanceAction(input: unknown) {
   const actor = await canOperateClass(parsed.data.classPeriodId)
   if (!actor) return 'notFound' as const
   if (!(await enabled(actor.schoolId))) return 'attendanceDisabled' as const
+  if (parsed.data.classScheduleSlotId) {
+    const slot = await db.classScheduleSlot.findFirst({
+      where: {
+        id: parsed.data.classScheduleSlotId,
+        schoolId: actor.schoolId,
+        classPeriodId: parsed.data.classPeriodId,
+      },
+      select: { id: true },
+    })
+    if (!slot) return 'notFound' as const
+  }
   const occurredOn = new Date(
     Date.UTC(
       parsed.data.occurredOn.getUTCFullYear(),
