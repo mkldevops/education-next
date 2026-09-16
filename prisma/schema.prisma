@@ -619,6 +619,7 @@ model AttendanceSession {
   occurrenceKey       String                  @db.VarChar(300)
   occurredOn          DateTime                @db.Date
   status              AttendanceSessionStatus @default(DRAFT)
+  statusBeforeCancellation AttendanceSessionStatus?
   createdById         String
   updatedById         String
   validatedAt         DateTime?

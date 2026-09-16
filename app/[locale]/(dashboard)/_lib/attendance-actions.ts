@@ -200,9 +200,37 @@ export async function setAttendanceCancellationAction(input: {
   const parsed = cancellationSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   const admin = await requireSchoolAdmin()
+  const session = await db.attendanceSession.findFirst({
+    where: { id: parsed.data.sessionId, schoolId: admin.schoolId },
+    select: { status: true, statusBeforeCancellation: true, _count: { select: { entries: true } } },
+  })
+  if (!session) return 'notFound' as const
+  if (
+    !parsed.data.cancelled &&
+    session.status === 'CANCELLED' &&
+    session._count.entries === 0 &&
+    !session.statusBeforeCancellation
+  ) {
+    await db.attendanceSession.deleteMany({
+      where: { id: parsed.data.sessionId, schoolId: admin.schoolId },
+    })
+    revalidatePath('/dashboard/attendance')
+    return 'OK' as const
+  }
   const result = await db.attendanceSession.updateMany({
     where: { id: parsed.data.sessionId, schoolId: admin.schoolId },
-    data: { status: parsed.data.cancelled ? 'CANCELLED' : 'DRAFT', updatedById: admin.userId },
+    data: parsed.data.cancelled
+      ? {
+          status: 'CANCELLED',
+          statusBeforeCancellation:
+            session.status === 'CANCELLED' ? session.statusBeforeCancellation : session.status,
+          updatedById: admin.userId,
+        }
+      : {
+          status: session.statusBeforeCancellation ?? 'DRAFT',
+          statusBeforeCancellation: null,
+          updatedById: admin.userId,
+        },
   })
   if (result.count !== 1) return 'notFound' as const
   revalidatePath('/dashboard/attendance')

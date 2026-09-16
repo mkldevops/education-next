@@ -5,7 +5,13 @@ const db = {
   classPeriodTeacher: { findFirst: vi.fn() },
   classScheduleSlot: { findFirst: vi.fn() },
   classAssignment: { findMany: vi.fn() },
-  attendanceSession: { upsert: vi.fn(), findUnique: vi.fn(), updateMany: vi.fn() },
+  attendanceSession: {
+    upsert: vi.fn(),
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    updateMany: vi.fn(),
+    deleteMany: vi.fn(),
+  },
   attendanceEntry: { updateMany: vi.fn() },
   $transaction: vi.fn(),
 }
@@ -36,6 +42,11 @@ beforeEach(() => {
   db.classAssignment.findMany.mockResolvedValue([])
   db.attendanceSession.upsert.mockResolvedValue({ id, entries: [] })
   db.attendanceSession.findUnique.mockResolvedValue(null)
+  db.attendanceSession.findFirst.mockResolvedValue({
+    status: 'DRAFT',
+    statusBeforeCancellation: null,
+    _count: { entries: 1 },
+  })
   db.$transaction.mockImplementation((callback) =>
     callback({ classAssignment: db.classAssignment, attendanceSession: db.attendanceSession })
   )
@@ -73,6 +84,32 @@ describe('attendance actions', () => {
     await expect(
       actions.setAttendanceCancellationAction({ sessionId: id, cancelled: 'yes' } as never)
     ).resolves.toBe('validationError')
+  })
+
+  it('deletes an empty cancelled placeholder on restore', async () => {
+    db.attendanceSession.findFirst.mockResolvedValue({
+      status: 'CANCELLED',
+      statusBeforeCancellation: null,
+      _count: { entries: 0 },
+    })
+    db.attendanceSession.deleteMany.mockResolvedValue({ count: 1 })
+    await expect(
+      actions.setAttendanceCancellationAction({ sessionId: id, cancelled: false })
+    ).resolves.toBe('OK')
+    expect(db.attendanceSession.deleteMany).toHaveBeenCalled()
+  })
+
+  it.each(['DRAFT', 'VALIDATED'] as const)('restores the saved %s status', async (status) => {
+    db.attendanceSession.findFirst.mockResolvedValue({
+      status: 'CANCELLED',
+      statusBeforeCancellation: status,
+      _count: { entries: 2 },
+    })
+    db.attendanceSession.updateMany.mockResolvedValue({ count: 1 })
+    await expect(
+      actions.setAttendanceCancellationAction({ sessionId: id, cancelled: false })
+    ).resolves.toBe('OK')
+    expect(db.attendanceSession.updateMany.mock.calls[0][0].data.status).toBe(status)
   })
 
   it('refuses opening an existing cancelled occurrence without upserting it again', async () => {

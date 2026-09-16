@@ -8,7 +8,7 @@ export function isAttendanceClosed(
     (event) =>
       event.status === 'PUBLISHED' &&
       event.category === 'CLOSURE' &&
-      event.startAt <= end &&
+      event.startAt < end &&
       (!event.endAt || event.endAt >= start)
   )
 }

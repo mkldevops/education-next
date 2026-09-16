@@ -14,4 +14,19 @@ describe('isAttendanceClosed', () => {
       isAttendanceClosed([{ status: 'PUBLISHED', category: 'OUTING', startAt: day }], day)
     ).toBe(false)
   })
+
+  it('uses an exclusive end-of-day boundary', () => {
+    expect(
+      isAttendanceClosed(
+        [
+          {
+            status: 'PUBLISHED',
+            category: 'CLOSURE',
+            startAt: new Date('2026-01-06T00:00:00.000Z'),
+          },
+        ],
+        day
+      )
+    ).toBe(false)
+  })
 })
