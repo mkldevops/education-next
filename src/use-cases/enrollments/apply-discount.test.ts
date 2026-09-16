@@ -187,6 +187,46 @@ describe('applyDiscount', () => {
     )
   })
 
+  it('derives a 60 euro discount from a final amount of 240 euros', async () => {
+    enrollmentGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      status: 'ACTIVE',
+      payments: [],
+      plan: { amount: 300 },
+    })
+
+    expect(
+      await applyDiscount({
+        schoolId,
+        enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
+        totalAmount: 240,
+      })
+    ).toBe('OK')
+    expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+      schoolId,
+      '550e8400-e29b-41d4-a716-446655440000',
+      60,
+      240
+    )
+  })
+
+  it('refuses a final amount lower than recorded payments', async () => {
+    enrollmentGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      status: 'ACTIVE',
+      payments: [{ amount: 250 }],
+      plan: { amount: 300 },
+    })
+
+    expect(
+      await applyDiscount({
+        schoolId,
+        enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
+        totalAmount: 240,
+      })
+    ).toBe('totalBelowPaid')
+  })
+
   it('should handle discount equal to plan amount', async () => {
     enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',

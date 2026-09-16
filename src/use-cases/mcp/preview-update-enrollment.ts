@@ -1,5 +1,5 @@
 import type { z } from 'zod'
-import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
+import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { draftExpiry, type McpFinding } from '@/domain/mcp-draft'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
@@ -85,16 +85,39 @@ export async function previewUpdateEnrollment(scope: McpScope, input: Input) {
 
   // Sans remise lue, celle de l'inscription suit la nouvelle formule : changer de forfait
   // ne doit pas effacer en silence une remise accordée.
-  const discount = data.discount ?? before.discount
-  const changedField = data.discount === undefined ? 'planName' : 'discount'
-  const changedValue = data.discount === undefined ? plan.name : String(discount)
+  let discount = data.discount ?? before.discount
+  const changedField =
+    data.totalAmount !== undefined
+      ? 'totalAmount'
+      : data.discount === undefined
+        ? 'planName'
+        : 'discount'
+  const changedValue =
+    data.totalAmount !== undefined
+      ? String(data.totalAmount)
+      : data.discount === undefined
+        ? plan.name
+        : String(discount)
+
+  if (data.totalAmount !== undefined) {
+    const pricing = pricingFromTotalAmount(plan.amount, data.totalAmount)
+    if (pricing === 'totalAmountExceedsPlan') {
+      blockers.push({
+        field: 'totalAmount',
+        value: String(data.totalAmount),
+        reason: 'totalAmountExceedsPlan',
+      })
+      return nothing
+    }
+    discount = pricing.discount
+  }
 
   if (validateDiscount(plan.amount, discount) !== 'OK') {
     blockers.push({ field: 'discount', value: String(discount), reason: 'discountExceedsPlan' })
     return nothing
   }
 
-  const totalAmount = calculateTotalAmount(plan.amount, discount)
+  const totalAmount = data.totalAmount ?? calculateTotalAmount(plan.amount, discount)
   const paid = roundHalfUp(
     enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
   )

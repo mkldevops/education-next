@@ -212,7 +212,7 @@ export function EnrollmentDrawer({
                   {paymentsEnabled && (
                     <ApplyDiscountDialog
                       enrollmentId={enrollment.id}
-                      currentDiscount={discountNum}
+                      currentTotalAmount={totalAmountNum}
                     />
                   )}
                   {paymentsEnabled &&

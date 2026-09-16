@@ -22,7 +22,7 @@ interface Props {
   isAdmin: boolean
   currentClassId: string | null
   availableClasses: Array<{ id: string; name: string }>
-  currentDiscount: number
+  currentTotalAmount: number
   paymentsEnabled: boolean
   planName: string
   availablePlans: Array<{ id: string; name: string }>
@@ -34,7 +34,7 @@ export function EnrollmentActions({
   isAdmin,
   currentClassId,
   availableClasses,
-  currentDiscount,
+  currentTotalAmount,
   paymentsEnabled,
   planName,
   availablePlans,
@@ -112,7 +112,10 @@ export function EnrollmentActions({
             classes={availableClasses}
           />
           {paymentsEnabled && (
-            <ApplyDiscountDialog enrollmentId={enrollmentId} currentDiscount={currentDiscount} />
+            <ApplyDiscountDialog
+              enrollmentId={enrollmentId}
+              currentTotalAmount={currentTotalAmount}
+            />
           )}
           {paymentsEnabled && planName === UNPRICED_PLAN_NAME && availablePlans.length > 0 && (
             <SetEnrollmentPlanDialog enrollmentId={enrollmentId} plans={availablePlans} />

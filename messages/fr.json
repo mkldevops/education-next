@@ -431,6 +431,7 @@
           "selectPlan": "Plan tarifaire",
           "selectClass": "Classe",
           "discount": "Réduction (€)",
+          "totalAmount": "Montant à payer (€)",
           "canLeaveAlone": "Autorisé à partir seul",
           "submit": "Créer",
           "cancel": "Annuler",
@@ -441,6 +442,7 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Famille, plan ou classe introuvable",
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
+            "totalAmountExceedsPlan": "Le montant à payer dépasse le tarif du plan",
             "classFull": "Cette classe est complète"
           }
         },
@@ -687,6 +689,7 @@
           "selectClass": "Classe",
           "noClassInPeriod": "Aucune classe sur la période sélectionnée. Créez une classe ou changez de période.",
           "discount": "Réduction (€)",
+          "totalAmount": "Montant à payer (€)",
           "canLeaveAlone": "Autorisé à partir seul",
           "replaceExisting": "Remplacer l'inscription existante de la période",
           "replaceExistingHint": "L'inscription en cours est annulée puis recréée. Impossible si elle a déjà reçu un paiement.",
@@ -696,6 +699,7 @@
           "error": "Erreur lors de l'inscription",
           "errors": {
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
+            "totalAmountExceedsPlan": "Le montant à payer dépasse le tarif du plan",
             "duplicateEnrollment": "Cet élève a déjà une inscription sur cette période. Cochez « Remplacer l'inscription existante » pour la recréer.",
             "classFull": "Cette classe est complète",
             "notFound": "Élève, plan ou classe introuvable",
@@ -1290,14 +1294,17 @@
           }
         },
         "applyDiscount": {
-          "title": "Appliquer une réduction",
+          "title": "Modifier le montant à payer",
           "amount": "Montant de la réduction (€)",
+          "totalAmount": "Montant à payer (€)",
           "cancel": "Annuler",
           "submit": "Appliquer",
           "success": "Réduction appliquée",
           "error": "Erreur lors de l'application",
           "errors": {
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
+            "totalAmountExceedsPlan": "Le montant à payer dépasse le tarif du plan",
+            "totalBelowPaid": "Le montant à payer ne peut pas être inférieur aux paiements déjà enregistrés",
             "notFound": "Inscription introuvable",
             "validationError": "Vérifiez le montant saisi"
           }

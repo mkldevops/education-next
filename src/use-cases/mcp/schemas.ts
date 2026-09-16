@@ -127,13 +127,17 @@ export const previewUpdateEnrollmentSchema = z
     studentLastname: z.string().trim().min(1).max(250).optional(),
     planName: z.string().trim().min(1).max(50).optional(),
     discount: z.number().min(0).optional(),
+    totalAmount: z.number().min(0).optional(),
   })
   .refine(
     (data) =>
       data.enrollmentId !== undefined ||
       (data.studentName !== undefined && data.studentLastname !== undefined)
   )
-  .refine((data) => data.planName !== undefined || data.discount !== undefined)
+  .refine(
+    (data) =>
+      data.planName !== undefined || data.discount !== undefined || data.totalAmount !== undefined
+  )
 
 export const commitDraftSchema = z.object({
   draftId: z.uuid(),

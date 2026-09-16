@@ -64,7 +64,7 @@ export default async function EnrollmentsPage({ params }: Props) {
     isAdmin && paymentsEnabled
       ? await db.plan.findMany({
           where: { schoolId: scope.schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
-          select: { id: true, name: true },
+          select: { id: true, name: true, amount: true },
           orderBy: { name: 'asc' },
         })
       : []
@@ -132,7 +132,7 @@ export default async function EnrollmentsPage({ params }: Props) {
         enrollments={serializableEnrollments}
         isAdmin={isAdmin}
         availableClasses={availableClasses}
-        availablePlans={availablePlans}
+        availablePlans={availablePlans.map((plan) => ({ ...plan, amount: Number(plan.amount) }))}
         locale={locale}
         periodName={selectedPeriod?.name ?? null}
         paymentsEnabled={paymentsEnabled}

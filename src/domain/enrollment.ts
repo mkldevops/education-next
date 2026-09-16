@@ -29,6 +29,18 @@ export function calculateTotalAmount(planAmount: number, discount: number): numb
   return planAmount - discount
 }
 
+/**
+ * Le montant à payer est l'entrée utilisateur; la remise reste le format de persistance.
+ * Garder cette conversion ici évite que les formulaires, les actions et MCP divergent.
+ */
+export function pricingFromTotalAmount(
+  planAmount: number,
+  totalAmount: number
+): { discount: number; totalAmount: number } | 'totalAmountExceedsPlan' {
+  if (totalAmount > planAmount) return 'totalAmountExceedsPlan'
+  return { totalAmount, discount: planAmount - totalAmount }
+}
+
 export function calculateRemainingBalance(totalAmount: number, totalPaid: number): number {
   return Math.max(0, totalAmount - totalPaid)
 }

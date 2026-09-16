@@ -24,6 +24,7 @@ import { createStudentAction } from '../../../_lib/student-actions'
 interface Option {
   id: string
   name: string
+  amount?: number
 }
 
 interface CreateStudentDialogProps {
@@ -121,7 +122,7 @@ function CreateStudentForm({
                 ...(paymentsEnabled
                   ? {
                       planId: formData.get('planId') as string,
-                      discount: Number(formData.get('discount') || 0),
+                      totalAmount: Number(formData.get('totalAmount')),
                     }
                   : {}),
                 classPeriodId: formData.get('classPeriodId') as string,
@@ -240,14 +241,14 @@ function CreateStudentForm({
                   </div>
                   {paymentsEnabled && (
                     <div className="space-y-2">
-                      <Label htmlFor="student-discount">{t('discount')}</Label>
+                      <Label htmlFor="student-total-amount">{t('totalAmount')}</Label>
                       <Input
-                        id="student-discount"
-                        name="discount"
+                        id="student-total-amount"
+                        name="totalAmount"
                         type="number"
                         step="0.01"
                         min="0"
-                        defaultValue="0"
+                        defaultValue={plans[0]?.amount ?? 0}
                         disabled={isPending}
                       />
                     </div>

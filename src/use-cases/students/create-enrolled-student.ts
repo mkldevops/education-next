@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 import { checkCapacity } from '@/domain/class-period'
-import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
+import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { validateStudentBirthday } from '@/domain/student'
 import { planGateway } from '@/gateways/plan-gateway'
 import { db } from '@/lib/db'
@@ -67,11 +67,19 @@ export async function createEnrolledStudent(input: Input) {
     // Formule réservée de montant nul et remise déjà refusée non nulle hors drapeau
     // (FR-017) : `totalAmount` reste 0 sans repasser par `calculateTotalAmount`.
     let totalAmount = 0
+    let discount = enrollment.discount
     if (plan) {
       const planAmount = Number(plan.amount)
-      const discountCheck = validateDiscount(planAmount, enrollment.discount)
-      if (discountCheck !== 'OK') return discountCheck
-      totalAmount = calculateTotalAmount(planAmount, enrollment.discount)
+      if (enrollment.totalAmount !== undefined) {
+        const pricing = pricingFromTotalAmount(planAmount, enrollment.totalAmount)
+        if (pricing === 'totalAmountExceedsPlan') return pricing
+        discount = pricing.discount
+        totalAmount = pricing.totalAmount
+      } else {
+        const discountCheck = validateDiscount(planAmount, discount)
+        if (discountCheck !== 'OK') return discountCheck
+        totalAmount = calculateTotalAmount(planAmount, discount)
+      }
     }
 
     // Même prédicat et même place dans la transaction que `create-enrollment.ts` : la place
@@ -109,7 +117,7 @@ export async function createEnrolledStudent(input: Input) {
         studentId: createdStudent.id,
         planId: planId ?? (await planGateway.ensureUnpriced(schoolId, tx)).id,
         totalAmount,
-        discount: enrollment.discount,
+        discount,
         canLeaveAlone: enrollment.canLeaveAlone,
       },
       select: { id: true },

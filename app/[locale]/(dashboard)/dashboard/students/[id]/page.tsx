@@ -247,7 +247,7 @@ export default async function StudentDetailPage({ params }: Props) {
             {isAdmin && !isEnrolledInSelectedPeriod && (
               <CreateEnrollmentDialog
                 students={[{ id: student.id, name: fullName }]}
-                plans={plans.map((p) => ({ id: p.id, name: p.name }))}
+                plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
                 classes={classes.map((c) => ({
                   id: c.id,
                   name: `${c.name} (${c.level.name} — ${c.period.name})`,

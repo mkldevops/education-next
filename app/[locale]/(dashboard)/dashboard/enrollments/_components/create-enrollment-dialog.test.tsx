@@ -21,7 +21,7 @@ function openDialog() {
 }
 
 describe('CreateEnrollmentDialog with payments enabled', () => {
-  it('shows the plan selector and the discount field', () => {
+  it('shows the plan selector and the amount due field', () => {
     render(
       <CreateEnrollmentDialog
         students={students}
@@ -33,13 +33,13 @@ describe('CreateEnrollmentDialog with payments enabled', () => {
     openDialog()
 
     expect(screen.getByLabelText('selectPlan')).toBeInTheDocument()
-    expect(screen.getByLabelText('discount')).toBeInTheDocument()
+    expect(screen.getByLabelText('totalAmount')).toBeInTheDocument()
     expect(screen.getByLabelText('selectClass')).toBeInTheDocument()
   })
 })
 
 describe('CreateEnrollmentDialog with payments disabled', () => {
-  it('hides the plan selector and the discount field, keeping the class selector', () => {
+  it('hides the plan selector and the amount due field, keeping the class selector', () => {
     render(
       <CreateEnrollmentDialog
         students={students}
@@ -51,7 +51,7 @@ describe('CreateEnrollmentDialog with payments disabled', () => {
     openDialog()
 
     expect(screen.queryByLabelText('selectPlan')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('discount')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('totalAmount')).not.toBeInTheDocument()
     expect(screen.getByLabelText('selectClass')).toBeInTheDocument()
   })
 })

@@ -3,6 +3,7 @@ import type { EnrollmentStatus } from '@/generated/prisma/client'
 import {
   calculateRemainingBalance,
   calculateTotalAmount,
+  pricingFromTotalAmount,
   VALID_TRANSITIONS,
   validateDiscount,
   validateTransition,
@@ -46,6 +47,16 @@ describe('enrollment domain', () => {
     it('should work with decimal amounts', () => {
       const result = calculateTotalAmount(99.99, 9.99)
       expect(result).toBeCloseTo(90, 2)
+    })
+  })
+
+  describe('pricingFromTotalAmount', () => {
+    it('derives the stored discount from the amount due', () => {
+      expect(pricingFromTotalAmount(300, 240)).toEqual({ totalAmount: 240, discount: 60 })
+    })
+
+    it('refuses an amount due above the plan amount', () => {
+      expect(pricingFromTotalAmount(300, 300.01)).toBe('totalAmountExceedsPlan')
     })
   })
 
