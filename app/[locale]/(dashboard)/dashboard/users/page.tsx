@@ -36,7 +36,7 @@ export default async function UsersPage({ params }: Props) {
   })
   const canManagePlatform = viewer?.isSuperAdmin ?? false
 
-  const [families, invitations, members, familyLinks] = await Promise.all([
+  const [families, invitations, members, familyLinks, teachers] = await Promise.all([
     db.family.findMany({
       where: { schoolId, isActive: true },
       select: { id: true, name: true },
@@ -51,6 +51,11 @@ export default async function UsersPage({ params }: Props) {
     db.userFamily.findMany({
       where: { schoolId },
       select: { userId: true, family: { select: { id: true, name: true } } },
+    }),
+    db.teacher.findMany({
+      where: { schoolId, isActive: true, userId: null },
+      select: { id: true, firstName: true, lastName: true, email: true },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     }),
   ])
 
@@ -79,6 +84,11 @@ export default async function UsersPage({ params }: Props) {
     family: familyByUserId[member.userId] ?? null,
     lastLoginAt: lastLoginByUserId[member.userId] ?? null,
   }))
+  const teacherOptions = teachers.map((teacher) => ({
+    id: teacher.id,
+    name: `${teacher.lastName} ${teacher.firstName}`,
+    email: teacher.email,
+  }))
 
   return (
     <div className="space-y-6">
@@ -90,13 +100,14 @@ export default async function UsersPage({ params }: Props) {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        {rows.length > 0 && <InviteUserDialog families={families} />}
+        {rows.length > 0 && <InviteUserDialog families={families} teachers={teacherOptions} />}
       </div>
       <UsersTable
         members={rows}
         canManagePlatform={canManagePlatform}
         currentUserId={viewerId}
         families={families}
+        teachers={teacherOptions}
         locale={locale}
       />
 
@@ -108,7 +119,11 @@ export default async function UsersPage({ params }: Props) {
         <PendingInvitations
           invitations={invitations}
           locale={locale}
-          roleLabels={{ ADMIN: tRoles('ADMIN'), PARENT: tRoles('PARENT') }}
+          roleLabels={{
+            ADMIN: tRoles('ADMIN'),
+            PARENT: tRoles('PARENT'),
+            TEACHER: tRoles('TEACHER'),
+          }}
           labels={{
             email: tInvitations('email'),
             role: tInvitations('role'),

@@ -23,7 +23,9 @@ export async function linkInvitedUser(
     where: { userId_schoolId: { userId, schoolId: invitation.schoolId } },
     select: { userId: true },
   })
-  if (membership) return 'alreadyMember'
+  // Une invitation ciblant une fiche enseignant ajoute une capacité à un compte
+  // déjà ADMIN/PARENT, sans écraser son rôle ni créer une seconde appartenance.
+  if (membership && !invitation.teacherId) return 'alreadyMember'
 
   const closed = await tx.invitation.updateMany({
     where: { id: invitation.id, schoolId: invitation.schoolId, usedAt: null },
@@ -33,9 +35,19 @@ export async function linkInvitedUser(
 
   // Le `SchoolMember` doit exister avant le `UserFamily` : sa clé étrangère
   // composite `(userId, schoolId) -> SchoolMember` bloquerait sinon l'insertion.
-  await tx.schoolMember.create({
-    data: { userId, schoolId: invitation.schoolId, role: invitation.role },
-  })
+  if (!membership) {
+    await tx.schoolMember.create({
+      data: { userId, schoolId: invitation.schoolId, role: invitation.role },
+    })
+  }
+
+  if (invitation.teacherId) {
+    const linked = await tx.teacher.updateMany({
+      where: { id: invitation.teacherId, schoolId: invitation.schoolId, userId: null },
+      data: { userId },
+    })
+    if (linked.count !== 1) throw new Error('teacherLinkUnavailable')
+  }
 
   if (invitation.familyId) {
     await tx.userFamily.upsert({

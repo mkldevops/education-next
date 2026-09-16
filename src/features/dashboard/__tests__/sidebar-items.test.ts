@@ -76,6 +76,29 @@ describe('resolveNavItems', () => {
     expect(keys(items.bottom)).toEqual(['profile'])
   })
 
+  it('keeps a parent role while exposing their linked teacher classes', () => {
+    const items = resolveNavItems({
+      role: 'PARENT',
+      isSuperAdmin: false,
+      familyId: 'family-1',
+      hasTeacherCapability: true,
+      features: { events: false, payments: true },
+    })
+
+    expect(keys(items.gestion)).toEqual(['dashboard', 'myFamily', 'myClasses'])
+  })
+
+  it('keeps admin navigation and adds their linked teacher classes', () => {
+    const items = resolveNavItems({
+      role: 'ADMIN',
+      isSuperAdmin: false,
+      hasTeacherCapability: true,
+      features: { events: false, payments: true },
+    })
+
+    expect(keys(items.gestion)).toContain('myClasses')
+  })
+
   it('falls back to the families list when a parent has no linked family', () => {
     const items = resolveNavItems({
       role: 'PARENT',

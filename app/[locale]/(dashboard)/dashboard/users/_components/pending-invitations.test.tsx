@@ -42,7 +42,7 @@ describe('PendingInvitations', () => {
           },
         ]}
         labels={labels}
-        roleLabels={{ ADMIN: 'Administrator', PARENT: 'Parent' }}
+        roleLabels={{ ADMIN: 'Administrator', PARENT: 'Parent', TEACHER: 'Teacher' }}
         locale="en"
       />
     )
@@ -60,7 +60,7 @@ describe('PendingInvitations', () => {
       <PendingInvitations
         invitations={[]}
         labels={labels}
-        roleLabels={{ ADMIN: 'Administrator', PARENT: 'Parent' }}
+        roleLabels={{ ADMIN: 'Administrator', PARENT: 'Parent', TEACHER: 'Teacher' }}
         locale="en"
       />
     )

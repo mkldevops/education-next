@@ -31,22 +31,32 @@ export type MemberRow = {
 }
 
 type FamilyOption = { id: string; name: string }
+type TeacherOption = { id: string; name: string; email: string | null }
 
 interface Props {
   members: MemberRow[]
   canManagePlatform: boolean
   currentUserId: string
   families: FamilyOption[]
+  teachers?: TeacherOption[]
   locale: string
 }
 
-const ROLE_VALUES: SchoolRole[] = ['ADMIN', 'PARENT']
+const ROLE_VALUES: SchoolRole[] = ['ADMIN', 'PARENT', 'TEACHER']
 const ROLE_COLORS: Record<SchoolRole, 'blue' | 'green'> = {
   ADMIN: 'blue',
   PARENT: 'green',
+  TEACHER: 'green',
 }
 
-export function UsersTable({ members, canManagePlatform, currentUserId, families, locale }: Props) {
+export function UsersTable({
+  members,
+  canManagePlatform,
+  currentUserId,
+  families,
+  teachers = [],
+  locale,
+}: Props) {
   const t = useTranslations('dashboard.pages.users')
   const tRoles = useTranslations('roles')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -139,7 +149,7 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
           <p className="font-semibold text-graphite">{t('empty.title')}</p>
           <p className="text-sm text-graphite-600">{t('empty.description')}</p>
         </div>
-        <InviteUserDialog families={families} />
+        <InviteUserDialog families={families} teachers={teachers} />
       </div>
     ) : hasActiveFilters ? (
       <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-2">

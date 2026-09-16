@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
 import { localizedHref } from '@/i18n/localized-href'
+import { db } from '@/lib/db'
 import type { SchoolContext } from '@/lib/school-context'
 import { getSchoolContext } from '@/lib/school-context'
 
@@ -63,7 +64,7 @@ export async function requireSchoolScope(): Promise<SchoolScope> {
     return { schoolId: context.schoolId, userId: context.userId, isAdmin: true }
   }
 
-  if (!context.familyId) notFound()
+  if (context.role !== 'PARENT' || !context.familyId) notFound()
 
   return {
     schoolId: context.schoolId,
@@ -71,6 +72,29 @@ export async function requireSchoolScope(): Promise<SchoolScope> {
     isAdmin: false,
     familyId: context.familyId,
   }
+}
+
+/**
+ * Enseignant lié au compte courant dans l'école active.
+ *
+ * Le rôle SchoolMember reste la source des privilèges d'administration ou parentaux.
+ * Une fiche `Teacher` liée est une capacité additionnelle : un ADMIN ou un PARENT
+ * peut donc consulter ses propres classes sans acquérir (ni céder) d'autres droits.
+ */
+export async function requireTeacher(): Promise<{
+  schoolId: string
+  userId: string
+  teacherId: string
+}> {
+  const context = await getSchoolContext()
+  if (!context) return redirectToLogin()
+
+  const teacher = await db.teacher.findFirst({
+    where: { schoolId: context.schoolId, userId: context.userId, isActive: true },
+    select: { id: true },
+  })
+  if (!teacher) notFound()
+  return { schoolId: context.schoolId, userId: context.userId, teacherId: teacher.id }
 }
 
 /** Portée plateforme : gestion des écoles et des comptes, hors de toute école. */

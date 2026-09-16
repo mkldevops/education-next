@@ -21,8 +21,15 @@ import { toast, toastActionError } from '@/lib/toast'
 import { inviteUserAction } from '../../../_lib/invitation-actions'
 
 type Family = { id: string; name: string }
+type Teacher = { id: string; name: string; email: string | null }
 
-export function InviteUserDialog({ families }: { families: Family[] }) {
+export function InviteUserDialog({
+  families,
+  teachers,
+}: {
+  families: Family[]
+  teachers: Teacher[]
+}) {
   const t = useTranslations('dashboard.pages.users.invite')
 
   return (
@@ -34,13 +41,13 @@ export function InviteUserDialog({ families }: { families: Family[] }) {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <InviteForm families={families} />
+        <InviteForm families={families} teachers={teachers} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function InviteForm({ families }: { families: Family[] }) {
+function InviteForm({ families, teachers }: { families: Family[]; teachers: Teacher[] }) {
   const t = useTranslations('dashboard.pages.users.invite')
   const tRoles = useTranslations('roles')
   const locale = useLocale()
@@ -59,6 +66,7 @@ function InviteForm({ families }: { families: Family[] }) {
         role: formData.get('role') as string,
         locale: formData.get('locale') as string,
         familyId: (formData.get('familyId') as string) || undefined,
+        teacherId: (formData.get('teacherId') as string) || undefined,
       })
       if (result === 'OK') {
         toast.success(t('success', { email: formData.get('email') as string }))
@@ -97,6 +105,7 @@ function InviteForm({ families }: { families: Family[] }) {
             >
               <option value="PARENT">{tRoles('PARENT')}</option>
               <option value="ADMIN">{tRoles('ADMIN')}</option>
+              <option value="TEACHER">{tRoles('TEACHER')}</option>
             </Select>
           </div>
           {role === 'PARENT' && families.length > 0 && (
@@ -111,6 +120,19 @@ function InviteForm({ families }: { families: Family[] }) {
                 ))}
               </Select>
               <p className="text-xs text-graphite-600">{t('familyHint')}</p>
+            </div>
+          )}
+          {role === 'TEACHER' && (
+            <div className="space-y-2">
+              <Label htmlFor="invite-teacher">{t('teacher')}</Label>
+              <Select id="invite-teacher" name="teacherId" required disabled={isPending}>
+                {teachers.map((teacher) => (
+                  <option key={teacher.id} value={teacher.id}>
+                    {teacher.name} — {teacher.email ?? t('missingTeacherEmail')}
+                  </option>
+                ))}
+              </Select>
+              <p className="text-xs text-graphite-600">{t('teacherHint')}</p>
             </div>
           )}
           <div className="space-y-2">

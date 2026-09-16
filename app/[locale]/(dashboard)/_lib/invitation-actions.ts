@@ -14,9 +14,10 @@ const inviteSchema = z.object({
   // écriture d'`Invitation.email`, évite qu'une casse saisie par l'admin rende le
   // compte invisible à toutes les lectures en aval.
   email: z.email().toLowerCase(),
-  role: z.enum(['ADMIN', 'PARENT']),
+  role: z.enum(['ADMIN', 'PARENT', 'TEACHER']),
   familyId: z.uuid().optional(),
   personId: z.uuid().optional(),
+  teacherId: z.uuid().optional(),
   locale: z.string().max(5).optional(),
 })
 
@@ -29,6 +30,7 @@ export async function inviteUserAction(input: {
   role: string
   familyId?: string
   personId?: string
+  teacherId?: string
   locale?: string
 }) {
   const { schoolId, userId } = await requireSchoolAdmin()
@@ -36,9 +38,11 @@ export async function inviteUserAction(input: {
   const parsed = inviteSchema.safeParse(input)
   if (!parsed.success) return 'invalidInput'
 
-  const { email, role, familyId, personId } = parsed.data
+  const { email, role, familyId, personId, teacherId } = parsed.data
   if ((familyId || personId) && role !== 'PARENT') return 'invalidInput'
   if (personId && !familyId) return 'invalidInput'
+  if (teacherId && role !== 'TEACHER') return 'invalidInput'
+  if (role === 'TEACHER' && !teacherId) return 'invalidInput'
 
   if (familyId && personId) {
     const familyPerson = await db.familyPerson.findUnique({
@@ -50,6 +54,14 @@ export async function inviteUserAction(input: {
     }
   }
 
+  if (teacherId) {
+    const teacher = await db.teacher.findUnique({
+      where: { id_schoolId: { id: teacherId, schoolId } },
+      select: { id: true, email: true, userId: true },
+    })
+    if (!teacher || teacher.userId || teacher.email?.toLowerCase() !== email) return 'invalidInput'
+  }
+
   // Une adresse déjà connue n'est plus un refus : un compte peut appartenir à
   // plusieurs écoles. Seule l'appartenance à l'école visée l'est, sinon l'invitation
   // ne rattacherait rien. L'acceptation par un compte existant est gardée par
@@ -57,7 +69,9 @@ export async function inviteUserAction(input: {
   const existing = await db.user.findUnique({ where: { email }, select: { id: true } })
   if (existing) {
     const membership = await schoolMemberGateway.findMembership(existing.id, schoolId)
-    if (membership) return 'alreadyMember'
+    // Une invitation TEACHER peut ajouter cette capacité à un ADMIN/PARENT déjà
+    // membre de l'école. Elle ne crée pas une seconde appartenance à l'acceptation.
+    if (membership && role !== 'TEACHER') return 'alreadyMember'
   }
 
   const school = await schoolGateway.findActiveById(schoolId)
@@ -77,6 +91,7 @@ export async function inviteUserAction(input: {
       createdById: userId,
       familyId,
       personId,
+      teacherId,
     },
   })
 

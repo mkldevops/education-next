@@ -18,6 +18,7 @@ type SidebarProps = {
   isSuperAdmin: boolean
   paymentsEnabled: boolean
   familyId?: string
+  hasTeacherCapability?: boolean
   logoUrl?: string
   schoolName?: string
   userName?: string
@@ -33,6 +34,7 @@ export function Sidebar({
   isSuperAdmin,
   paymentsEnabled,
   familyId,
+  hasTeacherCapability = false,
   logoUrl,
   schoolName,
   userName,
@@ -54,6 +56,7 @@ export function Sidebar({
     role,
     isSuperAdmin,
     familyId,
+    hasTeacherCapability,
     features: {
       classSchedule: classScheduleEnabled,
       events: eventsEnabled,

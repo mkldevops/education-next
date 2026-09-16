@@ -16,6 +16,7 @@ function createTx(overrides: { membership?: unknown; closedCount?: number } = {}
       findUnique: vi.fn().mockResolvedValue(overrides.membership ?? null),
       create: vi.fn(),
     },
+    teacher: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     userFamily: { upsert: vi.fn() },
     invitation: {
       updateMany: vi.fn().mockResolvedValue({ count: overrides.closedCount ?? 1 }),
@@ -69,6 +70,24 @@ describe('linkInvitedUser', () => {
     expect(await linkInvitedUser(asTx(tx), INVITATION, 'user-1')).toBe('alreadyMember')
     expect(tx.invitation.updateMany).not.toHaveBeenCalled()
     expect(tx.schoolMember.create).not.toHaveBeenCalled()
+  })
+
+  it('adds a teacher capability to an existing admin or parent without replacing membership', async () => {
+    const tx = createTx({ membership: { userId: 'user-1' } })
+
+    expect(
+      await linkInvitedUser(
+        asTx(tx),
+        { ...INVITATION, role: 'TEACHER', familyId: null, teacherId: 'teacher-1' },
+        'user-1'
+      )
+    ).toBe('OK')
+
+    expect(tx.schoolMember.create).not.toHaveBeenCalled()
+    expect(tx.teacher.updateMany).toHaveBeenCalledWith({
+      where: { id: 'teacher-1', schoolId: 'school-b', userId: null },
+      data: { userId: 'user-1' },
+    })
   })
 
   it('skips the family link when the invitation carries no family', async () => {

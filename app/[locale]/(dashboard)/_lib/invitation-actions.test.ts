@@ -8,6 +8,7 @@ const sendInvitationEmailMock = vi.fn()
 const dbMock = {
   user: { findUnique: vi.fn() },
   familyPerson: { findUnique: vi.fn() },
+  teacher: { findUnique: vi.fn() },
   invitation: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
 }
 
@@ -29,6 +30,7 @@ vi.mock('./invitation-email', () => ({
 const { inviteUserAction } = await import('./invitation-actions')
 
 const INPUT = { email: 'parent@school.test', role: 'PARENT' }
+const TEACHER_ID = '11111111-1111-4111-8111-111111111111'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -38,6 +40,11 @@ beforeEach(() => {
   dbMock.invitation.create.mockResolvedValue({ id: 'invitation-1' })
   findMembershipMock.mockResolvedValue(null)
   sendInvitationEmailMock.mockResolvedValue('OK')
+  dbMock.teacher.findUnique.mockResolvedValue({
+    id: TEACHER_ID,
+    email: 'teacher@school.test',
+    userId: null,
+  })
 })
 
 describe('inviteUserAction', () => {
@@ -55,6 +62,22 @@ describe('inviteUserAction', () => {
 
     expect(await inviteUserAction(INPUT)).toBe('alreadyMember')
     expect(dbMock.invitation.create).not.toHaveBeenCalled()
+  })
+
+  it('allows a teacher invitation to add a capability to an existing member', async () => {
+    dbMock.user.findUnique.mockResolvedValue({ id: 'user-1' })
+    findMembershipMock.mockResolvedValue({ userId: 'user-1', schoolId: 'school-b', role: 'ADMIN' })
+
+    expect(
+      await inviteUserAction({
+        email: 'teacher@school.test',
+        role: 'TEACHER',
+        teacherId: TEACHER_ID,
+      })
+    ).toBe('OK')
+    expect(dbMock.invitation.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ teacherId: TEACHER_ID }) })
+    )
   })
 
   it('still invites an unknown address without consulting memberships', async () => {
