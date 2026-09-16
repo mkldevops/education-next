@@ -25,6 +25,8 @@ async function purge() {
   await prisma.paymentTransaction.deleteMany()
   await prisma.invitation.deleteMany()
   await prisma.teacherExpense.deleteMany()
+  await prisma.classScheduleSlotTeacher.deleteMany()
+  await prisma.classScheduleSlot.deleteMany()
   await prisma.classPeriodTeacher.deleteMany()
   await prisma.classAssignment.deleteMany()
   await prisma.enrollment.deleteMany()
@@ -74,6 +76,7 @@ type SchoolFixture = {
    */
   themePrimary: string
   maxStudentsPerClass: number
+  scheduleVisibility: 'INTERNAL' | 'PUBLIC'
 }
 
 /** Référentiel et dossiers d'une école. Chaque écriture porte son `schoolId`. */
@@ -135,15 +138,7 @@ async function seedSchoolContent(fixture: SchoolFixture) {
       },
     ],
   })
-  await prisma.classPeriodTeacher.createMany({
-    data: teachers.map((teacher) => ({
-      schoolId,
-      classPeriodId: classCp.id,
-      teacherId: teacher.id,
-    })),
-  })
-
-  await prisma.classPeriod.create({
+  const classCe1 = await prisma.classPeriod.create({
     data: {
       schoolId,
       name: 'CE1-A',
@@ -151,6 +146,17 @@ async function seedSchoolContent(fixture: SchoolFixture) {
       levelId: levels[1].id,
       periodId: currentPeriod.id,
     },
+  })
+  await prisma.classPeriodTeacher.createMany({
+    data: [
+      ...teachers.map((teacher) => ({
+        schoolId,
+        classPeriodId: classCp.id,
+        teacherId: teacher.id,
+      })),
+      { schoolId, classPeriodId: classCe1.id, teacherId: teachers[0].id },
+      { schoolId, classPeriodId: classCe1.id, teacherId: teachers[1].id },
+    ],
   })
   await prisma.classPeriod.create({
     data: { schoolId, name: 'CP-A', capacity: 25, levelId: levels[0].id, periodId: nextPeriod.id },
@@ -257,8 +263,73 @@ async function seedSchoolContent(fixture: SchoolFixture) {
         valueType: 'BOOLEAN',
       },
       { schoolId, name: 'events_enabled', value: 'true', valueType: 'BOOLEAN' },
+      { schoolId, name: 'class_schedule_enabled', value: 'true', valueType: 'BOOLEAN' },
+      {
+        schoolId,
+        name: 'class_schedule_teacher_overlap_allowed',
+        value: 'true',
+        valueType: 'BOOLEAN',
+      },
+      {
+        schoolId,
+        name: 'class_schedule_visibility',
+        value: fixture.scheduleVisibility,
+        valueType: 'TEXT',
+      },
     ],
   })
+
+  // Plusieurs jours, classes et enseignants rendent la grille et la vue publique
+  // observables dès le seed. Chaque créneau est relié à un enseignant déjà affecté à
+  // sa classe et reste sans chevauchement pour que les données servent aussi de référence.
+  await Promise.all([
+    prisma.classScheduleSlot.create({
+      data: {
+        schoolId,
+        classPeriodId: classCp.id,
+        weekday: 1,
+        startTime: '08:30',
+        endTime: '10:00',
+        description: 'Lecture et ateliers de langage.',
+        teachers: { create: { teacherId: teachers[0].id } },
+      },
+    }),
+    prisma.classScheduleSlot.create({
+      data: {
+        schoolId,
+        classPeriodId: classCe1.id,
+        weekday: 1,
+        startTime: '10:15',
+        endTime: '11:45',
+        description: 'Mathématiques et résolution de problèmes.',
+        teachers: { create: { teacherId: teachers[0].id } },
+      },
+    }),
+    prisma.classScheduleSlot.create({
+      data: {
+        schoolId,
+        classPeriodId: classCp.id,
+        weekday: 3,
+        startTime: '09:00',
+        endTime: '10:30',
+        description: 'Découverte du monde et activités créatives.',
+        teachers: { create: { teacherId: teachers[1].id } },
+      },
+    }),
+    prisma.classScheduleSlot.create({
+      data: {
+        schoolId,
+        classPeriodId: classCe1.id,
+        weekday: 5,
+        startTime: '13:30',
+        endTime: '15:00',
+        description: 'Sciences et travail de groupe.',
+        teachers: {
+          create: [{ teacherId: teachers[0].id }, { teacherId: teachers[1].id }],
+        },
+      },
+    }),
+  ])
 
   // Quatre événements couvrant les trois visibilités et un brouillon : l'écran est
   // observable dès le seed, et l'isolation par école reste vérifiable.
@@ -357,6 +428,7 @@ async function seed() {
     fullTimeAmount: 1200,
     themePrimary: '#3c6e71',
     maxStudentsPerClass: 25,
+    scheduleVisibility: 'PUBLIC',
   })
 
   const horizonContent = await seedSchoolContent({
@@ -369,6 +441,7 @@ async function seed() {
     fullTimeAmount: 980,
     themePrimary: '#8c3b6e',
     maxStudentsPerClass: 18,
+    scheduleVisibility: 'INTERNAL',
   })
 
   // Parent d'une seule école : ne doit jamais voir l'autre.

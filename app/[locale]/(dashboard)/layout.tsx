@@ -11,6 +11,7 @@ import {
 import { localizedHref } from '@/i18n/localized-href'
 import { auth } from '@/lib/auth'
 import { getBrandingConfig } from '@/lib/branding'
+import { CLASS_SCHEDULE_ENABLED_CONFIG_KEY } from '@/lib/class-schedule-config'
 import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
 import { ACTIVE_SCHOOL_COOKIE, getAuthorizedSchools, getSchoolContext } from '@/lib/school-context'
@@ -30,24 +31,41 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
   // La tête de la barre latérale suit le drapeau seul, super-admin compris : le réglage
   // vit sur `/dashboard/config`, l'éteindre doit se voir immédiatement chez celui qui
   // l'écrit. L'issue de secours des liens profonds reste ouverte par `canSwitchSchool()`.
-  const [branding, session, schools, switchAllowed, eventsConfig, paymentsEnabled, cookieStore] =
-    await Promise.all([
-      getBrandingConfig(context.schoolId),
-      auth.api.getSession({ headers: await headers() }),
-      getAuthorizedSchools(),
-      isSchoolSwitchEnabled(),
-      db.config.findFirst({
-        where: { schoolId: context.schoolId, name: EVENTS_CONFIG_KEY, isActive: true },
-        select: { value: true },
-      }),
-      isPaymentsEnabled(context.schoolId),
-      cookies(),
-    ])
+  const [
+    branding,
+    session,
+    schools,
+    switchAllowed,
+    eventsConfig,
+    classScheduleConfig,
+    paymentsEnabled,
+    cookieStore,
+  ] = await Promise.all([
+    getBrandingConfig(context.schoolId),
+    auth.api.getSession({ headers: await headers() }),
+    getAuthorizedSchools(),
+    isSchoolSwitchEnabled(),
+    db.config.findFirst({
+      where: { schoolId: context.schoolId, name: EVENTS_CONFIG_KEY, isActive: true },
+      select: { value: true },
+    }),
+    db.config.findFirst({
+      where: {
+        schoolId: context.schoolId,
+        name: CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
+        isActive: true,
+      },
+      select: { value: true },
+    }),
+    isPaymentsEnabled(context.schoolId),
+    cookies(),
+  ])
   // La page de connexion n'a pas de session : elle s'habille de l'école désignée par ce cookie.
   const rememberSchool = cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId
 
   const userName = session?.user.name || session?.user.email || undefined
   const eventsEnabled = eventsConfig?.value === 'true'
+  const classScheduleEnabled = classScheduleConfig?.value === 'true'
 
   return (
     <>
@@ -63,6 +81,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
         schools={schools}
         activeSchoolId={context.schoolId}
         canSwitchSchool={switchAllowed}
+        classScheduleEnabled={classScheduleEnabled}
         eventsEnabled={eventsEnabled}
       />
     </>
@@ -74,12 +93,12 @@ export default async function DashboardLayout({ children, params }: Props) {
   const { locale } = await params
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       <Suspense fallback={<div className="hidden w-64 bg-white md:block" />}>
         <DashboardSidebarServer locale={locale} />
       </Suspense>
-      <div className="relative flex min-w-0 flex-1 flex-col">
-        <div className="sticky top-0 z-10">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="z-10 shrink-0">
           <Suspense fallback={null}>
             <ImpersonationBanner />
           </Suspense>
@@ -90,7 +109,7 @@ export default async function DashboardLayout({ children, params }: Props) {
             <DashboardHeader />
           </Suspense>
         </div>
-        <main className="min-w-0 flex-1 p-4 sm:p-6">
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain p-4 sm:p-6">
           <Suspense fallback={<div className="p-6">Loading...</div>}>{children}</Suspense>
         </main>
       </div>

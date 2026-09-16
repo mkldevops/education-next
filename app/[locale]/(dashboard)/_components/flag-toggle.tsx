@@ -26,6 +26,8 @@ type Props = {
   title: string
   description: string
   hint?: string
+  /** Réglage dépendant, visuellement rattaché à son interrupteur principal. */
+  nested?: boolean
   enabled: boolean
   onSave: (enabled: boolean) => Promise<string>
   /**
@@ -42,7 +44,15 @@ type Props = {
  * réglage gouverne toute une instance ou toute une école, afficher un état non
  * enregistré serait pire que l'attente.
  */
-export function FlagToggle({ title, description, hint, enabled, onSave, confirmDisable }: Props) {
+export function FlagToggle({
+  title,
+  description,
+  hint,
+  nested = false,
+  enabled,
+  onSave,
+  confirmDisable,
+}: Props) {
   const t = useTranslations('dashboard.platformFlag')
   const router = useRouter()
   const inputId = useId()
@@ -99,7 +109,13 @@ export function FlagToggle({ title, description, hint, enabled, onSave, confirmD
   const confirmDisableNow = () => commit(false, () => setConfirming(false))
 
   return (
-    <div className="flex items-start justify-between gap-6 px-6 py-5">
+    <div
+      className={
+        nested
+          ? 'ml-6 flex items-start justify-between gap-6 border-l-2 border-alabaster-700 py-5 pl-4 pr-6'
+          : 'flex items-start justify-between gap-6 px-6 py-5'
+      }
+    >
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <h3 id={titleId} className="text-sm font-semibold text-graphite">

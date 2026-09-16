@@ -189,6 +189,7 @@
       "schools": "Écoles",
       "teachers": "Enseignants",
       "events": "Événements",
+      "planning": "Planning",
       "superAdmins": "Super-admins"
     },
     "sidebar": {
@@ -219,6 +220,7 @@
       "schools": "Écoles",
       "teachers": "Enseignants",
       "events": "Événements",
+      "planning": "Planning",
       "superAdmins": "Super-admins"
     },
     "pages": {
@@ -905,6 +907,20 @@
           "events_enabled": {
             "label": "Événements",
             "description": "Active toute la fonctionnalité Événements ; l'entrée de menu disparaît quand ce réglage est désactivé."
+          },
+          "class_schedule_enabled": {
+            "label": "Planning des classes",
+            "description": "Active la gestion et la consultation du planning hebdomadaire. Les créneaux sont conservés lorsque ce réglage est désactivé."
+          },
+          "class_schedule_teacher_overlap_allowed": {
+            "label": "Chevauchements enseignants autorisés",
+            "description": "Autorise un même enseignant à être planifié sur plusieurs classes au même créneau. Un avertissement reste affiché."
+          },
+          "class_schedule_visibility": {
+            "label": "Visibilité du planning",
+            "description": "Interne : accessible aux membres connectés de l'école. Public : accessible depuis la page publique de l'école.",
+            "internal": "Interne",
+            "public": "Publique"
           }
         },
         "theme": {
@@ -1574,6 +1590,85 @@
           }
         }
       },
+      "planning": {
+        "title": "Planning des classes",
+        "description": "Consultez et organisez les créneaux hebdomadaires de vos classes.",
+        "empty": "Aucun créneau enregistré pour cette période",
+        "emptyNoPeriod": "Créez ou sélectionnez une période pour afficher le planning.",
+        "adminHint": "Ajoutez un créneau pour commencer à organiser les classes.",
+        "parentHint": "Le planning de l'école apparaîtra ici dès que des créneaux seront ajoutés.",
+        "weekdays": {
+          "1": "Lundi",
+          "2": "Mardi",
+          "3": "Mercredi",
+          "4": "Jeudi",
+          "5": "Vendredi",
+          "6": "Samedi",
+          "7": "Dimanche"
+        },
+        "slot": {
+          "class": "Classe",
+          "teachers": "Enseignants",
+          "noTeachers": "Aucun enseignant",
+          "content": "Contenu"
+        },
+        "duration": {
+          "hours": "h",
+          "minutes": "min"
+        },
+        "warnings": {
+          "teacherOverlap": "Cet enseignant est aussi planifié sur un créneau qui se chevauche."
+        },
+        "publicLink": {
+          "copy": "Partager le lien public",
+          "copied": "Lien public copié",
+          "copyFailed": "Impossible de copier le lien public"
+        },
+        "form": {
+          "createTrigger": "Ajouter un créneau",
+          "createTitle": "Nouveau créneau",
+          "editTrigger": "Modifier",
+          "editTitle": "Modifier le créneau",
+          "class": "Classe",
+          "weekday": "Jour",
+          "startTime": "Début",
+          "endTime": "Fin",
+          "description": "Contenu",
+          "descriptionPlaceholder": "Activité ou précision facultative",
+          "formatting": {
+            "bold": "Gras",
+            "italic": "Italique",
+            "bullets": "Liste à puces"
+          },
+          "teachers": "Enseignants",
+          "teachersPlaceholder": "Sélectionner les enseignants",
+          "teachersSearch": "Rechercher un enseignant",
+          "teachersEmpty": "Aucun enseignant affecté à cette classe",
+          "teachersNoResults": "Aucun enseignant trouvé",
+          "teachersRemove": "Retirer",
+          "cancel": "Annuler",
+          "submit": "Enregistrer"
+        },
+        "error": "Impossible d'enregistrer le créneau",
+        "success": "Créneau enregistré",
+        "successDeleted": "Créneau supprimé",
+        "delete": {
+          "trigger": "Supprimer",
+          "title": "Supprimer ce créneau ?",
+          "description": "Ce créneau ne sera plus visible dans le planning.",
+          "confirm": "Supprimer"
+        },
+        "errors": {
+          "validationError": "Vérifiez les informations saisies",
+          "invalidTimeRange": "L'heure de fin doit être postérieure à l'heure de début",
+          "notConfigured": "Le planning des classes n'est pas activé",
+          "classPeriodNotFound": "Classe introuvable",
+          "teacherNotFound": "Enseignant introuvable ou non affecté à cette classe",
+          "classOverlap": "Cette classe a déjà un créneau qui se chevauche",
+          "teacherOverlap": "Un enseignant a déjà un créneau qui se chevauche",
+          "notFound": "Créneau introuvable"
+        }
+      },
       "events": {
         "title": "Événements",
         "description": "Réunions, rentrées, sorties, vacances, fermetures et festivités de l'école.",
@@ -1844,6 +1939,30 @@
     "subtitle": "Les événements publics de {schoolName}.",
     "empty": "Aucun événement public pour le moment.",
     "subscribe": "Ajouter au calendrier"
+  },
+  "publicSchedule": {
+    "metadata": {
+      "title": "Planning de {schoolName}"
+    },
+    "notFoundTitle": "Planning introuvable",
+    "title": "Planning des classes",
+    "period": "Période {period}",
+    "empty": "Aucun créneau n'est actuellement publié",
+    "noTeachers": "Aucun enseignant",
+    "content": "Contenu",
+    "duration": {
+      "hours": "h",
+      "minutes": "min"
+    },
+    "weekdays": {
+      "1": "Lundi",
+      "2": "Mardi",
+      "3": "Mercredi",
+      "4": "Jeudi",
+      "5": "Vendredi",
+      "6": "Samedi",
+      "7": "Dimanche"
+    }
   },
   "settings": {
     "title": "Paramètres",

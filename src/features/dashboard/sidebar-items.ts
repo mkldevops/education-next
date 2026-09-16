@@ -27,7 +27,7 @@ export type NavItemConfig = {
   /** Surface plateforme : réservée à `isSuperAdmin`, qu'aucun rôle d'école ne couvre. */
   platformOnly?: true
   /** Surface pilotée par un réglage d'école ; `canView` la ferme quand il est éteint. */
-  feature?: 'events' | 'payments'
+  feature?: 'classSchedule' | 'events' | 'payments'
 }
 
 const gestionItems: NavItemConfig[] = [
@@ -42,6 +42,12 @@ const gestionItems: NavItemConfig[] = [
     key: 'events',
     requiredRoles: ['ADMIN'],
     feature: 'events',
+  },
+  {
+    href: '/dashboard/planning',
+    icon: CalendarDays,
+    key: 'planning',
+    feature: 'classSchedule',
   },
 ]
 
@@ -71,7 +77,7 @@ export type NavScope = {
   role: SchoolRole | null
   isSuperAdmin: boolean
   familyId?: string
-  features: { events: boolean; payments: boolean }
+  features: { classSchedule?: boolean; events: boolean; payments: boolean }
 }
 
 export type VisibleNavItems = {
@@ -107,6 +113,9 @@ export function resolveNavItems({
           icon: Users,
           key: 'myFamily',
         },
+        ...(features.classSchedule
+          ? [{ href: '/dashboard/planning', icon: CalendarDays, key: 'planning' }]
+          : []),
       ],
       config: configItems.filter(canView),
       bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }],

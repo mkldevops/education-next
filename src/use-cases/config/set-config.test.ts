@@ -107,6 +107,17 @@ describe('setConfig', () => {
     expect(result).toHaveProperty('valueType', 'TEXT')
   })
 
+  it('refuses an unknown class schedule visibility', async () => {
+    const result = await run({
+      schoolId: SCHOOL_ID,
+      name: 'class_schedule_visibility',
+      value: 'FRIENDS_ONLY',
+    })
+
+    expect(result).toBe('invalidConfigValue')
+    expect(gateway.setData).toBeNull()
+  })
+
   it('sets a NUMBER setting with a decimal', async () => {
     // WHEN
     const result = await run({ schoolId: SCHOOL_ID, name: 'max_students_per_class', value: '3.5' })

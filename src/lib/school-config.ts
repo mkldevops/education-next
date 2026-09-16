@@ -1,5 +1,10 @@
 import type { ConfigValueType } from '@/generated/prisma/client'
 import { BRANDING_CONFIG_KEYS } from './branding-config'
+import {
+  CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
+  CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY,
+  CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
+} from './class-schedule-config'
 import { EVENTS_CONFIG_KEY } from './events-config'
 import { PAYMENTS_ENABLED_CONFIG_KEY } from './payment-config'
 import {
@@ -23,6 +28,9 @@ export const SchoolConfigKey = {
   TeacherExpensesEnabled: TEACHER_EXPENSES_CONFIG_KEY,
   AutomaticPromotion: 'automatic_promotion',
   EventsEnabled: EVENTS_CONFIG_KEY,
+  ClassScheduleEnabled: CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
+  ClassScheduleTeacherOverlapAllowed: CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY,
+  ClassScheduleVisibility: CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
 } as const
 
 export type SchoolConfigKey = (typeof SchoolConfigKey)[keyof typeof SchoolConfigKey]
@@ -39,6 +47,9 @@ export const SCHOOL_CONFIG_VALUE_TYPES: Record<SchoolConfigKey, ConfigValueType>
   [SchoolConfigKey.PaymentsEnabled]: 'BOOLEAN',
   [SchoolConfigKey.AutomaticPromotion]: 'BOOLEAN',
   [SchoolConfigKey.EventsEnabled]: 'BOOLEAN',
+  [SchoolConfigKey.ClassScheduleEnabled]: 'BOOLEAN',
+  [SchoolConfigKey.ClassScheduleTeacherOverlapAllowed]: 'BOOLEAN',
+  [SchoolConfigKey.ClassScheduleVisibility]: 'TEXT',
 }
 
 export const SCHOOL_CONFIG_KEYS = Object.values(SchoolConfigKey)

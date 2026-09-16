@@ -129,6 +129,8 @@ model School {
   invitations         Invitation[]
   teachers            Teacher[]
   classPeriodTeachers ClassPeriodTeacher[]
+  classScheduleSlots   ClassScheduleSlot[]
+  classScheduleSlotTeachers ClassScheduleSlotTeacher[]
   teacherExpenses     TeacherExpense[]
   mcpApiKeys          McpApiKey[]
   mcpDrafts           McpDraft[]
@@ -433,6 +435,7 @@ model ClassPeriod {
   period           Period               @relation(fields: [periodId, schoolId], references: [id, schoolId], onDelete: Restrict)
   classAssignments ClassAssignment[]
   teachers         ClassPeriodTeacher[]
+  scheduleSlots    ClassScheduleSlot[]
 
   @@unique([id, schoolId])
   @@index([levelId])
@@ -453,6 +456,7 @@ model Teacher {
 
   school       School               @relation(fields: [schoolId], references: [id])
   classPeriods ClassPeriodTeacher[]
+  scheduleSlots ClassScheduleSlotTeacher[]
   expenses     TeacherExpense[]
 
   @@unique([id, schoolId])
@@ -473,6 +477,44 @@ model ClassPeriodTeacher {
   @@id([classPeriodId, teacherId])
   @@index([teacherId])
   @@index([schoolId])
+}
+
+/// Créneau récurrent de l'emploi du temps d'une classe. Les heures sont des heures
+/// murales ISO `HH:mm` car le créneau revient chaque semaine, sans date ni fuseau UTC.
+model ClassScheduleSlot {
+  id            String   @id @default(uuid())
+  schoolId      String
+  classPeriodId String
+  weekday       Int
+  startTime     String   @db.VarChar(5)
+  endTime       String   @db.VarChar(5)
+  description   String?  @db.VarChar(500)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  school      School                     @relation(fields: [schoolId], references: [id])
+  classPeriod ClassPeriod                @relation(fields: [classPeriodId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  teachers    ClassScheduleSlotTeacher[]
+
+  @@unique([id, schoolId])
+  @@index([schoolId])
+  @@index([schoolId, classPeriodId, weekday, startTime])
+}
+
+/// Sous-ensemble des enseignants affectés à la classe (`ClassPeriodTeacher`) pour un
+/// créneau. La règle d'appartenance à la classe est revalidée par le cas d'usage.
+model ClassScheduleSlotTeacher {
+  schoolId            String
+  classScheduleSlotId String
+  teacherId           String
+
+  school            School            @relation(fields: [schoolId], references: [id])
+  classScheduleSlot ClassScheduleSlot @relation(fields: [classScheduleSlotId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  teacher           Teacher           @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Restrict)
+
+  @@id([classScheduleSlotId, teacherId])
+  @@index([schoolId])
+  @@index([schoolId, teacherId])
 }
 
 model TeacherExpense {
