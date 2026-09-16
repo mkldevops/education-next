@@ -632,7 +632,7 @@ model AttendanceSession {
   entries           AttendanceEntry[]
 
   @@unique([id, schoolId])
-  @@unique([schoolId, classPeriodId, occurredOn, occurrenceKey])
+  @@unique([schoolId, classPeriodId, occurredOn, occurrenceKey], map: "AttendanceSession_occurrence_key")
   @@index([schoolId, occurredOn])
 }
 

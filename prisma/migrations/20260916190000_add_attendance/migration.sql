@@ -17,7 +17,7 @@ CREATE TABLE "AttendanceSession" (
   CONSTRAINT "AttendanceSession_pkey" PRIMARY KEY ("id")
 );
 CREATE UNIQUE INDEX "AttendanceSession_id_schoolId_key" ON "AttendanceSession"("id", "schoolId");
-CREATE UNIQUE INDEX "AttendanceSession_schoolId_classPeriodId_occurredOn_occurrenceKey_key" ON "AttendanceSession"("schoolId", "classPeriodId", "occurredOn", "occurrenceKey");
+CREATE UNIQUE INDEX "AttendanceSession_occurrence_key" ON "AttendanceSession"("schoolId", "classPeriodId", "occurredOn", "occurrenceKey");
 CREATE INDEX "AttendanceSession_schoolId_occurredOn_idx" ON "AttendanceSession"("schoolId", "occurredOn");
 
 CREATE TABLE "AttendanceEntry" (
