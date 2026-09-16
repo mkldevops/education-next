@@ -18,7 +18,7 @@ import {
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { createEnrollmentAction } from '../../../_lib/enrollment-actions'
@@ -26,6 +26,7 @@ import { createEnrollmentAction } from '../../../_lib/enrollment-actions'
 interface Option {
   id: string
   name: string
+  amount?: number
 }
 
 interface CreateEnrollmentDialogProps {
@@ -94,6 +95,8 @@ function CreateEnrollmentForm({
   const t = useTranslations('dashboard.pages.enrollments.create')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
+  const [planId, setPlanId] = useState(plans[0]?.id ?? '')
+  const [totalAmount, setTotalAmount] = useState(plans[0]?.amount ?? 0)
   const router = useRouter()
 
   useEffect(() => {
@@ -115,7 +118,7 @@ function CreateEnrollmentForm({
         studentId: formData.get('studentId') as string,
         planId: planId ? (planId as string) : undefined,
         classPeriodId: formData.get('classPeriodId') as string,
-        discount: Number(formData.get('discount') || 0),
+        totalAmount: paymentsEnabled ? totalAmount : undefined,
         canLeaveAlone: formData.get('canLeaveAlone') === 'on',
         replaceExisting: formData.get('replaceExisting') === 'on',
       })
@@ -170,7 +173,18 @@ function CreateEnrollmentForm({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="enroll-plan">{t('selectPlan')}</Label>
-                <Select id="enroll-plan" name="planId" required disabled={isPending}>
+                <Select
+                  id="enroll-plan"
+                  name="planId"
+                  required
+                  disabled={isPending}
+                  value={planId}
+                  onChange={(event) => {
+                    const selected = plans.find((plan) => plan.id === event.target.value)
+                    setPlanId(event.target.value)
+                    setTotalAmount(selected?.amount ?? 0)
+                  }}
+                >
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -185,14 +199,15 @@ function CreateEnrollmentForm({
           )}
           {paymentsEnabled && (
             <div className="space-y-2">
-              <Label htmlFor="enroll-discount">{t('discount')}</Label>
+              <Label htmlFor="enroll-total-amount">{t('totalAmount')}</Label>
               <Input
-                id="enroll-discount"
-                name="discount"
+                id="enroll-total-amount"
+                name="totalAmount"
                 type="number"
                 step="0.01"
                 min="0"
-                defaultValue="0"
+                value={totalAmount}
+                onChange={(event) => setTotalAmount(Number(event.target.value))}
                 disabled={isPending}
               />
             </div>

@@ -431,6 +431,7 @@
           "selectPlan": "Pricing plan",
           "selectClass": "Class",
           "discount": "Discount (€)",
+          "totalAmount": "Amount due (€)",
           "canLeaveAlone": "Can leave alone",
           "submit": "Create",
           "cancel": "Cancel",
@@ -441,6 +442,7 @@
             "validationError": "Check the information you entered",
             "notFound": "Family, plan or class not found",
             "discountExceedsPlan": "The discount exceeds the plan amount",
+            "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "classFull": "This class is full"
           }
         },
@@ -687,6 +689,7 @@
           "selectClass": "Class",
           "noClassInPeriod": "No class in the selected period. Create a class or switch period.",
           "discount": "Discount (€)",
+          "totalAmount": "Amount due (€)",
           "canLeaveAlone": "Can leave alone",
           "replaceExisting": "Replace the existing enrollment for this period",
           "replaceExistingHint": "The current enrollment is cancelled, then recreated. Not possible once it has received a payment.",
@@ -696,6 +699,7 @@
           "error": "Error creating enrollment",
           "errors": {
             "discountExceedsPlan": "The discount exceeds the plan amount",
+            "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "duplicateEnrollment": "This student already has an enrollment for this period. Tick “Replace the existing enrollment” to recreate it.",
             "classFull": "This class is full",
             "notFound": "Student, plan or class not found",
@@ -1294,14 +1298,17 @@
           }
         },
         "applyDiscount": {
-          "title": "Apply Discount",
+          "title": "Edit amount due",
           "amount": "Discount amount (€)",
+          "totalAmount": "Amount due (€)",
           "cancel": "Cancel",
           "submit": "Apply",
           "success": "Discount applied",
           "error": "Error applying discount",
           "errors": {
             "discountExceedsPlan": "The discount exceeds the plan amount",
+            "totalAmountExceedsPlan": "The amount due cannot exceed the plan price",
+            "totalBelowPaid": "The amount due cannot be lower than payments already recorded",
             "notFound": "Enrollment not found",
             "validationError": "Check the amount you entered"
           }
@@ -1325,6 +1332,15 @@
         "confirm": "Confirm",
         "cancel": "Cancel",
         "noUsers": "No users found",
+        "searchPlaceholder": "Search users…",
+        "filters": "Filters",
+        "empty": {
+          "title": "No users yet",
+          "description": "Invite an administrator or parent to give them access to this school.",
+          "filteredTitle": "No users match these filters",
+          "filteredDescription": "Change the criteria or show all users again.",
+          "clearFilters": "Clear filters"
+        },
         "userDeactivated": "User deactivated",
         "error": "An error occurred",
         "invite": {
@@ -1622,7 +1638,7 @@
         "empty": "No time slots have been recorded for this period",
         "emptyNoPeriod": "Create or select a period to view the schedule.",
         "adminHint": "Add a time slot to start organising classes.",
-        "parentHint": "The school schedule will appear here once time slots are added.",
+        "parentHint": "No time slot is scheduled for your children's classes during this period.",
         "weekdays": {
           "1": "Monday",
           "2": "Tuesday",
@@ -1636,6 +1652,7 @@
           "class": "Class",
           "teachers": "Teachers",
           "noTeachers": "No teacher",
+          "students": "For",
           "content": "Content"
         },
         "duration": {

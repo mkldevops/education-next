@@ -24,7 +24,12 @@ import { ChildrenTab } from './_components/children-tab'
 import { HeroBanner } from './_components/hero-banner'
 import { OverviewTab } from './_components/overview-tab'
 import { PaymentsTab } from './_components/payments-tab'
-import { deriveFamilyDetail, getFamilyDialogData, resolveFamily } from './_lib/family-detail'
+import {
+  deriveFamilyDetail,
+  getFamilyDialogData,
+  resolveFamily,
+  serializeFamilyPayments,
+} from './_lib/family-detail'
 
 type TabKey = 'overview' | 'children' | 'payments' | 'activity'
 
@@ -88,6 +93,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     totalPaid,
     remainingBalance,
   } = deriveFamilyDetail(family, familyBalance, studentId)
+  const payments = serializeFamilyPayments(family.payments)
 
   /* Le bouton « Inscrire » de la carte enfant se juge sur les mêmes données que
      `createEnrollment`, jamais sur les affectations affichées : celles-ci sont filtrées sur
@@ -138,7 +144,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 id: s.person.student.id,
                 name: `${s.person.lastname} ${s.person.name}`,
               }))}
-              plans={plans.map((p) => ({ id: p.id, name: p.name }))}
+              plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}
               defaultOpen={action === 'addEnrollment'}
@@ -157,7 +163,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             )}
             <CreateStudentDialog
               familyId={family.id}
-              plans={plans.map((p) => ({ id: p.id, name: p.name }))}
+              plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}
               defaultOpen={action === 'addStudent'}
@@ -222,6 +228,14 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 enrolledChildren={enrolledChildren}
                 totalEnrollments={allEnrollments.length}
                 activeEnrollments={activeEnrollments}
+                canAddEnrollment={
+                  isAdmin &&
+                  classOptions.length > 0 &&
+                  (!paymentsEnabled || plans.length > 0) &&
+                  students.some(
+                    ({ person }) => !studentsEnrolledInSelectedPeriod.has(person.student.id)
+                  )
+                }
                 paymentsEnabled={paymentsEnabled}
                 totalPaid={totalPaid}
                 remainingBalance={remainingBalance}
@@ -250,7 +264,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             ? [
                 {
                   label: t('tabs.payments'),
-                  content: <PaymentsTab payments={family.payments} locale={locale} />,
+                  content: <PaymentsTab payments={payments} locale={locale} />,
                 },
               ]
             : []),
@@ -259,7 +273,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             content: (
               <ActivityTab
                 enrollments={allEnrollments}
-                payments={family.payments}
+                payments={payments}
                 locale={locale}
                 paymentsEnabled={paymentsEnabled}
               />

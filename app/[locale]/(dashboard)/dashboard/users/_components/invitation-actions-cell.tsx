@@ -42,8 +42,9 @@ export function InvitationActionsCell({ invitationId }: Props) {
         {t('resend')}
       </Button>
       <Button
-        variant="destructive"
+        variant="outline"
         size="sm"
+        className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
         disabled={isPending}
         onClick={() => run(revokeInvitationAction, 'revokeSuccess')}
       >

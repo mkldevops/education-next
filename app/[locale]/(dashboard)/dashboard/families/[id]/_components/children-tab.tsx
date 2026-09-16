@@ -1,37 +1,6 @@
 import { getTranslations } from 'next-intl/server'
-import type {
-  ClassAssignment,
-  ClassPeriod,
-  Enrollment,
-  Level,
-  Payment,
-  Period,
-  Person,
-  Plan,
-  Student,
-} from '@/generated/prisma/client'
+import type { FamilyDetailStudent } from '../_lib/family-detail'
 import { ChildCard } from './child-card'
-
-type StudentWithRelation = {
-  person: Person & {
-    student: Student & {
-      enrollments: Array<
-        Enrollment & {
-          plan: Plan
-          payments: Payment[]
-          classAssignments: Array<
-            ClassAssignment & {
-              classPeriod: ClassPeriod & {
-                level: Level
-                period: Period
-              }
-            }
-          >
-        }
-      >
-    }
-  }
-}
 
 type ClassOption = {
   id: string
@@ -39,7 +8,7 @@ type ClassOption = {
 }
 
 type Props = {
-  students: StudentWithRelation[]
+  students: FamilyDetailStudent[]
   hasPendingEnrollments: boolean
   pendingCount: number
   locale: string
