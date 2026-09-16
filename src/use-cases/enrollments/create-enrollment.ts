@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 import { checkCapacity } from '@/domain/class-period'
-import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
+import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
@@ -60,7 +60,7 @@ export async function createEnrollment(input: Input) {
   if (existing && !parsed.data.replaceExisting) return 'duplicateEnrollment' as const
   if (existing && existing._count.payments > 0) return 'existingEnrollmentPaid' as const
 
-  const discount = parsed.data.discount ?? 0
+  let discount = parsed.data.discount ?? 0
 
   // La formule réservée est de montant nul, et la remise a déjà été refusée non nulle
   // plus haut hors drapeau (FR-017) : `totalAmount` reste 0 sans repasser par
@@ -69,9 +69,16 @@ export async function createEnrollment(input: Input) {
   let totalAmount = 0
   if (plan) {
     const planAmount = Number(plan.amount)
-    const discountCheck = validateDiscount(planAmount, discount)
-    if (discountCheck !== 'OK') return discountCheck
-    totalAmount = calculateTotalAmount(planAmount, discount)
+    if (parsed.data.totalAmount !== undefined) {
+      const pricing = pricingFromTotalAmount(planAmount, parsed.data.totalAmount)
+      if (typeof pricing === 'string') return pricing
+      discount = pricing.discount
+      totalAmount = pricing.totalAmount
+    } else {
+      const discountCheck = validateDiscount(planAmount, discount)
+      if (discountCheck !== 'OK') return discountCheck
+      totalAmount = calculateTotalAmount(planAmount, discount)
+    }
   }
 
   try {
@@ -109,7 +116,7 @@ export async function createEnrollment(input: Input) {
           studentId: parsed.data.studentId,
           planId,
           totalAmount,
-          discount: parsed.data.discount,
+          discount,
           canLeaveAlone: parsed.data.canLeaveAlone,
         },
       })

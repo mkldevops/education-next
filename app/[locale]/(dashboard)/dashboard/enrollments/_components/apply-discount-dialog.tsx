@@ -18,10 +18,13 @@ import { applyDiscountAction } from '../../../_lib/enrollment-actions'
 
 interface ApplyDiscountDialogProps {
   enrollmentId: string
-  currentDiscount: number
+  currentTotalAmount: number
 }
 
-export function ApplyDiscountDialog({ enrollmentId, currentDiscount }: ApplyDiscountDialogProps) {
+export function ApplyDiscountDialog({
+  enrollmentId,
+  currentTotalAmount,
+}: ApplyDiscountDialogProps) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.applyDiscount')
 
   return (
@@ -35,13 +38,13 @@ export function ApplyDiscountDialog({ enrollmentId, currentDiscount }: ApplyDisc
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <DiscountForm enrollmentId={enrollmentId} currentDiscount={currentDiscount} />
+        <DiscountForm enrollmentId={enrollmentId} currentTotalAmount={currentTotalAmount} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function DiscountForm({ enrollmentId, currentDiscount }: ApplyDiscountDialogProps) {
+function DiscountForm({ enrollmentId, currentTotalAmount }: ApplyDiscountDialogProps) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.applyDiscount')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
@@ -50,7 +53,7 @@ function DiscountForm({ enrollmentId, currentDiscount }: ApplyDiscountDialogProp
     (formData) =>
       applyDiscountAction({
         enrollmentId,
-        discount: Number(formData.get('discount')),
+        totalAmount: Number(formData.get('totalAmount')),
       }),
     { onSuccess: () => router.refresh() }
   )
@@ -60,14 +63,14 @@ function DiscountForm({ enrollmentId, currentDiscount }: ApplyDiscountDialogProp
       <DialogBody>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="discount-amount">{t('amount')}</Label>
+            <Label htmlFor="discount-amount">{t('totalAmount')}</Label>
             <Input
               id="discount-amount"
-              name="discount"
+              name="totalAmount"
               type="number"
               step="0.01"
               min="0"
-              defaultValue={currentDiscount}
+              defaultValue={currentTotalAmount}
               required
               disabled={isPending}
             />

@@ -1,40 +1,14 @@
 import { Card } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
 import { groupFamilyPayments } from '@/domain/payment'
-import type {
-  ClassAssignment,
-  ClassPeriod,
-  Enrollment,
-  Payment,
-  Plan,
-  Student,
-} from '@/generated/prisma/client'
 import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
-
-type EnrollmentWithRelation = Enrollment & {
-  plan: Plan
-  studentName?: string
-  classAssignments: Array<
-    ClassAssignment & {
-      classPeriod: ClassPeriod
-    }
-  >
-}
-
-type PaymentWithRelation = Payment & {
-  enrollment: Enrollment & {
-    student: Student & {
-      person: { name: string; lastname: string }
-    }
-    plan: Plan
-  }
-}
+import type { FamilyDetailEnrollment, FamilyDetailPayment } from '../_lib/family-detail'
 
 type Props = {
-  enrollments: EnrollmentWithRelation[]
-  payments: PaymentWithRelation[]
+  enrollments: FamilyDetailEnrollment[]
+  payments: FamilyDetailPayment[]
   locale: string
   /** Faux quand l'école a désactivé les paiements : ni versement, ni formule dans le fil. */
   paymentsEnabled: boolean

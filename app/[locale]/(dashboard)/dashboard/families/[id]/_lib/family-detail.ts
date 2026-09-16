@@ -94,6 +94,24 @@ export type FamilyDetail = Extract<
   { status: 'found' }
 >['resource']
 
+export function serializeFamilyPayments(payments: FamilyDetail['payments']) {
+  return payments.map((payment) => ({
+    ...payment,
+    amount: Number(payment.amount),
+    enrollment: {
+      ...payment.enrollment,
+      totalAmount: Number(payment.enrollment.totalAmount),
+      discount: Number(payment.enrollment.discount),
+      plan: {
+        ...payment.enrollment.plan,
+        amount: Number(payment.enrollment.plan.amount),
+      },
+    },
+  }))
+}
+
+export type FamilyDetailPayment = ReturnType<typeof serializeFamilyPayments>[number]
+
 /**
  * Plans et classes proposés par les dialogues d'administration, vides pour un parent.
  */
@@ -128,13 +146,36 @@ export function deriveFamilyDetail(
   balance: FamilyBalance,
   studentId: string | undefined
 ) {
-  const students = family.persons.filter(
-    (
-      fp
-    ): fp is typeof fp & {
-      person: typeof fp.person & { student: NonNullable<typeof fp.person.student> }
-    } => fp.person.student !== null
-  )
+  const students = family.persons
+    .filter(
+      (
+        fp
+      ): fp is typeof fp & {
+        person: typeof fp.person & { student: NonNullable<typeof fp.person.student> }
+      } => fp.person.student !== null
+    )
+    .map((familyPerson) => ({
+      ...familyPerson,
+      person: {
+        ...familyPerson.person,
+        student: {
+          ...familyPerson.person.student,
+          enrollments: familyPerson.person.student.enrollments.map((enrollment) => ({
+            ...enrollment,
+            totalAmount: Number(enrollment.totalAmount),
+            discount: Number(enrollment.discount),
+            plan: {
+              ...enrollment.plan,
+              amount: Number(enrollment.plan.amount),
+            },
+            payments: enrollment.payments.map((payment) => ({
+              ...payment,
+              amount: Number(payment.amount),
+            })),
+          })),
+        },
+      },
+    }))
 
   const allEnrollments = students.flatMap((s) =>
     s.person.student.enrollments.map((e) => ({
@@ -158,3 +199,6 @@ export function deriveFamilyDetail(
     remainingBalance: balance.remainingBalance,
   }
 }
+
+export type FamilyDetailStudent = ReturnType<typeof deriveFamilyDetail>['students'][number]
+export type FamilyDetailEnrollment = ReturnType<typeof deriveFamilyDetail>['allEnrollments'][number]

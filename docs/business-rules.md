@@ -852,8 +852,10 @@ child to the family.
 
 ### Money
 
-- `totalAmount = plan.amount - discount`, computed at creation and recomputed on every discount
-  change against the **plan's current price** — not against the stored total.
+- `totalAmount = plan.amount - discount`. The write surfaces accept the final `totalAmount` and
+  derive the stored discount against the **plan's current price** — not against a stored total.
+  A final amount below zero, above the plan price, or below active payments already recorded is
+  refused; only `PENDING` and `ACTIVE` enrollments can be repriced.
 - `remainingBalance = max(0, totalAmount - totalPaid)`. It never goes negative.
 - Changing a plan's price does not retroactively change existing enrollments. Applying a discount
   does, because it recomputes from the plan.

@@ -24,7 +24,7 @@ type CreateEnrollmentInput = Omit<z.input<typeof createEnrollmentSchema>, 'schoo
 type ActivateEnrollmentInput = Omit<z.infer<typeof enrollmentIdSchema>, 'schoolId'>
 type CompleteEnrollmentInput = Omit<z.infer<typeof enrollmentIdSchema>, 'schoolId'>
 type ReassignClassInput = Omit<z.infer<typeof reassignClassSchema>, 'schoolId'>
-type ApplyDiscountInput = Omit<z.infer<typeof applyDiscountSchema>, 'schoolId'>
+type ApplyDiscountInput = Omit<z.input<typeof applyDiscountSchema>, 'schoolId'>
 type PromoteStudentsInput = Omit<z.infer<typeof promoteStudentsSchema>, 'schoolId'>
 type SetEnrollmentPlanInput = Omit<z.infer<typeof setEnrollmentPlanSchema>, 'schoolId'>
 

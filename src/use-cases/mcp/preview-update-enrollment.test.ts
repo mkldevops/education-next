@@ -178,6 +178,13 @@ describe('previewUpdateEnrollment', () => {
     expect(createDraft).not.toHaveBeenCalled()
   })
 
+  it('refuses a final amount with more than two decimal places', async () => {
+    const result = await previewUpdateEnrollment(scope, { ...input, totalAmount: 120.001 })
+
+    expect(result).toBe('validationError')
+    expect(findOpenForMcp).not.toHaveBeenCalled()
+  })
+
   it('blocks a request that changes nothing', async () => {
     const result = await previewUpdateEnrollment(scope, { ...input, planName: legacy.name })
     assertPreview(result)

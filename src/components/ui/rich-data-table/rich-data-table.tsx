@@ -35,7 +35,7 @@ export interface RichDataTableProps<T> {
   data: T[]
   columns: ColumnDef<T>[]
   labels: RichDataTableLabels
-  emptyMessage: string
+  emptyMessage: ReactNode
   toolbar?: ReactNode
   onRowClick?: (row: T) => void
   enableSearch?: boolean
@@ -193,7 +193,7 @@ export function RichDataTable<T>({
           <tbody>
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="text-center py-8 text-graphite-600">
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-graphite-600">
                   {globalFilter ? labels.noResults : emptyMessage}
                 </td>
               </tr>
