@@ -138,6 +138,57 @@ export const classScheduleGateway = {
       orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
     }),
 
+  /**
+   * Créneaux des seules classes auxquelles les enfants d'une famille sont encore
+   * affectés dans la période. `familyId` ne vient jamais d'une entrée facultative :
+   * la page parent l'obtient de `requireSchoolScope()` avant cet appel.
+   */
+  listByFamilyAndPeriod: async (schoolId: string, familyId: string, periodId: string) => {
+    const assignments = await db.classAssignment.findMany({
+      where: {
+        schoolId,
+        endAt: null,
+        classPeriod: { periodId, isActive: true },
+        enrollment: {
+          student: {
+            isActive: true,
+            person: { families: { some: { schoolId, familyId } } },
+          },
+        },
+      },
+      select: {
+        classPeriodId: true,
+        enrollment: {
+          select: { student: { select: { person: { select: { name: true, lastname: true } } } } },
+        },
+      },
+    })
+
+    const studentsByClass = new Map<string, string[]>()
+    for (const assignment of assignments) {
+      const fullName = `${assignment.enrollment.student.person.name} ${assignment.enrollment.student.person.lastname}`
+      const students = studentsByClass.get(assignment.classPeriodId) ?? []
+      if (!students.includes(fullName)) students.push(fullName)
+      studentsByClass.set(assignment.classPeriodId, students)
+    }
+    if (studentsByClass.size === 0) return []
+
+    const slots = await db.classScheduleSlot.findMany({
+      where: {
+        schoolId,
+        classPeriodId: { in: [...studentsByClass.keys()] },
+        classPeriod: { periodId, isActive: true },
+      },
+      include: slotInclude,
+      orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
+    })
+
+    return slots.map((slot) => ({
+      ...slot,
+      students: studentsByClass.get(slot.classPeriodId) ?? [],
+    }))
+  },
+
   listPublicBySchoolAndPeriod: (schoolId: string, periodId: string) =>
     db.classScheduleSlot.findMany({
       where: { schoolId, classPeriod: { periodId } },

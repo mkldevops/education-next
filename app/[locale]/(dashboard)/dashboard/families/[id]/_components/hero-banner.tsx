@@ -51,7 +51,7 @@ export async function HeroBanner({
       </div>
 
       {(showActions || children) && (
-        <div className="flex shrink-0 items-center gap-2 self-start md:self-auto">
+        <div className="flex shrink-0 items-center gap-2 self-end md:self-auto">
           {showActions && (
             <ActionMenu
               familyId={family.id}

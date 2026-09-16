@@ -34,7 +34,11 @@ export const enrollmentGateway = {
   findById: (schoolId: string, id: string) =>
     db.enrollment.findUnique({
       where: { id_schoolId: { id, schoolId } },
-      include: { student: true, plan: true },
+      include: {
+        student: true,
+        plan: true,
+        payments: { where: { isActive: true }, select: { amount: true } },
+      },
     }),
 
   updateStatus: (schoolId: string, id: string, status: EnrollmentStatus) =>

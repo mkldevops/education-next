@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isCurrencyAmount } from '@/domain/enrollment'
 import { MCP_DRAFT_CHECKSUM_LENGTH } from '@/domain/mcp-draft'
 import { MCP_KEY_LIFETIMES_DAYS } from '@/domain/mcp-key'
 import { EVENT_CATEGORIES, EVENT_VISIBILITIES } from '@/use-cases/events/schemas'
@@ -127,13 +128,17 @@ export const previewUpdateEnrollmentSchema = z
     studentLastname: z.string().trim().min(1).max(250).optional(),
     planName: z.string().trim().min(1).max(50).optional(),
     discount: z.number().min(0).optional(),
+    totalAmount: z.number().min(0).refine(isCurrencyAmount).optional(),
   })
   .refine(
     (data) =>
       data.enrollmentId !== undefined ||
       (data.studentName !== undefined && data.studentLastname !== undefined)
   )
-  .refine((data) => data.planName !== undefined || data.discount !== undefined)
+  .refine(
+    (data) =>
+      data.planName !== undefined || data.discount !== undefined || data.totalAmount !== undefined
+  )
 
 export const commitDraftSchema = z.object({
   draftId: z.uuid(),

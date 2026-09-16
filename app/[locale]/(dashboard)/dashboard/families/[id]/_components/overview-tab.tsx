@@ -24,6 +24,7 @@ type Props = {
   enrolledChildren: number
   totalEnrollments: number
   activeEnrollments: number
+  canAddEnrollment: boolean
   paymentsEnabled: boolean
   totalPaid: number
   remainingBalance: number
@@ -40,6 +41,7 @@ export async function OverviewTab({
   enrolledChildren,
   totalEnrollments,
   activeEnrollments,
+  canAddEnrollment,
   paymentsEnabled,
   totalPaid,
   remainingBalance,
@@ -57,12 +59,32 @@ export async function OverviewTab({
             : 'grid grid-cols-1 md:grid-cols-2 gap-4'
         }
       >
-        <KPICard label={t('kpis.enrolledChildren')} value={enrolledChildren} icon={Users} />
+        <KPICard
+          label={t('kpis.enrolledChildren')}
+          value={enrolledChildren}
+          icon={Users}
+          action={
+            isAdmin
+              ? {
+                  href: `/dashboard/families/${familyId}?action=addStudent`,
+                  label: t('actions.newStudent'),
+                }
+              : undefined
+          }
+        />
         <KPICard
           label={t('kpis.totalEnrollments')}
           value={totalEnrollments}
           subValue={`${activeEnrollments} ${t('kpis.active')}`}
           icon={BookOpen}
+          action={
+            isAdmin && canAddEnrollment
+              ? {
+                  href: `/dashboard/families/${familyId}?action=addEnrollment`,
+                  label: t('actions.addEnrollment'),
+                }
+              : undefined
+          }
         />
         {paymentsEnabled && (
           <>

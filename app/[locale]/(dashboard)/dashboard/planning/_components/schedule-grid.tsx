@@ -14,12 +14,14 @@ type Slot = {
   description: string | null
   classPeriod: { id: string; name: string }
   teachers: Array<{ teacher: { id: string; firstName: string; lastName: string } }>
+  students?: string[]
 }
 
 type Props = {
   slots: Slot[]
   weekdayLabels: Record<number, string>
   noTeachersLabel: string
+  studentsLabel?: string
   contentLabel: string
   durationUnits: { hours: string; minutes: string }
   classes: ComponentProps<typeof ScheduleSlotDialog>['classes']
@@ -31,6 +33,7 @@ export function ScheduleGrid({
   slots,
   weekdayLabels,
   noTeachersLabel,
+  studentsLabel,
   contentLabel,
   durationUnits,
   classes,
@@ -76,6 +79,11 @@ export function ScheduleGrid({
                         <p className="mt-1 truncate text-sm text-graphite-600">
                           {teacherNames || noTeachersLabel}
                         </p>
+                        {studentsLabel && slot.students && slot.students.length > 0 && (
+                          <p className="mt-1 text-sm text-graphite-600">
+                            {studentsLabel}: {slot.students.join(', ')}
+                          </p>
+                        )}
                         <p className="mt-2 text-xs font-medium text-graphite-500">{duration}</p>
                       </div>
                     </div>

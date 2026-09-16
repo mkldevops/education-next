@@ -1,12 +1,14 @@
 'use client'
 
-import { RichDataTable, Select, StatusBadge } from '@peaklab/ui'
+import { Button, RichDataTable, Select, StatusBadge } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { useTableLabels } from '@/features/tables'
 import { formatDate } from '@/lib/date'
 import type { SchoolRole } from '@/types/enums'
+import { InviteUserDialog } from './invite-user-dialog'
 import { UserDrawer } from './user-drawer'
 
 export type MemberRow = {
@@ -29,12 +31,14 @@ export type MemberRow = {
 }
 
 type FamilyOption = { id: string; name: string }
+type TeacherOption = { id: string; name: string; email: string | null }
 
 interface Props {
   members: MemberRow[]
   canManagePlatform: boolean
   currentUserId: string
   families: FamilyOption[]
+  teachers?: TeacherOption[]
   locale: string
 }
 
@@ -45,13 +49,20 @@ const ROLE_COLORS: Record<SchoolRole, 'blue' | 'green'> = {
   TEACHER: 'green',
 }
 
-export function UsersTable({ members, canManagePlatform, currentUserId, families, locale }: Props) {
+export function UsersTable({
+  members,
+  canManagePlatform,
+  currentUserId,
+  families,
+  teachers = [],
+  locale,
+}: Props) {
   const t = useTranslations('dashboard.pages.users')
   const tRoles = useTranslations('roles')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [roleFilter, setRoleFilter] = useState<'ALL' | SchoolRole>('ALL')
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'ARCHIVED'>('ACTIVE')
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'ARCHIVED'>('ALL')
 
   const selectedMember = members.find((member) => member.userId === selectedId) ?? null
 
@@ -124,7 +135,42 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
     },
   ]
 
-  const labels = useTableLabels()
+  const tableLabels = useTableLabels()
+  const labels = { ...tableLabels, search: t('searchPlaceholder') }
+  const hasActiveFilters = roleFilter !== 'ALL' || statusFilter !== 'ALL'
+
+  const emptyMessage =
+    members.length === 0 ? (
+      <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-2">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-light text-primary">
+          <Users className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="space-y-1">
+          <p className="font-semibold text-graphite">{t('empty.title')}</p>
+          <p className="text-sm text-graphite-600">{t('empty.description')}</p>
+        </div>
+        <InviteUserDialog families={families} teachers={teachers} />
+      </div>
+    ) : hasActiveFilters ? (
+      <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-2">
+        <div className="space-y-1">
+          <p className="font-semibold text-graphite">{t('empty.filteredTitle')}</p>
+          <p className="text-sm text-graphite-600">{t('empty.filteredDescription')}</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setRoleFilter('ALL')
+            setStatusFilter('ALL')
+          }}
+        >
+          {t('empty.clearFilters')}
+        </Button>
+      </div>
+    ) : (
+      t('noUsers')
+    )
 
   return (
     <>
@@ -132,13 +178,14 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
         data={filtered}
         columns={columns}
         labels={labels}
-        emptyMessage={t('noUsers')}
+        emptyMessage={emptyMessage}
         onRowClick={(member) => {
           setSelectedId(member.userId)
           setDrawerOpen(true)
         }}
         toolbar={
-          <div className="flex flex-wrap gap-2">
+          <fieldset className="flex flex-wrap items-center gap-2">
+            <legend className="mr-2 text-sm font-medium text-graphite-600">{t('filters')}</legend>
             <Select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as 'ALL' | SchoolRole)}
@@ -158,11 +205,11 @@ export function UsersTable({ members, canManagePlatform, currentUserId, families
               aria-label={t('filterStatus')}
               className="w-auto"
             >
+              <option value="ALL">{t('statusAll')}</option>
               <option value="ACTIVE">{t('active')}</option>
               <option value="ARCHIVED">{t('inactive')}</option>
-              <option value="ALL">{t('statusAll')}</option>
             </Select>
-          </div>
+          </fieldset>
         }
       />
 
