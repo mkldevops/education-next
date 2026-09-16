@@ -88,11 +88,15 @@ describe('AttendancePanel', () => {
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'All present' }))
+    const allPresent = await screen.findByRole('button', { name: 'All present' })
+    await waitFor(() => expect(allPresent).not.toBeDisabled())
+    fireEvent.click(allPresent)
     await waitFor(() =>
       expect(markAllPresentActionMock).toHaveBeenCalledWith({ sessionId: 'session-1' })
     )
-    expect(screen.getByText('Present: 1 · Absent: 0 · Not recorded: 0')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByText('Present: 1 · Absent: 0 · Not recorded: 0')).toBeInTheDocument()
+    )
     expect(screen.getByRole('button', { name: 'Validate' })).toBeInTheDocument()
   })
 })
