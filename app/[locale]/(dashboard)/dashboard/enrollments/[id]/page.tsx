@@ -121,7 +121,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
             isActive: true,
             name: { not: UNPRICED_PLAN_NAME },
           },
-          select: { id: true, name: true },
+          select: { id: true, name: true, amount: true },
           orderBy: { name: 'asc' },
         })
       : []
@@ -172,7 +172,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           isAdmin={isAdmin}
           currentClassId={currentClassId}
           availableClasses={availableClasses}
-          currentDiscount={discount}
+          currentTotalAmount={totalAmount}
           paymentsEnabled={paymentsEnabled}
           planName={enrollment.plan.name}
           availablePlans={availablePlans}

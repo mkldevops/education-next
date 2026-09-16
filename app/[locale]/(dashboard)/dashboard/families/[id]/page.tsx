@@ -144,7 +144,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 id: s.person.student.id,
                 name: `${s.person.lastname} ${s.person.name}`,
               }))}
-              plans={plans.map((p) => ({ id: p.id, name: p.name }))}
+              plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}
               defaultOpen={action === 'addEnrollment'}
@@ -163,7 +163,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             )}
             <CreateStudentDialog
               familyId={family.id}
-              plans={plans.map((p) => ({ id: p.id, name: p.name }))}
+              plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}
               defaultOpen={action === 'addStudent'}
