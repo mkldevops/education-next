@@ -823,6 +823,13 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 - A teacher invitation names the unlinked teacher profile and binds it atomically when accepted. Revoking teacher access unlinks that profile without changing an ADMIN/PARENT membership; for a `TEACHER`-only member, it also removes the now-capabilityless membership. Removing any school membership clears the profile link, revoking access and making the profile available for a replacement.
 - Teacher memberships never authorize families, payments, users, configuration, classes administration, or other schools.
 
+## Attendance
+
+- `attendance_enabled` is opt-in per school. When off, attendance links and pages are hidden and every server mutation refuses it.
+- A logical occurrence is unique by school, class, date and a non-null occurrence key (`adhoc` or the schedule-slot id). Opening is an atomic upsert; its roster snapshots active class assignments at that date.
+- Entries remain `NOT_RECORDED`, `PRESENT` or `ABSENT`; **All present** changes only the first state. A validated session can be corrected and records the latest author and timestamp.
+- ADMIN may operate school classes. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
+
 ## Enrollments
 
 Owner: `src/domain/enrollment.ts`, `src/use-cases/enrollments/`.

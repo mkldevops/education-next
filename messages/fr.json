@@ -905,6 +905,10 @@
               "cancel": "Annuler"
             }
           },
+          "attendance_enabled": {
+            "label": "Appel",
+            "description": "Active la saisie des appels de classe."
+          },
           "automatic_promotion": {
             "label": "Promotion automatique",
             "description": "Promotion des élèves vers la période suivante. Aucun déclencheur dans l'interface à ce jour : le réglage est conservé mais reste sans effet."
@@ -1541,7 +1545,18 @@
       "myClasses": {
         "title": "Mes classes",
         "empty": "Aucune classe ne vous est actuellement affectée.",
-        "details": "{level} · {period}"
+        "details": "{level} · {period}",
+        "attendance": "Faire l’appel"
+      },
+      "attendance": {
+        "title": "Appel",
+        "start": "Commencer l’appel",
+        "allPresent": "Tous présents",
+        "draft": "Brouillon",
+        "validate": "Valider l’appel",
+        "present": "Présent",
+        "absent": "Absent",
+        "unrecorded": "Non renseigné"
       },
       "teachers": {
         "title": "Enseignants",

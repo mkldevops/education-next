@@ -1,4 +1,5 @@
 import type { ConfigValueType } from '@/generated/prisma/client'
+import { ATTENDANCE_ENABLED_CONFIG_KEY } from './attendance-config'
 import { BRANDING_CONFIG_KEYS } from './branding-config'
 import {
   CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
@@ -31,6 +32,7 @@ export const SchoolConfigKey = {
   ClassScheduleEnabled: CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
   ClassScheduleTeacherOverlapAllowed: CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY,
   ClassScheduleVisibility: CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
+  AttendanceEnabled: ATTENDANCE_ENABLED_CONFIG_KEY,
 } as const
 
 export type SchoolConfigKey = (typeof SchoolConfigKey)[keyof typeof SchoolConfigKey]
@@ -50,6 +52,7 @@ export const SCHOOL_CONFIG_VALUE_TYPES: Record<SchoolConfigKey, ConfigValueType>
   [SchoolConfigKey.ClassScheduleEnabled]: 'BOOLEAN',
   [SchoolConfigKey.ClassScheduleTeacherOverlapAllowed]: 'BOOLEAN',
   [SchoolConfigKey.ClassScheduleVisibility]: 'TEXT',
+  [SchoolConfigKey.AttendanceEnabled]: 'BOOLEAN',
 }
 
 export const SCHOOL_CONFIG_KEYS = Object.values(SchoolConfigKey)
