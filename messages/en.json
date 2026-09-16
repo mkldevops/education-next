@@ -1366,7 +1366,10 @@
           "language": "Invitation language",
           "family": "Family to link",
           "noFamily": "None for now",
-          "familyHint": "Without a family the parent can sign in but will see no data."
+          "familyHint": "Without a family the parent can sign in but will see no data.",
+          "teacher": "Teacher to invite",
+          "missingTeacherEmail": "email missing",
+          "teacherHint": "Access is limited to classes currently assigned to this teacher."
         },
         "errors": {
           "validation_error": "Check the information you entered",
@@ -1517,6 +1520,11 @@
             "assignmentNotFound": "This assignment no longer exists"
           }
         }
+      },
+      "myClasses": {
+        "title": "My classes",
+        "empty": "No class is currently assigned to you.",
+        "details": "{level} · {period}"
       },
       "teachers": {
         "title": "Teachers",
@@ -2179,7 +2187,8 @@
   "roles": {
     "SUPER_ADMIN": "Super Admin",
     "ADMIN": "Admin",
-    "PARENT": "Parent"
+    "PARENT": "Parent",
+    "TEACHER": "Teacher"
   },
   "emails": {
     "invitation": {

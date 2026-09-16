@@ -36,6 +36,7 @@ export type SchoolContext =
       role: 'PARENT'
       familyId: string | null
     }
+  | { userId: string; schoolId: string; isSuperAdmin: false; role: 'TEACHER' }
 
 /**
  * Mémoïsé pour la durée d'un rendu : la résolution du contexte et celle des écoles
@@ -98,6 +99,9 @@ async function resolveSchoolContext(): Promise<SchoolContext | null> {
 
   if (membership.role === 'ADMIN') {
     return { userId, schoolId: membership.schoolId, isSuperAdmin: false, role: 'ADMIN' }
+  }
+  if (membership.role === 'TEACHER') {
+    return { userId, schoolId: membership.schoolId, isSuperAdmin: false, role: 'TEACHER' }
   }
 
   const link = await db.userFamily.findFirst({

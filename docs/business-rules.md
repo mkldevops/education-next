@@ -814,6 +814,15 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   active teacher's assignment deletes nothing (`count` stays 0, same as a missing assignment). This
   keeps `classPeriodGateway.update` the sole path that ever touches an active-teacher assignment.
 
+## Teacher access
+
+Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
+
+- A teacher account has a `TEACHER` membership and is linked to one active `Teacher` profile in the same school.
+- Its only dashboard surface is **My classes**. The query is scoped by both school and current profile's active `ClassPeriodTeacher` assignments; removing an assignment removes that class immediately.
+- A teacher invitation names the unlinked teacher profile and binds it atomically when accepted. Removing the school membership clears the profile link, revoking access and making the profile available for a replacement.
+- Teacher memberships never authorize families, payments, users, configuration, classes administration, or other schools.
+
 ## Enrollments
 
 Owner: `src/domain/enrollment.ts`, `src/use-cases/enrollments/`.

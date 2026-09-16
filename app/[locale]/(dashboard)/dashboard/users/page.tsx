@@ -37,7 +37,7 @@ export default async function UsersPage({ params }: Props) {
   })
   const canManagePlatform = viewer?.isSuperAdmin ?? false
 
-  const [families, invitations, members, familyLinks] = await Promise.all([
+  const [families, invitations, members, familyLinks, teachers] = await Promise.all([
     db.family.findMany({
       where: { schoolId, isActive: true },
       select: { id: true, name: true },
@@ -52,6 +52,11 @@ export default async function UsersPage({ params }: Props) {
     db.userFamily.findMany({
       where: { schoolId },
       select: { userId: true, family: { select: { id: true, name: true } } },
+    }),
+    db.teacher.findMany({
+      where: { schoolId, isActive: true, userId: null },
+      select: { id: true, firstName: true, lastName: true, email: true },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     }),
   ])
 
@@ -128,7 +133,14 @@ export default async function UsersPage({ params }: Props) {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        <InviteUserDialog families={families} />
+        <InviteUserDialog
+          families={families}
+          teachers={teachers.map((teacher) => ({
+            id: teacher.id,
+            name: `${teacher.lastName} ${teacher.firstName}`,
+            email: teacher.email,
+          }))}
+        />
       </div>
       <UsersTable
         members={rows}

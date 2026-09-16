@@ -62,6 +62,7 @@ enum ConfigValueType {
 enum SchoolRole {
   ADMIN
   PARENT
+  TEACHER
 }
 
 // Nature de l'événement : purement présentationnelle (icône, couleur, filtre).
@@ -177,6 +178,7 @@ model User {
   passkeys            Passkey[]
   schoolMemberships   SchoolMember[]
   mcpApiKeys          McpApiKey[]
+  teacherProfiles     Teacher[]
 }
 
 model Session {
@@ -446,6 +448,7 @@ model ClassPeriod {
 model Teacher {
   id        String   @id @default(uuid())
   schoolId  String
+  userId    String?
   firstName String   @db.VarChar(250)
   lastName  String   @db.VarChar(250)
   email     String?  @db.VarChar(250)
@@ -455,11 +458,14 @@ model Teacher {
   updatedAt DateTime @updatedAt
 
   school       School               @relation(fields: [schoolId], references: [id])
+  user         User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
   classPeriods ClassPeriodTeacher[]
   scheduleSlots ClassScheduleSlotTeacher[]
   expenses     TeacherExpense[]
+  invitations  Invitation[]
 
   @@unique([id, schoolId])
+  @@unique([userId, schoolId])
   @@index([schoolId])
   @@index([schoolId, lastName, firstName])
 }
@@ -683,17 +689,20 @@ model Invitation {
   createdById String
   familyId    String?
   personId    String?
+  teacherId   String?
   createdAt   DateTime   @default(now())
 
   school    School  @relation(fields: [schoolId], references: [id])
   createdBy User    @relation(fields: [createdById], references: [id])
   family    Family? @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Cascade)
   person    Person? @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  teacher   Teacher? @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Restrict)
 
   @@index([email])
   @@index([token])
   @@index([familyId])
   @@index([personId])
+  @@index([teacherId])
   @@index([schoolId])
 }
 

@@ -40,6 +40,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     classScheduleConfig,
     paymentsEnabled,
     cookieStore,
+    teacher,
   ] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
@@ -59,6 +60,10 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     }),
     isPaymentsEnabled(context.schoolId),
     cookies(),
+    db.teacher.findFirst({
+      where: { schoolId: context.schoolId, userId: context.userId, isActive: true },
+      select: { id: true },
+    }),
   ])
   // La page de connexion n'a pas de session : elle s'habille de l'école désignée par ce cookie.
   const rememberSchool = cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId
@@ -75,6 +80,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
         isSuperAdmin={context.isSuperAdmin}
         paymentsEnabled={paymentsEnabled}
         familyId={context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined}
+        hasTeacherCapability={teacher !== null}
         logoUrl={branding.logoUrl}
         schoolName={branding.schoolName}
         userName={userName}

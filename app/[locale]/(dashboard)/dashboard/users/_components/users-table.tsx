@@ -38,10 +38,11 @@ interface Props {
   locale: string
 }
 
-const ROLE_VALUES: SchoolRole[] = ['ADMIN', 'PARENT']
+const ROLE_VALUES: SchoolRole[] = ['ADMIN', 'PARENT', 'TEACHER']
 const ROLE_COLORS: Record<SchoolRole, 'blue' | 'green'> = {
   ADMIN: 'blue',
   PARENT: 'green',
+  TEACHER: 'green',
 }
 
 export function UsersTable({ members, canManagePlatform, currentUserId, families, locale }: Props) {

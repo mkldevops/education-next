@@ -40,6 +40,7 @@ interface Props {
 const ROLE_COLORS: Record<SchoolRole, 'blue' | 'green'> = {
   ADMIN: 'blue',
   PARENT: 'green',
+  TEACHER: 'green',
 }
 
 export function UserDrawer({

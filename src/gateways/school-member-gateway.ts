@@ -110,6 +110,13 @@ export const schoolMemberGateway = {
         if (admins <= 1) return 'lastAdmin' as const
       }
 
+      // Un retrait de membre enseignant doit aussi libérer la fiche dans cette école : le
+      // contexte refuse alors la session dès la requête suivante, et une future invitation
+      // peut rattacher un remplaçant sans conserver un accès fantôme.
+      await tx.teacher.updateMany({
+        where: { schoolId, userId },
+        data: { userId: null },
+      })
       await tx.userFamily.deleteMany({ where: { userId, schoolId } })
       await tx.schoolMember.delete({ where: { userId_schoolId: { userId, schoolId } } })
       return 'OK' as const

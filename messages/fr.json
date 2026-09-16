@@ -188,6 +188,7 @@
       "users": "Utilisateurs",
       "schools": "Écoles",
       "teachers": "Enseignants",
+      "myClasses": "Mes classes",
       "events": "Événements",
       "planning": "Planning",
       "superAdmins": "Super-admins"
@@ -1366,7 +1367,10 @@
           "language": "Langue de l'invitation",
           "family": "Famille à rattacher",
           "noFamily": "Aucune pour le moment",
-          "familyHint": "Sans famille, le parent pourra se connecter mais ne verra aucune donnée."
+          "familyHint": "Sans famille, le parent pourra se connecter mais ne verra aucune donnée.",
+          "teacher": "Enseignant à inviter",
+          "missingTeacherEmail": "email manquant",
+          "teacherHint": "L'accès est limité aux classes actuellement affectées à cet enseignant."
         },
         "errors": {
           "validation_error": "Vérifiez les informations saisies",
@@ -1517,6 +1521,11 @@
             "assignmentNotFound": "Cette affectation n'existe plus"
           }
         }
+      },
+      "myClasses": {
+        "title": "Mes classes",
+        "empty": "Aucune classe ne vous est actuellement affectée.",
+        "details": "{level} · {period}"
       },
       "teachers": {
         "title": "Enseignants",
@@ -2179,7 +2188,8 @@
   "roles": {
     "SUPER_ADMIN": "Super Administrateur",
     "ADMIN": "Administrateur",
-    "PARENT": "Parent"
+    "PARENT": "Parent",
+    "TEACHER": "Enseignant"
   },
   "emails": {
     "invitation": {

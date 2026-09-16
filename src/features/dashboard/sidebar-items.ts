@@ -77,6 +77,7 @@ export type NavScope = {
   role: SchoolRole | null
   isSuperAdmin: boolean
   familyId?: string
+  hasTeacherCapability?: boolean
   features: { classSchedule?: boolean; events: boolean; payments: boolean }
 }
 
@@ -90,6 +91,7 @@ export function resolveNavItems({
   role,
   isSuperAdmin,
   familyId,
+  hasTeacherCapability = false,
   features,
 }: NavScope): VisibleNavItems {
   const canView = (item: NavItemConfig) => {
@@ -116,14 +118,30 @@ export function resolveNavItems({
         ...(features.classSchedule
           ? [{ href: '/dashboard/planning', icon: CalendarDays, key: 'planning' }]
           : []),
+        ...(hasTeacherCapability
+          ? [{ href: '/dashboard/my-classes', icon: BookOpen, key: 'myClasses' }]
+          : []),
       ],
       config: configItems.filter(canView),
       bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }],
     }
   }
 
+  if (role === 'TEACHER') {
+    return {
+      gestion: [{ href: '/dashboard/my-classes', icon: BookOpen, key: 'myClasses' }],
+      config: [],
+      bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }],
+    }
+  }
+
   return {
-    gestion: gestionItems.filter(canView),
+    gestion: [
+      ...gestionItems.filter(canView),
+      ...(hasTeacherCapability
+        ? [{ href: '/dashboard/my-classes', icon: BookOpen, key: 'myClasses' }]
+        : []),
+    ],
     config: configItems.filter(canView),
     bottom: bottomItems,
   }
