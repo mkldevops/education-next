@@ -1,17 +1,8 @@
-import type { Enrollment, Payment, Plan, Student } from '@/generated/prisma/client'
+import type { FamilyDetailPayment } from '../_lib/family-detail'
 import { PaymentHistoryTable } from './payment-history-table'
 
-type PaymentWithRelation = Payment & {
-  enrollment: Enrollment & {
-    student: Student & {
-      person: { name: string; lastname: string }
-    }
-    plan: Plan
-  }
-}
-
 type Props = {
-  payments: PaymentWithRelation[]
+  payments: FamilyDetailPayment[]
   locale: string
 }
 

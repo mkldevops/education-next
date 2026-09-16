@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isCurrencyAmount } from '@/domain/enrollment'
 
 export const createEnrollmentSchema = z.object({
   schoolId: z.string().min(1),
@@ -7,6 +8,7 @@ export const createEnrollmentSchema = z.object({
   // (FR-017). Un appelant qui en fournit une malgré tout est refusé, pas ignoré.
   planId: z.string().uuid().optional(),
   classPeriodId: z.string().uuid(),
+  totalAmount: z.number().min(0).refine(isCurrencyAmount).optional(),
   discount: z.number().min(0).default(0),
   canLeaveAlone: z.boolean().default(false),
   /** Annule l'inscription en cours de la même période au lieu de refuser le doublon. */
@@ -27,7 +29,8 @@ export const reassignClassSchema = z.object({
 export const applyDiscountSchema = z.object({
   schoolId: z.string().min(1),
   enrollmentId: z.string().uuid(),
-  discount: z.number().min(0),
+  discount: z.number().min(0).default(0),
+  totalAmount: z.number().min(0).refine(isCurrencyAmount).optional(),
 })
 
 export const setEnrollmentPlanSchema = z.object({
