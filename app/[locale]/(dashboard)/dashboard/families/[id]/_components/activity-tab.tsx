@@ -1,36 +1,10 @@
 import { getTranslations } from 'next-intl/server'
-import type {
-  ClassAssignment,
-  ClassPeriod,
-  Enrollment,
-  Payment,
-  Plan,
-  Student,
-} from '@/generated/prisma/client'
+import type { FamilyDetailEnrollment, FamilyDetailPayment } from '../_lib/family-detail'
 import { ActivityFeed } from './activity-feed'
 
-type EnrollmentWithRelation = Enrollment & {
-  plan: Plan
-  studentName?: string
-  classAssignments: Array<
-    ClassAssignment & {
-      classPeriod: ClassPeriod
-    }
-  >
-}
-
-type PaymentWithRelation = Payment & {
-  enrollment: Enrollment & {
-    student: Student & {
-      person: { name: string; lastname: string }
-    }
-    plan: Plan
-  }
-}
-
 type Props = {
-  enrollments: EnrollmentWithRelation[]
-  payments: PaymentWithRelation[]
+  enrollments: FamilyDetailEnrollment[]
+  payments: FamilyDetailPayment[]
   locale: string
   paymentsEnabled: boolean
 }

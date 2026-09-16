@@ -1,46 +1,15 @@
 import { buttonVariants, Card, StatusBadge } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
 import { EnrollmentStatusBadge } from '@/features/enums'
-import type {
-  ClassAssignment,
-  ClassPeriod,
-  Enrollment,
-  Level,
-  Payment,
-  Period,
-  Person,
-  Plan,
-  Student,
-} from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { ReassignClassDialog } from '../../../enrollments/_components/reassign-class-dialog'
+import type { FamilyDetailStudent } from '../_lib/family-detail'
 import { ActivateEnrollmentButton } from './activate-enrollment-button'
 import { EnrollButton } from './enroll-button'
 import { EnrollmentMenu } from './enrollment-menu'
-
-type StudentWithRelation = {
-  person: Person & {
-    student: Student & {
-      enrollments: Array<
-        Enrollment & {
-          plan: Plan
-          payments: Payment[]
-          classAssignments: Array<
-            ClassAssignment & {
-              classPeriod: ClassPeriod & {
-                level: Level
-                period: Period
-              }
-            }
-          >
-        }
-      >
-    }
-  }
-}
 
 type ClassOption = {
   id: string
@@ -48,7 +17,7 @@ type ClassOption = {
 }
 
 type Props = {
-  student: StudentWithRelation
+  student: FamilyDetailStudent
   locale: string
   familyId: string
   isAdmin: boolean

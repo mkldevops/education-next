@@ -1321,6 +1321,15 @@
         "confirm": "Confirmer",
         "cancel": "Annuler",
         "noUsers": "Aucun utilisateur enregistré",
+        "searchPlaceholder": "Rechercher un utilisateur…",
+        "filters": "Filtres",
+        "empty": {
+          "title": "Aucun utilisateur pour le moment",
+          "description": "Invitez un administrateur ou un parent pour lui donner accès à cette école.",
+          "filteredTitle": "Aucun utilisateur ne correspond aux filtres",
+          "filteredDescription": "Modifiez les critères ou affichez à nouveau tous les utilisateurs.",
+          "clearFilters": "Effacer les filtres"
+        },
         "userDeactivated": "Utilisateur désactivé",
         "error": "Une erreur est survenue",
         "invite": {
