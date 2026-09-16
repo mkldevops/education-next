@@ -1562,9 +1562,12 @@
           "submit": "Save",
           "success": "Teacher updated",
           "error": "Error updating teacher",
+          "revokeAccess": "Revoke teacher access",
+          "accessRevoked": "Teacher access revoked",
           "errors": {
             "validationError": "Check the information you entered",
-            "notFound": "Teacher not found"
+            "notFound": "Teacher not found",
+            "alreadyUnlinked": "This teacher no longer has account access"
           }
         },
         "expenses": {

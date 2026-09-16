@@ -466,6 +466,7 @@ model Teacher {
 
   @@unique([id, schoolId])
   @@unique([userId, schoolId])
+  @@index([userId])
   @@index([schoolId])
   @@index([schoolId, lastName, firstName])
 }

@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { inSerializableTransaction } from '@/lib/serializable-transaction'
 
 export type TeacherData = {
   firstName: string
@@ -57,4 +58,38 @@ export const teacherGateway = {
    * supprimé : la confirmation énumère pour que l'administrateur décide en connaissance.
    */
   countExpenses: (schoolId: string) => db.teacherExpense.count({ where: { schoolId } }),
+
+  /**
+   * Retire uniquement la capacité enseignant d'une fiche de l'école demandée.
+   * Un ADMIN/PARENT conserve son `SchoolMember`; un TEACHER-only perd aussi cette
+   * appartenance pour ne pas garder un compte sans capacité dans l'école.
+   */
+  revokeUserAccess: (schoolId: string, teacherId: string) =>
+    inSerializableTransaction(async (tx) => {
+      const teacher = await tx.teacher.findUnique({
+        where: { id_schoolId: { id: teacherId, schoolId } },
+        select: { userId: true },
+      })
+      if (!teacher) return 'notFound' as const
+      if (!teacher.userId) return 'alreadyUnlinked' as const
+
+      const member = await tx.schoolMember.findUnique({
+        where: { userId_schoolId: { userId: teacher.userId, schoolId } },
+        select: { role: true },
+      })
+
+      await tx.teacher.update({
+        where: { id_schoolId: { id: teacherId, schoolId } },
+        data: { userId: null },
+      })
+
+      if (member?.role === 'TEACHER') {
+        await tx.userFamily.deleteMany({ where: { userId: teacher.userId, schoolId } })
+        await tx.schoolMember.delete({
+          where: { userId_schoolId: { userId: teacher.userId, schoolId } },
+        })
+      }
+
+      return 'OK' as const
+    }),
 }

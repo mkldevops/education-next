@@ -107,6 +107,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
             lastName: teacher.lastName,
             email: teacher.email,
             phone: teacher.phone,
+            userId: teacher.userId,
           }}
         />
       ),

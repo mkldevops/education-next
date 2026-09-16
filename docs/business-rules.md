@@ -818,9 +818,9 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
 
 Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
 
-- A teacher account has a `TEACHER` membership and is linked to one active `Teacher` profile in the same school.
+- An active `Teacher` profile linked to a user in the same school grants teacher capability. It can complement an existing `ADMIN` or `PARENT` membership, or accompany a `TEACHER`-only membership.
 - Its only dashboard surface is **My classes**. The query is scoped by both school and current profile's active `ClassPeriodTeacher` assignments; removing an assignment removes that class immediately.
-- A teacher invitation names the unlinked teacher profile and binds it atomically when accepted. Removing the school membership clears the profile link, revoking access and making the profile available for a replacement.
+- A teacher invitation names the unlinked teacher profile and binds it atomically when accepted. Revoking teacher access unlinks that profile without changing an ADMIN/PARENT membership; for a `TEACHER`-only member, it also removes the now-capabilityless membership. Removing any school membership clears the profile link, revoking access and making the profile available for a replacement.
 - Teacher memberships never authorize families, payments, users, configuration, classes administration, or other schools.
 
 ## Enrollments
@@ -1293,8 +1293,8 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
 - **Visibility is an ordered scale, not a set of independent tags**: `PUBLIC ⊂ MEMBERS ⊂ STAFF`
   (`EventVisibility`, `prisma/schema.prisma`). `visibleEventVisibilities()` (`src/domain/event.ts`)
   turns a viewer into the list of visibilities it may read, which replaces a viewer × category
-  matrix. There is no `TEACHER` audience: `Teacher` carries no account of its own, and `SchoolRole`
-  only has `ADMIN` and `PARENT`, so a teacher-only visibility would be unreachable by anyone.
+  matrix. There is no `TEACHER` audience yet: teacher capability is restricted to **My classes**, so a
+  teacher-only event visibility would be unreachable by its intended audience.
 - **`EventCategory` is purely presentational** — icon, color, filter — and never restricts who can
   see an event. Confidentiality lives exclusively in `EventVisibility`; keeping the two axes separate
   avoids an admin believing that picking a category narrows the audience.

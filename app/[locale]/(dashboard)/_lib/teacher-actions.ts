@@ -1,7 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { z } from 'zod'
+import { z } from 'zod'
+import { teacherGateway } from '@/gateways/teacher-gateway'
 import { createTeacher } from '@/use-cases/teachers/create-teacher'
 import { createTeacherExpense } from '@/use-cases/teachers/create-teacher-expense'
 import type {
@@ -44,4 +45,17 @@ export async function createTeacherExpenseAction(
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/teachers')
   return result
+}
+
+export async function revokeTeacherAccessAction(id: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const parsed = z.string().uuid().safeParse(id)
+  if (!parsed.success) return 'validationError' as const
+
+  const result = await teacherGateway.revokeUserAccess(schoolId, parsed.data)
+  if (result !== 'OK') return result
+  revalidatePath('/dashboard/teachers')
+  revalidatePath('/dashboard/my-classes')
+  revalidatePath('/dashboard/users')
+  return 'OK' as const
 }

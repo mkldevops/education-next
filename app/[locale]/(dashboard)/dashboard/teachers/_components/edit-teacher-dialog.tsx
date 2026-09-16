@@ -13,7 +13,7 @@ import {
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
-import { updateTeacherAction } from '../../../_lib/teacher-actions'
+import { revokeTeacherAccessAction, updateTeacherAction } from '../../../_lib/teacher-actions'
 
 interface EditTeacherDialogProps {
   teacher: {
@@ -22,6 +22,7 @@ interface EditTeacherDialogProps {
     lastName: string
     email: string | null
     phone: string | null
+    userId: string | null
   }
 }
 
@@ -48,7 +49,7 @@ export function EditTeacherDialog({ teacher }: EditTeacherDialogProps) {
 function EditTeacherForm({ teacher }: EditTeacherDialogProps) {
   const t = useTranslations('dashboard.pages.teachers.edit')
   const tCreate = useTranslations('dashboard.pages.teachers.create')
-  const { isPending, close, onSubmit } = useDialogForm(t)
+  const { isPending, close, onSubmit, run } = useDialogForm(t)
 
   const handleSubmit = onSubmit((formData) =>
     updateTeacherAction(teacher.id, {
@@ -109,6 +110,20 @@ function EditTeacherForm({ teacher }: EditTeacherDialogProps) {
         </div>
       </DialogBody>
       <DialogFormActions t={t} isPending={isPending} onCancel={close} />
+      {teacher.userId && (
+        <div className="px-6 pb-6">
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={isPending}
+            onClick={() =>
+              run(() => revokeTeacherAccessAction(teacher.id), { successKey: 'accessRevoked' })
+            }
+          >
+            {t('revokeAccess')}
+          </Button>
+        </div>
+      )}
     </form>
   )
 }

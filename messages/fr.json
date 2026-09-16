@@ -1563,9 +1563,12 @@
           "submit": "Enregistrer",
           "success": "Enseignant mis à jour",
           "error": "Erreur lors de la mise à jour",
+          "revokeAccess": "Révoquer l’accès enseignant",
+          "accessRevoked": "Accès enseignant révoqué",
           "errors": {
             "validationError": "Vérifiez les informations saisies",
-            "notFound": "Enseignant introuvable"
+            "notFound": "Enseignant introuvable",
+            "alreadyUnlinked": "Cet enseignant n’a plus d’accès par compte"
           }
         },
         "expenses": {
