@@ -6,7 +6,7 @@ const db = {
   classScheduleSlot: { findFirst: vi.fn() },
   classAssignment: { findMany: vi.fn() },
   attendanceSession: {
-    upsert: vi.fn(),
+    create: vi.fn(),
     findUnique: vi.fn(),
     findFirst: vi.fn(),
     updateMany: vi.fn(),
@@ -40,7 +40,7 @@ beforeEach(() => {
   })
   db.config.findFirst.mockResolvedValue({ value: 'true' })
   db.classAssignment.findMany.mockResolvedValue([])
-  db.attendanceSession.upsert.mockResolvedValue({ id, entries: [] })
+  db.attendanceSession.create.mockResolvedValue({ id, status: 'DRAFT', entries: [] })
   db.attendanceSession.findUnique.mockResolvedValue(null)
   db.attendanceSession.findFirst.mockResolvedValue({
     status: 'DRAFT',
@@ -52,16 +52,16 @@ beforeEach(() => {
   )
 })
 describe('attendance actions', () => {
-  it('upserts a school-scoped cancelled occurrence', async () => {
+  it('creates a school-scoped cancelled occurrence', async () => {
     db.classScheduleSlot.findFirst.mockResolvedValue({ id })
-    db.attendanceSession.upsert.mockResolvedValue({})
+    db.attendanceSession.create.mockResolvedValue({})
     const result = await actions.cancelAttendanceOccurrenceAction({
       classPeriodId: id,
       classScheduleSlotId: id,
       occurredOn: '2026-01-01',
     })
     expect(result).toBe('OK')
-    expect(db.attendanceSession.upsert).toHaveBeenCalled()
+    expect(db.attendanceSession.create).toHaveBeenCalled()
   })
 
   it('rejects an occurrence slot outside the actor school/class', async () => {
@@ -118,7 +118,7 @@ describe('attendance actions', () => {
     await expect(
       actions.openAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
     ).resolves.toBe('sessionCancelled')
-    expect(db.attendanceSession.upsert).not.toHaveBeenCalled()
+    expect(db.attendanceSession.create).not.toHaveBeenCalled()
   })
   it('rejects disabled module and foreign slot', async () => {
     db.config.findFirst.mockResolvedValue({ value: 'false' })
@@ -137,20 +137,14 @@ describe('attendance actions', () => {
   })
   it('uses distinct logical occurrence keys for adhoc and a valid schedule slot', async () => {
     await actions.openAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
-    expect(
-      db.attendanceSession.upsert.mock.calls[0][0].where
-        .schoolId_classPeriodId_occurredOn_occurrenceKey.occurrenceKey
-    ).toBe('adhoc')
+    expect(db.attendanceSession.create.mock.calls[0][0].data.occurrenceKey).toBe('adhoc')
     db.classScheduleSlot.findFirst.mockResolvedValue({ id })
     await actions.openAttendanceAction({
       classPeriodId: id,
       classScheduleSlotId: id,
       occurredOn: '2026-01-01',
     })
-    expect(
-      db.attendanceSession.upsert.mock.calls[1][0].where
-        .schoolId_classPeriodId_occurredOn_occurrenceKey.occurrenceKey
-    ).toBe(id)
+    expect(db.attendanceSession.create.mock.calls[1][0].data.occurrenceKey).toBe(id)
   })
   it('denies an unassigned teacher before opening a class in this tenant', async () => {
     vi.mocked(auth.requireSchoolSession).mockResolvedValue({
@@ -168,7 +162,7 @@ describe('attendance actions', () => {
     expect(
       await actions.openAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
     ).toBe('notFound')
-    expect(db.attendanceSession.upsert).not.toHaveBeenCalled()
+    expect(db.attendanceSession.create).not.toHaveBeenCalled()
   })
   it('does not report missing entry as updated', async () => {
     db.attendanceSession.findUnique.mockResolvedValue({ schoolId: 's', classPeriodId: id })
@@ -176,6 +170,34 @@ describe('attendance actions', () => {
     expect(
       await actions.updateAttendanceEntryAction({ sessionId: id, entryId: id, status: 'PRESENT' })
     ).toBe('notFound')
+  })
+
+  it('reloads an existing session after a concurrent unique conflict', async () => {
+    db.attendanceSession.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id, status: 'DRAFT', entries: [] })
+    db.attendanceSession.create.mockRejectedValueOnce({ code: 'P2002' })
+    await expect(
+      actions.openAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
+    ).resolves.toMatchObject({ id })
+    expect(db.attendanceSession.create).toHaveBeenCalledTimes(1)
+  })
+
+  it('preserves the previous status when cancelling an existing session', async () => {
+    db.classScheduleSlot.findFirst.mockResolvedValue({ id })
+    db.attendanceSession.findUnique.mockResolvedValue({ id, status: 'VALIDATED' })
+    db.attendanceSession.updateMany.mockResolvedValue({ count: 1 })
+    await expect(
+      actions.cancelAttendanceOccurrenceAction({
+        classPeriodId: id,
+        classScheduleSlotId: id,
+        occurredOn: '2026-01-01',
+      })
+    ).resolves.toBe('OK')
+    expect(db.attendanceSession.updateMany.mock.calls[0][0].data).toMatchObject({
+      status: 'CANCELLED',
+      statusBeforeCancellation: 'VALIDATED',
+    })
   })
   it('marks only unrecorded entries and validates with actor', async () => {
     db.attendanceSession.findUnique.mockResolvedValue({ schoolId: 's', classPeriodId: id })

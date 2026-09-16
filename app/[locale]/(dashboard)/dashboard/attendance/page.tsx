@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { isAttendanceClosed } from '@/domain/attendance-closure'
 import { attendanceUtcDate } from '@/domain/attendance-date'
 import { expectedAttendance } from '@/domain/attendance-tracking'
+import { attendanceClassPeriodScope } from '@/domain/attendance-tracking-scope'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
@@ -43,18 +44,17 @@ export default async function AttendanceTrackingPage({
     value && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value) ? value : undefined
   const classId = actorTeacherId ? undefined : isUuid(query.classId)
   const filterTeacherId = actorTeacherId ? undefined : isUuid(query.teacherId)
+  const classPeriodScope = attendanceClassPeriodScope({
+    periodId: selectedPeriod?.id,
+    classId,
+    teacherId: actorTeacherId ?? filterTeacherId,
+  })
+  const queryClassPeriodScope = classPeriodScope ?? { isActive: true, periodId: '' }
   const slots = selectedPeriod
     ? await db.classScheduleSlot.findMany({
         where: {
           schoolId,
-          classPeriod: {
-            isActive: true,
-            ...(selectedPeriod ? { periodId: selectedPeriod.id } : {}),
-            ...(classId ? { id: classId } : {}),
-            ...(actorTeacherId || filterTeacherId
-              ? { teachers: { some: { teacherId: actorTeacherId ?? filterTeacherId } } }
-              : {}),
-          },
+          classPeriod: queryClassPeriodScope,
         },
         select: {
           id: true,
@@ -68,11 +68,19 @@ export default async function AttendanceTrackingPage({
     ? await db.attendanceSession.findMany({
         where: {
           schoolId,
+          classPeriod: queryClassPeriodScope,
           occurredOn: new Date(
             Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
           ),
         },
-        select: { id: true, classPeriodId: true, occurrenceKey: true, status: true },
+        select: {
+          id: true,
+          classPeriodId: true,
+          classScheduleSlotId: true,
+          occurrenceKey: true,
+          status: true,
+          classPeriod: { select: { name: true } },
+        },
       })
     : []
   const day = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
@@ -187,14 +195,17 @@ export default async function AttendanceTrackingPage({
       )}
       {admin &&
         sessions
-          .filter((session) => session.status === 'CANCELLED')
+          .filter(
+            (session) =>
+              session.status === 'CANCELLED' &&
+              session.classScheduleSlotId &&
+              slots.some((slot) => slot.id === session.classScheduleSlotId)
+          )
           .map((session) => (
-            <CancelAttendanceForm
-              key={session.id}
-              sessionId={session.id}
-              cancelled={false}
-              label={t('restore')}
-            />
+            <section key={session.id}>
+              <p>{session.classPeriod.name}</p>
+              <CancelAttendanceForm sessionId={session.id} cancelled={false} label={t('restore')} />
+            </section>
           ))}
     </main>
   )

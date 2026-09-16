@@ -46,6 +46,10 @@ async function enabled(schoolId: string) {
   return readsAsOptedIn(config?.value)
 }
 
+function isUniqueConstraint(error: unknown) {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002'
+}
+
 export async function openAttendanceAction(input: unknown) {
   const parsed = openSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
@@ -71,60 +75,66 @@ export async function openAttendanceAction(input: unknown) {
     )
   )
   const occurrenceKey = parsed.data.classScheduleSlotId ?? 'adhoc'
-  const session = await db.$transaction(async (tx) => {
-    const roster = await tx.classAssignment.findMany({
-      where: {
-        schoolId: actor.schoolId,
-        classPeriodId: parsed.data.classPeriodId,
-        startAt: { lte: occurredOn },
-        OR: [{ endAt: null }, { endAt: { gte: occurredOn } }],
-        enrollment: { status: 'ACTIVE' },
-      },
-      include: { enrollment: { include: { student: { include: { person: true } } } } },
-    })
-    const existing = await tx.attendanceSession.findUnique({
-      where: {
-        schoolId_classPeriodId_occurredOn_occurrenceKey: {
-          schoolId: actor.schoolId,
-          classPeriodId: parsed.data.classPeriodId,
-          occurredOn,
-          occurrenceKey,
-        },
-      },
-      select: { status: true },
-    })
-    if (existing?.status === 'CANCELLED') return 'sessionCancelled' as const
-    return tx.attendanceSession.upsert({
-      where: {
-        schoolId_classPeriodId_occurredOn_occurrenceKey: {
-          schoolId: actor.schoolId,
-          classPeriodId: parsed.data.classPeriodId,
-          occurredOn,
-          occurrenceKey,
-        },
-      },
-      update: {},
-      create: {
-        schoolId: actor.schoolId,
-        classPeriodId: parsed.data.classPeriodId,
-        classScheduleSlotId: parsed.data.classScheduleSlotId,
-        occurrenceKey,
-        occurredOn,
-        createdById: actor.userId,
-        updatedById: actor.userId,
-        entries: {
-          create: roster.map(({ enrollment }) => ({
-            schoolId: actor.schoolId,
-            studentId: enrollment.studentId,
-            studentName: `${enrollment.student.person.lastname} ${enrollment.student.person.name}`,
-            updatedById: actor.userId,
-          })),
-        },
-      },
+  const sessionWhere = {
+    schoolId_classPeriodId_occurredOn_occurrenceKey: {
+      schoolId: actor.schoolId,
+      classPeriodId: parsed.data.classPeriodId,
+      occurredOn,
+      occurrenceKey,
+    },
+  }
+  const loadExisting = () =>
+    db.attendanceSession.findUnique({
+      where: sessionWhere,
       include: { entries: { orderBy: { studentName: 'asc' } } },
     })
-  })
-  if (session === 'sessionCancelled') return session
+  const session = await (async () => {
+    try {
+      return await db.$transaction(async (tx) => {
+        const existing = await tx.attendanceSession.findUnique({
+          where: sessionWhere,
+          include: { entries: { orderBy: { studentName: 'asc' } } },
+        })
+        if (existing) return existing
+        const roster = await tx.classAssignment.findMany({
+          where: {
+            schoolId: actor.schoolId,
+            classPeriodId: parsed.data.classPeriodId,
+            startAt: { lte: occurredOn },
+            OR: [{ endAt: null }, { endAt: { gte: occurredOn } }],
+            enrollment: { status: 'ACTIVE' },
+          },
+          include: { enrollment: { include: { student: { include: { person: true } } } } },
+        })
+        return tx.attendanceSession.create({
+          data: {
+            schoolId: actor.schoolId,
+            classPeriodId: parsed.data.classPeriodId,
+            classScheduleSlotId: parsed.data.classScheduleSlotId,
+            occurrenceKey,
+            occurredOn,
+            createdById: actor.userId,
+            updatedById: actor.userId,
+            entries: {
+              create: roster.map(({ enrollment }) => ({
+                schoolId: actor.schoolId,
+                studentId: enrollment.studentId,
+                studentName: `${enrollment.student.person.lastname} ${enrollment.student.person.name}`,
+                updatedById: actor.userId,
+              })),
+            },
+          },
+          include: { entries: { orderBy: { studentName: 'asc' } } },
+        })
+      })
+    } catch (error) {
+      if (!isUniqueConstraint(error)) throw error
+      const existing = await loadExisting()
+      if (!existing) throw error
+      return existing
+    }
+  })()
+  if (session.status === 'CANCELLED') return 'sessionCancelled' as const
   revalidatePath('/dashboard/my-classes')
   return session
 }
@@ -257,27 +267,46 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
       parsed.data.occurredOn.getUTCDate()
     )
   )
-  await db.attendanceSession.upsert({
-    where: {
-      schoolId_classPeriodId_occurredOn_occurrenceKey: {
-        schoolId: admin.schoolId,
-        classPeriodId: parsed.data.classPeriodId,
-        occurredOn,
-        occurrenceKey: slot.id,
-      },
-    },
-    update: { status: 'CANCELLED', updatedById: admin.userId },
-    create: {
+  const occurrenceWhere = {
+    schoolId_classPeriodId_occurredOn_occurrenceKey: {
       schoolId: admin.schoolId,
       classPeriodId: parsed.data.classPeriodId,
-      classScheduleSlotId: slot.id,
-      occurrenceKey: slot.id,
       occurredOn,
-      status: 'CANCELLED',
-      createdById: admin.userId,
-      updatedById: admin.userId,
+      occurrenceKey: slot.id,
     },
+  }
+  const existing = await db.attendanceSession.findUnique({
+    where: occurrenceWhere,
+    select: { id: true, status: true },
   })
+  if (existing?.status === 'CANCELLED') return 'OK' as const
+  if (existing) {
+    await db.attendanceSession.updateMany({
+      where: { id: existing.id, schoolId: admin.schoolId },
+      data: {
+        status: 'CANCELLED',
+        statusBeforeCancellation: existing.status,
+        updatedById: admin.userId,
+      },
+    })
+  } else {
+    try {
+      await db.attendanceSession.create({
+        data: {
+          schoolId: admin.schoolId,
+          classPeriodId: parsed.data.classPeriodId,
+          classScheduleSlotId: slot.id,
+          occurrenceKey: slot.id,
+          occurredOn,
+          status: 'CANCELLED',
+          createdById: admin.userId,
+          updatedById: admin.userId,
+        },
+      })
+    } catch (error) {
+      if (!isUniqueConstraint(error)) throw error
+    }
+  }
   revalidatePath('/dashboard/attendance')
   return 'OK' as const
 }
