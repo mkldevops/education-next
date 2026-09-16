@@ -1612,7 +1612,7 @@
         "empty": "Aucun créneau enregistré pour cette période",
         "emptyNoPeriod": "Créez ou sélectionnez une période pour afficher le planning.",
         "adminHint": "Ajoutez un créneau pour commencer à organiser les classes.",
-        "parentHint": "Le planning de l'école apparaîtra ici dès que des créneaux seront ajoutés.",
+        "parentHint": "Aucun créneau n'est prévu pour les classes de vos enfants sur cette période.",
         "weekdays": {
           "1": "Lundi",
           "2": "Mardi",
@@ -1626,6 +1626,7 @@
           "class": "Classe",
           "teachers": "Enseignants",
           "noTeachers": "Aucun enseignant",
+          "students": "Concerné(s)",
           "content": "Contenu"
         },
         "duration": {

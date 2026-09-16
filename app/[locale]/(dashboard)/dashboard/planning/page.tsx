@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
+import { classScheduleGateway } from '@/gateways/class-schedule-gateway'
 import { configGateway } from '@/gateways/config-gateway'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { localizedHref } from '@/i18n/localized-href'
@@ -68,19 +69,25 @@ export default async function PlanningPage({ params }: Props) {
   }
 
   const [slots, classes] = await Promise.all([
-    db.classScheduleSlot.findMany({
-      where: {
-        schoolId: scope.schoolId,
-        classPeriod: { periodId: selectedPeriod.id, isActive: true },
-      },
-      include: {
-        classPeriod: { select: { id: true, name: true } },
-        teachers: {
-          include: { teacher: { select: { id: true, firstName: true, lastName: true } } },
-        },
-      },
-      orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
-    }),
+    scope.isAdmin
+      ? db.classScheduleSlot.findMany({
+          where: {
+            schoolId: scope.schoolId,
+            classPeriod: { periodId: selectedPeriod.id, isActive: true },
+          },
+          include: {
+            classPeriod: { select: { id: true, name: true } },
+            teachers: {
+              include: { teacher: { select: { id: true, firstName: true, lastName: true } } },
+            },
+          },
+          orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
+        })
+      : classScheduleGateway.listByFamilyAndPeriod(
+          scope.schoolId,
+          scope.familyId,
+          selectedPeriod.id
+        ),
     scope.isAdmin
       ? db.classPeriod.findMany({
           where: { schoolId: scope.schoolId, periodId: selectedPeriod.id, isActive: true },
@@ -147,6 +154,7 @@ export default async function PlanningPage({ params }: Props) {
           slots={slots}
           weekdayLabels={weekdayLabels}
           noTeachersLabel={t('slot.noTeachers')}
+          studentsLabel={t('slot.students')}
           contentLabel={t('slot.content')}
           durationUnits={{ hours: t('duration.hours'), minutes: t('duration.minutes') }}
           classes={classOptions}

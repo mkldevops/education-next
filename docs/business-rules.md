@@ -1181,6 +1181,25 @@ one school**.
   truth; keeping the old `school_name` key would have let two screens edit two different names. The
   migration copies it over and deletes the key.
 
+## Class schedules
+
+The planning grid has three deliberately separate audiences. Administrators read every active class
+of the selected period. The public grid remains governed by `class_schedule_enabled` and
+`class_schedule_visibility`. A parent reads only through
+`classScheduleGateway.listByFamilyAndPeriod()`:
+
+- The assignment is scoped by the active `schoolId`, the parent's non-null `familyId`, the selected
+  period, and `endAt: null`; closed assignments, other periods, other families and other schools
+  cannot contribute a class.
+- A parent without a linked family never reaches that gateway: `requireSchoolScope()` returns
+  `notFound()` before it can build a Prisma filter.
+- The returned slots are restricted to those class IDs and identify every child of the family
+  assigned to that class. A child without an active assignment yields the explicit empty planning
+  state instead of the school-wide schedule.
+
+Owner: `src/gateways/class-schedule-gateway.ts`,
+`app/[locale]/(dashboard)/dashboard/planning/page.tsx`.
+
 ## Branding images
 
 `src/use-cases/media/upload-branding-image.ts`, `src/gateways/storage-gateway.ts`.

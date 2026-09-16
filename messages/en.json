@@ -1612,7 +1612,7 @@
         "empty": "No time slots have been recorded for this period",
         "emptyNoPeriod": "Create or select a period to view the schedule.",
         "adminHint": "Add a time slot to start organising classes.",
-        "parentHint": "The school schedule will appear here once time slots are added.",
+        "parentHint": "No time slot is scheduled for your children's classes during this period.",
         "weekdays": {
           "1": "Monday",
           "2": "Tuesday",
@@ -1626,6 +1626,7 @@
           "class": "Class",
           "teachers": "Teachers",
           "noTeachers": "No teacher",
+          "students": "For",
           "content": "Content"
         },
         "duration": {
