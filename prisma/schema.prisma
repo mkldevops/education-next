@@ -30,6 +30,17 @@ enum EnrollmentStatus {
   CANCELLED
 }
 
+enum AttendanceSessionStatus {
+  DRAFT
+  VALIDATED
+}
+
+enum AttendanceEntryStatus {
+  NOT_RECORDED
+  PRESENT
+  ABSENT
+}
+
 enum PaymentMethod {
   CASH
   CARD
@@ -137,6 +148,8 @@ model School {
   mcpDrafts           McpDraft[]
   events              Event[]
   eventImages         EventImage[]
+  attendanceSessions  AttendanceSession[]
+  attendanceEntries   AttendanceEntry[]
 }
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
@@ -179,6 +192,8 @@ model User {
   schoolMemberships   SchoolMember[]
   mcpApiKeys          McpApiKey[]
   teacherProfiles     Teacher[]
+  createdAttendanceSessions AttendanceSession[] @relation("attendanceCreatedBy")
+  updatedAttendanceSessions AttendanceSession[] @relation("attendanceUpdatedBy")
 }
 
 model Session {
@@ -329,6 +344,7 @@ model Student {
   school      School       @relation(fields: [schoolId], references: [id])
   person      Person       @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Cascade)
   enrollments Enrollment[]
+  attendanceEntries AttendanceEntry[]
 
   @@unique([id, schoolId])
   @@unique([personId, schoolId])
@@ -438,6 +454,7 @@ model ClassPeriod {
   classAssignments ClassAssignment[]
   teachers         ClassPeriodTeacher[]
   scheduleSlots    ClassScheduleSlot[]
+  attendanceSessions AttendanceSession[]
 
   @@unique([id, schoolId])
   @@index([levelId])
@@ -502,6 +519,7 @@ model ClassScheduleSlot {
   school      School                     @relation(fields: [schoolId], references: [id])
   classPeriod ClassPeriod                @relation(fields: [classPeriodId, schoolId], references: [id, schoolId], onDelete: Cascade)
   teachers    ClassScheduleSlotTeacher[]
+  attendanceSessions AttendanceSession[]
 
   @@unique([id, schoolId])
   @@index([schoolId])
@@ -590,6 +608,50 @@ model ClassAssignment {
   @@index([enrollmentId])
   @@index([classPeriodId])
   @@index([schoolId])
+}
+
+model AttendanceSession {
+  id                  String                  @id @default(uuid())
+  schoolId            String
+  classPeriodId       String
+  classScheduleSlotId String?
+  occurrenceKey       String                  @db.VarChar(300)
+  occurredOn          DateTime                @db.Date
+  status              AttendanceSessionStatus @default(DRAFT)
+  createdById         String
+  updatedById         String
+  validatedAt         DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  school            School             @relation(fields: [schoolId], references: [id])
+  classPeriod       ClassPeriod        @relation(fields: [classPeriodId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  classScheduleSlot ClassScheduleSlot? @relation(fields: [classScheduleSlotId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  createdBy         User               @relation("attendanceCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy         User               @relation("attendanceUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  entries           AttendanceEntry[]
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, classPeriodId, occurredOn, occurrenceKey])
+  @@index([schoolId, occurredOn])
+}
+
+model AttendanceEntry {
+  id                  String                @id @default(uuid())
+  schoolId            String
+  attendanceSessionId String
+  studentId           String
+  studentName         String                @db.VarChar(500)
+  status              AttendanceEntryStatus @default(NOT_RECORDED)
+  updatedById         String
+  updatedAt           DateTime              @updatedAt
+
+  school            School            @relation(fields: [schoolId], references: [id])
+  attendanceSession AttendanceSession @relation(fields: [attendanceSessionId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  student           Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Restrict)
+
+  @@unique([attendanceSessionId, studentId])
+  @@index([schoolId, studentId])
 }
 
 model Payment {

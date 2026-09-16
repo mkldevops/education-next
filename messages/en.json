@@ -1524,7 +1524,18 @@
       "myClasses": {
         "title": "My classes",
         "empty": "No class is currently assigned to you.",
-        "details": "{level} · {period}"
+        "details": "{level} · {period}",
+        "attendance": "Take attendance"
+      },
+      "attendance": {
+        "title": "Attendance",
+        "start": "Start attendance",
+        "allPresent": "Mark all present",
+        "draft": "Draft",
+        "validate": "Validate attendance",
+        "present": "Present",
+        "absent": "Absent",
+        "unrecorded": "Not recorded"
       },
       "teachers": {
         "title": "Teachers",

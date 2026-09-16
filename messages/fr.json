@@ -1525,7 +1525,18 @@
       "myClasses": {
         "title": "Mes classes",
         "empty": "Aucune classe ne vous est actuellement affectée.",
-        "details": "{level} · {period}"
+        "details": "{level} · {period}",
+        "attendance": "Faire l’appel"
+      },
+      "attendance": {
+        "title": "Appel",
+        "start": "Commencer l’appel",
+        "allPresent": "Tous présents",
+        "draft": "Brouillon",
+        "validate": "Valider l’appel",
+        "present": "Présent",
+        "absent": "Absent",
+        "unrecorded": "Non renseigné"
       },
       "teachers": {
         "title": "Enseignants",

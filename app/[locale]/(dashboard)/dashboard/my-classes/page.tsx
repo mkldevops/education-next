@@ -1,6 +1,7 @@
 import { Breadcrumbs, Card } from '@peaklab/ui'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { requireTeacher } from '../../_lib/auth-helper'
 
@@ -41,6 +42,12 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
               <p className="text-sm text-graphite-600">
                 {t('details', { level: classPeriod.level.name, period: classPeriod.period.name })}
               </p>
+              <Link
+                className="text-sm font-medium text-primary"
+                href={`/dashboard/my-classes/${classPeriod.id}/attendance`}
+              >
+                {t('attendance')}
+              </Link>
             </div>
           ))
         )}
