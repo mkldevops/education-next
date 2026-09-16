@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@11.1.2",
   "scripts": {
-    "predev": "docker compose up -d",
+    "predev": "pnpm db:generate && docker compose up -d",
     "dev": "dotenv -- next dev",
     "build": "next build",
     "build:prod": "prisma generate && prisma migrate deploy && next build",

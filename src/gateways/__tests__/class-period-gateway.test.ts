@@ -9,6 +9,9 @@ type Tx = {
     deleteMany: ReturnType<typeof vi.fn>
     createMany: ReturnType<typeof vi.fn>
   }
+  classScheduleSlotTeacher: {
+    deleteMany: ReturnType<typeof vi.fn>
+  }
 }
 
 function withTransaction() {
@@ -20,6 +23,9 @@ function withTransaction() {
     classPeriodTeacher: {
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
       createMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
+    classScheduleSlotTeacher: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
   }
   dbMock.$transaction.mockImplementation((fn: (client: Tx) => unknown) => fn(tx))
@@ -58,6 +64,13 @@ describe('classPeriodGateway.update', () => {
 
     expect(tx.classPeriodTeacher.deleteMany).toHaveBeenCalledWith({
       where: { schoolId: SCHOOL, classPeriodId: CLASS_ID, teacher: { isActive: true } },
+    })
+    expect(tx.classScheduleSlotTeacher.deleteMany).toHaveBeenCalledWith({
+      where: {
+        schoolId: SCHOOL,
+        classScheduleSlot: { classPeriodId: CLASS_ID },
+        teacherId: { notIn: ['teacher-1'] },
+      },
     })
   })
 
@@ -101,11 +114,12 @@ describe('classPeriodGateway.listInactiveTeacherAssignments', () => {
 
 describe('classPeriodGateway.unassignTeacher', () => {
   it('deletes exactly the targeted inactive-teacher assignment, scoped by school', async () => {
-    dbMock.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 1 })
+    const tx = withTransaction()
+    tx.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 1 })
 
     const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'teacher-1')
 
-    expect(dbMock.classPeriodTeacher.deleteMany).toHaveBeenCalledWith({
+    expect(tx.classPeriodTeacher.deleteMany).toHaveBeenCalledWith({
       where: {
         schoolId: SCHOOL,
         classPeriodId: CLASS_ID,
@@ -113,14 +127,23 @@ describe('classPeriodGateway.unassignTeacher', () => {
         teacher: { isActive: false },
       },
     })
+    expect(tx.classScheduleSlotTeacher.deleteMany).toHaveBeenCalledWith({
+      where: {
+        schoolId: SCHOOL,
+        teacherId: 'teacher-1',
+        classScheduleSlot: { classPeriodId: CLASS_ID },
+      },
+    })
     expect(removed).toBe(true)
   })
 
   it('reports false when no assignment matched', async () => {
-    dbMock.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 0 })
+    const tx = withTransaction()
+    tx.classPeriodTeacher.deleteMany.mockResolvedValue({ count: 0 })
 
     const removed = await classPeriodGateway.unassignTeacher(SCHOOL, CLASS_ID, 'teacher-1')
 
     expect(removed).toBe(false)
+    expect(tx.classScheduleSlotTeacher.deleteMany).not.toHaveBeenCalled()
   })
 })

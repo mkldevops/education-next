@@ -189,6 +189,7 @@
       "schools": "Schools",
       "teachers": "Teachers",
       "events": "Events",
+      "planning": "Schedule",
       "superAdmins": "Super admins"
     },
     "sidebar": {
@@ -219,6 +220,7 @@
       "schools": "Schools",
       "teachers": "Teachers",
       "events": "Events",
+      "planning": "Schedule",
       "superAdmins": "Super admins"
     },
     "pages": {
@@ -905,6 +907,20 @@
           "events_enabled": {
             "label": "Events",
             "description": "Enables the entire Events feature; the menu entry disappears when this setting is off."
+          },
+          "class_schedule_enabled": {
+            "label": "Class schedule",
+            "description": "Enables management and viewing of the weekly class schedule. Slots are retained when the setting is turned off."
+          },
+          "class_schedule_teacher_overlap_allowed": {
+            "label": "Allow teacher overlaps",
+            "description": "Allows the same teacher to be scheduled in several classes at the same time. A warning is still shown."
+          },
+          "class_schedule_visibility": {
+            "label": "Schedule visibility",
+            "description": "Internal: available to signed-in school members. Public: available from the school public page.",
+            "internal": "Internal",
+            "public": "Public"
           }
         },
         "theme": {
@@ -1574,6 +1590,85 @@
           }
         }
       },
+      "planning": {
+        "title": "Class schedule",
+        "description": "View and organise the weekly time slots for your classes.",
+        "empty": "No time slots have been recorded for this period",
+        "emptyNoPeriod": "Create or select a period to view the schedule.",
+        "adminHint": "Add a time slot to start organising classes.",
+        "parentHint": "The school schedule will appear here once time slots are added.",
+        "weekdays": {
+          "1": "Monday",
+          "2": "Tuesday",
+          "3": "Wednesday",
+          "4": "Thursday",
+          "5": "Friday",
+          "6": "Saturday",
+          "7": "Sunday"
+        },
+        "slot": {
+          "class": "Class",
+          "teachers": "Teachers",
+          "noTeachers": "No teacher",
+          "content": "Content"
+        },
+        "duration": {
+          "hours": "h",
+          "minutes": "min"
+        },
+        "warnings": {
+          "teacherOverlap": "This teacher is also scheduled in an overlapping time slot."
+        },
+        "publicLink": {
+          "copy": "Share public link",
+          "copied": "Public link copied",
+          "copyFailed": "Could not copy the public link"
+        },
+        "form": {
+          "createTrigger": "Add time slot",
+          "createTitle": "New time slot",
+          "editTrigger": "Edit",
+          "editTitle": "Edit time slot",
+          "class": "Class",
+          "weekday": "Day",
+          "startTime": "Start",
+          "endTime": "End",
+          "description": "Content",
+          "descriptionPlaceholder": "Optional activity or detail",
+          "formatting": {
+            "bold": "Bold",
+            "italic": "Italic",
+            "bullets": "Bulleted list"
+          },
+          "teachers": "Teachers",
+          "teachersPlaceholder": "Select teachers",
+          "teachersSearch": "Search teachers",
+          "teachersEmpty": "No teachers are assigned to this class",
+          "teachersNoResults": "No teachers found",
+          "teachersRemove": "Remove",
+          "cancel": "Cancel",
+          "submit": "Save"
+        },
+        "error": "The time slot could not be saved",
+        "success": "Time slot saved",
+        "successDeleted": "Time slot deleted",
+        "delete": {
+          "trigger": "Delete",
+          "title": "Delete this time slot?",
+          "description": "This time slot will no longer be visible in the schedule.",
+          "confirm": "Delete"
+        },
+        "errors": {
+          "validationError": "Check the information you entered",
+          "invalidTimeRange": "The end time must be later than the start time",
+          "notConfigured": "Class scheduling is not enabled",
+          "classPeriodNotFound": "Class not found",
+          "teacherNotFound": "Teacher not found or not assigned to this class",
+          "classOverlap": "This class already has an overlapping time slot",
+          "teacherOverlap": "A teacher already has an overlapping time slot",
+          "notFound": "Time slot not found"
+        }
+      },
       "events": {
         "title": "Events",
         "description": "Meetings, first days, outings, holidays, closures and celebrations for the school.",
@@ -1844,6 +1939,30 @@
     "subtitle": "Public events at {schoolName}.",
     "empty": "No public event yet.",
     "subscribe": "Add to calendar"
+  },
+  "publicSchedule": {
+    "metadata": {
+      "title": "{schoolName} schedule"
+    },
+    "notFoundTitle": "Schedule not found",
+    "title": "Class schedule",
+    "period": "{period} period",
+    "empty": "No time slots are currently published",
+    "noTeachers": "No teacher",
+    "content": "Content",
+    "duration": {
+      "hours": "h",
+      "minutes": "min"
+    },
+    "weekdays": {
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday",
+      "7": "Sunday"
+    }
   },
   "settings": {
     "title": "Settings",

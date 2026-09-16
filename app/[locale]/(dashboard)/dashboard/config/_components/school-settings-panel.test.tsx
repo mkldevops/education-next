@@ -21,6 +21,9 @@ const settings: SchoolSetting[] = [
   { name: 'max_students_per_class', value: '30', valueType: 'NUMBER' },
   { name: 'payments_enabled', value: 'true', valueType: 'BOOLEAN' },
   { name: 'teacher_expenses_enabled', value: 'false', valueType: 'BOOLEAN' },
+  { name: 'class_schedule_enabled', value: 'false', valueType: 'BOOLEAN' },
+  { name: 'class_schedule_teacher_overlap_allowed', value: 'true', valueType: 'BOOLEAN' },
+  { name: 'class_schedule_visibility', value: 'INTERNAL', valueType: 'TEXT' },
 ]
 
 /** Une école sans empreinte : aucune confirmation ne s'arme, sauf mention contraire. */
@@ -91,5 +94,26 @@ describe('SchoolSettingsPanel', () => {
     await waitFor(() =>
       expect(setConfigAction).toHaveBeenCalledWith({ name: 'payments_enabled', value: 'false' })
     )
+  })
+
+  it('keeps schedule-dependent settings hidden and inactive until scheduling is enabled', () => {
+    const { rerender } = render(<Panel />)
+
+    expect(screen.getByText('settings.class_schedule_enabled.label')).toBeInTheDocument()
+    const overlap = screen.getByText('settings.class_schedule_teacher_overlap_allowed.label')
+    const visibility = screen.getByText('settings.class_schedule_visibility.label')
+    expect(overlap.closest('[aria-hidden]')).toHaveAttribute('aria-hidden', 'true')
+    expect(visibility.closest('[aria-hidden]')).toHaveAttribute('aria-hidden', 'true')
+
+    rerender(
+      <Panel
+        settings={settings.map((setting) =>
+          setting.name === 'class_schedule_enabled' ? { ...setting, value: 'true' } : setting
+        )}
+      />
+    )
+
+    expect(overlap.closest('[aria-hidden]')).toHaveAttribute('aria-hidden', 'false')
+    expect(visibility.closest('[aria-hidden]')).toHaveAttribute('aria-hidden', 'false')
   })
 })

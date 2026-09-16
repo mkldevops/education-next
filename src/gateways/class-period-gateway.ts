@@ -53,6 +53,14 @@ export const classPeriodGateway = {
         data: classData,
       })
 
+      await tx.classScheduleSlotTeacher.deleteMany({
+        where: {
+          schoolId,
+          classScheduleSlot: { classPeriodId: id },
+          teacherId: { notIn: teacherIds },
+        },
+      })
+
       await tx.classPeriodTeacher.deleteMany({
         where: { schoolId, classPeriodId: id, teacher: { isActive: true } },
       })
@@ -127,9 +135,16 @@ export const classPeriodGateway = {
   // distingue une affectation absente (ou active) d'une suppression réelle, sans
   // lever d'erreur sur un id fourni par le client.
   unassignTeacher: async (schoolId: string, classPeriodId: string, teacherId: string) => {
-    const { count } = await db.classPeriodTeacher.deleteMany({
-      where: { schoolId, classPeriodId, teacherId, teacher: { isActive: false } },
+    return db.$transaction(async (tx) => {
+      const { count } = await tx.classPeriodTeacher.deleteMany({
+        where: { schoolId, classPeriodId, teacherId, teacher: { isActive: false } },
+      })
+      if (count === 0) return false
+
+      await tx.classScheduleSlotTeacher.deleteMany({
+        where: { schoolId, teacherId, classScheduleSlot: { classPeriodId } },
+      })
+      return true
     })
-    return count > 0
   },
 }

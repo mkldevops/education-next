@@ -16,7 +16,7 @@
  */
 
 /**
- * Les 22 modèles portant un `schoolId`. `SchoolMember` en est volontairement absent :
+ * Les 24 modèles portant un `schoolId`. `SchoolMember` en est volontairement absent :
  * c'est la table de découverte, lue par `userId` avant qu'une école soit connue.
  * `McpApiKey` aussi : la clé est résolue par son hachage avant que l'école soit connue.
  */
@@ -39,6 +39,8 @@ const TENANT_SCOPED_MODELS: Record<string, true> = {
   Invitation: true,
   Teacher: true,
   ClassPeriodTeacher: true,
+  ClassScheduleSlot: true,
+  ClassScheduleSlotTeacher: true,
   TeacherExpense: true,
   McpDraft: true,
   Event: true,

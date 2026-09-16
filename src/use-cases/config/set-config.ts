@@ -1,5 +1,9 @@
 import type { z } from 'zod'
 import { configGateway } from '@/gateways/config-gateway'
+import {
+  CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
+  ClassScheduleVisibility,
+} from '@/lib/class-schedule-config'
 import { SCHOOL_CONFIG_VALUE_TYPES } from '@/lib/school-config'
 import { isHexColor } from '@/lib/theme-palettes'
 import { setConfigSchema } from './schemas'
@@ -27,6 +31,13 @@ export async function setConfig(input: Input, configGw = configGateway) {
   if (!parsed.success) return 'validationError' as const
 
   const { schoolId, name, value } = parsed.data
+  if (
+    name === CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY &&
+    value !== ClassScheduleVisibility.Internal &&
+    value !== ClassScheduleVisibility.Public
+  ) {
+    return 'invalidConfigValue' as const
+  }
   const valueType = SCHOOL_CONFIG_VALUE_TYPES[name]
   if (!validateValueType(value, valueType)) {
     return 'invalidConfigValue' as const

@@ -24,6 +24,7 @@ type SidebarProps = {
   schools?: AuthorizedSchool[]
   activeSchoolId?: string
   canSwitchSchool: boolean
+  classScheduleEnabled?: boolean
   eventsEnabled?: boolean
 }
 
@@ -38,6 +39,7 @@ export function Sidebar({
   schools = [],
   activeSchoolId,
   canSwitchSchool,
+  classScheduleEnabled = false,
   eventsEnabled = false,
 }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
@@ -52,7 +54,11 @@ export function Sidebar({
     role,
     isSuperAdmin,
     familyId,
-    features: { events: eventsEnabled, payments: paymentsEnabled },
+    features: {
+      classSchedule: classScheduleEnabled,
+      events: eventsEnabled,
+      payments: paymentsEnabled,
+    },
   })
 
   const isActive = (href: string) => {

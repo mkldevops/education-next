@@ -26,12 +26,14 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 | Class teacher | `ClassPeriodTeacher` | A teacher assigned to one class for one period. |
 | Teacher expense | `TeacherExpense` | A generic expense note for a teacher, such as food, snacks, supplies, goods purchases, or another reimbursable item. |
 | Payment | `Payment` | Money received, always attached to one enrollment. |
+| Class schedule slot | `ClassScheduleSlot` | A recurring weekly time slot for one class. |
+| Slot teacher | `ClassScheduleSlotTeacher` | An active class teacher assigned to one schedule slot. |
 
 ## Multi-school
 
-Every business row belongs to exactly one `School`. Twenty-one models carry `schoolId NOT NULL`:
+Every business row belongs to exactly one `School`. Twenty-three models carry `schoolId NOT NULL`:
 `Family`, `UserFamily`, `Person`, `FamilyPerson`, `Student`, `PhoneNumber`, `Config`, `Level`,
-`Period`, `ClassPeriod`, `ClassPeriodTeacher`, `Enrollment`, `ClassAssignment`, `Payment`,
+`Period`, `ClassPeriod`, `ClassPeriodTeacher`, `ClassScheduleSlot`, `ClassScheduleSlotTeacher`, `Enrollment`, `ClassAssignment`, `Payment`,
 `PaymentTransaction`, `Plan`, `Invitation`, `Teacher`, `TeacherExpense`, `Event`, `EventImage`.
 
 `PaymentProviderEvent` is the one business model left unscoped, deliberately: its
