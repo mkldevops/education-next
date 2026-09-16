@@ -1,5 +1,7 @@
 import { Card } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { Link } from '@/i18n/routing'
 import { cn } from '@/lib/utils'
 
 type KPIColor = 'gray' | 'green' | 'amber'
@@ -40,9 +42,13 @@ type Props = {
   subValue?: string
   icon?: LucideIcon
   color?: KPIColor
+  action?: {
+    href: string
+    label: string
+  }
 }
 
-export function KPICard({ label, value, subValue, icon: Icon, color = 'gray' }: Props) {
+export function KPICard({ label, value, subValue, icon: Icon, color = 'gray', action }: Props) {
   const { bg, border, text, subText, iconBg, iconText } = KPI_COLOR_STYLES[color]
 
   return (
@@ -58,6 +64,15 @@ export function KPICard({ label, value, subValue, icon: Icon, color = 'gray' }: 
           <p className={cn('text-2xl font-bold', text)}>{value}</p>
           {subValue && <p className={cn('text-xs', subText)}>{subValue}</p>}
         </div>
+        {action && (
+          <Link
+            href={action.href}
+            className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded border border-primary px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            <Plus aria-hidden className="size-4" />
+            {action.label}
+          </Link>
+        )}
       </div>
     </Card>
   )

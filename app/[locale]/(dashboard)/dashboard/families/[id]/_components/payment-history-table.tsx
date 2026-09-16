@@ -2,22 +2,14 @@ import { EmptyState } from '@peaklab/ui'
 import { Receipt } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { type FamilyPayment, groupFamilyPayments } from '@/domain/payment'
-import type { Enrollment, Payment, PaymentMethod, Plan, Student } from '@/generated/prisma/client'
+import type { PaymentMethod } from '@/generated/prisma/client'
 import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
-
-type PaymentWithRelation = Payment & {
-  enrollment: Enrollment & {
-    student: Student & {
-      person: { name: string; lastname: string }
-    }
-    plan: Plan
-  }
-}
+import type { FamilyDetailPayment } from '../_lib/family-detail'
 
 type Props = {
-  payments: PaymentWithRelation[]
+  payments: FamilyDetailPayment[]
   locale: string
 }
 
@@ -33,7 +25,7 @@ function Allocation({
   payment,
   locale,
 }: {
-  payment: FamilyPayment<PaymentWithRelation>
+  payment: FamilyPayment<FamilyDetailPayment>
   locale: string
 }) {
   return (

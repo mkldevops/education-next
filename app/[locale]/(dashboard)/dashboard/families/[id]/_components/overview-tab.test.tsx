@@ -11,7 +11,14 @@ vi.mock('next-intl', () => ({
 vi.mock('@/lib/stripe', () => ({ isStripeConfigured: () => true }))
 // `OnlinePaymentButton` tire `@/i18n/routing`, qui charge `next-intl/navigation` — non
 // résolu par Node hors du bundler Next — et l'action serveur d'ouverture de paiement.
-vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('@/i18n/routing', () => ({
+  Link: ({ href, children, ...props }: React.ComponentProps<'a'>) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+  useRouter: () => ({ push: vi.fn() }),
+}))
 vi.mock('../../../../_lib/online-payment-actions', () => ({
   createOnlinePaymentAction: vi.fn(),
 }))
@@ -33,6 +40,7 @@ const baseProps = {
   enrolledChildren: 2,
   totalEnrollments: 3,
   activeEnrollments: 2,
+  canAddEnrollment: true,
   totalPaid: 100,
   remainingBalance: 50,
   totalDue: 150,
@@ -40,6 +48,33 @@ const baseProps = {
 }
 
 describe('OverviewTab', () => {
+  it('offers relevant student and enrollment actions to administrators', async () => {
+    render(await OverviewTab({ ...baseProps, isAdmin: true, paymentsEnabled: true }))
+
+    expect(screen.getByRole('link', { name: 'actions.newStudent' })).toHaveAttribute(
+      'href',
+      '/dashboard/families/family-1?action=addStudent'
+    )
+    expect(screen.getByRole('link', { name: 'actions.addEnrollment' })).toHaveAttribute(
+      'href',
+      '/dashboard/families/family-1?action=addEnrollment'
+    )
+  })
+
+  it('hides enrollment creation when no student needs one', async () => {
+    render(
+      await OverviewTab({
+        ...baseProps,
+        isAdmin: true,
+        canAddEnrollment: false,
+        paymentsEnabled: true,
+      })
+    )
+
+    expect(screen.getByRole('link', { name: 'actions.newStudent' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'actions.addEnrollment' })).not.toBeInTheDocument()
+  })
+
   it('shows the financial summary and online payment button when payments are enabled', async () => {
     render(await OverviewTab({ ...baseProps, paymentsEnabled: true }))
 

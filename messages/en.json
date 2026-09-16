@@ -1321,6 +1321,15 @@
         "confirm": "Confirm",
         "cancel": "Cancel",
         "noUsers": "No users found",
+        "searchPlaceholder": "Search users…",
+        "filters": "Filters",
+        "empty": {
+          "title": "No users yet",
+          "description": "Invite an administrator or parent to give them access to this school.",
+          "filteredTitle": "No users match these filters",
+          "filteredDescription": "Change the criteria or show all users again.",
+          "clearFilters": "Clear filters"
+        },
         "userDeactivated": "User deactivated",
         "error": "An error occurred",
         "invite": {
