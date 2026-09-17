@@ -53,6 +53,62 @@ export const teacherGateway = {
       orderBy: { requestedAt: 'desc' },
     }),
 
+  archive: (schoolId: string, teacherId: string) =>
+    inSerializableTransaction(async (tx) => {
+      const teacher = await tx.teacher.findUnique({
+        where: { id_schoolId: { id: teacherId, schoolId } },
+        select: { userId: true },
+      })
+      if (!teacher) return 'notFound' as const
+
+      if (teacher.userId) {
+        const member = await tx.schoolMember.findUnique({
+          where: { userId_schoolId: { userId: teacher.userId, schoolId } },
+          select: { role: true },
+        })
+        if (member?.role === 'TEACHER') {
+          await tx.userFamily.deleteMany({ where: { userId: teacher.userId, schoolId } })
+          await tx.schoolMember.delete({
+            where: { userId_schoolId: { userId: teacher.userId, schoolId } },
+          })
+        }
+      }
+
+      await tx.teacher.update({
+        where: { id_schoolId: { id: teacherId, schoolId } },
+        data: { isActive: false, userId: null },
+      })
+      return 'OK' as const
+    }),
+
+  delete: (schoolId: string, teacherId: string) =>
+    inSerializableTransaction(async (tx) => {
+      const teacher = await tx.teacher.findUnique({
+        where: { id_schoolId: { id: teacherId, schoolId } },
+        select: {
+          userId: true,
+          _count: {
+            select: {
+              classPeriods: true,
+              scheduleSlots: true,
+              expenses: true,
+              invitations: true,
+            },
+          },
+        },
+      })
+      if (!teacher) return 'notFound' as const
+
+      const dependencies = Object.values(teacher._count).reduce(
+        (total, count) => total + count,
+        teacher.userId ? 1 : 0
+      )
+      if (dependencies > 0) return 'teacherInUse' as const
+
+      await tx.teacher.delete({ where: { id_schoolId: { id: teacherId, schoolId } } })
+      return 'OK' as const
+    }),
+
   /**
    * Ce que la désactivation des notes de frais va rendre inatteignable. Rien n'est
    * supprimé : la confirmation énumère pour que l'administrateur décide en connaissance.

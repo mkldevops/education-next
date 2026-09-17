@@ -6,6 +6,7 @@ const dbMock = {
     update: vi.fn(),
     findUnique: vi.fn(),
     findFirst: vi.fn(),
+    findMany: vi.fn(),
   },
   eventImage: {
     count: vi.fn(),
@@ -109,5 +110,24 @@ describe('eventGateway.removeImage', () => {
     await eventGateway.removeImage(SCHOOL, EVENT_ID, 'img-0')
 
     expect(tx.eventImage.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('eventGateway.listUpcoming', () => {
+  it('loads only the cover image for each dashboard event', async () => {
+    dbMock.event.findMany.mockResolvedValue([])
+
+    await eventGateway.listUpcoming(
+      SCHOOL,
+      ['PUBLIC', 'MEMBERS'],
+      new Date('2026-09-17T00:00:00.000Z'),
+      5
+    )
+
+    expect(dbMock.event.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: { images: { orderBy: { position: 'asc' }, take: 1 } },
+      })
+    )
   })
 })

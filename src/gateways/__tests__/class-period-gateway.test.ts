@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 type Tx = {
   classPeriod: {
     update: ReturnType<typeof vi.fn>
+    findUnique: ReturnType<typeof vi.fn>
     findUniqueOrThrow: ReturnType<typeof vi.fn>
   }
   classPeriodTeacher: {
@@ -18,6 +19,14 @@ function withTransaction() {
   const tx: Tx = {
     classPeriod: {
       update: vi.fn().mockResolvedValue({}),
+      findUnique: vi.fn().mockResolvedValue({
+        _count: {
+          classAssignments: 0,
+          teachers: 0,
+          scheduleSlots: 0,
+          attendanceSessions: 0,
+        },
+      }),
       findUniqueOrThrow: vi.fn().mockResolvedValue({}),
     },
     classPeriodTeacher: {
@@ -109,6 +118,54 @@ describe('classPeriodGateway.listInactiveTeacherAssignments', () => {
       include: { teacher: true },
       orderBy: { teacher: { lastName: 'asc' } },
     })
+  })
+})
+
+describe('classPeriodGateway.deactivate', () => {
+  it('archives an unused class within its school scope', async () => {
+    const tx = withTransaction()
+
+    expect(await classPeriodGateway.deactivate(SCHOOL, CLASS_ID)).toBe('OK')
+    expect(tx.classPeriod.findUnique).toHaveBeenCalledWith({
+      where: { id_schoolId: { id: CLASS_ID, schoolId: SCHOOL } },
+      select: {
+        _count: {
+          select: {
+            classAssignments: true,
+            teachers: true,
+            scheduleSlots: true,
+            attendanceSessions: true,
+          },
+        },
+      },
+    })
+    expect(tx.classPeriod.update).toHaveBeenCalledWith({
+      where: { id_schoolId: { id: CLASS_ID, schoolId: SCHOOL } },
+      data: { isActive: false },
+    })
+  })
+
+  it('refuses a class with any dependent record', async () => {
+    const tx = withTransaction()
+    tx.classPeriod.findUnique.mockResolvedValue({
+      _count: {
+        classAssignments: 1,
+        teachers: 0,
+        scheduleSlots: 0,
+        attendanceSessions: 0,
+      },
+    })
+
+    expect(await classPeriodGateway.deactivate(SCHOOL, CLASS_ID)).toBe('classInUse')
+    expect(tx.classPeriod.update).not.toHaveBeenCalled()
+  })
+
+  it('reports a class outside the active school scope as missing', async () => {
+    const tx = withTransaction()
+    tx.classPeriod.findUnique.mockResolvedValue(null)
+
+    expect(await classPeriodGateway.deactivate(SCHOOL, CLASS_ID)).toBe('notFound')
+    expect(tx.classPeriod.update).not.toHaveBeenCalled()
   })
 })
 

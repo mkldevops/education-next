@@ -10,7 +10,7 @@ import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateExpenseDialog } from './_components/create-expense-dialog'
 import { CreateTeacherDialog } from './_components/create-teacher-dialog'
-import { EditTeacherDialog } from './_components/edit-teacher-dialog'
+import { TeacherActionsMenu } from './_components/teacher-actions-menu'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -100,7 +100,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
       headerClassName: 'text-right',
       className: 'text-right',
       render: (teacher) => (
-        <EditTeacherDialog
+        <TeacherActionsMenu
           teacher={{
             id: teacher.id,
             firstName: teacher.firstName,

@@ -10,6 +10,7 @@ import type { PaymentMethod } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
+import { FamilyActionsMenu } from './family-actions-menu'
 
 export type FamilyPaymentRow = {
   amount: number
@@ -209,6 +210,11 @@ export function FamiliesDataTable({ data, paymentsEnabled }: Props) {
       accessorFn: (row) => row.enrollmentCount,
       cell: ({ getValue }) => <span className="text-graphite">{getValue() as number}</span>,
       enableSorting: true,
+    },
+    {
+      id: 'actions',
+      header: t('actions'),
+      cell: ({ row }) => <FamilyActionsMenu familyId={row.original.id} />,
     },
   ]
 

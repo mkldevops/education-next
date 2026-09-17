@@ -2,7 +2,6 @@
 
 import { RichDataTable, useMenu } from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
-import { UserPlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { useTableLabels } from '@/features/tables'
@@ -10,6 +9,7 @@ import type { Family, FamilyPerson, Person, Student } from '@/generated/prisma/c
 import { Link } from '@/i18n/routing'
 import { calculateAge, formatDate } from '@/lib/date'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
+import { StudentActionsMenu } from './student-actions-menu'
 
 export type StudentRow = Student & {
   person: Person & {
@@ -108,24 +108,16 @@ export function StudentsDataTable({
     enableSorting: true,
   }
 
-  const enrollColumn: ColumnDef<StudentRow> = {
-    id: 'enroll',
-    header: '',
-    cell: ({ row }) => {
-      // Une inscription en cours par élève et par période : le bouton disparaît dès que l'élève
-      // en a une, `createEnrollment` refuserait le formulaire.
-      if (row.original.enrollments.length > 0) return null
-      return (
-        <button
-          type="button"
-          onClick={() => setEnrollStudent(row.original)}
-          className="relative z-10 flex items-center gap-1 rounded px-2 py-1 text-sm text-primary hover:bg-alabaster-900 hover:text-primary-hover"
-        >
-          <UserPlus className="h-4 w-4" />
-          {t('enroll')}
-        </button>
-      )
-    },
+  const actionsColumn: ColumnDef<StudentRow> = {
+    id: 'actions',
+    header: t('actions'),
+    cell: ({ row }) => (
+      <StudentActionsMenu
+        student={row.original}
+        canEnroll={row.original.enrollments.length === 0}
+        onEnroll={() => setEnrollStudent(row.original)}
+      />
+    ),
   }
 
   const columns: ColumnDef<StudentRow>[] = [
@@ -162,7 +154,7 @@ export function StudentsDataTable({
       cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
       enableSorting: true,
     },
-    ...(isAdmin ? [enrollColumn] : []),
+    ...(isAdmin ? [actionsColumn] : []),
   ]
 
   const labels = useTableLabels()

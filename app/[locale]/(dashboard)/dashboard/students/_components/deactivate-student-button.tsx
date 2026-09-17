@@ -17,13 +17,19 @@ import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { deactivateStudentAction } from '../../../_lib/student-actions'
 
-export function DeactivateStudentButton({ studentId }: { studentId: string }) {
+type Props = {
+  studentId: string
+  triggerRole?: React.AriaRole
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
+}
+
+export function DeactivateStudentButton({ studentId, triggerRole }: Props) {
   const t = useTranslations('dashboard.pages.students.deactivate')
 
   return (
     <Dialog>
       <DialogTrigger>
-        <Button variant="destructive" size="sm">
+        <Button variant="destructive" size="sm" role={triggerRole}>
           {t('title')}
         </Button>
       </DialogTrigger>

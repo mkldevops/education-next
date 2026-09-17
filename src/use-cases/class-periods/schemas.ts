@@ -27,3 +27,8 @@ export const unassignClassPeriodTeacherSchema = z.object({
   id: z.string().uuid(),
   teacherId: z.string().uuid(),
 })
+
+export const deactivateClassPeriodSchema = z.object({
+  schoolId: z.string().min(1),
+  id: z.string().uuid(),
+})

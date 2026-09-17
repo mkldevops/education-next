@@ -3,8 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { teacherGateway } from '@/gateways/teacher-gateway'
+import { archiveTeacher } from '@/use-cases/teachers/archive-teacher'
 import { createTeacher } from '@/use-cases/teachers/create-teacher'
 import { createTeacherExpense } from '@/use-cases/teachers/create-teacher-expense'
+import { deleteTeacher } from '@/use-cases/teachers/delete-teacher'
 import type {
   createTeacherExpenseSchema,
   createTeacherSchema,
@@ -58,4 +60,23 @@ export async function revokeTeacherAccessAction(id: string) {
   revalidatePath('/dashboard/my-classes')
   revalidatePath('/dashboard/users')
   return 'OK' as const
+}
+
+export async function archiveTeacherAction(id: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await archiveTeacher({ schoolId, id })
+  if (result !== 'OK') return result
+  revalidatePath('/dashboard/teachers')
+  revalidatePath('/dashboard/classes')
+  revalidatePath('/dashboard/my-classes')
+  revalidatePath('/dashboard/users')
+  return result
+}
+
+export async function deleteTeacherAction(id: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await deleteTeacher({ schoolId, id })
+  if (result !== 'OK') return result
+  revalidatePath('/dashboard/teachers')
+  return result
 }

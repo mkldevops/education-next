@@ -1,5 +1,5 @@
 import { Card, type Column, DataTable, ProgressBar, StatusBadge, StatusDot } from '@peaklab/ui'
-import { AlertCircle, TrendingUp, Users, Wallet } from 'lucide-react'
+import { AlertCircle, Plus, TrendingUp, Wallet } from 'lucide-react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { connection } from 'next/server'
@@ -16,6 +16,7 @@ import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
 import { requireSchoolScope } from '../_lib/auth-helper'
 import { SchoolInsightsSection } from './_components/school-insights'
+import { StudentTrendCard } from './_components/student-trend-card'
 import { UnlinkedParentNotice } from './_components/unlinked-parent-notice'
 import { UpcomingEventsCard } from './_components/upcoming-events-card'
 import { getDashboardOverview } from './_lib/dashboard-overview'
@@ -72,7 +73,28 @@ export default async function DashboardPage({ params }: Props) {
     recentEnrollments,
     parentBalance,
     insights,
+    recentStudents,
   } = await getDashboardOverview(scope, paymentsEnabled)
+
+  const trendStart = new Date()
+  trendStart.setDate(1)
+  trendStart.setMonth(trendStart.getMonth() - 5)
+  const monthlyAdds = Array.from({ length: 6 }, (_, index) => {
+    const month = new Date(trendStart.getFullYear(), trendStart.getMonth() + index, 1)
+    return {
+      label: new Intl.DateTimeFormat(locale, { month: 'short' }).format(month),
+      count: recentStudents.filter(
+        (student) =>
+          student.createdAt.getFullYear() === month.getFullYear() &&
+          student.createdAt.getMonth() === month.getMonth()
+      ).length,
+    }
+  })
+  let runningStudents = studentCount - monthlyAdds.reduce((sum, month) => sum + month.count, 0)
+  const studentTrend = monthlyAdds.map((month) => {
+    runningStudents += month.count
+    return { label: month.label, value: runningStudents }
+  })
 
   const periodScope = selectedPeriod
     ? t('stats.scopePeriod', { period: selectedPeriod.name })
@@ -186,15 +208,13 @@ export default async function DashboardPage({ params }: Props) {
         </p>
 
         {isAdmin && (
-          <div className="mt-6 max-w-sm">
+          <div className="mt-6">
             <Link
               href="/dashboard/families?action=create"
-              className="block p-4 rounded border border-white/60 bg-white/80 backdrop-blur-sm hover:bg-white transition"
+              className="inline-flex items-center gap-2 rounded bg-primary px-4 py-2.5 font-medium text-white shadow-sm transition hover:bg-primary-hover"
             >
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-graphite-600" />
-                <span className="font-medium text-graphite">{t('quickActions.newFamily')}</span>
-              </div>
+              <Plus className="h-5 w-5" />
+              {t('quickActions.newFamily')}
             </Link>
           </div>
         )}
@@ -219,18 +239,12 @@ export default async function DashboardPage({ params }: Props) {
             </div>
           </Card>
         )}
-        <Card className="rounded border border-alabaster-700 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-graphite-600">{t('stats.students')}</p>
-              <p className="mt-2 text-3xl font-bold text-graphite">{studentCount}</p>
-              <p className="mt-1 text-xs text-graphite-600">{t('stats.scopeAll')}</p>
-            </div>
-            <div className="rounded bg-primary-light p-3">
-              <TrendingUp className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-        </Card>
+        <StudentTrendCard
+          title={t('stats.students')}
+          subtitle={t('stats.lastSixMonths')}
+          total={studentCount}
+          points={studentTrend}
+        />
         <Card className="rounded border border-alabaster-700 bg-white p-5">
           <div className="flex items-center justify-between">
             <div>

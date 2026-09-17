@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const dbMock = {
   family: { count: vi.fn() },
-  student: { count: vi.fn() },
+  student: { count: vi.fn(), findMany: vi.fn() },
   enrollment: { count: vi.fn(), findMany: vi.fn() },
 }
 const getSelectedPeriodMock = vi.fn()
@@ -22,6 +22,7 @@ beforeEach(() => {
   getSelectedPeriodMock.mockResolvedValue(null)
   dbMock.family.count.mockResolvedValue(0)
   dbMock.student.count.mockResolvedValue(0)
+  dbMock.student.findMany.mockResolvedValue([])
   dbMock.enrollment.count.mockResolvedValue(0)
   dbMock.enrollment.findMany.mockResolvedValue([])
   getSchoolInsightsMock.mockResolvedValue({ payments: null, classes: [], levels: [] })

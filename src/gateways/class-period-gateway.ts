@@ -107,6 +107,36 @@ export const classPeriodGateway = {
     return count
   },
 
+  deactivate: (schoolId: string, id: string) =>
+    db.$transaction(async (tx) => {
+      const classPeriod = await tx.classPeriod.findUnique({
+        where: { id_schoolId: { id, schoolId } },
+        select: {
+          _count: {
+            select: {
+              classAssignments: true,
+              teachers: true,
+              scheduleSlots: true,
+              attendanceSessions: true,
+            },
+          },
+        },
+      })
+      if (!classPeriod) return 'notFound' as const
+
+      const dependencies = Object.values(classPeriod._count).reduce(
+        (total, count) => total + count,
+        0
+      )
+      if (dependencies > 0) return 'classInUse' as const
+
+      await tx.classPeriod.update({
+        where: { id_schoolId: { id, schoolId } },
+        data: { isActive: false },
+      })
+      return 'OK' as const
+    }),
+
   findByLevelAndPeriod: (schoolId: string, levelId: string, periodId: string) =>
     db.classPeriod.findFirst({
       where: {

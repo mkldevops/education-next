@@ -1,4 +1,5 @@
 import { Card } from '@peaklab/ui'
+import Image from 'next/image'
 import { getTranslations } from 'next-intl/server'
 import type { EventViewer } from '@/domain/event'
 import { EventCategoryLabel, EventStatusBadge } from '@/features/enums'
@@ -42,15 +43,31 @@ export async function UpcomingEventsCard({ schoolId, viewer, locale, canManage }
       ) : (
         <ul className="mt-3 space-y-3">
           {events.map((event) => (
-            <li key={event.id} className="flex items-start justify-between gap-3">
-              <div className={cn(event.status === 'CANCELLED' && 'line-through opacity-60')}>
+            <li key={event.id} className="flex items-center gap-3">
+              {event.images[0] && (
+                <Image
+                  src={`/api/media/${event.images[0].storageKey}`}
+                  alt={event.images[0].alt ?? ''}
+                  width={80}
+                  height={60}
+                  className="h-[60px] w-20 shrink-0 rounded object-cover"
+                />
+              )}
+              <div
+                className={cn(
+                  'min-w-0 flex-1',
+                  event.status === 'CANCELLED' && 'line-through opacity-60'
+                )}
+              >
                 <p className="text-sm font-medium text-graphite">{event.title}</p>
                 <p className="text-xs text-graphite-600">
                   {formatEventDate(event, locale)} ·{' '}
                   <EventCategoryLabel category={event.category} />
                 </p>
               </div>
-              <EventStatusBadge status={event.status} />
+              <div className="shrink-0 self-start">
+                <EventStatusBadge status={event.status} />
+              </div>
             </li>
           ))}
         </ul>

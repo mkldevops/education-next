@@ -25,15 +25,17 @@ interface EditStudentDialogProps {
     healthNotes: string | null
     snackAuthorization: boolean
   }
+  triggerRole?: React.AriaRole
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
-export function EditStudentDialog({ student }: EditStudentDialogProps) {
+export function EditStudentDialog({ student, triggerRole }: EditStudentDialogProps) {
   const t = useTranslations('dashboard.pages.students.edit')
 
   return (
     <Dialog>
       <DialogTrigger>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" role={triggerRole}>
           {t('title')}
         </Button>
       </DialogTrigger>
