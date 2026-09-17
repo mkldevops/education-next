@@ -9,6 +9,7 @@ import {
   Sidebar,
 } from '@/features/dashboard'
 import { localizedHref } from '@/i18n/localized-href'
+import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { auth } from '@/lib/auth'
 import { getBrandingConfig } from '@/lib/branding'
 import { CLASS_SCHEDULE_ENABLED_CONFIG_KEY } from '@/lib/class-schedule-config'
@@ -41,6 +42,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     paymentsEnabled,
     cookieStore,
     teacher,
+    attendanceConfig,
   ] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
@@ -64,6 +66,10 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
       where: { schoolId: context.schoolId, userId: context.userId, isActive: true },
       select: { id: true },
     }),
+    db.config.findFirst({
+      where: { schoolId: context.schoolId, name: ATTENDANCE_ENABLED_CONFIG_KEY, isActive: true },
+      select: { value: true },
+    }),
   ])
   // La page de connexion n'a pas de session : elle s'habille de l'école désignée par ce cookie.
   const rememberSchool = cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId
@@ -71,6 +77,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
   const userName = session?.user.name || session?.user.email || undefined
   const eventsEnabled = eventsConfig?.value === 'true'
   const classScheduleEnabled = classScheduleConfig?.value === 'true'
+  const attendanceEnabled = attendanceConfig?.value === 'true'
 
   return (
     <>
@@ -89,6 +96,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
         canSwitchSchool={switchAllowed}
         classScheduleEnabled={classScheduleEnabled}
         eventsEnabled={eventsEnabled}
+        attendanceEnabled={attendanceEnabled}
       />
     </>
   )

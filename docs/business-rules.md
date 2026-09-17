@@ -829,6 +829,8 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 - A logical occurrence is unique by school, class, date and a non-null occurrence key (`adhoc` or the schedule-slot id). Opening is an atomic upsert; its roster snapshots active class assignments at that date.
 - Entries remain `NOT_RECORDED`, `PRESENT` or `ABSENT`; **All present** changes only the first state. A validated session can be corrected and records the latest author and timestamp.
 - ADMIN may operate school classes. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
+- Tracking derives expected occurrences from weekly slots for the selected **UTC calendar date** (the explicit V1 school-time convention). A slot absent from that day's planning creates no missing call.
+- Closures, cancellations and one-off timetable exceptions are represented as excluded slot ids before occurrence generation. They therefore suppress an expected occurrence rather than displaying a false `NOT_STARTED` state.
 
 ## Enrollments
 
@@ -868,10 +870,8 @@ child to the family.
 
 ### Money
 
-- `totalAmount = plan.amount - discount`. The write surfaces accept the final `totalAmount` and
-  derive the stored discount against the **plan's current price** — not against a stored total.
-  A final amount below zero, above the plan price, or below active payments already recorded is
-  refused; only `PENDING` and `ACTIVE` enrollments can be repriced.
+- `totalAmount = plan.amount - discount`, computed at creation and recomputed on every discount
+  change against the **plan's current price** — not against the stored total.
 - `remainingBalance = max(0, totalAmount - totalPaid)`. It never goes negative.
 - Changing a plan's price does not retroactively change existing enrollments. Applying a discount
   does, because it recomputes from the plan.
@@ -1196,25 +1196,6 @@ one school**.
 - **The school name is no longer a `Config` entry.** It lives on `School.name`, the single source of
   truth; keeping the old `school_name` key would have let two screens edit two different names. The
   migration copies it over and deletes the key.
-
-## Class schedules
-
-The planning grid has three deliberately separate audiences. Administrators read every active class
-of the selected period. The public grid remains governed by `class_schedule_enabled` and
-`class_schedule_visibility`. A parent reads only through
-`classScheduleGateway.listByFamilyAndPeriod()`:
-
-- The assignment is scoped by the active `schoolId`, the parent's non-null `familyId`, the selected
-  period, and `endAt: null`; closed assignments, other periods, other families and other schools
-  cannot contribute a class.
-- A parent without a linked family never reaches that gateway: `requireSchoolScope()` returns
-  `notFound()` before it can build a Prisma filter.
-- The returned slots are restricted to those class IDs and identify every child of the family
-  assigned to that class. A child without an active assignment yields the explicit empty planning
-  state instead of the school-wide schedule.
-
-Owner: `src/gateways/class-schedule-gateway.ts`,
-`app/[locale]/(dashboard)/dashboard/planning/page.tsx`.
 
 ## Branding images
 

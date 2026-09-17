@@ -191,6 +191,7 @@
       "myClasses": "Mes classes",
       "events": "Événements",
       "planning": "Planning",
+      "attendance": "Suivi des appels",
       "superAdmins": "Super-admins"
     },
     "sidebar": {
@@ -432,7 +433,6 @@
           "selectPlan": "Plan tarifaire",
           "selectClass": "Classe",
           "discount": "Réduction (€)",
-          "totalAmount": "Montant à payer (€)",
           "canLeaveAlone": "Autorisé à partir seul",
           "submit": "Créer",
           "cancel": "Annuler",
@@ -443,7 +443,6 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Famille, plan ou classe introuvable",
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
-            "totalAmountExceedsPlan": "Le montant à payer dépasse le tarif du plan",
             "classFull": "Cette classe est complète"
           }
         },
@@ -690,7 +689,6 @@
           "selectClass": "Classe",
           "noClassInPeriod": "Aucune classe sur la période sélectionnée. Créez une classe ou changez de période.",
           "discount": "Réduction (€)",
-          "totalAmount": "Montant à payer (€)",
           "canLeaveAlone": "Autorisé à partir seul",
           "replaceExisting": "Remplacer l'inscription existante de la période",
           "replaceExistingHint": "L'inscription en cours est annulée puis recréée. Impossible si elle a déjà reçu un paiement.",
@@ -700,7 +698,6 @@
           "error": "Erreur lors de l'inscription",
           "errors": {
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
-            "totalAmountExceedsPlan": "Le montant à payer dépasse le tarif du plan",
             "duplicateEnrollment": "Cet élève a déjà une inscription sur cette période. Cochez « Remplacer l'inscription existante » pour la recréer.",
             "classFull": "Cette classe est complète",
             "notFound": "Élève, plan ou classe introuvable",
@@ -1299,17 +1296,14 @@
           }
         },
         "applyDiscount": {
-          "title": "Modifier le montant à payer",
+          "title": "Appliquer une réduction",
           "amount": "Montant de la réduction (€)",
-          "totalAmount": "Montant à payer (€)",
           "cancel": "Annuler",
           "submit": "Appliquer",
           "success": "Réduction appliquée",
           "error": "Erreur lors de l'application",
           "errors": {
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
-            "totalAmountExceedsPlan": "Le montant à payer dépasse le tarif du plan",
-            "totalBelowPaid": "Le montant à payer ne peut pas être inférieur aux paiements déjà enregistrés",
             "notFound": "Inscription introuvable",
             "validationError": "Vérifiez le montant saisi"
           }
@@ -1333,15 +1327,6 @@
         "confirm": "Confirmer",
         "cancel": "Annuler",
         "noUsers": "Aucun utilisateur enregistré",
-        "searchPlaceholder": "Rechercher un utilisateur…",
-        "filters": "Filtres",
-        "empty": {
-          "title": "Aucun utilisateur pour le moment",
-          "description": "Invitez un administrateur ou un parent pour lui donner accès à cette école.",
-          "filteredTitle": "Aucun utilisateur ne correspond aux filtres",
-          "filteredDescription": "Modifiez les critères ou affichez à nouveau tous les utilisateurs.",
-          "clearFilters": "Effacer les filtres"
-        },
         "userDeactivated": "Utilisateur désactivé",
         "error": "Une erreur est survenue",
         "invite": {
@@ -1550,6 +1535,21 @@
       },
       "attendance": {
         "title": "Appel",
+        "trackingTitle": "Suivi des appels",
+        "empty": "Aucun appel n’est attendu pour cette journée.",
+        "filters": "Filtres",
+        "date": "Date",
+        "class": "Classe",
+        "teacher": "Enseignant",
+        "allClasses": "Toutes les classes",
+        "allTeachers": "Tous les enseignants",
+        "applyFilters": "Appliquer les filtres",
+        "notStarted": "Non commencé",
+        "inProgress": "En cours",
+        "validated": "Validé",
+        "cancel": "Annuler la séance",
+        "restore": "Rétablir la séance",
+        "sessionCancelled": "Cette séance est annulée.",
         "start": "Commencer l’appel",
         "allPresent": "Tous présents",
         "draft": "Brouillon",
@@ -1639,7 +1639,7 @@
         "empty": "Aucun créneau enregistré pour cette période",
         "emptyNoPeriod": "Créez ou sélectionnez une période pour afficher le planning.",
         "adminHint": "Ajoutez un créneau pour commencer à organiser les classes.",
-        "parentHint": "Aucun créneau n'est prévu pour les classes de vos enfants sur cette période.",
+        "parentHint": "Le planning de l'école apparaîtra ici dès que des créneaux seront ajoutés.",
         "weekdays": {
           "1": "Lundi",
           "2": "Mardi",
@@ -1653,7 +1653,6 @@
           "class": "Classe",
           "teachers": "Enseignants",
           "noTeachers": "Aucun enseignant",
-          "students": "Concerné(s)",
           "content": "Contenu"
         },
         "duration": {
