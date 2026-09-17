@@ -24,15 +24,21 @@ interface EditTeacherDialogProps {
     phone: string | null
     userId: string | null
   }
+  triggerRole?: React.AriaRole
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
-export function EditTeacherDialog({ teacher }: EditTeacherDialogProps) {
+export function EditTeacherDialog({
+  teacher,
+  triggerRole,
+  restoreFocusRef,
+}: EditTeacherDialogProps) {
   const t = useTranslations('dashboard.pages.teachers.edit')
 
   return (
-    <Dialog>
+    <Dialog restoreFocusRef={restoreFocusRef}>
       <DialogTrigger>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" role={triggerRole}>
           {t('title')}
         </Button>
       </DialogTrigger>

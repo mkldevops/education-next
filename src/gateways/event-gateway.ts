@@ -107,6 +107,7 @@ export const eventGateway = {
         status: { in: ['PUBLISHED', 'CANCELLED'] },
         startAt: { gte: from },
       },
+      include: { images: { orderBy: { position: 'asc' }, take: 1 } },
       orderBy: { startAt: 'asc' },
       ...(take !== undefined ? { take } : {}),
     }),

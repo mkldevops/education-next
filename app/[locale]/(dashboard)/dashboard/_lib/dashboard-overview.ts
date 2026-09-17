@@ -24,6 +24,7 @@ export async function getDashboardOverview(scope: SchoolScope, paymentsEnabled: 
     pendingPaymentCount,
     recentEnrollments,
     insights,
+    recentStudents,
   ] = await Promise.all([
     db.family.count({
       where: {
@@ -85,6 +86,16 @@ export async function getDashboardOverview(scope: SchoolScope, paymentsEnabled: 
     scope.isAdmin
       ? getSchoolInsights(scope.schoolId, selectedPeriod?.id ?? null, paymentsEnabled)
       : Promise.resolve<SchoolInsights | null>(null),
+    scope.isAdmin
+      ? db.student.findMany({
+          where: {
+            schoolId: scope.schoolId,
+            isActive: true,
+            createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1) },
+          },
+          select: { createdAt: true },
+        })
+      : Promise.resolve([]),
   ])
 
   return {
@@ -101,5 +112,6 @@ export async function getDashboardOverview(scope: SchoolScope, paymentsEnabled: 
         ? null
         : await getFamilyBalance(scope.schoolId, scope.familyId),
     insights,
+    recentStudents,
   }
 }

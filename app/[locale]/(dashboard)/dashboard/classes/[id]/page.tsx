@@ -16,6 +16,7 @@ import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { resolveDeepLink } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
+import { DeleteClassDialog } from '../_components/delete-class-dialog'
 import { EditClassDialog } from '../_components/edit-class-dialog'
 import { UnassignTeacherDialog } from '../_components/unassign-teacher-dialog'
 
@@ -170,7 +171,7 @@ export default async function ClassDetailPage({ params }: Props) {
             {classPeriod.period.name}
           </p>
         </div>
-        <div className="shrink-0">
+        <div className="flex shrink-0 gap-2">
           <EditClassDialog
             classItem={{
               id: classPeriod.id,
@@ -182,6 +183,7 @@ export default async function ClassDetailPage({ params }: Props) {
             levels={levels}
             teachers={teacherOptions}
           />
+          <DeleteClassDialog classPeriodId={classPeriod.id} className={classPeriod.name} />
         </div>
       </div>
 

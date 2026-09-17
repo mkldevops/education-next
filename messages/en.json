@@ -156,6 +156,7 @@
       "pendingPayments": "Pending payments",
       "pendingEnrollments": "Enrollments to review",
       "remainingBalance": "Family balance",
+      "lastSixMonths": "Trend over 6 months",
       "scopeAll": "All periods",
       "scopePeriod": "{period} period"
     },
@@ -228,6 +229,7 @@
     "pages": {
       "families": {
         "title": "Families",
+        "actions": "Actions",
         "name": "Name",
         "emergencyContact": "Emergency Contact",
         "students": "Students",
@@ -402,6 +404,7 @@
       },
       "students": {
         "title": "Students",
+        "actions": "Actions",
         "name": "Name",
         "birthday": "Birthday",
         "age": "Age",
@@ -663,6 +666,21 @@
             "levelAlreadyAssigned": "This level already has a class in this period",
             "capacityBelowEnrolled": "Capacity is below the number of students already assigned",
             "teacherNotFound": "One selected teacher was not found"
+          }
+        },
+        "delete": {
+          "trigger": "Delete class",
+          "deleteTriggerLabel": "Delete the {name} class",
+          "title": "Delete class",
+          "description": "The {name} class will be archived. This action is only available if it has never been used.",
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "success": "Class deleted",
+          "error": "Error deleting class",
+          "errors": {
+            "validationError": "Invalid class identifier",
+            "notFound": "Class not found",
+            "classInUse": "This class cannot be deleted because it has associated data"
           }
         },
         "teachers": "Teachers",
@@ -1624,6 +1642,33 @@
             "validationError": "Check the information you entered",
             "notFound": "Teacher not found",
             "alreadyUnlinked": "This teacher no longer has account access"
+          }
+        },
+        "archive": {
+          "trigger": "Archive",
+          "title": "Archive teacher",
+          "description": "{name} will be removed from active lists and their teacher access will be revoked. Their history will be preserved.",
+          "cancel": "Cancel",
+          "confirm": "Archive",
+          "success": "Teacher archived",
+          "error": "Error archiving teacher",
+          "errors": {
+            "validationError": "Invalid identifier",
+            "notFound": "Teacher not found"
+          }
+        },
+        "delete": {
+          "trigger": "Delete permanently",
+          "title": "Delete teacher permanently",
+          "description": "The record for {name} will be deleted and cannot be restored.",
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "success": "Teacher deleted",
+          "error": "Error deleting teacher",
+          "errors": {
+            "validationError": "Invalid identifier",
+            "notFound": "Teacher not found",
+            "teacherInUse": "This teacher still has account access or associated data. Archive them to preserve their history."
           }
         },
         "expenses": {

@@ -32,15 +32,25 @@ interface EditClassDialogProps {
   }
   levels: TeacherOption[]
   teachers: TeacherOption[]
+  /** `menuitem` when the trigger is rendered inside a row actions menu. */
+  triggerRole?: React.AriaRole
+  /** Focus fallback when the menu trigger is hidden while the dialog is open. */
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
-export function EditClassDialog({ classItem, levels, teachers }: EditClassDialogProps) {
+export function EditClassDialog({
+  classItem,
+  levels,
+  teachers,
+  triggerRole,
+  restoreFocusRef,
+}: EditClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.edit')
 
   return (
-    <Dialog>
+    <Dialog restoreFocusRef={restoreFocusRef}>
       <DialogTrigger>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" role={triggerRole}>
           {t('title')}
         </Button>
       </DialogTrigger>

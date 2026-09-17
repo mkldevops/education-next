@@ -7,8 +7,8 @@ import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
+import { ClassActionsMenu } from './_components/class-actions-menu'
 import { CreateClassDialog } from './_components/create-class-dialog'
-import { EditClassDialog } from './_components/edit-class-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -134,7 +134,7 @@ export default async function ClassesPage({ params }: Props) {
       headerClassName: 'text-right',
       className: 'text-right',
       render: (item) => (
-        <EditClassDialog
+        <ClassActionsMenu
           classItem={{
             id: item.id,
             name: item.name,

@@ -156,6 +156,7 @@
       "pendingPayments": "Paiements en attente",
       "pendingEnrollments": "Inscriptions à traiter",
       "remainingBalance": "Solde de la famille",
+      "lastSixMonths": "Évolution sur 6 mois",
       "scopeAll": "Toutes périodes",
       "scopePeriod": "Période {period}"
     },
@@ -229,6 +230,7 @@
     "pages": {
       "families": {
         "title": "Familles",
+        "actions": "Actions",
         "name": "Nom",
         "emergencyContact": "Contact d'urgence",
         "students": "Élèves",
@@ -403,6 +405,7 @@
       },
       "students": {
         "title": "Élèves",
+        "actions": "Actions",
         "name": "Nom",
         "birthday": "Date de naissance",
         "age": "Âge",
@@ -664,6 +667,21 @@
             "levelAlreadyAssigned": "Ce niveau possède déjà une classe sur cette période",
             "capacityBelowEnrolled": "La capacité est inférieure au nombre d'élèves déjà affectés",
             "teacherNotFound": "Un enseignant sélectionné est introuvable"
+          }
+        },
+        "delete": {
+          "trigger": "Supprimer la classe",
+          "deleteTriggerLabel": "Supprimer la classe {name}",
+          "title": "Supprimer la classe",
+          "description": "La classe {name} sera archivée. Cette action est possible uniquement si elle n’a jamais été utilisée.",
+          "cancel": "Annuler",
+          "confirm": "Supprimer",
+          "success": "Classe supprimée",
+          "error": "Erreur lors de la suppression",
+          "errors": {
+            "validationError": "Identifiant de classe invalide",
+            "notFound": "Classe introuvable",
+            "classInUse": "Cette classe ne peut pas être supprimée car elle contient des données associées"
           }
         },
         "teachers": "Enseignants",
@@ -1625,6 +1643,33 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Enseignant introuvable",
             "alreadyUnlinked": "Cet enseignant n’a plus d’accès par compte"
+          }
+        },
+        "archive": {
+          "trigger": "Archiver",
+          "title": "Archiver l’enseignant",
+          "description": "{name} sera retiré des listes actives et son accès enseignant sera révoqué. Son historique sera conservé.",
+          "cancel": "Annuler",
+          "confirm": "Archiver",
+          "success": "Enseignant archivé",
+          "error": "Erreur lors de l’archivage",
+          "errors": {
+            "validationError": "Identifiant invalide",
+            "notFound": "Enseignant introuvable"
+          }
+        },
+        "delete": {
+          "trigger": "Supprimer définitivement",
+          "title": "Supprimer définitivement l’enseignant",
+          "description": "La fiche de {name} sera supprimée sans possibilité de restauration.",
+          "cancel": "Annuler",
+          "confirm": "Supprimer",
+          "success": "Enseignant supprimé",
+          "error": "Erreur lors de la suppression",
+          "errors": {
+            "validationError": "Identifiant invalide",
+            "notFound": "Enseignant introuvable",
+            "teacherInUse": "Cet enseignant possède encore un accès ou des données associées. Archivez-le pour conserver son historique."
           }
         },
         "expenses": {
