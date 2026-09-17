@@ -11,6 +11,7 @@ import {
   Input,
   Label,
   MultiSelect,
+  Select,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
@@ -26,12 +27,14 @@ interface EditClassDialogProps {
     id: string
     name: string
     capacity: number
+    levelId: string
     teacherIds: string[]
   }
+  levels: TeacherOption[]
   teachers: TeacherOption[]
 }
 
-export function EditClassDialog({ classItem, teachers }: EditClassDialogProps) {
+export function EditClassDialog({ classItem, levels, teachers }: EditClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.edit')
 
   return (
@@ -45,13 +48,13 @@ export function EditClassDialog({ classItem, teachers }: EditClassDialogProps) {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <EditClassForm classItem={classItem} teachers={teachers} />
+        <EditClassForm classItem={classItem} levels={levels} teachers={teachers} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function EditClassForm({ classItem, teachers }: EditClassDialogProps) {
+function EditClassForm({ classItem, levels, teachers }: EditClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.edit')
   const tCreate = useTranslations('dashboard.pages.classes.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
@@ -60,6 +63,7 @@ function EditClassForm({ classItem, teachers }: EditClassDialogProps) {
     updateClassPeriodAction(classItem.id, {
       name: formData.get('name') as string,
       capacity: Number(formData.get('capacity')),
+      levelId: formData.get('levelId') as string,
       teacherIds: formData.getAll('teacherIds').map(String),
     })
   )
@@ -78,6 +82,22 @@ function EditClassForm({ classItem, teachers }: EditClassDialogProps) {
               maxLength={250}
               disabled={isPending}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-class-level">{tCreate('selectLevel')}</Label>
+            <Select
+              id="edit-class-level"
+              name="levelId"
+              defaultValue={classItem.levelId}
+              required
+              disabled={isPending}
+            >
+              {levels.map((level) => (
+                <option key={level.id} value={level.id}>
+                  {level.name}
+                </option>
+              ))}
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-class-capacity">{tCreate('capacity')}</Label>

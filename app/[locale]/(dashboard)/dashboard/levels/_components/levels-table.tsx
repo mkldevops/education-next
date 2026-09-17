@@ -4,6 +4,7 @@ import { Card, type Column, DataTable } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/routing'
+import { GenerateClassDialog } from './generate-class-dialog'
 import { LevelActionsMenu } from './level-actions-menu'
 
 export type LevelRow = {
@@ -87,6 +88,15 @@ export function LevelsTable({
               {classPeriod.name}
             </Link>
           ))}
+          {selectedPeriod && level.currentClasses.length === 0 && (
+            <GenerateClassDialog
+              levelId={level.id}
+              levelName={level.name}
+              periodId={selectedPeriod.id}
+              periodName={selectedPeriod.name}
+              defaultCapacity={defaultCapacity}
+            />
+          )}
         </div>
       ),
     },
@@ -98,8 +108,6 @@ export function LevelsTable({
       render: (level) => (
         <LevelActionsMenu
           level={level}
-          generateFor={selectedPeriod && level.currentClasses.length === 0 ? selectedPeriod : null}
-          defaultCapacity={defaultCapacity}
           allLevels={allLevels}
           takenNextLevelIds={takenNextLevelIds}
         />

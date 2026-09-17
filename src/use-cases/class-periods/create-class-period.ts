@@ -25,6 +25,13 @@ export async function createClassPeriod(
   const period = await periodGw.findById(schoolId, data.periodId)
   if (!period) return 'periodNotFound' as const
 
+  const existingClassPeriod = await classPeriodGw.findByLevelAndPeriod(
+    schoolId,
+    data.levelId,
+    data.periodId
+  )
+  if (existingClassPeriod) return 'levelAlreadyAssigned' as const
+
   if (teacherIds.length > 0) {
     const teachers = await teacherGw.findByIds(schoolId, teacherIds)
     if (teachers.length !== teacherIds.length) return 'teacherNotFound' as const

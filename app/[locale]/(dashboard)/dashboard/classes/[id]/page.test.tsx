@@ -6,6 +6,7 @@ const dbMock = {
   user: { findUnique: vi.fn() },
   userFamily: { findFirst: vi.fn() },
   classPeriod: { findFirst: vi.fn() },
+  level: { findMany: vi.fn() },
   teacher: { findMany: vi.fn() },
   classPeriodTeacher: { findMany: vi.fn() },
 }
@@ -68,6 +69,7 @@ beforeEach(() => {
   authMock.api.getSession.mockResolvedValue({ user: { id: 'user-1' } })
   dbMock.user.findUnique.mockResolvedValue({ isSuperAdmin: false })
   dbMock.userFamily.findFirst.mockResolvedValue(null)
+  dbMock.level.findMany.mockResolvedValue([{ id: 'level-1', name: 'CP' }])
   schoolMemberGatewayMock.listAuthorizedSchools.mockResolvedValue([
     membership(AL_NOUR),
     membership(HORIZON),
@@ -118,6 +120,8 @@ describe('ClassDetailPage, ressource dans l’école active', () => {
       schoolId: AL_NOUR.id,
       name: 'CP-A',
       capacity: 20,
+      levelId: 'level-1',
+      periodId: 'period-1',
       level: { name: 'CP' },
       period: { name: '2026-2027' },
       classAssignments: [],
@@ -158,6 +162,8 @@ describe('ClassDetailPage, ressource dans l’école active', () => {
       schoolId: AL_NOUR.id,
       name: 'CP-A',
       capacity: 20,
+      levelId: 'level-1',
+      periodId: 'period-1',
       level: { name: 'CP' },
       period: { name: '2026-2027' },
       classAssignments: [

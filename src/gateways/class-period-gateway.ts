@@ -35,6 +35,7 @@ export const classPeriodGateway = {
     data: {
       name?: string
       capacity?: number
+      levelId?: string
       teacherIds?: string[]
     }
   ) => {

@@ -4,13 +4,9 @@ import { useMenu } from '@peaklab/ui'
 import { MoreHorizontal } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { EditLevelDialog } from './edit-level-dialog'
-import { GenerateClassDialog } from './generate-class-dialog'
 
 type Props = {
   level: { id: string; name: string; nextLevelId: string | null; classCount: number }
-  /** Période sélectionnée, absente quand le niveau y a déjà une classe. */
-  generateFor: { id: string; name: string } | null
-  defaultCapacity: number
   allLevels: { id: string; name: string }[]
   takenNextLevelIds: string[]
 }
@@ -26,13 +22,7 @@ type Props = {
  * bouton `⋯`, seul ancrage qui reste visible — pour quand il referme et que son propre
  * déclencheur n'est plus focalisable.
  */
-export function LevelActionsMenu({
-  level,
-  generateFor,
-  defaultCapacity,
-  allLevels,
-  takenNextLevelIds,
-}: Props) {
+export function LevelActionsMenu({ level, allLevels, takenNextLevelIds }: Props) {
   const t = useTranslations('dashboard.pages.levels')
   const { open, toggle, containerRef, triggerRef, menuRef } = useMenu()
 
@@ -57,17 +47,6 @@ export function LevelActionsMenu({
           open ? '' : 'hidden'
         }`}
       >
-        {generateFor && (
-          <GenerateClassDialog
-            levelId={level.id}
-            levelName={level.name}
-            periodId={generateFor.id}
-            periodName={generateFor.name}
-            defaultCapacity={defaultCapacity}
-            triggerRole="menuitem"
-            restoreFocusRef={triggerRef}
-          />
-        )}
         <EditLevelDialog
           level={{ id: level.id, name: level.name }}
           currentNextLevelId={level.nextLevelId}

@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest'
+import en from '../../../../messages/en.json'
+import fr from '../../../../messages/fr.json'
 import { resolveNavItems } from '../sidebar-items'
 
 const keys = (items: { key: string }[]) => items.map((item) => item.key)
 
 describe('resolveNavItems', () => {
+  it('translates the attendance navigation entry in every locale', () => {
+    expect(fr.dashboard.sidebar.attendance).toBe('Suivi des appels')
+    expect(en.dashboard.sidebar.attendance).toBe('Attendance tracking')
+  })
+
   it('shows attendance only when enabled for an admin and teacher', () => {
     const admin = resolveNavItems({
       role: 'ADMIN',

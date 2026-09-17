@@ -60,6 +60,7 @@ class ClassPeriodGatewaySpy {
   createdSchoolId: string | null = null
   createdData: unknown = null
   classPeriodToReturn: unknown = null
+  existingClassPeriod: unknown = null
 
   async create(createSchoolId: string, data: unknown) {
     this.createdSchoolId = createSchoolId
@@ -87,7 +88,7 @@ class ClassPeriodGatewaySpy {
   }
 
   async findByLevelAndPeriod() {
-    return null
+    return this.existingClassPeriod
   }
 }
 
@@ -180,6 +181,30 @@ describe('createClassPeriod', () => {
 
     // THEN
     expect(result).toBe('periodNotFound')
+  })
+
+  it('fails when the level already has a class in the period', async () => {
+    // GIVEN
+    classPeriodGateway.existingClassPeriod = { id: 'existing-class-period' }
+    const input = {
+      schoolId,
+      name: 'Class B',
+      capacity: 30,
+      levelId: '123e4567-e89b-12d3-a456-426614174000',
+      periodId: '123e4567-e89b-12d3-a456-426614174001',
+    }
+
+    // WHEN
+    const result = await createClassPeriod(
+      input,
+      classPeriodGateway as unknown as ClassPeriodGw,
+      levelGateway as unknown as LevelGw,
+      periodGateway as unknown as PeriodGw
+    )
+
+    // THEN
+    expect(result).toBe('levelAlreadyAssigned')
+    expect(classPeriodGateway.createdData).toBeNull()
   })
 
   it('fails when one selected teacher does not belong to the school', async () => {
