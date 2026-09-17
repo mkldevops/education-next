@@ -39,6 +39,7 @@ enum AttendanceSessionStatus {
 enum AttendanceEntryStatus {
   NOT_RECORDED
   PRESENT
+  LATE
   ABSENT
 }
 

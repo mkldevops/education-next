@@ -1,7 +1,8 @@
-import { Card } from '@peaklab/ui'
+import { buttonVariants, Card } from '@peaklab/ui'
 import { ChevronDown } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
 import { parseSimpleInline, type SimpleInlineNode } from '@/domain/simple-rich-text'
+import { Link } from '@/i18n/routing'
 import { DeleteScheduleSlotDialog } from './delete-schedule-slot-dialog'
 import { ScheduleSlotDialog } from './schedule-slot-dialog'
 
@@ -27,6 +28,7 @@ type Props = {
   classes: ComponentProps<typeof ScheduleSlotDialog>['classes']
   teachersByClass: ComponentProps<typeof ScheduleSlotDialog>['teachersByClass']
   isAdmin: boolean
+  attendance?: { datesByWeekday: Record<number, string>; label: string }
 }
 
 export function ScheduleGrid({
@@ -39,6 +41,7 @@ export function ScheduleGrid({
   classes,
   teachersByClass,
   isAdmin,
+  attendance,
 }: Props) {
   const weekdays = Array.from(new Set(slots.map((slot) => slot.weekday))).sort((a, b) => a - b)
 
@@ -101,6 +104,14 @@ export function ScheduleGrid({
                     )}
                     {isAdmin && (
                       <div className="mt-4 flex justify-end gap-2 border-t border-alabaster-700 pt-3">
+                        {attendance && (
+                          <Link
+                            href={`/dashboard/my-classes/${slot.classPeriodId ?? slot.classPeriod.id}/attendance?date=${attendance.datesByWeekday[slot.weekday]}&slotId=${slot.id}`}
+                            className={buttonVariants({ size: 'sm' })}
+                          >
+                            {attendance.label}
+                          </Link>
+                        )}
                         <ScheduleSlotDialog
                           classes={classes}
                           teachersByClass={teachersByClass}

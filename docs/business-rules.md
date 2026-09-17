@@ -830,9 +830,9 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 ## Attendance
 
 - `attendance_enabled` is opt-in per school. When off, attendance links and pages are hidden and every server mutation refuses it.
-- A logical occurrence is unique by school, class, date and a non-null occurrence key (`adhoc` or the schedule-slot id). Opening is an atomic upsert; its roster snapshots active class assignments at that date.
-- Entries remain `NOT_RECORDED`, `PRESENT` or `ABSENT`; **All present** changes only the first state. A validated session can be corrected and records the latest author and timestamp.
-- ADMIN may operate school classes. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
+- A logical occurrence is unique by school, class, date and its schedule-slot id. Opening is an atomic upsert; its roster snapshots active class assignments at that date.
+- Entries remain `NOT_RECORDED`, `PRESENT`, `LATE` or `ABSENT`; **All present** changes only the first state and preserves late or absent pupils. Opening an existing occurrence loads it directly for consultation or correction. A validated session can be corrected and records the latest author and timestamp.
+- ADMIN may operate school classes and open only occurrences selected from the planning or tracking page. The server requires a schedule-slot id belonging to that class and matching the selected UTC date. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
 - Tracking derives expected occurrences from weekly slots for the selected **UTC calendar date** (the explicit V1 school-time convention). A slot absent from that day's planning creates no missing call.
 - Closures, cancellations and one-off timetable exceptions are represented as excluded slot ids before occurrence generation. They therefore suppress an expected occurrence rather than displaying a false `NOT_STARTED` state.
 
