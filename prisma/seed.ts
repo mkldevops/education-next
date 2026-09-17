@@ -7,6 +7,9 @@ import {
   DEMO_SCHEDULE_SLOTS,
   DEMO_TEACHERS,
   EXPECTED_SEED_COUNTS,
+  HORIZON_DEMO_CLASSES,
+  HORIZON_DEMO_FAMILIES,
+  HORIZON_DEMO_TEACHERS,
 } from './seed-fixtures'
 
 /**
@@ -35,6 +38,8 @@ async function purge() {
   await prisma.teacherExpense.deleteMany()
   await prisma.classScheduleSlotTeacher.deleteMany()
   await prisma.classScheduleSlot.deleteMany()
+  await prisma.attendanceEntry.deleteMany()
+  await prisma.attendanceSession.deleteMany()
   await prisma.classPeriodTeacher.deleteMany()
   await prisma.classAssignment.deleteMany()
   await prisma.enrollment.deleteMany()
@@ -91,11 +96,14 @@ type SchoolFixture = {
   themePrimary: string
   maxStudentsPerClass: number
   scheduleVisibility: 'INTERNAL' | 'PUBLIC'
+  classes: readonly { name: string; levelIndex: number }[]
+  teachers: readonly { firstName: string; lastName: string }[]
+  families: typeof HORIZON_DEMO_FAMILIES
 }
 
 /** Référentiel et dossiers d'une école. Chaque écriture porte son `schoolId`. */
 async function seedSchoolContent(fixture: SchoolFixture) {
-  const { schoolId, createdById } = fixture
+  const { schoolId, createdById, classes, teachers: teacherFixtures, families } = fixture
 
   const levelNames = ['CP', 'CE1', 'CE2', 'CM1', 'CM2']
   const levels = []
@@ -147,7 +155,7 @@ async function seedSchoolContent(fixture: SchoolFixture) {
   })
 
   const teachers = await prisma.teacher.createManyAndReturn({
-    data: DEMO_TEACHERS.map((teacher, index) => ({
+    data: teacherFixtures.map((teacher, index) => ({
       schoolId,
       ...teacher,
       email: `${emailPart(teacher.firstName)}.${emailPart(teacher.lastName)}.${emailPart(fixture.familyName)}@school.test`,
@@ -156,7 +164,7 @@ async function seedSchoolContent(fixture: SchoolFixture) {
   })
 
   const currentClasses = []
-  for (const classFixture of DEMO_CLASSES) {
+  for (const classFixture of classes) {
     currentClasses.push(
       await prisma.classPeriod.create({
         data: {
@@ -242,7 +250,12 @@ async function seedSchoolContent(fixture: SchoolFixture) {
   })
 
   await prisma.classAssignment.create({
-    data: { schoolId, enrollmentId: enrollment.id, classPeriodId: currentClasses[2].id },
+    data: {
+      schoolId,
+      enrollmentId: enrollment.id,
+      classPeriodId: currentClasses[2].id,
+      startAt: currentPeriod.startAt,
+    },
   })
 
   await prisma.payment.create({
@@ -260,7 +273,7 @@ async function seedSchoolContent(fixture: SchoolFixture) {
 
   // Des fratries et des niveaux variés donnent du volume aux listes tout en gardant
   // des dossiers réalistes : chaque élève est inscrit et affecté à la période active.
-  for (const familyFixture of DEMO_FAMILIES) {
+  for (const familyFixture of families) {
     const seededFamily = await prisma.family.create({
       data: {
         schoolId,
@@ -323,7 +336,8 @@ async function seedSchoolContent(fixture: SchoolFixture) {
         data: {
           schoolId,
           enrollmentId: seededEnrollment.id,
-          classPeriodId: currentClasses[childFixture.levelIndex].id,
+          classPeriodId: currentClasses[childFixture.classIndex].id,
+          startAt: currentPeriod.startAt,
         },
       })
     }
@@ -350,6 +364,7 @@ async function seedSchoolContent(fixture: SchoolFixture) {
         valueType: 'BOOLEAN',
       },
       { schoolId, name: 'events_enabled', value: 'true', valueType: 'BOOLEAN' },
+      { schoolId, name: 'attendance_enabled', value: 'true', valueType: 'BOOLEAN' },
       { schoolId, name: 'class_schedule_enabled', value: 'true', valueType: 'BOOLEAN' },
       {
         schoolId,
@@ -428,6 +443,7 @@ async function seedSchoolContent(fixture: SchoolFixture) {
     fullTimePlanId: fullTime.id,
     fullTimeAmount: fixture.fullTimeAmount,
     defaultClassId: currentClasses[0].id,
+    currentPeriodStartAt: currentPeriod.startAt,
   }
 }
 
@@ -468,6 +484,9 @@ async function seed() {
     themePrimary: '#3c6e71',
     maxStudentsPerClass: 25,
     scheduleVisibility: 'PUBLIC',
+    classes: DEMO_CLASSES,
+    teachers: DEMO_TEACHERS,
+    families: DEMO_FAMILIES,
   })
 
   const horizonContent = await seedSchoolContent({
@@ -481,6 +500,9 @@ async function seed() {
     themePrimary: '#8c3b6e',
     maxStudentsPerClass: 18,
     scheduleVisibility: 'INTERNAL',
+    classes: HORIZON_DEMO_CLASSES,
+    teachers: HORIZON_DEMO_TEACHERS,
+    families: HORIZON_DEMO_FAMILIES,
   })
 
   // Parent d'une seule école : ne doit jamais voir l'autre.
@@ -562,13 +584,17 @@ async function seed() {
         schoolId,
         enrollmentId: enrollment.id,
         classPeriodId: schoolContent.defaultClassId,
+        startAt: schoolContent.currentPeriodStartAt,
       },
     })
   }
 
   console.log('Seed complete')
   console.log(
-    `  par école: ${EXPECTED_SEED_COUNTS.classesPerSchool} classes, ${EXPECTED_SEED_COUNTS.familiesPerSchool} familles, ${EXPECTED_SEED_COUNTS.studentsPerSchool} élèves, ${EXPECTED_SEED_COUNTS.scheduleSlotsPerSchool} créneaux, ${EXPECTED_SEED_COUNTS.eventsPerSchool} événements`
+    `  Al-Nour: ${EXPECTED_SEED_COUNTS.alNour.classes} classes, ${EXPECTED_SEED_COUNTS.alNour.families} familles, ${EXPECTED_SEED_COUNTS.alNour.students} élèves, ${EXPECTED_SEED_COUNTS.alNour.scheduleSlots} créneaux`
+  )
+  console.log(
+    `  Horizon: ${EXPECTED_SEED_COUNTS.horizon.classes} classes, ${EXPECTED_SEED_COUNTS.horizon.families} familles, ${EXPECTED_SEED_COUNTS.horizon.students} élèves, ${EXPECTED_SEED_COUNTS.horizon.scheduleSlots} créneaux`
   )
   console.log('  superadmin@school.test / superadmin123  (plateforme, aucune école)')
   console.log('  admin@school.test / admin123            (ADMIN des deux écoles)')

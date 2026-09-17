@@ -19,10 +19,10 @@ export function CancelAttendanceForm({
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   return (
-    <span>
+    <span className="flex flex-col items-stretch gap-2 sm:items-end">
       <Button
-        size="sm"
         variant="outline"
+        className="w-full sm:w-auto"
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
@@ -33,7 +33,11 @@ export function CancelAttendanceForm({
       >
         {label}
       </Button>
-      {error && <span role="alert">{error}</span>}
+      {error && (
+        <span role="alert" className="text-sm text-red-700">
+          {error}
+        </span>
+      )}
     </span>
   )
 }
@@ -52,8 +56,8 @@ export function CancelOccurrenceForm({
   const [pending, startTransition] = useTransition()
   return (
     <Button
-      size="sm"
       variant="outline"
+      className="w-full sm:w-auto"
       disabled={pending}
       onClick={() =>
         startTransition(async () => {

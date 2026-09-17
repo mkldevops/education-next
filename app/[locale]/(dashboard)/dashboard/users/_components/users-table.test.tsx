@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import en from '../../../../../../messages/en.json'
+import fr from '../../../../../../messages/fr.json'
 import type { MemberRow } from './users-table'
 import { UsersTable } from './users-table'
 
@@ -56,6 +58,17 @@ const renderTable = (members: MemberRow[]) =>
   )
 
 describe('UsersTable', () => {
+  it('defines localized labels for search and filters', () => {
+    expect(fr.dashboard.pages.users).toMatchObject({
+      searchPlaceholder: 'Rechercher un utilisateur...',
+      filters: 'Filtres',
+    })
+    expect(en.dashboard.pages.users).toMatchObject({
+      searchPlaceholder: 'Search users...',
+      filters: 'Filters',
+    })
+  })
+
   it('shows an actionable empty state when the school has no members', () => {
     renderTable([])
 

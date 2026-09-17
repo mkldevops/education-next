@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
@@ -9,13 +10,13 @@ import { requireSchoolAdmin, requireSchoolSession, requireTeacher } from './auth
 
 const openSchema = z.object({
   classPeriodId: z.uuid(),
-  classScheduleSlotId: z.uuid().optional(),
+  classScheduleSlotId: z.uuid(),
   occurredOn: z.coerce.date(),
 })
 const updateSchema = z.object({
   sessionId: z.uuid(),
   entryId: z.uuid(),
-  status: z.enum(['NOT_RECORDED', 'PRESENT', 'ABSENT']),
+  status: z.enum(['NOT_RECORDED', 'PRESENT', 'LATE', 'ABSENT']),
 })
 const sessionSchema = z.object({ sessionId: z.uuid() })
 const cancellationSchema = z.object({ sessionId: z.uuid(), cancelled: z.boolean() })
@@ -56,17 +57,6 @@ export async function openAttendanceAction(input: unknown) {
   const actor = await canOperateClass(parsed.data.classPeriodId)
   if (!actor) return 'notFound' as const
   if (!(await enabled(actor.schoolId))) return 'attendanceDisabled' as const
-  if (parsed.data.classScheduleSlotId) {
-    const slot = await db.classScheduleSlot.findFirst({
-      where: {
-        id: parsed.data.classScheduleSlotId,
-        schoolId: actor.schoolId,
-        classPeriodId: parsed.data.classPeriodId,
-      },
-      select: { id: true },
-    })
-    if (!slot) return 'notFound' as const
-  }
   const occurredOn = new Date(
     Date.UTC(
       parsed.data.occurredOn.getUTCFullYear(),
@@ -74,7 +64,17 @@ export async function openAttendanceAction(input: unknown) {
       parsed.data.occurredOn.getUTCDate()
     )
   )
-  const occurrenceKey = parsed.data.classScheduleSlotId ?? 'adhoc'
+  const slot = await db.classScheduleSlot.findFirst({
+    where: {
+      id: parsed.data.classScheduleSlotId,
+      schoolId: actor.schoolId,
+      classPeriodId: parsed.data.classPeriodId,
+      weekday: planningWeekday(occurredOn),
+    },
+    select: { id: true },
+  })
+  if (!slot) return 'notFound' as const
+  const occurrenceKey = parsed.data.classScheduleSlotId
   const sessionWhere = {
     schoolId_classPeriodId_occurredOn_occurrenceKey: {
       schoolId: actor.schoolId,
@@ -117,7 +117,6 @@ export async function openAttendanceAction(input: unknown) {
             updatedById: actor.userId,
             entries: {
               create: roster.map(({ enrollment }) => ({
-                schoolId: actor.schoolId,
                 studentId: enrollment.studentId,
                 studentName: `${enrollment.student.person.lastname} ${enrollment.student.person.name}`,
                 updatedById: actor.userId,
@@ -251,15 +250,6 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
   const parsed = cancelOccurrenceSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   const admin = await requireSchoolAdmin()
-  const slot = await db.classScheduleSlot.findFirst({
-    where: {
-      id: parsed.data.classScheduleSlotId,
-      schoolId: admin.schoolId,
-      classPeriodId: parsed.data.classPeriodId,
-    },
-    select: { id: true },
-  })
-  if (!slot) return 'notFound' as const
   const occurredOn = new Date(
     Date.UTC(
       parsed.data.occurredOn.getUTCFullYear(),
@@ -267,6 +257,16 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
       parsed.data.occurredOn.getUTCDate()
     )
   )
+  const slot = await db.classScheduleSlot.findFirst({
+    where: {
+      id: parsed.data.classScheduleSlotId,
+      schoolId: admin.schoolId,
+      classPeriodId: parsed.data.classPeriodId,
+      weekday: planningWeekday(occurredOn),
+    },
+    select: { id: true },
+  })
+  if (!slot) return 'notFound' as const
   const occurrenceWhere = {
     schoolId_classPeriodId_occurredOn_occurrenceKey: {
       schoolId: admin.schoolId,
