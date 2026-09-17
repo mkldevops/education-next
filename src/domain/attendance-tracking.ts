@@ -1,3 +1,5 @@
+import { planningWeekday } from './current-week-dates'
+
 export type ExpectedAttendance = {
   classPeriodId: string
   classScheduleSlotId: string
@@ -22,7 +24,7 @@ export function expectedAttendance(
   return slots
     .filter(
       (slot) =>
-        slot.weekday === date.getUTCDay() &&
+        slot.weekday === planningWeekday(date) &&
         !excludedSlotIds.has(slot.id) &&
         sessions.find(
           (session) =>

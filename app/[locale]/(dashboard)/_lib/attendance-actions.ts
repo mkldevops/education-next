@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
@@ -68,7 +69,7 @@ export async function openAttendanceAction(input: unknown) {
       id: parsed.data.classScheduleSlotId,
       schoolId: actor.schoolId,
       classPeriodId: parsed.data.classPeriodId,
-      weekday: occurredOn.getUTCDay(),
+      weekday: planningWeekday(occurredOn),
     },
     select: { id: true },
   })
@@ -261,7 +262,7 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
       id: parsed.data.classScheduleSlotId,
       schoolId: admin.schoolId,
       classPeriodId: parsed.data.classPeriodId,
-      weekday: occurredOn.getUTCDay(),
+      weekday: planningWeekday(occurredOn),
     },
     select: { id: true },
   })

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { attendanceUtcDate } from '@/domain/attendance-date'
+import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
@@ -43,7 +44,7 @@ export default async function AttendancePage({
       scheduleSlots: {
         some: {
           id: classScheduleSlotId,
-          weekday: new Date(`${occurredOn}T00:00:00.000Z`).getUTCDay(),
+          weekday: planningWeekday(new Date(`${occurredOn}T00:00:00.000Z`)),
         },
       },
     },

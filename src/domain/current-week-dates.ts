@@ -1,6 +1,11 @@
-/** Returns the UTC calendar date for each ISO weekday (Monday = 1) in the reference week. */
+/** Converts a UTC calendar date to the planning convention (Monday = 1, Sunday = 7). */
+export function planningWeekday(reference: Date): number {
+  return reference.getUTCDay() || 7
+}
+
+/** Returns the UTC calendar date for each ISO weekday in the reference week. */
 export function currentWeekDates(reference: Date): Record<number, string> {
-  const isoWeekday = reference.getUTCDay() || 7
+  const isoWeekday = planningWeekday(reference)
   const monday = new Date(reference)
   monday.setUTCDate(reference.getUTCDate() - isoWeekday + 1)
 

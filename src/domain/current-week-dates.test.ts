@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { currentWeekDates } from './current-week-dates'
+import { currentWeekDates, planningWeekday } from './current-week-dates'
 
 describe('currentWeekDates', () => {
   it('maps every planning weekday to its date in the current week', () => {
@@ -12,5 +12,9 @@ describe('currentWeekDates', () => {
       6: '2026-09-19',
       7: '2026-09-20',
     })
+  })
+
+  it('maps Sunday to planning weekday 7', () => {
+    expect(planningWeekday(new Date('2026-09-20T00:00:00.000Z'))).toBe(7)
   })
 })
