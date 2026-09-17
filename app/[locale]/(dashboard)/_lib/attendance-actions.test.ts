@@ -43,6 +43,7 @@ beforeEach(() => {
   db.config.findFirst.mockResolvedValue({ value: 'true' })
   db.classPeriod.findFirst.mockResolvedValue({ id })
   db.event.findMany.mockResolvedValue([])
+  db.classScheduleSlot.findFirst.mockResolvedValue({ id })
   db.classAssignment.findMany.mockResolvedValue([])
   db.attendanceSession.create.mockResolvedValue({ id, status: 'DRAFT', entries: [] })
   db.attendanceSession.findUnique.mockResolvedValue(null)
@@ -166,7 +167,35 @@ describe('attendance actions', () => {
       classScheduleSlotId: id,
       occurredOn: '2026-01-01',
     })
+    expect(db.classScheduleSlot.findFirst).toHaveBeenCalledWith({
+      where: { id, schoolId: 's', classPeriodId: id, weekday: 4 },
+      select: { id: true },
+    })
     expect(db.attendanceSession.create.mock.calls[1][0].data.occurrenceKey).toBe(id)
+  })
+  it('inherits entry tenant scope from the parent attendance session', async () => {
+    db.classAssignment.findMany.mockResolvedValue([
+      {
+        enrollment: {
+          studentId: 'student-1',
+          student: { person: { lastname: 'Benali', name: 'Yasmine' } },
+        },
+      },
+    ])
+
+    await actions.startScheduledAttendanceAction({
+      classPeriodId: id,
+      classScheduleSlotId: id,
+      occurredOn: '2026-01-01',
+    })
+
+    expect(db.attendanceSession.create.mock.calls[0][0].data.entries.create).toEqual([
+      {
+        studentId: 'student-1',
+        studentName: 'Benali Yasmine',
+        updatedById: 'u',
+      },
+    ])
   })
   it('creates nested roster entries without the parent school id', async () => {
     db.classAssignment.findMany.mockResolvedValue([

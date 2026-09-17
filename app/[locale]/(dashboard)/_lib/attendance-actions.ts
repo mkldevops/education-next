@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { isAttendanceClosed } from '@/domain/attendance-closure'
-import { attendanceScheduleWeekday } from '@/domain/attendance-weekday'
+import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
@@ -103,7 +103,7 @@ async function openAttendance(input: unknown, occurrence: 'scheduled' | 'adhoc')
         id: classScheduleSlotId ?? '',
         schoolId: actor.schoolId,
         classPeriodId: parsed.data.classPeriodId,
-        weekday: attendanceScheduleWeekday(occurredOn),
+        weekday: planningWeekday(occurredOn),
       },
       select: { id: true },
     })
@@ -317,15 +317,6 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
   const parsed = cancelOccurrenceSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   const admin = await requireSchoolAdmin()
-  const slot = await db.classScheduleSlot.findFirst({
-    where: {
-      id: parsed.data.classScheduleSlotId,
-      schoolId: admin.schoolId,
-      classPeriodId: parsed.data.classPeriodId,
-    },
-    select: { id: true },
-  })
-  if (!slot) return 'notFound' as const
   const occurredOn = new Date(
     Date.UTC(
       parsed.data.occurredOn.getUTCFullYear(),
@@ -333,6 +324,16 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
       parsed.data.occurredOn.getUTCDate()
     )
   )
+  const slot = await db.classScheduleSlot.findFirst({
+    where: {
+      id: parsed.data.classScheduleSlotId,
+      schoolId: admin.schoolId,
+      classPeriodId: parsed.data.classPeriodId,
+      weekday: planningWeekday(occurredOn),
+    },
+    select: { id: true },
+  })
+  if (!slot) return 'notFound' as const
   const occurrenceWhere = {
     schoolId_classPeriodId_occurredOn_occurrenceKey: {
       schoolId: admin.schoolId,

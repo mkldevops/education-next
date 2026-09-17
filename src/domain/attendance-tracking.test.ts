@@ -26,6 +26,20 @@ describe('expectedAttendance', () => {
       )
     ).toEqual([])
   })
+  it('includes a Sunday slot using planning weekday 7', () => {
+    const date = new Date('2026-09-20T00:00:00Z')
+
+    expect(
+      expectedAttendance(date, [{ id: 'sunday', classPeriodId: 'class-a', weekday: 7 }], [])
+    ).toEqual([
+      {
+        classPeriodId: 'class-a',
+        classScheduleSlotId: 'sunday',
+        occurredOn: date,
+        status: 'NOT_STARTED',
+      },
+    ])
+  })
   it('derives not started, in progress and validated from slot occurrences', () => {
     const date = new Date('2026-09-16T00:00:00Z')
     const slots = [

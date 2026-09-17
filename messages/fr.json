@@ -156,6 +156,7 @@
       "pendingPayments": "Paiements en attente",
       "pendingEnrollments": "Inscriptions à traiter",
       "remainingBalance": "Solde de la famille",
+      "lastSixMonths": "Évolution sur 6 mois",
       "scopeAll": "Toutes périodes",
       "scopePeriod": "Période {period}"
     },
@@ -230,6 +231,7 @@
     "pages": {
       "families": {
         "title": "Familles",
+        "actions": "Actions",
         "name": "Nom",
         "emergencyContact": "Contact d'urgence",
         "students": "Élèves",
@@ -404,6 +406,7 @@
       },
       "students": {
         "title": "Élèves",
+        "actions": "Actions",
         "name": "Nom",
         "birthday": "Date de naissance",
         "age": "Âge",
@@ -665,6 +668,21 @@
             "levelAlreadyAssigned": "Ce niveau possède déjà une classe sur cette période",
             "capacityBelowEnrolled": "La capacité est inférieure au nombre d'élèves déjà affectés",
             "teacherNotFound": "Un enseignant sélectionné est introuvable"
+          }
+        },
+        "delete": {
+          "trigger": "Supprimer la classe",
+          "deleteTriggerLabel": "Supprimer la classe {name}",
+          "title": "Supprimer la classe",
+          "description": "La classe {name} sera archivée. Cette action est possible uniquement si elle n’a jamais été utilisée.",
+          "cancel": "Annuler",
+          "confirm": "Supprimer",
+          "success": "Classe supprimée",
+          "error": "Erreur lors de la suppression",
+          "errors": {
+            "validationError": "Identifiant de classe invalide",
+            "notFound": "Classe introuvable",
+            "classInUse": "Cette classe ne peut pas être supprimée car elle contient des données associées"
           }
         },
         "teachers": "Enseignants",
@@ -1317,6 +1335,8 @@
       },
       "users": {
         "title": "Utilisateurs",
+        "searchPlaceholder": "Rechercher un utilisateur...",
+        "filters": "Filtres",
         "name": "Nom",
         "email": "Email",
         "role": "Rôle",
@@ -1547,17 +1567,28 @@
       "attendance": {
         "title": "Appel",
         "trackingTitle": "Suivi des appels",
+        "description": "Pilotez les appels attendus et suivez leur avancement pour la journée sélectionnée.",
         "empty": "Aucun appel n’est attendu pour cette journée.",
+        "emptyDescription": "Modifiez la date ou les filtres pour consulter une autre journée.",
         "filters": "Filtres",
+        "filtersDescription": "Affinez le suivi par date, classe ou enseignant.",
         "date": "Date",
         "class": "Classe",
         "teacher": "Enseignant",
         "allClasses": "Toutes les classes",
         "allTeachers": "Tous les enseignants",
         "applyFilters": "Appliquer les filtres",
+        "expectedCalls": "{count, plural, =0 {Aucun appel attendu} one {# appel attendu} other {# appels attendus}}",
+        "callsDescription": "État des séances prévues pour cette journée.",
+        "cancelledCalls": "{count, plural, =0 {Aucune séance annulée} one {# séance annulée} other {# séances annulées}}",
+        "cancelledDescription": "Ces séances sont retirées du suivi de la journée mais peuvent être rétablies.",
         "notStarted": "Non commencé",
         "inProgress": "En cours",
         "validated": "Validé",
+        "takeAttendance": "Faire l’appel",
+        "resumeAttendance": "Reprendre l’appel",
+        "takeAttendanceFor": "Faire l’appel — {className}",
+        "cancelled": "Annulée",
         "cancel": "Annuler la séance",
         "restore": "Rétablir la séance",
         "previousDay": "Jour précédent",
@@ -1579,6 +1610,11 @@
         "allPresent": "Tous présents",
         "draft": "Brouillon",
         "validate": "Valider l’appel",
+        "saveCorrections": "Enregistrer les corrections",
+        "validationSuccess": "L’appel est validé.",
+        "correctionsSaved": "Les corrections sont enregistrées.",
+        "savedTitle": "Appel enregistré",
+        "returningToTracking": "Retour au suivi des appels…",
         "present": "Présent",
         "late": "En retard",
         "absent": "Absent",
@@ -1673,6 +1709,33 @@
             "alreadyUnlinked": "Cet enseignant n’a plus d’accès par compte"
           }
         },
+        "archive": {
+          "trigger": "Archiver",
+          "title": "Archiver l’enseignant",
+          "description": "{name} sera retiré des listes actives et son accès enseignant sera révoqué. Son historique sera conservé.",
+          "cancel": "Annuler",
+          "confirm": "Archiver",
+          "success": "Enseignant archivé",
+          "error": "Erreur lors de l’archivage",
+          "errors": {
+            "validationError": "Identifiant invalide",
+            "notFound": "Enseignant introuvable"
+          }
+        },
+        "delete": {
+          "trigger": "Supprimer définitivement",
+          "title": "Supprimer définitivement l’enseignant",
+          "description": "La fiche de {name} sera supprimée sans possibilité de restauration.",
+          "cancel": "Annuler",
+          "confirm": "Supprimer",
+          "success": "Enseignant supprimé",
+          "error": "Erreur lors de la suppression",
+          "errors": {
+            "validationError": "Identifiant invalide",
+            "notFound": "Enseignant introuvable",
+            "teacherInUse": "Cet enseignant possède encore un accès ou des données associées. Archivez-le pour conserver son historique."
+          }
+        },
         "expenses": {
           "teacher": "Enseignant",
           "amount": "Montant",
@@ -1725,7 +1788,8 @@
           "teachers": "Enseignants",
           "noTeachers": "Aucun enseignant",
           "students": "Élèves",
-          "content": "Contenu"
+          "content": "Contenu",
+          "takeAttendance": "Faire l’appel"
         },
         "duration": {
           "hours": "h",

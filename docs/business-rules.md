@@ -795,6 +795,9 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   editable and can be repaired from the class form instead of being locked in place.
 - **A class is full** when `currentEnrolled >= capacity` → `classFull`.
 - **Capacity cannot drop below current occupancy** → `capacityBelowEnrolled`.
+- **A class can only be archived while it is unused** → `classInUse` when it has any student
+  assignment, teacher assignment, schedule slot, or attendance session. Archiving is a soft delete
+  (`isActive: false`), so an identifier outside the active school scope reads as `notFound`.
 - **Occupancy counts** assignments with `endAt: null` whose enrollment is `PENDING`, `ACTIVE` or
   `COMPLETED`. Cancelled enrollments free their seat; completed ones do not.
 - **Teachers are many-to-many.** A `ClassPeriod` may have no teacher yet, one teacher, or several
@@ -827,6 +830,11 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 - A `TEACHER`-only member entering `/dashboard` is redirected to **My classes**. A parent who also has teacher capability retains the parent dashboard, as do school and platform administrators.
 - A teacher invitation names the unlinked teacher profile and binds it atomically when accepted. Revoking teacher access unlinks that profile without changing an ADMIN/PARENT membership; for a `TEACHER`-only member, it also removes the now-capabilityless membership. Removing any school membership clears the profile link, revoking access and making the profile available for a replacement.
 - Teacher memberships never authorize families, payments, users, configuration, classes administration, or other schools.
+- **Archiving a teacher preserves history** (`isActive: false`) while clearing `Teacher.userId` and
+  removing a `TEACHER`-only school membership. Existing class, planning, expense, and invitation
+  rows remain attached and therefore auditable.
+- **Permanent deletion is limited to an unused teacher** → `teacherInUse` when the teacher still has
+  account access, a class or schedule assignment, an expense, or an invitation.
 
 ## Attendance
 

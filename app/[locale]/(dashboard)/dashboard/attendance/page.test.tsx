@@ -118,6 +118,35 @@ beforeEach(() => {
 })
 
 describe('AttendanceTrackingPage', () => {
+  it('preserves admin filters and separates cancelled scheduled sessions from expected calls', async () => {
+    dbMock.attendanceSession.findMany.mockResolvedValue([
+      {
+        id: 'cancelled-1',
+        classPeriodId: 'class-1',
+        classScheduleSlotId: 'slot-morning',
+        occurrenceKey: 'slot-morning',
+        status: 'CANCELLED',
+        classPeriod: { name: 'CP-A' },
+      },
+    ])
+    const { container } = render(
+      await AttendanceTrackingPage({
+        params: Promise.resolve({ locale: 'fr' }),
+        searchParams: Promise.resolve({ date: '2026-09-17' }),
+      })
+    )
+    expect(container.querySelector('main')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('class')).toHaveValue('')
+    expect(screen.getByLabelText('teacher')).toHaveValue('')
+    expect(screen.getByText('cancelledCalls').parentElement).toHaveTextContent('1')
+    expect(screen.getByText('expectedCalls').parentElement).toHaveTextContent('1')
+    expect(screen.getByText('sessionCancelled')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'start' })).toHaveAttribute(
+      'href',
+      '/dashboard/my-classes/class-1/attendance?date=2026-09-17&slotId=slot-afternoon'
+    )
+  })
+
   it('keeps two scheduled slots distinct, separates an adhoc session, and preserves filters in date navigation', async () => {
     render(
       await AttendanceTrackingPage({

@@ -3,7 +3,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { isAttendanceClosed } from '@/domain/attendance-closure'
 import { attendanceUtcDate } from '@/domain/attendance-date'
-import { attendanceScheduleWeekday } from '@/domain/attendance-weekday'
+import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
@@ -47,7 +47,7 @@ export default async function AttendancePage({
       where: {
         schoolId,
         classPeriodId: classPeriod.id,
-        weekday: attendanceScheduleWeekday(occurredOn),
+        weekday: planningWeekday(occurredOn),
       },
       select: { id: true, startTime: true, endTime: true },
       orderBy: { startTime: 'asc' },
@@ -90,6 +90,7 @@ export default async function AttendancePage({
         },
       })
     : null
+  if (initialSession?.status === 'CANCELLED') notFound()
   if (attendanceClosed && selectedSlot && !initialSession) notFound()
   const panelSlots = attendanceClosed && selectedSlot && initialSession ? [selectedSlot] : slots
   const t = await getTranslations('dashboard.pages.attendance')

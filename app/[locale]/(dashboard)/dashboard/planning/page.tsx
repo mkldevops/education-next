@@ -4,11 +4,15 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { attendanceUtcDate } from '@/domain/attendance-date'
+import { currentWeekDates } from '@/domain/current-week-dates'
+import { readsAsOptedIn } from '@/domain/feature-flags'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { classScheduleGateway } from '@/gateways/class-schedule-gateway'
 import { configGateway } from '@/gateways/config-gateway'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { localizedHref } from '@/i18n/localized-href'
+import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import {
   CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
   ClassScheduleVisibility,
@@ -38,13 +42,16 @@ export default async function PlanningPage({ params }: Props) {
   const scope = await requireSchoolScope()
   if (!(await isClassScheduleEnabled(scope.schoolId))) notFound()
 
-  const [t, tBreadcrumbs, selectedPeriod, school, visibility] = await Promise.all([
-    getTranslations('dashboard.pages.planning'),
-    getTranslations('dashboard.breadcrumbs'),
-    getSelectedPeriod(scope.schoolId),
-    schoolGateway.findActiveById(scope.schoolId),
-    configGateway.get(scope.schoolId, CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY),
-  ])
+  const [t, tBreadcrumbs, selectedPeriod, school, visibility, attendanceConfig] = await Promise.all(
+    [
+      getTranslations('dashboard.pages.planning'),
+      getTranslations('dashboard.breadcrumbs'),
+      getSelectedPeriod(scope.schoolId),
+      schoolGateway.findActiveById(scope.schoolId),
+      configGateway.get(scope.schoolId, CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY),
+      configGateway.get(scope.schoolId, ATTENDANCE_ENABLED_CONFIG_KEY),
+    ]
+  )
   const publicScheduleHref =
     school && visibility?.value === ClassScheduleVisibility.Public
       ? localizedHref(locale, `/ecole/${school.slug}/planning`)
@@ -120,6 +127,13 @@ export default async function PlanningPage({ params }: Props) {
   const weekdayLabels = Object.fromEntries(
     Array.from({ length: 7 }, (_, index) => [index + 1, t(`weekdays.${index + 1}`)])
   ) as Record<number, string>
+  const attendance =
+    scope.isAdmin && readsAsOptedIn(attendanceConfig?.value)
+      ? {
+          datesByWeekday: currentWeekDates(attendanceUtcDate(undefined)),
+          label: t('slot.takeAttendance'),
+        }
+      : undefined
 
   return (
     <div className="space-y-6">
@@ -160,6 +174,7 @@ export default async function PlanningPage({ params }: Props) {
           classes={classOptions}
           teachersByClass={teachersByClass}
           isAdmin={scope.isAdmin}
+          attendance={attendance}
         />
       )}
     </div>

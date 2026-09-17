@@ -63,7 +63,9 @@ export function BarChart({
               )}
               style={{ height: `${Math.max(ratio * 100, point.value > 0 ? 4 : 2)}%` }}
             />
-            <span className="text-xs text-graphite-600">{point.label}</span>
+            <span className="line-clamp-2 h-8 text-center text-xs leading-4 text-graphite-600">
+              {point.label}
+            </span>
           </div>
         )
       })}

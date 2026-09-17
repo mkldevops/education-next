@@ -1,4 +1,4 @@
-import { attendanceScheduleWeekday } from './attendance-weekday'
+import { planningWeekday } from './current-week-dates'
 
 export type ExpectedAttendance = {
   classPeriodId: string
@@ -24,7 +24,7 @@ export function expectedAttendance(
   return slots
     .filter(
       (slot) =>
-        slot.weekday === attendanceScheduleWeekday(date) &&
+        slot.weekday === planningWeekday(date) &&
         !excludedSlotIds.has(slot.id) &&
         sessions.find(
           (session) =>

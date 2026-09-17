@@ -156,6 +156,12 @@ export default async function AttendanceTrackingPage({
   )
   const scheduledSessions = sessions.filter((session) => session.occurrenceKey !== 'adhoc')
   const adhocSessions = sessions.filter((session) => session.occurrenceKey === 'adhoc')
+  const cancelledSessions = scheduledSessions.filter(
+    (session) =>
+      session.status === 'CANCELLED' &&
+      session.classScheduleSlotId &&
+      slots.some((slot) => slot.id === session.classScheduleSlotId)
+  )
   const filtersActive = Boolean(classId || filterTeacherId)
   const filters = { classId, teacherId: filterTeacherId }
   const errorLabels = {
@@ -178,6 +184,10 @@ export default async function AttendanceTrackingPage({
         <div>
           <h1 className="text-2xl font-bold text-graphite">{t('trackingTitle')}</h1>
           <p className="mt-1 text-sm text-graphite-600">{formattedDate(today)}</p>
+          <p className="mt-1 text-sm text-graphite-600">
+            {t('description')}
+            {selectedPeriod ? ` · ${selectedPeriod.name}` : ''}
+          </p>
         </div>
         <nav
           aria-label={t('date')}
@@ -204,6 +214,21 @@ export default async function AttendanceTrackingPage({
             <ChevronRight aria-hidden="true" className="size-4" />
           </Link>
         </nav>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Card className="p-4">
+          <p className="text-2xl font-semibold text-graphite">{occurrences.length}</p>
+          <p className="text-sm text-graphite-600">
+            {t('expectedCalls', { count: occurrences.length })}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-2xl font-semibold text-graphite">{cancelledSessions.length}</p>
+          <p className="text-sm text-graphite-600">
+            {t('cancelledCalls', { count: cancelledSessions.length })}
+          </p>
+        </Card>
       </div>
 
       {admin && (
@@ -438,39 +463,32 @@ export default async function AttendanceTrackingPage({
       )}
 
       {admin &&
-        scheduledSessions
-          .filter(
-            (session) =>
-              session.status === 'CANCELLED' &&
-              session.classScheduleSlotId &&
-              slots.some((slot) => slot.id === session.classScheduleSlotId)
+        cancelledSessions.map((session) => {
+          const slot = slots.find((candidate) => candidate.id === session.classScheduleSlotId)
+          return (
+            <Card
+              key={session.id}
+              className="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center sm:gap-4"
+            >
+              <div className="w-full min-w-0 sm:flex-1">
+                <h2 className="font-semibold text-graphite">{session.classPeriod.name}</h2>
+                <p className="mt-1 text-sm text-graphite-600">
+                  {formattedDate(today)} · {slot?.startTime}–{slot?.endTime}
+                </p>
+              </div>
+              <StatusBadge status="red" label={t('sessionCancelled')} />
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+                <CancelAttendanceForm
+                  sessionId={session.id}
+                  cancelled={false}
+                  label={t('restore')}
+                  pendingLabel={t('restorePending')}
+                  errors={errorLabels}
+                />
+              </div>
+            </Card>
           )
-          .map((session) => {
-            const slot = slots.find((candidate) => candidate.id === session.classScheduleSlotId)
-            return (
-              <Card
-                key={session.id}
-                className="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center sm:gap-4"
-              >
-                <div className="w-full min-w-0 sm:flex-1">
-                  <h2 className="font-semibold text-graphite">{session.classPeriod.name}</h2>
-                  <p className="mt-1 text-sm text-graphite-600">
-                    {formattedDate(today)} · {slot?.startTime}–{slot?.endTime}
-                  </p>
-                </div>
-                <StatusBadge status="red" label={t('sessionCancelled')} />
-                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-                  <CancelAttendanceForm
-                    sessionId={session.id}
-                    cancelled={false}
-                    label={t('restore')}
-                    pendingLabel={t('restorePending')}
-                    errors={errorLabels}
-                  />
-                </div>
-              </Card>
-            )
-          })}
+        })}
     </div>
   )
 }

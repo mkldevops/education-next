@@ -28,3 +28,8 @@ export const createTeacherExpenseSchema = z.object({
   requestedAt: z.date(),
   paidAt: z.date().nullable().optional(),
 })
+
+export const teacherLifecycleSchema = z.object({
+  schoolId: z.string().min(1),
+  id: z.string().uuid(),
+})

@@ -6,6 +6,15 @@ export const DEMO_CLASSES = [
   { name: 'CM2-A', levelIndex: 4 },
 ] as const
 
+export const HORIZON_DEMO_CLASSES = [
+  ...DEMO_CLASSES,
+  { name: 'CP-B', levelIndex: 0 },
+  { name: 'CE1-B', levelIndex: 1 },
+  { name: 'CE2-B', levelIndex: 2 },
+  { name: 'CM1-B', levelIndex: 3 },
+  { name: 'CM2-B', levelIndex: 4 },
+] as const
+
 export const DEMO_TEACHERS = [
   { firstName: 'Amina', lastName: 'Benali' },
   { firstName: 'Karim', lastName: 'Foudil' },
@@ -14,11 +23,20 @@ export const DEMO_TEACHERS = [
   { firstName: 'Thomas', lastName: 'Bernard' },
 ] as const
 
+export const HORIZON_DEMO_TEACHERS = [
+  ...DEMO_TEACHERS,
+  { firstName: 'Sonia', lastName: 'Bensaïd' },
+  { firstName: 'Mehdi', lastName: 'Aït Ali' },
+  { firstName: 'Julie', lastName: 'Roux' },
+  { firstName: 'Samir', lastName: 'Khelifi' },
+  { firstName: 'Isabelle', lastName: 'Laurent' },
+] as const
+
 type DemoChild = {
   firstName: string
   sex: 'MALE' | 'FEMALE'
   birthday: string
-  levelIndex: number
+  classIndex: number
   snackAuthorization?: boolean
   allergies?: string
 }
@@ -44,14 +62,14 @@ export const DEMO_FAMILIES: DemoFamily[] = [
         firstName: 'Lina',
         sex: 'FEMALE',
         birthday: '2020-02-14',
-        levelIndex: 0,
+        classIndex: 0,
         snackAuthorization: true,
       },
       {
         firstName: 'Sami',
         sex: 'MALE',
         birthday: '2018-07-03',
-        levelIndex: 2,
+        classIndex: 2,
       },
     ],
   },
@@ -66,7 +84,7 @@ export const DEMO_FAMILIES: DemoFamily[] = [
         firstName: 'Hugo',
         sex: 'MALE',
         birthday: '2019-11-22',
-        levelIndex: 1,
+        classIndex: 1,
         snackAuthorization: true,
       },
     ],
@@ -82,14 +100,14 @@ export const DEMO_FAMILIES: DemoFamily[] = [
         firstName: 'Inès',
         sex: 'FEMALE',
         birthday: '2017-05-18',
-        levelIndex: 3,
+        classIndex: 3,
         allergies: 'Fruits à coque',
       },
       {
         firstName: 'Nour',
         sex: 'FEMALE',
         birthday: '2020-08-09',
-        levelIndex: 0,
+        classIndex: 0,
         snackAuthorization: true,
       },
     ],
@@ -105,7 +123,7 @@ export const DEMO_FAMILIES: DemoFamily[] = [
         firstName: 'Emma',
         sex: 'FEMALE',
         birthday: '2016-03-27',
-        levelIndex: 4,
+        classIndex: 4,
         snackAuthorization: true,
       },
     ],
@@ -121,17 +139,58 @@ export const DEMO_FAMILIES: DemoFamily[] = [
         firstName: 'Ilyas',
         sex: 'MALE',
         birthday: '2019-01-30',
-        levelIndex: 1,
+        classIndex: 1,
       },
       {
         firstName: 'Maya',
         sex: 'FEMALE',
         birthday: '2016-10-11',
-        levelIndex: 4,
+        classIndex: 4,
         snackAuthorization: true,
       },
     ],
   },
+]
+
+const HORIZON_EXTRA_FAMILY_SEEDS = [
+  ['Amari', 'Leïla', 'Aya', 'Rayan'],
+  ['Boukari', 'Nassim', 'Lina', 'Yanis'],
+  ['Chérif', 'Samira', 'Meriem', 'Ilyan'],
+  ['Dahmani', 'Walid', 'Nora', 'Adam'],
+  ['El Mansouri', 'Imane', 'Jade', 'Naël'],
+  ['Ferhat', 'Sofiane', 'Sarah', 'Amine'],
+  ['Gacem', 'Nawel', 'Louna', 'Ismaël'],
+  ['Hamidi', 'Rachid', 'Myriam', 'Elias'],
+  ['Kadri', 'Soraya', 'Yasmine', 'Noham'],
+  ['Lounis', 'Kamel', 'Selma', 'Idris'],
+] as const
+
+export const HORIZON_DEMO_FAMILIES: DemoFamily[] = [
+  ...DEMO_FAMILIES,
+  ...HORIZON_EXTRA_FAMILY_SEEDS.map(
+    ([name, parentFirstName, firstChild, secondChild], index): DemoFamily => ({
+      name,
+      parentFirstName,
+      parentSex: index % 2 === 0 ? 'FEMALE' : 'MALE',
+      phone: `06 80 20 ${String(index + 10).padStart(2, '0')} ${String(index + 30).padStart(2, '0')}`,
+      languagesAtHome: index % 3 === 0 ? ['Français', 'Arabe'] : ['Français'],
+      children: [
+        {
+          firstName: firstChild,
+          sex: 'FEMALE',
+          birthday: `201${6 + (index % 4)}-${String((index % 9) + 1).padStart(2, '0')}-12`,
+          classIndex: 5 + (index % 5),
+          snackAuthorization: true,
+        },
+        {
+          firstName: secondChild,
+          sex: 'MALE',
+          birthday: `201${6 + ((index + 2) % 4)}-${String(((index + 4) % 9) + 1).padStart(2, '0')}-21`,
+          classIndex: 5 + ((index + 2) % 5),
+        },
+      ],
+    })
+  ),
 ]
 
 export const DEMO_SCHEDULE_SLOTS = [
@@ -269,15 +328,20 @@ export const DEMO_EVENTS: DemoEvent[] = [
   },
 ]
 
-const additionalStudentCount = DEMO_FAMILIES.reduce(
-  (total, family) => total + family.children.length,
-  0
-)
+const expectedCounts = (
+  classes: readonly unknown[],
+  teachers: readonly unknown[],
+  families: DemoFamily[]
+) => ({
+  classes: classes.length,
+  families: families.length + 2,
+  students: families.reduce((total, family) => total + family.children.length, 0) + 2,
+  teachers: teachers.length,
+  scheduleSlots: classes.length * DEMO_SCHEDULE_SLOTS.length,
+  events: DEMO_EVENTS.length,
+})
 
 export const EXPECTED_SEED_COUNTS = {
-  classesPerSchool: DEMO_CLASSES.length,
-  familiesPerSchool: DEMO_FAMILIES.length + 2,
-  studentsPerSchool: additionalStudentCount + 2,
-  scheduleSlotsPerSchool: DEMO_CLASSES.length * DEMO_SCHEDULE_SLOTS.length,
-  eventsPerSchool: DEMO_EVENTS.length,
+  alNour: expectedCounts(DEMO_CLASSES, DEMO_TEACHERS, DEMO_FAMILIES),
+  horizon: expectedCounts(HORIZON_DEMO_CLASSES, HORIZON_DEMO_TEACHERS, HORIZON_DEMO_FAMILIES),
 } as const

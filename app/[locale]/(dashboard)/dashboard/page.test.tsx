@@ -73,6 +73,7 @@ const overview = (paymentsEnabled: boolean, isAdmin: boolean) => ({
   selectedPeriod: null,
   familyCount: 3,
   studentCount: 4,
+  recentStudents: [],
   enrollmentCount: 5,
   pendingPaymentCount: 1,
   recentEnrollments,

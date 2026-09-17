@@ -39,8 +39,8 @@ enum AttendanceSessionStatus {
 enum AttendanceEntryStatus {
   NOT_RECORDED
   PRESENT
-  ABSENT
   LATE
+  ABSENT
 }
 
 enum PaymentMethod {

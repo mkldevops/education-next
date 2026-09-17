@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
 import { createClassPeriod } from '@/use-cases/class-periods/create-class-period'
+import { deactivateClassPeriod } from '@/use-cases/class-periods/deactivate-class-period'
 import type {
   createClassPeriodSchema,
   updateClassPeriodSchema,
@@ -45,5 +46,14 @@ export async function unassignClassPeriodTeacherAction(id: string, teacherId: st
   if (result !== 'OK') return result
   revalidatePath('/dashboard/classes')
   revalidatePath(`/dashboard/classes/${id}`)
+  return result
+}
+
+export async function deactivateClassPeriodAction(id: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await deactivateClassPeriod({ schoolId, id })
+  if (result !== 'OK') return result
+  revalidatePath('/dashboard/classes')
+  revalidatePath('/dashboard/levels')
   return result
 }

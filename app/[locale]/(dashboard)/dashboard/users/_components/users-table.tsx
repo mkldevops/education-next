@@ -185,7 +185,8 @@ export function UsersTable({
         }}
         toolbar={
           <fieldset className="flex flex-wrap items-center gap-2">
-            <legend className="mr-2 text-sm font-medium text-graphite-600">{t('filters')}</legend>
+            <legend className="sr-only">{t('filters')}</legend>
+            <span className="mr-2 text-sm font-medium text-graphite-600">{t('filters')}</span>
             <Select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as 'ALL' | SchoolRole)}

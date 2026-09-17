@@ -156,6 +156,7 @@
       "pendingPayments": "Pending payments",
       "pendingEnrollments": "Enrollments to review",
       "remainingBalance": "Family balance",
+      "lastSixMonths": "Trend over 6 months",
       "scopeAll": "All periods",
       "scopePeriod": "{period} period"
     },
@@ -229,6 +230,7 @@
     "pages": {
       "families": {
         "title": "Families",
+        "actions": "Actions",
         "name": "Name",
         "emergencyContact": "Emergency Contact",
         "students": "Students",
@@ -403,6 +405,7 @@
       },
       "students": {
         "title": "Students",
+        "actions": "Actions",
         "name": "Name",
         "birthday": "Birthday",
         "age": "Age",
@@ -664,6 +667,21 @@
             "levelAlreadyAssigned": "This level already has a class in this period",
             "capacityBelowEnrolled": "Capacity is below the number of students already assigned",
             "teacherNotFound": "One selected teacher was not found"
+          }
+        },
+        "delete": {
+          "trigger": "Delete class",
+          "deleteTriggerLabel": "Delete the {name} class",
+          "title": "Delete class",
+          "description": "The {name} class will be archived. This action is only available if it has never been used.",
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "success": "Class deleted",
+          "error": "Error deleting class",
+          "errors": {
+            "validationError": "Invalid class identifier",
+            "notFound": "Class not found",
+            "classInUse": "This class cannot be deleted because it has associated data"
           }
         },
         "teachers": "Teachers",
@@ -1316,6 +1334,8 @@
       },
       "users": {
         "title": "Users",
+        "searchPlaceholder": "Search users...",
+        "filters": "Filters",
         "name": "Name",
         "email": "Email",
         "role": "Role",
@@ -1546,17 +1566,28 @@
       "attendance": {
         "title": "Attendance",
         "trackingTitle": "Attendance tracking",
+        "description": "Manage expected attendance and follow its progress for the selected day.",
         "empty": "No attendance is expected for this day.",
+        "emptyDescription": "Change the date or filters to view another day.",
         "filters": "Filters",
+        "filtersDescription": "Narrow the tracking view by date, class, or teacher.",
         "date": "Date",
         "class": "Class",
         "teacher": "Teacher",
         "allClasses": "All classes",
         "allTeachers": "All teachers",
         "applyFilters": "Apply filters",
+        "expectedCalls": "{count, plural, =0 {No expected attendance} one {# expected attendance} other {# expected attendance sessions}}",
+        "callsDescription": "Status of the sessions scheduled for this day.",
+        "cancelledCalls": "{count, plural, =0 {No cancelled session} one {# cancelled session} other {# cancelled sessions}}",
+        "cancelledDescription": "These sessions are removed from the day’s tracking but can be restored.",
         "notStarted": "Not started",
         "inProgress": "In progress",
         "validated": "Validated",
+        "takeAttendance": "Take attendance",
+        "resumeAttendance": "Resume attendance",
+        "takeAttendanceFor": "Take attendance — {className}",
+        "cancelled": "Cancelled",
         "cancel": "Cancel session",
         "restore": "Restore session",
         "previousDay": "Previous day",
@@ -1578,6 +1609,11 @@
         "allPresent": "Mark all present",
         "draft": "Draft",
         "validate": "Validate attendance",
+        "saveCorrections": "Save corrections",
+        "validationSuccess": "Attendance validated.",
+        "correctionsSaved": "Corrections saved.",
+        "savedTitle": "Attendance saved",
+        "returningToTracking": "Returning to attendance tracking…",
         "present": "Present",
         "late": "Late",
         "absent": "Absent",
@@ -1672,6 +1708,33 @@
             "alreadyUnlinked": "This teacher no longer has account access"
           }
         },
+        "archive": {
+          "trigger": "Archive",
+          "title": "Archive teacher",
+          "description": "{name} will be removed from active lists and their teacher access will be revoked. Their history will be preserved.",
+          "cancel": "Cancel",
+          "confirm": "Archive",
+          "success": "Teacher archived",
+          "error": "Error archiving teacher",
+          "errors": {
+            "validationError": "Invalid identifier",
+            "notFound": "Teacher not found"
+          }
+        },
+        "delete": {
+          "trigger": "Delete permanently",
+          "title": "Delete teacher permanently",
+          "description": "The record for {name} will be deleted and cannot be restored.",
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "success": "Teacher deleted",
+          "error": "Error deleting teacher",
+          "errors": {
+            "validationError": "Invalid identifier",
+            "notFound": "Teacher not found",
+            "teacherInUse": "This teacher still has account access or associated data. Archive them to preserve their history."
+          }
+        },
         "expenses": {
           "teacher": "Teacher",
           "amount": "Amount",
@@ -1724,7 +1787,8 @@
           "teachers": "Teachers",
           "noTeachers": "No teacher",
           "students": "Students",
-          "content": "Content"
+          "content": "Content",
+          "takeAttendance": "Take attendance"
         },
         "duration": {
           "hours": "h",
