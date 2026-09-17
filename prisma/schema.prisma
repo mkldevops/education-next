@@ -646,6 +646,8 @@ model AttendanceEntry {
   studentId           String
   studentName         String                @db.VarChar(500)
   status              AttendanceEntryStatus @default(NOT_RECORDED)
+  lateMinutes         Int?
+  message             String?               @db.VarChar(1000)
   updatedById         String
   updatedAt           DateTime              @updatedAt
 

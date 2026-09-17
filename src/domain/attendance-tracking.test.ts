@@ -54,4 +54,10 @@ describe('expectedAttendance', () => {
       ]).map((x) => x.status)
     ).toEqual(['NOT_STARTED', 'IN_PROGRESS', 'VALIDATED'])
   })
+  it('matches Sunday with the planning convention weekday 7', () => {
+    const date = new Date('2026-09-20T00:00:00.000Z')
+    expect(
+      expectedAttendance(date, [{ id: 'sunday', classPeriodId: 'a', weekday: 7 }], [])
+    ).toHaveLength(1)
+  })
 })

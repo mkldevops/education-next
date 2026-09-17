@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = {
   config: { findFirst: vi.fn() },
+  classPeriod: { findFirst: vi.fn() },
+  event: { findMany: vi.fn() },
   classPeriodTeacher: { findFirst: vi.fn() },
   classScheduleSlot: { findFirst: vi.fn() },
   classAssignment: { findMany: vi.fn() },
@@ -39,6 +41,8 @@ beforeEach(() => {
     isSuperAdmin: false,
   })
   db.config.findFirst.mockResolvedValue({ value: 'true' })
+  db.classPeriod.findFirst.mockResolvedValue({ id })
+  db.event.findMany.mockResolvedValue([])
   db.classScheduleSlot.findFirst.mockResolvedValue({ id })
   db.classAssignment.findMany.mockResolvedValue([])
   db.attendanceSession.create.mockResolvedValue({ id, status: 'DRAFT', entries: [] })
@@ -117,38 +121,48 @@ describe('attendance actions', () => {
     db.classAssignment.findMany.mockResolvedValue([])
     db.attendanceSession.findUnique.mockResolvedValue({ status: 'CANCELLED' })
     await expect(
-      actions.openAttendanceAction({
-        classPeriodId: id,
-        classScheduleSlotId: id,
-        occurredOn: '2026-01-01',
-      })
+      actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
     ).resolves.toBe('sessionCancelled')
     expect(db.attendanceSession.create).not.toHaveBeenCalled()
   })
   it('rejects disabled module and foreign slot', async () => {
     db.config.findFirst.mockResolvedValue({ value: 'false' })
     expect(
-      await actions.openAttendanceAction({
-        classPeriodId: id,
-        classScheduleSlotId: id,
-        occurredOn: '2026-01-01',
-      })
+      await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
     ).toBe('attendanceDisabled')
     db.config.findFirst.mockResolvedValue({ value: 'true' })
     db.classScheduleSlot.findFirst.mockResolvedValue(null)
     expect(
-      await actions.openAttendanceAction({
+      await actions.startScheduledAttendanceAction({
         classPeriodId: id,
         classScheduleSlotId: id,
         occurredOn: '2026-01-01',
       })
     ).toBe('notFound')
   })
-  it('requires a schedule slot and uses it as the logical occurrence key', async () => {
+  it('refuses creating a planned occurrence on a published closure', async () => {
+    db.event.findMany.mockResolvedValue([
+      {
+        status: 'PUBLISHED',
+        category: 'CLOSURE',
+        startAt: new Date('2026-01-01T00:00:00Z'),
+        endAt: null,
+      },
+    ])
+    db.classScheduleSlot.findFirst.mockResolvedValue({ id })
     await expect(
-      actions.openAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
-    ).resolves.toBe('validationError')
-    await actions.openAttendanceAction({
+      actions.startScheduledAttendanceAction({
+        classPeriodId: id,
+        classScheduleSlotId: id,
+        occurredOn: '2026-01-01',
+      })
+    ).resolves.toBe('attendanceClosed')
+  })
+  it('uses distinct logical occurrence keys for adhoc and a valid schedule slot', async () => {
+    await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
+    expect(db.attendanceSession.create.mock.calls[0][0].data.occurrenceKey).toBe('adhoc')
+    db.classScheduleSlot.findFirst.mockResolvedValue({ id })
+    await actions.startScheduledAttendanceAction({
       classPeriodId: id,
       classScheduleSlotId: id,
       occurredOn: '2026-01-01',
@@ -157,7 +171,7 @@ describe('attendance actions', () => {
       where: { id, schoolId: 's', classPeriodId: id, weekday: 4 },
       select: { id: true },
     })
-    expect(db.attendanceSession.create.mock.calls[0][0].data.occurrenceKey).toBe(id)
+    expect(db.attendanceSession.create.mock.calls[1][0].data.occurrenceKey).toBe(id)
   })
   it('inherits entry tenant scope from the parent attendance session', async () => {
     db.classAssignment.findMany.mockResolvedValue([
@@ -169,7 +183,7 @@ describe('attendance actions', () => {
       },
     ])
 
-    await actions.openAttendanceAction({
+    await actions.startScheduledAttendanceAction({
       classPeriodId: id,
       classScheduleSlotId: id,
       occurredOn: '2026-01-01',
@@ -182,6 +196,15 @@ describe('attendance actions', () => {
         updatedById: 'u',
       },
     ])
+  })
+  it('creates nested roster entries without the parent school id', async () => {
+    db.classAssignment.findMany.mockResolvedValue([
+      { enrollment: { studentId: 'student-1', student: { person: { lastname: 'A', name: 'B' } } } },
+    ])
+    await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
+    const entry = db.attendanceSession.create.mock.calls[0][0].data.entries.create[0]
+    expect(entry).toEqual({ studentId: 'student-1', studentName: 'A B', updatedById: 'u' })
+    expect(entry).not.toHaveProperty('schoolId')
   })
   it('denies an unassigned teacher before opening a class in this tenant', async () => {
     vi.mocked(auth.requireSchoolSession).mockResolvedValue({
@@ -197,11 +220,7 @@ describe('attendance actions', () => {
     })
     db.classPeriodTeacher.findFirst.mockResolvedValue(null)
     expect(
-      await actions.openAttendanceAction({
-        classPeriodId: id,
-        classScheduleSlotId: id,
-        occurredOn: '2026-01-01',
-      })
+      await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
     ).toBe('notFound')
     expect(db.attendanceSession.create).not.toHaveBeenCalled()
   })
@@ -213,14 +232,116 @@ describe('attendance actions', () => {
     ).toBe('notFound')
   })
 
-  it('records a student as late', async () => {
-    db.attendanceSession.findUnique.mockResolvedValue({ schoolId: 's', classPeriodId: id })
+  it('updates a late entry atomically with optional minutes and message', async () => {
+    db.attendanceSession.findUnique.mockResolvedValue({
+      schoolId: 's',
+      classPeriodId: id,
+      status: 'DRAFT',
+    })
     db.attendanceEntry.updateMany.mockResolvedValue({ count: 1 })
 
     await expect(
-      actions.updateAttendanceEntryAction({ sessionId: id, entryId: id, status: 'LATE' })
+      actions.updateAttendanceEntryAction({
+        sessionId: id,
+        entryId: id,
+        status: 'LATE',
+        lateMinutes: 15,
+        message: 'Bus delayed',
+      })
     ).resolves.toBe('OK')
-    expect(db.attendanceEntry.updateMany.mock.calls[0][0].data.status).toBe('LATE')
+
+    expect(db.attendanceEntry.updateMany).toHaveBeenCalledTimes(1)
+    expect(db.attendanceEntry.updateMany.mock.calls[0][0]).toMatchObject({
+      data: { status: 'LATE', lateMinutes: 15, message: 'Bus delayed', updatedById: 'u' },
+    })
+  })
+
+  it('clears late minutes but preserves an omitted message on a non-late update', async () => {
+    db.attendanceSession.findUnique.mockResolvedValue({
+      schoolId: 's',
+      classPeriodId: id,
+      status: 'DRAFT',
+    })
+    db.attendanceEntry.updateMany.mockResolvedValue({ count: 1 })
+
+    await actions.updateAttendanceEntryAction({ sessionId: id, entryId: id, status: 'PRESENT' })
+
+    expect(db.attendanceEntry.updateMany.mock.calls[0][0].data).toEqual({
+      status: 'PRESENT',
+      lateMinutes: null,
+      updatedById: 'u',
+    })
+  })
+
+  it.each([0, 1440])('accepts %i as a late-minute boundary', async (lateMinutes) => {
+    db.attendanceSession.findUnique.mockResolvedValue({
+      schoolId: 's',
+      classPeriodId: id,
+      status: 'DRAFT',
+    })
+    db.attendanceEntry.updateMany.mockResolvedValue({ count: 1 })
+
+    await expect(
+      actions.updateAttendanceEntryAction({
+        sessionId: id,
+        entryId: id,
+        status: 'LATE',
+        lateMinutes,
+      })
+    ).resolves.toBe('OK')
+
+    expect(db.attendanceEntry.updateMany.mock.calls[0][0].data.lateMinutes).toBe(lateMinutes)
+  })
+
+  it('allows an explicit null message to clear it', async () => {
+    db.attendanceSession.findUnique.mockResolvedValue({
+      schoolId: 's',
+      classPeriodId: id,
+      status: 'DRAFT',
+    })
+    db.attendanceEntry.updateMany.mockResolvedValue({ count: 1 })
+
+    await actions.updateAttendanceEntryAction({
+      sessionId: id,
+      entryId: id,
+      status: 'LATE',
+      lateMinutes: null,
+      message: null,
+    })
+
+    expect(db.attendanceEntry.updateMany.mock.calls[0][0].data).toEqual({
+      status: 'LATE',
+      lateMinutes: null,
+      message: null,
+      updatedById: 'u',
+    })
+  })
+
+  it.each([
+    { lateMinutes: -1 },
+    { lateMinutes: 1441 },
+    { lateMinutes: 1.5 },
+    { message: 'x'.repeat(1001) },
+  ])('rejects invalid optional late-entry data: %o', async (invalid) => {
+    await expect(
+      actions.updateAttendanceEntryAction({
+        sessionId: id,
+        entryId: id,
+        status: 'LATE',
+        ...invalid,
+      })
+    ).resolves.toBe('validationError')
+    expect(db.attendanceEntry.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('does not look up or update an entry outside the active school', async () => {
+    db.attendanceSession.findUnique.mockResolvedValue(null)
+
+    await expect(
+      actions.updateAttendanceEntryAction({ sessionId: id, entryId: id, status: 'LATE' })
+    ).resolves.toBe('notFound')
+
+    expect(db.attendanceEntry.updateMany).not.toHaveBeenCalled()
   })
 
   it('reloads an existing session after a concurrent unique conflict', async () => {
@@ -229,11 +350,7 @@ describe('attendance actions', () => {
       .mockResolvedValueOnce({ id, status: 'DRAFT', entries: [] })
     db.attendanceSession.create.mockRejectedValueOnce({ code: 'P2002' })
     await expect(
-      actions.openAttendanceAction({
-        classPeriodId: id,
-        classScheduleSlotId: id,
-        occurredOn: '2026-01-01',
-      })
+      actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
     ).resolves.toMatchObject({ id })
     expect(db.attendanceSession.create).toHaveBeenCalledTimes(1)
   })

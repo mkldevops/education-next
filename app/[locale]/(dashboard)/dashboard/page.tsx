@@ -5,7 +5,7 @@ import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolGateway } from '@/gateways/school-gateway'
-import { Link } from '@/i18n/routing'
+import { Link, redirect } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
@@ -47,6 +47,9 @@ export default async function DashboardPage({ params }: Props) {
   const session = await auth.api.getSession({ headers: await headers() })
 
   const context = await getSchoolContext()
+  if (!context?.isSuperAdmin && context?.role === 'TEACHER') {
+    redirect({ href: '/dashboard/my-classes', locale })
+  }
   if (context?.role === 'PARENT' && !context.familyId) {
     const school = await schoolGateway.findActiveById(context.schoolId)
     return (

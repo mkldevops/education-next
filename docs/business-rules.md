@@ -826,7 +826,8 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
 Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
 
 - An active `Teacher` profile linked to a user in the same school grants teacher capability. It can complement an existing `ADMIN` or `PARENT` membership, or accompany a `TEACHER`-only membership.
-- Its only dashboard surface is **My classes**. The query is scoped by both school and current profile's active `ClassPeriodTeacher` assignments; removing an assignment removes that class immediately.
+- Its dashboard surfaces are **My classes** and **Attendance tracking**. Both are scoped by the school and current profile's active `ClassPeriodTeacher` assignments; removing an assignment removes that class and its attendance access immediately.
+- A `TEACHER`-only member entering `/dashboard` is redirected to **My classes**. A parent who also has teacher capability retains the parent dashboard, as do school and platform administrators.
 - A teacher invitation names the unlinked teacher profile and binds it atomically when accepted. Revoking teacher access unlinks that profile without changing an ADMIN/PARENT membership; for a `TEACHER`-only member, it also removes the now-capabilityless membership. Removing any school membership clears the profile link, revoking access and making the profile available for a replacement.
 - Teacher memberships never authorize families, payments, users, configuration, classes administration, or other schools.
 - **Archiving a teacher preserves history** (`isActive: false`) while clearing `Teacher.userId` and
@@ -838,9 +839,10 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 ## Attendance
 
 - `attendance_enabled` is opt-in per school. When off, attendance links and pages are hidden and every server mutation refuses it.
-- A logical occurrence is unique by school, class, date and its schedule-slot id. Opening is an atomic upsert; its roster snapshots active class assignments at that date.
-- Entries remain `NOT_RECORDED`, `PRESENT`, `LATE` or `ABSENT`; **All present** changes only the first state and preserves late or absent pupils. Opening an existing occurrence loads it directly for consultation or correction. A validated session can be corrected and records the latest author and timestamp.
-- ADMIN may operate school classes and open only occurrences selected from the planning or tracking page. The server requires a schedule-slot id belonging to that class and matching the selected UTC date. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
+- A logical occurrence is unique by school, class, date and a non-null occurrence key (`adhoc` or the schedule-slot id). Opening is an atomic upsert; its roster snapshots active class assignments at that date.
+- The attendance route identifies a planned occurrence explicitly with its UTC calendar `date` and `slotId`; an exceptional occurrence uses `date` and `occurrence=adhoc`. Loading either identity only reads an existing session: creating a planned or exceptional session remains an explicit mutation. A slot must belong to the class and school **and** match the selected date's planning weekday (Monday 1 through Sunday 7).
+- Entries remain `NOT_RECORDED`, `PRESENT`, `ABSENT` or `LATE`; **All present** changes only the first state. A late entry may carry zero to 1,440 optional whole minutes and an internal optional message of at most 1,000 characters; it never notifies a parent. Changing to any other status clears late minutes while preserving its message. A validated session can be corrected and records the latest author and timestamp.
+- ADMIN may operate school classes. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
 - Tracking derives expected occurrences from weekly slots for the selected **UTC calendar date** (the explicit V1 school-time convention). A slot absent from that day's planning creates no missing call.
 - Closures, cancellations and one-off timetable exceptions are represented as excluded slot ids before occurrence generation. They therefore suppress an expected occurrence rather than displaying a false `NOT_STARTED` state.
 

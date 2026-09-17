@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { isAttendanceClosed } from '@/domain/attendance-closure'
 import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
@@ -13,10 +14,17 @@ const openSchema = z.object({
   classScheduleSlotId: z.uuid(),
   occurredOn: z.coerce.date(),
 })
+const openAdhocSchema = z.object({
+  classPeriodId: z.uuid(),
+  occurredOn: z.coerce.date(),
+})
 const updateSchema = z.object({
   sessionId: z.uuid(),
   entryId: z.uuid(),
-  status: z.enum(['NOT_RECORDED', 'PRESENT', 'LATE', 'ABSENT']),
+  status: z.enum(['NOT_RECORDED', 'PRESENT', 'ABSENT', 'LATE']),
+  // Omitted fields preserve existing values for callers using the pre-R2 payload.
+  lateMinutes: z.number().int().min(0).max(1440).nullable().optional(),
+  message: z.string().max(1000).nullable().optional(),
 })
 const sessionSchema = z.object({ sessionId: z.uuid() })
 const cancellationSchema = z.object({ sessionId: z.uuid(), cancelled: z.boolean() })
@@ -28,8 +36,14 @@ const cancelOccurrenceSchema = z.object({
 
 async function canOperateClass(classPeriodId: string) {
   const context = await requireSchoolSession()
-  if (context.isSuperAdmin || context.role === 'ADMIN')
+  if (context.isSuperAdmin || context.role === 'ADMIN') {
+    const classPeriod = await db.classPeriod.findFirst({
+      where: { id: classPeriodId, schoolId: context.schoolId },
+      select: { id: true },
+    })
+    if (!classPeriod) return null
     return { schoolId: context.schoolId, userId: context.userId }
+  }
   const teacher = await requireTeacher()
   const assignment = await db.classPeriodTeacher.findFirst({
     where: { schoolId: teacher.schoolId, classPeriodId, teacherId: teacher.teacherId },
@@ -51,8 +65,8 @@ function isUniqueConstraint(error: unknown) {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002'
 }
 
-export async function openAttendanceAction(input: unknown) {
-  const parsed = openSchema.safeParse(input)
+async function openAttendance(input: unknown, occurrence: 'scheduled' | 'adhoc') {
+  const parsed = (occurrence === 'scheduled' ? openSchema : openAdhocSchema).safeParse(input)
   if (!parsed.success) return 'validationError' as const
   const actor = await canOperateClass(parsed.data.classPeriodId)
   if (!actor) return 'notFound' as const
@@ -64,17 +78,38 @@ export async function openAttendanceAction(input: unknown) {
       parsed.data.occurredOn.getUTCDate()
     )
   )
-  const slot = await db.classScheduleSlot.findFirst({
-    where: {
-      id: parsed.data.classScheduleSlotId,
-      schoolId: actor.schoolId,
-      classPeriodId: parsed.data.classPeriodId,
-      weekday: planningWeekday(occurredOn),
-    },
-    select: { id: true },
-  })
-  if (!slot) return 'notFound' as const
-  const occurrenceKey = parsed.data.classScheduleSlotId
+  const classScheduleSlotId =
+    occurrence === 'scheduled'
+      ? (parsed.data as unknown as z.infer<typeof openSchema>).classScheduleSlotId
+      : null
+  if (occurrence === 'scheduled') {
+    if (!classScheduleSlotId) return 'validationError' as const
+    const closures = await db.event.findMany({
+      where: {
+        schoolId: actor.schoolId,
+        isActive: true,
+        status: 'PUBLISHED',
+        category: 'CLOSURE',
+        startAt: { lt: new Date(occurredOn.getTime() + 86400000) },
+        OR: [{ endAt: null }, { endAt: { gte: occurredOn } }],
+      },
+      select: { status: true, category: true, startAt: true, endAt: true },
+    })
+    if (isAttendanceClosed(closures, occurredOn)) return 'attendanceClosed' as const
+  }
+  if (occurrence === 'scheduled') {
+    const slot = await db.classScheduleSlot.findFirst({
+      where: {
+        id: classScheduleSlotId ?? '',
+        schoolId: actor.schoolId,
+        classPeriodId: parsed.data.classPeriodId,
+        weekday: planningWeekday(occurredOn),
+      },
+      select: { id: true },
+    })
+    if (!slot) return 'notFound' as const
+  }
+  const occurrenceKey = classScheduleSlotId ?? 'adhoc'
   const sessionWhere = {
     schoolId_classPeriodId_occurredOn_occurrenceKey: {
       schoolId: actor.schoolId,
@@ -110,7 +145,7 @@ export async function openAttendanceAction(input: unknown) {
           data: {
             schoolId: actor.schoolId,
             classPeriodId: parsed.data.classPeriodId,
-            classScheduleSlotId: parsed.data.classScheduleSlotId,
+            classScheduleSlotId,
             occurrenceKey,
             occurredOn,
             createdById: actor.userId,
@@ -138,37 +173,63 @@ export async function openAttendanceAction(input: unknown) {
   return session
 }
 
+/** Starts the exact planned occurrence selected in the schedule. */
+export async function startScheduledAttendanceAction(input: unknown) {
+  return openAttendance(input, 'scheduled')
+}
+
+/** Starts an exceptional attendance occurrence, deliberately separate from a schedule slot. */
+export async function startAdhocAttendanceAction(input: unknown) {
+  return openAttendance(input, 'adhoc')
+}
+
 export async function updateAttendanceEntryAction(input: unknown) {
   const parsed = updateSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  const context = await requireSchoolSession()
   const session = await db.attendanceSession.findUnique({
-    where: { id: parsed.data.sessionId },
-    select: { schoolId: true, classPeriodId: true },
+    where: { id_schoolId: { id: parsed.data.sessionId, schoolId: context.schoolId } },
+    select: { schoolId: true, classPeriodId: true, status: true },
   })
   if (!session) return 'notFound' as const
+  if (session.status === 'CANCELLED') return 'sessionCancelled' as const
   const actor = await canOperateClass(session.classPeriodId)
   if (!actor || actor.schoolId !== session.schoolId || !(await enabled(actor.schoolId)))
     return 'notFound' as const
+  const data = {
+    status: parsed.data.status,
+    updatedById: actor.userId,
+    ...(parsed.data.status === 'LATE'
+      ? parsed.data.lateMinutes === undefined
+        ? {}
+        : { lateMinutes: parsed.data.lateMinutes }
+      : { lateMinutes: null }),
+    ...(parsed.data.message === undefined ? {} : { message: parsed.data.message }),
+  }
   const updated = await db.attendanceEntry.updateMany({
     where: {
       id: parsed.data.entryId,
       attendanceSessionId: parsed.data.sessionId,
       schoolId: actor.schoolId,
     },
-    data: { status: parsed.data.status, updatedById: actor.userId },
+    data,
   })
   if (updated.count !== 1) return 'notFound' as const
+  revalidatePath('/dashboard/my-classes')
+  revalidatePath('/dashboard/attendance')
   return 'OK' as const
 }
 
 export async function markAllPresentAction(input: unknown) {
   const parsed = sessionSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  const context = await requireSchoolSession()
   const session = await db.attendanceSession.findUnique({
-    where: { id: parsed.data.sessionId },
-    select: { schoolId: true, classPeriodId: true },
+    where: { id_schoolId: { id: parsed.data.sessionId, schoolId: context.schoolId } },
+    select: { schoolId: true, classPeriodId: true, status: true },
   })
   if (!session) return 'notFound' as const
+  if (session.status === 'CANCELLED') return 'sessionCancelled' as const
   const actor = await canOperateClass(session.classPeriodId)
   if (!actor || actor.schoolId !== session.schoolId || !(await enabled(actor.schoolId)))
     return 'notFound' as const
@@ -180,17 +241,21 @@ export async function markAllPresentAction(input: unknown) {
     },
     data: { status: 'PRESENT', updatedById: actor.userId },
   })
+  revalidatePath('/dashboard/my-classes')
+  revalidatePath('/dashboard/attendance')
   return 'OK' as const
 }
 
 export async function validateAttendanceAction(input: unknown) {
   const parsed = sessionSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
+  const context = await requireSchoolSession()
   const session = await db.attendanceSession.findUnique({
-    where: { id: parsed.data.sessionId },
-    select: { schoolId: true, classPeriodId: true },
+    where: { id_schoolId: { id: parsed.data.sessionId, schoolId: context.schoolId } },
+    select: { schoolId: true, classPeriodId: true, status: true },
   })
   if (!session) return 'notFound' as const
+  if (session.status === 'CANCELLED') return 'sessionCancelled' as const
   const actor = await canOperateClass(session.classPeriodId)
   if (!actor || actor.schoolId !== session.schoolId || !(await enabled(actor.schoolId)))
     return 'notFound' as const
@@ -199,6 +264,8 @@ export async function validateAttendanceAction(input: unknown) {
     data: { status: 'VALIDATED', validatedAt: new Date(), updatedById: actor.userId },
   })
   if (updated.count !== 1) return 'notFound' as const
+  revalidatePath('/dashboard/my-classes')
+  revalidatePath('/dashboard/attendance')
   return 'OK' as const
 }
 
