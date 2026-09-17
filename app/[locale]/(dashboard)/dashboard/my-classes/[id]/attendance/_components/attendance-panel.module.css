@@ -1,0 +1,21 @@
+.enterForward {
+  animation: enter-forward 150ms ease-out both;
+}
+
+.enterBack {
+  animation: enter-back 150ms ease-out both;
+}
+
+@keyframes enter-forward {
+  from { opacity: 0; transform: translateX(0.35rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes enter-back {
+  from { opacity: 0; transform: translateX(-0.35rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enterForward, .enterBack { animation: none; }
+}

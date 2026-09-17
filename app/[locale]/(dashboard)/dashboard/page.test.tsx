@@ -9,6 +9,7 @@ const isPaymentsEnabledMock = vi.fn()
 const isEventsEnabledMock = vi.fn()
 const getDashboardOverviewMock = vi.fn()
 const isStripeConfiguredMock = vi.fn(() => true)
+const redirectMock = vi.fn()
 
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
@@ -18,6 +19,7 @@ vi.mock('next-intl/server', () => ({
   setRequestLocale: () => {},
 }))
 vi.mock('@/i18n/routing', () => ({
+  redirect: redirectMock,
   Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
     <a href={href} {...props}>
       {children}
@@ -178,5 +180,55 @@ describe('DashboardPage, parent', () => {
 
     expect(screen.getByText('stats.remainingBalance')).toBeInTheDocument()
     expect(screen.getByText('online-payment')).toBeInTheDocument()
+  })
+})
+
+describe('DashboardPage, teacher-only membership', () => {
+  beforeEach(() => {
+    getSchoolContextMock.mockResolvedValue({
+      role: 'TEACHER',
+      isSuperAdmin: false,
+      schoolId: 'school-1',
+      userId: 'user-1',
+    })
+  })
+
+  it.each(['fr', 'en'])('redirects %s to My classes before dashboard reads', async (locale) => {
+    const redirectSignal = new Error('teacher dashboard redirect')
+    redirectMock.mockImplementationOnce(() => {
+      throw redirectSignal
+    })
+
+    await expect(DashboardPage({ params: Promise.resolve({ locale }) })).rejects.toBe(
+      redirectSignal
+    )
+
+    expect(redirectMock).toHaveBeenCalledWith({ href: '/dashboard/my-classes', locale })
+    expect(requireSchoolScopeMock).not.toHaveBeenCalled()
+    expect(isPaymentsEnabledMock).not.toHaveBeenCalled()
+    expect(isEventsEnabledMock).not.toHaveBeenCalled()
+    expect(getDashboardOverviewMock).not.toHaveBeenCalled()
+    expect(schoolGatewayMock.findActiveById).not.toHaveBeenCalled()
+  })
+
+  it('keeps the administrative dashboard for a super-admin with a teacher membership', async () => {
+    getSchoolContextMock.mockResolvedValue({
+      role: 'TEACHER',
+      isSuperAdmin: true,
+      schoolId: 'school-1',
+      userId: 'user-1',
+    })
+    requireSchoolScopeMock.mockResolvedValue({
+      schoolId: 'school-1',
+      userId: 'user-1',
+      isAdmin: true,
+    })
+    isPaymentsEnabledMock.mockResolvedValue(false)
+    getDashboardOverviewMock.mockResolvedValue(overview(false, true))
+
+    await DashboardPage({ params: Promise.resolve({ locale: 'fr' }) })
+
+    expect(redirectMock).not.toHaveBeenCalled()
+    expect(requireSchoolScopeMock).toHaveBeenCalledOnce()
   })
 })
