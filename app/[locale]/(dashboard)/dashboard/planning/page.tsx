@@ -16,7 +16,7 @@ import {
 import { db } from '@/lib/db'
 import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-schedule-enabled'
 import { requireSchoolScope } from '../../_lib/auth-helper'
-import { restrictedPageMetadata } from '../../_lib/page-metadata'
+import { schoolScopedPageMetadata } from '../../_lib/page-metadata'
 import { ScheduleGrid } from './_components/schedule-grid'
 import { ScheduleSlotDialog } from './_components/schedule-slot-dialog'
 import { SharePublicScheduleLink } from './_components/share-public-schedule-link'
@@ -27,7 +27,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.planning.title')
+  return schoolScopedPageMetadata(locale, 'dashboard.pages.planning.title')
 }
 
 export default async function PlanningPage({ params }: Props) {

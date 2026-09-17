@@ -1653,6 +1653,7 @@
           "class": "Classe",
           "teachers": "Enseignants",
           "noTeachers": "Aucun enseignant",
+          "students": "Élèves",
           "content": "Contenu"
         },
         "duration": {
