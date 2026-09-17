@@ -223,6 +223,7 @@
       "teachers": "Enseignants",
       "events": "Événements",
       "planning": "Planning",
+      "attendance": "Suivi des appels",
       "superAdmins": "Super-admins"
     },
     "pages": {
@@ -609,6 +610,7 @@
           "error": "Erreur lors de la création de la classe",
           "errors": {
             "duplicateName": "Une classe porte déjà ce nom sur cette période",
+            "levelAlreadyAssigned": "Ce niveau possède déjà une classe sur cette période",
             "notFound": "Niveau ou période introuvable",
             "validationError": "Vérifiez les informations saisies"
           }
@@ -638,6 +640,7 @@
           "errors": {
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Niveau ou période introuvable",
+            "levelAlreadyAssigned": "Ce niveau possède déjà une classe sur cette période",
             "teacherNotFound": "Un enseignant sélectionné est introuvable"
           },
           "teachers": "Enseignants",
@@ -657,6 +660,8 @@
           "errors": {
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Classe introuvable",
+            "levelNotFound": "Niveau introuvable",
+            "levelAlreadyAssigned": "Ce niveau possède déjà une classe sur cette période",
             "capacityBelowEnrolled": "La capacité est inférieure au nombre d'élèves déjà affectés",
             "teacherNotFound": "Un enseignant sélectionné est introuvable"
           }

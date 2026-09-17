@@ -789,6 +789,10 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
 
 - **Capacity is per class**, stored on `ClassPeriod.capacity`, required at creation and a positive
   integer. The `max_students_per_class` config only supplies the default value in the creation form.
+- **One active class per level and period.** Creation and a level change both check the active class
+  already assigned to `(schoolId, levelId, periodId)` and return `levelAlreadyAssigned` before any
+  write. Saving a class without changing its level skips that check so legacy duplicates remain
+  editable and can be repaired from the class form instead of being locked in place.
 - **A class is full** when `currentEnrolled >= capacity` → `classFull`.
 - **Capacity cannot drop below current occupancy** → `capacityBelowEnrolled`.
 - **Occupancy counts** assignments with `endAt: null` whose enrollment is `PENDING`, `ACTIVE` or

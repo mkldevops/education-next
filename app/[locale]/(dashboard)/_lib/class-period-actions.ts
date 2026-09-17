@@ -34,6 +34,7 @@ export async function updateClassPeriodAction(
   const result = await updateClassPeriod({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/classes')
+  revalidatePath('/dashboard/levels')
   revalidatePath(`/dashboard/classes/${id}`)
   return result
 }

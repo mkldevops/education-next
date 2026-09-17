@@ -89,11 +89,27 @@ export default async function ClassDetailPage({ params }: Props) {
     )
 
   const classPeriod = resolution.resource
-  const [teachers, inactiveTeacherAssignments, paymentsEnabled] = await Promise.all([
+  const [teachers, levels, inactiveTeacherAssignments, paymentsEnabled] = await Promise.all([
     db.teacher.findMany({
       where: { schoolId: classPeriod.schoolId, isActive: true },
       select: { id: true, firstName: true, lastName: true },
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    }),
+    db.level.findMany({
+      where: {
+        schoolId: classPeriod.schoolId,
+        isActive: true,
+        OR: [
+          { id: classPeriod.levelId },
+          {
+            classPeriods: {
+              none: { periodId: classPeriod.periodId, isActive: true },
+            },
+          },
+        ],
+      },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
     }),
     classPeriodGateway.listInactiveTeacherAssignments(classPeriod.schoolId, classPeriod.id),
     isPaymentsEnabled(classPeriod.schoolId),
@@ -160,8 +176,10 @@ export default async function ClassDetailPage({ params }: Props) {
               id: classPeriod.id,
               name: classPeriod.name,
               capacity: classPeriod.capacity,
+              levelId: classPeriod.levelId,
               teacherIds: classPeriod.teachers.map(({ teacherId }) => teacherId),
             }}
+            levels={levels}
             teachers={teacherOptions}
           />
         </div>

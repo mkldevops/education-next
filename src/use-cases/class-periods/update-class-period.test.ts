@@ -3,11 +3,16 @@ import { updateClassPeriod } from './update-class-period'
 
 type ClassPeriodGw = Parameters<typeof updateClassPeriod>[1]
 type TeacherGw = Parameters<typeof updateClassPeriod>[2]
+type LevelGw = Parameters<typeof updateClassPeriod>[3]
 
 const schoolId = '00000000-0000-0000-0000-000000000001'
 
 class ClassPeriodGatewaySpy {
-  classPeriodsByIdMap: Record<string, { id: string; name: string; capacity: number }> = {}
+  classPeriodsByIdMap: Record<
+    string,
+    { id: string; name: string; capacity: number; levelId: string; periodId: string }
+  > = {}
+  existingClassPeriod: unknown = null
   enrolledCountToReturn = 0
   updatedSchoolId: string | null = null
   updatedId: string | null = null
@@ -38,7 +43,7 @@ class ClassPeriodGatewaySpy {
   }
 
   async findByLevelAndPeriod() {
-    return null
+    return this.existingClassPeriod
   }
 }
 
@@ -50,19 +55,33 @@ class TeacherGatewaySpy {
   }
 }
 
+class LevelGatewaySpy {
+  levelToReturn: { id: string } | null = { id: 'level' }
+
+  async findById() {
+    return this.levelToReturn
+  }
+}
+
 describe('updateClassPeriod', () => {
   let gateway: ClassPeriodGatewaySpy
   let teacherGateway: TeacherGatewaySpy
+  let levelGateway: LevelGatewaySpy
   const classPeriodId1 = '123e4567-e89b-12d3-a456-426614174001'
+  const currentLevelId = '123e4567-e89b-12d3-a456-426614174002'
+  const periodId = '123e4567-e89b-12d3-a456-426614174003'
 
   beforeEach(() => {
     gateway = new ClassPeriodGatewaySpy()
     teacherGateway = new TeacherGatewaySpy()
+    levelGateway = new LevelGatewaySpy()
     gateway.classPeriodsByIdMap = {
       [classPeriodId1]: {
         id: classPeriodId1,
         name: 'Class A',
         capacity: 30,
+        levelId: currentLevelId,
+        periodId,
       },
     }
   })
@@ -186,6 +205,75 @@ describe('updateClassPeriod', () => {
 
     // THEN
     expect(result).toHaveProperty('id', classPeriodId1)
+  })
+
+  it('updates the class level when the target level is available in the period', async () => {
+    // GIVEN
+    const levelId = '123e4567-e89b-12d3-a456-426614174004'
+
+    // WHEN
+    const result = await updateClassPeriod(
+      { schoolId, id: classPeriodId1, levelId },
+      gateway as unknown as ClassPeriodGw,
+      teacherGateway as unknown as TeacherGw,
+      levelGateway as unknown as LevelGw
+    )
+
+    // THEN
+    expect(result).toHaveProperty('levelId', levelId)
+    expect(gateway.updatedData).toMatchObject({ levelId })
+  })
+
+  it('fails when the target level does not belong to the school', async () => {
+    // GIVEN
+    levelGateway.levelToReturn = null
+    const levelId = '123e4567-e89b-12d3-a456-426614174004'
+
+    // WHEN
+    const result = await updateClassPeriod(
+      { schoolId, id: classPeriodId1, levelId },
+      gateway as unknown as ClassPeriodGw,
+      teacherGateway as unknown as TeacherGw,
+      levelGateway as unknown as LevelGw
+    )
+
+    // THEN
+    expect(result).toBe('levelNotFound')
+    expect(gateway.updatedData).toBeNull()
+  })
+
+  it('fails when the target level already has a class in the period', async () => {
+    // GIVEN
+    gateway.existingClassPeriod = { id: 'other-class' }
+    const levelId = '123e4567-e89b-12d3-a456-426614174004'
+
+    // WHEN
+    const result = await updateClassPeriod(
+      { schoolId, id: classPeriodId1, levelId },
+      gateway as unknown as ClassPeriodGw,
+      teacherGateway as unknown as TeacherGw,
+      levelGateway as unknown as LevelGw
+    )
+
+    // THEN
+    expect(result).toBe('levelAlreadyAssigned')
+    expect(gateway.updatedData).toBeNull()
+  })
+
+  it('allows saving the current level when duplicate legacy data exists', async () => {
+    // GIVEN
+    gateway.existingClassPeriod = { id: 'legacy-duplicate' }
+
+    // WHEN
+    const result = await updateClassPeriod(
+      { schoolId, id: classPeriodId1, levelId: currentLevelId },
+      gateway as unknown as ClassPeriodGw,
+      teacherGateway as unknown as TeacherGw,
+      levelGateway as unknown as LevelGw
+    )
+
+    // THEN
+    expect(result).toHaveProperty('levelId', currentLevelId)
   })
 
   it('replaces the class teachers when teacher ids are supplied', async () => {

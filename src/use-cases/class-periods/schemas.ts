@@ -18,6 +18,7 @@ export const updateClassPeriodSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(250).optional(),
   capacity: z.number().int().positive().optional(),
+  levelId: z.string().uuid().optional(),
   teacherIds: teacherIdsSchema.optional(),
 })
 

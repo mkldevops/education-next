@@ -222,6 +222,7 @@
       "teachers": "Teachers",
       "events": "Events",
       "planning": "Schedule",
+      "attendance": "Attendance tracking",
       "superAdmins": "Super admins"
     },
     "pages": {
@@ -608,6 +609,7 @@
           "error": "Error while creating the class",
           "errors": {
             "duplicateName": "A class already has this name for this period",
+            "levelAlreadyAssigned": "This level already has a class in this period",
             "notFound": "Level or period not found",
             "validationError": "Check the information you entered"
           }
@@ -637,6 +639,7 @@
           "errors": {
             "validationError": "Check the information you entered",
             "notFound": "Level or period not found",
+            "levelAlreadyAssigned": "This level already has a class in this period",
             "teacherNotFound": "One selected teacher was not found"
           },
           "teachers": "Teachers",
@@ -656,6 +659,8 @@
           "errors": {
             "validationError": "Check the information you entered",
             "notFound": "Class not found",
+            "levelNotFound": "Level not found",
+            "levelAlreadyAssigned": "This level already has a class in this period",
             "capacityBelowEnrolled": "Capacity is below the number of students already assigned",
             "teacherNotFound": "One selected teacher was not found"
           }

@@ -139,8 +139,19 @@ export default async function ClassesPage({ params }: Props) {
             id: item.id,
             name: item.name,
             capacity: item.capacity,
+            levelId: item.levelId,
             teacherIds: item.teachers.map(({ teacherId }) => teacherId),
           }}
+          levels={levels.filter(
+            (level) =>
+              level.id === item.levelId ||
+              !classes.some(
+                (candidate) =>
+                  candidate.id !== item.id &&
+                  candidate.periodId === item.periodId &&
+                  candidate.levelId === level.id
+              )
+          )}
           teachers={teacherOptions}
         />
       ),
