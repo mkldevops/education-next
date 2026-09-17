@@ -1657,6 +1657,7 @@
           "class": "Class",
           "teachers": "Teachers",
           "noTeachers": "No teacher",
+          "students": "Students",
           "content": "Content"
         },
         "duration": {

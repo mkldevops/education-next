@@ -8,8 +8,31 @@ async function isSchoolAdmin(): Promise<boolean> {
   return context !== null && isActiveSchoolAdmin(context)
 }
 
+async function hasSchoolScope(): Promise<boolean> {
+  const context = await getSchoolContext()
+  if (!context) return false
+
+  return (
+    context.isSuperAdmin ||
+    context.role === 'ADMIN' ||
+    (context.role === 'PARENT' && context.familyId !== null)
+  )
+}
+
 export async function restrictedPageMetadata(locale: string, titleKey: string): Promise<Metadata> {
   const [t, allowed] = await Promise.all([getTranslations({ locale }), isSchoolAdmin()])
+
+  return {
+    title: allowed ? t(titleKey) : t('errorPages.404.title'),
+  }
+}
+
+/** Titre des pages lisibles par un administrateur ou un parent rattaché. */
+export async function schoolScopedPageMetadata(
+  locale: string,
+  titleKey: string
+): Promise<Metadata> {
+  const [t, allowed] = await Promise.all([getTranslations({ locale }), hasSchoolScope()])
 
   return {
     title: allowed ? t(titleKey) : t('errorPages.404.title'),
