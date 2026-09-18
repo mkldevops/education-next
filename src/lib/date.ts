@@ -21,13 +21,18 @@ export function formatDateTime(value: DateInput, locale: string) {
  *
  * L'anniversaire n'est compté que s'il est passé : un élève né le 31/12 a encore l'âge de
  * l'année précédente le 30/12, ce que la simple différence de millésimes fait faux.
+ *
+ * Une date de naissance est un jour stocké à minuit UTC : les composants sont lus en UTC, sans
+ * quoi un lecteur à l'ouest de Greenwich la verrait la veille. `at` est requis : rendu par un
+ * composant client, l'âge doit recevoir la date du serveur, faute de quoi serveur et navigateur
+ * divergent d'un jour autour d'un anniversaire et l'hydratation échoue.
  */
-export function calculateAge(birthday: DateInput, at: DateInput = new Date()) {
+export function calculateAge(birthday: DateInput, at: DateInput) {
   const birth = new Date(birthday)
   const reference = new Date(at)
-  let age = reference.getFullYear() - birth.getFullYear()
-  const monthDelta = reference.getMonth() - birth.getMonth()
-  if (monthDelta < 0 || (monthDelta === 0 && reference.getDate() < birth.getDate())) {
+  let age = reference.getUTCFullYear() - birth.getUTCFullYear()
+  const monthDelta = reference.getUTCMonth() - birth.getUTCMonth()
+  if (monthDelta < 0 || (monthDelta === 0 && reference.getUTCDate() < birth.getUTCDate())) {
     age -= 1
   }
   return age

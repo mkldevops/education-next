@@ -1122,6 +1122,10 @@ A student is **skipped**, with the reason reported, when:
   are nullable. A paper enrollment sheet often carries neither, and a required field forced the
   operator to invent a value that then read as real data. A form left blank sends `undefined` on
   create and `null` on update, which clears the column; age is simply not shown.
+- **A student's age is computed by `calculateAge` alone** (`src/lib/date.ts`): completed years,
+  a birthday counting only once passed, the stored day read in UTC. The reference date is always
+  explicit; the students table receives it from the server so its client render cannot disagree
+  with the server's around a birthday.
 - **A family may be created without any parent**, on the dashboard and through `enroll_family` alike.
 - **Languages spoken at home belong to the family, not the student**, and are always optional.
   `Family.languagesAtHome` is a JSON list of free-text names, at most 20 entries of 50 characters

@@ -89,6 +89,23 @@ describe('calculateAge', () => {
     expect(calculateAge('2016-02-29', '2026-02-28')).toBe(9)
     expect(calculateAge('2016-02-29', '2026-03-01')).toBe(10)
   })
+
+  it('reads the stored birthday day whatever the runtime time zone', () => {
+    const originalTz = process.env.TZ
+    try {
+      for (const tz of ['UTC', 'America/Los_Angeles', 'Pacific/Kiritimati']) {
+        process.env.TZ = tz
+        expect(calculateAge('2016-01-12', '2026-01-12T00:00:00Z')).toBe(10)
+        expect(calculateAge('2016-01-12', '2026-01-11T23:59:59Z')).toBe(9)
+      }
+    } finally {
+      if (originalTz === undefined) {
+        delete process.env.TZ
+      } else {
+        process.env.TZ = originalTz
+      }
+    }
+  })
 })
 
 describe('formatEventDate', () => {

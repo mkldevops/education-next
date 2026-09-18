@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { languagesOf } from '@/domain/family'
 import { enrollmentBalances } from '@/domain/payment'
+import { calculateAge } from '@/lib/date'
 import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
@@ -114,9 +115,7 @@ export function deriveStudentDetail(student: StudentDetail) {
     fullName: `${student.person.name} ${student.person.lastname}`,
     family: student.person.families[0]?.family ?? null,
     birthday,
-    age: birthday
-      ? Math.floor((Date.now() - birthday.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-      : null,
+    age: birthday ? calculateAge(birthday, new Date()) : null,
     totalDue,
     totalPaid,
     remaining: Math.max(0, totalDue - totalPaid),
