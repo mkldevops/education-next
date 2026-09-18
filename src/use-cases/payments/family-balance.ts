@@ -1,3 +1,4 @@
+import { resolveDebtorFamily } from '@/domain/family-debtor'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
@@ -71,7 +72,7 @@ export function calculateFamilyBalance(enrollments: BalanceEnrollment[]): Family
 }
 
 export async function getFamilyBalance(schoolId: string, familyId: string) {
-  const enrollments = await db.enrollment.findMany({
+  const rows = await db.enrollment.findMany({
     where: {
       schoolId,
       status: { in: ['PENDING', 'ACTIVE'] },
@@ -92,8 +93,21 @@ export async function getFamilyBalance(schoolId: string, familyId: string) {
         where: { isActive: true },
         select: { amount: true },
       },
+      student: {
+        select: {
+          person: {
+            select: {
+              families: { select: { familyId: true, relationType: true } },
+            },
+          },
+        },
+      },
     },
   })
+
+  const enrollments = rows
+    .filter((row) => resolveDebtorFamily(row.student.person.families)?.familyId === familyId)
+    .map(({ student: _student, ...enrollment }) => enrollment)
 
   return calculateFamilyBalance(enrollments)
 }

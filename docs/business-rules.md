@@ -863,11 +863,16 @@ PENDING ──▶ ACTIVE ──▶ COMPLETED
 
 ### Creation
 
-Atomic in one `db.$transaction`: the capacity count, the enrollment, and the class assignment
-(`src/use-cases/enrollments/create-enrollment.ts`).
+Atomic in one `db.$transaction`: the duplicate guard, the capacity count, the enrollment, and the
+class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
 
 - Student, plan and class must all exist → `notFound`.
-- **One enrollment per student per class** → `duplicateEnrollment`.
+- **One `PENDING` or `ACTIVE` enrollment per student per period** → `duplicateEnrollment`. The guard
+  is read inside the transaction, after a transaction-scoped advisory lock on (school, student,
+  period) (`enrollmentGateway.lockStudentInPeriod`), so two concurrent creations for the same
+  student cannot both find the period free. No unique index can carry this rule: the period lives
+  on the assignment's class, not on `Enrollment`. A `COMPLETED` enrollment leaves re-enrollment
+  open.
 - **Capacity is re-counted inside the transaction**, not before it, so two concurrent enrollments
   cannot both pass the check → `classFull`.
 
@@ -944,6 +949,10 @@ Screens show what the family handed over instead: `groupFamilyPayments()` in
 - **One enrollment appears at most once per payment**, so two identical cash payments recorded back
   to back stay two payments.
 - Enrollment pages still show the part that enrollment received.
+- **The period filter never cuts a payment in half.** The `/dashboard/payments` list groups every
+  active payment first, then keeps a family payment as soon as one of its rows falls in the
+  selected period — through `filterFamilyPaymentsByPeriod()` — and shows the full amount, with the
+  part specific to that period underneath when it differs.
 
 ### Collection statistics
 
@@ -968,6 +977,13 @@ announced figures cannot drift from what a family is asked to pay.
   cost does not grow with the school's payment history.
 - **Follow-up lists a family, not an enrollment**, through `student.person.families`, the same link
   used by the family balance. An enrollment attached to no family is owed by nobody and ignored.
+  A student attached to several families (shared custody) owes only one of them:
+  `resolveDebtorFamily()` (`src/domain/family-debtor.ts`) picks the link with the highest-priority
+  `relationType` — parent, then tutor, grandparent, sibling, other, in the order `RelationType` is
+  declared — tied links breaking on the lowest `familyId`. `familiesOutstanding`,
+  `findPayableByFamily` and the `/dashboard/families` list all resolve the same debtor, so a family
+  never sees another family's debt on its own balance, and the follow-up total always reconciles
+  with the sum of its rows.
 
 ### Refunds
 

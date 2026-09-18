@@ -1,3 +1,4 @@
+import { resolveDebtorFamily } from '@/domain/family-debtor'
 import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
@@ -93,34 +94,48 @@ export const enrollmentGateway = {
   },
 
   /**
-   * Inscription en cours du même élève sur la **période** de cette classe, paiements actifs
-   * comptés : un remplacement ne doit jamais effacer une inscription déjà réglée.
+   * Sérialise les inscriptions d'un même élève sur une même période, jusqu'à la fin de `tx`.
+   *
+   * Aucune contrainte d'unicité ne peut doubler le garde de doublon : la période n'est pas
+   * portée par `Enrollment` mais par la classe de l'affectation. Sans ce verrou, deux
+   * transactions lisent chacune une période libre et créent deux inscriptions en cours (#316).
    */
-  findActiveInPeriod: async (schoolId: string, studentId: string, classPeriodId: string) => {
-    const classPeriod = await db.classPeriod.findUnique({
-      where: { id_schoolId: { id: classPeriodId, schoolId } },
-      select: { periodId: true },
-    })
-    if (!classPeriod) return null
+  lockStudentInPeriod: async (
+    tx: Prisma.TransactionClient,
+    schoolId: string,
+    studentId: string,
+    periodId: string
+  ) => {
+    const key = `enrollment:${schoolId}:${studentId}:${periodId}`
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`
+  },
 
-    return db.enrollment.findFirst({
+  /**
+   * Inscription en cours du même élève sur la période, paiements actifs comptés : un
+   * remplacement ne doit jamais effacer une inscription déjà réglée.
+   *
+   * À lire dans la transaction qui écrit, après `lockStudentInPeriod` : lue avant, elle ne
+   * protège pas d'une inscription concurrente.
+   */
+  findActiveInPeriod: (
+    tx: Prisma.TransactionClient,
+    schoolId: string,
+    studentId: string,
+    periodId: string
+  ) =>
+    tx.enrollment.findFirst({
       where: {
         schoolId,
         studentId,
         status: { in: ['PENDING', 'ACTIVE'] },
-        classAssignments: {
-          some: {
-            classPeriod: { periodId: classPeriod.periodId },
-          },
-        },
+        classAssignments: { some: { classPeriod: { periodId } } },
       },
       select: {
         id: true,
         status: true,
         _count: { select: { payments: { where: { isActive: true } } } },
       },
-    })
-  },
+    }),
 
   updateDiscount: (schoolId: string, id: string, discount: number, totalAmount: number) =>
     db.enrollment.update({
@@ -183,8 +198,14 @@ export const enrollmentGateway = {
       take: 10,
     }),
 
-  findPayableByFamily: (schoolId: string, familyId: string) =>
-    db.enrollment.findMany({
+  /**
+   * Inscriptions payables par une famille : celles de ses élèves dont elle est la famille
+   * redevable. `families: { some: { familyId } }` ne suffit pas — un élève en garde partagée
+   * est rattaché à plusieurs familles, et une seule d'entre elles doit porter la dette
+   * (`resolveDebtorFamily`, appliqué comme dans `familiesOutstanding`).
+   */
+  findPayableByFamily: async (schoolId: string, familyId: string) => {
+    const rows = await db.enrollment.findMany({
       where: {
         schoolId,
         status: { in: ['PENDING', 'ACTIVE'] },
@@ -196,9 +217,25 @@ export const enrollmentGateway = {
           },
         },
       },
-      include: { payments: { where: { isActive: true } } },
+      include: {
+        payments: { where: { isActive: true } },
+        student: {
+          select: {
+            person: {
+              select: {
+                families: { select: { familyId: true, relationType: true } },
+              },
+            },
+          },
+        },
+      },
       orderBy: [{ registeredAt: 'asc' }, { id: 'asc' }],
-    }),
+    })
+
+    return rows
+      .filter((row) => resolveDebtorFamily(row.student.person.families)?.familyId === familyId)
+      .map(({ student: _student, ...enrollment }) => enrollment)
+  },
 
   findEnrolledStudentIds: async (schoolId: string, periodId: string, studentIds: string[]) => {
     if (studentIds.length === 0) return new Set<string>()
