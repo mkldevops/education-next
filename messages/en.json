@@ -788,6 +788,7 @@
         "pending": "Pending",
         "noPayments": "No payments registered",
         "noPaymentsInPeriod": "No payment in period {period}. Record a payment or switch period.",
+        "periodShare": "incl. {amount} for {period}",
         "stats": {
           "due": "Total due",
           "collected": "Collected",

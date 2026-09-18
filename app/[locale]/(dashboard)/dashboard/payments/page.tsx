@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { groupFamilyPayments } from '@/domain/payment'
+import { filterFamilyPaymentsByPeriod, groupFamilyPayments } from '@/domain/payment'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
@@ -44,21 +44,9 @@ export default async function PaymentsPage({ params }: Props) {
   const selectedPeriod = await getSelectedPeriod(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
-  const whereClause = {
-    schoolId: scope.schoolId,
-    isActive: true,
-    ...(selectedPeriodId
-      ? {
-          enrollment: {
-            classAssignments: { some: { classPeriod: { periodId: selectedPeriodId } } },
-          },
-        }
-      : {}),
-  }
-
   const [payments, stats] = await Promise.all([
     db.payment.findMany({
-      where: whereClause,
+      where: { schoolId: scope.schoolId, isActive: true },
       include: {
         family: true,
         enrollment: {
@@ -68,6 +56,7 @@ export default async function PaymentsPage({ params }: Props) {
                 person: true,
               },
             },
+            classAssignments: { include: { classPeriod: { select: { periodId: true } } } },
           },
         },
       },
@@ -76,7 +65,16 @@ export default async function PaymentsPage({ params }: Props) {
     getPaymentStats(scope.schoolId, selectedPeriodId),
   ])
 
-  const paymentRows = groupFamilyPayments(payments).map((payment) => ({
+  const familyPayments = groupFamilyPayments(payments)
+  const scopedPayments = selectedPeriodId
+    ? filterFamilyPaymentsByPeriod(familyPayments, (line) =>
+        line.enrollment.classAssignments.some(
+          (assignment) => assignment.classPeriod.periodId === selectedPeriodId
+        )
+      )
+    : familyPayments.map((payment) => ({ ...payment, periodAmount: payment.amount }))
+
+  const paymentRows = scopedPayments.map((payment) => ({
     id: payment.id,
     familyId: payment.familyId,
     familyName: payment.lines[0].family.name,
@@ -87,6 +85,7 @@ export default async function PaymentsPage({ params }: Props) {
       )
       .join(', '),
     amount: payment.amount,
+    periodAmount: payment.periodAmount,
     method: payment.method,
     reference: payment.reference,
     paidAt: payment.paidAt,

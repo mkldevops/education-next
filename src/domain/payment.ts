@@ -214,3 +214,25 @@ export function groupFamilyPayments<T extends GroupablePayment>(
     .sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime() || b.lastCreatedAt - a.lastCreatedAt)
     .map(({ key: _key, lastCreatedAt: _lastCreatedAt, ...group }) => group)
 }
+
+/**
+ * La base garde une ligne `Payment` par inscription, réparties sur des périodes différentes.
+ * Filtrer ces lignes avant `groupFamilyPayments` coupait un paiement famille en morceaux : la
+ * période choisie ne montrait que sa part, jamais la somme remise par la famille.
+ *
+ * On garde donc le paiement entier dès qu'une de ses lignes tombe dans la période choisie, et on
+ * ajoute `periodAmount`, la part propre à cette période, pour l'affichage.
+ */
+export function filterFamilyPaymentsByPeriod<T extends GroupablePayment>(
+  familyPayments: Array<FamilyPayment<T>>,
+  isInPeriod: (line: T) => boolean
+): Array<FamilyPayment<T> & { periodAmount: number }> {
+  return familyPayments
+    .filter((payment) => payment.lines.some(isInPeriod))
+    .map((payment) => ({
+      ...payment,
+      periodAmount: roundHalfUp(
+        payment.lines.filter(isInPeriod).reduce((sum, line) => sum + Number(line.amount), 0)
+      ),
+    }))
+}

@@ -949,6 +949,10 @@ Screens show what the family handed over instead: `groupFamilyPayments()` in
 - **One enrollment appears at most once per payment**, so two identical cash payments recorded back
   to back stay two payments.
 - Enrollment pages still show the part that enrollment received.
+- **The period filter never cuts a payment in half.** The `/dashboard/payments` list groups every
+  active payment first, then keeps a family payment as soon as one of its rows falls in the
+  selected period — through `filterFamilyPaymentsByPeriod()` — and shows the full amount, with the
+  part specific to that period underneath when it differs.
 
 ### Collection statistics
 
