@@ -13,6 +13,7 @@ const classPeriodGatewayMock = {
   countEnrolled: vi.fn(),
 }
 const enrollmentGatewayMock = {
+  lockStudentInPeriod: vi.fn(),
   findActiveInPeriod: vi.fn(),
 }
 const dbMock = {
@@ -55,6 +56,7 @@ describe('createEnrollment', () => {
     isPaymentsEnabledMock.mockResolvedValue(true)
     classPeriodGatewayMock.findById = vi.fn()
     classPeriodGatewayMock.countEnrolled = vi.fn()
+    enrollmentGatewayMock.lockStudentInPeriod = vi.fn()
     enrollmentGatewayMock.findActiveInPeriod = vi.fn()
     dbMock.$transaction = vi.fn(async (cb) => {
       const tx = {
@@ -146,6 +148,7 @@ describe('createEnrollment', () => {
     classPeriodGatewayMock.findById.mockResolvedValue({
       id: validInput.classPeriodId,
       capacity: 10,
+      periodId: 'period-1',
     })
   }
 
@@ -158,6 +161,29 @@ describe('createEnrollment', () => {
     })
 
     expect(await createEnrollment(validInput)).toBe('duplicateEnrollment')
+  })
+
+  it('reads the duplicate guard inside the transaction, after locking the student period', async () => {
+    mockValidReferences()
+    const calls: string[] = []
+    let transactionTx: unknown
+    dbMock.$transaction = vi.fn(async (cb) => {
+      transactionTx = { enrollment: {}, classAssignment: {} }
+      return cb(transactionTx)
+    })
+    enrollmentGatewayMock.lockStudentInPeriod.mockImplementation(async () => {
+      calls.push('lock')
+    })
+    enrollmentGatewayMock.findActiveInPeriod.mockImplementation(async () => {
+      calls.push('read')
+      return { id: 'existing', status: 'ACTIVE', _count: { payments: 0 } }
+    })
+
+    expect(await createEnrollment(validInput)).toBe('duplicateEnrollment')
+    expect(calls).toEqual(['lock', 'read'])
+    const guardArgs = [transactionTx, schoolId, validInput.studentId, 'period-1']
+    expect(enrollmentGatewayMock.lockStudentInPeriod).toHaveBeenCalledWith(...guardArgs)
+    expect(enrollmentGatewayMock.findActiveInPeriod).toHaveBeenCalledWith(...guardArgs)
   })
 
   it('cancels the existing enrollment when the caller asks to replace it', async () => {

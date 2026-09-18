@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import type { PrismaClient } from '@/generated/prisma/client'
 import { createUnguardedArchivedClient } from '@/lib/db'
+import { createEnrollment } from '@/use-cases/enrollments/create-enrollment'
 
 /**
  * `findStudentIdsEnrolledInPeriod` sur une vraie base : le point de contrôle est que la
@@ -140,8 +141,28 @@ describe.skipIf(!databaseUrl)('findStudentIdsEnrolledInPeriod sur base réelle',
     // `duplicateEnrollment`, et un remplacement annulerait une inscription vivante.
     expect(enrolled.has(student)).toBe(true)
     expect(
-      await enrollmentGateway.findActiveInPeriod(schoolId, student, classPeriodId)
+      await enrollmentGateway.findActiveInPeriod(raw, schoolId, student, periodId)
     ).not.toBeNull()
+  })
+
+  it("n'ouvre qu'une inscription quand deux créations concurrentes visent la même période", async () => {
+    // GIVEN un élève sans inscription sur la période
+    const student = await createStudent('Concurrent')
+    const input = {
+      schoolId,
+      studentId: student,
+      planId,
+      classPeriodId,
+      discount: 0,
+      canLeaveAlone: false,
+    }
+
+    // WHEN deux créations partent en même temps
+    const results = await Promise.all([createEnrollment(input), createEnrollment(input)])
+
+    // THEN la seconde lit l'inscription de la première sous le verrou (#316)
+    expect(results.filter((result) => result === 'duplicateEnrollment')).toHaveLength(1)
+    expect(await raw.enrollment.count({ where: { schoolId, studentId: student } })).toBe(1)
   })
 
   it.each([
