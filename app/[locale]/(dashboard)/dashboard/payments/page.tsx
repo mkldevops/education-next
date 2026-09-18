@@ -56,7 +56,7 @@ export default async function PaymentsPage({ params }: Props) {
                 person: true,
               },
             },
-            classAssignments: { include: { classPeriod: { select: { periodId: true } } } },
+            classAssignments: { select: { classPeriod: { select: { periodId: true } } } },
           },
         },
       },
