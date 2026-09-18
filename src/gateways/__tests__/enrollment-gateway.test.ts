@@ -217,3 +217,125 @@ describe.skipIf(!databaseUrl)('findStudentIdsEnrolledInPeriod sur base réelle',
     expect(enrolled.has(studentId)).toBe(false)
   })
 })
+
+describe.skipIf(!databaseUrl)('findPayableByFamily sur base réelle', () => {
+  let db2: PrismaClient
+  let school2Id: string
+  let plan2Id: string
+  let family1Id: string
+  let family2Id: string
+
+  beforeAll(async () => {
+    db2 = createUnguardedArchivedClient()
+    const suffix = `${Date.now().toString(36)}-payable`
+
+    const school = await db2.school.create({
+      data: { name: `payable ${suffix}`, slug: `payable-${suffix}` },
+    })
+    school2Id = school.id
+
+    const admin = await db2.user.create({ data: { email: `admin-${suffix}@payable.test` } })
+    const plan = await db2.plan.create({
+      data: { schoolId: school2Id, name: `plan ${suffix}`, amount: 180 },
+    })
+    plan2Id = plan.id
+
+    const [family1, family2] = await Promise.all([
+      db2.family.create({
+        data: { schoolId: school2Id, name: 'Famille A', createdById: admin.id },
+      }),
+      db2.family.create({
+        data: { schoolId: school2Id, name: 'Famille B', createdById: admin.id },
+      }),
+    ])
+    family1Id = family1.id
+    family2Id = family2.id
+
+    // Élève propre à la famille A : seule inscription attendue sur son solde.
+    const ownPerson = await db2.person.create({
+      data: { schoolId: school2Id, name: 'Léa', lastname: 'Propre' },
+    })
+    await db2.familyPerson.create({
+      data: {
+        schoolId: school2Id,
+        familyId: family1Id,
+        personId: ownPerson.id,
+        relationType: 'OTHER',
+      },
+    })
+    const ownStudent = await db2.student.create({
+      data: { schoolId: school2Id, personId: ownPerson.id },
+    })
+    await db2.enrollment.create({
+      data: {
+        schoolId: school2Id,
+        studentId: ownStudent.id,
+        planId: plan2Id,
+        totalAmount: 180,
+        status: 'ACTIVE',
+      },
+    })
+
+    // Élève en garde partagée : rattaché aux deux familles, un parent dans B, un tiers dans A.
+    // Seule B doit voir son inscription.
+    const sharedPerson = await db2.person.create({
+      data: { schoolId: school2Id, name: 'Noa', lastname: 'Partagé' },
+    })
+    await db2.familyPerson.createMany({
+      data: [
+        {
+          schoolId: school2Id,
+          familyId: family1Id,
+          personId: sharedPerson.id,
+          relationType: 'OTHER',
+        },
+        {
+          schoolId: school2Id,
+          familyId: family2Id,
+          personId: sharedPerson.id,
+          relationType: 'PARENT',
+        },
+      ],
+    })
+    const sharedStudent = await db2.student.create({
+      data: { schoolId: school2Id, personId: sharedPerson.id },
+    })
+    await db2.enrollment.create({
+      data: {
+        schoolId: school2Id,
+        studentId: sharedStudent.id,
+        planId: plan2Id,
+        totalAmount: 180,
+        status: 'ACTIVE',
+      },
+    })
+  }, 60_000)
+
+  afterAll(async () => {
+    if (!db2) return
+    await db2.enrollment.deleteMany({ where: { schoolId: school2Id } })
+    await db2.plan.deleteMany({ where: { schoolId: school2Id } })
+    await db2.student.deleteMany({ where: { schoolId: school2Id } })
+    await db2.familyPerson.deleteMany({ where: { schoolId: school2Id } })
+    await db2.person.deleteMany({ where: { schoolId: school2Id } })
+    await db2.family.deleteMany({ where: { schoolId: school2Id } })
+    await db2.school.delete({ where: { id: school2Id } })
+    await db2.$disconnect()
+  }, 60_000)
+
+  it('attribue la dette du garde partagé à la seule famille prioritaire (PARENT)', async () => {
+    const payableByA = await enrollmentGateway.findPayableByFamily(school2Id, family1Id)
+    const payableByB = await enrollmentGateway.findPayableByFamily(school2Id, family2Id)
+
+    expect(payableByA).toHaveLength(1)
+    expect(Number(payableByA[0].totalAmount)).toBe(180)
+    expect(payableByB).toHaveLength(1)
+    expect(Number(payableByB[0].totalAmount)).toBe(180)
+
+    // Les deux familles ne doivent jamais se recouper : sinon la même inscription est
+    // réclamée deux fois.
+    const idsA = new Set(payableByA.map((enrollment) => enrollment.id))
+    const idsB = new Set(payableByB.map((enrollment) => enrollment.id))
+    expect([...idsA].some((id) => idsB.has(id))).toBe(false)
+  })
+})
