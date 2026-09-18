@@ -113,6 +113,11 @@ describe('calculateFamilyBalance', () => {
 describe('getFamilyBalance', () => {
   const schoolId = 'school-1'
 
+  /** Un élève rattaché à `family-1` seule, comme la grande majorité des données réelles. */
+  const debtorOfFamily1 = {
+    student: { person: { families: [{ familyId: 'family-1', relationType: 'OTHER' }] } },
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
     dbMock.enrollment.findMany.mockResolvedValue([])
@@ -145,6 +150,7 @@ describe('getFamilyBalance', () => {
         totalAmount: 600,
         discount: 0,
         payments: [{ amount: 600 }],
+        ...debtorOfFamily1,
       },
       {
         id: 'enrollment-2026',
@@ -152,6 +158,7 @@ describe('getFamilyBalance', () => {
         totalAmount: 800,
         discount: 0,
         payments: [{ amount: 600 }],
+        ...debtorOfFamily1,
       },
     ])
 
@@ -170,6 +177,7 @@ describe('getFamilyBalance', () => {
         totalAmount: 180,
         discount: 0,
         payments: [],
+        ...debtorOfFamily1,
       }))
     )
 
@@ -188,6 +196,7 @@ describe('getFamilyBalance', () => {
         totalAmount: 600,
         discount: 0,
         payments: [{ amount: 500 }],
+        ...debtorOfFamily1,
       },
       {
         id: 'enrollment-2026',
@@ -195,6 +204,7 @@ describe('getFamilyBalance', () => {
         totalAmount: 800,
         discount: 0,
         payments: [],
+        ...debtorOfFamily1,
       },
     ])
 
@@ -205,5 +215,65 @@ describe('getFamilyBalance', () => {
       'enrollment-2025',
       'enrollment-2026',
     ])
+  })
+
+  it('excludes a shared-custody student whose parent family is elsewhere', async () => {
+    dbMock.enrollment.findMany.mockResolvedValue([
+      {
+        id: 'enrollment-own',
+        status: 'ACTIVE',
+        totalAmount: 180,
+        discount: 0,
+        payments: [],
+        ...debtorOfFamily1,
+      },
+      {
+        // Élève en garde partagée : rattaché à family-1 (OTHER) et family-2 (PARENT).
+        // family-2 est prioritaire, donc family-1 ne doit rien voir de cette inscription.
+        id: 'enrollment-shared',
+        status: 'ACTIVE',
+        totalAmount: 300,
+        discount: 0,
+        payments: [],
+        student: {
+          person: {
+            families: [
+              { familyId: 'family-1', relationType: 'OTHER' },
+              { familyId: 'family-2', relationType: 'PARENT' },
+            ],
+          },
+        },
+      },
+    ])
+
+    const balance = await getFamilyBalance(schoolId, 'family-1')
+
+    expect(balance.enrollments.map((e) => e.enrollmentId)).toEqual(['enrollment-own'])
+    expect(balance.totalAmount).toBe(180)
+  })
+
+  it('includes a shared-custody student whose parent link is this family', async () => {
+    dbMock.enrollment.findMany.mockResolvedValue([
+      {
+        id: 'enrollment-shared',
+        status: 'ACTIVE',
+        totalAmount: 300,
+        discount: 0,
+        payments: [],
+        student: {
+          person: {
+            families: [
+              { familyId: 'family-1', relationType: 'PARENT' },
+              { familyId: 'family-2', relationType: 'OTHER' },
+            ],
+          },
+        },
+      },
+    ])
+
+    const balance = await getFamilyBalance(schoolId, 'family-1')
+
+    expect(balance.enrollments.map((e) => e.enrollmentId)).toEqual(['enrollment-shared'])
+    expect(balance.totalAmount).toBe(300)
   })
 })

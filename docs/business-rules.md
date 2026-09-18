@@ -966,8 +966,14 @@ announced figures cannot drift from what a family is asked to pay.
 
 - **A trend chart ends on the last payment**, not on today: a closed school year would otherwise be
   displayed empty. Months without any payment stay in the series at zero.
-- **Follow-up lists a family, not an enrollment**, through `student.person.families`, the same link
-  used by the family balance. An enrollment attached to no family is owed by nobody and ignored.
+- **Follow-up lists a family, not an enrollment.** An enrollment attached to no family is owed
+  by nobody and ignored. A student attached to several families (shared custody) owes only one
+  of them: `resolveDebtorFamily()` (`src/domain/family-debtor.ts`) picks the link with the
+  highest-priority `relationType` — parent, then tutor, grandparent, sibling, other, in the
+  order `RelationType` is declared — tied links breaking on the lowest `familyId`.
+  `familiesOutstanding`, `findPayableByFamily` and the `/dashboard/families` list all resolve
+  the same debtor, so a family never sees another family's debt on its own balance, and the
+  follow-up total always reconciles with the sum of its rows.
 
 ### Refunds
 

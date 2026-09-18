@@ -1,3 +1,4 @@
+import { resolveDebtorFamily } from '@/domain/family-debtor'
 import {
   collectionByMethod,
   type FamilyOutstanding,
@@ -46,9 +47,11 @@ export async function getPaymentStats(
           person: {
             select: {
               families: {
-                select: { family: { select: { id: true, name: true } } },
-                orderBy: { familyId: 'asc' },
-                take: 1,
+                select: {
+                  familyId: true,
+                  relationType: true,
+                  family: { select: { id: true, name: true } },
+                },
               },
             },
           },
@@ -63,7 +66,7 @@ export async function getPaymentStats(
 
   const enrollments: StatsEnrollment[] = rows.map((row) => ({
     totalAmount: row.totalAmount,
-    family: row.student.person.families[0]?.family ?? null,
+    family: resolveDebtorFamily(row.student.person.families)?.family ?? null,
     payments: row.payments,
   }))
   const payments = enrollments.flatMap((enrollment) => enrollment.payments)
