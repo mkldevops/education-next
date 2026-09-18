@@ -789,6 +789,7 @@
         "pending": "En attente",
         "noPayments": "Aucun paiement enregistré",
         "noPaymentsInPeriod": "Aucun paiement sur la période {period}. Enregistrez un paiement ou changez de période.",
+        "periodShare": "dont {amount} sur {period}",
         "stats": {
           "due": "Total dû",
           "collected": "Encaissé",
