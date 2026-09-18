@@ -34,6 +34,8 @@ type Props = {
   plans: Option[]
   classes: Option[]
   paymentsEnabled: boolean
+  /** Date de référence de l'âge, fixée par le serveur pour que le rendu client lui soit identique. */
+  today: Date
 }
 
 /**
@@ -42,7 +44,15 @@ type Props = {
  * L'âge répond à la question posée en salle de classe ; la date sert aux dossiers, et n'a donc
  * pas besoin d'occuper une colonne entière.
  */
-function AgeCell({ birthday, locale }: { birthday: Date | null; locale: string }) {
+function AgeCell({
+  birthday,
+  locale,
+  today,
+}: {
+  birthday: Date | null
+  locale: string
+  today: Date
+}) {
   const t = useTranslations('dashboard.pages.students')
   const { open, toggle, containerRef, triggerRef, menuRef } = useMenu()
 
@@ -59,7 +69,7 @@ function AgeCell({ birthday, locale }: { birthday: Date | null; locale: string }
         aria-expanded={open}
         className="rounded px-1 py-0.5 text-graphite hover:bg-alabaster-900"
       >
-        {t('ageValue', { age: calculateAge(birthday) })}
+        {t('ageValue', { age: calculateAge(birthday, today) })}
       </button>
 
       {open && (
@@ -82,6 +92,7 @@ export function StudentsDataTable({
   plans,
   classes,
   paymentsEnabled,
+  today,
 }: Props) {
   const t = useTranslations('dashboard.pages.students')
   // Un seul dialogue pour toute la table : `key` le remonte à chaque élève choisi, ce qui
@@ -140,7 +151,7 @@ export function StudentsDataTable({
       header: t('age'),
       accessorFn: (row) => row.birthday?.getTime(),
       sortUndefined: 'last',
-      cell: ({ row }) => <AgeCell birthday={row.original.birthday} locale={locale} />,
+      cell: ({ row }) => <AgeCell birthday={row.original.birthday} locale={locale} today={today} />,
       enableSorting: true,
     },
     ...(isAdmin ? [familyColumn] : []),

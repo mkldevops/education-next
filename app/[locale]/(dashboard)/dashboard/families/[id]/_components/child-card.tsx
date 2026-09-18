@@ -2,7 +2,7 @@ import { buttonVariants, Card, StatusBadge } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import { Link } from '@/i18n/routing'
-import { formatDate } from '@/lib/date'
+import { calculateAge, formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { ReassignClassDialog } from '../../../enrollments/_components/reassign-class-dialog'
@@ -48,9 +48,7 @@ export async function ChildCard({
   const enrollments = person.student.enrollments
 
   const birthday = person.student.birthday ? new Date(person.student.birthday) : null
-  const age = birthday
-    ? Math.floor((Date.now() - birthday.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-    : null
+  const age = birthday ? calculateAge(birthday, new Date()) : null
 
   return (
     <Card className="flex h-full flex-col p-4 rounded border overflow-hidden hover:shadow-md transition-all duration-200">

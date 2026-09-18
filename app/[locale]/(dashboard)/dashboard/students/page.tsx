@@ -100,6 +100,7 @@ export default async function StudentsPage({ params }: Props) {
           name: `${classPeriod.name} (${classPeriod.level.name} — ${classPeriod.period.name})`,
         }))}
         paymentsEnabled={paymentsEnabled}
+        today={new Date()}
       />
     </div>
   )
