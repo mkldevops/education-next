@@ -863,11 +863,16 @@ PENDING ──▶ ACTIVE ──▶ COMPLETED
 
 ### Creation
 
-Atomic in one `db.$transaction`: the capacity count, the enrollment, and the class assignment
-(`src/use-cases/enrollments/create-enrollment.ts`).
+Atomic in one `db.$transaction`: the duplicate guard, the capacity count, the enrollment, and the
+class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
 
 - Student, plan and class must all exist → `notFound`.
-- **One enrollment per student per class** → `duplicateEnrollment`.
+- **One `PENDING` or `ACTIVE` enrollment per student per period** → `duplicateEnrollment`. The guard
+  is read inside the transaction, after a transaction-scoped advisory lock on (school, student,
+  period) (`enrollmentGateway.lockStudentInPeriod`), so two concurrent creations for the same
+  student cannot both find the period free. No unique index can carry this rule: the period lives
+  on the assignment's class, not on `Enrollment`. A `COMPLETED` enrollment leaves re-enrollment
+  open.
 - **Capacity is re-counted inside the transaction**, not before it, so two concurrent enrollments
   cannot both pass the check → `classFull`.
 

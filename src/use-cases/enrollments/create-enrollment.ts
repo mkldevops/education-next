@@ -52,14 +52,6 @@ export async function createEnrollment(input: Input) {
   const classPeriod = await classPeriodGateway.findById(schoolId, parsed.data.classPeriodId)
   if (!classPeriod) return 'notFound' as const
 
-  const existing = await enrollmentGateway.findActiveInPeriod(
-    schoolId,
-    parsed.data.studentId,
-    parsed.data.classPeriodId
-  )
-  if (existing && !parsed.data.replaceExisting) return 'duplicateEnrollment' as const
-  if (existing && existing._count.payments > 0) return 'existingEnrollmentPaid' as const
-
   let discount = parsed.data.discount ?? 0
 
   // La formule réservée est de montant nul, et la remise a déjà été refusée non nulle
@@ -83,6 +75,23 @@ export async function createEnrollment(input: Input) {
 
   try {
     const result = await db.$transaction(async (tx) => {
+      // Garde de doublon lue sous verrou, avant toute écriture : les refus ci-dessous valident
+      // une transaction vide, et une inscription concurrente attend la fin de celle-ci (#316).
+      await enrollmentGateway.lockStudentInPeriod(
+        tx,
+        schoolId,
+        parsed.data.studentId,
+        classPeriod.periodId
+      )
+      const existing = await enrollmentGateway.findActiveInPeriod(
+        tx,
+        schoolId,
+        parsed.data.studentId,
+        classPeriod.periodId
+      )
+      if (existing && !parsed.data.replaceExisting) return 'duplicateEnrollment' as const
+      if (existing && existing._count.payments > 0) return 'existingEnrollmentPaid' as const
+
       // Résolue ici plutôt qu'avant l'ouverture de la transaction : une création (première
       // coupure de l'école) repart avec le rollback si la classe s'avère pleine plus bas.
       const planId = plan ? plan.id : (await planGateway.ensureUnpriced(schoolId, tx)).id
