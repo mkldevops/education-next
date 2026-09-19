@@ -1,16 +1,34 @@
 import { type DecimalLike, roundHalfUp, toNumber } from '@/lib/decimal'
 
-export type StatsPayment = {
-  amount: DecimalLike
-  method: string
-  paidAt: Date
-  cashedAt: Date | null
-}
-
 export type StatsEnrollment = {
   totalAmount: DecimalLike
+  /** Somme des paiements actifs de l'inscription, agrégée en base. */
+  paid: DecimalLike | null
   family: { id: string; name: string } | null
-  payments: StatsPayment[]
+}
+
+export type MethodTotal = {
+  method: string
+  amount: DecimalLike | null
+  count: number
+}
+
+export type UncashedCheques = {
+  amount: DecimalLike | null
+  count: number
+}
+
+export type DatedAmount = {
+  amount: DecimalLike
+  paidAt: Date
+}
+
+export type MonthWindow = {
+  /** Premier instant du premier mois affiché, en UTC. */
+  from: Date
+  /** Premier instant du mois suivant le dernier mois affiché, exclu, en UTC. */
+  to: Date
+  months: number
 }
 
 export type PaymentTotals = {
@@ -48,11 +66,8 @@ export type FamilyOutstanding = {
   collectionRate: number
 }
 
-/** Un `cashedAt` ne concerne que les chèques : le reste est encaissé à la remise. */
-const CHEQUE = 'CHECK'
-
-function sumAmounts(payments: StatsPayment[]): number {
-  return roundHalfUp(payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0))
+function amountOf(value: DecimalLike | null): number {
+  return value === null ? 0 : toNumber(value)
 }
 
 function rate(collected: number, due: number): number {
@@ -65,33 +80,26 @@ function rate(collected: number, due: number): number {
  *
  * Le dû est `totalAmount`, déjà net de remise. Le restant est plafonné à zéro par inscription,
  * comme `calculateFamilyBalance` : un trop-perçu isolé ne doit pas effacer la dette d'une autre
- * inscription.
+ * inscription. Un `cashedAt` ne concerne que les chèques : le reste est encaissé à la remise.
  */
-export function summarizePayments(enrollments: StatsEnrollment[]): PaymentTotals {
+export function summarizePayments(
+  enrollments: StatsEnrollment[],
+  methods: MethodTotal[],
+  uncashed: UncashedCheques
+): PaymentTotals {
   let due = 0
   let collected = 0
   let remaining = 0
   let settledCount = 0
-  let paymentCount = 0
-  let uncashedAmount = 0
-  let uncashedCount = 0
 
   for (const enrollment of enrollments) {
     const total = toNumber(enrollment.totalAmount)
-    const paid = sumAmounts(enrollment.payments)
+    const paid = roundHalfUp(amountOf(enrollment.paid))
 
     due += total
     collected += paid
     remaining += Math.max(0, roundHalfUp(total - paid))
     if (paid >= total) settledCount += 1
-
-    for (const payment of enrollment.payments) {
-      paymentCount += 1
-      if (payment.method === CHEQUE && payment.cashedAt === null) {
-        uncashedAmount += toNumber(payment.amount)
-        uncashedCount += 1
-      }
-    }
   }
 
   due = roundHalfUp(due)
@@ -106,73 +114,79 @@ export function summarizePayments(enrollments: StatsEnrollment[]): PaymentTotals
     enrollmentCount: enrollments.length,
     settledCount,
     outstandingCount: enrollments.length - settledCount,
-    paymentCount,
-    uncashedAmount: roundHalfUp(uncashedAmount),
-    uncashedCount,
+    paymentCount: methods.reduce((sum, method) => sum + method.count, 0),
+    uncashedAmount: roundHalfUp(amountOf(uncashed.amount)),
+    uncashedCount: uncashed.count,
   }
 }
 
 function monthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+function monthStart(date: Date, offset = 0): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + offset, 1))
+}
+
+/** Premier instant, en UTC, du mois qui suit `date` : borne exclue du mois courant. */
+export function nextMonthStart(date: Date): Date {
+  return monthStart(date, 1)
 }
 
 /**
- * Série mensuelle des encaissements, mois vides compris.
+ * Fenêtre du graphique mensuel, en mois UTC comme les dates de paiement saisies.
  *
- * La fenêtre se termine au mois du dernier paiement plutôt qu'au mois courant : une période
- * scolaire passée resterait sinon affichée vide.
+ * Elle se termine au mois du dernier paiement plutôt qu'au mois courant, sans jamais le dépasser :
+ * une période scolaire passée resterait sinon affichée vide, et une date saisie dans le futur
+ * étirerait le graphique au point d'écraser les mois utiles.
  */
-export function monthlyCollection(
-  payments: StatsPayment[],
+export function monthWindow(
+  latestPaidAt: Date | null,
   { months = 12, reference = new Date() }: { months?: number; reference?: Date } = {}
-): MonthlyCollection[] {
-  const buckets = new Map<string, MonthlyCollection>()
-  let latest: Date | null = null
+): MonthWindow {
+  const cap = nextMonthStart(reference)
+  const end = latestPaidAt && latestPaidAt < cap ? latestPaidAt : reference
 
-  for (const payment of payments) {
-    const key = monthKey(payment.paidAt)
-    const bucket = buckets.get(key)
-    if (bucket) {
-      bucket.amount += toNumber(payment.amount)
-      bucket.count += 1
-    } else {
-      buckets.set(key, { month: key, amount: toNumber(payment.amount), count: 1 })
-    }
-    if (!latest || payment.paidAt > latest) latest = payment.paidAt
-  }
-
-  const end = latest ?? reference
-  const series: MonthlyCollection[] = []
-
-  for (let offset = months - 1; offset >= 0; offset--) {
-    const key = monthKey(new Date(end.getFullYear(), end.getMonth() - offset, 1))
-    const bucket = buckets.get(key)
-    series.push({ month: key, amount: roundHalfUp(bucket?.amount ?? 0), count: bucket?.count ?? 0 })
-  }
-
-  return series
+  return { from: monthStart(end, 1 - months), to: nextMonthStart(end), months }
 }
 
-/** Répartition par mode de paiement, triée par montant décroissant. */
-export function collectionByMethod(payments: StatsPayment[]): MethodCollection[] {
+/** Série mensuelle des encaissements sur la fenêtre, mois vides compris. */
+export function monthlyCollection(
+  payments: DatedAmount[],
+  window: MonthWindow
+): MonthlyCollection[] {
   const buckets = new Map<string, { amount: number; count: number }>()
 
   for (const payment of payments) {
-    const bucket = buckets.get(payment.method) ?? { amount: 0, count: 0 }
+    if (payment.paidAt < window.from || payment.paidAt >= window.to) continue
+    const key = monthKey(payment.paidAt)
+    const bucket = buckets.get(key) ?? { amount: 0, count: 0 }
     bucket.amount += toNumber(payment.amount)
     bucket.count += 1
-    buckets.set(payment.method, bucket)
+    buckets.set(key, bucket)
   }
 
-  const total = roundHalfUp([...buckets.values()].reduce((sum, bucket) => sum + bucket.amount, 0))
+  return Array.from({ length: window.months }, (_, index) => {
+    const key = monthKey(monthStart(window.from, index))
+    const bucket = buckets.get(key)
+    return { month: key, amount: roundHalfUp(bucket?.amount ?? 0), count: bucket?.count ?? 0 }
+  })
+}
 
-  return [...buckets.entries()]
-    .map(([method, bucket]) => ({
-      method,
-      amount: roundHalfUp(bucket.amount),
-      count: bucket.count,
-      share: total > 0 ? roundHalfUp((bucket.amount / total) * 100, 1) : 0,
-    }))
+/** Répartition par mode de paiement, triée par montant décroissant. */
+export function collectionByMethod(methods: MethodTotal[]): MethodCollection[] {
+  const total = roundHalfUp(methods.reduce((sum, method) => sum + amountOf(method.amount), 0))
+
+  return methods
+    .map((method) => {
+      const amount = amountOf(method.amount)
+      return {
+        method: method.method,
+        amount: roundHalfUp(amount),
+        count: method.count,
+        share: total > 0 ? roundHalfUp((amount / total) * 100, 1) : 0,
+      }
+    })
     .sort((a, b) => b.amount - a.amount || a.method.localeCompare(b.method))
 }
 
@@ -191,7 +205,7 @@ export function familiesOutstanding(
     if (!enrollment.family) continue
 
     const total = toNumber(enrollment.totalAmount)
-    const paid = sumAmounts(enrollment.payments)
+    const paid = roundHalfUp(amountOf(enrollment.paid))
     const bucket = buckets.get(enrollment.family.id) ?? {
       familyId: enrollment.family.id,
       familyName: enrollment.family.name,
