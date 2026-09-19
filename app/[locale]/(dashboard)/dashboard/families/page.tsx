@@ -2,6 +2,7 @@ import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -59,6 +60,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
         select: {
           person: {
             select: {
+              families: { select: { familyId: true, relationType: true } },
               student: {
                 select: {
                   enrollments: {
@@ -91,7 +93,12 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
   })
 
   const familyRows: FamilyRow[] = families.map((family) => {
-    const enrollments = family.persons.flatMap((fp) => fp.person.student?.enrollments ?? [])
+    const enrollments = family.persons.flatMap((fp) => {
+      const studentEnrollments = fp.person.student?.enrollments ?? []
+      if (studentEnrollments.length === 0) return []
+      const debtorFamilyId = resolveDebtorFamily(fp.person.families)?.familyId
+      return debtorFamilyId === family.id ? studentEnrollments : []
+    })
     const balance = calculateFamilyBalance(enrollments)
     const payments = enrollments
       .flatMap((enrollment) => enrollment.payments)

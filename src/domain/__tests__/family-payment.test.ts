@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { enrollmentBalances, groupFamilyPayments } from '../payment'
+import { enrollmentBalances, filterFamilyPaymentsByPeriod, groupFamilyPayments } from '../payment'
 
 const paidAt = new Date('2026-09-12T00:00:00.000Z')
 const createdAt = new Date('2026-09-12T10:00:00.000Z')
 
-function line(overrides: Partial<Parameters<typeof groupFamilyPayments>[0][number]> = {}) {
+function line(
+  overrides: Partial<Parameters<typeof groupFamilyPayments>[0][number]> & { periodId?: string } = {}
+) {
   return {
     id: 'payment-1',
     familyId: 'family-1',
@@ -123,6 +125,42 @@ describe('groupFamilyPayments', () => {
 
     expect(groups).toHaveLength(2)
     expect(groups.map((group) => group.lines.length).sort()).toEqual([1, 2])
+  })
+})
+
+describe('filterFamilyPaymentsByPeriod', () => {
+  it('keeps the full amount of a payment split across two periods', () => {
+    const groups = groupFamilyPayments([
+      line({ id: 'a', enrollmentId: 'enrollment-a', amount: 90, periodId: 'period-1' }),
+      line({ id: 'b', enrollmentId: 'enrollment-b', amount: 90, periodId: 'period-2' }),
+    ])
+
+    const scoped = filterFamilyPaymentsByPeriod(groups, (l) => l.periodId === 'period-1')
+
+    expect(scoped).toHaveLength(1)
+    expect(scoped[0].amount).toBe(180)
+    expect(scoped[0].periodAmount).toBe(90)
+    expect(scoped[0].lines).toHaveLength(2)
+  })
+
+  it('drops a payment with no line in the selected period', () => {
+    const groups = groupFamilyPayments([line({ id: 'a', periodId: 'period-2' })])
+
+    const scoped = filterFamilyPaymentsByPeriod(groups, (l) => l.periodId === 'period-1')
+
+    expect(scoped).toHaveLength(0)
+  })
+
+  it('reports the full amount as the period share when every line matches', () => {
+    const groups = groupFamilyPayments([
+      line({ id: 'a', enrollmentId: 'enrollment-a', amount: 90, periodId: 'period-1' }),
+      line({ id: 'b', enrollmentId: 'enrollment-b', amount: 90, periodId: 'period-1' }),
+    ])
+
+    const scoped = filterFamilyPaymentsByPeriod(groups, (l) => l.periodId === 'period-1')
+
+    expect(scoped[0].amount).toBe(180)
+    expect(scoped[0].periodAmount).toBe(180)
   })
 })
 

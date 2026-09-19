@@ -1,4 +1,5 @@
 import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
+import { resolveDebtorFamily } from '@/domain/family-debtor'
 import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { acquireAdvisoryLock } from './advisory-lock'
@@ -199,8 +200,14 @@ export const enrollmentGateway = {
       take: 10,
     }),
 
-  findPayableByFamily: (schoolId: string, familyId: string) =>
-    db.enrollment.findMany({
+  /**
+   * Inscriptions payables par une famille : celles de ses élèves dont elle est la famille
+   * redevable. `families: { some: { familyId } }` ne suffit pas — un élève en garde partagée
+   * est rattaché à plusieurs familles, et une seule d'entre elles doit porter la dette
+   * (`resolveDebtorFamily`, appliqué comme dans `familiesOutstanding`).
+   */
+  findPayableByFamily: async (schoolId: string, familyId: string) => {
+    const rows = await db.enrollment.findMany({
       where: {
         schoolId,
         status: { in: [...OPEN_ENROLLMENT_STATUSES] },
@@ -212,9 +219,25 @@ export const enrollmentGateway = {
           },
         },
       },
-      include: { payments: { where: { isActive: true } } },
+      include: {
+        payments: { where: { isActive: true } },
+        student: {
+          select: {
+            person: {
+              select: {
+                families: { select: { familyId: true, relationType: true } },
+              },
+            },
+          },
+        },
+      },
       orderBy: [{ registeredAt: 'asc' }, { id: 'asc' }],
-    }),
+    })
+
+    return rows
+      .filter((row) => resolveDebtorFamily(row.student.person.families)?.familyId === familyId)
+      .map(({ student: _student, ...enrollment }) => enrollment)
+  },
 
   findEnrolledStudentIds: async (schoolId: string, periodId: string, studentIds: string[]) => {
     if (studentIds.length === 0) return new Set<string>()

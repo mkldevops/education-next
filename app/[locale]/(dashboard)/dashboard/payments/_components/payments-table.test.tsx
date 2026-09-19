@@ -26,6 +26,7 @@ const basePayment: Omit<PaymentRow, 'id' | 'paidAt' | 'cashedAt'> = {
   familyName: 'Dupont',
   students: 'Alice Dupont, Bruno Dupont',
   amount: 100,
+  periodAmount: 100,
   method: 'CASH',
   reference: null,
 }
@@ -92,5 +93,57 @@ describe('PaymentsTable', () => {
     render(<PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" periodName={null} />)
 
     expectChronologicalToggle('cashedAt')
+  })
+})
+
+describe('period share', () => {
+  const paidAt = new Date('2026-01-01T00:00:00Z')
+
+  it('shows the period share when a payment spans two periods', () => {
+    const split: PaymentRow = {
+      ...basePayment,
+      id: 'payment-split',
+      amount: 180,
+      periodAmount: 90,
+      paidAt,
+      cashedAt: null,
+    }
+
+    render(<PaymentsTable payments={[split]} locale="fr" periodName="Trimestre 1" />)
+
+    const amountCell = within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2]
+    expect(amountCell.textContent).toContain('periodShare')
+  })
+
+  it('hides the period share when the full payment falls in the period', () => {
+    const whole: PaymentRow = {
+      ...basePayment,
+      id: 'payment-whole',
+      amount: 90,
+      periodAmount: 90,
+      paidAt,
+      cashedAt: null,
+    }
+
+    render(<PaymentsTable payments={[whole]} locale="fr" periodName="Trimestre 1" />)
+
+    const amountCell = within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2]
+    expect(amountCell.textContent).not.toContain('periodShare')
+  })
+
+  it('hides the period share when no period is selected', () => {
+    const split: PaymentRow = {
+      ...basePayment,
+      id: 'payment-split',
+      amount: 180,
+      periodAmount: 90,
+      paidAt,
+      cashedAt: null,
+    }
+
+    render(<PaymentsTable payments={[split]} locale="fr" periodName={null} />)
+
+    const amountCell = within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2]
+    expect(amountCell.textContent).not.toContain('periodShare')
   })
 })

@@ -16,6 +16,7 @@ export interface PaymentRow {
   familyName: string
   students: string
   amount: number
+  periodAmount: number
   method: PaymentMethod
   reference: string | null
   paidAt: Date
@@ -59,11 +60,24 @@ export function PaymentsTable({ payments, locale, periodName }: Props) {
       id: 'amount',
       header: t('amount'),
       accessorFn: (row) => row.amount,
-      cell: ({ row }) => (
-        <span className="font-medium text-graphite">
-          {formatCurrency(row.original.amount, locale)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const { amount, periodAmount } = row.original
+        const showPeriodShare = periodName !== null && periodAmount !== amount
+
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium text-graphite">{formatCurrency(amount, locale)}</span>
+            {showPeriodShare && (
+              <span className="text-xs text-graphite/60">
+                {t('periodShare', {
+                  amount: formatCurrency(periodAmount, locale),
+                  period: periodName,
+                })}
+              </span>
+            )}
+          </div>
+        )
+      },
       enableSorting: true,
     },
     {
