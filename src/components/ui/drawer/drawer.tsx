@@ -1,15 +1,7 @@
 'use client'
 
 import { X } from 'lucide-react'
-import {
-  cloneElement,
-  createContext,
-  isValidElement,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { cloneElement, createContext, isValidElement, useContext, useEffect, useState } from 'react'
 import { cn } from '../utils'
 
 interface DrawerContextType {
@@ -81,7 +73,6 @@ export interface DrawerContentProps {
 
 export function DrawerContent({ children, className, side = 'right' }: DrawerContentProps) {
   const { open, setOpen } = useDrawer()
-  const overlayRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,7 +94,6 @@ export function DrawerContent({ children, className, side = 'right' }: DrawerCon
     <div className="fixed inset-0 z-50">
       <button
         type="button"
-        ref={overlayRef}
         className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-default"
         onClick={() => setOpen(false)}
         aria-label="Close drawer"

@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolScope } from '../../_lib/auth-helper'
+import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
 import { EnrollmentsTable } from './_components/enrollments-table'
 
 type Props = {
@@ -38,7 +39,7 @@ export default async function EnrollmentsPage({ params }: Props) {
 
   const isAdmin = scope.isAdmin
 
-  const whereStudent = scope.isAdmin
+  const whereStudent = isAdmin
     ? {}
     : {
         person: {
@@ -68,6 +69,25 @@ export default async function EnrollmentsPage({ params }: Props) {
           orderBy: { name: 'asc' },
         })
       : []
+  // `amount` pré-remplit le montant dû du dialogue de création ; converti ici car un `Decimal`
+  // ne traverse pas la frontière client.
+  const planOptions = availablePlans.map((plan) => ({
+    id: plan.id,
+    name: plan.name,
+    amount: Number(plan.amount),
+  }))
+
+  const availableStudents = isAdmin
+    ? await db.student.findMany({
+        where: { schoolId: scope.schoolId, isActive: true },
+        select: { id: true, person: { select: { name: true, lastname: true } } },
+        orderBy: [{ person: { lastname: 'asc' } }, { person: { name: 'asc' } }],
+      })
+    : []
+  const studentOptions = availableStudents.map((student) => ({
+    id: student.id,
+    name: `${student.person.name} ${student.person.lastname}`,
+  }))
 
   const enrollments = await db.enrollment.findMany({
     where: {
@@ -127,12 +147,22 @@ export default async function EnrollmentsPage({ params }: Props) {
           { label: tBreadcrumbs('enrollments') },
         ]}
       />
-      <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
+        {isAdmin && (
+          <CreateEnrollmentDialog
+            students={studentOptions}
+            plans={planOptions}
+            classes={availableClasses}
+            paymentsEnabled={paymentsEnabled}
+          />
+        )}
+      </div>
       <EnrollmentsTable
         enrollments={serializableEnrollments}
         isAdmin={isAdmin}
         availableClasses={availableClasses}
-        availablePlans={availablePlans.map((plan) => ({ ...plan, amount: Number(plan.amount) }))}
+        availablePlans={planOptions}
         locale={locale}
         periodName={selectedPeriod?.name ?? null}
         paymentsEnabled={paymentsEnabled}

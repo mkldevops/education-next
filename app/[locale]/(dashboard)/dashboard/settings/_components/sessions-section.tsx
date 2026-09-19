@@ -8,13 +8,12 @@ import { useState, useTransition } from 'react'
 import { revokeSessionAction } from '@/actions'
 import { formatDate } from '@/lib/date'
 
-type SessionData = {
+export type SessionData = {
   id: string
   token: string
   userAgent: string | null
   ipAddress: string | null
   createdAt: string
-  expiresAt: string
   isCurrent: boolean
 }
 

@@ -28,13 +28,7 @@ export default async function UsersPage({ params }: Props) {
   const tRoles = await getTranslations('roles')
   const tInvitations = await getTranslations('dashboard.pages.users.invitations')
 
-  const { schoolId, userId: viewerId } = await requireSchoolAdmin()
-
-  const viewer = await db.user.findUnique({
-    where: { id: viewerId },
-    select: { isSuperAdmin: true },
-  })
-  const canManagePlatform = viewer?.isSuperAdmin ?? false
+  const { schoolId, userId: viewerId, isSuperAdmin: canManagePlatform } = await requireSchoolAdmin()
 
   const [families, invitations, members, familyLinks, teachers] = await Promise.all([
     db.family.findMany({
@@ -67,17 +61,15 @@ export default async function UsersPage({ params }: Props) {
 
   const memberIds = members.map((member) => member.userId)
   const lastSessions = memberIds.length
-    ? await db.session.findMany({
+    ? await db.session.groupBy({
+        by: ['userId'],
         where: { userId: { in: memberIds } },
-        orderBy: { createdAt: 'desc' },
-        select: { userId: true, createdAt: true },
+        _max: { createdAt: true },
       })
     : []
-  const lastLoginByUserId: Partial<Record<string, Date>> = {}
-  for (const session of lastSessions) {
-    if (session.userId in lastLoginByUserId) continue
-    lastLoginByUserId[session.userId] = session.createdAt
-  }
+  const lastLoginByUserId: Partial<Record<string, Date>> = Object.fromEntries(
+    lastSessions.map((row) => [row.userId, row._max.createdAt ?? undefined])
+  )
 
   const rows = members.map((member) => ({
     ...member,

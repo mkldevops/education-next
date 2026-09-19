@@ -2,17 +2,16 @@ import type { z } from 'zod'
 import { checkCapacity } from '@/domain/class-period'
 import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { validateFamilyName } from '@/domain/family'
-import { draftExpiry, type McpFinding } from '@/domain/mcp-draft'
+import type { McpFinding } from '@/domain/mcp-draft'
 import { distributePayment } from '@/domain/payment'
 import { validateStudentBirthday } from '@/domain/student'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
-import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { personGateway } from '@/gateways/person-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
-import { draftChecksum } from '@/lib/mcp-draft-crypto'
+import { blockedPreview, saveDraftPreview } from './draft-response'
 import { matchByName } from './match-by-name'
 import type { McpScope } from './resolve-mcp-scope'
 import { previewEnrollFamilySchema } from './schemas'
@@ -41,6 +40,12 @@ type ResolvedStudent = {
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 const within = (a: string, b: string) => a.toLowerCase().includes(b.trim().toLowerCase())
+
+export function countSeatsByClass(classIds: string[]): Map<string, number> {
+  const seats = new Map<string, number>()
+  for (const id of classIds) seats.set(id, (seats.get(id) ?? 0) + 1)
+  return seats
+}
 
 /**
  * Un élève de la fiche retrouvé parmi les membres de la famille visée.
@@ -181,16 +186,12 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
   }
 
   const studentTotals = studentPlans.map((plan) =>
-    calculateTotalAmount(plan ? Number(plan.amount) : 0, data.discount)
+    calculateTotalAmount(plan ? plan.amount : 0, data.discount)
   )
 
   // La remise vaut pour chaque inscription : elle doit tenir dans la formule la moins chère
   // de la fratrie, et un seul blocage suffit à la corriger.
-  if (
-    studentPlans.some(
-      (plan) => plan && validateDiscount(Number(plan.amount), data.discount) !== 'OK'
-    )
-  ) {
+  if (studentPlans.some((plan) => plan && validateDiscount(plan.amount, data.discount) !== 'OK')) {
     blockers.push({
       field: 'discount',
       value: String(data.discount),
@@ -201,10 +202,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
   // La capacité se juge par classe visée, pas par fratrie : deux enfants en C4 et un en
   // C2 ne prennent pas trois places en C4. Le commit refait ce compte dans sa
   // transaction, seul endroit où il fait autorité.
-  const seatsWanted = new Map<string, number>()
-  for (const classPeriod of studentClasses) {
-    if (classPeriod) seatsWanted.set(classPeriod.id, (seatsWanted.get(classPeriod.id) ?? 0) + 1)
-  }
+  const seatsWanted = countSeatsByClass(studentClasses.flatMap((c) => (c ? [c.id] : [])))
 
   const seatChecks = await Promise.all(
     [...seatsWanted].map(async ([id, wanted]) => {
@@ -321,7 +319,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
 
       const enrollment = {
         classPeriod: { id: classPeriod.id, name: classPeriod.name },
-        plan: { id: plan.id, name: plan.name, amount: Number(plan.amount) },
+        plan: { id: plan.id, name: plan.name, amount: plan.amount },
         totalAmount: studentTotals[index],
       }
 
@@ -351,7 +349,7 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
   )
 
   if (blockers.length > 0 || students.length !== data.students.length) {
-    return { draftId: null, checksum: null, plan: null, matches, warnings, blockers }
+    return blockedPreview(matches, warnings, blockers)
   }
 
   const resolved = {
@@ -381,14 +379,5 @@ export async function previewEnrollFamily(scope: McpScope, input: Input) {
       : null,
   }
 
-  const checksum = draftChecksum(resolved)
-  const draft = await mcpDraftGateway.create(schoolId, {
-    keyId: scope.keyId,
-    tool: ENROLL_FAMILY_TOOL,
-    checksum,
-    resolved,
-    expiresAt: draftExpiry(),
-  })
-
-  return { draftId: draft.id, checksum, plan: resolved, matches, warnings, blockers }
+  return saveDraftPreview(scope, ENROLL_FAMILY_TOOL, resolved, matches, warnings, blockers)
 }

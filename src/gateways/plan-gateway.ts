@@ -1,3 +1,4 @@
+import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
@@ -25,7 +26,9 @@ export const planGateway = {
     }),
 
   countOpenEnrollments: (schoolId: string, id: string) =>
-    db.enrollment.count({ where: { schoolId, planId: id, status: { in: ['PENDING', 'ACTIVE'] } } }),
+    db.enrollment.count({
+      where: { schoolId, planId: id, status: { in: [...OPEN_ENROLLMENT_STATUSES] } },
+    }),
 
   deactivate: (schoolId: string, id: string) =>
     db.plan.update({

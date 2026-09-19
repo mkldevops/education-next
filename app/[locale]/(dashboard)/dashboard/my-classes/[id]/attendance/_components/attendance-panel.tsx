@@ -2,6 +2,7 @@
 
 import { Button, Card } from '@peaklab/ui'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from '@/i18n/routing'
 import {
@@ -16,6 +17,7 @@ import { AttendanceReview } from './attendance-review'
 import {
   type AttendanceEntry,
   type AttendanceStatus,
+  countAttendanceStatuses,
   StudentAttendanceCard,
   type StudentCardLabels,
 } from './student-attendance-card'
@@ -32,7 +34,6 @@ type Labels = StudentCardLabels & {
   startExceptional: string
   changeDate: string
   progress: string
-  markRemainingPresent: string
   reviewAttendance: string
   partialWarning: string
   validatePartial: string
@@ -42,18 +43,18 @@ type Labels = StudentCardLabels & {
   validatedStatus: string
   previousStudent: string
   nextStudent: string
-  previous?: string
-  next?: string
+  previous: string
+  next: string
   studentPosition: string
   saveBeforeContinue: string
   summary: string
   noStudents: string
-  reviewSubtitle?: string
-  completeStudents?: string
+  reviewSubtitle: string
+  completeStudents: string
   partialWarningSingle: string
   completeStudent: string
-  all?: string
-  edit?: string
+  all: string
+  edit: string
   errors: Record<string, string>
 }
 type Session = { id: string; status: string; entries: AttendanceEntry[] }
@@ -78,6 +79,7 @@ export function AttendancePanel({
   selectedSlotId,
   selectedOccurrence,
   initialSession,
+  returnHref,
   labels,
 }: {
   classPeriodId: string
@@ -88,8 +90,10 @@ export function AttendancePanel({
   selectedSlotId?: string
   selectedOccurrence?: 'adhoc'
   initialSession: Session | null
+  returnHref: string
   labels: Labels
 }) {
+  const t = useTranslations('dashboard.pages.attendance')
   const [session, setSession] = useState<Session | null>(initialSession)
   const [drafts, setDrafts] = useState<Record<string, AttendanceEntry>>(() =>
     Object.fromEntries(initialSession?.entries.map((entry) => [entry.id, entry]) ?? [])
@@ -115,17 +119,12 @@ export function AttendancePanel({
   const review = useRef<HTMLDivElement>(null)
   const entries = session?.entries.map((entry) => drafts[entry.id] ?? entry) ?? []
   const active = entries[index]
-  const counts = entries.reduce(
-    (all, entry) => {
-      all[entry.status] += 1
-      return all
-    },
-    { NOT_RECORDED: 0, PRESENT: 0, LATE: 0, ABSENT: 0 }
-  )
+  const counts = countAttendanceStatuses(entries)
   const recorded = counts.PRESENT + counts.LATE + counts.ABSENT
-  const dirty = entries.some(
-    (entry) => !same(payload(entry), confirmed.current[entry.id] ?? payload(entry))
-  )
+  const isUnsaved = (entry: AttendanceEntry) =>
+    !same(payload(entry), confirmed.current[entry.id] ?? payload(entry))
+  const focusControl = () => setTimeout(() => control.current?.focus())
+  const dirty = entries.some(isUnsaved)
   const entryErrors = Object.values(errors).some(Boolean)
   const pendingEntries = pending.size > 0
   const selectedSlot = slots.find((slot) => slot.id === selectedSlotId)
@@ -231,21 +230,21 @@ export function AttendancePanel({
       }, 500)
     )
   }
+  const saveNow = (id: string) => {
+    const timer = debounceTimers.current.get(id)
+    if (timer) clearTimeout(timer)
+    debounceTimers.current.delete(id)
+    void save(id)
+  }
   const flush = async () =>
-    (
-      await Promise.all(
-        entries
-          .filter((entry) => !same(payload(entry), confirmed.current[entry.id] ?? payload(entry)))
-          .map((entry) => save(entry.id))
-      )
-    ).every(Boolean)
+    (await Promise.all(entries.filter(isUnsaved).map((entry) => save(entry.id)))).every(Boolean)
   const move = async (next: number) => {
     if (!active || next < 0 || next >= entries.length || globalPending) return
     const result = await save(active.id)
-    if (!result && !same(payload(active), confirmed.current[active.id] ?? payload(active))) return
+    if (!result && isUnsaved(active)) return
     setForward(next > index)
     setIndex(next)
-    setTimeout(() => control.current?.focus())
+    focusControl()
   }
   const start = async () => {
     setGlobalPending(true)
@@ -418,17 +417,11 @@ export function AttendancePanel({
                   style={{ width: `${entries.length ? (recorded / entries.length) * 100 : 0}%` }}
                 />
               </div>
-              {editing ? (
+              {editing && counts.NOT_RECORDED > 0 ? (
                 <button
                   type="button"
                   className="text-sm text-primary underline underline-offset-4 disabled:text-graphite-600"
-                  disabled={
-                    globalPending ||
-                    pendingEntries ||
-                    dirty ||
-                    entryErrors ||
-                    counts.NOT_RECORDED === 0
-                  }
+                  disabled={globalPending || pendingEntries || dirty || entryErrors}
                   onClick={() =>
                     void global(
                       () => markAllPresentAction({ sessionId: session.id }),
@@ -450,7 +443,7 @@ export function AttendancePanel({
                     )
                   }
                 >
-                  {labels.markRemainingPresent.replace('{count}', String(counts.NOT_RECORDED))}
+                  {t('markRemainingPresent', { count: counts.NOT_RECORDED })}
                 </button>
               ) : null}
             </section>
@@ -479,19 +472,14 @@ export function AttendancePanel({
                     void save(active.id)
                   }}
                   onLateMinutes={(value) => {
-                    updateDraft(active.id, { lateMinutes: value === '' ? null : Number(value) })
+                    updateDraft(active.id, { lateMinutes: value })
                     scheduleSave(active.id)
                   }}
                   onMessage={(message) => {
                     updateDraft(active.id, { message: message || null })
                     scheduleSave(active.id)
                   }}
-                  onMessageBlur={() => {
-                    const timer = debounceTimers.current.get(active.id)
-                    if (timer) clearTimeout(timer)
-                    debounceTimers.current.delete(active.id)
-                    void save(active.id)
-                  }}
+                  onFieldBlur={() => saveNow(active.id)}
                   onRetry={() => {
                     void save(active.id)
                   }}
@@ -506,7 +494,7 @@ export function AttendancePanel({
                         onClick={() => void move(index - 1)}
                       >
                         <ChevronLeft aria-hidden="true" />
-                        <span>{labels.previous ?? labels.previousStudent}</span>
+                        <span>{labels.previous}</span>
                       </Button>
                       <span className="row-start-1 col-span-2 col-start-1 text-center text-xs font-medium text-graphite-600 sm:col-span-1 sm:col-start-2 sm:row-start-1">
                         {position}
@@ -519,7 +507,7 @@ export function AttendancePanel({
                         disabled={index === entries.length - 1 || globalPending}
                         onClick={() => void move(index + 1)}
                       >
-                        <span>{labels.next ?? labels.nextStudent}</span>
+                        <span>{labels.next}</span>
                         <ChevronRight aria-hidden="true" />
                       </Button>
                     </div>
@@ -546,23 +534,13 @@ export function AttendancePanel({
             <div ref={review} tabIndex={-1} className="scroll-mt-28 focus:outline-none">
               <AttendanceReview
                 entries={entries}
-                labels={{
-                  ...labels,
-                  reviewSubtitle: labels.reviewSubtitle ?? '',
-                  partialWarningSingle: labels.partialWarningSingle,
-                  completeStudents: labels.completeStudents ?? '',
-                  completeStudent: labels.completeStudent,
-                  all: labels.all ?? '',
-                  edit: labels.edit ?? '',
-                  validatedStatus: labels.validatedStatus,
-                  correctAttendance: labels.correctAttendance,
-                  returnClasses: labels.returnClasses,
-                }}
+                labels={labels}
                 validated={session.status === 'VALIDATED' && !editing}
+                returnHref={returnHref}
                 onCorrect={() => {
                   setEditing(true)
                   setReviewing(false)
-                  setTimeout(() => control.current?.focus())
+                  focusControl()
                 }}
                 onReturn={() => setReviewing(false)}
                 onComplete={() => {
@@ -570,7 +548,7 @@ export function AttendancePanel({
                   if (first >= 0) {
                     setIndex(first)
                     setReviewing(false)
-                    setTimeout(() => control.current?.focus())
+                    focusControl()
                   }
                 }}
                 onEdit={(entryId) => {
@@ -578,7 +556,7 @@ export function AttendancePanel({
                   if (target >= 0) {
                     setIndex(target)
                     setReviewing(false)
-                    setTimeout(() => control.current?.focus())
+                    focusControl()
                   }
                 }}
                 validating={globalPending || pendingEntries || entryErrors}

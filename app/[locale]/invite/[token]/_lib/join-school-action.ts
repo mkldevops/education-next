@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { findInvitationByToken } from '@/lib/db-unscoped'
+import { normalizeEmail } from './invited-email'
 import { linkInvitedUser } from './link-invited-user'
 
 const joinSchema = z.object({ token: z.string().min(1) })
@@ -32,7 +33,7 @@ export async function joinSchoolAction(input: { token: string }) {
   if (invitation.usedAt) return 'alreadyUsed' as const
   if (invitation.expiresAt < new Date()) return 'expired' as const
 
-  if (sessionEmail.toLowerCase() !== invitation.email.toLowerCase()) {
+  if (normalizeEmail(sessionEmail) !== normalizeEmail(invitation.email)) {
     return 'emailMismatch' as const
   }
 

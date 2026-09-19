@@ -15,18 +15,18 @@ import { ImpersonateUserButton } from './impersonate-user-button'
 import { LinkFamilyDialog } from './link-family-dialog'
 import type { UserDetail } from './use-user-detail'
 import { Section } from './user-detail-sections'
-import type { MemberRow } from './users-table'
+import type { FamilyOption, MemberRow } from './users-table'
 
 interface Props {
   user: MemberRow['user']
   detail: UserDetail | null
-  families: Array<{ id: string; name: string }>
+  families: FamilyOption[]
   activeSessionCount: number
   isPending: boolean
   isSelf: boolean
-  canDelete: boolean
   run: (action: () => Promise<string>, successKey: string) => void
   onClose: () => void
+  onFamilyLinked: () => void
 }
 
 export function UserPlatformActions({
@@ -36,9 +36,9 @@ export function UserPlatformActions({
   activeSessionCount,
   isPending,
   isSelf,
-  canDelete,
   run,
   onClose,
+  onFamilyLinked,
 }: Props) {
   const t = useTranslations('dashboard.pages.users')
 
@@ -71,7 +71,11 @@ export function UserPlatformActions({
         {isSelf && <p className="text-xs text-graphite-600">{t('cannotChangeOwnPlatformLevel')}</p>}
         <div className="flex flex-wrap gap-2">
           <EditUserDialog user={user} />
-          <LinkFamilyDialog userId={user.id} families={unlinkedFamilies} />
+          <LinkFamilyDialog
+            userId={user.id}
+            families={unlinkedFamilies}
+            onLinked={onFamilyLinked}
+          />
           <ImpersonateUserButton
             userId={user.id}
             disabled={isPending || isSelf || user.isSuperAdmin || !user.isActive}
@@ -111,7 +115,7 @@ export function UserPlatformActions({
               {t('reactivate')}
             </Button>
           )}
-          {canDelete && <DeleteUserDialog user={user} onDeleted={onClose} />}
+          {!isSelf && !user.isActive && <DeleteUserDialog user={user} onDeleted={onClose} />}
         </div>
       </div>
     </Section>

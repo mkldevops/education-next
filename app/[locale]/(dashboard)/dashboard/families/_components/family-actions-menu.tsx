@@ -5,6 +5,7 @@ import { Archive, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { type CSSProperties, useEffect, useState } from 'react'
 import { Link } from '@/i18n/routing'
+import { familyActionHref } from '../[id]/_lib/family-action-href'
 
 type Props = { familyId: string }
 const MENU_WIDTH = 224
@@ -53,7 +54,7 @@ export function FamilyActionsMenu({ familyId }: Props) {
       >
         <Link
           role="menuitem"
-          href={`/dashboard/families/${familyId}?action=editFamily`}
+          href={familyActionHref(familyId, 'editFamily')}
           className={`${item} text-graphite`}
         >
           <Pencil className="h-4 w-4" />
@@ -61,7 +62,7 @@ export function FamilyActionsMenu({ familyId }: Props) {
         </Link>
         <Link
           role="menuitem"
-          href={`/dashboard/families/${familyId}?action=archiveFamily`}
+          href={familyActionHref(familyId, 'archiveFamily')}
           className={`${item} text-graphite`}
         >
           <Archive className="h-4 w-4" />
@@ -69,7 +70,7 @@ export function FamilyActionsMenu({ familyId }: Props) {
         </Link>
         <Link
           role="menuitem"
-          href={`/dashboard/families/${familyId}?action=deleteFamily`}
+          href={familyActionHref(familyId, 'deleteFamily')}
           className={`${item} text-red-600`}
         >
           <Trash2 className="h-4 w-4" />

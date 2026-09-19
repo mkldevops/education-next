@@ -9,13 +9,8 @@
     "src/use-cases/payments/list-payments.ts",
     "src/use-cases/students/list-students.ts",
     "src/config/email.ts",
-    "src/domain/index.ts",
-    "src/gateways/email/**",
-    "src/gateways/index.ts",
     "src/lib/email.ts",
     "src/lib/theme.ts",
-    "src/shared/index.ts",
-    "src/types/email.ts",
     "src/use-cases/index.ts"
   ],
   "ignoreDependencies": ["tailwindcss"]

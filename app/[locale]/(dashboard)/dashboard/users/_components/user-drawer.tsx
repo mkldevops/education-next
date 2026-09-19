@@ -13,8 +13,8 @@ import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
-import type { SchoolRole } from '@/types/enums'
 import { unlinkUserFamilyAction } from '../../../_lib/user-actions'
+import { ROLE_COLORS } from './role-colors'
 import { ChangeSchoolMemberRoleDialog, RemoveSchoolMemberDialog } from './school-member-dialogs'
 import { useUserDetail } from './use-user-detail'
 import {
@@ -25,7 +25,7 @@ import {
   SecuritySection,
 } from './user-detail-sections'
 import { UserPlatformActions } from './user-platform-actions'
-import type { MemberRow } from './users-table'
+import type { FamilyOption, MemberRow } from './users-table'
 
 interface Props {
   member: MemberRow | null
@@ -33,14 +33,8 @@ interface Props {
   onOpenChange: (open: boolean) => void
   canManagePlatform: boolean
   isSelf: boolean
-  families: Array<{ id: string; name: string }>
+  families: FamilyOption[]
   locale: string
-}
-
-const ROLE_COLORS: Record<SchoolRole, 'blue' | 'green'> = {
-  ADMIN: 'blue',
-  PARENT: 'green',
-  TEACHER: 'green',
 }
 
 export function UserDrawer({
@@ -142,9 +136,9 @@ export function UserDrawer({
               activeSessionCount={activeSessions.length}
               isPending={isPending}
               isSelf={isSelf}
-              canDelete={canManagePlatform && !isSelf && !user.isActive}
               run={run}
               onClose={close}
+              onFamilyLinked={() => void refresh()}
             />
           )}
         </DrawerBody>

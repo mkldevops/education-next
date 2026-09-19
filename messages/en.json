@@ -437,6 +437,7 @@
           "selectPlan": "Pricing plan",
           "selectClass": "Class",
           "discount": "Discount (€)",
+          "totalAmount": "Amount due (€)",
           "canLeaveAlone": "Can leave alone",
           "submit": "Create",
           "cancel": "Cancel",
@@ -447,7 +448,10 @@
             "validationError": "Check the information you entered",
             "notFound": "Family, plan or class not found",
             "discountExceedsPlan": "The discount exceeds the plan amount",
-            "classFull": "This class is full"
+            "classFull": "This class is full",
+            "totalAmountExceedsPlan": "The amount due exceeds the plan price",
+            "invalidCurrencyAmount": "The amount must have at most two decimal places",
+            "paymentsDisabled": "Payment management is turned off for this school"
           }
         },
         "edit": {
@@ -512,7 +516,9 @@
           "error": "Error updating period",
           "errors": {
             "notFound": "Period not found",
-            "validationError": "Check the information entered"
+            "validationError": "Check the information entered",
+            "invalidDates": "The end date must come after the start date",
+            "overlappingPeriod": "This period overlaps another one"
           }
         },
         "promote": {
@@ -577,7 +583,8 @@
           "error": "Error creating level",
           "errors": {
             "validationError": "Check the information you entered",
-            "notFound": "Level not found"
+            "notFound": "Level not found",
+            "nameTaken": "A level with this name already exists"
           }
         },
         "edit": {
@@ -597,7 +604,8 @@
             "levelInUse": "Classes use this level: remove them first",
             "circularReference": "This progression would create a loop",
             "notFound": "Level not found",
-            "validationError": "Check the information entered"
+            "validationError": "Check the information entered",
+            "nameTaken": "A level with this name already exists"
           }
         },
         "generateClass": {
@@ -725,9 +733,13 @@
             "classFull": "This class is full",
             "notFound": "Student, plan or class not found",
             "validationError": "Check the information you entered",
-            "existingEnrollmentPaid": "The existing enrollment already received a payment: refund or cancel it manually before recreating one."
+            "existingEnrollmentPaid": "The existing enrollment already received a payment: refund or cancel it manually before recreating one.",
+            "totalAmountExceedsPlan": "The amount due exceeds the plan price",
+            "invalidCurrencyAmount": "The amount must have at most two decimal places",
+            "paymentsDisabled": "Payment management is turned off for this school"
           },
-          "replaceExistingHintNoPayments": "The current enrollment is cancelled, then recreated."
+          "replaceExistingHintNoPayments": "The current enrollment is cancelled, then recreated.",
+          "totalAmount": "Amount due (€)"
         },
         "drawer": {
           "title": "Enrollment Details",
@@ -1011,7 +1023,8 @@
           "errors": {
             "validationError": "Check the information you entered",
             "notFound": "Setting not found",
-            "invalidConfigValue": "The value does not match the selected type"
+            "invalidConfigValue": "The value does not match the selected type",
+            "invalidNumber": "Enter a whole number of at least 1"
           }
         },
         "image": {
@@ -1329,8 +1342,13 @@
           "errors": {
             "discountExceedsPlan": "The discount exceeds the plan amount",
             "notFound": "Enrollment not found",
-            "validationError": "Check the amount you entered"
-          }
+            "validationError": "Check the amount you entered",
+            "totalAmountExceedsPlan": "The amount due exceeds the plan price",
+            "invalidCurrencyAmount": "The amount must have at most two decimal places",
+            "totalBelowPaid": "The amount due would fall below what has already been paid on this enrollment",
+            "paymentsDisabled": "Payment management is turned off for this school"
+          },
+          "totalAmount": "Final amount due (€)"
         }
       },
       "users": {
@@ -1625,7 +1643,7 @@
         "startExceptional": "Start exceptional attendance",
         "showOccurrences": "Show occurrences",
         "progress": "{recorded} / {total} recorded",
-        "markRemainingPresent": "Mark the remaining {count} present",
+        "markRemainingPresent": "{count, plural, one {Mark the remaining student present} other {Mark the remaining # students present}}",
         "showUnrecorded": "Show only unrecorded",
         "showAll": "Show all students",
         "clearStatus": "Not recorded",
@@ -1663,6 +1681,14 @@
           "attendanceClosed": "The school is closed on this date.",
           "sessionCancelled": "This session is cancelled.",
           "unexpected": "Saving failed. Please retry."
+        },
+        "returnTracking": "Back to attendance tracking",
+        "lateMinutesInvalid": "Late minutes must be a whole number between 0 and 1440.",
+        "cancelDialog": {
+          "title": "Cancel this session?",
+          "description": "The session will no longer count as an expected call. You can restore it from attendance tracking.",
+          "confirm": "Cancel session",
+          "dismiss": "Keep session"
         }
       },
       "teachers": {

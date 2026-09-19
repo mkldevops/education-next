@@ -19,12 +19,11 @@ import { canSwitchSchool } from '../../../_lib/school-switch'
 import { DeleteClassDialog } from '../_components/delete-class-dialog'
 import { EditClassDialog } from '../_components/edit-class-dialog'
 import { UnassignTeacherDialog } from '../_components/unassign-teacher-dialog'
+import { ROSTER_STATUSES } from '../_lib/roster'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
 }
-
-const ROSTER_STATUSES = ['PENDING', 'ACTIVE', 'COMPLETED'] as const
 
 /**
  * Résolveur unique de la page ET de `generateMetadata`.

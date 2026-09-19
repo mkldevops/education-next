@@ -20,6 +20,12 @@ vi.mock('next/navigation', () => ({
     throw new Error('notFound')
   },
 }))
+const getSchoolContextMock = vi.fn()
+vi.mock('@/lib/school-context', () => ({
+  getSchoolContext: getSchoolContextMock,
+  isActiveSchoolAdmin: (context: { isSuperAdmin: boolean; role: string | null }) =>
+    context.isSuperAdmin || context.role === 'ADMIN',
+}))
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
   setRequestLocale: () => {},
@@ -69,11 +75,19 @@ vi.mock('../../_lib/auth-helper', () => ({
   requireTeacher: requireTeacherMock,
 }))
 vi.mock('./_components/cancel-attendance-form', () => ({
-  CancelAttendanceForm: () => <button type="button">cancel form</button>,
-  CancelOccurrenceForm: () => <button type="button">cancel occurrence form</button>,
+  CancelAttendanceForm: ({ confirmation }: { confirmation?: object }) => (
+    <button type="button" data-confirm={confirmation ? 'yes' : 'no'}>
+      cancel form
+    </button>
+  ),
+  CancelOccurrenceForm: ({ confirmation }: { confirmation?: object }) => (
+    <button type="button" data-confirm={confirmation ? 'yes' : 'no'}>
+      cancel occurrence form
+    </button>
+  ),
 }))
 
-const { default: AttendanceTrackingPage } = await import('./page')
+const { default: AttendanceTrackingPage, generateMetadata } = await import('./page')
 
 const CLASS_FILTER_ID = '00000000-0000-4000-8000-000000000001'
 const TEACHER_FILTER_ID = '00000000-0000-4000-8000-000000000002'
@@ -141,6 +155,14 @@ describe('AttendanceTrackingPage', () => {
     expect(screen.getByText('cancelledCalls').parentElement).toHaveTextContent('1')
     expect(screen.getByText('expectedCalls').parentElement).toHaveTextContent('1')
     expect(screen.getByText('sessionCancelled')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'cancel occurrence form' })).toHaveAttribute(
+      'data-confirm',
+      'yes'
+    )
+    expect(screen.getByRole('button', { name: 'cancel form' })).toHaveAttribute(
+      'data-confirm',
+      'no'
+    )
     expect(screen.getByRole('link', { name: 'start' })).toHaveAttribute(
       'href',
       '/dashboard/my-classes/class-1/attendance?date=2026-09-17&slotId=slot-afternoon'
@@ -255,5 +277,27 @@ describe('AttendanceTrackingPage', () => {
       '/dashboard/my-classes/class-1/attendance?date=2026-09-17&slotId=slot-morning'
     )
     expect(screen.queryByRole('link', { name: 'start' })).not.toBeInTheDocument()
+  })
+})
+
+describe('AttendanceTrackingPage metadata', () => {
+  const metadataFor = () => generateMetadata({ params: Promise.resolve({ locale: 'fr' }) })
+
+  it.each([
+    [{ isSuperAdmin: false, role: 'ADMIN' }],
+    [{ isSuperAdmin: false, role: 'TEACHER' }],
+    [{ isSuperAdmin: true, role: null }],
+  ])('titles the page for a role that can open it (%o)', async (context) => {
+    getSchoolContextMock.mockResolvedValue({ schoolId: 'school-1', userId: 'u', ...context })
+    await expect(metadataFor()).resolves.toEqual({
+      title: 'dashboard.pages.attendance.trackingTitle',
+    })
+  })
+
+  it('does not reveal the page title to a parent or a visitor', async () => {
+    getSchoolContextMock.mockResolvedValue({ isSuperAdmin: false, role: 'PARENT' })
+    await expect(metadataFor()).resolves.toEqual({ title: 'errorPages.404.title' })
+    getSchoolContextMock.mockResolvedValue(null)
+    await expect(metadataFor()).resolves.toEqual({ title: 'errorPages.404.title' })
   })
 })

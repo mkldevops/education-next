@@ -1,5 +1,6 @@
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
+import { acquireAdvisoryLock } from './advisory-lock'
 
 type ClassScheduleSlotData = {
   classPeriodId: string
@@ -40,7 +41,7 @@ async function acquireScheduleLocks(
   ]
 
   for (const key of [...new Set(keys)].sort()) {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`
+    await acquireAdvisoryLock(tx, key)
   }
 }
 

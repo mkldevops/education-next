@@ -9,7 +9,7 @@ export const createPeriodSchema = z.object({
 
 export const updatePeriodSchema = z.object({
   schoolId: z.string().min(1),
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string().min(1).max(50).optional(),
   startAt: z.coerce.date().optional(),
   endAt: z.coerce.date().optional(),
@@ -17,5 +17,5 @@ export const updatePeriodSchema = z.object({
 
 export const deactivatePeriodSchema = z.object({
   schoolId: z.string().min(1),
-  id: z.string().uuid(),
+  id: z.uuid(),
 })

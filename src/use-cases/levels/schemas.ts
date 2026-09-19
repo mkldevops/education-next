@@ -7,17 +7,17 @@ export const createLevelSchema = z.object({
 
 export const setNextLevelSchema = z.object({
   schoolId: z.string().min(1),
-  id: z.string().uuid(),
-  nextLevelId: z.string().uuid().nullable(),
+  id: z.uuid(),
+  nextLevelId: z.uuid().nullable(),
 })
 
 export const renameLevelSchema = z.object({
   schoolId: z.string().min(1),
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string().min(1).max(250),
 })
 
 export const deactivateLevelSchema = z.object({
   schoolId: z.string().min(1),
-  id: z.string().uuid(),
+  id: z.uuid(),
 })

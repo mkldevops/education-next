@@ -4,7 +4,7 @@ import { AddPersonDialog } from '../../_components/add-person-dialog'
 import { EditPersonDialog } from '../../_components/edit-person-dialog'
 import { InviteParentButton } from '../../_components/invite-parent-button'
 
-type PersonWithRelation = FamilyPerson & {
+export type PersonWithRelation = FamilyPerson & {
   person: Person & {
     phoneNumbers: PhoneNumber[]
   }

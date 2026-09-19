@@ -1,17 +1,21 @@
 import { Breadcrumbs, buttonVariants, Card, EmptyState, StatusBadge } from '@peaklab/ui'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import type { ReactNode } from 'react'
 import { isAttendanceClosed } from '@/domain/attendance-closure'
 import { attendanceUtcDate } from '@/domain/attendance-date'
-import { expectedAttendance } from '@/domain/attendance-tracking'
+import { type ExpectedAttendance, expectedAttendance } from '@/domain/attendance-tracking'
 import { attendanceClassPeriodScope } from '@/domain/attendance-tracking-scope'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { getSelectedPeriod } from '@/features/dashboard/period'
+import type { AttendanceSessionStatus } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
+import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 import { requireSchoolSession, requireTeacher } from '../../_lib/auth-helper'
 import { CancelAttendanceForm, CancelOccurrenceForm } from './_components/cancel-attendance-form'
 
@@ -25,7 +29,7 @@ function shiftUtcDate(date: Date, days: number) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + days))
 }
 
-function isUuid(value: string | undefined) {
+function uuidOrUndefined(value: string | undefined) {
   return value && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value) ? value : undefined
 }
 
@@ -41,6 +45,63 @@ function attendanceEntryHref(classPeriodId: string, date: Date, slotId?: string)
   if (slotId) params.set('slotId', slotId)
   else params.set('occurrence', 'adhoc')
   return `/dashboard/my-classes/${classPeriodId}/attendance?${params.toString()}`
+}
+
+const EXPECTED_STATUS = {
+  NOT_STARTED: { badge: 'gray', label: 'notStarted', action: 'start' },
+  IN_PROGRESS: { badge: 'amber', label: 'inProgress', action: 'resume' },
+  VALIDATED: { badge: 'green', label: 'validated', action: 'viewOrCorrect' },
+} as const satisfies Record<ExpectedAttendance['status'], unknown>
+
+const ADHOC_STATUS = {
+  DRAFT: { badge: 'amber', label: 'inProgress' },
+  VALIDATED: { badge: 'green', label: 'validated' },
+  CANCELLED: { badge: 'red', label: 'sessionCancelled' },
+} as const satisfies Record<AttendanceSessionStatus, unknown>
+
+function OccurrenceRow({
+  title,
+  subtitle,
+  badge,
+  headingLevel = 'h3',
+  children,
+}: {
+  title: ReactNode
+  subtitle: ReactNode
+  badge: ReactNode
+  headingLevel?: 'h2' | 'h3'
+  children: ReactNode
+}) {
+  const Heading = headingLevel
+  return (
+    <Card className="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center sm:gap-4">
+      <div className="w-full min-w-0 sm:flex-1">
+        <Heading className="font-semibold text-graphite">{title}</Heading>
+        <p className="mt-1 text-sm text-graphite-600">{subtitle}</p>
+      </div>
+      {badge}
+      <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+        {children}
+      </div>
+    </Card>
+  )
+}
+
+/**
+ * Même porte que la page : administrateur actif ou enseignant de l'école. Les helpers
+ * de `page-metadata` ne couvrent pas le rôle enseignant ; un autre rôle reçoit le titre 404.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const [t, context] = await Promise.all([getTranslations({ locale }), getSchoolContext()])
+  const allowed = context !== null && (isActiveSchoolAdmin(context) || context.role === 'TEACHER')
+  return {
+    title: allowed ? t('dashboard.pages.attendance.trackingTitle') : t('errorPages.404.title'),
+  }
 }
 
 export default async function AttendanceTrackingPage({
@@ -73,16 +134,16 @@ export default async function AttendanceTrackingPage({
   if (!readsAsOptedIn(config?.value)) notFound()
 
   const selectedPeriod = await getSelectedPeriod(schoolId)
-  const today = attendanceUtcDate(query.date)
-  const classId = teacher ? undefined : isUuid(query.classId)
-  const filterTeacherId = teacher ? undefined : isUuid(query.teacherId)
+  const selectedDate = attendanceUtcDate(query.date)
+  const classId = teacher ? undefined : uuidOrUndefined(query.classId)
+  const filterTeacherId = teacher ? undefined : uuidOrUndefined(query.teacherId)
   const classPeriodScope = attendanceClassPeriodScope({
     periodId: selectedPeriod?.id,
     classId,
     teacherId: teacher?.teacherId ?? filterTeacherId,
   })
   const queryClassPeriodScope = classPeriodScope ?? { isActive: true, periodId: '' }
-  const day = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
+  const day = shiftUtcDate(selectedDate, 0)
   const [slots, sessions, closures, classes, teachers] = selectedPeriod
     ? await Promise.all([
         db.classScheduleSlot.findMany({
@@ -114,7 +175,7 @@ export default async function AttendanceTrackingPage({
             isActive: true,
             status: 'PUBLISHED',
             category: 'CLOSURE',
-            startAt: { lt: new Date(day.getTime() + 86400000) },
+            startAt: { lt: shiftUtcDate(day, 1) },
             OR: [{ endAt: null }, { endAt: { gte: day } }],
           },
           select: { status: true, category: true, startAt: true, endAt: true },
@@ -143,7 +204,7 @@ export default async function AttendanceTrackingPage({
     : [[], [], [], [], []]
   const closed = isAttendanceClosed(closures, day)
   const occurrences = expectedAttendance(
-    today,
+    selectedDate,
     closed
       ? slots.filter((slot) =>
           sessions.some(
@@ -171,6 +232,20 @@ export default async function AttendanceTrackingPage({
     sessionCancelled: t('errors.sessionCancelled'),
     unexpected: t('errors.unexpected'),
   }
+  const cancelConfirmation = {
+    title: t('cancelDialog.title'),
+    description: t('cancelDialog.description'),
+    confirmLabel: t('cancelDialog.confirm'),
+    cancelLabel: t('cancelDialog.dismiss'),
+  }
+  const resetFiltersLink = (
+    <Link
+      href={attendanceHref(selectedDate, {})}
+      className={buttonVariants({ variant: 'outline', className: 'min-h-11' })}
+    >
+      {t('resetFilters')}
+    </Link>
+  )
 
   return (
     <div className="space-y-6">
@@ -183,7 +258,7 @@ export default async function AttendanceTrackingPage({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-graphite">{t('trackingTitle')}</h1>
-          <p className="mt-1 text-sm text-graphite-600">{formattedDate(today)}</p>
+          <p className="mt-1 text-sm text-graphite-600">{formattedDate(selectedDate)}</p>
           <p className="mt-1 text-sm text-graphite-600">
             {t('description')}
             {selectedPeriod ? ` · ${selectedPeriod.name}` : ''}
@@ -194,7 +269,7 @@ export default async function AttendanceTrackingPage({
           className="flex w-full flex-wrap justify-start gap-2 sm:w-auto sm:justify-end"
         >
           <Link
-            href={attendanceHref(shiftUtcDate(today, -1), filters)}
+            href={attendanceHref(shiftUtcDate(selectedDate, -1), filters)}
             className={buttonVariants({ variant: 'outline', size: 'sm', className: 'min-h-11' })}
           >
             <ChevronLeft aria-hidden="true" className="size-4" />
@@ -207,7 +282,7 @@ export default async function AttendanceTrackingPage({
             {t('today')}
           </Link>
           <Link
-            href={attendanceHref(shiftUtcDate(today, 1), filters)}
+            href={attendanceHref(shiftUtcDate(selectedDate, 1), filters)}
             className={buttonVariants({ variant: 'outline', size: 'sm', className: 'min-h-11' })}
           >
             {t('nextDay')}
@@ -240,7 +315,7 @@ export default async function AttendanceTrackingPage({
                 className="h-10 rounded border border-alabaster-600 bg-white px-3 text-sm"
                 type="date"
                 name="date"
-                defaultValue={dateParam(today)}
+                defaultValue={dateParam(selectedDate)}
               />
             </label>
             <label className="grid gap-1 text-sm font-medium text-graphite">
@@ -277,14 +352,7 @@ export default async function AttendanceTrackingPage({
               <button type="submit" className={buttonVariants({ className: 'min-h-11' })}>
                 {t('applyFilters')}
               </button>
-              {filtersActive && (
-                <Link
-                  href={attendanceHref(today, {})}
-                  className={buttonVariants({ variant: 'outline', className: 'min-h-11' })}
-                >
-                  {t('resetFilters')}
-                </Link>
-              )}
+              {filtersActive && resetFiltersLink}
             </div>
           </form>
         </Card>
@@ -297,12 +365,7 @@ export default async function AttendanceTrackingPage({
           description={filtersActive ? undefined : t('empty')}
           action={
             filtersActive ? (
-              <Link
-                href={attendanceHref(today, {})}
-                className={buttonVariants({ variant: 'outline', className: 'min-h-11' })}
-              >
-                {t('resetFilters')}
-              </Link>
+              resetFiltersLink
             ) : admin ? (
               <Link
                 href="/dashboard/planning"
@@ -329,71 +392,50 @@ export default async function AttendanceTrackingPage({
                   candidate.classPeriodId === item.classPeriodId &&
                   candidate.occurrenceKey === item.classScheduleSlotId
               )
-              const statusKey =
-                item.status === 'NOT_STARTED'
-                  ? 'notStarted'
-                  : item.status === 'IN_PROGRESS'
-                    ? 'inProgress'
-                    : 'validated'
-              const actionLabel =
-                item.status === 'NOT_STARTED'
-                  ? t('start')
-                  : item.status === 'IN_PROGRESS'
-                    ? t('resume')
-                    : t('viewOrCorrect')
+              const status = EXPECTED_STATUS[item.status]
               return (
-                <Card
+                <OccurrenceRow
                   key={item.classScheduleSlotId}
-                  className="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center sm:gap-4"
+                  title={slot?.classPeriod.name}
+                  subtitle={
+                    <>
+                      {formattedDate(selectedDate)} · {slot?.startTime}–{slot?.endTime}
+                    </>
+                  }
+                  badge={<StatusBadge status={status.badge} label={t(status.label)} />}
                 >
-                  <div className="w-full min-w-0 sm:flex-1">
-                    <h3 className="font-semibold text-graphite">{slot?.classPeriod.name}</h3>
-                    <p className="mt-1 text-sm text-graphite-600">
-                      {formattedDate(today)} · {slot?.startTime}–{slot?.endTime}
-                    </p>
-                  </div>
-                  <StatusBadge
-                    status={
-                      item.status === 'VALIDATED'
-                        ? 'green'
-                        : item.status === 'IN_PROGRESS'
-                          ? 'amber'
-                          : 'gray'
-                    }
-                    label={t(statusKey)}
-                  />
-                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-                    <Link
-                      href={attendanceEntryHref(
-                        item.classPeriodId,
-                        today,
-                        item.classScheduleSlotId
-                      )}
-                      className={buttonVariants({ size: 'sm', className: 'min-h-11' })}
-                    >
-                      {actionLabel}
-                    </Link>
-                    {admin &&
-                      (session ? (
-                        <CancelAttendanceForm
-                          sessionId={session.id}
-                          cancelled
-                          label={t('cancel')}
-                          pendingLabel={t('cancellationPending')}
-                          errors={errorLabels}
-                        />
-                      ) : (
-                        <CancelOccurrenceForm
-                          classPeriodId={item.classPeriodId}
-                          classScheduleSlotId={item.classScheduleSlotId}
-                          occurredOn={item.occurredOn}
-                          label={t('cancel')}
-                          pendingLabel={t('cancellationPending')}
-                          errors={errorLabels}
-                        />
-                      ))}
-                  </div>
-                </Card>
+                  <Link
+                    href={attendanceEntryHref(
+                      item.classPeriodId,
+                      selectedDate,
+                      item.classScheduleSlotId
+                    )}
+                    className={buttonVariants({ size: 'sm', className: 'min-h-11' })}
+                  >
+                    {t(status.action)}
+                  </Link>
+                  {admin &&
+                    (session ? (
+                      <CancelAttendanceForm
+                        sessionId={session.id}
+                        cancelled
+                        label={t('cancel')}
+                        pendingLabel={t('cancellationPending')}
+                        errors={errorLabels}
+                        confirmation={cancelConfirmation}
+                      />
+                    ) : (
+                      <CancelOccurrenceForm
+                        classPeriodId={item.classPeriodId}
+                        classScheduleSlotId={item.classScheduleSlotId}
+                        occurredOn={item.occurredOn}
+                        label={t('cancel')}
+                        pendingLabel={t('cancellationPending')}
+                        errors={errorLabels}
+                        confirmation={cancelConfirmation}
+                      />
+                    ))}
+                </OccurrenceRow>
               )
             })}
           </div>
@@ -407,56 +449,44 @@ export default async function AttendanceTrackingPage({
           </h2>
           <div className="grid gap-3">
             {adhocSessions.map((session) => (
-              <Card
+              <OccurrenceRow
                 key={session.id}
-                className="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center sm:gap-4"
+                title={session.classPeriod.name}
+                subtitle={
+                  <>
+                    {t('exceptionalOccurrence')} · {formattedDate(selectedDate)}
+                  </>
+                }
+                badge={
+                  <StatusBadge
+                    status={ADHOC_STATUS[session.status].badge}
+                    label={t(ADHOC_STATUS[session.status].label)}
+                  />
+                }
               >
-                <div className="w-full min-w-0 sm:flex-1">
-                  <h3 className="font-semibold text-graphite">{session.classPeriod.name}</h3>
-                  <p className="mt-1 text-sm text-graphite-600">
-                    {t('exceptionalOccurrence')} · {formattedDate(today)}
-                  </p>
-                </div>
-                <StatusBadge
-                  status={
-                    session.status === 'VALIDATED'
-                      ? 'green'
-                      : session.status === 'CANCELLED'
-                        ? 'red'
-                        : 'amber'
-                  }
-                  label={
-                    session.status === 'VALIDATED'
-                      ? t('validated')
-                      : session.status === 'CANCELLED'
-                        ? t('sessionCancelled')
-                        : t('inProgress')
-                  }
-                />
-                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-                  {session.status !== 'CANCELLED' && (
-                    <Link
-                      href={attendanceEntryHref(session.classPeriodId, today)}
-                      className={buttonVariants({ size: 'sm', className: 'min-h-11' })}
-                    >
-                      {session.status === 'VALIDATED' ? t('viewOrCorrect') : t('resume')}
-                    </Link>
-                  )}
-                  {admin && (
-                    <CancelAttendanceForm
-                      sessionId={session.id}
-                      cancelled={session.status !== 'CANCELLED'}
-                      label={session.status === 'CANCELLED' ? t('restore') : t('cancel')}
-                      pendingLabel={
-                        session.status === 'CANCELLED'
-                          ? t('restorePending')
-                          : t('cancellationPending')
-                      }
-                      errors={errorLabels}
-                    />
-                  )}
-                </div>
-              </Card>
+                {session.status !== 'CANCELLED' && (
+                  <Link
+                    href={attendanceEntryHref(session.classPeriodId, selectedDate)}
+                    className={buttonVariants({ size: 'sm', className: 'min-h-11' })}
+                  >
+                    {session.status === 'VALIDATED' ? t('viewOrCorrect') : t('resume')}
+                  </Link>
+                )}
+                {admin && (
+                  <CancelAttendanceForm
+                    sessionId={session.id}
+                    cancelled={session.status !== 'CANCELLED'}
+                    label={session.status === 'CANCELLED' ? t('restore') : t('cancel')}
+                    pendingLabel={
+                      session.status === 'CANCELLED'
+                        ? t('restorePending')
+                        : t('cancellationPending')
+                    }
+                    errors={errorLabels}
+                    confirmation={session.status === 'CANCELLED' ? undefined : cancelConfirmation}
+                  />
+                )}
+              </OccurrenceRow>
             ))}
           </div>
         </section>
@@ -466,27 +496,25 @@ export default async function AttendanceTrackingPage({
         cancelledSessions.map((session) => {
           const slot = slots.find((candidate) => candidate.id === session.classScheduleSlotId)
           return (
-            <Card
+            <OccurrenceRow
               key={session.id}
-              className="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center sm:gap-4"
+              headingLevel="h2"
+              title={session.classPeriod.name}
+              subtitle={
+                <>
+                  {formattedDate(selectedDate)} · {slot?.startTime}–{slot?.endTime}
+                </>
+              }
+              badge={<StatusBadge status="red" label={t('sessionCancelled')} />}
             >
-              <div className="w-full min-w-0 sm:flex-1">
-                <h2 className="font-semibold text-graphite">{session.classPeriod.name}</h2>
-                <p className="mt-1 text-sm text-graphite-600">
-                  {formattedDate(today)} · {slot?.startTime}–{slot?.endTime}
-                </p>
-              </div>
-              <StatusBadge status="red" label={t('sessionCancelled')} />
-              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-                <CancelAttendanceForm
-                  sessionId={session.id}
-                  cancelled={false}
-                  label={t('restore')}
-                  pendingLabel={t('restorePending')}
-                  errors={errorLabels}
-                />
-              </div>
-            </Card>
+              <CancelAttendanceForm
+                sessionId={session.id}
+                cancelled={false}
+                label={t('restore')}
+                pendingLabel={t('restorePending')}
+                errors={errorLabels}
+              />
+            </OccurrenceRow>
           )
         })}
     </div>

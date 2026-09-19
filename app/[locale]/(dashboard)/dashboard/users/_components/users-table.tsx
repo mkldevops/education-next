@@ -9,6 +9,7 @@ import { useTableLabels } from '@/features/tables'
 import { formatDate } from '@/lib/date'
 import type { SchoolRole } from '@/types/enums'
 import { InviteUserDialog } from './invite-user-dialog'
+import { ROLE_COLORS } from './role-colors'
 import { UserDrawer } from './user-drawer'
 
 export type MemberRow = {
@@ -30,8 +31,8 @@ export type MemberRow = {
   lastLoginAt: Date | null
 }
 
-type FamilyOption = { id: string; name: string }
-type TeacherOption = { id: string; name: string; email: string | null }
+export type FamilyOption = { id: string; name: string }
+export type TeacherOption = { id: string; name: string; email: string | null }
 
 interface Props {
   members: MemberRow[]
@@ -43,11 +44,6 @@ interface Props {
 }
 
 const ROLE_VALUES: SchoolRole[] = ['ADMIN', 'PARENT', 'TEACHER']
-const ROLE_COLORS: Record<SchoolRole, 'blue' | 'green'> = {
-  ADMIN: 'blue',
-  PARENT: 'green',
-  TEACHER: 'green',
-}
 
 export function UsersTable({
   members,

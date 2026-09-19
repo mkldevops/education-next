@@ -25,6 +25,20 @@ const invitationIdSchema = z.object({ id: z.string().min(1) })
 
 const INVITATION_TTL_MS = 48 * 60 * 60 * 1000
 
+const nextInvitationExpiry = () => new Date(Date.now() + INVITATION_TTL_MS)
+
+async function findPendingInvitation(schoolId: string, input: unknown) {
+  const parsed = invitationIdSchema.safeParse(input)
+  if (!parsed.success) return 'invalidInput' as const
+
+  const invitation = await db.invitation.findUnique({
+    where: { id: parsed.data.id, schoolId },
+  })
+  if (!invitation) return 'notFound' as const
+  if (invitation.usedAt) return 'alreadyUsed' as const
+  return invitation
+}
+
 export async function inviteUserAction(input: {
   email: string
   role: string
@@ -49,7 +63,7 @@ export async function inviteUserAction(input: {
       where: { familyId_personId: { familyId, personId }, schoolId },
       include: { person: true },
     })
-    if (!familyPerson || familyPerson.person.email?.toLowerCase() !== email.toLowerCase()) {
+    if (!familyPerson || familyPerson.person.email?.toLowerCase() !== email) {
       return 'invalidInput'
     }
   }
@@ -87,7 +101,7 @@ export async function inviteUserAction(input: {
       role,
       token,
       locale,
-      expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
+      expiresAt: nextInvitationExpiry(),
       createdById: userId,
       familyId,
       personId,
@@ -106,14 +120,8 @@ export async function inviteUserAction(input: {
 export async function resendInvitationAction(input: { id: string }) {
   const { schoolId } = await requireSchoolAdmin()
 
-  const parsed = invitationIdSchema.safeParse(input)
-  if (!parsed.success) return 'invalidInput'
-
-  const invitation = await db.invitation.findUnique({
-    where: { id: parsed.data.id, schoolId },
-  })
-  if (!invitation) return 'notFound'
-  if (invitation.usedAt) return 'alreadyUsed'
+  const invitation = await findPendingInvitation(schoolId, input)
+  if (typeof invitation === 'string') return invitation
 
   const school = await schoolGateway.findActiveById(schoolId)
   if (!school) return 'notFound'
@@ -121,7 +129,7 @@ export async function resendInvitationAction(input: { id: string }) {
   const token = crypto.randomUUID()
   await db.invitation.update({
     where: { id: invitation.id, schoolId },
-    data: { token, expiresAt: new Date(Date.now() + INVITATION_TTL_MS) },
+    data: { token, expiresAt: nextInvitationExpiry() },
   })
 
   const sent = await sendInvitationEmail({
@@ -140,14 +148,8 @@ export async function resendInvitationAction(input: { id: string }) {
 export async function revokeInvitationAction(input: { id: string }) {
   const { schoolId } = await requireSchoolAdmin()
 
-  const parsed = invitationIdSchema.safeParse(input)
-  if (!parsed.success) return 'invalidInput'
-
-  const invitation = await db.invitation.findUnique({
-    where: { id: parsed.data.id, schoolId },
-  })
-  if (!invitation) return 'notFound'
-  if (invitation.usedAt) return 'alreadyUsed'
+  const invitation = await findPendingInvitation(schoolId, input)
+  if (typeof invitation === 'string') return invitation
 
   await db.invitation.delete({ where: { id: invitation.id, schoolId } })
 

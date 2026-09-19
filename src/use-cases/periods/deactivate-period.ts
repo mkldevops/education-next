@@ -8,12 +8,14 @@ export async function deactivatePeriod(input: Input, periodGw = periodGateway) {
   const parsed = deactivatePeriodSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const period = await periodGw.findById(parsed.data.schoolId, parsed.data.id)
+  const { schoolId, id } = parsed.data
+
+  const period = await periodGw.findById(schoolId, id)
   if (!period) return 'notFound' as const
 
-  const classPeriods = await periodGw.countClassPeriods(parsed.data.schoolId, parsed.data.id)
+  const classPeriods = await periodGw.countClassPeriods(schoolId, id)
   if (classPeriods > 0) return 'periodInUse' as const
 
-  await periodGw.deactivate(parsed.data.schoolId, parsed.data.id)
+  await periodGw.deactivate(schoolId, id)
   return 'OK' as const
 }

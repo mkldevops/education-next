@@ -8,22 +8,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Input,
-  Label,
-  Select,
 } from '@peaklab/ui'
 import { Pencil } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
+import type { RelationType, Sex } from '@/generated/prisma/client'
 import { updateFamilyPersonAction } from '../../../_lib/family-actions'
-
-type RelationType = 'PARENT' | 'TUTOR' | 'GRANDPARENT' | 'SIBLING' | 'OTHER'
+import { PersonFields } from './person-fields'
 
 export interface EditablePerson {
   id: string
   name: string
   lastname: string
-  sex: 'MALE' | 'FEMALE' | null
+  sex: Sex | null
   email: string | null
   address: string | null
   postCode: string | null
@@ -73,7 +70,7 @@ function EditPersonForm({ familyId, person }: EditPersonDialogProps) {
       personId: person.id,
       name: formData.get('name') as string,
       lastname: formData.get('lastname') as string,
-      sex: optionalField(formData, 'sex') as 'MALE' | 'FEMALE' | null,
+      sex: optionalField(formData, 'sex') as Sex | null,
       relationType: formData.get('relationType') as RelationType,
       email: optionalField(formData, 'email'),
       address: optionalField(formData, 'address'),
@@ -86,119 +83,7 @@ function EditPersonForm({ familyId, person }: EditPersonDialogProps) {
   return (
     <form onSubmit={handleSubmit}>
       <DialogBody>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="edit-person-name">{t('firstname')}</Label>
-              <Input
-                id="edit-person-name"
-                name="name"
-                required
-                maxLength={250}
-                defaultValue={person.name}
-                disabled={isPending}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-person-lastname">{t('lastname')}</Label>
-              <Input
-                id="edit-person-lastname"
-                name="lastname"
-                required
-                maxLength={250}
-                defaultValue={person.lastname}
-                disabled={isPending}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="edit-person-sex">{t('sex')}</Label>
-              <Select
-                id="edit-person-sex"
-                name="sex"
-                defaultValue={person.sex ?? ''}
-                disabled={isPending}
-              >
-                <option value="">{t('unspecified')}</option>
-                <option value="MALE">{t('male')}</option>
-                <option value="FEMALE">{t('female')}</option>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-person-relation">{t('relationType')}</Label>
-              <Select
-                id="edit-person-relation"
-                name="relationType"
-                required
-                defaultValue={person.relationType}
-                disabled={isPending}
-              >
-                <option value="PARENT">{t('parent')}</option>
-                <option value="TUTOR">{t('tutor')}</option>
-                <option value="GRANDPARENT">{t('grandparent')}</option>
-                <option value="SIBLING">{t('sibling')}</option>
-                <option value="OTHER">{t('other')}</option>
-              </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="edit-person-email">{t('email')}</Label>
-              <Input
-                id="edit-person-email"
-                name="email"
-                type="email"
-                maxLength={250}
-                defaultValue={person.email ?? ''}
-                disabled={isPending}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-person-phone">{t('phone')}</Label>
-              <Input
-                id="edit-person-phone"
-                name="phoneNumber"
-                type="tel"
-                maxLength={20}
-                defaultValue={person.phoneNumber ?? ''}
-                disabled={isPending}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-person-address">{t('address')}</Label>
-            <Input
-              id="edit-person-address"
-              name="address"
-              maxLength={250}
-              defaultValue={person.address ?? ''}
-              disabled={isPending}
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="edit-person-postcode">{t('postCode')}</Label>
-              <Input
-                id="edit-person-postcode"
-                name="postCode"
-                maxLength={10}
-                defaultValue={person.postCode ?? ''}
-                disabled={isPending}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-person-city">{t('city')}</Label>
-              <Input
-                id="edit-person-city"
-                name="city"
-                maxLength={250}
-                defaultValue={person.city ?? ''}
-                disabled={isPending}
-              />
-            </div>
-          </div>
-        </div>
+        <PersonFields t={t} idPrefix="edit-person" isPending={isPending} defaults={person} />
       </DialogBody>
       <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>

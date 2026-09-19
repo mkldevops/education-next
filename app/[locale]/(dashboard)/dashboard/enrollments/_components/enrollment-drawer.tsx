@@ -14,23 +14,14 @@ import {
   StatusBadge,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
-import { Link, useRouter } from '@/i18n/routing'
+import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { type DecimalLike, formatCurrency, toNumber } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
-import { toast, toastActionError } from '@/lib/toast'
-import {
-  activateEnrollmentAction,
-  cancelEnrollmentAction,
-  completeEnrollmentAction,
-} from '../../../_lib/enrollment-actions'
-import { ApplyDiscountDialog } from './apply-discount-dialog'
-import { ReassignClassDialog } from './reassign-class-dialog'
-import { SetEnrollmentPlanDialog } from './set-enrollment-plan-dialog'
+import { EnrollmentActions } from './enrollment-actions'
 
 interface ClassAssignment {
   id: string
@@ -95,16 +86,10 @@ export function EnrollmentDrawer({
   const t = useTranslations('dashboard.pages.enrollments.drawer')
   const tEnrollments = useTranslations('dashboard.pages.enrollments')
   const tDetails = useTranslations('dashboard.pages.enrollmentDetails')
-  const tActions = useTranslations('dashboard.pages.enrollmentDetails.actions')
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
 
   if (!enrollment) return null
 
-  const familyName =
-    enrollment.student.person.families.length > 0
-      ? enrollment.student.person.families[0].family.name
-      : '-'
+  const familyName = enrollment.student.person.families[0]?.family.name ?? '-'
 
   const totalPaid = enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
   const totalAmountNum = toNumber(enrollment.totalAmount)
@@ -113,25 +98,6 @@ export function EnrollmentDrawer({
   const remaining = calculateRemainingBalance(totalAmountNum, totalPaid)
 
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
-
-  const run = (action: () => Promise<string>, successKey: string, closeAfter = false) => {
-    startTransition(async () => {
-      const result = await action()
-      if (result !== 'OK') {
-        toastActionError(tActions, result)
-        return
-      }
-      toast.success(tActions(successKey))
-      router.refresh()
-      if (closeAfter) onOpenChange(false)
-    })
-  }
-
-  const handleActivate = () =>
-    run(() => activateEnrollmentAction({ id: enrollment.id }), 'activated')
-  const handleComplete = () =>
-    run(() => completeEnrollmentAction({ id: enrollment.id }), 'completed')
-  const handleCancel = () => run(() => cancelEnrollmentAction(enrollment.id), 'cancelled', true)
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -181,50 +147,19 @@ export function EnrollmentDrawer({
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 border-t pt-3">
-              {isAdmin && enrollment.status === 'PENDING' && (
-                <>
-                  <Button size="sm" disabled={isPending} onClick={handleActivate}>
-                    {isPending ? '...' : tActions('activate')}
-                  </Button>
-                  <Button size="sm" variant="outline" disabled={isPending} onClick={handleCancel}>
-                    {isPending ? '...' : tActions('cancel')}
-                  </Button>
-                </>
-              )}
-              {isAdmin && enrollment.status === 'ACTIVE' && (
-                <>
-                  <Button size="sm" disabled={isPending} onClick={handleComplete}>
-                    {isPending ? '...' : tActions('complete')}
-                  </Button>
-                  <Button size="sm" variant="outline" disabled={isPending} onClick={handleCancel}>
-                    {isPending ? '...' : tActions('cancel')}
-                  </Button>
-                </>
-              )}
-              {isAdmin && (enrollment.status === 'PENDING' || enrollment.status === 'ACTIVE') && (
-                <>
-                  <ReassignClassDialog
-                    enrollmentId={enrollment.id}
-                    currentClassId={currentClassId}
-                    classes={availableClasses}
-                  />
-                  {paymentsEnabled && (
-                    <ApplyDiscountDialog
-                      enrollmentId={enrollment.id}
-                      currentTotalAmount={totalAmountNum}
-                    />
-                  )}
-                  {paymentsEnabled &&
-                    enrollment.plan.name === UNPRICED_PLAN_NAME &&
-                    availablePlans.length > 0 && (
-                      <SetEnrollmentPlanDialog
-                        enrollmentId={enrollment.id}
-                        plans={availablePlans}
-                      />
-                    )}
-                </>
-              )}
+            <div className="border-t pt-3">
+              <EnrollmentActions
+                enrollmentId={enrollment.id}
+                status={enrollment.status}
+                isAdmin={isAdmin}
+                currentClassId={currentClassId}
+                availableClasses={availableClasses}
+                currentTotalAmount={totalAmountNum}
+                paymentsEnabled={paymentsEnabled}
+                planName={enrollment.plan.name}
+                availablePlans={availablePlans}
+                onCancelled={() => onOpenChange(false)}
+              />
             </div>
           </div>
 

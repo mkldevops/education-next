@@ -1,19 +1,13 @@
 import { Card } from '@peaklab/ui'
 import { BookOpen, CircleCheck, TriangleAlert, Users } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
-import type { FamilyPerson, Person, PhoneNumber } from '@/generated/prisma/client'
 import { formatCurrency } from '@/lib/decimal'
 import { isStripeConfigured } from '@/lib/stripe'
+import { familyActionHref } from '../_lib/family-action-href'
 import { FinancialSummary } from './financial-summary'
 import { KPICard } from './kpi-card'
 import { OnlinePaymentButton } from './online-payment-button'
-import { ParentsSection } from './parents-section'
-
-type PersonWithRelation = FamilyPerson & {
-  person: Person & {
-    phoneNumbers: PhoneNumber[]
-  }
-}
+import { ParentsSection, type PersonWithRelation } from './parents-section'
 
 type Props = {
   locale: string
@@ -66,7 +60,7 @@ export async function OverviewTab({
           action={
             isAdmin
               ? {
-                  href: `/dashboard/families/${familyId}?action=addStudent`,
+                  href: familyActionHref(familyId, 'addStudent'),
                   label: t('actions.newStudent'),
                 }
               : undefined
@@ -80,7 +74,7 @@ export async function OverviewTab({
           action={
             isAdmin && canAddEnrollment
               ? {
-                  href: `/dashboard/families/${familyId}?action=addEnrollment`,
+                  href: familyActionHref(familyId, 'addEnrollment'),
                   label: t('actions.addEnrollment'),
                 }
               : undefined

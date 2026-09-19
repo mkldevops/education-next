@@ -5,6 +5,7 @@ import { Copy } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import {
+  isKeyUsable,
   MCP_KEY_DEFAULT_LIFETIME_DAYS,
   MCP_KEY_LIFETIMES_DAYS,
   MCP_KEY_MAX_PER_USER,
@@ -19,6 +20,12 @@ type Props = {
   keys: McpApiKeyView[]
 }
 
+const isLive = (row: McpApiKeyView) =>
+  isKeyUsable({
+    revokedAt: row.revokedAt === null ? null : new Date(row.revokedAt),
+    expiresAt: new Date(row.expiresAt),
+  })
+
 /**
  * L'onglet montre la clé en clair une seule fois, sans jamais la relire : la base n'en
  * garde que le hachage, et un second affichage supposerait de la conserver déchiffrable.
@@ -29,12 +36,11 @@ export function ApiKeysSection({ keys }: Props) {
   const [pending, startTransition] = useTransition()
   const [name, setName] = useState('')
   const [lifetimeDays, setLifetimeDays] = useState<number>(MCP_KEY_DEFAULT_LIFETIME_DAYS)
-  const [createdKey, setCreatedKey] = useState<string | null>(null)
+  const [created, setCreated] = useState<{ id: string; key: string } | null>(null)
+  const createdKey = created?.key ?? null
   const [rows, setRows] = useState(keys)
 
-  const liveCount = rows.filter(
-    (row) => row.revokedAt === null && new Date(row.expiresAt).getTime() > Date.now()
-  ).length
+  const liveCount = rows.filter(isLive).length
   const atCapacity = liveCount >= MCP_KEY_MAX_PER_USER
 
   const command = createdKey
@@ -62,7 +68,7 @@ export function ApiKeysSection({ keys }: Props) {
         return
       }
 
-      setCreatedKey(result.key)
+      setCreated({ id: result.record.id, key: result.key })
       setRows((current) => [result.record, ...current])
       setName('')
     })
@@ -78,6 +84,8 @@ export function ApiKeysSection({ keys }: Props) {
 
       const revokedAt = new Date().toISOString()
       setRows((current) => current.map((row) => (row.id === id ? { ...row, revokedAt } : row)))
+      // Une clé révoquée ne doit plus rester affichée ni copiable.
+      setCreated((current) => (current?.id === id ? null : current))
       toast.success(t('revoked'))
     })
   }
@@ -156,7 +164,6 @@ export function ApiKeysSection({ keys }: Props) {
           <ul className="mt-4 divide-y divide-alabaster-700">
             {rows.map((row) => {
               const revoked = row.revokedAt !== null
-              const expired = new Date(row.expiresAt).getTime() <= Date.now()
 
               return (
                 <li key={row.id} className="flex items-center justify-between gap-4 py-3">
@@ -171,7 +178,7 @@ export function ApiKeysSection({ keys }: Props) {
                         : t('list.neverUsed')}
                     </p>
                   </div>
-                  {revoked || expired ? (
+                  {!isLive(row) ? (
                     <span className="shrink-0 text-xs text-graphite-600">
                       {revoked ? t('list.revoked') : t('list.expired')}
                     </span>

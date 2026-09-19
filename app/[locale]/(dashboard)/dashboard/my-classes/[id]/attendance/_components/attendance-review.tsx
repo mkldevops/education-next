@@ -4,7 +4,12 @@ import { Button } from '@peaklab/ui'
 import { MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from '@/i18n/routing'
-import type { AttendanceEntry, AttendanceStatus } from './student-attendance-card'
+import {
+  type AttendanceEntry,
+  type AttendanceStatus,
+  attendanceStatusLabel,
+  countAttendanceStatuses,
+} from './student-attendance-card'
 
 type ReviewLabels = {
   present: string
@@ -28,6 +33,20 @@ type ReviewLabels = {
   returnClasses: string
 }
 
+const filterStyles: Record<AttendanceStatus, string> = {
+  PRESENT: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+  LATE: 'border-amber-200 bg-amber-50 text-amber-950',
+  ABSENT: 'border-red-200 bg-red-50 text-red-950',
+  NOT_RECORDED: 'border-alabaster-700 bg-alabaster-900 text-graphite',
+}
+
+const badgeStyles: Record<AttendanceStatus, string> = {
+  PRESENT: 'bg-emerald-50 text-emerald-900',
+  LATE: 'bg-amber-50 text-amber-950',
+  ABSENT: 'bg-red-50 text-red-900',
+  NOT_RECORDED: 'bg-alabaster-900 text-graphite-600',
+}
+
 export function AttendanceReview({
   entries,
   labels,
@@ -38,6 +57,7 @@ export function AttendanceReview({
   validating,
   validated,
   onCorrect,
+  returnHref,
 }: {
   entries: AttendanceEntry[]
   labels: ReviewLabels
@@ -48,24 +68,12 @@ export function AttendanceReview({
   validating: boolean
   validated: boolean
   onCorrect: () => void
+  /** Écran de retour accessible au rôle courant : suivi des appels (admin) ou « Mes classes ». */
+  returnHref: string
 }) {
   const [filter, setFilter] = useState<AttendanceStatus | 'ALL'>('ALL')
-  const counts = entries.reduce(
-    (all, entry) => {
-      all[entry.status] += 1
-      return all
-    },
-    { NOT_RECORDED: 0, PRESENT: 0, LATE: 0, ABSENT: 0 }
-  )
+  const counts = countAttendanceStatuses(entries)
   const rows = filter === 'ALL' ? entries : entries.filter((entry) => entry.status === filter)
-  const name = (status: AttendanceStatus) =>
-    status === 'PRESENT'
-      ? labels.present
-      : status === 'LATE'
-        ? labels.late
-        : status === 'ABSENT'
-          ? labels.absent
-          : labels.unrecorded
   return (
     <section
       className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-alabaster-700 bg-white shadow-[0_18px_50px_-34px_rgba(53,53,53,0.42)]"
@@ -92,10 +100,10 @@ export function AttendanceReview({
             type="button"
             aria-pressed={filter === status}
             onClick={() => setFilter(status)}
-            className={`rounded-xl border p-3 text-left text-sm transition-colors ${filter === status ? 'ring-2 ring-primary ring-offset-1' : ''} ${status === 'PRESENT' ? 'border-emerald-200 bg-emerald-50 text-emerald-950' : status === 'LATE' ? 'border-amber-200 bg-amber-50 text-amber-950' : status === 'ABSENT' ? 'border-red-200 bg-red-50 text-red-950' : 'border-alabaster-700 bg-alabaster-900 text-graphite'}`}
+            className={`rounded-xl border p-3 text-left text-sm transition-colors ${filter === status ? 'ring-2 ring-primary ring-offset-1' : ''} ${filterStyles[status]}`}
           >
             <strong className="block text-xl">{counts[status]}</strong>
-            {name(status)}
+            {attendanceStatusLabel(status, labels)}
           </button>
         ))}
       </div>
@@ -148,9 +156,9 @@ export function AttendanceReview({
               <p className="break-words font-medium">
                 {entry.studentName}{' '}
                 <span
-                  className={`ml-1 inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs ${entry.status === 'PRESENT' ? 'bg-emerald-50 text-emerald-900' : entry.status === 'LATE' ? 'bg-amber-50 text-amber-950' : entry.status === 'ABSENT' ? 'bg-red-50 text-red-900' : 'bg-alabaster-900 text-graphite-600'}`}
+                  className={`ml-1 inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs ${badgeStyles[entry.status]}`}
                 >
-                  {name(entry.status)}
+                  {attendanceStatusLabel(entry.status, labels)}
                 </span>
                 {entry.status === 'LATE' && entry.lateMinutes !== null ? (
                   <span className="ml-1 whitespace-nowrap text-xs text-amber-800">
@@ -189,7 +197,7 @@ export function AttendanceReview({
           <>
             <Link
               className="inline-flex min-h-11 items-center text-sm text-primary underline"
-              href="/dashboard/my-classes"
+              href={returnHref}
             >
               {labels.returnClasses}
             </Link>

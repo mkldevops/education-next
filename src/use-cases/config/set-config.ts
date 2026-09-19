@@ -10,10 +10,16 @@ import { setConfigSchema } from './schemas'
 
 type Input = z.infer<typeof setConfigSchema>
 
+/**
+ * Le seul réglage NUMBER est un effectif (`max_students_per_class`) : un entier d'au moins 1.
+ * `Number('')` vaut 0 et `Number('1e2')` vaut 100, d'où le motif plutôt qu'une conversion.
+ */
+function isPositiveInteger(value: string): boolean {
+  return /^\d+$/.test(value) && Number(value) >= 1 && Number.isSafeInteger(Number(value))
+}
+
 function validateValueType(value: string, valueType: string): boolean {
   switch (valueType) {
-    case 'NUMBER':
-      return !Number.isNaN(Number(value))
     case 'BOOLEAN':
       return value === 'true' || value === 'false'
     // La valeur d'une couleur est injectée telle quelle dans le `<style>` du layout : sans
@@ -39,6 +45,9 @@ export async function setConfig(input: Input, configGw = configGateway) {
     return 'invalidConfigValue' as const
   }
   const valueType = SCHOOL_CONFIG_VALUE_TYPES[name]
+  if (valueType === 'NUMBER' && !isPositiveInteger(value)) {
+    return 'invalidNumber' as const
+  }
   if (!validateValueType(value, valueType)) {
     return 'invalidConfigValue' as const
   }

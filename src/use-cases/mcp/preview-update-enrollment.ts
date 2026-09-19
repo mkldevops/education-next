@@ -1,11 +1,10 @@
 import type { z } from 'zod'
 import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
-import { draftExpiry, type McpFinding } from '@/domain/mcp-draft'
+import type { McpFinding } from '@/domain/mcp-draft'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
-import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { roundHalfUp } from '@/lib/decimal'
-import { draftChecksum } from '@/lib/mcp-draft-crypto'
+import { blockedPreview, saveDraftPreview } from './draft-response'
 import { matchByName } from './match-by-name'
 import type { McpScope } from './resolve-mcp-scope'
 import { previewUpdateEnrollmentSchema } from './schemas'
@@ -17,6 +16,12 @@ type Input = z.input<typeof previewUpdateEnrollmentSchema>
 type Candidate = Awaited<ReturnType<typeof enrollmentGateway.findOpenForMcp>>[number]
 
 export const UPDATE_ENROLLMENT_TOOL = 'update_enrollment'
+
+export function paidAmount(
+  payments: ReadonlyArray<{ amount: { toString(): string } | number }>
+): number {
+  return roundHalfUp(payments.reduce((sum, payment) => sum + Number(payment.amount), 0))
+}
 
 function describe(enrollment: Candidate) {
   return {
@@ -47,7 +52,7 @@ export async function previewUpdateEnrollment(scope: McpScope, input: Input) {
       : { name: data.studentName ?? '', lastname: data.studentLastname ?? '' }
   )
   const matches = { enrollments: candidates.map(describe) }
-  const nothing = { draftId: null, checksum: null, plan: null, matches, warnings, blockers }
+  const nothing = blockedPreview(matches, warnings, blockers)
 
   if (candidates.length !== 1) {
     blockers.push({
@@ -86,18 +91,18 @@ export async function previewUpdateEnrollment(scope: McpScope, input: Input) {
   // Sans remise lue, celle de l'inscription suit la nouvelle formule : changer de forfait
   // ne doit pas effacer en silence une remise accordée.
   let discount = data.discount ?? before.discount
-  const changedField =
-    data.totalAmount !== undefined
-      ? 'totalAmount'
-      : data.discount === undefined
-        ? 'planName'
-        : 'discount'
-  const changedValue =
-    data.totalAmount !== undefined
-      ? String(data.totalAmount)
-      : data.discount === undefined
-        ? plan.name
-        : String(discount)
+  let changedField: 'totalAmount' | 'planName' | 'discount'
+  let changedValue: string
+  if (data.totalAmount !== undefined) {
+    changedField = 'totalAmount'
+    changedValue = String(data.totalAmount)
+  } else if (data.discount === undefined) {
+    changedField = 'planName'
+    changedValue = plan.name
+  } else {
+    changedField = 'discount'
+    changedValue = String(discount)
+  }
 
   if (data.totalAmount !== undefined) {
     const pricing = pricingFromTotalAmount(plan.amount, data.totalAmount)
@@ -118,9 +123,7 @@ export async function previewUpdateEnrollment(scope: McpScope, input: Input) {
   }
 
   const totalAmount = data.totalAmount ?? calculateTotalAmount(plan.amount, discount)
-  const paid = roundHalfUp(
-    enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
-  )
+  const paid = paidAmount(enrollment.payments)
 
   // Un total recalculé ne se compare pas au total stocké seul : une formule dont le prix a
   // changé depuis l'inscription rend un recalcul réel même à formule et remise égales.
@@ -149,14 +152,5 @@ export async function previewUpdateEnrollment(scope: McpScope, input: Input) {
     remaining: roundHalfUp(totalAmount - paid),
   }
 
-  const checksum = draftChecksum(resolved)
-  const draft = await mcpDraftGateway.create(schoolId, {
-    keyId: scope.keyId,
-    tool: UPDATE_ENROLLMENT_TOOL,
-    checksum,
-    resolved,
-    expiresAt: draftExpiry(),
-  })
-
-  return { draftId: draft.id, checksum, plan: resolved, matches, warnings, blockers }
+  return saveDraftPreview(scope, UPDATE_ENROLLMENT_TOOL, resolved, matches, warnings, blockers)
 }

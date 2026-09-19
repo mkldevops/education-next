@@ -147,6 +147,51 @@ describe('ApiKeysSection', () => {
       expect(toastSuccess).toHaveBeenCalledWith('revoked')
     })
 
+    it('hides the new-key panel once the key it shows is revoked', async () => {
+      const record = keyRow({ name: 'Poste admin' })
+      createMcpApiKeyAction.mockResolvedValue({ key: 'edu_mcp_secret', record })
+      revokeMcpApiKeyAction.mockResolvedValue('OK')
+
+      render(<ApiKeysSection keys={[]} />)
+      fireEvent.change(screen.getByLabelText('nameLabel'), { target: { value: 'Poste admin' } })
+      fireEvent.click(screen.getByRole('button', { name: 'create' }))
+
+      await waitFor(() => expect(screen.getByText('created.title')).toBeInTheDocument())
+
+      // La transition de création doit être terminée avant d'ouvrir la confirmation.
+      await waitFor(() => expect(screen.getByRole('button', { name: 'list.revoke' })).toBeEnabled())
+      fireEvent.click(screen.getByRole('button', { name: 'list.revoke' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'revokeDialog.confirm' }))
+
+      await waitFor(() => expect(revokeMcpApiKeyAction).toHaveBeenCalledWith(record.id))
+      await waitFor(() => expect(screen.queryByText('created.title')).not.toBeInTheDocument())
+      expect(screen.queryByDisplayValue('edu_mcp_secret')).not.toBeInTheDocument()
+    })
+
+    it('keeps the new-key panel when another key is revoked', async () => {
+      const other = keyRow({ name: 'Ancien poste' })
+      const record = keyRow({ name: 'Poste admin' })
+      createMcpApiKeyAction.mockResolvedValue({ key: 'edu_mcp_secret', record })
+      revokeMcpApiKeyAction.mockResolvedValue('OK')
+
+      render(<ApiKeysSection keys={[other]} />)
+      fireEvent.change(screen.getByLabelText('nameLabel'), { target: { value: 'Poste admin' } })
+      fireEvent.click(screen.getByRole('button', { name: 'create' }))
+
+      await waitFor(() => expect(screen.getByText('created.title')).toBeInTheDocument())
+
+      // Les lignes sont triées la plus récente d'abord : la seconde est l'ancienne clé.
+      await waitFor(() =>
+        expect(screen.getAllByRole('button', { name: 'list.revoke' })[1]).toBeEnabled()
+      )
+      fireEvent.click(screen.getAllByRole('button', { name: 'list.revoke' })[1])
+      fireEvent.click(await screen.findByRole('button', { name: 'revokeDialog.confirm' }))
+
+      await waitFor(() => expect(revokeMcpApiKeyAction).toHaveBeenCalledWith(other.id))
+      await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('revoked'))
+      expect(screen.getByText('created.title')).toBeInTheDocument()
+    })
+
     it('leaves the key listed as active when the confirmed action refuses', async () => {
       revokeMcpApiKeyAction.mockResolvedValue('notFound')
       const key = keyRow()

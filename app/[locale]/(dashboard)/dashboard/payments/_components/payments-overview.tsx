@@ -1,10 +1,19 @@
 import { BarChart, Card, ProgressBar } from '@peaklab/ui'
+import type { LucideIcon } from 'lucide-react'
 import { Banknote, HandCoins, Landmark, Wallet } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
+import type { ReactNode } from 'react'
 import type { PaymentMethod } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
+import { cn } from '@/lib/utils'
 import type { PaymentStats } from '@/use-cases/payments/payment-stats'
+
+const KPI_TONES = {
+  primary: { tile: 'bg-primary-light', icon: 'text-primary' },
+  amber: { tile: 'bg-amber-100', icon: 'text-amber-600' },
+  blue: { tile: 'bg-blue-100', icon: 'text-blue-600' },
+} as const
 
 interface Props {
   stats: PaymentStats
@@ -41,78 +50,43 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
   return (
     <div className="space-y-6">
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-graphite-600">{t('due')}</p>
-              <p className="mt-2 text-3xl font-bold text-graphite">
-                {formatCurrency(totals.due, locale)}
-              </p>
-              <p className="mt-1 text-xs text-graphite-600">{scope}</p>
-            </div>
-            <div className="rounded bg-primary-light p-3">
-              <Landmark className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-graphite-600">{t('collected')}</p>
-              <p className="mt-2 text-3xl font-bold text-graphite">
-                {formatCurrency(totals.collected, locale)}
-              </p>
-              <p className="mt-1 text-xs text-graphite-600">
-                {t('paymentsCount', { count: totals.paymentCount })}
-              </p>
-            </div>
-            <div className="rounded bg-primary-light p-3">
-              <HandCoins className="h-6 w-6 text-primary" />
-            </div>
-          </div>
+        <KpiCard
+          label={t('due')}
+          value={formatCurrency(totals.due, locale)}
+          caption={scope}
+          icon={Landmark}
+          tone="primary"
+        />
+        <KpiCard
+          label={t('collected')}
+          value={formatCurrency(totals.collected, locale)}
+          caption={t('paymentsCount', { count: totals.paymentCount })}
+          icon={HandCoins}
+          tone="primary"
+        >
           <div className="mt-4">
             <ProgressBar value={totals.collectionRate} />
             <p className="mt-1 text-xs text-graphite-600">{t('collectionRate')}</p>
           </div>
-        </Card>
-
-        <Card className="border-amber-200 p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-graphite-600">{t('remaining')}</p>
-              <p className="mt-2 text-3xl font-bold text-graphite">
-                {formatCurrency(totals.remaining, locale)}
-              </p>
-              <p className="mt-1 text-xs text-graphite-600">
-                {t('outstandingEnrollments', {
-                  outstanding: totals.outstandingCount,
-                  total: totals.enrollmentCount,
-                })}
-              </p>
-            </div>
-            <div className="rounded bg-amber-100 p-3">
-              <Wallet className="h-6 w-6 text-amber-600" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-graphite-600">{t('uncashed')}</p>
-              <p className="mt-2 text-3xl font-bold text-graphite">
-                {formatCurrency(totals.uncashedAmount, locale)}
-              </p>
-              <p className="mt-1 text-xs text-graphite-600">
-                {t('uncashedCount', { count: totals.uncashedCount })}
-              </p>
-            </div>
-            <div className="rounded bg-blue-100 p-3">
-              <Banknote className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </Card>
+        </KpiCard>
+        <KpiCard
+          label={t('remaining')}
+          value={formatCurrency(totals.remaining, locale)}
+          caption={t('outstandingEnrollments', {
+            outstanding: totals.outstandingCount,
+            total: totals.enrollmentCount,
+          })}
+          icon={Wallet}
+          tone="amber"
+          className="border-amber-200"
+        />
+        <KpiCard
+          label={t('uncashed')}
+          value={formatCurrency(totals.uncashedAmount, locale)}
+          caption={t('uncashedCount', { count: totals.uncashedCount })}
+          icon={Banknote}
+          tone="blue"
+        />
       </div>
 
       <Card className="p-6">
@@ -195,5 +169,39 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
         </Card>
       </div>
     </div>
+  )
+}
+
+function KpiCard({
+  label,
+  value,
+  caption,
+  icon: Icon,
+  tone,
+  className,
+  children,
+}: {
+  label: string
+  value: string
+  caption: ReactNode
+  icon: LucideIcon
+  tone: keyof typeof KPI_TONES
+  className?: string
+  children?: ReactNode
+}) {
+  return (
+    <Card className={cn('p-5', className)}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-graphite-600">{label}</p>
+          <p className="mt-2 text-3xl font-bold text-graphite">{value}</p>
+          <p className="mt-1 text-xs text-graphite-600">{caption}</p>
+        </div>
+        <div className={cn('rounded p-3', KPI_TONES[tone].tile)}>
+          <Icon className={cn('h-6 w-6', KPI_TONES[tone].icon)} />
+        </div>
+      </div>
+      {children}
+    </Card>
   )
 }

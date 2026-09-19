@@ -1,5 +1,7 @@
-import type { EventCategory, EventStatus, EventVisibility } from '@/generated/prisma/client'
+import type { EventCategory, EventStatus, EventVisibility, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
+
+const withImages = { images: { orderBy: { position: 'asc' } } } satisfies Prisma.EventInclude
 
 export type EventData = {
   title: string
@@ -43,7 +45,7 @@ export const eventGateway = {
   findById: (schoolId: string, id: string) =>
     db.event.findUnique({
       where: { id_schoolId: { id, schoolId } },
-      include: { images: { orderBy: { position: 'asc' } } },
+      include: withImages,
     }),
 
   findBySlug: (schoolId: string, slug: string) => db.event.findFirst({ where: { schoolId, slug } }),
@@ -51,7 +53,7 @@ export const eventGateway = {
   findBySlugWithImages: (schoolId: string, slug: string) =>
     db.event.findFirst({
       where: { schoolId, slug },
-      include: { images: { orderBy: { position: 'asc' } } },
+      include: withImages,
     }),
 
   countImages: (schoolId: string, eventId: string) =>
@@ -92,7 +94,7 @@ export const eventGateway = {
   listPublic: (schoolId: string) =>
     db.event.findMany({
       where: { schoolId, visibility: 'PUBLIC', status: { in: ['PUBLISHED', 'CANCELLED'] } },
-      include: { images: { orderBy: { position: 'asc' } } },
+      include: withImages,
       orderBy: { startAt: 'asc' },
     }),
 

@@ -1,17 +1,21 @@
 import { z } from 'zod'
+import { RelationType, Sex } from '@/generated/prisma/enums'
+
+const sexSchema = z.enum(Sex)
+const relationTypeSchema = z.enum(RelationType)
 
 const phoneNumberFormat = /^\+?[\d\s().-]{6,20}$/
 
 const languagesAtHomeSchema = z.array(z.string().trim().min(1).max(50)).max(20)
 
 export const personInputSchema = z.object({
-  name: z.string().min(1).max(250),
-  lastname: z.string().min(1).max(250),
-  sex: z.enum(['MALE', 'FEMALE']).optional(),
+  name: z.string().trim().min(1).max(250),
+  lastname: z.string().trim().min(1).max(250),
+  sex: sexSchema.optional(),
   email: z.email().max(250).optional(),
-  address: z.string().max(250).optional(),
-  postCode: z.string().max(10).optional(),
-  city: z.string().max(250).optional(),
+  address: z.string().trim().max(250).optional(),
+  postCode: z.string().trim().max(10).optional(),
+  city: z.string().trim().max(250).optional(),
 })
 
 const parentInputSchema = personInputSchema
@@ -22,15 +26,15 @@ const parentInputSchema = personInputSchema
 
 export const createFamilySchema = z.object({
   schoolId: z.string().min(1),
-  name: z.string().min(1).max(50),
-  emergencyContactName: z.string().max(250).optional(),
+  name: z.string().trim().min(1).max(50),
+  emergencyContactName: z.string().trim().max(250).optional(),
   emergencyContactPhone: z.string().min(1).max(20).regex(phoneNumberFormat).optional(),
-  authorizedPickup: z.string().optional(),
+  authorizedPickup: z.string().trim().optional(),
   languagesAtHome: languagesAtHomeSchema.default([]),
   parents: z.array(parentInputSchema),
-  address: z.string().max(250).optional(),
-  postCode: z.string().max(10).optional(),
-  city: z.string().max(250).optional(),
+  address: z.string().trim().max(250).optional(),
+  postCode: z.string().trim().max(10).optional(),
+  city: z.string().trim().max(250).optional(),
 })
 
 // Optional fields are nullish on update: `undefined` leaves the column untouched,
@@ -38,10 +42,10 @@ export const createFamilySchema = z.object({
 export const updateFamilySchema = z.object({
   schoolId: z.string().min(1),
   id: z.string().uuid(),
-  name: z.string().min(1).max(50).optional(),
-  emergencyContactName: z.string().max(250).nullish(),
+  name: z.string().trim().min(1).max(50).optional(),
+  emergencyContactName: z.string().trim().max(250).nullish(),
   emergencyContactPhone: z.string().min(1).max(20).regex(phoneNumberFormat).nullish(),
-  authorizedPickup: z.string().nullish(),
+  authorizedPickup: z.string().trim().nullish(),
   languagesAtHome: languagesAtHomeSchema.optional(),
 })
 
@@ -49,7 +53,7 @@ export const addPersonToFamilySchema = z.object({
   schoolId: z.string().min(1),
   familyId: z.string().uuid(),
   person: personInputSchema,
-  relationType: z.enum(['PARENT', 'TUTOR', 'GRANDPARENT', 'SIBLING', 'OTHER']),
+  relationType: relationTypeSchema,
   phoneNumber: z.string().min(1).max(20).optional(),
 })
 
@@ -57,14 +61,14 @@ export const updateFamilyPersonSchema = z.object({
   schoolId: z.string().min(1),
   familyId: z.string().uuid(),
   personId: z.string().uuid(),
-  name: z.string().min(1).max(250).optional(),
-  lastname: z.string().min(1).max(250).optional(),
-  sex: z.enum(['MALE', 'FEMALE']).nullish(),
-  relationType: z.enum(['PARENT', 'TUTOR', 'GRANDPARENT', 'SIBLING', 'OTHER']).optional(),
+  name: z.string().trim().min(1).max(250).optional(),
+  lastname: z.string().trim().min(1).max(250).optional(),
+  sex: sexSchema.nullish(),
+  relationType: relationTypeSchema.optional(),
   email: z.email().max(250).nullish(),
-  address: z.string().max(250).nullish(),
-  postCode: z.string().max(10).nullish(),
-  city: z.string().max(250).nullish(),
+  address: z.string().trim().max(250).nullish(),
+  postCode: z.string().trim().max(10).nullish(),
+  city: z.string().trim().max(250).nullish(),
   phoneNumber: z.string().min(1).max(20).regex(phoneNumberFormat).nullish(),
 })
 

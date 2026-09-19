@@ -1,6 +1,8 @@
+import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
+import { acquireAdvisoryLock } from './advisory-lock'
 
 /** Forme retournée par `findCompletedByPeriod`, consommée par `promote-students`. */
 export type CompletedEnrollment = Prisma.EnrollmentGetPayload<{
@@ -84,7 +86,7 @@ export const enrollmentGateway = {
       where: {
         schoolId,
         studentId: { in: studentIds },
-        status: { in: ['PENDING', 'ACTIVE'] },
+        status: { in: [...OPEN_ENROLLMENT_STATUSES] },
         classAssignments: { some: { classPeriod: { periodId } } },
       },
       select: { studentId: true },
@@ -107,7 +109,7 @@ export const enrollmentGateway = {
     periodId: string
   ) => {
     const key = `enrollment:${schoolId}:${studentId}:${periodId}`
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`
+    await acquireAdvisoryLock(tx, key)
   },
 
   /**
@@ -127,7 +129,7 @@ export const enrollmentGateway = {
       where: {
         schoolId,
         studentId,
-        status: { in: ['PENDING', 'ACTIVE'] },
+        status: { in: [...OPEN_ENROLLMENT_STATUSES] },
         classAssignments: { some: { classPeriod: { periodId } } },
       },
       select: {
@@ -151,7 +153,7 @@ export const enrollmentGateway = {
    */
   findOpenById: (schoolId: string, id: string) =>
     db.enrollment.findFirst({
-      where: { schoolId, id, status: { in: ['PENDING', 'ACTIVE'] } },
+      where: { schoolId, id, status: { in: [...OPEN_ENROLLMENT_STATUSES] } },
       include: {
         payments: { where: { isActive: true }, select: { amount: true } },
       },
@@ -172,7 +174,7 @@ export const enrollmentGateway = {
     db.enrollment.findMany({
       where: {
         schoolId,
-        status: { in: ['PENDING', 'ACTIVE'] },
+        status: { in: [...OPEN_ENROLLMENT_STATUSES] },
         ...('id' in filter
           ? { id: filter.id }
           : {
@@ -208,7 +210,7 @@ export const enrollmentGateway = {
     const rows = await db.enrollment.findMany({
       where: {
         schoolId,
-        status: { in: ['PENDING', 'ACTIVE'] },
+        status: { in: [...OPEN_ENROLLMENT_STATUSES] },
         student: {
           person: {
             families: {

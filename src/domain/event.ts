@@ -1,4 +1,5 @@
 import type { EventStatus, EventVisibility } from '@/generated/prisma/client'
+import { DAY_MS, utcStartOfDay } from './day'
 
 export type EventViewer = 'PUBLIC' | 'MEMBER' | 'STAFF'
 
@@ -51,22 +52,8 @@ export function normalizeEventDates<
   // que la convention « allDay -> minuit UTC » doit éviter.
   return {
     ...input,
-    startAt: new Date(
-      Date.UTC(
-        input.startAt.getUTCFullYear(),
-        input.startAt.getUTCMonth(),
-        input.startAt.getUTCDate()
-      )
-    ),
-    endAt: input.endAt
-      ? new Date(
-          Date.UTC(
-            input.endAt.getUTCFullYear(),
-            input.endAt.getUTCMonth(),
-            input.endAt.getUTCDate()
-          )
-        )
-      : input.endAt,
+    startAt: utcStartOfDay(input.startAt),
+    endAt: input.endAt ? utcStartOfDay(input.endAt) : input.endAt,
   }
 }
 
@@ -126,8 +113,6 @@ export function filterVisibleEvents<T extends { visibility: EventVisibility; sta
   )
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000
-
 /**
  * Bandeau J-x : l'événement PUBLISHED le plus proche dont la fenêtre d'annonce est
  * ouverte. `announceDaysBefore` porte cette fenêtre par événement — `null` signifie
@@ -151,7 +136,7 @@ export function selectAnnouncedEvent<
     allDay: boolean
   },
 >(events: T[], now: Date): T | null {
-  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const todayStart = utcStartOfDay(now)
 
   const eligible = events.filter((event) => {
     if (event.status !== 'PUBLISHED' || event.announceDaysBefore === null) return false

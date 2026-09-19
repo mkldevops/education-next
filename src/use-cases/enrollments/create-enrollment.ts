@@ -1,12 +1,12 @@
 import type { z } from 'zod'
 import { checkCapacity } from '@/domain/class-period'
-import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
 import { studentGateway } from '@/gateways/student-gateway'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { resolveEnrollmentPricing } from './pricing'
 import { createEnrollmentSchema } from './schemas'
 
 type Input = z.input<typeof createEnrollmentSchema>
@@ -41,36 +41,32 @@ export async function createEnrollment(input: Input) {
   const student = await studentGateway.findById(schoolId, parsed.data.studentId)
   if (!student) return 'notFound' as const
 
-  // `null` hors drapeau : la formule réservée n'est résolue que dans la transaction plus
-  // bas, pour repartir avec le rollback si la classe s'avère pleine (`ensureUnpriced` ne
-  // doit pas laisser une ligne orpheline sans inscription qui la justifie).
-  const plan = paymentsEnabled
-    ? await planGateway.findById(schoolId, parsed.data.planId as string)
-    : null
+  // `null` sans `planId`, ce qui n'arrive que hors drapeau (voir les gardes ci-dessus) : la
+  // formule réservée n'est résolue que dans la transaction plus bas, pour repartir avec le
+  // rollback si la classe s'avère pleine (`ensureUnpriced` ne doit pas laisser une ligne
+  // orpheline sans inscription qui la justifie).
+  const { planId: requestedPlanId } = parsed.data
+  const plan =
+    requestedPlanId !== undefined ? await planGateway.findById(schoolId, requestedPlanId) : null
   if (paymentsEnabled && !plan) return 'notFound' as const
 
   const classPeriod = await classPeriodGateway.findById(schoolId, parsed.data.classPeriodId)
   if (!classPeriod) return 'notFound' as const
 
-  let discount = parsed.data.discount ?? 0
-
   // La formule réservée est de montant nul, et la remise a déjà été refusée non nulle
-  // plus haut hors drapeau (FR-017) : `totalAmount` reste 0 sans repasser par
-  // `calculateTotalAmount`. `if (plan)` narrowe proprement sans assertion : `plan` n'est
-  // non nul qu'après le contrôle `notFound` ci-dessus, drapeau actif.
+  // plus haut hors drapeau (FR-017) : `discount` et `totalAmount` restent 0 sans repasser
+  // par `resolveEnrollmentPricing`. `if (plan)` narrowe proprement sans assertion : `plan`
+  // n'est non nul qu'après le contrôle `notFound` ci-dessus, drapeau actif.
+  let discount = 0
   let totalAmount = 0
   if (plan) {
-    const planAmount = Number(plan.amount)
-    if (parsed.data.totalAmount !== undefined) {
-      const pricing = pricingFromTotalAmount(planAmount, parsed.data.totalAmount)
-      if (typeof pricing === 'string') return pricing
-      discount = pricing.discount
-      totalAmount = pricing.totalAmount
-    } else {
-      const discountCheck = validateDiscount(planAmount, discount)
-      if (discountCheck !== 'OK') return discountCheck
-      totalAmount = calculateTotalAmount(planAmount, discount)
-    }
+    const pricing = resolveEnrollmentPricing(
+      Number(plan.amount),
+      parsed.data.discount ?? 0,
+      parsed.data.totalAmount
+    )
+    if (typeof pricing === 'string') return pricing
+    ;({ discount, totalAmount } = pricing)
   }
 
   try {

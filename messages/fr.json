@@ -438,6 +438,7 @@
           "selectPlan": "Plan tarifaire",
           "selectClass": "Classe",
           "discount": "Réduction (€)",
+          "totalAmount": "Montant dû (€)",
           "canLeaveAlone": "Autorisé à partir seul",
           "submit": "Créer",
           "cancel": "Annuler",
@@ -448,7 +449,10 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Famille, plan ou classe introuvable",
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
-            "classFull": "Cette classe est complète"
+            "classFull": "Cette classe est complète",
+            "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
+            "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
           }
         },
         "edit": {
@@ -513,7 +517,9 @@
           "error": "Erreur lors de la mise à jour",
           "errors": {
             "notFound": "Période introuvable",
-            "validationError": "Vérifiez les informations saisies"
+            "validationError": "Vérifiez les informations saisies",
+            "invalidDates": "La date de fin doit suivre la date de début",
+            "overlappingPeriod": "Cette période en chevauche une autre"
           }
         },
         "promote": {
@@ -578,7 +584,8 @@
           "error": "Erreur lors de la création",
           "errors": {
             "validationError": "Vérifiez les informations saisies",
-            "notFound": "Niveau introuvable"
+            "notFound": "Niveau introuvable",
+            "nameTaken": "Un niveau porte déjà ce nom"
           }
         },
         "edit": {
@@ -598,7 +605,8 @@
             "levelInUse": "Des classes utilisent ce niveau : supprimez-les d'abord",
             "circularReference": "Cette progression créerait une boucle",
             "notFound": "Niveau introuvable",
-            "validationError": "Vérifiez les informations saisies"
+            "validationError": "Vérifiez les informations saisies",
+            "nameTaken": "Un niveau porte déjà ce nom"
           }
         },
         "generateClass": {
@@ -726,9 +734,13 @@
             "classFull": "Cette classe est complète",
             "notFound": "Élève, plan ou classe introuvable",
             "validationError": "Vérifiez les informations saisies",
-            "existingEnrollmentPaid": "L'inscription existante a déjà reçu un paiement : remboursez-la ou annulez-la manuellement avant d'en recréer une."
+            "existingEnrollmentPaid": "L'inscription existante a déjà reçu un paiement : remboursez-la ou annulez-la manuellement avant d'en recréer une.",
+            "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
+            "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
           },
-          "replaceExistingHintNoPayments": "L'inscription en cours est annulée puis recréée."
+          "replaceExistingHintNoPayments": "L'inscription en cours est annulée puis recréée.",
+          "totalAmount": "Montant dû (€)"
         },
         "drawer": {
           "title": "Détail de l'inscription",
@@ -1012,7 +1024,8 @@
           "errors": {
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Paramètre introuvable",
-            "invalidConfigValue": "La valeur ne correspond pas au type choisi"
+            "invalidConfigValue": "La valeur ne correspond pas au type choisi",
+            "invalidNumber": "Saisissez un nombre entier supérieur ou égal à 1"
           }
         },
         "image": {
@@ -1330,8 +1343,13 @@
           "errors": {
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
             "notFound": "Inscription introuvable",
-            "validationError": "Vérifiez le montant saisi"
-          }
+            "validationError": "Vérifiez le montant saisi",
+            "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
+            "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
+            "totalBelowPaid": "Le montant dû serait inférieur à ce qui a déjà été payé sur cette inscription",
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
+          },
+          "totalAmount": "Montant final dû (€)"
         }
       },
       "users": {
@@ -1626,7 +1644,7 @@
         "startExceptional": "Commencer l’appel exceptionnel",
         "showOccurrences": "Afficher les séances",
         "progress": "{recorded} / {total} renseignés",
-        "markRemainingPresent": "Marquer les {count} restants présents",
+        "markRemainingPresent": "{count, plural, one {Marquer l’élève restant présent} other {Marquer les # élèves restants présents}}",
         "showUnrecorded": "Afficher uniquement les non renseignés",
         "showAll": "Afficher tous les élèves",
         "clearStatus": "Non renseigné",
@@ -1664,6 +1682,14 @@
           "attendanceClosed": "L’école est fermée à cette date.",
           "sessionCancelled": "Cette séance est annulée.",
           "unexpected": "L’enregistrement a échoué. Réessayez."
+        },
+        "returnTracking": "Retour au suivi des appels",
+        "lateMinutesInvalid": "Le retard doit être un nombre entier de minutes entre 0 et 1440.",
+        "cancelDialog": {
+          "title": "Annuler cette séance ?",
+          "description": "La séance ne sera plus comptée parmi les appels attendus. Vous pourrez la rétablir depuis le suivi des appels.",
+          "confirm": "Annuler la séance",
+          "dismiss": "Conserver la séance"
         }
       },
       "teachers": {

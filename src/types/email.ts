@@ -27,9 +27,3 @@ export interface EmailProvider {
   send(message: EmailMessage): Promise<SendEmailResult>
   sendBatch?(messages: EmailMessage[]): Promise<SendEmailResult[]>
 }
-
-export interface EmailProviderError {
-  code: SendEmailResult
-  message: string
-  originalError?: unknown
-}

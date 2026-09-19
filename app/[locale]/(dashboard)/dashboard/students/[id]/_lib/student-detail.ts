@@ -99,7 +99,13 @@ export async function getStudentDialogData(
     }),
   ])
 
-  return { plans, classes }
+  return {
+    plans,
+    classes: classes.map((c) => ({
+      id: c.id,
+      name: `${c.name} (${c.level.name} — ${c.period.name})`,
+    })),
+  }
 }
 
 export function deriveStudentDetail(student: StudentDetail) {

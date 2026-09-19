@@ -1,17 +1,8 @@
 'use client'
 
-import {
-  Button,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-} from '@peaklab/ui'
+import { DialogBody, DialogContent, DialogHeader, DialogTitle, Input, Label } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useDialogForm } from '@/features/forms'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { updatePeriodAction } from '../../../_lib/period-actions'
 
 interface EditPeriodDialogProps {
@@ -93,14 +84,7 @@ function EditPeriodForm({ period }: EditPeriodDialogProps) {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => close()} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

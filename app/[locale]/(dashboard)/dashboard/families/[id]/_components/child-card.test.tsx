@@ -84,6 +84,34 @@ describe('ChildCard', () => {
   })
 })
 
+describe('ChildCard class link', () => {
+  const assigned = () => {
+    const value = student('Annuel')
+    value.person.student.enrollments[0].classAssignments = [
+      { classPeriod: { id: 'class-1', name: 'CP A' } },
+    ] as unknown as (typeof value.person.student.enrollments)[number]['classAssignments']
+    return value
+  }
+
+  it('shows the class as plain text to a parent, the class page being admin-only', async () => {
+    render(await ChildCard({ ...baseProps, student: assigned(), paymentsEnabled: false }))
+
+    expect(screen.getByText('CP A')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'CP A' })).not.toBeInTheDocument()
+  })
+
+  it('links the class for an admin', async () => {
+    render(
+      await ChildCard({ ...baseProps, isAdmin: true, student: assigned(), paymentsEnabled: false })
+    )
+
+    expect(screen.getByRole('link', { name: 'CP A' })).toHaveAttribute(
+      'href',
+      '/dashboard/classes/class-1'
+    )
+  })
+})
+
 describe('ActivityFeed', () => {
   it('omits payments and the reserved plan name when payments are disabled', async () => {
     const { ActivityFeed } = await import('./activity-feed')

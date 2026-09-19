@@ -9,11 +9,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import type { DeactivationBlockers } from '@/domain/school-deactivation'
+import { useDialogForm } from '@/features/forms'
 import { toast, toastActionError } from '@/lib/toast'
 import {
   deactivateSchoolAction,
@@ -63,24 +63,12 @@ export function EditSchoolDialog(props: Props) {
 
 function EditSchoolForm({ school, isLastActive }: Props) {
   const t = useTranslations('schools.admin.edit')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, run, onSubmit, startTransition } = useDialogForm(t)
   const [blockers, setBlockers] = useState<DeactivationBlockers | null>(null)
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await updateSchoolAction({ id: school.id, ...readSchoolIdentity(formData) })
-      if (result !== 'OK') {
-        toastActionError(t, result)
-        return
-      }
-      toast.success(t('success'))
-      setOpen(false)
-    })
-  }
+  const handleSubmit = onSubmit((formData) =>
+    updateSchoolAction({ id: school.id, ...readSchoolIdentity(formData) })
+  )
 
   const handleDeactivate = () => {
     setBlockers(null)
@@ -95,21 +83,12 @@ function EditSchoolForm({ school, isLastActive }: Props) {
         return
       }
       toast.success(t('deactivateSuccess'))
-      setOpen(false)
+      close()
     })
   }
 
-  const handleReactivate = () => {
-    startTransition(async () => {
-      const result = await reactivateSchoolAction(school.id)
-      if (result !== 'OK') {
-        toastActionError(t, result)
-        return
-      }
-      toast.success(t('reactivateSuccess'))
-      setOpen(false)
-    })
-  }
+  const handleReactivate = () =>
+    run(() => reactivateSchoolAction(school.id), { successKey: 'reactivateSuccess' })
 
   return (
     <form onSubmit={handleSubmit}>
@@ -134,12 +113,7 @@ function EditSchoolForm({ school, isLastActive }: Props) {
           </Button>
         )}
         <div className="flex gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={isPending}
-          >
+          <Button type="button" variant="outline" onClick={close} disabled={isPending}>
             {t('cancel')}
           </Button>
           <Button type="submit" disabled={isPending}>

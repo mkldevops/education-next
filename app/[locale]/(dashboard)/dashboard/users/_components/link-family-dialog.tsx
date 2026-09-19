@@ -5,26 +5,27 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
   Label,
   Select,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
 import { linkUserFamilyAction } from '../../../_lib/user-actions'
+import type { FamilyOption } from './users-table'
 
 interface Props {
   userId: string
-  families: Array<{ id: string; name: string }>
+  families: FamilyOption[]
+  /** Appelé après un rattachement réussi, pour que le tiroir recharge son détail. */
+  onLinked?: () => void
 }
 
-export function LinkFamilyDialog({ userId, families }: Props) {
+export function LinkFamilyDialog({ userId, families, onLinked }: Props) {
   const t = useTranslations('dashboard.pages.users')
 
   if (families.length === 0) return null
@@ -40,32 +41,25 @@ export function LinkFamilyDialog({ userId, families }: Props) {
         <DialogHeader>
           <DialogTitle>{t('linkFamily')}</DialogTitle>
         </DialogHeader>
-        <LinkFamilyForm userId={userId} families={families} />
+        <LinkFamilyForm userId={userId} families={families} onLinked={onLinked} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function LinkFamilyForm({ userId, families }: Props) {
+function LinkFamilyForm({ userId, families, onLinked }: Props) {
   const t = useTranslations('dashboard.pages.users')
   const router = useRouter()
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
   const [familyId, setFamilyId] = useState(families[0]?.id ?? '')
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    startTransition(async () => {
-      const result = await linkUserFamilyAction({ id: userId, familyId })
-      if (result === 'OK') {
-        toast.success(t('familyLinked'))
-        router.refresh()
-        setOpen(false)
-        return
-      }
-      toastActionError(t, result)
-    })
-  }
+  const handleSubmit = onSubmit(() => linkUserFamilyAction({ id: userId, familyId }), {
+    successKey: 'familyLinked',
+    onSuccess: () => {
+      router.refresh()
+      onLinked?.()
+    },
+  })
 
   return (
     <form onSubmit={handleSubmit}>
@@ -86,14 +80,7 @@ function LinkFamilyForm({ userId, families }: Props) {
           </Select>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending || !familyId}>
-          {isPending ? '...' : t('confirm')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} submitKey="confirm" />
     </form>
   )
 }

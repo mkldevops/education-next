@@ -1,4 +1,5 @@
 import { configGateway } from '@/gateways/config-gateway'
+import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { getStripeClient } from '@/lib/stripe'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -33,6 +34,14 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
     },
   })
 
+  const updateTransaction = (data: Prisma.PaymentTransactionUpdateInput) =>
+    db.paymentTransaction.update({
+      where: { id_schoolId: { id: transaction.id, schoolId: input.schoolId } },
+      data,
+    })
+
+  const familyUrl = `${input.appUrl}/${input.locale}/dashboard/families/${input.familyId}`
+
   try {
     const session = await stripe.checkout.sessions.create(
       {
@@ -55,8 +64,8 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
           transactionId: transaction.id,
           familyId: input.familyId,
         },
-        success_url: `${input.appUrl}/${input.locale}/dashboard/families/${input.familyId}?payment=success`,
-        cancel_url: `${input.appUrl}/${input.locale}/dashboard/families/${input.familyId}?payment=cancelled`,
+        success_url: `${familyUrl}?payment=success`,
+        cancel_url: `${familyUrl}?payment=cancelled`,
       },
       {
         idempotencyKey: transaction.id,
@@ -64,24 +73,15 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
     )
 
     if (!session.url) {
-      await db.paymentTransaction.update({
-        where: { id_schoolId: { id: transaction.id, schoolId: input.schoolId } },
-        data: { status: 'FAILED' },
-      })
+      await updateTransaction({ status: 'FAILED' })
       return 'providerError' as const
     }
 
-    await db.paymentTransaction.update({
-      where: { id_schoolId: { id: transaction.id, schoolId: input.schoolId } },
-      data: { providerSessionId: session.id },
-    })
+    await updateTransaction({ providerSessionId: session.id })
 
     return { result: 'OK' as const, url: session.url }
   } catch {
-    await db.paymentTransaction.update({
-      where: { id_schoolId: { id: transaction.id, schoolId: input.schoolId } },
-      data: { status: 'FAILED' },
-    })
+    await updateTransaction({ status: 'FAILED' })
     return 'providerError' as const
   }
 }

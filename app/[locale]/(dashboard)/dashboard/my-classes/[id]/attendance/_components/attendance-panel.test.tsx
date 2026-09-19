@@ -20,6 +20,10 @@ vi.mock('lucide-react', () => ({
   ChevronRight: () => <svg />,
   MessageSquare: () => <svg />,
 }))
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string, values?: { count?: number }) =>
+    key === 'markRemainingPresent' ? `Mark ${values?.count} remaining` : key,
+}))
 vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
     <a href={href}>{children}</a>
@@ -47,7 +51,6 @@ const labels = {
   startExceptional: 'Start exceptional',
   changeDate: 'Change date',
   progress: '{recorded} / {total} recorded',
-  markRemainingPresent: 'Mark {count} remaining',
   reviewAttendance: 'Review',
   partialWarning: '{count} missing',
   partialWarningSingle: '1 missing',
@@ -65,6 +68,7 @@ const labels = {
   absent: 'Absent',
   unrecorded: 'Not recorded',
   lateMinutes: 'Minutes late',
+  lateMinutesInvalid: 'Late minutes must be a whole number between 0 and 1440.',
   message: 'Message',
   messageHint: 'Optional',
   saving: 'Saving',
@@ -72,6 +76,9 @@ const labels = {
   retry: 'Retry',
   previousStudent: 'Previous student',
   nextStudent: 'Next student',
+  previous: 'Previous',
+  next: 'Next',
+  reviewSubtitle: 'Check details',
   studentPosition: 'Student {current} of {total}',
   saveBeforeContinue: 'Save first',
   summary: 'Summary',
@@ -92,6 +99,7 @@ const props = {
   locale: 'en',
   slots: [],
   selectedOccurrence: 'adhoc' as const,
+  returnHref: '/dashboard/my-classes',
   labels,
 }
 const makeSession = (
@@ -178,6 +186,53 @@ describe('AttendancePanel', () => {
         message: 'Bus',
       })
     )
+  })
+  it('rejects negative late minutes with a field message instead of sending them', async () => {
+    mocks.update.mockResolvedValue('OK')
+    render(
+      <AttendancePanel
+        {...props}
+        initialSession={makeSession([
+          { id: 'a', studentName: 'Amina', status: 'LATE', lateMinutes: 5, message: null },
+        ])}
+      />
+    )
+    const input = screen.getByRole('spinbutton', { name: 'Minutes late' })
+    fireEvent.change(input, { target: { value: '-3' } })
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Late minutes must be a whole number between 0 and 1440.'
+    )
+    expect(input).toHaveAttribute('aria-invalid', 'true')
+    fireEvent.blur(input)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(mocks.update).not.toHaveBeenCalledWith(expect.objectContaining({ lateMinutes: -3 }))
+
+    fireEvent.change(input, { target: { value: '7' } })
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    fireEvent.blur(input)
+    await waitFor(() =>
+      expect(mocks.update).toHaveBeenLastCalledWith({
+        sessionId: 's',
+        entryId: 'a',
+        status: 'LATE',
+        lateMinutes: 7,
+        message: null,
+      })
+    )
+  })
+  it('names the real remaining count and hides the shortcut once everyone is recorded', () => {
+    const { rerender } = render(<AttendancePanel {...props} initialSession={makeSession()} />)
+    expect(screen.getByRole('button', { name: 'Mark 1 remaining' })).toBeInTheDocument()
+    rerender(
+      <AttendancePanel
+        {...props}
+        key="recorded"
+        initialSession={makeSession([
+          { id: 'a', studentName: 'Amina', status: 'PRESENT', lateMinutes: null, message: null },
+        ])}
+      />
+    )
+    expect(screen.queryByRole('button', { name: /remaining/ })).not.toBeInTheDocument()
   })
   it('shows the zero-roster state', () => {
     render(<AttendancePanel {...props} initialSession={makeSession([])} />)

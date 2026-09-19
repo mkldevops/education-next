@@ -24,6 +24,7 @@ import { ChildrenTab } from './_components/children-tab'
 import { HeroBanner } from './_components/hero-banner'
 import { OverviewTab } from './_components/overview-tab'
 import { PaymentsTab } from './_components/payments-tab'
+import type { FamilyAction } from './_lib/family-action-href'
 import {
   deriveFamilyDetail,
   getFamilyDialogData,
@@ -49,6 +50,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   await connection()
   const { locale, id } = await params
   const { action, studentId, payment, tab } = await searchParams
+  const openAction = action as FamilyAction | undefined
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.familyDetails')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -69,7 +71,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   const family = resolution.resource
   const isAdmin = isActiveSchoolAdmin(context)
   const paymentsEnabled = await isPaymentsEnabled(family.schoolId)
-  const TAB_KEYS: TabKey[] = paymentsEnabled
+  const tabKeys: TabKey[] = paymentsEnabled
     ? ['overview', 'children', 'payments', 'activity']
     : ['overview', 'children', 'activity']
 
@@ -88,11 +90,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     activeEnrollments,
     pendingCount,
     scopedStudentId,
-    totalAmount,
-    totalDiscount,
-    totalPaid,
-    remainingBalance,
-  } = deriveFamilyDetail(family, familyBalance, studentId)
+  } = deriveFamilyDetail(family, studentId)
+  const { totalAmount, totalDiscount, totalPaid, remainingBalance } = familyBalance
   const payments = serializeFamilyPayments(family.payments)
 
   /* Le bouton « Inscrire » de la carte enfant se juge sur les mêmes données que
@@ -117,6 +116,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     id: c.id,
     name: `${c.name} (${c.level.name} — ${c.period.name})`,
   }))
+  const planOptions = plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))
+  const familyHref = `/dashboard/families/${family.id}`
 
   return (
     <div className="space-y-6">
@@ -144,29 +145,29 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 id: s.person.student.id,
                 name: `${s.person.lastname} ${s.person.name}`,
               }))}
-              plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
+              plans={planOptions}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}
-              defaultOpen={action === 'addEnrollment'}
+              defaultOpen={openAction === 'addEnrollment'}
               defaultStudentId={scopedStudentId}
-              redirectTo={`/dashboard/families/${family.id}`}
+              redirectTo={familyHref}
               showTrigger={false}
             />
             {paymentsEnabled && (
               <RecordPaymentDialog
                 families={[{ id: family.id, name: family.name }]}
                 remainingAmount={remainingBalance}
-                defaultOpen={action === 'addPayment'}
-                redirectTo={`/dashboard/families/${family.id}`}
+                defaultOpen={openAction === 'addPayment'}
+                redirectTo={familyHref}
                 showTrigger={false}
               />
             )}
             <CreateStudentDialog
               familyId={family.id}
-              plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
+              plans={planOptions}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}
-              defaultOpen={action === 'addStudent'}
+              defaultOpen={openAction === 'addStudent'}
               showTrigger={false}
             />
             <EditFamilyDialog
@@ -178,14 +179,14 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 authorizedPickup: family.authorizedPickup,
                 languagesAtHome: family.languagesAtHome,
               }}
-              defaultOpen={action === 'editFamily'}
-              redirectTo={`/dashboard/families/${family.id}`}
+              defaultOpen={openAction === 'editFamily'}
+              redirectTo={familyHref}
               showTrigger={false}
             />
             <DeactivateFamilyButton
               familyId={family.id}
-              defaultOpen={action === 'archiveFamily'}
-              redirectTo={`/dashboard/families/${family.id}`}
+              defaultOpen={openAction === 'archiveFamily'}
+              redirectTo={familyHref}
               showTrigger={false}
             />
             {deletionImpact && (
@@ -193,8 +194,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 familyId={family.id}
                 familyName={family.name}
                 impact={deletionImpact}
-                defaultOpen={action === 'deleteFamily'}
-                redirectTo={`/dashboard/families/${family.id}`}
+                defaultOpen={openAction === 'deleteFamily'}
+                redirectTo={familyHref}
                 showTrigger={false}
               />
             )}
@@ -214,7 +215,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
       )}
 
       <Tabs
-        defaultIndex={Math.max(0, TAB_KEYS.indexOf(tab as TabKey))}
+        defaultIndex={Math.max(0, tabKeys.indexOf(tab as TabKey))}
         tabs={[
           {
             label: t('tabs.overview'),
@@ -249,7 +250,6 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             content: (
               <ChildrenTab
                 students={students}
-                hasPendingEnrollments={pendingCount > 0}
                 pendingCount={pendingCount}
                 locale={locale}
                 familyId={family.id}

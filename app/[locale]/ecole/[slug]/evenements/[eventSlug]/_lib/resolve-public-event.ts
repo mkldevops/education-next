@@ -1,10 +1,9 @@
 import { cache } from 'react'
 import { resolveEventPageAccess } from '@/domain/event'
-import { configGateway } from '@/gateways/config-gateway'
 import { eventGateway } from '@/gateways/event-gateway'
 import { schoolGateway } from '@/gateways/school-gateway'
-import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
 import { getAuthorizedSchools } from '@/lib/school-context'
+import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
 
 /**
  * Événement affichable à l'adresse publique, ou `null` pour une 404.
@@ -19,8 +18,7 @@ export const resolvePublicEvent = cache(async (schoolSlug: string, eventSlug: st
   const school = await schoolGateway.findBySlug(schoolSlug)
   if (!school?.isActive) return null
 
-  const config = await configGateway.get(school.id, EVENTS_CONFIG_KEY)
-  if (config?.value !== 'true') return null
+  if (!(await isEventsEnabled(school.id))) return null
 
   const event = await eventGateway.findBySlugWithImages(school.id, eventSlug)
   if (!event) return null

@@ -56,6 +56,21 @@ describe('addPersonToFamily', () => {
     expect(result).toBe('validationError')
   })
 
+  it('should reject a person name made only of spaces', async () => {
+    const result = await addPersonToFamily({
+      schoolId: 'school-1',
+      familyId: '550e8400-e29b-41d4-a716-446655440000',
+      person: {
+        name: '   ',
+        lastname: 'Doe',
+        sex: 'MALE',
+      },
+      relationType: 'PARENT',
+    })
+
+    expect(result).toBe('validationError')
+  })
+
   it('should fail with family not found', async () => {
     familyGatewayMock.findById.mockResolvedValue(null)
 

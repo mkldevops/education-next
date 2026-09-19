@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@peaklab/ui'
+import { Button, ConfirmDialog } from '@peaklab/ui'
 import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import {
@@ -22,10 +22,79 @@ function errorMessage(result: unknown, errors: ErrorLabels) {
     : errors.unexpected
 }
 
+export type CancellationConfirmation = {
+  title: string
+  description: string
+  confirmLabel: string
+  cancelLabel: string
+}
+
 type CommonProps = {
   label: string
   pendingLabel: string
   errors: ErrorLabels
+  /** Étape de confirmation avant une annulation : absente pour un rétablissement. */
+  confirmation?: CancellationConfirmation
+}
+
+function CancellationButton({
+  run,
+  label,
+  pendingLabel,
+  errors,
+  confirmation,
+}: CommonProps & {
+  run: () => Promise<unknown>
+}) {
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const execute = async () => {
+    try {
+      const result = await run()
+      if (result !== 'OK') {
+        setError(errorMessage(result, errors))
+        return
+      }
+      setError(null)
+      router.refresh()
+    } catch {
+      setError(errors.unexpected)
+    }
+  }
+  const button = (
+    <Button
+      size="sm"
+      variant="outline"
+      className="min-h-11"
+      disabled={pending}
+      onClick={confirmation ? undefined : () => startTransition(execute)}
+      aria-busy={pending}
+    >
+      {pending ? pendingLabel : label}
+    </Button>
+  )
+  return (
+    <span className="inline-flex flex-col items-start gap-1">
+      {confirmation ? (
+        <ConfirmDialog
+          trigger={button}
+          title={confirmation.title}
+          description={confirmation.description}
+          confirmLabel={confirmation.confirmLabel}
+          cancelLabel={confirmation.cancelLabel}
+          onConfirm={() => new Promise<void>((done) => startTransition(() => execute().then(done)))}
+        />
+      ) : (
+        button
+      )}
+      {error && (
+        <span role="alert" className="text-sm text-red-700">
+          {error}
+        </span>
+      )}
+    </span>
+  )
 }
 
 export function CancelAttendanceForm({
@@ -34,45 +103,19 @@ export function CancelAttendanceForm({
   label,
   pendingLabel,
   errors,
+  confirmation,
 }: CommonProps & {
   sessionId: string
   cancelled: boolean
 }) {
-  const router = useRouter()
-  const [pending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-  const submit = () =>
-    startTransition(async () => {
-      try {
-        const result = await setAttendanceCancellationAction({ sessionId, cancelled })
-        if (result !== 'OK') {
-          setError(errorMessage(result, errors))
-          return
-        }
-        setError(null)
-        router.refresh()
-      } catch {
-        setError(errors.unexpected)
-      }
-    })
   return (
-    <span className="inline-flex flex-col items-start gap-1">
-      <Button
-        size="sm"
-        variant="outline"
-        className="min-h-11"
-        disabled={pending}
-        onClick={submit}
-        aria-busy={pending}
-      >
-        {pending ? pendingLabel : label}
-      </Button>
-      {error && (
-        <span role="alert" className="text-sm text-red-700">
-          {error}
-        </span>
-      )}
-    </span>
+    <CancellationButton
+      run={() => setAttendanceCancellationAction({ sessionId, cancelled })}
+      label={label}
+      pendingLabel={pendingLabel}
+      errors={errors}
+      confirmation={confirmation}
+    />
   )
 }
 
@@ -83,49 +126,21 @@ export function CancelOccurrenceForm({
   label,
   pendingLabel,
   errors,
+  confirmation,
 }: CommonProps & {
   classPeriodId: string
   classScheduleSlotId: string
   occurredOn: Date
 }) {
-  const router = useRouter()
-  const [pending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-  const submit = () =>
-    startTransition(async () => {
-      try {
-        const result = await cancelAttendanceOccurrenceAction({
-          classPeriodId,
-          classScheduleSlotId,
-          occurredOn,
-        })
-        if (result !== 'OK') {
-          setError(errorMessage(result, errors))
-          return
-        }
-        setError(null)
-        router.refresh()
-      } catch {
-        setError(errors.unexpected)
-      }
-    })
   return (
-    <span className="inline-flex flex-col items-start gap-1">
-      <Button
-        size="sm"
-        variant="outline"
-        className="min-h-11"
-        disabled={pending}
-        onClick={submit}
-        aria-busy={pending}
-      >
-        {pending ? pendingLabel : label}
-      </Button>
-      {error && (
-        <span role="alert" className="text-sm text-red-700">
-          {error}
-        </span>
-      )}
-    </span>
+    <CancellationButton
+      run={() =>
+        cancelAttendanceOccurrenceAction({ classPeriodId, classScheduleSlotId, occurredOn })
+      }
+      label={label}
+      pendingLabel={pendingLabel}
+      errors={errors}
+      confirmation={confirmation}
+    />
   )
 }

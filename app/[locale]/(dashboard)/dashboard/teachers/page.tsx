@@ -19,6 +19,9 @@ type Props = {
 
 const TAB_KEYS = ['teachers', 'expenses'] as const
 
+const teacherName = (person: { firstName: string; lastName: string }) =>
+  `${person.lastName} ${person.firstName}`
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
   return restrictedPageMetadata(locale, 'dashboard.pages.teachers.title')
@@ -40,14 +43,22 @@ export default async function TeachersPage({ params, searchParams }: Props) {
       include: {
         classPeriods: {
           where: { classPeriod: { isActive: true } },
-          include: { classPeriod: { include: { level: true, period: true } } },
+          select: {
+            classPeriod: {
+              select: {
+                name: true,
+                level: { select: { name: true } },
+                period: { select: { name: true } },
+              },
+            },
+          },
         },
       },
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     }),
     db.teacherExpense.findMany({
       where: { schoolId, isActive: true },
-      include: { teacher: true },
+      include: { teacher: { select: { firstName: true, lastName: true } } },
       orderBy: { requestedAt: 'desc' },
     }),
     isTeacherExpensesEnabled(schoolId),
@@ -55,7 +66,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
 
   const teacherOptions = teachers.map((teacher) => ({
     id: teacher.id,
-    name: `${teacher.lastName} ${teacher.firstName}`,
+    name: teacherName(teacher),
   }))
 
   const teacherColumns: Column<(typeof teachers)[0]>[] = [
@@ -63,7 +74,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
       key: 'name',
       header: t('teachers.name'),
       className: 'font-medium text-graphite',
-      render: (teacher) => `${teacher.lastName} ${teacher.firstName}`,
+      render: teacherName,
     },
     {
       key: 'email',
@@ -119,7 +130,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
       key: 'teacher',
       header: t('expenses.teacher'),
       className: 'font-medium text-graphite',
-      render: (expense) => `${expense.teacher.lastName} ${expense.teacher.firstName}`,
+      render: (expense) => teacherName(expense.teacher),
     },
     {
       key: 'amount',

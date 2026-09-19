@@ -9,12 +9,16 @@ import { getPlatformSetting } from './get-platform-setting'
  * cache inter-requêtes.
  */
 const readFlag = cache(
-  async (name: string, getSetting: typeof getPlatformSetting): Promise<boolean> => {
+  async (
+    name: string,
+    getSetting: typeof getPlatformSetting,
+    verdict: (value: string | null) => boolean
+  ): Promise<boolean> => {
     const setting = await getSetting({ name })
 
     // Le nom est une constante : `validationError` est inatteignable, et `notFound` est
     // le cas nominal d'une installation qui n'a jamais touché au réglage.
-    return readsAsEnabled(typeof setting === 'string' ? null : setting.value)
+    return verdict(typeof setting === 'string' ? null : setting.value)
   }
 )
 
@@ -22,25 +26,13 @@ export function readPlatformFlag(
   name: string,
   getSetting: typeof getPlatformSetting = getPlatformSetting
 ): Promise<boolean> {
-  return readFlag(name, getSetting)
+  return readFlag(name, getSetting, readsAsEnabled)
 }
 
-/**
- * Frère de `readFlag` pour les drapeaux qui s'ouvrent sur un `true` explicite au lieu de
- * se fermer sur un `false` explicite — mémoïsé de la même façon, réduit à un appel direct
- * hors rendu.
- */
-const readOptInFlag = cache(
-  async (name: string, getSetting: typeof getPlatformSetting): Promise<boolean> => {
-    const setting = await getSetting({ name })
-
-    return readsAsOptedIn(typeof setting === 'string' ? null : setting.value)
-  }
-)
-
+/** Variante qui ne s'ouvre que sur un `true` explicite. */
 export function readPlatformOptInFlag(
   name: string,
   getSetting: typeof getPlatformSetting = getPlatformSetting
 ): Promise<boolean> {
-  return readOptInFlag(name, getSetting)
+  return readFlag(name, getSetting, readsAsOptedIn)
 }

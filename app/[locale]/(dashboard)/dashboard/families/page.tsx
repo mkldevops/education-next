@@ -6,7 +6,11 @@ import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
-import { calculateFamilyBalance } from '@/use-cases/payments/family-balance'
+import {
+  calculateFamilyBalance,
+  isPayableEnrollment,
+  PAYABLE_ENROLLMENT_STATUSES,
+} from '@/use-cases/payments/family-balance'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
 import { FamiliesDataTable, type FamilyRow } from './_components/families-data-table'
@@ -60,7 +64,13 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
               student: {
                 select: {
                   enrollments: {
-                    where: { status: { in: ['PENDING', 'ACTIVE'] } },
+                    // Payments on a cancelled or completed enrollment stay in the paid total.
+                    where: {
+                      OR: [
+                        { status: { in: [...PAYABLE_ENROLLMENT_STATUSES] } },
+                        { payments: { some: { isActive: true } } },
+                      ],
+                    },
                     select: {
                       id: true,
                       status: true,
@@ -100,7 +110,8 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
       emergencyContactName: family.emergencyContactName,
       emergencyContactPhone: family.emergencyContactPhone,
       studentCount: family.persons.filter((fp) => fp.person.student).length,
-      enrollmentCount: enrollments.length,
+      enrollmentCount: enrollments.filter((enrollment) => isPayableEnrollment(enrollment.status))
+        .length,
       due: balance.totalAmount,
       paid: balance.totalPaid,
       remaining: balance.remainingBalance,

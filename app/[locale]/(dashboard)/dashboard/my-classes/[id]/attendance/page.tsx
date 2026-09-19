@@ -105,6 +105,7 @@ export default async function AttendancePage({
       selectedSlotId={selectedSlot?.id}
       selectedOccurrence={selectedOccurrence}
       initialSession={initialSession}
+      returnHref={admin ? `/dashboard/attendance?date=${date}` : '/dashboard/my-classes'}
       labels={{
         title: t('title'),
         start: t('start'),
@@ -117,14 +118,13 @@ export default async function AttendancePage({
         date: t('date'),
         changeDate: t('showOccurrences'),
         progress: t('progress', { recorded: '{recorded}', total: '{total}' }),
-        markRemainingPresent: t('markRemainingPresent', { count: '{count}' }),
         reviewAttendance: t('reviewAttendance'),
         partialWarning: t('partialWarning', { count: '{count}' }),
         partialWarningSingle: t('partialWarningSingle'),
         validatePartial: t('validatePartial'),
         returnToEntry: t('returnToEntry'),
         correctAttendance: t('correctAttendance'),
-        returnClasses: t('returnClasses'),
+        returnClasses: admin ? t('returnTracking') : t('returnClasses'),
         validatedStatus: t('validatedStatus'),
         schedule: t('schedule'),
         selectOccurrence: t('selectOccurrence'),
@@ -134,6 +134,7 @@ export default async function AttendancePage({
         saved: t('saved'),
         retry: t('retry'),
         lateMinutes: t('lateMinutes'),
+        lateMinutesInvalid: t('lateMinutesInvalid'),
         message: t('message'),
         messageHint: t('messageHint'),
         previousStudent: t('previousStudent'),

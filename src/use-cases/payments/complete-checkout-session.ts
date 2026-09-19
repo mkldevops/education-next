@@ -38,15 +38,7 @@ export async function completeCheckoutSession(input: Input) {
   }
 
   const balance = await getFamilyBalance(transaction.schoolId, transaction.familyId)
-  const distribution = distributePayment(
-    Number(transaction.amount),
-    balance.enrollments.map((enrollment) => ({
-      enrollmentId: enrollment.enrollmentId,
-      totalAmount: enrollment.totalAmount,
-      discount: enrollment.discount,
-      remainingBalance: enrollment.remainingBalance,
-    }))
-  )
+  const distribution = distributePayment(Number(transaction.amount), balance.enrollments)
   if (distribution.result !== 'OK') return distribution.result
 
   const paidAt = new Date()

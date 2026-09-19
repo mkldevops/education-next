@@ -52,6 +52,7 @@ interface FamiliesSectionProps {
 
 export function FamiliesSection({ detail, canUnlink, isPending, onUnlink }: FamiliesSectionProps) {
   const t = useTranslations('dashboard.pages.users')
+  const tRelation = useTranslations('dashboard.pages.familyDetails.relationType')
 
   return (
     <Section title={t('sections.families')}>
@@ -82,7 +83,7 @@ export function FamiliesSection({ detail, canUnlink, isPending, onUnlink }: Fami
             {family.persons.map(({ person, relationType }) => (
               <li key={person.id} className="text-sm text-graphite-600">
                 {person.name} {person.lastname}
-                <span className="text-graphite-600"> · {relationType}</span>
+                <span className="text-graphite-600"> · {tRelation(relationType)}</span>
                 {person.student && (
                   <span className="text-graphite-600">
                     {' '}

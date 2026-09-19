@@ -1,11 +1,15 @@
 import { z } from 'zod'
 
+const manualPaymentMethodSchema = z.enum(['CASH', 'CARD', 'TRANSFER', 'CHECK'])
+
+export type ManualPaymentMethod = z.infer<typeof manualPaymentMethodSchema>
+
 export const recordPaymentSchema = z
   .object({
     schoolId: z.string().min(1),
-    familyId: z.string().uuid(),
+    familyId: z.uuid(),
     amount: z.number().refine((n) => n !== 0, { message: 'Amount must not be zero' }),
-    method: z.enum(['CASH', 'CARD', 'TRANSFER', 'CHECK']),
+    method: manualPaymentMethodSchema,
     reference: z.string().max(250).optional(),
     paidAt: z.coerce.date(),
     cashedAt: z.coerce.date().optional(),

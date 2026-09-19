@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -15,6 +14,7 @@ import {
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
+import { DialogFormActions } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
 import { toastActionError } from '@/lib/toast'
 import { setEnrollmentPlanAction } from '../../../_lib/enrollment-actions'
@@ -90,14 +90,7 @@ function SetPlanForm({ enrollmentId, plans }: SetEnrollmentPlanDialogProps) {
           </Select>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={() => setOpen(false)} />
     </form>
   )
 }

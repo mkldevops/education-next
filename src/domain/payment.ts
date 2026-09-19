@@ -1,4 +1,4 @@
-import { roundHalfUp } from '@/lib/decimal'
+import { type DecimalLike, roundHalfUp, toNumber } from '@/lib/decimal'
 
 export type EnrollmentBalance = {
   enrollmentId: string
@@ -9,21 +9,21 @@ export type EnrollmentBalance = {
 
 type PayableEnrollment = {
   id: string
-  totalAmount: number | { toString(): string }
-  discount: number | { toString(): string }
-  payments: Array<{ amount: number | { toString(): string } }>
+  totalAmount: DecimalLike
+  discount: DecimalLike
+  payments: Array<{ amount: DecimalLike }>
 }
 
 export function enrollmentBalances(enrollments: PayableEnrollment[]): EnrollmentBalance[] {
   return enrollments.map((enrollment) => {
-    const totalAmount = Number(enrollment.totalAmount)
+    const totalAmount = toNumber(enrollment.totalAmount)
     const paid = roundHalfUp(
-      enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
+      enrollment.payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0)
     )
     return {
       enrollmentId: enrollment.id,
       totalAmount,
-      discount: Number(enrollment.discount),
+      discount: toNumber(enrollment.discount),
       remainingBalance: Math.max(0, roundHalfUp(totalAmount - paid)),
     }
   })
@@ -131,7 +131,7 @@ type GroupablePayment = {
   id: string
   familyId: string
   enrollmentId: string
-  amount: number | { toString(): string }
+  amount: DecimalLike
   method: string
   reference: string | null
   paidAt: Date
@@ -189,7 +189,7 @@ export function groupFamilyPayments<T extends GroupablePayment>(
 
     if (group) {
       group.lines.push(payment)
-      group.amount = roundHalfUp(group.amount + Number(payment.amount))
+      group.amount = roundHalfUp(group.amount + toNumber(payment.amount))
       group.lastCreatedAt = createdAt
       continue
     }
@@ -199,7 +199,7 @@ export function groupFamilyPayments<T extends GroupablePayment>(
       lastCreatedAt: createdAt,
       id: payment.id,
       familyId: payment.familyId,
-      amount: roundHalfUp(Number(payment.amount)),
+      amount: roundHalfUp(toNumber(payment.amount)),
       method: payment.method,
       reference: payment.reference,
       paidAt: payment.paidAt,

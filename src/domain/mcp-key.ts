@@ -1,3 +1,5 @@
+import { DAY_MS } from './day'
+
 /** Préfixe littéral de toute clé MCP : il rend la fuite reconnaissable dans un log ou un dépôt. */
 export const MCP_KEY_PREFIX = 'edu_mcp_'
 
@@ -36,5 +38,5 @@ export function isKeyUsable(key: KeyLifecycle, now: Date = new Date()): boolean 
 }
 
 export function expiryFromDays(days: number, now: Date = new Date()): Date {
-  return new Date(now.getTime() + days * 24 * 60 * 60 * 1000)
+  return new Date(now.getTime() + days * DAY_MS)
 }

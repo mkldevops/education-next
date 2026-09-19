@@ -1,3 +1,5 @@
+import type { SchoolConfigKey } from './school-config'
+
 /**
  * Les quatre couleurs d'école éditées ensemble depuis `/dashboard/config`. L'ordre est
  * celui du nuancier : la couleur principale d'abord, le fond en dernier.
@@ -7,7 +9,7 @@ export const THEME_COLOR_KEYS = [
   'theme_primary_hover',
   'theme_primary_light',
   'theme_background',
-] as const
+] as const satisfies readonly SchoolConfigKey[]
 
 export type ThemeColorKey = (typeof THEME_COLOR_KEYS)[number]
 

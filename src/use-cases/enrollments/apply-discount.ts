@@ -1,9 +1,9 @@
 import type { z } from 'zod'
-import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { configGateway } from '@/gateways/config-gateway'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { roundHalfUp } from '@/lib/decimal'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { resolveEnrollmentPricing } from './pricing'
 import { applyDiscountSchema } from './schemas'
 
 type Input = z.input<typeof applyDiscountSchema>
@@ -20,18 +20,13 @@ export async function applyDiscount(input: Input, configGw = configGateway) {
     return 'notFound' as const
   }
 
-  const planAmount = Number(enrollment.plan.amount)
-  let discount = parsed.data.discount
-  let totalAmount = calculateTotalAmount(planAmount, discount)
-  if (parsed.data.totalAmount !== undefined) {
-    const pricing = pricingFromTotalAmount(planAmount, parsed.data.totalAmount)
-    if (typeof pricing === 'string') return pricing
-    discount = pricing.discount
-    totalAmount = pricing.totalAmount
-  } else {
-    const discountCheck = validateDiscount(planAmount, discount)
-    if (discountCheck !== 'OK') return discountCheck
-  }
+  const pricing = resolveEnrollmentPricing(
+    Number(enrollment.plan.amount),
+    parsed.data.discount,
+    parsed.data.totalAmount
+  )
+  if (typeof pricing === 'string') return pricing
+  const { discount, totalAmount } = pricing
   const totalPaid = roundHalfUp(
     (enrollment.payments ?? []).reduce((sum, payment) => sum + Number(payment.amount), 0)
   )

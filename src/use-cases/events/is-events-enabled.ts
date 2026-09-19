@@ -8,15 +8,21 @@ import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
  *
  * Contrairement à `isPaymentsEnabled` (`readsAsEnabled` : absence de ligne = activé), ce
  * drapeau est désactivé par défaut (`EVENTS_CONFIG_DEFAULT.value = 'false'`) — la même
- * sémantique fail-closed que `createEvent`/`updateEvent`/`archiveEvent`, qui refusent déjà
- * sur `config?.value !== 'true'`.
+ * sémantique fail-closed que `createEvent`/`updateEvent`/`archiveEvent`, qui refusent via
+ * `readEventsEnabled` ci-dessous.
  */
-const readFlag = cache(
-  async (schoolId: string, configGw: typeof configGateway): Promise<boolean> => {
-    const config = await configGw.get(schoolId, EVENTS_CONFIG_KEY)
-    return config?.value === 'true'
-  }
+const readFlag = cache((schoolId: string, configGw: typeof configGateway) =>
+  readEventsEnabled(schoolId, configGw)
 )
+
+/** Lecture non mémoïsée du drapeau, partagée par les cas d'usage qui le vérifient avant d'agir. */
+export async function readEventsEnabled(
+  schoolId: string,
+  configGw: typeof configGateway = configGateway
+): Promise<boolean> {
+  const config = await configGw.get(schoolId, EVENTS_CONFIG_KEY)
+  return config?.value === 'true'
+}
 
 export function isEventsEnabled(
   schoolId: string,

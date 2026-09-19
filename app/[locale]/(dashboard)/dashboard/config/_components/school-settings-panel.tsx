@@ -1,6 +1,5 @@
 'use client'
 
-import { Card } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { Fragment } from 'react'
 import type { ConfigValueType } from '@/generated/prisma/client'
@@ -17,7 +16,13 @@ import { isThemeColorKey, type ThemeColors } from '@/lib/theme-palettes'
 import { FlagToggle } from '../../../_components/flag-toggle'
 import { setConfigAction } from '../../../_lib/config-actions'
 import { EditConfigDialog } from './edit-config-dialog'
+import { SettingsSection } from './settings-section'
 import { ThemePaletteEditor } from './theme-palette-editor'
+
+const CLASS_SCHEDULE_DEPENDENT_KEYS: readonly SchoolConfigKey[] = [
+  CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY,
+  CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
+]
 
 export type SchoolSetting = {
   name: SchoolConfigKey
@@ -52,17 +57,15 @@ export function SchoolSettingsPanel({ settings, paymentFootprint, teacherExpense
   const { payments, pendingTransactions } = paymentFootprint
   const classScheduleEnabled =
     settings.find((setting) => setting.name === CLASS_SCHEDULE_ENABLED_CONFIG_KEY)?.value === 'true'
-  const classScheduleSettings = settings.filter(
-    (setting) =>
-      setting.name === CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY ||
-      setting.name === CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY
+  const classScheduleSettings = settings.filter((setting) =>
+    CLASS_SCHEDULE_DEPENDENT_KEYS.includes(setting.name)
   )
   const themeColors: Partial<ThemeColors> = Object.fromEntries(
     settings.flatMap((setting) =>
       isThemeColorKey(setting.name) ? [[setting.name, setting.value]] : []
     )
   )
-  let themeRendered = false
+  const firstThemeKey = settings.find((setting) => isThemeColorKey(setting.name))?.name
 
   const confirmDisableFor = (name: SchoolConfigKey) => {
     const confirmation = (key: string, values: Record<string, number>) => ({
@@ -84,9 +87,9 @@ export function SchoolSettingsPanel({ settings, paymentFootprint, teacherExpense
   const renderSetting = (setting: SchoolSetting, nested = false) => {
     // Les couleurs du thème partagent un nuancier, rendu à la place de la première.
     if (isThemeColorKey(setting.name)) {
-      if (themeRendered) return null
-      themeRendered = true
-      return <ThemePaletteEditor key="theme" colors={themeColors} />
+      return setting.name === firstThemeKey ? (
+        <ThemePaletteEditor key="theme" colors={themeColors} />
+      ) : null
     }
 
     const label = t(`settings.${setting.name}.label`)
@@ -130,44 +133,35 @@ export function SchoolSettingsPanel({ settings, paymentFootprint, teacherExpense
   }
 
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-lg font-semibold text-graphite">{t('sections.school')}</h2>
-        <p className="mt-1 text-sm text-graphite-600">{t('sections.schoolDescription')}</p>
-      </div>
-      <Card className="divide-y divide-alabaster-700 rounded border border-alabaster-700 p-0">
-        {settings.map((setting) => {
-          const isClassScheduleDependent =
-            setting.name === CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY ||
-            setting.name === CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY
-          if (isClassScheduleDependent) return null
+    <SettingsSection title={t('sections.school')} description={t('sections.schoolDescription')}>
+      {settings.map((setting) => {
+        if (CLASS_SCHEDULE_DEPENDENT_KEYS.includes(setting.name)) return null
 
-          const row = renderSetting(setting)
-          if (setting.name !== CLASS_SCHEDULE_ENABLED_CONFIG_KEY) return row
+        const row = renderSetting(setting)
+        if (setting.name !== CLASS_SCHEDULE_ENABLED_CONFIG_KEY) return row
 
-          return (
-            <Fragment key={setting.name}>
-              {row}
-              <div
-                aria-hidden={!classScheduleEnabled}
-                inert={!classScheduleEnabled}
-                className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${
-                  classScheduleEnabled
-                    ? 'max-h-96 opacity-100'
-                    : 'pointer-events-none max-h-0 opacity-0'
-                }`}
-              >
-                <div className="divide-y divide-alabaster-700">
-                  {classScheduleSettings.map((dependentSetting) =>
-                    renderSetting(dependentSetting, true)
-                  )}
-                </div>
+        return (
+          <Fragment key={setting.name}>
+            {row}
+            <div
+              aria-hidden={!classScheduleEnabled}
+              inert={!classScheduleEnabled}
+              className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${
+                classScheduleEnabled
+                  ? 'max-h-96 opacity-100'
+                  : 'pointer-events-none max-h-0 opacity-0'
+              }`}
+            >
+              <div className="divide-y divide-alabaster-700">
+                {classScheduleSettings.map((dependentSetting) =>
+                  renderSetting(dependentSetting, true)
+                )}
               </div>
-            </Fragment>
-          )
-        })}
-      </Card>
-    </section>
+            </div>
+          </Fragment>
+        )
+      })}
+    </SettingsSection>
   )
 }
 

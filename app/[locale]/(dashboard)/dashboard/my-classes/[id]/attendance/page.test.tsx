@@ -9,6 +9,7 @@ const dbMock = {
   attendanceSession: { findUnique: vi.fn() },
 }
 const requireSchoolSessionMock = vi.fn()
+const requireTeacherMock = vi.fn()
 
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next/navigation', () => ({
@@ -23,20 +24,26 @@ vi.mock('next-intl/server', () => ({
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('../../../../_lib/auth-helper', () => ({
   requireSchoolSession: requireSchoolSessionMock,
-  requireTeacher: vi.fn(),
+  requireTeacher: requireTeacherMock,
 }))
 vi.mock('./_components/attendance-panel', () => ({
   AttendancePanel: ({
     initialSession,
     selectedSlotId,
+    returnHref,
+    labels,
   }: {
     initialSession: { id: string } | null
     selectedSlotId?: string
+    returnHref: string
+    labels: { returnClasses: string }
   }) => (
     <div
       data-testid="attendance-panel"
       data-session-id={initialSession?.id}
       data-slot-id={selectedSlotId}
+      data-return-href={returnHref}
+      data-return-label={labels.returnClasses}
     />
   ),
 }))
@@ -82,6 +89,43 @@ describe('AttendancePage', () => {
 
     expect(screen.getByTestId('attendance-panel')).toHaveAttribute('data-session-id', 'session-1')
     expect(screen.getByTestId('attendance-panel')).toHaveAttribute('data-slot-id', 'slot-1')
+  })
+
+  it('sends an admin back to the tracking day they came from', async () => {
+    render(
+      await AttendancePage({
+        params: Promise.resolve({ locale: 'fr', id: 'class-1' }),
+        searchParams: Promise.resolve({ date: '2026-09-17', slotId: 'slot-1' }),
+      })
+    )
+
+    const panel = screen.getByTestId('attendance-panel')
+    expect(panel).toHaveAttribute('data-return-href', '/dashboard/attendance?date=2026-09-17')
+    expect(panel).toHaveAttribute('data-return-label', 'returnTracking')
+  })
+
+  it('sends a teacher back to their classes', async () => {
+    requireSchoolSessionMock.mockResolvedValue({
+      schoolId: 'school-1',
+      userId: 'teacher-user',
+      role: 'TEACHER',
+      isSuperAdmin: false,
+    })
+    requireTeacherMock.mockResolvedValue({
+      schoolId: 'school-1',
+      userId: 'teacher-user',
+      teacherId: 'teacher-1',
+    })
+    render(
+      await AttendancePage({
+        params: Promise.resolve({ locale: 'fr', id: 'class-1' }),
+        searchParams: Promise.resolve({ date: '2026-09-17', slotId: 'slot-1' }),
+      })
+    )
+
+    const panel = screen.getByTestId('attendance-panel')
+    expect(panel).toHaveAttribute('data-return-href', '/dashboard/my-classes')
+    expect(panel).toHaveAttribute('data-return-label', 'returnClasses')
   })
 
   it('does not expose a new scheduled session on a closed date', async () => {

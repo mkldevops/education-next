@@ -3,16 +3,15 @@ import { Resend } from 'resend'
 import type { EmailConfig, EmailMessage, EmailProvider, SendEmailResult } from '@/types/email'
 
 export class ResendProvider implements EmailProvider {
-  private client: Resend
+  private readonly client: Resend
+  private readonly fromEmail: string
+  private readonly fromName: string
 
   constructor(config: EmailConfig) {
     this.client = new Resend(config.apiKey)
     this.fromEmail = config.fromEmail
     this.fromName = config.fromName
   }
-
-  private fromEmail: string
-  private fromName: string
 
   async send(message: EmailMessage): Promise<SendEmailResult> {
     const from = this.fromName ? `${this.fromName} <${this.fromEmail}>` : this.fromEmail
@@ -47,10 +46,6 @@ export class ResendProvider implements EmailProvider {
       console.error('[email/resend] failed', { from, to, subject: message.subject, result }, error)
       return result
     }
-  }
-
-  async sendBatch(messages: EmailMessage[]): Promise<SendEmailResult[]> {
-    return Promise.all(messages.map((msg) => this.send(msg)))
   }
 }
 

@@ -8,7 +8,6 @@ import { eventPeriodBounds, shiftEventToNextYear } from '@/domain/event'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { EventCategoryLabel, EventStatusBadge, EventVisibilityLabel } from '@/features/enums'
 import { schoolGateway } from '@/gateways/school-gateway'
-import type { EventCategory } from '@/generated/prisma/client'
 import { formatEventDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
@@ -16,7 +15,7 @@ import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateEventDialog } from './_components/create-event-dialog'
 import { EventActionsMenu } from './_components/event-actions-menu'
-import { EVENT_CATEGORY_VALUES } from './_components/event-enum-values'
+import { isEventCategory } from './_components/event-enum-values'
 import { EventsFilters } from './_components/events-filters'
 
 type Props = {
@@ -51,10 +50,7 @@ export default async function EventsPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.events')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const selectedCategory =
-    category && (EVENT_CATEGORY_VALUES as string[]).includes(category)
-      ? (category as EventCategory)
-      : undefined
+  const selectedCategory = isEventCategory(category) ? category : undefined
   // La liste suit la période choisie dans l'en-tête, comme classes et paiements. Une école
   // sans période voit tous ses événements plutôt qu'une liste vide inexplicable.
   const selectedPeriod = await getSelectedPeriod(schoolId)

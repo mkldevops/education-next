@@ -8,14 +8,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Input,
-  Label,
-  Select,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
+import type { RelationType, Sex } from '@/generated/prisma/client'
 import { addPersonToFamilyAction } from '../../../_lib/family-actions'
+import { PersonFields } from './person-fields'
 
 export function AddPersonDialog({ familyId }: { familyId: string }) {
   const t = useTranslations('dashboard.pages.families.addPerson')
@@ -48,18 +47,13 @@ function AddPersonForm({ familyId }: { familyId: string }) {
       person: {
         name: formData.get('name') as string,
         lastname: formData.get('lastname') as string,
-        sex: (formData.get('sex') as 'MALE' | 'FEMALE' | '') || undefined,
+        sex: (formData.get('sex') as Sex | '') || undefined,
         email: (formData.get('email') as string) || undefined,
         address: (formData.get('address') as string) || undefined,
         postCode: (formData.get('postCode') as string) || undefined,
         city: (formData.get('city') as string) || undefined,
       },
-      relationType: formData.get('relationType') as
-        | 'PARENT'
-        | 'TUTOR'
-        | 'GRANDPARENT'
-        | 'SIBLING'
-        | 'OTHER',
+      relationType: formData.get('relationType') as RelationType,
       phoneNumber: (formData.get('phoneNumber') as string) || undefined,
     })
   )
@@ -67,80 +61,7 @@ function AddPersonForm({ familyId }: { familyId: string }) {
   return (
     <form onSubmit={handleSubmit}>
       <DialogBody>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="person-name">{t('firstname')}</Label>
-              <Input id="person-name" name="name" required maxLength={250} disabled={isPending} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="person-lastname">{t('lastname')}</Label>
-              <Input
-                id="person-lastname"
-                name="lastname"
-                required
-                maxLength={250}
-                disabled={isPending}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="person-sex">{t('sex')}</Label>
-              <Select id="person-sex" name="sex" disabled={isPending}>
-                <option value="">{t('unspecified')}</option>
-                <option value="MALE">{t('male')}</option>
-                <option value="FEMALE">{t('female')}</option>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="person-relation">{t('relationType')}</Label>
-              <Select id="person-relation" name="relationType" required disabled={isPending}>
-                <option value="PARENT">{t('parent')}</option>
-                <option value="TUTOR">{t('tutor')}</option>
-                <option value="GRANDPARENT">{t('grandparent')}</option>
-                <option value="SIBLING">{t('sibling')}</option>
-                <option value="OTHER">{t('other')}</option>
-              </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="person-email">{t('email')}</Label>
-              <Input
-                id="person-email"
-                name="email"
-                type="email"
-                maxLength={250}
-                disabled={isPending}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="person-phone">{t('phone')}</Label>
-              <Input
-                id="person-phone"
-                name="phoneNumber"
-                type="tel"
-                maxLength={20}
-                disabled={isPending}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="person-address">{t('address')}</Label>
-            <Input id="person-address" name="address" maxLength={250} disabled={isPending} />
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="person-postcode">{t('postCode')}</Label>
-              <Input id="person-postcode" name="postCode" maxLength={10} disabled={isPending} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="person-city">{t('city')}</Label>
-              <Input id="person-city" name="city" maxLength={250} disabled={isPending} />
-            </div>
-          </div>
-        </div>
+        <PersonFields t={t} idPrefix="person" isPending={isPending} />
       </DialogBody>
       <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
