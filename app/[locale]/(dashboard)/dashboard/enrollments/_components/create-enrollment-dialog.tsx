@@ -18,7 +18,7 @@ import {
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { createEnrollmentAction } from '../../../_lib/enrollment-actions'
@@ -56,7 +56,7 @@ export function CreateEnrollmentDialog({
 
   return (
     <Dialog initialOpen={defaultOpen}>
-      <DialogRouteOpener open={defaultOpen} cleanUrl={redirectTo} />
+      <DialogRouteOpener open={defaultOpen} cleanUrl={redirectTo ?? '/dashboard/enrollments'} />
       {showTrigger && (
         <DialogTrigger>
           <Button size={triggerSize}>
@@ -74,7 +74,6 @@ export function CreateEnrollmentDialog({
           plans={plans}
           classes={classes}
           paymentsEnabled={paymentsEnabled}
-          defaultOpen={defaultOpen}
           defaultStudentId={defaultStudentId}
           redirectTo={redirectTo}
         />
@@ -85,13 +84,7 @@ export function CreateEnrollmentDialog({
 
 type CreateEnrollmentFormProps = Pick<
   CreateEnrollmentDialogProps,
-  | 'students'
-  | 'plans'
-  | 'classes'
-  | 'paymentsEnabled'
-  | 'defaultOpen'
-  | 'defaultStudentId'
-  | 'redirectTo'
+  'students' | 'plans' | 'classes' | 'paymentsEnabled' | 'defaultStudentId' | 'redirectTo'
 >
 
 function CreateEnrollmentForm({
@@ -99,7 +92,6 @@ function CreateEnrollmentForm({
   plans,
   classes,
   paymentsEnabled,
-  defaultOpen = false,
   defaultStudentId,
   redirectTo,
 }: CreateEnrollmentFormProps) {
@@ -109,13 +101,6 @@ function CreateEnrollmentForm({
   const [planId, setPlanId] = useState(plans[0]?.id ?? '')
   const [totalAmount, setTotalAmount] = useState(plans[0]?.amount ?? 0)
   const router = useRouter()
-
-  useEffect(() => {
-    if (defaultOpen) {
-      setOpen(true)
-      router.replace(redirectTo ?? '/dashboard/enrollments')
-    }
-  }, [defaultOpen, setOpen, router, redirectTo])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

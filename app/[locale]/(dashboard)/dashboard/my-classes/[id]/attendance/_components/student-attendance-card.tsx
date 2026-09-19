@@ -2,7 +2,7 @@
 
 import { Button } from '@peaklab/ui'
 import { Check } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 
 export type AttendanceStatus = 'NOT_RECORDED' | 'PRESENT' | 'LATE' | 'ABSENT'
 export type AttendanceEntry = {
@@ -18,6 +18,7 @@ export type StudentCardLabels = {
   absent: string
   unrecorded: string
   lateMinutes: string
+  lateMinutesInvalid: string
   message: string
   messageHint: string
   saving: string
@@ -51,6 +52,30 @@ export function countAttendanceStatuses(
   )
 }
 
+/** Borne partagée avec le schéma serveur de `updateAttendanceEntryAction`. */
+export const MAX_LATE_MINUTES = 1440
+
+/**
+ * Lit la saisie du retard : vide → `null`, entier dans [0, MAX] → nombre, sinon `'invalid'`.
+ * `min`/`max` HTML ne bornent que les flèches : une valeur tapée (« -3 ») passe sans ce contrôle.
+ */
+export function parseLateMinutes(value: string): number | null | 'invalid' {
+  if (value.trim() === '') return null
+  const minutes = Number(value)
+  return Number.isInteger(minutes) && minutes >= 0 && minutes <= MAX_LATE_MINUTES
+    ? minutes
+    : 'invalid'
+}
+
+/** Ramène une saisie hors bornes à la valeur valide la plus proche (entier dans [0, MAX]). */
+export function clampLateMinutes(value: string): number | null {
+  const minutes = Number(value)
+  if (value.trim() === '' || !Number.isFinite(minutes)) return null
+  return Math.min(MAX_LATE_MINUTES, Math.max(0, Math.round(minutes)))
+}
+
+const formatLateMinutes = (minutes: number | null) => (minutes === null ? '' : String(minutes))
+
 const statusStyles = {
   PRESENT: 'border-emerald-200 bg-emerald-50 text-emerald-950 hover:bg-emerald-100',
   LATE: 'border-amber-200 bg-amber-50 text-amber-950 hover:bg-amber-100',
@@ -82,7 +107,7 @@ export function StudentAttendanceCard({
   saved: boolean
   inputRef?: (node: HTMLButtonElement | null) => void
   onStatus: (status: AttendanceStatus) => void
-  onLateMinutes: (value: string) => void
+  onLateMinutes: (value: number | null) => void
   onMessage: (value: string) => void
   onFieldBlur: () => void
   onRetry: () => void
@@ -96,6 +121,25 @@ export function StudentAttendanceCard({
     .join('')
     .toUpperCase()
   const statusLabel = attendanceStatusLabel(entry.status, labels)
+  // Brouillon texte du retard : un champ contrôlé par `entry.lateMinutes` remettrait la dernière
+  // valeur valide à chaque saisie refusée, rendant le bornage au `blur` inatteignable.
+  const [lateMinutesDraft, setLateMinutesDraft] = useState(formatLateMinutes(entry.lateMinutes))
+  const [lateMinutesError, setLateMinutesError] = useState(false)
+  const [syncedLateMinutes, setSyncedLateMinutes] = useState({
+    id: entry.id,
+    minutes: entry.lateMinutes,
+  })
+  // La carte n'est pas remontée entre deux élèves : resynchroniser sur l'élève et sur toute
+  // valeur imposée de l'extérieur (statut changé, enregistrement serveur).
+  if (syncedLateMinutes.id !== entry.id || syncedLateMinutes.minutes !== entry.lateMinutes) {
+    const studentChanged = syncedLateMinutes.id !== entry.id
+    setSyncedLateMinutes({ id: entry.id, minutes: entry.lateMinutes })
+    if (studentChanged || parseLateMinutes(lateMinutesDraft) !== entry.lateMinutes) {
+      setLateMinutesDraft(formatLateMinutes(entry.lateMinutes))
+      setLateMinutesError(false)
+    }
+  }
+  const lateMinutesErrorId = `late-minutes-error-${entry.id}`
   return (
     <article className="overflow-hidden rounded-3xl border border-alabaster-700 bg-white shadow-[0_18px_50px_-34px_rgba(53,53,53,0.42)]">
       <div className="space-y-5 p-5 sm:p-8">
@@ -167,12 +211,33 @@ export function StudentAttendanceCard({
                   min="0"
                   max="1440"
                   type="number"
-                  value={entry.lateMinutes ?? ''}
+                  step="1"
+                  value={lateMinutesDraft}
                   disabled={globalPending}
-                  onChange={(event) => onLateMinutes(event.target.value)}
-                  onBlur={onFieldBlur}
+                  aria-invalid={lateMinutesError || undefined}
+                  aria-describedby={lateMinutesError ? lateMinutesErrorId : undefined}
+                  onChange={(event) => {
+                    const minutes = parseLateMinutes(event.target.value)
+                    setLateMinutesDraft(event.target.value)
+                    setLateMinutesError(minutes === 'invalid')
+                    if (minutes !== 'invalid') onLateMinutes(minutes)
+                  }}
+                  onBlur={() => {
+                    if (parseLateMinutes(lateMinutesDraft) === 'invalid') {
+                      const minutes = clampLateMinutes(lateMinutesDraft)
+                      setLateMinutesDraft(formatLateMinutes(minutes))
+                      setLateMinutesError(false)
+                      onLateMinutes(minutes)
+                    }
+                    onFieldBlur()
+                  }}
                 />
               </label>
+            ) : null}
+            {entry.status === 'LATE' && lateMinutesError ? (
+              <p id={lateMinutesErrorId} role="alert" className="text-sm text-red-700">
+                {labels.lateMinutesInvalid}
+              </p>
             ) : null}
             <div>
               <label htmlFor={`message-${entry.id}`} className="text-sm font-medium">

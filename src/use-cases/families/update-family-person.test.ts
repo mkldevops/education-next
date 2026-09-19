@@ -51,6 +51,36 @@ describe('updateFamilyPerson', () => {
     expect(result).toBe('validationError')
   })
 
+  it('should reject a first or last name made only of spaces', async () => {
+    const blankName = await updateFamilyPerson({
+      schoolId: 'school-1',
+      familyId,
+      personId,
+      name: '  ',
+    })
+    const blankLastname = await updateFamilyPerson({
+      schoolId: 'school-1',
+      familyId,
+      personId,
+      lastname: '\t ',
+    })
+
+    expect(blankName).toBe('validationError')
+    expect(blankLastname).toBe('validationError')
+    expect(personGatewayMock.updateWithFamily).not.toHaveBeenCalled()
+  })
+
+  it('should trim surrounding spaces from names', async () => {
+    await updateFamilyPerson({ schoolId: 'school-1', familyId, personId, name: '  Tatiana ' })
+
+    expect(personGatewayMock.updateWithFamily).toHaveBeenCalledWith(
+      'school-1',
+      familyId,
+      personId,
+      expect.objectContaining({ person: expect.objectContaining({ name: 'Tatiana' }) })
+    )
+  })
+
   it('should fail when the person is not linked to the family', async () => {
     familyGatewayMock.findPerson.mockResolvedValue(null)
 

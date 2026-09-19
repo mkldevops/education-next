@@ -99,7 +99,8 @@ function EditConfigForm({ config }: Pick<EditConfigDialogProps, 'config'>) {
                 id="edit-config-value"
                 name="value"
                 type={config.valueType === 'NUMBER' ? 'number' : 'text'}
-                step={config.valueType === 'NUMBER' ? 'any' : undefined}
+                min={config.valueType === 'NUMBER' ? 1 : undefined}
+                step={config.valueType === 'NUMBER' ? 1 : undefined}
                 defaultValue={config.value}
                 required
                 disabled={isPending}

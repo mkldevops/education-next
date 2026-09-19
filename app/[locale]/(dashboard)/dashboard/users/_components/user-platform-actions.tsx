@@ -26,6 +26,7 @@ interface Props {
   isSelf: boolean
   run: (action: () => Promise<string>, successKey: string) => void
   onClose: () => void
+  onFamilyLinked: () => void
 }
 
 export function UserPlatformActions({
@@ -37,6 +38,7 @@ export function UserPlatformActions({
   isSelf,
   run,
   onClose,
+  onFamilyLinked,
 }: Props) {
   const t = useTranslations('dashboard.pages.users')
 
@@ -69,7 +71,11 @@ export function UserPlatformActions({
         {isSelf && <p className="text-xs text-graphite-600">{t('cannotChangeOwnPlatformLevel')}</p>}
         <div className="flex flex-wrap gap-2">
           <EditUserDialog user={user} />
-          <LinkFamilyDialog userId={user.id} families={unlinkedFamilies} />
+          <LinkFamilyDialog
+            userId={user.id}
+            families={unlinkedFamilies}
+            onLinked={onFamilyLinked}
+          />
           <ImpersonateUserButton
             userId={user.id}
             disabled={isPending || isSelf || user.isSuperAdmin || !user.isActive}

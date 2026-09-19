@@ -780,6 +780,10 @@ Owner: `src/domain/level.ts`, `src/use-cases/levels/`.
   edited, and a level cannot point at itself → `circularReference`. The walk also stops on a
   repeated node, so a pre-existing cycle elsewhere cannot hang the check.
 - **A level holding classes cannot be archived** → `levelInUse`.
+- **Active level names are unique within a school** → `nameTaken`. `createLevel` and `renameLevel`
+  look up an active homonym (`levelGateway.findActiveByName`) before writing; a rename keeps its own
+  name. The partial unique index `Level(schoolId, name) WHERE isActive` settles concurrent writes,
+  and its P2002 is mapped to the same `nameTaken`. An archived level's name can be reused.
 - **The cycle walk only sees one school's levels.** `checkCircularReference` is pure; its map is
   built from `levelGateway.list(schoolId)` in `src/use-cases/levels/set-next-level.ts`.
 
@@ -788,7 +792,13 @@ Owner: `src/domain/level.ts`, `src/use-cases/levels/`.
 Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
 
 - **Capacity is per class**, stored on `ClassPeriod.capacity`, required at creation and a positive
-  integer. The `max_students_per_class` config only supplies the default value in the creation form.
+  integer. The `max_students_per_class` config only supplies the default value in the creation form,
+  and `setConfig` accepts it only as an integer of at least 1 (`/^\d+$/`, >= 1) → `invalidNumber`
+  otherwise (negative, zero, decimal, empty or exponent notation); the config form enforces
+  `min=1 step=1`.
+- **The class detail page is admin-only**, so class names appear as plain text, not links, on the
+  pages parents can open (family child card and menu, dashboard recent enrollments, enrollment
+  detail).
 - **One active class per level and period.** Creation and a level change both check the active class
   already assigned to `(schoolId, levelId, periodId)` and return `levelAlreadyAssigned` before any
   write. Saving a class without changing its level skips that check so legacy duplicates remain
@@ -845,6 +855,17 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 - ADMIN may operate school classes. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
 - Tracking derives expected occurrences from weekly slots for the selected **UTC calendar date** (the explicit V1 school-time convention). A slot absent from that day's planning creates no missing call.
 - Closures, cancellations and one-off timetable exceptions are represented as excluded slot ids before occurrence generation. They therefore suppress an expected occurrence rather than displaying a false `NOT_STARTED` state.
+- **Cancelling a scheduled or ad hoc session asks for an explicit confirmation** (`ConfirmDialog` in
+  `app/[locale]/(dashboard)/dashboard/attendance/_components/cancel-attendance-form.tsx`). Restoring
+  a cancelled session needs no confirmation.
+- **Late minutes are a whole number from 0 to 1,440.** The client checks it with `parseLateMinutes` /
+  `MAX_LATE_MINUTES` in
+  `app/[locale]/(dashboard)/dashboard/my-classes/[id]/attendance/_components/student-attendance-card.tsx`
+  and never sends an invalid value; the server applies the same limit through the Zod `updateSchema`
+  in `app/[locale]/(dashboard)/_lib/attendance-actions.ts`.
+- **The return link after validation depends on who validated.** An admin goes back to
+  `/dashboard/attendance` for the same day; a teacher goes back to `/dashboard/my-classes`, because
+  that page requires a teacher record.
 
 ## Enrollments
 
@@ -875,6 +896,12 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
   open.
 - **Capacity is re-counted inside the transaction**, not before it, so two concurrent enrollments
   cannot both pass the check → `classFull`.
+- **Three entry points for a school admin**: the enrollments list (`/dashboard/enrollments`,
+  « Nouvelle inscription », any active student of the school), the students list, and the family
+  and student detail pages. On every one, the amount due is prefilled with the selected plan's
+  price.
+- `createEnrollmentAction` returns only `{ id }` on success, or a typed error code string on
+  failure.
 
 ### Creating an already enrolled student
 
@@ -917,11 +944,15 @@ many payments as the family wants. `calculateFamilyBalance()` in
 
 | Figure | Covers |
 |---|---|
-| `remainingBalance` | `PENDING` + `ACTIVE` enrollments, across every period |
-| `remainingAmountInCents` | the same figure, as the integer Stripe charges |
+| `totalAmount` / `totalDiscount` / `remainingBalance` | `PENDING` + `ACTIVE` enrollments, across every period |
+| `remainingAmountInCents` | the same remaining figure, as the integer Stripe charges |
+| `totalPaid` | every active payment of the family, including those recorded on a `CANCELLED` or `COMPLETED` enrollment |
 
 An enrollment awaiting validation is owed and payable: the money is collected when the family hands
-it over, not when an admin gets to the enrollment. `CANCELLED` and `COMPLETED` enrollments are out.
+it over, not when an admin gets to the enrollment. `CANCELLED` and `COMPLETED` enrollments no longer
+owe anything and never receive an allocation. **Money received stays received**, though: their
+active payments still count in `totalPaid` (the family's « Total payé »), so cancelling an
+enrollment never makes a recorded payment disappear from the family totals.
 
 ### Recording a payment
 
@@ -1115,6 +1146,9 @@ A student is **skipped**, with the reason reported, when:
 ## Families, students, people
 
 - **Family name**: required, at most 50 characters (`src/domain/family.ts`).
+- **Names and free-text family fields are trimmed by the schema**: person first and last names, and
+  the family name, emergency contact name, authorized pickup, address, post code and city. A name
+  made only of spaces therefore returns `validationError`.
 - **Phone numbers** match `/^\+?[\d\s().-]{6,20}$/`, on parents, emergency contacts and additional
   numbers alike.
 - **Update semantics**: on `updateFamilySchema`, optional fields are `nullish` — `undefined` leaves

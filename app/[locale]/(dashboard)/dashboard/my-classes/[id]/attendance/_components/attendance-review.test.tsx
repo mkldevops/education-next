@@ -64,6 +64,7 @@ describe('AttendanceReview', () => {
         validating={false}
         validated={false}
         onCorrect={vi.fn()}
+        returnHref="/dashboard/attendance?date=2026-09-18"
       />
     )
     fireEvent.click(screen.getByRole('button', { name: /Late/ }))
@@ -86,6 +87,7 @@ describe('AttendanceReview', () => {
         validating={false}
         validated={false}
         onCorrect={vi.fn()}
+        returnHref="/dashboard/attendance?date=2026-09-18"
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'Edit Bilal' }))
@@ -103,11 +105,16 @@ describe('AttendanceReview', () => {
         validating={false}
         validated
         onCorrect={vi.fn()}
+        returnHref="/dashboard/attendance?date=2026-09-18"
       />
     )
     expect(screen.getByRole('status')).toHaveTextContent('Validated')
     expect(screen.queryByRole('button', { name: 'Validate anyway' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Edit/ })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Correct' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Classes' })).toHaveAttribute(
+      'href',
+      '/dashboard/attendance?date=2026-09-18'
+    )
   })
 })

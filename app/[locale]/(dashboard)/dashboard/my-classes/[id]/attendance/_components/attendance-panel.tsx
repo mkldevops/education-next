@@ -2,6 +2,7 @@
 
 import { Button, Card } from '@peaklab/ui'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from '@/i18n/routing'
 import {
@@ -33,7 +34,6 @@ type Labels = StudentCardLabels & {
   startExceptional: string
   changeDate: string
   progress: string
-  markRemainingPresent: string
   reviewAttendance: string
   partialWarning: string
   validatePartial: string
@@ -79,6 +79,7 @@ export function AttendancePanel({
   selectedSlotId,
   selectedOccurrence,
   initialSession,
+  returnHref,
   labels,
 }: {
   classPeriodId: string
@@ -89,8 +90,10 @@ export function AttendancePanel({
   selectedSlotId?: string
   selectedOccurrence?: 'adhoc'
   initialSession: Session | null
+  returnHref: string
   labels: Labels
 }) {
+  const t = useTranslations('dashboard.pages.attendance')
   const [session, setSession] = useState<Session | null>(initialSession)
   const [drafts, setDrafts] = useState<Record<string, AttendanceEntry>>(() =>
     Object.fromEntries(initialSession?.entries.map((entry) => [entry.id, entry]) ?? [])
@@ -414,17 +417,11 @@ export function AttendancePanel({
                   style={{ width: `${entries.length ? (recorded / entries.length) * 100 : 0}%` }}
                 />
               </div>
-              {editing ? (
+              {editing && counts.NOT_RECORDED > 0 ? (
                 <button
                   type="button"
                   className="text-sm text-primary underline underline-offset-4 disabled:text-graphite-600"
-                  disabled={
-                    globalPending ||
-                    pendingEntries ||
-                    dirty ||
-                    entryErrors ||
-                    counts.NOT_RECORDED === 0
-                  }
+                  disabled={globalPending || pendingEntries || dirty || entryErrors}
                   onClick={() =>
                     void global(
                       () => markAllPresentAction({ sessionId: session.id }),
@@ -446,7 +443,7 @@ export function AttendancePanel({
                     )
                   }
                 >
-                  {labels.markRemainingPresent.replace('{count}', String(counts.NOT_RECORDED))}
+                  {t('markRemainingPresent', { count: counts.NOT_RECORDED })}
                 </button>
               ) : null}
             </section>
@@ -475,7 +472,7 @@ export function AttendancePanel({
                     void save(active.id)
                   }}
                   onLateMinutes={(value) => {
-                    updateDraft(active.id, { lateMinutes: value === '' ? null : Number(value) })
+                    updateDraft(active.id, { lateMinutes: value })
                     scheduleSave(active.id)
                   }}
                   onMessage={(message) => {
@@ -539,6 +536,7 @@ export function AttendancePanel({
                 entries={entries}
                 labels={labels}
                 validated={session.status === 'VALIDATED' && !editing}
+                returnHref={returnHref}
                 onCorrect={() => {
                   setEditing(true)
                   setReviewing(false)

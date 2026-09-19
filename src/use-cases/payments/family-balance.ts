@@ -28,13 +28,34 @@ export type FamilyBalance = {
   remainingAmountInCents: number
 }
 
-export function calculateFamilyBalance(enrollments: BalanceEnrollment[]): FamilyBalance {
+/** Only these enrollments still owe money; the others only contribute what was already paid. */
+export const PAYABLE_ENROLLMENT_STATUSES = [
+  'PENDING',
+  'ACTIVE',
+] as const satisfies EnrollmentStatus[]
+
+export function isPayableEnrollment(status: EnrollmentStatus) {
+  return (PAYABLE_ENROLLMENT_STATUSES as readonly EnrollmentStatus[]).includes(status)
+}
+
+function sumPayments(enrollment: BalanceEnrollment) {
+  return roundHalfUp(enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0))
+}
+
+/**
+ * Money received stays received: payments recorded on a cancelled or completed enrollment still
+ * count in `totalPaid`, but such an enrollment neither owes an amount nor receives an allocation.
+ */
+export function calculateFamilyBalance(allEnrollments: BalanceEnrollment[]): FamilyBalance {
+  const enrollments = allEnrollments.filter((enrollment) => isPayableEnrollment(enrollment.status))
+  const settledPaid = allEnrollments
+    .filter((enrollment) => !isPayableEnrollment(enrollment.status))
+    .reduce((sum, enrollment) => sum + sumPayments(enrollment), 0)
+
   const balances = enrollments.map((enrollment) => {
     const totalAmount = Number(enrollment.totalAmount)
     const discount = Number(enrollment.discount)
-    const paidAmount = roundHalfUp(
-      enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
-    )
+    const paidAmount = sumPayments(enrollment)
     const remainingBalance = Math.max(0, roundHalfUp(totalAmount - paidAmount))
 
     return {
@@ -54,7 +75,7 @@ export function calculateFamilyBalance(enrollments: BalanceEnrollment[]): Family
     balances.reduce((sum, enrollment) => sum + enrollment.discount, 0)
   )
   const totalPaid = roundHalfUp(
-    balances.reduce((sum, enrollment) => sum + enrollment.paidAmount, 0)
+    balances.reduce((sum, enrollment) => sum + enrollment.paidAmount, settledPaid)
   )
   const remainingBalance = roundHalfUp(
     balances.reduce((sum, enrollment) => sum + enrollment.remainingBalance, 0)
@@ -74,7 +95,10 @@ export async function getFamilyBalance(schoolId: string, familyId: string) {
   const enrollments = await db.enrollment.findMany({
     where: {
       schoolId,
-      status: { in: ['PENDING', 'ACTIVE'] },
+      OR: [
+        { status: { in: [...PAYABLE_ENROLLMENT_STATUSES] } },
+        { payments: { some: { isActive: true } } },
+      ],
       student: {
         person: {
           families: {

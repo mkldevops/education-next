@@ -9,9 +9,42 @@ const { cancelAttendanceOccurrenceActionMock, refresh, setAttendanceCancellation
     setAttendanceCancellationActionMock: vi.fn(),
   }))
 
-vi.mock('@peaklab/ui', () => ({
-  Button: (props: ButtonHTMLAttributes<HTMLButtonElement>) => <button {...props} />,
-}))
+vi.mock('@peaklab/ui', async () => {
+  const { cloneElement, useState } = await import('react')
+  return {
+    Button: (props: ButtonHTMLAttributes<HTMLButtonElement>) => <button {...props} />,
+    ConfirmDialog: ({
+      trigger,
+      title,
+      confirmLabel,
+      cancelLabel,
+      onConfirm,
+    }: {
+      trigger: React.ReactElement<{ onClick?: () => void }>
+      title: string
+      confirmLabel: string
+      cancelLabel: string
+      onConfirm: () => Promise<void>
+    }) => {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          {cloneElement(trigger, { onClick: () => setOpen(true) })}
+          {open ? (
+            <div role="dialog" aria-label={title}>
+              <button type="button" onClick={() => setOpen(false)}>
+                {cancelLabel}
+              </button>
+              <button type="button" onClick={() => void onConfirm().then(() => setOpen(false))}>
+                {confirmLabel}
+              </button>
+            </div>
+          ) : null}
+        </>
+      )
+    },
+  }
+})
 
 vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ refresh }) }))
 
@@ -21,6 +54,13 @@ vi.mock('../../../_lib/attendance-actions', () => ({
 }))
 
 import { CancelAttendanceForm, CancelOccurrenceForm } from './cancel-attendance-form'
+
+const confirmation = {
+  title: 'Cancel this session?',
+  description: 'Expected calls will no longer include it.',
+  confirmLabel: 'Yes, cancel',
+  cancelLabel: 'Keep session',
+}
 
 const errors = {
   validationError: 'Check the selected occurrence.',
@@ -123,6 +163,54 @@ describe('attendance cancellation forms', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel session' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(errors.unexpected)
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('asks for confirmation before cancelling a scheduled occurrence', async () => {
+    cancelAttendanceOccurrenceActionMock.mockResolvedValue('OK')
+    render(
+      <CancelOccurrenceForm
+        classPeriodId="00000000-0000-4000-8000-000000000001"
+        classScheduleSlotId="00000000-0000-4000-8000-000000000002"
+        occurredOn={new Date('2026-09-17T00:00:00.000Z')}
+        label="Cancel session"
+        pendingLabel="Cancelling session"
+        errors={errors}
+        confirmation={confirmation}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel session' }))
+    expect(screen.getByRole('dialog', { name: confirmation.title })).toBeInTheDocument()
+    expect(cancelAttendanceOccurrenceActionMock).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: confirmation.cancelLabel }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(cancelAttendanceOccurrenceActionMock).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel session' }))
+    fireEvent.click(screen.getByRole('button', { name: confirmation.confirmLabel }))
+    await waitFor(() => expect(cancelAttendanceOccurrenceActionMock).toHaveBeenCalledOnce())
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce())
+  })
+
+  it('keeps a failed confirmed cancellation visible', async () => {
+    setAttendanceCancellationActionMock.mockResolvedValue('notFound')
+    render(
+      <CancelAttendanceForm
+        sessionId="00000000-0000-4000-8000-000000000001"
+        cancelled
+        label="Cancel session"
+        pendingLabel="Cancelling session"
+        errors={errors}
+        confirmation={confirmation}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel session' }))
+    fireEvent.click(screen.getByRole('button', { name: confirmation.confirmLabel }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(errors.notFound)
     expect(refresh).not.toHaveBeenCalled()
   })
 })

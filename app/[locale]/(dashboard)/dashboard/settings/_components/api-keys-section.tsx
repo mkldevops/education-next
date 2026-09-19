@@ -36,7 +36,8 @@ export function ApiKeysSection({ keys }: Props) {
   const [pending, startTransition] = useTransition()
   const [name, setName] = useState('')
   const [lifetimeDays, setLifetimeDays] = useState<number>(MCP_KEY_DEFAULT_LIFETIME_DAYS)
-  const [createdKey, setCreatedKey] = useState<string | null>(null)
+  const [created, setCreated] = useState<{ id: string; key: string } | null>(null)
+  const createdKey = created?.key ?? null
   const [rows, setRows] = useState(keys)
 
   const liveCount = rows.filter(isLive).length
@@ -67,7 +68,7 @@ export function ApiKeysSection({ keys }: Props) {
         return
       }
 
-      setCreatedKey(result.key)
+      setCreated({ id: result.record.id, key: result.key })
       setRows((current) => [result.record, ...current])
       setName('')
     })
@@ -83,6 +84,8 @@ export function ApiKeysSection({ keys }: Props) {
 
       const revokedAt = new Date().toISOString()
       setRows((current) => current.map((row) => (row.id === id ? { ...row, revokedAt } : row)))
+      // Une clé révoquée ne doit plus rester affichée ni copiable.
+      setCreated((current) => (current?.id === id ? null : current))
       toast.success(t('revoked'))
     })
   }

@@ -21,6 +21,10 @@ vi.mock('lucide-react', () => ({
   ChevronRight: () => <svg />,
   MessageSquare: () => <svg />,
 }))
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string, values?: { count?: number }) =>
+    key === 'markRemainingPresent' ? `Mark ${values?.count} remaining` : key,
+}))
 vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
@@ -48,7 +52,6 @@ const labels = {
   startExceptional: 'Start exceptional',
   changeDate: 'Change date',
   progress: '{recorded} / {total} recorded',
-  markRemainingPresent: 'Mark {count} remaining',
   reviewAttendance: 'Review',
   partialWarning: '{count} missing',
   validatePartial: 'Validate anyway',
@@ -61,6 +64,7 @@ const labels = {
   absent: 'Absent',
   unrecorded: 'Not recorded',
   lateMinutes: 'Minutes late',
+  lateMinutesInvalid: 'Late minutes must be a whole number between 0 and 1440.',
   message: 'Message',
   messageHint: 'Optional',
   saving: 'Saving',
@@ -96,6 +100,7 @@ const props = {
   locale: 'en',
   slots: [],
   selectedOccurrence: 'adhoc' as const,
+  returnHref: '/dashboard/my-classes',
   labels,
 }
 type Entry = {

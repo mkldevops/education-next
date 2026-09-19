@@ -41,14 +41,13 @@ export {
   DialogHeader,
   type DialogHeaderProps,
   type DialogProps,
-  DialogRouteOpener,
-  type DialogRouteOpenerProps,
   DialogTitle,
   type DialogTitleProps,
   DialogTrigger,
   type DialogTriggerProps,
   useDialog,
 } from './dialog/dialog'
+export { DialogRouteOpener, type DialogRouteOpenerProps } from './dialog/dialog-route-opener'
 // Drawer
 export {
   Drawer,

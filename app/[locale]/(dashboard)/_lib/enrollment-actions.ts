@@ -35,7 +35,9 @@ export async function createEnrollmentAction(data: CreateEnrollmentInput) {
   revalidatePath('/dashboard/enrollments')
   revalidatePath('/dashboard/families', 'layout')
   revalidatePath('/dashboard/students', 'layout')
-  return result
+  // La ligne Prisma porte des `Decimal` que le sérialiseur des actions refuse : seul
+  // l'identifiant traverse la frontière client.
+  return { id: result.id }
 }
 
 export async function activateEnrollmentAction(data: ActivateEnrollmentInput) {

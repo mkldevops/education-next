@@ -22,6 +22,13 @@ export const levelGateway = {
       include: { nextLevel: true },
     }),
 
+  /** L'unicité du nom ne porte que sur les niveaux actifs (index partiel `isActive`). */
+  findActiveByName: (schoolId: string, name: string) =>
+    db.level.findFirst({
+      where: { schoolId, name, isActive: true },
+      select: { id: true },
+    }),
+
   /**
    * Graphe de progression, seule lecture d'ensemble du modèle : `setNextLevel` y cherche
    * un cycle, et n'a besoin que des deux colonnes de l'arête.

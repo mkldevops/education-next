@@ -63,7 +63,7 @@ describe('setConfig', () => {
     })
 
     // THEN
-    expect(result).toBe('invalidConfigValue')
+    expect(result).toBe('invalidNumber')
   })
 
   it('fails when a BOOLEAN setting has an invalid value', async () => {
@@ -118,12 +118,21 @@ describe('setConfig', () => {
     expect(gateway.setData).toBeNull()
   })
 
-  it('sets a NUMBER setting with a decimal', async () => {
+  it.each(['-5', '0', '3.5', '', ' ', '1e2', '+3'])('refuses %j as a class size', async (value) => {
     // WHEN
-    const result = await run({ schoolId: SCHOOL_ID, name: 'max_students_per_class', value: '3.5' })
+    const result = await run({ schoolId: SCHOOL_ID, name: 'max_students_per_class', value })
 
     // THEN
-    expect(result).toHaveProperty('value', '3.5')
+    expect(result).toBe('invalidNumber')
+    expect(gateway.setData).toBeNull()
+  })
+
+  it.each(['1', '25'])('sets the class size to %s', async (value) => {
+    // WHEN
+    const result = await run({ schoolId: SCHOOL_ID, name: 'max_students_per_class', value })
+
+    // THEN
+    expect(result).toMatchObject({ value, valueType: 'NUMBER' })
   })
 
   it.each(['true', 'false'])('sets a BOOLEAN setting to %s', async (value) => {

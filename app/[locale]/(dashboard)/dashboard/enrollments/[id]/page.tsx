@@ -267,12 +267,17 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 {enrollment.classAssignments.map((a) => (
                   <tr key={a.id} className="text-sm">
                     <td className="py-3 pr-4 font-medium">
-                      <Link
-                        href={`/dashboard/classes/${a.classPeriod.id}`}
-                        className="text-primary hover:underline"
-                      >
-                        {a.classPeriod.name}
-                      </Link>
+                      {isAdmin ? (
+                        <Link
+                          href={`/dashboard/classes/${a.classPeriod.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {a.classPeriod.name}
+                        </Link>
+                      ) : (
+                        // La page classe est réservée aux admins : un parent n'y aurait qu'un 404.
+                        a.classPeriod.name
+                      )}
                     </td>
                     <td className="py-3 pr-4 text-graphite-600">{a.classPeriod.level.name}</td>
                     <td className="py-3 pr-4 text-graphite-600">{a.classPeriod.period.name}</td>

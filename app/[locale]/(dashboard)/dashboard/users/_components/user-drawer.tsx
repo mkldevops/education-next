@@ -138,6 +138,7 @@ export function UserDrawer({
               isSelf={isSelf}
               run={run}
               onClose={close}
+              onFamilyLinked={() => void refresh()}
             />
           )}
         </DrawerBody>

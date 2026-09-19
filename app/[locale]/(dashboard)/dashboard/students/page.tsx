@@ -94,7 +94,11 @@ export default async function StudentsPage({ params }: Props) {
         data={students}
         locale={locale}
         isAdmin={isAdmin}
-        plans={plans.map((plan) => ({ id: plan.id, name: plan.name }))}
+        plans={plans.map((plan) => ({
+          id: plan.id,
+          name: plan.name,
+          amount: Number(plan.amount),
+        }))}
         classes={classes}
         paymentsEnabled={paymentsEnabled}
         today={new Date()}

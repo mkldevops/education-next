@@ -57,6 +57,7 @@ export function AttendanceReview({
   validating,
   validated,
   onCorrect,
+  returnHref,
 }: {
   entries: AttendanceEntry[]
   labels: ReviewLabels
@@ -67,6 +68,8 @@ export function AttendanceReview({
   validating: boolean
   validated: boolean
   onCorrect: () => void
+  /** Écran de retour accessible au rôle courant : suivi des appels (admin) ou « Mes classes ». */
+  returnHref: string
 }) {
   const [filter, setFilter] = useState<AttendanceStatus | 'ALL'>('ALL')
   const counts = countAttendanceStatuses(entries)
@@ -194,7 +197,7 @@ export function AttendanceReview({
           <>
             <Link
               className="inline-flex min-h-11 items-center text-sm text-primary underline"
-              href="/dashboard/my-classes"
+              href={returnHref}
             >
               {labels.returnClasses}
             </Link>

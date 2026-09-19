@@ -95,9 +95,14 @@ export function StudentsDataTable({
   today,
 }: Props) {
   const t = useTranslations('dashboard.pages.students')
-  // Un seul dialogue pour toute la table : `key` le remonte à chaque élève choisi, ce qui
-  // réinitialise le formulaire sans le dupliquer sur chaque ligne.
-  const [enrollStudent, setEnrollStudent] = useState<StudentRow | null>(null)
+  // Un seul dialogue pour toute la table : `key` le remonte à chaque demande d'inscription, ce qui
+  // le rouvre et réinitialise le formulaire sans le dupliquer sur chaque ligne. La clé est un
+  // compteur et non l'id de l'élève : refermé par « Annuler », le dialogue ne prévient pas la
+  // table, et redemander le même élève doit tout de même le rouvrir.
+  const [enrollRequest, setEnrollRequest] = useState<{ student: StudentRow; key: number } | null>(
+    null
+  )
+  const enrollStudent = enrollRequest?.student ?? null
 
   const familyColumn: ColumnDef<StudentRow> = {
     id: 'family',
@@ -126,7 +131,12 @@ export function StudentsDataTable({
       <StudentActionsMenu
         student={row.original}
         canEnroll={row.original.enrollments.length === 0}
-        onEnroll={() => setEnrollStudent(row.original)}
+        onEnroll={() =>
+          setEnrollRequest((previous) => ({
+            student: row.original,
+            key: (previous?.key ?? 0) + 1,
+          }))
+        }
       />
     ),
   }
@@ -184,7 +194,7 @@ export function StudentsDataTable({
 
       {enrollStudent && (
         <CreateEnrollmentDialog
-          key={enrollStudent.id}
+          key={enrollRequest?.key}
           students={[
             {
               id: enrollStudent.id,

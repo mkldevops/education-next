@@ -9,11 +9,10 @@ export {
   DialogHeader,
   type DialogHeaderProps,
   type DialogProps,
-  DialogRouteOpener,
-  type DialogRouteOpenerProps,
   DialogTitle,
   type DialogTitleProps,
   DialogTrigger,
   type DialogTriggerProps,
   useDialog,
 } from './dialog'
+export { DialogRouteOpener, type DialogRouteOpenerProps } from './dialog-route-opener'

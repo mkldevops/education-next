@@ -21,9 +21,11 @@ import type { FamilyOption } from './users-table'
 interface Props {
   userId: string
   families: FamilyOption[]
+  /** Appelé après un rattachement réussi, pour que le tiroir recharge son détail. */
+  onLinked?: () => void
 }
 
-export function LinkFamilyDialog({ userId, families }: Props) {
+export function LinkFamilyDialog({ userId, families, onLinked }: Props) {
   const t = useTranslations('dashboard.pages.users')
 
   if (families.length === 0) return null
@@ -39,13 +41,13 @@ export function LinkFamilyDialog({ userId, families }: Props) {
         <DialogHeader>
           <DialogTitle>{t('linkFamily')}</DialogTitle>
         </DialogHeader>
-        <LinkFamilyForm userId={userId} families={families} />
+        <LinkFamilyForm userId={userId} families={families} onLinked={onLinked} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function LinkFamilyForm({ userId, families }: Props) {
+function LinkFamilyForm({ userId, families, onLinked }: Props) {
   const t = useTranslations('dashboard.pages.users')
   const router = useRouter()
   const { isPending, close, onSubmit } = useDialogForm(t)
@@ -53,7 +55,10 @@ function LinkFamilyForm({ userId, families }: Props) {
 
   const handleSubmit = onSubmit(() => linkUserFamilyAction({ id: userId, familyId }), {
     successKey: 'familyLinked',
-    onSuccess: () => router.refresh(),
+    onSuccess: () => {
+      router.refresh()
+      onLinked?.()
+    },
   })
 
   return (

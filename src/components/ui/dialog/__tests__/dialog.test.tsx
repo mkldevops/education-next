@@ -1,5 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { hydrateRoot } from 'react-dom/client'
+import { renderToString } from 'react-dom/server'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   Dialog,
   DialogBody,
@@ -9,6 +11,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../dialog'
+import { DialogRouteOpener } from '../dialog-route-opener'
+
+const replace = vi.hoisted(() => vi.fn())
+vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ replace }) }))
 
 function renderDialog() {
   return render(
@@ -124,5 +130,76 @@ describe('DialogContent accessibility', () => {
     expect(document.activeElement).toBe(fallback)
 
     fallback.remove()
+  })
+})
+
+function RouteDialog({ open, cleanUrl }: { open: boolean; cleanUrl?: string }) {
+  return (
+    <Dialog initialOpen={open}>
+      <DialogRouteOpener open={open} cleanUrl={cleanUrl} />
+      <DialogContent>
+        <DialogTitle>Route dialog</DialogTitle>
+        <DialogFooter>
+          <button type="button">Cancel</button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+describe('DialogRouteOpener', () => {
+  beforeEach(() => replace.mockClear())
+
+  it('cleans the URL through the locale-aware router instead of raw history', () => {
+    const historySpy = vi.spyOn(window.history, 'replaceState')
+    render(<RouteDialog open cleanUrl="/dashboard/families/f1" />)
+
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(replace).toHaveBeenCalledWith('/dashboard/families/f1', { scroll: false })
+    expect(historySpy).not.toHaveBeenCalled()
+    historySpy.mockRestore()
+  })
+
+  it('reopens when the same deep link is requested again after the dialog was closed', () => {
+    const { rerender } = render(<RouteDialog open cleanUrl="/dashboard/families/f1" />)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    // Le nettoyage d'URL redemande le rendu serveur : `open` repasse à false, puis le second
+    // choix du même `?action=` le remet à true.
+    rerender(<RouteDialog open={false} cleanUrl="/dashboard/families/f1" />)
+    rerender(<RouteDialog open cleanUrl="/dashboard/families/f1" />)
+
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(replace).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('DialogContent hydration', () => {
+  it('hydrates a dialog opened by the server without a mismatch, then shows it', async () => {
+    const serverHtml = renderToString(<RouteDialog open cleanUrl="/dashboard/payments" />)
+    expect(serverHtml).not.toContain('role="dialog"')
+
+    const container = document.createElement('div')
+    container.innerHTML = serverHtml
+    document.body.appendChild(container)
+    const onRecoverableError = vi.fn()
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    let root: ReturnType<typeof hydrateRoot> | undefined
+    await act(async () => {
+      root = hydrateRoot(container, <RouteDialog open cleanUrl="/dashboard/payments" />, {
+        onRecoverableError,
+      })
+    })
+
+    expect(onRecoverableError).not.toHaveBeenCalled()
+    expect(consoleError).not.toHaveBeenCalled()
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Cancel' }))
+
+    act(() => root?.unmount())
+    container.remove()
+    consoleError.mockRestore()
   })
 })

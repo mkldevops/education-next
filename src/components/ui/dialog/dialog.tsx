@@ -9,6 +9,7 @@ import {
   useId,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '../utils'
@@ -71,23 +72,6 @@ export function Dialog({ children, initialOpen = false, restoreFocusRef }: Dialo
   )
 }
 
-export interface DialogRouteOpenerProps {
-  open: boolean
-  cleanUrl?: string
-}
-
-export function DialogRouteOpener({ open, cleanUrl }: DialogRouteOpenerProps) {
-  const { setOpen } = useDialog()
-
-  useEffect(() => {
-    if (!open) return
-    setOpen(true)
-    if (cleanUrl) window.history.replaceState(null, '', cleanUrl)
-  }, [open, cleanUrl, setOpen])
-
-  return null
-}
-
 export interface DialogTriggerProps {
   children: React.ReactNode
 }
@@ -112,6 +96,21 @@ export function DialogTrigger({ children }: DialogTriggerProps) {
   )
 }
 
+const subscribeNoop = () => () => {}
+
+/**
+ * `false` au rendu serveur et pendant l'hydratation, `true` ensuite. Un dialogue ouvert dès le
+ * rendu serveur (lien `?action=`) ne peut pas être portalisé côté serveur : le client doit donc
+ * rendre la même absence de contenu à l'hydratation, puis le portail au rendu suivant.
+ */
+function useIsClient() {
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  )
+}
+
 export interface DialogContentProps {
   children: React.ReactNode
   className?: string
@@ -120,9 +119,12 @@ export interface DialogContentProps {
 export function DialogContent({ children, className }: DialogContentProps) {
   const { open, setOpen, titleId, restoreFocusRef } = useDialog()
   const panelRef = useRef<HTMLDivElement>(null)
+  const isClient = useIsClient()
 
+  // `isClient` en dépendance : un dialogue hydraté ouvert (`?action=`) n'a pas encore de
+  // portail au premier passage de l'effet ; il faut le relancer quand le panneau existe.
   useEffect(() => {
-    if (!open) return
+    if (!open || !isClient) return
     const previouslyFocused = document.activeElement as HTMLElement | null
     const panel = panelRef.current
     const [firstFocusable] = panel ? getFocusableElements(panel) : []
@@ -133,7 +135,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
       // dialogue était ouvert — par exemple masqué en CSS par le menu qui le contenait.
       if (!focusIfPossible(previouslyFocused)) focusIfPossible(restoreFocusRef?.current)
     }
-  }, [open, restoreFocusRef])
+  }, [open, isClient, restoreFocusRef])
 
   useEffect(() => {
     if (!open) return
@@ -181,7 +183,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
     }
   }, [open])
 
-  if (!open || typeof document === 'undefined') return null
+  if (!open || !isClient) return null
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 text-left">

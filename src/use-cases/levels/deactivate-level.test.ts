@@ -13,6 +13,10 @@ class LevelGatewaySpy {
     return this.levelsByIdMap[id] || null
   }
 
+  async findActiveByName() {
+    return null
+  }
+
   async countClassPeriods() {
     return this.classPeriodCount
   }

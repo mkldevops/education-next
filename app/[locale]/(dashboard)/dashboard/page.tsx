@@ -139,6 +139,8 @@ export default async function DashboardPage({ params }: Props) {
       render: (item) => {
         const current = item.classAssignments.find((assignment) => !assignment.endAt)
         if (!current) return '—'
+        // La page classe est réservée aux admins : un parent n'y obtiendrait qu'un 404.
+        if (!isAdmin) return current.classPeriod.level.name
         return (
           <Link
             href={`/dashboard/classes/${current.classPeriod.id}`}

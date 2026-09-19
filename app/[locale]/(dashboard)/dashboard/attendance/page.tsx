@@ -1,5 +1,6 @@
 import { Breadcrumbs, buttonVariants, Card, EmptyState, StatusBadge } from '@peaklab/ui'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -14,6 +15,7 @@ import type { AttendanceSessionStatus } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
+import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 import { requireSchoolSession, requireTeacher } from '../../_lib/auth-helper'
 import { CancelAttendanceForm, CancelOccurrenceForm } from './_components/cancel-attendance-form'
 
@@ -83,6 +85,23 @@ function OccurrenceRow({
       </div>
     </Card>
   )
+}
+
+/**
+ * Même porte que la page : administrateur actif ou enseignant de l'école. Les helpers
+ * de `page-metadata` ne couvrent pas le rôle enseignant ; un autre rôle reçoit le titre 404.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const [t, context] = await Promise.all([getTranslations({ locale }), getSchoolContext()])
+  const allowed = context !== null && (isActiveSchoolAdmin(context) || context.role === 'TEACHER')
+  return {
+    title: allowed ? t('dashboard.pages.attendance.trackingTitle') : t('errorPages.404.title'),
+  }
 }
 
 export default async function AttendanceTrackingPage({
@@ -212,6 +231,12 @@ export default async function AttendanceTrackingPage({
     attendanceDisabled: t('errors.attendanceDisabled'),
     sessionCancelled: t('errors.sessionCancelled'),
     unexpected: t('errors.unexpected'),
+  }
+  const cancelConfirmation = {
+    title: t('cancelDialog.title'),
+    description: t('cancelDialog.description'),
+    confirmLabel: t('cancelDialog.confirm'),
+    cancelLabel: t('cancelDialog.dismiss'),
   }
   const resetFiltersLink = (
     <Link
@@ -397,6 +422,7 @@ export default async function AttendanceTrackingPage({
                         label={t('cancel')}
                         pendingLabel={t('cancellationPending')}
                         errors={errorLabels}
+                        confirmation={cancelConfirmation}
                       />
                     ) : (
                       <CancelOccurrenceForm
@@ -406,6 +432,7 @@ export default async function AttendanceTrackingPage({
                         label={t('cancel')}
                         pendingLabel={t('cancellationPending')}
                         errors={errorLabels}
+                        confirmation={cancelConfirmation}
                       />
                     ))}
                 </OccurrenceRow>
@@ -456,6 +483,7 @@ export default async function AttendanceTrackingPage({
                         : t('cancellationPending')
                     }
                     errors={errorLabels}
+                    confirmation={session.status === 'CANCELLED' ? undefined : cancelConfirmation}
                   />
                 )}
               </OccurrenceRow>

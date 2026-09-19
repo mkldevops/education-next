@@ -76,7 +76,10 @@ export async function ChildCard({
                 (paymentsEnabled && enrollment.plan.name !== UNPRICED_PLAN_NAME
                   ? enrollment.plan.name
                   : t('childCard.noClass')),
-              classPeriodId: enrollment.classAssignments[0]?.classPeriod.id ?? null,
+              // La page classe est réservée aux admins : un parent n'y obtiendrait qu'un 404.
+              classPeriodId: isAdmin
+                ? (enrollment.classAssignments[0]?.classPeriod.id ?? null)
+                : null,
             }))}
           />
         )}
@@ -120,7 +123,12 @@ export async function ChildCard({
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                  {currentAssignment ? (
+                  {currentAssignment && !isAdmin ? (
+                    // La page classe est réservée aux admins : un parent lit le nom sans lien.
+                    <span className="text-xs font-medium text-graphite">
+                      {currentAssignment.classPeriod.name}
+                    </span>
+                  ) : currentAssignment ? (
                     // Le nom de la classe porte déjà niveau et période : les répéter entre
                     // parenthèses n'ajoutait rien et noyait le lien.
                     <Link

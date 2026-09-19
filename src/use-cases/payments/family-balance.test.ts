@@ -94,6 +94,60 @@ describe('calculateFamilyBalance', () => {
     expect(balance.enrollments.map((e) => e.enrollmentId)).toEqual(['enrollment-1', 'enrollment-2'])
   })
 
+  it('keeps payments of a cancelled enrollment in the total paid without owing it', () => {
+    const balance = calculateFamilyBalance([
+      {
+        id: 'cancelled',
+        status: 'CANCELLED',
+        totalAmount: 300,
+        discount: 0,
+        payments: [{ amount: 200 }],
+      },
+      {
+        id: 'completed',
+        status: 'COMPLETED',
+        totalAmount: 100,
+        discount: 10,
+        payments: [{ amount: 50 }],
+      },
+      {
+        id: 'active',
+        status: 'ACTIVE',
+        totalAmount: 150,
+        discount: 5,
+        payments: [{ amount: 30 }],
+      },
+    ])
+
+    expect(balance.totalPaid).toBe(280)
+    expect(balance.totalAmount).toBe(150)
+    expect(balance.totalDiscount).toBe(5)
+    expect(balance.remainingBalance).toBe(120)
+    expect(balance.remainingAmountInCents).toBe(12000)
+    expect(balance.enrollments.map((e) => e.enrollmentId)).toEqual(['active'])
+  })
+
+  it('shows money received on a cancelled enrollment when nothing else is owed', () => {
+    const balance = calculateFamilyBalance([
+      {
+        id: 'cancelled',
+        status: 'CANCELLED',
+        totalAmount: 300,
+        discount: 0,
+        payments: [{ amount: 200 }],
+      },
+    ])
+
+    expect(balance).toEqual({
+      enrollments: [],
+      totalAmount: 0,
+      totalDiscount: 0,
+      totalPaid: 200,
+      remainingBalance: 0,
+      remainingAmountInCents: 0,
+    })
+  })
+
   it('rounds the checkout amount to integer cents', () => {
     const balance = calculateFamilyBalance([
       {
@@ -125,7 +179,7 @@ describe('getFamilyBalance', () => {
 
     expect(where).toEqual({
       schoolId,
-      status: { in: ['PENDING', 'ACTIVE'] },
+      OR: [{ status: { in: ['PENDING', 'ACTIVE'] } }, { payments: { some: { isActive: true } } }],
       student: {
         person: {
           families: {

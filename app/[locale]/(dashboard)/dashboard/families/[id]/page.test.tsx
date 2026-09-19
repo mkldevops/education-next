@@ -32,7 +32,7 @@ vi.mock('@/i18n/routing', () => ({
       {children}
     </a>
   ),
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }),
 }))
 vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriodId: getSelectedPeriodIdMock }))
 vi.mock('@/gateways/family-gateway', () => ({
