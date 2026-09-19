@@ -19,16 +19,14 @@ import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { inviteUserAction } from '../../../_lib/invitation-actions'
-
-type Family = { id: string; name: string }
-type Teacher = { id: string; name: string; email: string | null }
+import type { FamilyOption, TeacherOption } from './users-table'
 
 export function InviteUserDialog({
   families,
   teachers,
 }: {
-  families: Family[]
-  teachers: Teacher[]
+  families: FamilyOption[]
+  teachers: TeacherOption[]
 }) {
   const t = useTranslations('dashboard.pages.users.invite')
 
@@ -47,7 +45,13 @@ export function InviteUserDialog({
   )
 }
 
-function InviteForm({ families, teachers }: { families: Family[]; teachers: Teacher[] }) {
+function InviteForm({
+  families,
+  teachers,
+}: {
+  families: FamilyOption[]
+  teachers: TeacherOption[]
+}) {
   const t = useTranslations('dashboard.pages.users.invite')
   const tRoles = useTranslations('roles')
   const locale = useLocale()

@@ -4,33 +4,17 @@ import { Tabs } from '@peaklab/ui'
 import { KeyRound, Monitor, Plug, Shield, User } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { McpApiKeyView } from '../_lib/mcp-api-key-view'
-import { AccountSection } from './account-section'
+import { AccountSection, type LinkedAccount } from './account-section'
 import { ApiKeysSection } from './api-keys-section'
 import { type Passkey, PasskeySection } from './passkey-section'
 import { PasswordSection } from './password-section'
 import { ProfileSection } from './profile-section'
-import { SessionsSection } from './sessions-section'
-
-type SessionData = {
-  id: string
-  token: string
-  userAgent: string | null
-  ipAddress: string | null
-  createdAt: string
-  expiresAt: string
-  isCurrent: boolean
-}
-
-type LinkedAccount = {
-  id: string
-  providerId: string
-}
+import { type SessionData, SessionsSection } from './sessions-section'
 
 type Props = {
   user: {
     name: string
     email: string
-    image: string | null
   }
   sessions: SessionData[]
   linkedAccounts: LinkedAccount[]

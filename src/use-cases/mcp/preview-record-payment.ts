@@ -1,11 +1,10 @@
 import type { z } from 'zod'
-import { draftExpiry, type McpFinding } from '@/domain/mcp-draft'
+import type { McpFinding } from '@/domain/mcp-draft'
 import { distributePayment, enrollmentBalances } from '@/domain/payment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
-import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
-import { draftChecksum } from '@/lib/mcp-draft-crypto'
+import { blockedPreview, saveDraftPreview } from './draft-response'
 import type { McpScope } from './resolve-mcp-scope'
 import { previewRecordPaymentSchema } from './schemas'
 
@@ -39,7 +38,7 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
       value: data.familyId ?? data.familyName ?? '',
       reason: candidates.length === 0 ? 'notFound' : 'ambiguousFamily',
     })
-    return { draftId: null, checksum: null, plan: null, matches, warnings, blockers }
+    return blockedPreview(matches, warnings, blockers)
   }
 
   const family = candidates[0]
@@ -69,7 +68,7 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
   }
 
   if (blockers.length > 0) {
-    return { draftId: null, checksum: null, plan: null, matches, warnings, blockers }
+    return blockedPreview(matches, warnings, blockers)
   }
 
   const resolved = {
@@ -86,14 +85,5 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
     allocation,
   }
 
-  const checksum = draftChecksum(resolved)
-  const draft = await mcpDraftGateway.create(schoolId, {
-    keyId: scope.keyId,
-    tool: RECORD_PAYMENT_TOOL,
-    checksum,
-    resolved,
-    expiresAt: draftExpiry(),
-  })
-
-  return { draftId: draft.id, checksum, plan: resolved, matches, warnings, blockers }
+  return saveDraftPreview(scope, RECORD_PAYMENT_TOOL, resolved, matches, warnings, blockers)
 }

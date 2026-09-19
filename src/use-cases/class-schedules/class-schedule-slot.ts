@@ -3,10 +3,8 @@ import { validateWeeklyTimeRange } from '@/domain/class-schedule'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { classScheduleGateway } from '@/gateways/class-schedule-gateway'
 import { configGateway } from '@/gateways/config-gateway'
-import {
-  CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
-  CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY,
-} from '@/lib/class-schedule-config'
+import { CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY } from '@/lib/class-schedule-config'
+import { isClassScheduleEnabled } from './is-class-schedule-enabled'
 import {
   createClassScheduleSlotSchema,
   deleteClassScheduleSlotSchema,
@@ -31,6 +29,15 @@ type SlotData = {
 
 type SlotWarning = { type: 'teacherOverlap'; slotIds: string[] }
 
+function toSlotResult(saved: Awaited<ReturnType<ScheduleGateway['saveWithOverlapValidation']>>) {
+  if (saved.status !== 'OK') return saved.status
+  const warnings: SlotWarning[] =
+    saved.teacherOverlapIds.length > 0
+      ? [{ type: 'teacherOverlap', slotIds: saved.teacherOverlapIds }]
+      : []
+  return { slot: saved.slot, warnings }
+}
+
 async function validateSlot(
   schoolId: string,
   data: SlotData,
@@ -45,8 +52,7 @@ async function validateSlot(
   | 'teacherOverlap'
   | { teacherOverlapAllowed: boolean }
 > {
-  const config = await configGw.get(schoolId, CLASS_SCHEDULE_ENABLED_CONFIG_KEY)
-  if (config?.value !== 'true') return 'notConfigured'
+  if (!(await isClassScheduleEnabled(schoolId, configGw))) return 'notConfigured'
 
   if (validateWeeklyTimeRange(data) !== 'OK') return 'invalidTimeRange'
 
@@ -84,12 +90,7 @@ export async function createClassScheduleSlot(
     data,
     validation.teacherOverlapAllowed
   )
-  if (saved.status !== 'OK') return saved.status
-  const warnings: SlotWarning[] =
-    saved.teacherOverlapIds.length > 0
-      ? [{ type: 'teacherOverlap', slotIds: saved.teacherOverlapIds }]
-      : []
-  return { slot: saved.slot, warnings }
+  return toSlotResult(saved)
 }
 
 export async function updateClassScheduleSlot(
@@ -114,12 +115,7 @@ export async function updateClassScheduleSlot(
     validation.teacherOverlapAllowed,
     id
   )
-  if (saved.status !== 'OK') return saved.status
-  const warnings: SlotWarning[] =
-    saved.teacherOverlapIds.length > 0
-      ? [{ type: 'teacherOverlap', slotIds: saved.teacherOverlapIds }]
-      : []
-  return { slot: saved.slot, warnings }
+  return toSlotResult(saved)
 }
 
 export async function deleteClassScheduleSlot(
@@ -131,8 +127,7 @@ export async function deleteClassScheduleSlot(
   if (!parsed.success) return 'validationError' as const
 
   const { schoolId, id } = parsed.data
-  const config = await configGw.get(schoolId, CLASS_SCHEDULE_ENABLED_CONFIG_KEY)
-  if (config?.value !== 'true') return 'notConfigured' as const
+  if (!(await isClassScheduleEnabled(schoolId, configGw))) return 'notConfigured' as const
 
   const slot = await scheduleGw.findById(schoolId, id)
   if (!slot) return 'notFound' as const

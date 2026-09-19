@@ -11,12 +11,10 @@ import {
   DialogTrigger,
   Label,
   Select,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
+import { useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
 import { reassignClassAction } from '../../../_lib/enrollment-actions'
 
 interface Option {
@@ -62,30 +60,19 @@ export function ReassignClassDialog({
 
 function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDialogProps) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.reassign')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
 
   const availableClasses = classes.filter((c) => c.id !== currentClassId)
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await reassignClassAction({
+  const handleSubmit = onSubmit(
+    (formData) =>
+      reassignClassAction({
         enrollmentId,
         newClassPeriodId: formData.get('newClassPeriodId') as string,
-      })
-      if (result !== 'OK') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-        router.refresh()
-      }
-    })
-  }
+      }),
+    { onSuccess: () => router.refresh() }
+  )
 
   return (
     <form onSubmit={handleSubmit}>
@@ -112,7 +99,7 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
         </div>
       </DialogBody>
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+        <Button type="button" variant="outline" onClick={close} disabled={isPending}>
           {t('cancel')}
         </Button>
         <Button type="submit" disabled={isPending || availableClasses.length === 0}>

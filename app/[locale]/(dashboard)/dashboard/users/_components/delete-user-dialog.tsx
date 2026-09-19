@@ -11,12 +11,11 @@ import {
   DialogTrigger,
   Input,
   Label,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
 import { deleteUserAction } from '../../../_lib/user-actions'
 import type { MemberRow } from './users-table'
 
@@ -48,24 +47,16 @@ export function DeleteUserDialog({ user, onDeleted }: Props) {
 function DeleteUserForm({ user, onDeleted }: Props) {
   const t = useTranslations('dashboard.pages.users')
   const router = useRouter()
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
   const [confirmation, setConfirmation] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    startTransition(async () => {
-      const result = await deleteUserAction({ id: user.id, confirmation })
-      if (result === 'OK') {
-        toast.success(t('userDeleted'))
-        router.refresh()
-        setOpen(false)
-        onDeleted()
-        return
-      }
-      toastActionError(t, result)
-    })
-  }
+  const handleSubmit = onSubmit(() => deleteUserAction({ id: user.id, confirmation }), {
+    successKey: 'userDeleted',
+    onSuccess: () => {
+      router.refresh()
+      onDeleted()
+    },
+  })
 
   return (
     <form onSubmit={handleSubmit}>
@@ -88,7 +79,7 @@ function DeleteUserForm({ user, onDeleted }: Props) {
         </div>
       </DialogBody>
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+        <Button type="button" variant="outline" onClick={close} disabled={isPending}>
           {t('cancel')}
         </Button>
         <Button

@@ -21,27 +21,23 @@ export function expectedAttendance(
   sessions: Session[],
   excludedSlotIds: ReadonlySet<string> = new Set()
 ): ExpectedAttendance[] {
+  const weekday = planningWeekday(date)
   return slots
-    .filter(
-      (slot) =>
-        slot.weekday === planningWeekday(date) &&
-        !excludedSlotIds.has(slot.id) &&
-        sessions.find(
-          (session) =>
-            session.classPeriodId === slot.classPeriodId && session.occurrenceKey === slot.id
-        )?.status !== 'CANCELLED'
-    )
-    .map((slot) => {
+    .filter((slot) => slot.weekday === weekday && !excludedSlotIds.has(slot.id))
+    .flatMap<ExpectedAttendance>((slot) => {
       const session = sessions.find(
         (candidate) =>
           candidate.classPeriodId === slot.classPeriodId && candidate.occurrenceKey === slot.id
       )
-      return {
-        classPeriodId: slot.classPeriodId,
-        classScheduleSlotId: slot.id,
-        occurredOn: date,
-        status:
-          session?.status === 'VALIDATED' ? 'VALIDATED' : session ? 'IN_PROGRESS' : 'NOT_STARTED',
-      }
+      if (session?.status === 'CANCELLED') return []
+      return [
+        {
+          classPeriodId: slot.classPeriodId,
+          classScheduleSlotId: slot.id,
+          occurredOn: date,
+          status:
+            session?.status === 'VALIDATED' ? 'VALIDATED' : session ? 'IN_PROGRESS' : 'NOT_STARTED',
+        },
+      ]
     })
 }

@@ -18,7 +18,7 @@ import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
-import { EnrollmentActions } from './_components/enrollment-actions'
+import { EnrollmentActions } from '../_components/enrollment-actions'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -121,7 +121,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
             isActive: true,
             name: { not: UNPRICED_PLAN_NAME },
           },
-          select: { id: true, name: true, amount: true },
+          select: { id: true, name: true },
           orderBy: { name: 'asc' },
         })
       : []
@@ -131,11 +131,8 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const totalPaid = enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
   const remaining = calculateRemainingBalance(totalAmount, totalPaid)
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
-  const familyName =
-    enrollment.student.person.families.length > 0
-      ? enrollment.student.person.families[0].family.name
-      : '-'
   const familyContext = enrollment.student.person.families[0]?.family
+  const familyName = familyContext?.name ?? '-'
 
   return (
     <div className="space-y-6">

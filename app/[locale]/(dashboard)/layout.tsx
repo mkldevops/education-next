@@ -20,6 +20,12 @@ import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 import { RememberActiveSchool } from './_components/remember-active-school'
 
+function readConfigFlag(schoolId: string, name: string) {
+  return db.config
+    .findFirst({ where: { schoolId, name, isActive: true }, select: { value: true } })
+    .then((config) => config?.value === 'true')
+}
+
 type Props = {
   children: React.ReactNode
   params: Promise<{ locale: string }>
@@ -37,47 +43,31 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     session,
     schools,
     switchAllowed,
-    eventsConfig,
-    classScheduleConfig,
+    eventsEnabled,
+    classScheduleEnabled,
     paymentsEnabled,
     cookieStore,
     teacher,
-    attendanceConfig,
+    attendanceEnabled,
   ] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
     getAuthorizedSchools(),
     isSchoolSwitchEnabled(),
-    db.config.findFirst({
-      where: { schoolId: context.schoolId, name: EVENTS_CONFIG_KEY, isActive: true },
-      select: { value: true },
-    }),
-    db.config.findFirst({
-      where: {
-        schoolId: context.schoolId,
-        name: CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
-        isActive: true,
-      },
-      select: { value: true },
-    }),
+    readConfigFlag(context.schoolId, EVENTS_CONFIG_KEY),
+    readConfigFlag(context.schoolId, CLASS_SCHEDULE_ENABLED_CONFIG_KEY),
     isPaymentsEnabled(context.schoolId),
     cookies(),
     db.teacher.findFirst({
       where: { schoolId: context.schoolId, userId: context.userId, isActive: true },
       select: { id: true },
     }),
-    db.config.findFirst({
-      where: { schoolId: context.schoolId, name: ATTENDANCE_ENABLED_CONFIG_KEY, isActive: true },
-      select: { value: true },
-    }),
+    readConfigFlag(context.schoolId, ATTENDANCE_ENABLED_CONFIG_KEY),
   ])
   // La page de connexion n'a pas de session : elle s'habille de l'école désignée par ce cookie.
   const rememberSchool = cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId
 
   const userName = session?.user.name || session?.user.email || undefined
-  const eventsEnabled = eventsConfig?.value === 'true'
-  const classScheduleEnabled = classScheduleConfig?.value === 'true'
-  const attendanceEnabled = attendanceConfig?.value === 'true'
 
   return (
     <>

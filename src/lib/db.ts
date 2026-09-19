@@ -123,9 +123,7 @@ const globalForPrisma = globalThis as unknown as {
 
 function getClient(): PrismaClient {
   if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = asPrismaClient(
-      withTenantGuard(asPrismaClient(withSoftDelete(createRawClient())))
-    )
+    globalForPrisma.prisma = asPrismaClient(withTenantGuard(createUnguardedClient()))
   }
   return globalForPrisma.prisma
 }

@@ -13,7 +13,6 @@ type Props = {
   user: {
     name: string
     email: string
-    image: string | null
   }
 }
 

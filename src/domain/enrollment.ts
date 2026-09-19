@@ -1,5 +1,10 @@
 import type { EnrollmentStatus } from '@/generated/prisma/client'
 
+export const OPEN_ENROLLMENT_STATUSES = [
+  'PENDING',
+  'ACTIVE',
+] as const satisfies readonly EnrollmentStatus[]
+
 export const VALID_TRANSITIONS: Record<EnrollmentStatus, EnrollmentStatus[]> = {
   PENDING: ['ACTIVE', 'CANCELLED'],
   ACTIVE: ['COMPLETED', 'CANCELLED'],

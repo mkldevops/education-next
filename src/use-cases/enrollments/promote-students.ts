@@ -114,6 +114,23 @@ async function buildEligibilityContext(
   return { alreadyPromotedStudentIds, targetClassPeriodByLevelId, occupancyByClassPeriodId }
 }
 
+async function loadPromotion(input: Input) {
+  const parsed = promoteStudentsSchema.safeParse(input)
+  if (!parsed.success) return 'validationError' as const
+  const { schoolId, sourcePeriodId, targetPeriodId } = parsed.data
+
+  if (!(await periodGateway.findById(schoolId, sourcePeriodId))) return 'notFound' as const
+  if (!(await periodGateway.findById(schoolId, targetPeriodId))) return 'notFound' as const
+
+  const enrollments = await enrollmentGateway.findCompletedByPeriod(schoolId, sourcePeriodId)
+  const context = await buildEligibilityContext(schoolId, enrollments, targetPeriodId)
+  return { schoolId, enrollments, context }
+}
+
+/**
+ * Réserve une place et marque l'élève promu dans `context` quand il est éligible : à appeler une
+ * seule fois par inscription.
+ */
 function resolveEligibility(
   enrollment: CompletedEnrollment,
   context: EligibilityContext
@@ -142,21 +159,9 @@ function resolveEligibility(
 }
 
 export async function previewPromoteStudents(input: Input) {
-  const parsed = promoteStudentsSchema.safeParse(input)
-  if (!parsed.success) return 'validationError' as const
-  const { schoolId } = parsed.data
-
-  const sourcePeriod = await periodGateway.findById(schoolId, parsed.data.sourcePeriodId)
-  if (!sourcePeriod) return 'notFound' as const
-
-  const targetPeriod = await periodGateway.findById(schoolId, parsed.data.targetPeriodId)
-  if (!targetPeriod) return 'notFound' as const
-
-  const enrollments = await enrollmentGateway.findCompletedByPeriod(
-    schoolId,
-    parsed.data.sourcePeriodId
-  )
-  const context = await buildEligibilityContext(schoolId, enrollments, parsed.data.targetPeriodId)
+  const loaded = await loadPromotion(input)
+  if (typeof loaded === 'string') return loaded
+  const { enrollments, context } = loaded
 
   let promoted = 0
   const skippedByReason: Record<SkipReason, number> = {
@@ -182,21 +187,9 @@ export async function previewPromoteStudents(input: Input) {
 }
 
 export async function promoteStudents(input: Input) {
-  const parsed = promoteStudentsSchema.safeParse(input)
-  if (!parsed.success) return 'validationError' as const
-  const { schoolId } = parsed.data
-
-  const sourcePeriod = await periodGateway.findById(schoolId, parsed.data.sourcePeriodId)
-  if (!sourcePeriod) return 'notFound' as const
-
-  const targetPeriod = await periodGateway.findById(schoolId, parsed.data.targetPeriodId)
-  if (!targetPeriod) return 'notFound' as const
-
-  const enrollments = await enrollmentGateway.findCompletedByPeriod(
-    schoolId,
-    parsed.data.sourcePeriodId
-  )
-  const context = await buildEligibilityContext(schoolId, enrollments, parsed.data.targetPeriodId)
+  const loaded = await loadPromotion(input)
+  if (typeof loaded === 'string') return loaded
+  const { schoolId, enrollments, context } = loaded
 
   let promoted = 0
   let skipped = 0

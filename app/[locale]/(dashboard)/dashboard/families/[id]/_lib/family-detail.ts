@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { db } from '@/lib/db'
+import type { DecimalLike } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
-import type { FamilyBalance } from '@/use-cases/payments/family-balance'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
 
 /**
@@ -94,19 +94,40 @@ export type FamilyDetail = Extract<
   { status: 'found' }
 >['resource']
 
+type EnrollmentAmounts = {
+  totalAmount: DecimalLike
+  discount: DecimalLike
+  plan: { amount: DecimalLike }
+}
+
+function serializeEnrollmentAmounts<E extends EnrollmentAmounts>(
+  enrollment: E
+): Omit<E, 'totalAmount' | 'discount' | 'plan'> & {
+  totalAmount: number
+  discount: number
+  plan: Omit<E['plan'], 'amount'> & { amount: number }
+} {
+  const { totalAmount, discount, plan, ...rest } = enrollment
+  return {
+    ...rest,
+    totalAmount: Number(totalAmount),
+    discount: Number(discount),
+    plan: serializePlanAmount(plan),
+  }
+}
+
+function serializePlanAmount<P extends { amount: DecimalLike }>(
+  plan: P
+): Omit<P, 'amount'> & { amount: number } {
+  const { amount, ...rest } = plan
+  return { ...rest, amount: Number(amount) }
+}
+
 export function serializeFamilyPayments(payments: FamilyDetail['payments']) {
   return payments.map((payment) => ({
     ...payment,
     amount: Number(payment.amount),
-    enrollment: {
-      ...payment.enrollment,
-      totalAmount: Number(payment.enrollment.totalAmount),
-      discount: Number(payment.enrollment.discount),
-      plan: {
-        ...payment.enrollment.plan,
-        amount: Number(payment.enrollment.plan.amount),
-      },
-    },
+    enrollment: serializeEnrollmentAmounts(payment.enrollment),
   }))
 }
 
@@ -141,11 +162,7 @@ export async function getFamilyDialogData(
   return { plans, classes }
 }
 
-export function deriveFamilyDetail(
-  family: FamilyDetail,
-  balance: FamilyBalance,
-  studentId: string | undefined
-) {
+export function deriveFamilyDetail(family: FamilyDetail, studentId: string | undefined) {
   const students = family.persons
     .filter(
       (
@@ -161,13 +178,7 @@ export function deriveFamilyDetail(
         student: {
           ...familyPerson.person.student,
           enrollments: familyPerson.person.student.enrollments.map((enrollment) => ({
-            ...enrollment,
-            totalAmount: Number(enrollment.totalAmount),
-            discount: Number(enrollment.discount),
-            plan: {
-              ...enrollment.plan,
-              amount: Number(enrollment.plan.amount),
-            },
+            ...serializeEnrollmentAmounts(enrollment),
             payments: enrollment.payments.map((payment) => ({
               ...payment,
               amount: Number(payment.amount),
@@ -193,10 +204,6 @@ export function deriveFamilyDetail(
     scopedStudentId: students.some((s) => s.person.student.id === studentId)
       ? studentId
       : undefined,
-    totalAmount: balance.totalAmount,
-    totalDiscount: balance.totalDiscount,
-    totalPaid: balance.totalPaid,
-    remainingBalance: balance.remainingBalance,
   }
 }
 

@@ -2,7 +2,7 @@ import type { z } from 'zod'
 import { MAX_EVENT_IMAGES } from '@/domain/event'
 import { configGateway } from '@/gateways/config-gateway'
 import { eventGateway } from '@/gateways/event-gateway'
-import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
+import { readEventsEnabled } from './is-events-enabled'
 import { addEventImageSchema } from './schemas'
 
 type Input = z.infer<typeof addEventImageSchema>
@@ -12,8 +12,7 @@ export async function addEventImage(input: Input, gw = eventGateway, configGw = 
   if (!parsed.success) return 'validationError' as const
 
   const { schoolId, eventId, storageKey, alt } = parsed.data
-  const config = await configGw.get(schoolId, EVENTS_CONFIG_KEY)
-  if (config?.value !== 'true') return 'notConfigured' as const
+  if (!(await readEventsEnabled(schoolId, configGw))) return 'notConfigured' as const
 
   const event = await gw.findById(schoolId, eventId)
   if (!event) return 'notFound' as const

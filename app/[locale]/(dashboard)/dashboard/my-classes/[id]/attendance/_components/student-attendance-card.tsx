@@ -25,6 +25,32 @@ export type StudentCardLabels = {
   retry: string
 }
 
+const statusLabelKey: Record<AttendanceStatus, 'present' | 'late' | 'absent' | 'unrecorded'> = {
+  PRESENT: 'present',
+  LATE: 'late',
+  ABSENT: 'absent',
+  NOT_RECORDED: 'unrecorded',
+}
+
+export function attendanceStatusLabel(
+  status: AttendanceStatus,
+  labels: Pick<StudentCardLabels, 'present' | 'late' | 'absent' | 'unrecorded'>
+) {
+  return labels[statusLabelKey[status]]
+}
+
+export function countAttendanceStatuses(
+  entries: readonly { status: AttendanceStatus }[]
+): Record<AttendanceStatus, number> {
+  return entries.reduce(
+    (all, entry) => {
+      all[entry.status] += 1
+      return all
+    },
+    { NOT_RECORDED: 0, PRESENT: 0, LATE: 0, ABSENT: 0 }
+  )
+}
+
 const statusStyles = {
   PRESENT: 'border-emerald-200 bg-emerald-50 text-emerald-950 hover:bg-emerald-100',
   LATE: 'border-amber-200 bg-amber-50 text-amber-950 hover:bg-amber-100',
@@ -43,7 +69,7 @@ export function StudentAttendanceCard({
   onStatus,
   onLateMinutes,
   onMessage,
-  onMessageBlur,
+  onFieldBlur,
   onRetry,
   footer,
 }: {
@@ -58,7 +84,7 @@ export function StudentAttendanceCard({
   onStatus: (status: AttendanceStatus) => void
   onLateMinutes: (value: string) => void
   onMessage: (value: string) => void
-  onMessageBlur: () => void
+  onFieldBlur: () => void
   onRetry: () => void
   footer?: ReactNode
 }) {
@@ -69,14 +95,7 @@ export function StudentAttendanceCard({
     .map((part) => part[0])
     .join('')
     .toUpperCase()
-  const statusLabel =
-    entry.status === 'PRESENT'
-      ? labels.present
-      : entry.status === 'LATE'
-        ? labels.late
-        : entry.status === 'ABSENT'
-          ? labels.absent
-          : labels.unrecorded
+  const statusLabel = attendanceStatusLabel(entry.status, labels)
   return (
     <article className="overflow-hidden rounded-3xl border border-alabaster-700 bg-white shadow-[0_18px_50px_-34px_rgba(53,53,53,0.42)]">
       <div className="space-y-5 p-5 sm:p-8">
@@ -102,12 +121,7 @@ export function StudentAttendanceCard({
           <>
             <section aria-label={entry.studentName} className="grid grid-cols-3 gap-2">
               {(['PRESENT', 'LATE', 'ABSENT'] as const).map((status, index) => {
-                const text =
-                  status === 'PRESENT'
-                    ? labels.present
-                    : status === 'LATE'
-                      ? labels.late
-                      : labels.absent
+                const text = attendanceStatusLabel(status, labels)
                 return (
                   <Button
                     key={status}
@@ -156,7 +170,7 @@ export function StudentAttendanceCard({
                   value={entry.lateMinutes ?? ''}
                   disabled={globalPending}
                   onChange={(event) => onLateMinutes(event.target.value)}
-                  onBlur={onMessageBlur}
+                  onBlur={onFieldBlur}
                 />
               </label>
             ) : null}
@@ -172,7 +186,7 @@ export function StudentAttendanceCard({
                 disabled={globalPending}
                 maxLength={1000}
                 onChange={(event) => onMessage(event.target.value)}
-                onBlur={onMessageBlur}
+                onBlur={onFieldBlur}
               />
               <span
                 id={`message-hint-${entry.id}`}

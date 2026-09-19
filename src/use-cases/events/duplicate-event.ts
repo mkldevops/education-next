@@ -2,8 +2,8 @@ import { z } from 'zod'
 import { shiftEventToNextYear } from '@/domain/event'
 import { configGateway } from '@/gateways/config-gateway'
 import { eventGateway } from '@/gateways/event-gateway'
-import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
 import { createEvent } from './create-event'
+import { readEventsEnabled } from './is-events-enabled'
 
 const duplicateEventSchema = z.object({
   schoolId: z.string().min(1),
@@ -31,8 +31,7 @@ export async function duplicateEvent(
   if (!parsed.success) return 'validationError' as const
 
   const { schoolId, id, title } = parsed.data
-  const config = await configGw.get(schoolId, EVENTS_CONFIG_KEY)
-  if (config?.value !== 'true') return 'notConfigured' as const
+  if (!(await readEventsEnabled(schoolId, configGw))) return 'notConfigured' as const
 
   const source = await gw.findById(schoolId, id)
   if (!source) return 'notFound' as const

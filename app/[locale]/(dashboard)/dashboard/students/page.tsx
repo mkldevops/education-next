@@ -95,10 +95,7 @@ export default async function StudentsPage({ params }: Props) {
         locale={locale}
         isAdmin={isAdmin}
         plans={plans.map((plan) => ({ id: plan.id, name: plan.name }))}
-        classes={classes.map((classPeriod) => ({
-          id: classPeriod.id,
-          name: `${classPeriod.name} (${classPeriod.level.name} — ${classPeriod.period.name})`,
-        }))}
+        classes={classes}
         paymentsEnabled={paymentsEnabled}
         today={new Date()}
       />

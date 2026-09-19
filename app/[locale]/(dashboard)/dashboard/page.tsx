@@ -42,7 +42,6 @@ export default async function DashboardPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('dashboard')
   const tStatus = await getTranslations('status')
-  const tEnrollments = await getTranslations('dashboard.pages.enrollments')
 
   const session = await auth.api.getSession({ headers: await headers() })
 
@@ -78,6 +77,7 @@ export default async function DashboardPage({ params }: Props) {
     insights,
     recentStudents,
   } = await getDashboardOverview(scope, paymentsEnabled)
+  type RecentEnrollment = (typeof recentEnrollments)[number]
 
   const trendStart = new Date()
   trendStart.setDate(1)
@@ -104,7 +104,7 @@ export default async function DashboardPage({ params }: Props) {
     : t('stats.scopeAll')
 
   const userName = session?.user.name || 'User'
-  const enrollmentColumns: Column<(typeof recentEnrollments)[number]>[] = [
+  const enrollmentColumns: Column<RecentEnrollment>[] = [
     {
       key: 'student',
       header: t('table.student'),
@@ -123,13 +123,13 @@ export default async function DashboardPage({ params }: Props) {
             key: 'plan',
             header: t('table.plan'),
             className: 'text-graphite-600',
-            render: (item: (typeof recentEnrollments)[number]) =>
+            render: (item) =>
               item.plan.name === UNPRICED_PLAN_NAME ? (
-                <StatusBadge status="amber" label={tEnrollments('unpriced.badge')} />
+                <StatusBadge status="amber" label={t('pages.enrollments.unpriced.badge')} />
               ) : (
                 item.plan.name
               ),
-          },
+          } satisfies Column<RecentEnrollment>,
         ]
       : []),
     {
@@ -170,7 +170,7 @@ export default async function DashboardPage({ params }: Props) {
               const ratio = finalAmount > 0 ? (totalPaid / finalAmount) * 100 : 0
               return <ProgressBar value={ratio} />
             },
-          } satisfies Column<(typeof recentEnrollments)[number]>,
+          } satisfies Column<RecentEnrollment>,
         ]
       : []),
     {
@@ -189,7 +189,7 @@ export default async function DashboardPage({ params }: Props) {
               item.status === 'PENDING' ? (
                 <ActivateEnrollmentButton enrollmentId={item.id} />
               ) : null,
-          } satisfies Column<(typeof recentEnrollments)[number]>,
+          } satisfies Column<RecentEnrollment>,
         ]
       : []),
   ]

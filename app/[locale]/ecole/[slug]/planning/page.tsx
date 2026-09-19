@@ -4,6 +4,8 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { cache } from 'react'
+import { isPeriodCurrent } from '@/domain/period'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { db } from '@/lib/db'
 import { listPublicClassSchedule } from '@/use-cases/class-schedules/list-public-class-schedule'
@@ -13,7 +15,7 @@ type Props = {
   params: Promise<{ locale: string; slug: string }>
 }
 
-async function resolvePublicSchedule(slug: string) {
+const resolvePublicSchedule = cache(async (slug: string) => {
   const school = await schoolGateway.findBySlug(slug)
   if (!school?.isActive) return null
 
@@ -23,14 +25,13 @@ async function resolvePublicSchedule(slug: string) {
     orderBy: { startAt: 'desc' },
   })
   const now = new Date()
-  const period =
-    periods.find((candidate) => candidate.startAt <= now && now <= candidate.endAt) ?? periods[0]
+  const period = periods.find((candidate) => isPeriodCurrent(candidate, now)) ?? periods[0]
   if (!period) return null
 
   const schedule = await listPublicClassSchedule(slug, period.id)
   if (schedule === 'notFound') return null
   return { school: schedule.school, period, slots: schedule.slots }
-}
+})
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params
@@ -60,9 +61,7 @@ export default async function PublicSchedulePage({ params }: Props) {
         <header className="mb-8">
           <p className="text-sm font-medium text-primary">{result.school.name}</p>
           <h1 className="mt-1 text-3xl font-bold text-graphite">{t('title')}</h1>
-          {result.period && (
-            <p className="mt-2 text-graphite-600">{t('period', { period: result.period.name })}</p>
-          )}
+          <p className="mt-2 text-graphite-600">{t('period', { period: result.period.name })}</p>
         </header>
         {result.slots.length === 0 ? (
           <EmptyState icon={CalendarDays} title={t('empty')} />

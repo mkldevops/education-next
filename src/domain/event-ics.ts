@@ -1,5 +1,6 @@
+import { DAY_MS } from './day'
+
 const FOLD_LIMIT = 75
-const DAY_MS = 24 * 60 * 60 * 1000
 // 2020-01-01T00:00:00Z : toute date `updatedAt` de l'application lui est postérieure, donc
 // SEQUENCE reste positive ; repousse le dépassement de l'INTEGER 32 bits signé de la RFC
 // (2 147 483 647 s) de 1970 à environ 2088, loin de la portée de cette application.

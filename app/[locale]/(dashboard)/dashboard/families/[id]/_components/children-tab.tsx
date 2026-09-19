@@ -1,15 +1,9 @@
 import { getTranslations } from 'next-intl/server'
 import type { FamilyDetailStudent } from '../_lib/family-detail'
-import { ChildCard } from './child-card'
-
-type ClassOption = {
-  id: string
-  name: string
-}
+import { ChildCard, type ClassOption } from './child-card'
 
 type Props = {
   students: FamilyDetailStudent[]
-  hasPendingEnrollments: boolean
   pendingCount: number
   locale: string
   familyId: string
@@ -21,7 +15,6 @@ type Props = {
 
 export async function ChildrenTab({
   students,
-  hasPendingEnrollments,
   pendingCount,
   locale,
   familyId,
@@ -34,7 +27,7 @@ export async function ChildrenTab({
 
   return (
     <div className="space-y-4">
-      {hasPendingEnrollments && (
+      {pendingCount > 0 && (
         <div className="rounded bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
           <div className="flex-1">
             <h3 className="text-sm font-medium text-amber-900">{t('alert.needsAttention')}</h3>

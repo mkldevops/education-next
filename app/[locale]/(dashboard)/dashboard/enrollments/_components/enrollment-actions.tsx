@@ -11,10 +11,10 @@ import {
   activateEnrollmentAction,
   cancelEnrollmentAction,
   completeEnrollmentAction,
-} from '../../../../_lib/enrollment-actions'
-import { ApplyDiscountDialog } from '../../_components/apply-discount-dialog'
-import { ReassignClassDialog } from '../../_components/reassign-class-dialog'
-import { SetEnrollmentPlanDialog } from '../../_components/set-enrollment-plan-dialog'
+} from '../../../_lib/enrollment-actions'
+import { ApplyDiscountDialog } from './apply-discount-dialog'
+import { ReassignClassDialog } from './reassign-class-dialog'
+import { SetEnrollmentPlanDialog } from './set-enrollment-plan-dialog'
 
 interface Props {
   enrollmentId: string
@@ -26,6 +26,7 @@ interface Props {
   paymentsEnabled: boolean
   planName: string
   availablePlans: Array<{ id: string; name: string }>
+  onCancelled?: () => void
 }
 
 export function EnrollmentActions({
@@ -38,46 +39,30 @@ export function EnrollmentActions({
   paymentsEnabled,
   planName,
   availablePlans,
+  onCancelled,
 }: Props) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.actions')
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const handleActivate = () => {
+  const run = (action: () => Promise<string>, successKey: string, onDone?: () => void) =>
     startTransition(async () => {
-      const result = await activateEnrollmentAction({ id: enrollmentId })
-      if (result === 'OK') {
-        toast.success(t('activated'))
-        router.refresh()
-      } else {
+      const result = await action()
+      if (result !== 'OK') {
         toastActionError(t, result)
+        return
       }
+      toast.success(t(successKey))
+      router.refresh()
+      onDone?.()
     })
-  }
 
-  const handleComplete = () => {
-    startTransition(async () => {
-      const result = await completeEnrollmentAction({ id: enrollmentId })
-      if (result === 'OK') {
-        toast.success(t('completed'))
-        router.refresh()
-      } else {
-        toastActionError(t, result)
-      }
-    })
-  }
-
-  const handleCancel = () => {
-    startTransition(async () => {
-      const result = await cancelEnrollmentAction(enrollmentId)
-      if (result === 'OK') {
-        toast.success(t('cancelled'))
-        router.refresh()
-      } else {
-        toastActionError(t, result)
-      }
-    })
-  }
+  const handleActivate = () =>
+    run(() => activateEnrollmentAction({ id: enrollmentId }), 'activated')
+  const handleComplete = () =>
+    run(() => completeEnrollmentAction({ id: enrollmentId }), 'completed')
+  const handleCancel = () =>
+    run(() => cancelEnrollmentAction(enrollmentId), 'cancelled', onCancelled)
 
   const canAct = status === 'PENDING' || status === 'ACTIVE'
   if (!isAdmin) return null
@@ -87,20 +72,20 @@ export function EnrollmentActions({
       {status === 'PENDING' && (
         <>
           <Button size="sm" disabled={isPending} onClick={handleActivate}>
-            {t('activate')}
+            {isPending ? '...' : t('activate')}
           </Button>
           <Button size="sm" variant="outline" disabled={isPending} onClick={handleCancel}>
-            {t('cancel')}
+            {isPending ? '...' : t('cancel')}
           </Button>
         </>
       )}
       {status === 'ACTIVE' && (
         <>
           <Button size="sm" disabled={isPending} onClick={handleComplete}>
-            {t('complete')}
+            {isPending ? '...' : t('complete')}
           </Button>
           <Button size="sm" variant="outline" disabled={isPending} onClick={handleCancel}>
-            {t('cancel')}
+            {isPending ? '...' : t('cancel')}
           </Button>
         </>
       )}

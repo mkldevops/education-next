@@ -5,23 +5,22 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
   Label,
   Select,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
 import { linkUserFamilyAction } from '../../../_lib/user-actions'
+import type { FamilyOption } from './users-table'
 
 interface Props {
   userId: string
-  families: Array<{ id: string; name: string }>
+  families: FamilyOption[]
 }
 
 export function LinkFamilyDialog({ userId, families }: Props) {
@@ -49,23 +48,13 @@ export function LinkFamilyDialog({ userId, families }: Props) {
 function LinkFamilyForm({ userId, families }: Props) {
   const t = useTranslations('dashboard.pages.users')
   const router = useRouter()
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, onSubmit } = useDialogForm(t)
   const [familyId, setFamilyId] = useState(families[0]?.id ?? '')
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    startTransition(async () => {
-      const result = await linkUserFamilyAction({ id: userId, familyId })
-      if (result === 'OK') {
-        toast.success(t('familyLinked'))
-        router.refresh()
-        setOpen(false)
-        return
-      }
-      toastActionError(t, result)
-    })
-  }
+  const handleSubmit = onSubmit(() => linkUserFamilyAction({ id: userId, familyId }), {
+    successKey: 'familyLinked',
+    onSuccess: () => router.refresh(),
+  })
 
   return (
     <form onSubmit={handleSubmit}>
@@ -86,14 +75,7 @@ function LinkFamilyForm({ userId, families }: Props) {
           </Select>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending || !familyId}>
-          {isPending ? '...' : t('confirm')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} submitKey="confirm" />
     </form>
   )
 }

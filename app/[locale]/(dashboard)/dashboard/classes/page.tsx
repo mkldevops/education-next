@@ -5,10 +5,12 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { MAX_STUDENTS_PER_CLASS_CONFIG_KEY } from '@/lib/school-config-defaults'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { ClassActionsMenu } from './_components/class-actions-menu'
 import { CreateClassDialog } from './_components/create-class-dialog'
+import { ROSTER_STATUSES } from './_lib/roster'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -43,7 +45,7 @@ export default async function ClassesPage({ params }: Props) {
       orderBy: { startAt: 'desc' },
     }),
     db.config.findFirst({
-      where: { schoolId, name: 'max_students_per_class', isActive: true },
+      where: { schoolId, name: MAX_STUDENTS_PER_CLASS_CONFIG_KEY, isActive: true },
       select: { value: true },
     }),
     db.teacher.findMany({
@@ -71,7 +73,7 @@ export default async function ClassesPage({ params }: Props) {
       classAssignments: {
         where: {
           endAt: null,
-          enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
+          enrollment: { status: { in: [...ROSTER_STATUSES] } },
         },
       },
       teachers: {

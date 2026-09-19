@@ -21,6 +21,10 @@ export type SchoolInsights = {
   levels: LevelFill[]
 }
 
+export function classFillRate(classPeriod: Pick<ClassFill, 'enrolled' | 'capacity'>): number {
+  return classPeriod.capacity > 0 ? classPeriod.enrolled / classPeriod.capacity : 0
+}
+
 /**
  * Lectures agrégées du tableau de bord administrateur : encaissements, remplissage des classes
  * et répartition des élèves par niveau, sur la période sélectionnée.
@@ -81,9 +85,7 @@ export async function getSchoolInsights(
   return {
     payments,
     classes: [...classes].sort(
-      (a, b) =>
-        (b.capacity > 0 ? b.enrolled / b.capacity : 0) -
-          (a.capacity > 0 ? a.enrolled / a.capacity : 0) || a.name.localeCompare(b.name)
+      (a, b) => classFillRate(b) - classFillRate(a) || a.name.localeCompare(b.name)
     ),
     levels: [...byLevel.entries()].map(([level, enrolled]) => ({ level, enrolled })),
   }

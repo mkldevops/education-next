@@ -106,7 +106,6 @@ export default async function PaymentsPage({ params }: Props) {
       <PaymentsTable
         payments={paymentRows}
         locale={locale}
-        isAdmin
         periodName={selectedPeriod?.name ?? null}
       />
     </div>

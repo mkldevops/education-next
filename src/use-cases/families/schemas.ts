@@ -1,4 +1,8 @@
 import { z } from 'zod'
+import { RelationType, Sex } from '@/generated/prisma/enums'
+
+const sexSchema = z.enum(Sex)
+const relationTypeSchema = z.enum(RelationType)
 
 const phoneNumberFormat = /^\+?[\d\s().-]{6,20}$/
 
@@ -7,7 +11,7 @@ const languagesAtHomeSchema = z.array(z.string().trim().min(1).max(50)).max(20)
 export const personInputSchema = z.object({
   name: z.string().min(1).max(250),
   lastname: z.string().min(1).max(250),
-  sex: z.enum(['MALE', 'FEMALE']).optional(),
+  sex: sexSchema.optional(),
   email: z.email().max(250).optional(),
   address: z.string().max(250).optional(),
   postCode: z.string().max(10).optional(),
@@ -49,7 +53,7 @@ export const addPersonToFamilySchema = z.object({
   schoolId: z.string().min(1),
   familyId: z.string().uuid(),
   person: personInputSchema,
-  relationType: z.enum(['PARENT', 'TUTOR', 'GRANDPARENT', 'SIBLING', 'OTHER']),
+  relationType: relationTypeSchema,
   phoneNumber: z.string().min(1).max(20).optional(),
 })
 
@@ -59,8 +63,8 @@ export const updateFamilyPersonSchema = z.object({
   personId: z.string().uuid(),
   name: z.string().min(1).max(250).optional(),
   lastname: z.string().min(1).max(250).optional(),
-  sex: z.enum(['MALE', 'FEMALE']).nullish(),
-  relationType: z.enum(['PARENT', 'TUTOR', 'GRANDPARENT', 'SIBLING', 'OTHER']).optional(),
+  sex: sexSchema.nullish(),
+  relationType: relationTypeSchema.optional(),
   email: z.email().max(250).nullish(),
   address: z.string().max(250).nullish(),
   postCode: z.string().max(10).nullish(),

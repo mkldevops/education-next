@@ -15,13 +15,13 @@ export const createTeacherSchema = z.object({
 })
 
 export const updateTeacherSchema = createTeacherSchema
-  .extend({ id: z.string().uuid() })
+  .extend({ id: z.uuid() })
   .partial({ firstName: true, lastName: true, email: true, phone: true })
   .required({ schoolId: true, id: true })
 
 export const createTeacherExpenseSchema = z.object({
   schoolId: z.string().min(1),
-  teacherId: z.string().uuid(),
+  teacherId: z.uuid(),
   amount: z.number().positive(),
   category: z.string().trim().min(1).max(100),
   description: z.string().trim().min(1).max(250),
@@ -31,5 +31,5 @@ export const createTeacherExpenseSchema = z.object({
 
 export const teacherLifecycleSchema = z.object({
   schoolId: z.string().min(1),
-  id: z.string().uuid(),
+  id: z.uuid(),
 })

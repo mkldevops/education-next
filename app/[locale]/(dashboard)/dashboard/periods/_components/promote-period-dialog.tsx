@@ -13,7 +13,7 @@ import {
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import type { FormEvent } from 'react'
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { toast, toastActionError } from '@/lib/toast'
 import type {
   PromotionPreview,
@@ -50,20 +50,12 @@ export function PromotePeriodDialogContent({
   targetOptions,
 }: PromotePeriodDialogProps) {
   const t = useTranslations('dashboard.pages.periods.promote')
-  const { open, setOpen } = useDialog()
+  const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const [step, setStep] = useState<Step>('form')
   const [targetPeriodId, setTargetPeriodId] = useState(targetOptions[0]?.id ?? '')
   const [preview, setPreview] = useState<PromotionPreview | null>(null)
   const [report, setReport] = useState<PromotionResult | null>(null)
-
-  useEffect(() => {
-    if (open) return
-    setStep('form')
-    setPreview(null)
-    setReport(null)
-    setTargetPeriodId(targetOptions[0]?.id ?? '')
-  }, [open, targetOptions])
 
   const handlePreview = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()

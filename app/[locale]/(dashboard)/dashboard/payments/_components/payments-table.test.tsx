@@ -57,8 +57,8 @@ const rowC: PaymentRow = {
   cashedAt: new Date('2025-01-10T00:00:00Z'),
 } // '10/01/2025'
 
-// Columns (isAdmin=false): students, amount, method, reference, paidAt, cashedAt.
-const CELL_INDEX = { paidAt: 4, cashedAt: 5 } as const
+// Columns: family, students, amount, method, reference, paidAt, cashedAt.
+const CELL_INDEX = { paidAt: 5, cashedAt: 6 } as const
 
 const readColumn = (cellIndex: number) =>
   screen
@@ -83,17 +83,13 @@ const expectChronologicalToggle = (columnId: 'paidAt' | 'cashedAt') => {
 
 describe('PaymentsTable', () => {
   it('sorts the paidAt column chronologically, not lexicographically', () => {
-    render(
-      <PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" isAdmin={false} periodName={null} />
-    )
+    render(<PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" periodName={null} />)
 
     expectChronologicalToggle('paidAt')
   })
 
   it('sorts the cashedAt column chronologically, not lexicographically', () => {
-    render(
-      <PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" isAdmin={false} periodName={null} />
-    )
+    render(<PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" periodName={null} />)
 
     expectChronologicalToggle('cashedAt')
   })

@@ -8,9 +8,11 @@ export async function renameLevel(input: Input, levelGw = levelGateway) {
   const parsed = renameLevelSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const level = await levelGw.findById(parsed.data.schoolId, parsed.data.id)
+  const { schoolId, id, name } = parsed.data
+
+  const level = await levelGw.findById(schoolId, id)
   if (!level) return 'notFound' as const
 
-  await levelGw.update(parsed.data.schoolId, parsed.data.id, { name: parsed.data.name })
+  await levelGw.update(schoolId, id, { name })
   return 'OK' as const
 }

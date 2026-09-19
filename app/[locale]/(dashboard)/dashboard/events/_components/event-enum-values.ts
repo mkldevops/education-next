@@ -1,18 +1,12 @@
-import type { EventCategory, EventStatus, EventVisibility } from '@/generated/prisma/client'
+import { EventCategory, EventStatus, EventVisibility } from '@/generated/prisma/enums'
 
-// `EventCategory`/`EventVisibility`/`EventStatus` sont des unions TypeScript sans
-// représentation runtime : ces tableaux sont la seule source pour peupler un `<select>`,
-// partagée par la page et les deux dialogues plutôt que redéclarée à chaque appelant.
-export const EVENT_CATEGORY_VALUES: EventCategory[] = [
-  'MEETING',
-  'TERM_START',
-  'OUTING',
-  'HOLIDAY',
-  'CLOSURE',
-  'CELEBRATION',
-  'OTHER',
-]
+// Ces tableaux alimentent les options des `<select>` de la page et des deux dialogues.
+export const EVENT_CATEGORY_VALUES: EventCategory[] = Object.values(EventCategory)
 
-export const EVENT_VISIBILITY_VALUES: EventVisibility[] = ['PUBLIC', 'MEMBERS', 'STAFF']
+export const EVENT_VISIBILITY_VALUES: EventVisibility[] = Object.values(EventVisibility)
 
-export const EVENT_STATUS_VALUES: EventStatus[] = ['DRAFT', 'PUBLISHED', 'CANCELLED']
+export const EVENT_STATUS_VALUES: EventStatus[] = Object.values(EventStatus)
+
+export function isEventCategory(value: string | undefined): value is EventCategory {
+  return value !== undefined && (EVENT_CATEGORY_VALUES as readonly string[]).includes(value)
+}

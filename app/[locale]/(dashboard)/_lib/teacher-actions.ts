@@ -51,7 +51,7 @@ export async function createTeacherExpenseAction(
 
 export async function revokeTeacherAccessAction(id: string) {
   const { schoolId } = await requireSchoolAdmin()
-  const parsed = z.string().uuid().safeParse(id)
+  const parsed = z.uuid().safeParse(id)
   if (!parsed.success) return 'validationError' as const
 
   const result = await teacherGateway.revokeUserAccess(schoolId, parsed.data)

@@ -24,6 +24,8 @@ import {
   updateClassScheduleSlotAction,
 } from '../../../_lib/class-schedule-actions'
 
+const DESCRIPTION_MAX_LENGTH = 500 // mirrors .max(500) in src/use-cases/class-schedules/schemas.ts
+
 type Option = { id: string; name: string }
 
 type Slot = {
@@ -242,7 +244,7 @@ function ScheduleSlotForm({ classes, teachersByClass, slot }: Props) {
               data-placeholder={tForm('descriptionPlaceholder')}
               onInput={(event) => {
                 const nextDescription = serializeEditor(event.currentTarget)
-                if (nextDescription.length > 500) {
+                if (nextDescription.length > DESCRIPTION_MAX_LENGTH) {
                   renderMarkdownIntoEditor(event.currentTarget, description)
                   return
                 }
@@ -250,7 +252,9 @@ function ScheduleSlotForm({ classes, teachersByClass, slot }: Props) {
               }}
               className="min-h-24 rounded-b border border-alabaster-700 bg-white px-3 py-2 text-sm leading-relaxed text-graphite outline-none empty:before:pointer-events-none empty:before:text-graphite-400 empty:before:content-[attr(data-placeholder)] focus:border-primary focus:ring-2 focus:ring-primary/20 [&_em]:italic [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
             />
-            <p className="text-xs text-graphite-600">{description.length}/500</p>
+            <p className="text-xs text-graphite-600">
+              {description.length}/{DESCRIPTION_MAX_LENGTH}
+            </p>
           </div>
         </div>
       </DialogBody>

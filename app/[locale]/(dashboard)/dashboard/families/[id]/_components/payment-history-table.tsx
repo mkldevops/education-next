@@ -49,7 +49,7 @@ function MethodBadge({ method, label }: { method: PaymentMethod; label: string }
     <span
       className={cn(
         'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
-        METHOD_STYLES[method] ?? 'bg-alabaster-900 text-graphite ring-graphite-600/20'
+        METHOD_STYLES[method]
       )}
     >
       {label}
@@ -67,7 +67,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
   const familyPayments = groupFamilyPayments(payments)
   const total = familyPayments.reduce((sum, p) => sum + p.amount, 0)
   const pending = familyPayments.filter((p) => p.method === 'CHECK' && !p.cashedAt)
-  const pendingTotal = pending.reduce((sum, p) => sum + Number(p.amount), 0)
+  const pendingTotal = pending.reduce((sum, p) => sum + p.amount, 0)
 
   return (
     <section className="space-y-4">

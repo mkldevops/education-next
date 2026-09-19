@@ -33,9 +33,7 @@ export async function setConfigAction(data: Omit<SetConfigInput, 'schoolId'>) {
 
 export async function getConfigAction(data: Omit<GetConfigInput, 'schoolId'>) {
   const { schoolId } = await requireSchoolAdmin()
-  const result = await getConfig({ ...data, schoolId })
-  if (typeof result === 'string') return result
-  return result
+  return getConfig({ ...data, schoolId })
 }
 
 /**

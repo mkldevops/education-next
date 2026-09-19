@@ -41,6 +41,8 @@ export default async function PeriodsPage({ params }: Props) {
   const now = new Date()
   const currentPeriodId = periods.find((period) => isPeriodCurrent(period, now))?.id ?? null
 
+  const periodsByStartAsc = [...periods].sort((a, b) => a.startAt.getTime() - b.startAt.getTime())
+
   const columns: Column<(typeof periods)[number]>[] = [
     {
       key: 'name',
@@ -80,9 +82,9 @@ export default async function PeriodsPage({ params }: Props) {
       headerClassName: 'text-right',
       className: 'text-right',
       render: (period) => {
-        const targetOptions = periods
-          .filter((candidate) => new Date(candidate.startAt) > new Date(period.startAt))
-          .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+        const targetOptions = periodsByStartAsc
+          .filter((candidate) => candidate.startAt > period.startAt)
+          .map(({ id, name }) => ({ id, name }))
         return (
           <PeriodRowActions
             period={period}

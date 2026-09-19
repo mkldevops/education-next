@@ -21,8 +21,35 @@ const SERVER_INFO = { name: 'education', version: '1.0.0' }
 
 const NO_ARGS = z.object({})
 
+// Pas `readOnlyHint` : un preview persiste son brouillon et `create_event` écrit sa ligne.
+// Le dire évite qu'un client en approbation automatique fabrique des lignes sans jamais
+// demander.
+const NON_IDEMPOTENT_WRITE = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: false,
+}
+
+const IDEMPOTENT_COMMIT = { destructiveHint: false, idempotentHint: true, openWorldHint: false }
+
 function json(payload: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(payload) }] }
+}
+
+type ToolResult = ReturnType<typeof json> & { isError?: boolean }
+
+async function guard(
+  tool: string,
+  run: () => Promise<unknown>,
+  toResult: (value: unknown) => ToolResult
+): Promise<ToolResult> {
+  try {
+    return toResult(await run())
+  } catch (error) {
+    console.error(`[mcp] ${tool}`, error)
+    return { ...json({ error: 'internalError' }), isError: true }
+  }
 }
 
 /**
@@ -33,13 +60,8 @@ function json(payload: unknown) {
  * jusqu'au client, donc jusqu'au contexte du fournisseur de modèle. Le détail reste dans
  * les journaux du serveur, l'appelant ne reçoit qu'un refus fixe.
  */
-async function read(tool: string, load: () => Promise<unknown>) {
-  try {
-    return json(await load())
-  } catch (error) {
-    console.error(`[mcp] ${tool}`, error)
-    return { ...json({ error: 'internalError' }), isError: true }
-  }
+function read(tool: string, load: () => Promise<unknown>) {
+  return guard(tool, load, json)
 }
 
 /**
@@ -49,15 +71,10 @@ async function read(tool: string, load: () => Promise<unknown>) {
  * seule cette couche sait qu'une chaîne est un refus et non une valeur. Le `catch`
  * couvre le reste, pour la raison écrite au-dessus.
  */
-async function write(tool: string, run: () => Promise<unknown>) {
-  try {
-    const result = await run()
-    if (typeof result === 'string') return { ...json({ error: result }), isError: true }
-    return json(result)
-  } catch (error) {
-    console.error(`[mcp] ${tool}`, error)
-    return { ...json({ error: 'internalError' }), isError: true }
-  }
+function write(tool: string, run: () => Promise<unknown>) {
+  return guard(tool, run, (result) =>
+    typeof result === 'string' ? { ...json({ error: result }), isError: true } : json(result)
+  )
 }
 
 /**
@@ -152,14 +169,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
         'homonymes trouvés, des avertissements et des `blockers`. Un `blockers` non vide ' +
         'nomme le champ à corriger et interdit le commit.',
       inputSchema: previewEnrollFamilySchema,
-      // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
-      // en approbation automatique fabrique des lignes sans jamais demander.
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
+      annotations: NON_IDEMPOTENT_WRITE,
     },
     async (args) => write('preview_enroll_family', () => previewEnrollFamily(scope, args))
   )
@@ -173,7 +183,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
         'plan déjà prévisualisé. Rejouer le même `draftId` rend le résultat enregistré au ' +
         "lieu de créer une seconde famille. Le brouillon expire au bout d'une demi-heure.",
       inputSchema: commitDraftSchema,
-      annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
+      annotations: IDEMPOTENT_COMMIT,
     },
     async (args) => write('commit_enroll_family', () => commitEnrollFamily(scope, args))
   )
@@ -193,12 +203,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
         "l'école), `slugTaken` (un événement actif porte déjà ce titre : le renommer, par " +
         "exemple avec l'année), `invalidDateRange`, `validationError`.",
       inputSchema: mcpCreateEventSchema,
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
+      annotations: NON_IDEMPOTENT_WRITE,
     },
     async (args) => write('create_event', () => createEventFromMcp(scope, args))
   )
@@ -217,14 +222,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
           'répartition sans rien écrire. La famille se désigne par son identifiant ou par ' +
           'son nom ; un nom qui vise plusieurs familles est un `blocker`.',
         inputSchema: previewRecordPaymentSchema,
-        // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
-        // en approbation automatique fabrique des lignes sans jamais demander.
-        annotations: {
-          readOnlyHint: false,
-          destructiveHint: false,
-          idempotentHint: false,
-          openWorldHint: false,
-        },
+        annotations: NON_IDEMPOTENT_WRITE,
       },
       async (args) => write('preview_record_payment', () => previewRecordPayment(scope, args))
     )
@@ -237,7 +235,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
           'Écrit les paiements de la répartition déjà prévisualisée. Rejouer le même ' +
           '`draftId` rend le résultat enregistré au lieu de doubler le versement.',
         inputSchema: commitDraftSchema,
-        annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
+        annotations: IDEMPOTENT_COMMIT,
       },
       async (args) => write('commit_record_payment', () => commitRecordPayment(scope, args))
     )
@@ -253,14 +251,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
           'sienne. Rend le passage « avant → après », le total recalculé et le reste à payer ; ' +
           'plusieurs inscriptions candidates sont un `blocker` qui les liste.',
         inputSchema: previewUpdateEnrollmentSchema,
-        // Pas `readOnlyHint` : un preview persiste son brouillon. Le dire évite qu'un client
-        // en approbation automatique fabrique des lignes sans jamais demander.
-        annotations: {
-          readOnlyHint: false,
-          destructiveHint: false,
-          idempotentHint: false,
-          openWorldHint: false,
-        },
+        annotations: NON_IDEMPOTENT_WRITE,
       },
       async (args) => write('preview_update_enrollment', () => previewUpdateEnrollment(scope, args))
     )
@@ -273,7 +264,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
           'Applique la formule, la remise et le total déjà prévisualisés. Les paiements ' +
           "restent sur l'inscription. Rejouer le même `draftId` rend le résultat enregistré.",
         inputSchema: commitDraftSchema,
-        annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
+        annotations: IDEMPOTENT_COMMIT,
       },
       async (args) => write('commit_update_enrollment', () => commitUpdateEnrollment(scope, args))
     )

@@ -1,3 +1,4 @@
+import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
@@ -60,9 +61,7 @@ export const studentGateway = {
       where: {
         schoolId,
         studentId: id,
-        status: {
-          in: ['PENDING', 'ACTIVE'],
-        },
+        status: { in: [...OPEN_ENROLLMENT_STATUSES] },
       },
     })
     return count > 0

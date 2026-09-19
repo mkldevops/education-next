@@ -12,12 +12,11 @@ import {
   DialogTrigger,
   Input,
   Label,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
-import { toast, toastActionError } from '@/lib/toast'
 import { deleteFamilyAction } from '../../../_lib/family-actions'
 
 /** Ce que la suppression emportera, tel que la page de détail le compte déjà. */
@@ -73,22 +72,14 @@ function DeleteFamilyForm({
   impact,
 }: Pick<Props, 'familyId' | 'familyName' | 'impact'>) {
   const t = useTranslations('dashboard.pages.families.delete')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, run } = useDialogForm(t)
   const [confirmation, setConfirmation] = useState('')
   const router = useRouter()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    startTransition(async () => {
-      const result = await deleteFamilyAction(familyId, confirmation)
-      if (result !== 'OK') {
-        toastActionError(t, result)
-        return
-      }
-      toast.success(t('success'))
-      setOpen(false)
-      router.push('/dashboard/families')
+    run(() => deleteFamilyAction(familyId, confirmation), {
+      onSuccess: () => router.push('/dashboard/families'),
     })
   }
 
@@ -119,7 +110,7 @@ function DeleteFamilyForm({
         </div>
       </DialogBody>
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+        <Button type="button" variant="outline" onClick={close} disabled={isPending}>
           {t('cancel')}
         </Button>
         <Button

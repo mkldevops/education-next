@@ -9,14 +9,19 @@ import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { requireSchoolAdmin, requireSchoolSession, requireTeacher } from './auth-helper'
 
+const DAY_MS = 24 * 60 * 60 * 1000
+const utcDay = z.coerce
+  .date()
+  .transform((d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())))
+
 const openSchema = z.object({
   classPeriodId: z.uuid(),
   classScheduleSlotId: z.uuid(),
-  occurredOn: z.coerce.date(),
+  occurredOn: utcDay,
 })
 const openAdhocSchema = z.object({
   classPeriodId: z.uuid(),
-  occurredOn: z.coerce.date(),
+  occurredOn: utcDay,
 })
 const updateSchema = z.object({
   sessionId: z.uuid(),
@@ -28,11 +33,8 @@ const updateSchema = z.object({
 })
 const sessionSchema = z.object({ sessionId: z.uuid() })
 const cancellationSchema = z.object({ sessionId: z.uuid(), cancelled: z.boolean() })
-const cancelOccurrenceSchema = z.object({
-  classPeriodId: z.uuid(),
-  classScheduleSlotId: z.uuid(),
-  occurredOn: z.coerce.date(),
-})
+
+const SESSION_WITH_ENTRIES = { entries: { orderBy: { studentName: 'asc' } } } as const
 
 async function canOperateClass(classPeriodId: string) {
   const context = await requireSchoolSession()
@@ -65,44 +67,51 @@ function isUniqueConstraint(error: unknown) {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002'
 }
 
-async function openAttendance(input: unknown, occurrence: 'scheduled' | 'adhoc') {
-  const parsed = (occurrence === 'scheduled' ? openSchema : openAdhocSchema).safeParse(input)
-  if (!parsed.success) return 'validationError' as const
-  const actor = await canOperateClass(parsed.data.classPeriodId)
+async function resolveOperableSession(sessionId: string) {
+  const context = await requireSchoolSession()
+  const session = await db.attendanceSession.findUnique({
+    where: { id_schoolId: { id: sessionId, schoolId: context.schoolId } },
+    select: { schoolId: true, classPeriodId: true, status: true },
+  })
+  if (!session) return 'notFound' as const
+  if (session.status === 'CANCELLED') return 'sessionCancelled' as const
+  const actor = await canOperateClass(session.classPeriodId)
+  if (!actor || actor.schoolId !== session.schoolId || !(await enabled(actor.schoolId)))
+    return 'notFound' as const
+  return { actor }
+}
+
+function revalidateAttendance() {
+  revalidatePath('/dashboard/my-classes')
+  revalidatePath('/dashboard/attendance')
+}
+
+async function openAttendance(
+  classPeriodId: string,
+  occurredOn: Date,
+  classScheduleSlotId: string | null
+) {
+  const actor = await canOperateClass(classPeriodId)
   if (!actor) return 'notFound' as const
   if (!(await enabled(actor.schoolId))) return 'attendanceDisabled' as const
-  const occurredOn = new Date(
-    Date.UTC(
-      parsed.data.occurredOn.getUTCFullYear(),
-      parsed.data.occurredOn.getUTCMonth(),
-      parsed.data.occurredOn.getUTCDate()
-    )
-  )
-  const classScheduleSlotId =
-    occurrence === 'scheduled'
-      ? (parsed.data as unknown as z.infer<typeof openSchema>).classScheduleSlotId
-      : null
-  if (occurrence === 'scheduled') {
-    if (!classScheduleSlotId) return 'validationError' as const
+  if (classScheduleSlotId) {
     const closures = await db.event.findMany({
       where: {
         schoolId: actor.schoolId,
         isActive: true,
         status: 'PUBLISHED',
         category: 'CLOSURE',
-        startAt: { lt: new Date(occurredOn.getTime() + 86400000) },
+        startAt: { lt: new Date(occurredOn.getTime() + DAY_MS) },
         OR: [{ endAt: null }, { endAt: { gte: occurredOn } }],
       },
       select: { status: true, category: true, startAt: true, endAt: true },
     })
     if (isAttendanceClosed(closures, occurredOn)) return 'attendanceClosed' as const
-  }
-  if (occurrence === 'scheduled') {
     const slot = await db.classScheduleSlot.findFirst({
       where: {
-        id: classScheduleSlotId ?? '',
+        id: classScheduleSlotId,
         schoolId: actor.schoolId,
-        classPeriodId: parsed.data.classPeriodId,
+        classPeriodId,
         weekday: planningWeekday(occurredOn),
       },
       select: { id: true },
@@ -113,28 +122,25 @@ async function openAttendance(input: unknown, occurrence: 'scheduled' | 'adhoc')
   const sessionWhere = {
     schoolId_classPeriodId_occurredOn_occurrenceKey: {
       schoolId: actor.schoolId,
-      classPeriodId: parsed.data.classPeriodId,
+      classPeriodId,
       occurredOn,
       occurrenceKey,
     },
   }
   const loadExisting = () =>
-    db.attendanceSession.findUnique({
-      where: sessionWhere,
-      include: { entries: { orderBy: { studentName: 'asc' } } },
-    })
-  const session = await (async () => {
+    db.attendanceSession.findUnique({ where: sessionWhere, include: SESSION_WITH_ENTRIES })
+  const findOrCreateSession = async () => {
     try {
       return await db.$transaction(async (tx) => {
         const existing = await tx.attendanceSession.findUnique({
           where: sessionWhere,
-          include: { entries: { orderBy: { studentName: 'asc' } } },
+          include: SESSION_WITH_ENTRIES,
         })
         if (existing) return existing
         const roster = await tx.classAssignment.findMany({
           where: {
             schoolId: actor.schoolId,
-            classPeriodId: parsed.data.classPeriodId,
+            classPeriodId,
             startAt: { lte: occurredOn },
             OR: [{ endAt: null }, { endAt: { gte: occurredOn } }],
             enrollment: { status: 'ACTIVE' },
@@ -144,7 +150,7 @@ async function openAttendance(input: unknown, occurrence: 'scheduled' | 'adhoc')
         return tx.attendanceSession.create({
           data: {
             schoolId: actor.schoolId,
-            classPeriodId: parsed.data.classPeriodId,
+            classPeriodId,
             classScheduleSlotId,
             occurrenceKey,
             occurredOn,
@@ -158,7 +164,7 @@ async function openAttendance(input: unknown, occurrence: 'scheduled' | 'adhoc')
               })),
             },
           },
-          include: { entries: { orderBy: { studentName: 'asc' } } },
+          include: SESSION_WITH_ENTRIES,
         })
       })
     } catch (error) {
@@ -167,7 +173,8 @@ async function openAttendance(input: unknown, occurrence: 'scheduled' | 'adhoc')
       if (!existing) throw error
       return existing
     }
-  })()
+  }
+  const session = await findOrCreateSession()
   if (session.status === 'CANCELLED') return 'sessionCancelled' as const
   revalidatePath('/dashboard/my-classes')
   return session
@@ -175,27 +182,25 @@ async function openAttendance(input: unknown, occurrence: 'scheduled' | 'adhoc')
 
 /** Starts the exact planned occurrence selected in the schedule. */
 export async function startScheduledAttendanceAction(input: unknown) {
-  return openAttendance(input, 'scheduled')
+  const parsed = openSchema.safeParse(input)
+  if (!parsed.success) return 'validationError' as const
+  const { classPeriodId, occurredOn, classScheduleSlotId } = parsed.data
+  return openAttendance(classPeriodId, occurredOn, classScheduleSlotId)
 }
 
 /** Starts an exceptional attendance occurrence, deliberately separate from a schedule slot. */
 export async function startAdhocAttendanceAction(input: unknown) {
-  return openAttendance(input, 'adhoc')
+  const parsed = openAdhocSchema.safeParse(input)
+  if (!parsed.success) return 'validationError' as const
+  return openAttendance(parsed.data.classPeriodId, parsed.data.occurredOn, null)
 }
 
 export async function updateAttendanceEntryAction(input: unknown) {
   const parsed = updateSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
-  const context = await requireSchoolSession()
-  const session = await db.attendanceSession.findUnique({
-    where: { id_schoolId: { id: parsed.data.sessionId, schoolId: context.schoolId } },
-    select: { schoolId: true, classPeriodId: true, status: true },
-  })
-  if (!session) return 'notFound' as const
-  if (session.status === 'CANCELLED') return 'sessionCancelled' as const
-  const actor = await canOperateClass(session.classPeriodId)
-  if (!actor || actor.schoolId !== session.schoolId || !(await enabled(actor.schoolId)))
-    return 'notFound' as const
+  const resolved = await resolveOperableSession(parsed.data.sessionId)
+  if (typeof resolved === 'string') return resolved
+  const { actor } = resolved
   const data = {
     status: parsed.data.status,
     updatedById: actor.userId,
@@ -215,24 +220,16 @@ export async function updateAttendanceEntryAction(input: unknown) {
     data,
   })
   if (updated.count !== 1) return 'notFound' as const
-  revalidatePath('/dashboard/my-classes')
-  revalidatePath('/dashboard/attendance')
+  revalidateAttendance()
   return 'OK' as const
 }
 
 export async function markAllPresentAction(input: unknown) {
   const parsed = sessionSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
-  const context = await requireSchoolSession()
-  const session = await db.attendanceSession.findUnique({
-    where: { id_schoolId: { id: parsed.data.sessionId, schoolId: context.schoolId } },
-    select: { schoolId: true, classPeriodId: true, status: true },
-  })
-  if (!session) return 'notFound' as const
-  if (session.status === 'CANCELLED') return 'sessionCancelled' as const
-  const actor = await canOperateClass(session.classPeriodId)
-  if (!actor || actor.schoolId !== session.schoolId || !(await enabled(actor.schoolId)))
-    return 'notFound' as const
+  const resolved = await resolveOperableSession(parsed.data.sessionId)
+  if (typeof resolved === 'string') return resolved
+  const { actor } = resolved
   await db.attendanceEntry.updateMany({
     where: {
       attendanceSessionId: parsed.data.sessionId,
@@ -241,31 +238,22 @@ export async function markAllPresentAction(input: unknown) {
     },
     data: { status: 'PRESENT', updatedById: actor.userId },
   })
-  revalidatePath('/dashboard/my-classes')
-  revalidatePath('/dashboard/attendance')
+  revalidateAttendance()
   return 'OK' as const
 }
 
 export async function validateAttendanceAction(input: unknown) {
   const parsed = sessionSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
-  const context = await requireSchoolSession()
-  const session = await db.attendanceSession.findUnique({
-    where: { id_schoolId: { id: parsed.data.sessionId, schoolId: context.schoolId } },
-    select: { schoolId: true, classPeriodId: true, status: true },
-  })
-  if (!session) return 'notFound' as const
-  if (session.status === 'CANCELLED') return 'sessionCancelled' as const
-  const actor = await canOperateClass(session.classPeriodId)
-  if (!actor || actor.schoolId !== session.schoolId || !(await enabled(actor.schoolId)))
-    return 'notFound' as const
+  const resolved = await resolveOperableSession(parsed.data.sessionId)
+  if (typeof resolved === 'string') return resolved
+  const { actor } = resolved
   const updated = await db.attendanceSession.updateMany({
     where: { id: parsed.data.sessionId, schoolId: actor.schoolId },
     data: { status: 'VALIDATED', validatedAt: new Date(), updatedById: actor.userId },
   })
   if (updated.count !== 1) return 'notFound' as const
-  revalidatePath('/dashboard/my-classes')
-  revalidatePath('/dashboard/attendance')
+  revalidateAttendance()
   return 'OK' as const
 }
 
@@ -314,16 +302,10 @@ export async function setAttendanceCancellationAction(input: {
 }
 
 export async function cancelAttendanceOccurrenceAction(input: unknown) {
-  const parsed = cancelOccurrenceSchema.safeParse(input)
+  const parsed = openSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   const admin = await requireSchoolAdmin()
-  const occurredOn = new Date(
-    Date.UTC(
-      parsed.data.occurredOn.getUTCFullYear(),
-      parsed.data.occurredOn.getUTCMonth(),
-      parsed.data.occurredOn.getUTCDate()
-    )
-  )
+  const { occurredOn } = parsed.data
   const slot = await db.classScheduleSlot.findFirst({
     where: {
       id: parsed.data.classScheduleSlotId,

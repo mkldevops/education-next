@@ -1,7 +1,12 @@
+import type { z } from 'zod'
 import { isDraftUsable, staleCommitBefore } from '@/domain/mcp-draft'
 import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
+import type { Prisma } from '@/generated/prisma/client'
+import { db } from '@/lib/db'
+import type { McpScope } from './resolve-mcp-scope'
+import { commitDraftSchema } from './schemas'
 
-export type ClaimOutcome =
+type ClaimOutcome =
   | { status: 'claimed'; resolved: unknown }
   | { status: 'replayed'; result: unknown }
   | { status: 'draftNotFound' }
@@ -23,7 +28,7 @@ export type ClaimOutcome =
  * Le brouillon appartient à la clé qui l'a proposé : une autre clé de la même école ne le
  * voit pas, et se l'entend refuser comme inexistant plutôt que comme interdit.
  */
-export async function claimDraft(
+async function claimDraft(
   schoolId: string,
   keyId: string,
   tool: string,
@@ -76,4 +81,72 @@ export async function claimDraft(
  */
 export function releaseDraft(schoolId: string, draftId: string) {
   return mcpDraftGateway.release(schoolId, draftId)
+}
+
+type ResolvedClaim<S extends z.ZodTypeAny> =
+  | { done: true; value: unknown }
+  | { done: false; draftId: string; resolved: z.infer<S> }
+
+/**
+ * Valide l'entrée, prend le verrou et retraverse le plan relu par `schema`.
+ *
+ * `done` porte la réponse à rendre telle quelle : un refus, ou le résultat d'un commit
+ * rejoué. Un plan illisible rend le verrou avant de refuser.
+ */
+export async function claimResolved<S extends z.ZodTypeAny>(
+  scope: Pick<McpScope, 'schoolId' | 'keyId'>,
+  tool: string,
+  input: unknown,
+  schema: S
+): Promise<ResolvedClaim<S>> {
+  const parsed = commitDraftSchema.safeParse(input)
+  if (!parsed.success) return { done: true, value: 'validationError' as const }
+  const { schoolId, keyId } = scope
+  const { draftId, checksum } = parsed.data
+
+  const outcome = await claimDraft(schoolId, keyId, tool, draftId, checksum)
+  if (outcome.status === 'replayed') return { done: true, value: outcome.result }
+  if (outcome.status !== 'claimed') return { done: true, value: outcome.status }
+
+  const plan = schema.safeParse(outcome.resolved)
+  if (!plan.success) {
+    await releaseDraft(schoolId, draftId)
+    return { done: true, value: 'validationError' as const }
+  }
+  return { done: false, draftId, resolved: plan.data }
+}
+
+/**
+ * Exécute l'écriture d'un brouillon engagé et y attache son résultat.
+ *
+ * `body` rend soit un refus (une chaîne), soit ce qui a été écrit.
+ */
+export async function commitInTransaction<T extends string | object>(
+  schoolId: string,
+  draftId: string,
+  body: (tx: Prisma.TransactionClient) => Promise<T>
+): Promise<T> {
+  try {
+    const result = await db.$transaction(async (tx) => {
+      const written = await body(tx)
+      if (typeof written === 'string') return written
+
+      // Le résultat est écrit dans la transaction qui écrit les données : `result` nul
+      // signifie alors « rien n'a été écrit », ce qui rend le verrou reprenable.
+      await tx.mcpDraft.updateMany({ where: { id: draftId, schoolId }, data: { result: written } })
+
+      return written
+    })
+
+    // Un refus constaté au commit n'a rien écrit : rendre le verrou laisse le client
+    // refaire un `preview_*` sans attendre le délai d'abandon.
+    if (typeof result === 'string') await releaseDraft(schoolId, draftId)
+
+    return result
+  } catch (error) {
+    // La transaction a été annulée, résultat compris. Sans ce rattrapage le brouillon
+    // resterait engagé sans résultat, donc injoignable jusqu'au délai d'abandon.
+    await releaseDraft(schoolId, draftId)
+    throw error
+  }
 }

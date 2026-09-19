@@ -20,6 +20,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
+import type { ManualPaymentMethod } from '@/use-cases/payments/schemas'
 import { recordPaymentAction } from '../../../_lib/payment-actions'
 
 interface Option {
@@ -27,9 +28,7 @@ interface Option {
   name: string
 }
 
-type Method = 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK'
-
-const METHODS: Array<{ value: Method; icon: LucideIcon }> = [
+const METHODS: Array<{ value: ManualPaymentMethod; icon: LucideIcon }> = [
   { value: 'CASH', icon: Banknote },
   { value: 'CARD', icon: CreditCard },
   { value: 'TRANSFER', icon: ArrowLeftRight },
@@ -83,7 +82,7 @@ function RecordPaymentForm({
   const t = useTranslations('dashboard.pages.payments.record')
   const format = useFormatter()
   const { isPending, close, onSubmit } = useDialogForm(t)
-  const [method, setMethod] = useState<Method>('CASH')
+  const [method, setMethod] = useState<ManualPaymentMethod>('CASH')
   const [amount, setAmount] = useState('')
   const router = useRouter()
 

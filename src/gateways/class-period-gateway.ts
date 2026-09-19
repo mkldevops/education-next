@@ -1,4 +1,12 @@
+import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
+import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
+
+const classPeriodInclude = {
+  level: true,
+  period: true,
+  teachers: { where: { teacher: { isActive: true } }, include: { teacher: true } },
+} satisfies Prisma.ClassPeriodInclude
 
 export const classPeriodGateway = {
   create: (
@@ -74,11 +82,7 @@ export const classPeriodGateway = {
 
       return tx.classPeriod.findUniqueOrThrow({
         where: { id_schoolId: { id, schoolId } },
-        include: {
-          level: true,
-          period: true,
-          teachers: { where: { teacher: { isActive: true } }, include: { teacher: true } },
-        },
+        include: classPeriodInclude,
       })
     })
   },
@@ -86,26 +90,20 @@ export const classPeriodGateway = {
   findById: (schoolId: string, id: string) =>
     db.classPeriod.findUnique({
       where: { id_schoolId: { id, schoolId } },
-      include: {
-        level: true,
-        period: true,
-        teachers: { where: { teacher: { isActive: true } }, include: { teacher: true } },
-      },
+      include: classPeriodInclude,
     }),
 
-  countEnrolled: async (schoolId: string, id: string) => {
-    const count = await db.classAssignment.count({
+  countEnrolled: (schoolId: string, id: string) =>
+    db.classAssignment.count({
       where: {
         schoolId,
         classPeriodId: id,
         endAt: null,
         enrollment: {
-          status: { in: ['PENDING', 'ACTIVE'] },
+          status: { in: [...OPEN_ENROLLMENT_STATUSES] },
         },
       },
-    })
-    return count
-  },
+    }),
 
   deactivate: (schoolId: string, id: string) =>
     db.$transaction(async (tx) => {

@@ -2,7 +2,7 @@ import { BarChart, Card, ProgressBar } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
-import type { SchoolInsights } from '../_lib/school-insights'
+import { classFillRate, type SchoolInsights } from '../_lib/school-insights'
 
 interface Props {
   insights: SchoolInsights
@@ -109,13 +109,7 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
                     </span>
                   </div>
                   <div className="mt-2">
-                    <ProgressBar
-                      value={
-                        classPeriod.capacity > 0
-                          ? (classPeriod.enrolled / classPeriod.capacity) * 100
-                          : 0
-                      }
-                    />
+                    <ProgressBar value={classFillRate(classPeriod) * 100} />
                   </div>
                 </li>
               ))}

@@ -18,8 +18,9 @@ import {
 import { ChevronDown, ChevronsUpDown, ChevronUp } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { Button, Input } from '@/components/ui'
-import { cn } from '@/components/ui/utils'
+import { Button } from '../button'
+import { Input } from '../input'
+import { cn } from '../utils'
 
 export interface RichDataTableLabels {
   search: string

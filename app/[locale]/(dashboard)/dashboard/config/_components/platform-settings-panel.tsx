@@ -1,6 +1,5 @@
 'use client'
 
-import { Card } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { FlagToggle } from '../../../_components/flag-toggle'
 import {
@@ -9,6 +8,7 @@ import {
   setPasskeySignInEnabledAction,
   setSchoolSwitchEnabledAction,
 } from '../../../_lib/platform-settings-actions'
+import { SettingsSection } from './settings-section'
 
 type Props = {
   googleEnabled: boolean
@@ -38,7 +38,7 @@ export function PlatformSettingsPanel({
 
   return (
     <>
-      <Section title={tAuth('title')} description={tAuth('description')}>
+      <SettingsSection title={tAuth('title')} description={tAuth('description')}>
         <FlagToggle
           title={tAuth('google.title')}
           description={tAuth('google.description')}
@@ -64,18 +64,18 @@ export function PlatformSettingsPanel({
           enabled={passkeyEnabled}
           onSave={setPasskeySignInEnabledAction}
         />
-      </Section>
+      </SettingsSection>
 
-      <Section title={t('sections.schools')} description={t('sections.schoolsDescription')}>
+      <SettingsSection title={t('sections.schools')} description={t('sections.schoolsDescription')}>
         <FlagToggle
           title={tSwitch('title')}
           description={tSwitch('description')}
           enabled={schoolSwitchEnabled}
           onSave={setSchoolSwitchEnabledAction}
         />
-      </Section>
+      </SettingsSection>
 
-      <Section title={tIntegrations('title')} description={tIntegrations('description')}>
+      <SettingsSection title={tIntegrations('title')} description={tIntegrations('description')}>
         <FlagToggle
           title={tIntegrations('mcp.title')}
           description={tIntegrations('mcp.description')}
@@ -83,29 +83,7 @@ export function PlatformSettingsPanel({
           enabled={mcpEnabled}
           onSave={setMcpEnabledAction}
         />
-      </Section>
+      </SettingsSection>
     </>
-  )
-}
-
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string
-  description: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-lg font-semibold text-graphite">{title}</h2>
-        <p className="mt-1 text-sm text-graphite-600">{description}</p>
-      </div>
-      <Card className="divide-y divide-alabaster-700 rounded border border-alabaster-700 p-0">
-        {children}
-      </Card>
-    </section>
   )
 }

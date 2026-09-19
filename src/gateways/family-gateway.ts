@@ -1,3 +1,4 @@
+import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
 import type { Prisma, PrismaClient } from '@/generated/prisma/client'
 import { db, dbArchived } from '@/lib/db'
 
@@ -225,7 +226,7 @@ export const familyGateway = {
     const count = await db.enrollment.count({
       where: {
         schoolId,
-        status: { in: ['PENDING', 'ACTIVE'] },
+        status: { in: [...OPEN_ENROLLMENT_STATUSES] },
         student: { person: { families: { some: { familyId: id } } } },
       },
     })
@@ -260,7 +261,7 @@ export const familyGateway = {
                   select: {
                     id: true,
                     enrollments: {
-                      where: { isActive: true, status: { in: ['PENDING', 'ACTIVE'] } },
+                      where: { isActive: true, status: { in: [...OPEN_ENROLLMENT_STATUSES] } },
                       select: { id: true },
                     },
                   },

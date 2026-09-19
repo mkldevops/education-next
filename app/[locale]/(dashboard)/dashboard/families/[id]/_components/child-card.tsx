@@ -11,7 +11,7 @@ import { ActivateEnrollmentButton } from './activate-enrollment-button'
 import { EnrollButton } from './enroll-button'
 import { EnrollmentMenu } from './enrollment-menu'
 
-type ClassOption = {
+export type ClassOption = {
   id: string
   name: string
 }
@@ -47,7 +47,7 @@ export async function ChildCard({
   const { person } = student
   const enrollments = person.student.enrollments
 
-  const birthday = person.student.birthday ? new Date(person.student.birthday) : null
+  const { birthday } = person.student
   const age = birthday ? calculateAge(birthday, new Date()) : null
 
   return (
@@ -92,8 +92,8 @@ export async function ChildCard({
       <div className="space-y-2 mt-auto mb-4 pb-4 border-b border-alabaster-700">
         {enrollments.length > 0 ? (
           enrollments.map((enrollment) => {
-            const totalAmount = Number(enrollment.totalAmount)
-            const totalPaid = enrollment.payments.reduce((sum, p) => sum + Number(p.amount), 0)
+            const totalAmount = enrollment.totalAmount
+            const totalPaid = enrollment.payments.reduce((sum, p) => sum + p.amount, 0)
             const remaining = totalAmount - totalPaid
             const paidPercentage = totalAmount > 0 ? (totalPaid / totalAmount) * 100 : 0
             const currentAssignment = enrollment.classAssignments[0]

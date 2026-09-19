@@ -12,19 +12,23 @@ async function hasSchoolScope(): Promise<boolean> {
   const context = await getSchoolContext()
   if (!context) return false
 
-  return (
-    context.isSuperAdmin ||
-    context.role === 'ADMIN' ||
-    (context.role === 'PARENT' && context.familyId !== null)
-  )
+  return isActiveSchoolAdmin(context) || (context.role === 'PARENT' && context.familyId !== null)
+}
+
+async function gatedTitle(
+  locale: string,
+  titleKey: string,
+  allowed: Promise<boolean>
+): Promise<Metadata> {
+  const [t, ok] = await Promise.all([getTranslations({ locale }), allowed])
+
+  return {
+    title: ok ? t(titleKey) : t('errorPages.404.title'),
+  }
 }
 
 export async function restrictedPageMetadata(locale: string, titleKey: string): Promise<Metadata> {
-  const [t, allowed] = await Promise.all([getTranslations({ locale }), isSchoolAdmin()])
-
-  return {
-    title: allowed ? t(titleKey) : t('errorPages.404.title'),
-  }
+  return gatedTitle(locale, titleKey, isSchoolAdmin())
 }
 
 /** Titre des pages lisibles par un administrateur ou un parent rattaché. */
@@ -32,20 +36,16 @@ export async function schoolScopedPageMetadata(
   locale: string,
   titleKey: string
 ): Promise<Metadata> {
-  const [t, allowed] = await Promise.all([getTranslations({ locale }), hasSchoolScope()])
-
-  return {
-    title: allowed ? t(titleKey) : t('errorPages.404.title'),
-  }
+  return gatedTitle(locale, titleKey, hasSchoolScope())
 }
 
 /** Pendant plateforme : le titre ne fuite que pour un `isSuperAdmin`. */
 export async function platformPageMetadata(locale: string, titleKey: string): Promise<Metadata> {
-  const [t, context] = await Promise.all([getTranslations({ locale }), getSchoolContext()])
-
-  return {
-    title: context?.isSuperAdmin ? t(titleKey) : t('errorPages.404.title'),
-  }
+  return gatedTitle(
+    locale,
+    titleKey,
+    getSchoolContext().then((context) => context?.isSuperAdmin === true)
+  )
 }
 
 /**

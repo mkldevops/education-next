@@ -83,6 +83,17 @@ export function CreateEnrollmentDialog({
   )
 }
 
+type CreateEnrollmentFormProps = Pick<
+  CreateEnrollmentDialogProps,
+  | 'students'
+  | 'plans'
+  | 'classes'
+  | 'paymentsEnabled'
+  | 'defaultOpen'
+  | 'defaultStudentId'
+  | 'redirectTo'
+>
+
 function CreateEnrollmentForm({
   students,
   plans,
@@ -91,7 +102,7 @@ function CreateEnrollmentForm({
   defaultOpen = false,
   defaultStudentId,
   redirectTo,
-}: CreateEnrollmentDialogProps) {
+}: CreateEnrollmentFormProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()

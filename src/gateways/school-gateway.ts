@@ -1,3 +1,4 @@
+import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
 import type { DeactivationVerdict } from '@/domain/school-deactivation'
 import { classifySchoolDeactivation } from '@/domain/school-deactivation'
 import { db } from '@/lib/db'
@@ -117,7 +118,9 @@ export const schoolGateway = {
       }
 
       const [pendingEnrollments, pendingTransactions, pendingInvitations] = await Promise.all([
-        tx.enrollment.count({ where: { schoolId: id, status: { in: ['PENDING', 'ACTIVE'] } } }),
+        tx.enrollment.count({
+          where: { schoolId: id, status: { in: [...OPEN_ENROLLMENT_STATUSES] } },
+        }),
         tx.paymentTransaction.count({ where: { schoolId: id, status: 'PENDING' } }),
         tx.invitation.count({ where: { schoolId: id, usedAt: null } }),
       ])

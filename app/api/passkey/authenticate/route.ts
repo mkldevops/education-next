@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { getClientIp } from '@/lib/rate-limit'
 import { authenticateWithPasskey } from '@/use-cases/auth/authenticate-with-passkey'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
-import { getClientIp, isRateLimited } from './_lib/rate-limit'
+import { isRateLimited } from './_lib/rate-limit'
 
 const AuthBodySchema = z.object({
   id: z.string(),

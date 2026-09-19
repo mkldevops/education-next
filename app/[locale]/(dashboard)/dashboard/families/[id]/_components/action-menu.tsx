@@ -7,14 +7,13 @@ import { useTranslations } from 'next-intl'
 import { useCallback } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { cn } from '@/lib/utils'
+import { type FamilyAction, familyActionHref } from '../_lib/family-action-href'
 
 type Props = {
   familyId: string
   paymentsEnabled: boolean
   canRecordPayment: boolean
 }
-
-type FamilyAction = 'addPayment' | 'addStudent' | 'editFamily' | 'archiveFamily' | 'deleteFamily'
 
 type FamilyActionItem = {
   key: string
@@ -32,7 +31,7 @@ export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment }: Prop
 
   const handleAction = useCallback(
     (action: FamilyAction) => {
-      router.push(`/dashboard/families/${familyId}?action=${action}`)
+      router.push(familyActionHref(familyId, action))
     },
     [familyId, router]
   )

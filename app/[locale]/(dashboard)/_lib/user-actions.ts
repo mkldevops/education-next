@@ -52,7 +52,7 @@ export async function createUserAction(data: {
     })
     await schoolMemberGateway.createMembership(res.user.id, schoolId, parsed.data.role)
 
-    revalidatePath('/dashboard/users')
+    revalidatePath(USERS_PATH)
     return { id: res.user.id, email: parsed.data.email }
   } catch {
     return 'error' as const

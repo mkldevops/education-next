@@ -4,7 +4,7 @@ import { configGateway } from '@/gateways/config-gateway'
 import { eventGateway } from '@/gateways/event-gateway'
 import { schoolGateway } from '@/gateways/school-gateway'
 import type { Event, EventImage } from '@/generated/prisma/client'
-import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
+import { readEventsEnabled } from './is-events-enabled'
 
 export type PublicEvent = Event & { images: EventImage[] }
 
@@ -22,9 +22,9 @@ export type PublicEventsResult =
  * `getSchoolContext`. La route ICS n'en bénéficie pas (requête indépendante), mais partage
  * la même fonction, donc « exactement la même projection » que la page.
  *
- * Le drapeau `events_enabled` est vérifié ici par `configGateway` directement, pas via
- * `isEventsEnabled` : comme `createEvent`/`updateEvent`, l'injection directe garde cette
- * fonction testable sans dépendre d'un autre module mémoïsé.
+ * Le drapeau `events_enabled` est vérifié ici par `readEventsEnabled`, pas via
+ * `isEventsEnabled` : comme `createEvent`/`updateEvent`, l'injection directe de `configGw`
+ * garde cette fonction testable sans dépendre d'une lecture mémoïsée.
  */
 const resolvePublicEvents = cache(
   async (
@@ -36,8 +36,7 @@ const resolvePublicEvents = cache(
     const school = await schoolGw.findBySlug(slug)
     if (!school?.isActive) return 'notFound'
 
-    const config = await configGw.get(school.id, EVENTS_CONFIG_KEY)
-    if (config?.value !== 'true') return 'notConfigured'
+    if (!(await readEventsEnabled(school.id, configGw))) return 'notConfigured'
 
     const events = await eventGw.listPublic(school.id)
 

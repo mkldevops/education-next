@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import type { FamilyBalance } from '@/use-cases/payments/family-balance'
 import { deriveFamilyDetail, type FamilyDetail, serializeFamilyPayments } from './family-detail'
 
 const decimal = (value: number) => ({ toString: () => String(value) })
@@ -30,14 +29,8 @@ describe('family detail serialization', () => {
         },
       ],
     } as unknown as FamilyDetail
-    const balance = {
-      totalAmount: 350,
-      totalDiscount: 25,
-      totalPaid: 100,
-      remainingBalance: 250,
-    } as FamilyBalance
 
-    const result = deriveFamilyDetail(family, balance, undefined)
+    const result = deriveFamilyDetail(family, undefined)
     const enrollment = result.students[0]?.person.student.enrollments[0]
 
     expect(enrollment).toMatchObject({

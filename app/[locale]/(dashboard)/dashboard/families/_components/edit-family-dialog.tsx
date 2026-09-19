@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogRouteOpener,
   DialogTitle,
@@ -13,12 +12,11 @@ import {
   Input,
   Label,
   Textarea,
-  useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
 import { languagesOf, parseLanguagesAtHome } from '@/domain/family'
-import { toast, toastActionError } from '@/lib/toast'
+import { DialogFormActions, useDialogForm } from '@/features/forms'
+import { toast } from '@/lib/toast'
 import { updateFamilySchema } from '@/use-cases/families/schemas'
 import { updateFamilyAction } from '../../../_lib/family-actions'
 
@@ -67,8 +65,7 @@ export function EditFamilyDialog({
 function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
   const t = useTranslations('dashboard.pages.families.edit')
   const tCreate = useTranslations('dashboard.pages.families.create')
-  const { setOpen } = useDialog()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, close, run } = useDialogForm(t)
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -94,15 +91,7 @@ function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
 
     const { id, ...data } = parsed.data
 
-    startTransition(async () => {
-      const result = await updateFamilyAction(id, data)
-      if (typeof result === 'string') {
-        toastActionError(t, result)
-      } else {
-        toast.success(t('success'))
-        setOpen(false)
-      }
-    })
+    run(() => updateFamilyAction(id, data))
   }
 
   return (
@@ -164,14 +153,7 @@ function EditFamilyForm({ family }: Pick<EditFamilyDialogProps, 'family'>) {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-          {t('cancel')}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? '...' : t('submit')}
-        </Button>
-      </DialogFooter>
+      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
     </form>
   )
 }

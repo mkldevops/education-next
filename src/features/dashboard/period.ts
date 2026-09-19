@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { selectDefaultPeriod } from '@/domain/period'
 import { db } from '@/lib/db'
 
+export const SELECTED_PERIOD_COOKIE = 'selected_period'
+
 export type SelectedPeriod = {
   id: string
   name: string
@@ -19,7 +21,7 @@ export type SelectedPeriod = {
  * les données de l'école B. Un cookie pointant ailleurs est traité comme absent.
  */
 export async function getSelectedPeriod(schoolId: string): Promise<SelectedPeriod | null> {
-  const raw = (await cookies()).get('selected_period')?.value
+  const raw = (await cookies()).get(SELECTED_PERIOD_COOKIE)?.value
   const parsed = z.uuid().safeParse(raw)
 
   if (parsed.success) {

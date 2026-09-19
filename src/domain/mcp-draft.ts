@@ -1,3 +1,5 @@
+import { DAY_MS } from './day'
+
 /**
  * Durée de vie d'un brouillon d'écriture. Assez longue pour qu'un humain lise le plan
  * résolu, assez courte pour qu'un plan calculé sur un état périmé ne s'engage pas :
@@ -45,7 +47,7 @@ export const MCP_DRAFT_COMMITTED_RETENTION_DAYS = 7
 export const MCP_DRAFT_PURGE_INTERVAL_MINUTES = 15
 
 export function committedRetentionBefore(now: Date = new Date()): Date {
-  return new Date(now.getTime() - MCP_DRAFT_COMMITTED_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+  return new Date(now.getTime() - MCP_DRAFT_COMMITTED_RETENTION_DAYS * DAY_MS)
 }
 
 export type McpDraftLifecycle = {

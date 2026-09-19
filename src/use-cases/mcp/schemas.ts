@@ -24,10 +24,14 @@ const phoneNumberFormat = /^\+?[\d\s().-]{6,20}$/
  */
 const isoDate = z.union([z.iso.date(), z.iso.datetime({ offset: true })])
 
+export const mcpPaymentMethodSchema = z.enum(['CASH', 'CARD', 'TRANSFER', 'CHECK'])
+
+export const mcpSexSchema = z.enum(['MALE', 'FEMALE'])
+
 const mcpPersonSchema = z.object({
   name: z.string().trim().min(1).max(250),
   lastname: z.string().trim().min(1).max(250),
-  sex: z.enum(['MALE', 'FEMALE']).optional(),
+  sex: mcpSexSchema.optional(),
 })
 
 const mcpParentSchema = mcpPersonSchema.extend({
@@ -54,17 +58,20 @@ const mcpStudentSchema = mcpPersonSchema.extend({
   planName: z.string().trim().min(1).max(50).optional(),
 })
 
-const mcpPaymentSchema = z
-  .object({
-    amount: z.number().refine((n) => n !== 0),
-    method: z.enum(['CASH', 'CARD', 'TRANSFER', 'CHECK']),
-    reference: z.string().trim().max(250).optional(),
-    paidAt: isoDate,
-    cashedAt: isoDate.optional(),
-  })
-  .refine((data) => data.method === 'CHECK' || data.cashedAt === undefined, {
-    path: ['cashedAt'],
-  })
+const paymentFields = {
+  amount: z.number().refine((n) => n !== 0),
+  method: mcpPaymentMethodSchema,
+  reference: z.string().trim().max(250).optional(),
+  paidAt: isoDate,
+  cashedAt: isoDate.optional(),
+}
+
+const cashedAtOnlyForCheck = (data: { method: string; cashedAt?: string }) =>
+  data.method === 'CHECK' || data.cashedAt === undefined
+
+const mcpPaymentSchema = z.object(paymentFields).refine(cashedAtOnlyForCheck, {
+  path: ['cashedAt'],
+})
 
 /**
  * Classe et formule sont attendues en **libellés**, pas en identifiants.
@@ -103,16 +110,10 @@ export const previewRecordPaymentSchema = z
   .object({
     familyId: z.uuid().optional(),
     familyName: z.string().trim().min(1).max(50).optional(),
-    amount: z.number().refine((n) => n !== 0),
-    method: z.enum(['CASH', 'CARD', 'TRANSFER', 'CHECK']),
-    reference: z.string().trim().max(250).optional(),
-    paidAt: isoDate,
-    cashedAt: isoDate.optional(),
+    ...paymentFields,
   })
   .refine((data) => data.familyId !== undefined || data.familyName !== undefined)
-  .refine((data) => data.method === 'CHECK' || data.cashedAt === undefined, {
-    path: ['cashedAt'],
-  })
+  .refine(cashedAtOnlyForCheck, { path: ['cashedAt'] })
 
 /**
  * L'inscription se désigne par son identifiant, ou par l'élève qu'elle concerne.

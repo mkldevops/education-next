@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { getSchoolContext } from '@/lib/school-context'
+import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 
 const searchSchema = z.object({
   query: z.string().min(1).max(250),
@@ -32,55 +32,25 @@ export async function searchStudentsAndFamilies(
   if (!context) return 'unauthorized' as const
 
   const { schoolId } = context
-  const isAdmin = context.isSuperAdmin || context.role === 'ADMIN'
+  const isAdmin = isActiveSchoolAdmin(context)
   const familyId = context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined
 
   if (!isAdmin && !familyId) return []
 
-  const searchQuery = parsed.data.query.toLowerCase()
+  const searchQuery = parsed.data.query
 
   const [students, families] = await Promise.all([
     db.student.findMany({
       where: {
         schoolId,
-        AND: [
-          {
-            OR: [
-              {
-                person: {
-                  name: {
-                    contains: searchQuery,
-                    mode: 'insensitive',
-                  },
-                },
-              },
-              {
-                person: {
-                  lastname: {
-                    contains: searchQuery,
-                    mode: 'insensitive',
-                  },
-                },
-              },
-            ],
-          },
-          {
-            person: {
-              isActive: true,
-            },
-          },
-          isAdmin
-            ? {}
-            : {
-                person: {
-                  families: {
-                    some: {
-                      familyId,
-                    },
-                  },
-                },
-              },
-        ],
+        person: {
+          isActive: true,
+          OR: [
+            { name: { contains: searchQuery, mode: 'insensitive' } },
+            { lastname: { contains: searchQuery, mode: 'insensitive' } },
+          ],
+          ...(isAdmin ? {} : { families: { some: { familyId } } }),
+        },
       },
       include: {
         person: {
@@ -98,54 +68,20 @@ export async function searchStudentsAndFamilies(
       },
       take: 5,
     }),
-    isAdmin
-      ? db.family.findMany({
-          where: {
-            schoolId,
-            AND: [
-              {
-                name: {
-                  contains: searchQuery,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                isActive: true,
-              },
-            ],
-          },
-          select: {
-            id: true,
-            name: true,
-            _count: { select: { persons: true } },
-          },
-          take: 5,
-        })
-      : db.family.findMany({
-          where: {
-            schoolId,
-            AND: [
-              {
-                name: {
-                  contains: searchQuery,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                isActive: true,
-              },
-              {
-                id: familyId,
-              },
-            ],
-          },
-          select: {
-            id: true,
-            name: true,
-            _count: { select: { persons: true } },
-          },
-          take: 5,
-        }),
+    db.family.findMany({
+      where: {
+        schoolId,
+        isActive: true,
+        name: { contains: searchQuery, mode: 'insensitive' },
+        ...(isAdmin ? {} : { id: familyId }),
+      },
+      select: {
+        id: true,
+        name: true,
+        _count: { select: { persons: true } },
+      },
+      take: 5,
+    }),
   ])
 
   const results: SearchResult[] = [

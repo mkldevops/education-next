@@ -10,7 +10,7 @@ import { useRouter as useI18nRouter } from '@/i18n/routing'
 import { linkSocial, signOut, unlinkAccount } from '@/lib/auth-client'
 import { toast } from '@/lib/toast'
 
-type LinkedAccount = {
+export type LinkedAccount = {
   id: string
   providerId: string
 }

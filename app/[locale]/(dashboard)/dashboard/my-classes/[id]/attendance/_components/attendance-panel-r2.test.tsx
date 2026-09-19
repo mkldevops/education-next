@@ -68,6 +68,8 @@ const labels = {
   retry: 'Retry',
   previousStudent: 'Previous student',
   nextStudent: 'Next student',
+  previous: 'Previous',
+  next: 'Next',
   studentPosition: 'Student {current} of {total}',
   saveBeforeContinue: 'Save first',
   summary: 'Summary',
