@@ -1314,7 +1314,8 @@
           "errors": {
             "validationError": "Check the information you entered",
             "notFound": "Enrollment not found",
-            "invalidStatusTransition": "That status change is not allowed from the current state"
+            "invalidStatusTransition": "That status change is not allowed from the current state",
+            "enrollmentPaid": "This enrollment already received a payment: refund it before cancelling"
           }
         },
         "reassign": {

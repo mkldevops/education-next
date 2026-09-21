@@ -1315,7 +1315,8 @@
           "errors": {
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Inscription introuvable",
-            "invalidStatusTransition": "Ce changement de statut n'est pas autorisé depuis l'état actuel"
+            "invalidStatusTransition": "Ce changement de statut n'est pas autorisé depuis l'état actuel",
+            "enrollmentPaid": "Cette inscription a déjà reçu un paiement : remboursez-la avant de l'annuler"
           }
         },
         "reassign": {

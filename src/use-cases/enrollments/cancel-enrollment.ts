@@ -17,6 +17,10 @@ export async function cancelEnrollment(input: Input) {
   const transitionCheck = validateTransition(enrollment.status, 'CANCELLED')
   if (transitionCheck !== 'OK') return transitionCheck
 
+  // Annuler effacerait ces paiements du solde et de l'historique famille (#307) : l'argent
+  // encaissé resterait attribué à une inscription qui n'apparaît plus nulle part.
+  if (enrollment.payments.length > 0) return 'enrollmentPaid' as const
+
   await classAssignmentGateway.closeCurrent(schoolId, parsed.data.id)
   await enrollmentGateway.updateStatus(schoolId, parsed.data.id, 'CANCELLED')
   return 'OK' as const
