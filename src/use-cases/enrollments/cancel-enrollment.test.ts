@@ -80,6 +80,7 @@ describe('cancelEnrollment', () => {
     enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'PENDING',
+      payments: [],
     })
 
     const result = await cancelEnrollment({
@@ -94,6 +95,7 @@ describe('cancelEnrollment', () => {
     enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'ACTIVE',
+      payments: [],
     })
 
     const result = await cancelEnrollment({
@@ -104,10 +106,28 @@ describe('cancelEnrollment', () => {
     expect(result).toBe('OK')
   })
 
+  it('should refuse cancelling an enrollment with an active payment attached', async () => {
+    enrollmentGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      status: 'PENDING',
+      payments: [{ amount: 50 }],
+    })
+
+    const result = await cancelEnrollment({
+      schoolId,
+      id: '550e8400-e29b-41d4-a716-446655440000',
+    })
+
+    expect(result).toBe('enrollmentPaid')
+    expect(classAssignmentGatewayMock.closeCurrent).not.toHaveBeenCalled()
+    expect(enrollmentGatewayMock.updateStatus).not.toHaveBeenCalled()
+  })
+
   it('should close current class assignment', async () => {
     enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'ACTIVE',
+      payments: [],
     })
 
     await cancelEnrollment({
@@ -125,6 +145,7 @@ describe('cancelEnrollment', () => {
     enrollmentGatewayMock.findById.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
       status: 'ACTIVE',
+      payments: [],
     })
 
     await cancelEnrollment({
