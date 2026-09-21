@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { distributePayment, type EnrollmentBalance } from '../payment'
+import { distributePayment, distributeReceivedPayment, type EnrollmentBalance } from '../payment'
 
 describe('payment distribution', () => {
   describe('distributePayment with positive amounts', () => {
@@ -363,6 +363,47 @@ describe('payment distribution', () => {
         const totalDistributed = result.distribution.reduce((sum, d) => sum + d.amount, 0)
         expect(totalDistributed).toBe(100)
       }
+    })
+  })
+
+  describe('distributeReceivedPayment (#306)', () => {
+    it('behaves like distributePayment when the amount fits the remaining balance', () => {
+      const enrollments: EnrollmentBalance[] = [
+        { enrollmentId: 'e1', remainingBalance: 60, totalAmount: 100, discount: 0 },
+        { enrollmentId: 'e2', remainingBalance: 40, totalAmount: 100, discount: 0 },
+      ]
+
+      expect(distributeReceivedPayment(100, enrollments)).toEqual({
+        result: 'OK',
+        distribution: [
+          { enrollmentId: 'e1', amount: 60 },
+          { enrollmentId: 'e2', amount: 40 },
+        ],
+      })
+    })
+
+    it('records the full amount as credit on the first enrollment instead of refusing an overpayment', () => {
+      const enrollments: EnrollmentBalance[] = [
+        { enrollmentId: 'e1', remainingBalance: 20, totalAmount: 100, discount: 0 },
+        { enrollmentId: 'e2', remainingBalance: 10, totalAmount: 100, discount: 0 },
+      ]
+
+      const result = distributeReceivedPayment(100, enrollments)
+
+      expect(result).toEqual({
+        result: 'OK',
+        distribution: [
+          { enrollmentId: 'e1', amount: 90 },
+          { enrollmentId: 'e2', amount: 10 },
+        ],
+      })
+      if (result.result === 'OK') {
+        expect(result.distribution.reduce((sum, d) => sum + d.amount, 0)).toBe(100)
+      }
+    })
+
+    it('returns noPayableEnrollments when there is no enrollment left to credit', () => {
+      expect(distributeReceivedPayment(100, [])).toEqual({ result: 'noPayableEnrollments' })
     })
   })
 })

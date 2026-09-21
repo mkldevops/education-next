@@ -1,4 +1,4 @@
-import { distributePayment } from '@/domain/payment'
+import { distributeReceivedPayment } from '@/domain/payment'
 import { db } from '@/lib/db'
 import { findPaymentTransactionByProviderSessionId } from '@/lib/db-unscoped'
 import { getFamilyBalance } from './family-balance'
@@ -38,8 +38,23 @@ export async function completeCheckoutSession(input: Input) {
   }
 
   const balance = await getFamilyBalance(transaction.schoolId, transaction.familyId)
-  const distribution = distributePayment(Number(transaction.amount), balance.enrollments)
-  if (distribution.result !== 'OK') return distribution.result
+  const distribution = distributeReceivedPayment(
+    Number(transaction.amount),
+    balance.payableEnrollments
+  )
+  if (distribution.result !== 'OK') {
+    // La carte est déjà débitée : impossible d'écrire un `Payment` sans inscription cible
+    // (aucune n'est au statut payable). Alerter au lieu de se contenter d'un 422 muet.
+    console.error('[payments/complete-checkout-session] stripe payment captured but not recorded', {
+      providerEventId: input.providerEventId,
+      transactionId: transaction.id,
+      schoolId: transaction.schoolId,
+      familyId: transaction.familyId,
+      amount: transaction.amount,
+      result: distribution.result,
+    })
+    return distribution.result
+  }
 
   const paidAt = new Date()
   const providerPaymentId =

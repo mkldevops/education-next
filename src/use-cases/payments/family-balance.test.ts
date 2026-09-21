@@ -14,6 +14,7 @@ describe('calculateFamilyBalance', () => {
   it('returns an empty balance without enrollments', () => {
     expect(calculateFamilyBalance([])).toEqual({
       enrollments: [],
+      payableEnrollments: [],
       totalAmount: 0,
       totalDiscount: 0,
       totalPaid: 0,
@@ -68,6 +69,10 @@ describe('calculateFamilyBalance', () => {
         paidAmount: 40,
         remainingBalance: 60,
       },
+    ])
+    expect(balance.payableEnrollments.map((e) => e.enrollmentId)).toEqual([
+      'enrollment-1',
+      'enrollment-2',
     ])
   })
 
@@ -140,6 +145,7 @@ describe('calculateFamilyBalance', () => {
 
     expect(balance).toEqual({
       enrollments: [],
+      payableEnrollments: [],
       totalAmount: 0,
       totalDiscount: 0,
       totalPaid: 200,
