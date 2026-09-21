@@ -1039,9 +1039,19 @@ the checkout flow, not by the form.
   pending enrollments included; partial online payment is not offered.
 - The `PaymentTransaction` row is created **before** the Stripe session and its id is the
   idempotency key.
-- The webhook refuses anything that does not match: an already-seen provider event → `duplicate`;
-  a transaction already `SUCCEEDED` → `duplicate`; `payment_status !== 'paid'` → `notPaid`;
-  a different amount → `amountMismatch`; a different currency → `currencyMismatch`.
+- The webhook refuses only what predates the money leaving the customer's card: an already-seen
+  provider event → `duplicate`; a transaction already `SUCCEEDED` → `duplicate`;
+  `payment_status !== 'paid'` → `notPaid`; a different amount → `amountMismatch`; a different
+  currency → `currencyMismatch`.
+- Once the card is charged, the webhook never refuses on a stale balance. A manual payment
+  recorded between the checkout session and the webhook can shrink or clear what's owed;
+  `distributeReceivedPayment` (`src/domain/payment.ts`) allocates the captured amount against
+  `FamilyBalance.payableEnrollments` (every payable-status enrollment, including already-settled
+  ones) instead of `distributePayment`'s narrower, `overpayment`-refusing set. Each enrollment
+  gets its normal share, capped at its remaining balance; anything beyond that lands in full on
+  the first enrollment as an unreconciled credit. Only the impossible case — no payable-status
+  enrollment left at all — still returns `noPayableEnrollments`, and is logged with
+  `console.error` so a captured, unrecorded payment is never silent (#306).
 
 ### Activating payments per school
 

@@ -58,6 +58,44 @@ export function distributePayment(
   }
 }
 
+/**
+ * Le webhook Stripe appelle cette fonction après que la carte a déjà été débitée : refuser
+ * n'annule pas le débit, ça perd juste sa trace. Contrairement à `distributePayment`, elle
+ * n'échoue jamais faute de solde suffisant. Chaque inscription reçoit d'abord sa part normale,
+ * plafonnée à son solde restant ; le surplus — provoqué par un encaissement manuel intercalé
+ * entre la création de la session et le webhook (#306) — est porté en totalité sur la première
+ * inscription, en crédit famille à régulariser manuellement si besoin.
+ *
+ * `enrollments` doit inclure toutes les inscriptions au statut payable, y compris celles déjà
+ * soldées (`FamilyBalance.payableEnrollments`), pour rester une cible valide au surplus même si
+ * plus aucune ne doit encore d'argent.
+ */
+export function distributeReceivedPayment(
+  amount: number,
+  enrollments: EnrollmentBalance[]
+): DistributionSuccess | { result: 'noPayableEnrollments' } {
+  if (enrollments.length === 0) {
+    return { result: 'noPayableEnrollments' }
+  }
+
+  const totalRemaining = enrollments.reduce((sum, e) => sum + e.remainingBalance, 0)
+  if (amount <= totalRemaining) {
+    return distributePositivePayment(amount, enrollments) as DistributionSuccess
+  }
+
+  const surplus = roundHalfUp(amount - totalRemaining)
+  return {
+    result: 'OK',
+    distribution: enrollments.map((enrollment, index) => ({
+      enrollmentId: enrollment.enrollmentId,
+      amount:
+        index === 0
+          ? roundHalfUp(enrollment.remainingBalance + surplus)
+          : enrollment.remainingBalance,
+    })),
+  }
+}
+
 function distributePositivePayment(
   amount: number,
   enrollments: EnrollmentBalance[]

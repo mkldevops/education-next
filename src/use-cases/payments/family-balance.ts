@@ -22,6 +22,12 @@ type FamilyEnrollmentBalance = {
 
 export type FamilyBalance = {
   enrollments: FamilyEnrollmentBalance[]
+  /**
+   * Toutes les inscriptions ventilables (statut payable), y compris celles déjà soldées.
+   * Sert de filet pour un encaissement Stripe déjà débité quand `enrollments` est devenu
+   * vide ou insuffisant entre la création de la session et le webhook (#306).
+   */
+  payableEnrollments: FamilyEnrollmentBalance[]
   totalAmount: number
   totalDiscount: number
   totalPaid: number
@@ -84,6 +90,7 @@ export function calculateFamilyBalance(allEnrollments: BalanceEnrollment[]): Fam
 
   return {
     enrollments: balances.filter((enrollment) => enrollment.remainingBalance > 0),
+    payableEnrollments: balances,
     totalAmount,
     totalDiscount,
     totalPaid,

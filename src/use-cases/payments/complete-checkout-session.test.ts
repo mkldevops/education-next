@@ -46,7 +46,7 @@ describe('completeCheckoutSession', () => {
     dbMock.paymentProviderEvent.findUnique.mockResolvedValue(null)
     findPaymentTransactionByProviderSessionIdMock.mockResolvedValue(transaction)
     getFamilyBalanceMock.mockResolvedValue({
-      enrollments: [
+      payableEnrollments: [
         {
           enrollmentId: 'enrollment-1',
           totalAmount: 60,
@@ -130,5 +130,40 @@ describe('completeCheckoutSession', () => {
       })
     ).toBe('notPaid')
     expect(dbMock.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('records the full Stripe capture even when a manual payment shrank the balance since checkout (#306)', async () => {
+    getFamilyBalanceMock.mockResolvedValue({
+      payableEnrollments: [
+        { enrollmentId: 'enrollment-1', totalAmount: 60, discount: 0, remainingBalance: 20 },
+        { enrollmentId: 'enrollment-2', totalAmount: 40, discount: 0, remainingBalance: 0 },
+      ],
+    })
+
+    expect(await completeCheckoutSession(input)).toBe('OK')
+
+    expect(txMock.payment.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({ enrollmentId: 'enrollment-1', amount: 100 }),
+        expect.objectContaining({ enrollmentId: 'enrollment-2', amount: 0 }),
+      ],
+    })
+    expect(txMock.paymentTransaction.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'SUCCEEDED' }) })
+    )
+  })
+
+  it('alerts and refuses when every enrollment lost its payable status before the webhook (#306)', async () => {
+    getFamilyBalanceMock.mockResolvedValue({ payableEnrollments: [] })
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    expect(await completeCheckoutSession(input)).toBe('noPayableEnrollments')
+
+    expect(dbMock.$transaction).not.toHaveBeenCalled()
+    expect(errorSpy).toHaveBeenCalledWith(
+      '[payments/complete-checkout-session] stripe payment captured but not recorded',
+      expect.objectContaining({ result: 'noPayableEnrollments' })
+    )
+    errorSpy.mockRestore()
   })
 })
