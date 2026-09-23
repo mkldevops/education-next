@@ -5,6 +5,10 @@ const isPasskeySignInEnabledMock = vi.fn()
 const findUniqueVerificationMock = vi.fn()
 const deleteVerificationMock = vi.fn()
 const findUniquePasskeyMock = vi.fn()
+const findManyPasskeyMock = vi.fn()
+const findFirstPasskeyMock = vi.fn()
+const deletePasskeyMock = vi.fn()
+const getSessionMock = vi.fn()
 
 vi.mock('@/use-cases/platform-settings/is-passkey-sign-in-enabled', () => ({
   isPasskeySignInEnabled: isPasskeySignInEnabledMock,
@@ -18,14 +22,22 @@ vi.mock('@/lib/db', () => ({
     },
     passkey: {
       findUnique: findUniquePasskeyMock,
+      findMany: findManyPasskeyMock,
+      findFirst: findFirstPasskeyMock,
+      delete: deletePasskeyMock,
     },
   },
 }))
 
-vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: vi.fn() } } }))
+vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: getSessionMock } } }))
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
 
-const { verifyPasskeyAuthentication } = await import('./passkey-actions')
+const {
+  deletePasskey,
+  getPasskeyRegistrationOptions,
+  verifyPasskeyAuthentication,
+  verifyPasskeyRegistration,
+} = await import('./passkey-actions')
 
 const response = { id: 'credential-id' } as AuthenticationResponseJSON
 const challengeId = 'a'.repeat(32)
@@ -56,5 +68,35 @@ describe('verifyPasskeyAuthentication', () => {
     expect(findUniqueVerificationMock).toHaveBeenCalledWith({
       where: { identifier: `passkey-auth-challenge:${challengeId}` },
     })
+  })
+})
+
+describe('passkey management while impersonating', () => {
+  beforeEach(() => {
+    getSessionMock.mockResolvedValue({
+      user: { id: 'user-1', email: 'parent@school.test' },
+      session: { impersonatedBy: 'super-admin-1' },
+    })
+  })
+
+  it('refuses the registration options before reading any passkey', async () => {
+    expect(await getPasskeyRegistrationOptions('Laptop')).toEqual({ error: 'impersonating' })
+    expect(findManyPasskeyMock).not.toHaveBeenCalled()
+  })
+
+  it('refuses the registration before reading the challenge', async () => {
+    const result = await verifyPasskeyRegistration(
+      {} as Parameters<typeof verifyPasskeyRegistration>[0],
+      'Laptop'
+    )
+
+    expect(result).toBe('impersonating')
+    expect(findUniqueVerificationMock).not.toHaveBeenCalled()
+  })
+
+  it('refuses the deletion before touching the passkey', async () => {
+    expect(await deletePasskey('passkey-1')).toBe('impersonating')
+    expect(findFirstPasskeyMock).not.toHaveBeenCalled()
+    expect(deletePasskeyMock).not.toHaveBeenCalled()
   })
 })

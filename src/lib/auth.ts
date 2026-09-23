@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { impersonationLogGateway } from '@/gateways/impersonation-log-gateway'
 import { userGateway } from '@/gateways/user-gateway'
 import { db } from '@/lib/db'
 import { impersonation } from '@/lib/impersonation'
@@ -122,7 +123,12 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: 'education-next',
   },
-  plugins: [impersonation({ findUser: (id) => userGateway.findManaged(id) })],
+  plugins: [
+    impersonation({
+      findUser: (id) => userGateway.findManaged(id),
+      log: impersonationLogGateway,
+    }),
+  ],
   trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'],
 })
 

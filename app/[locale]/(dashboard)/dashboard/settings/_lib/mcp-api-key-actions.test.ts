@@ -5,8 +5,12 @@ const isMcpEnabledMock = vi.fn()
 const createMcpApiKeyMock = vi.fn()
 const revokeMcpApiKeyMock = vi.fn()
 const revalidatePathMock = vi.fn()
+const isImpersonatingRequestMock = vi.fn()
 
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }))
+vi.mock('@/lib/impersonation-guard', () => ({
+  isImpersonatingRequest: isImpersonatingRequestMock,
+}))
 vi.mock('../../../_lib/auth-helper', () => ({ requireSchoolAdmin: requireSchoolAdminMock }))
 vi.mock('@/use-cases/platform-settings/is-mcp-enabled', () => ({ isMcpEnabled: isMcpEnabledMock }))
 vi.mock('@/use-cases/mcp/create-mcp-api-key', () => ({ createMcpApiKey: createMcpApiKeyMock }))
@@ -28,6 +32,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   requireSchoolAdminMock.mockResolvedValue({ schoolId: 'school-1', userId: 'user-1' })
   isMcpEnabledMock.mockResolvedValue(true)
+  isImpersonatingRequestMock.mockResolvedValue(false)
   createMcpApiKeyMock.mockResolvedValue({ key: 'edu_mcp_secret', record })
   revokeMcpApiKeyMock.mockResolvedValue('OK')
 })
@@ -101,5 +106,22 @@ describe('revokeMcpApiKeyAction', () => {
 
     expect(await revokeMcpApiKeyAction('key-1')).toBe('notFound')
     expect(revalidatePathMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('MCP keys while impersonating', () => {
+  beforeEach(() => {
+    isImpersonatingRequestMock.mockResolvedValue(true)
+  })
+
+  it('refuses to mint a key under the borrowed identity', async () => {
+    expect(await createMcpApiKeyAction({ name: 'x', lifetimeDays: 90 })).toBe('impersonating')
+    expect(createMcpApiKeyMock).not.toHaveBeenCalled()
+    expect(revalidatePathMock).not.toHaveBeenCalled()
+  })
+
+  it('refuses to revoke a key under the borrowed identity', async () => {
+    expect(await revokeMcpApiKeyAction('key-1')).toBe('impersonating')
+    expect(revokeMcpApiKeyMock).not.toHaveBeenCalled()
   })
 })

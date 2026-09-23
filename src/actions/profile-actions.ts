@@ -3,6 +3,7 @@
 import { headers } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
+import { isImpersonating } from '@/domain/user'
 import { PrismaProfileGateway } from '@/gateways/prisma-profile-gateway'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
@@ -15,6 +16,20 @@ type ActionResult<T> = { success: true; data: T } | { success: false; error: str
 async function getAuthenticatedUserId(): Promise<string | null> {
   const session = await auth.api.getSession({ headers: await headers() })
   return session?.user?.id ?? null
+}
+
+type CredentialGuard = { ok: true; userId: string } | { ok: false; error: string }
+
+/**
+ * Garde des opérations sur les identifiants et le compte : session requise, et refus
+ * `impersonating` pendant un emprunt. Better Auth refuse aussi ces routes par son crochet
+ * `before` ; ce contrôle en amont rend un discriminant lisible au lieu d'une exception.
+ */
+async function guardCredentialOperation(requestHeaders: Headers): Promise<CredentialGuard> {
+  const session = await auth.api.getSession({ headers: requestHeaders })
+  if (!session) return { ok: false, error: 'unauthorized' }
+  if (isImpersonating(session)) return { ok: false, error: 'impersonating' }
+  return { ok: true, userId: session.user.id }
 }
 
 const changePasswordSchema = z
@@ -44,13 +59,11 @@ export async function updateProfileAction(data: UpdateProfileData): Promise<Acti
 }
 
 export async function deleteProfileAction(): Promise<ActionResult<null>> {
-  const userId = await getAuthenticatedUserId()
-  if (!userId) {
-    return { success: false, error: 'unauthorized' }
-  }
+  const guard = await guardCredentialOperation(await headers())
+  if (!guard.ok) return { success: false, error: guard.error }
 
   const gateway = new PrismaProfileGateway(db)
-  const result = await deleteProfile(userId, gateway)
+  const result = await deleteProfile(guard.userId, gateway)
 
   if (result !== 'OK') {
     return { success: false, error: result }
@@ -70,6 +83,8 @@ export async function changePasswordAction(data: {
   }
 
   const requestHeaders = await headers()
+  const guard = await guardCredentialOperation(requestHeaders)
+  if (!guard.ok) return { success: false, error: guard.error }
 
   try {
     await auth.api.changePassword({
@@ -125,9 +140,13 @@ export async function changeEmailAction(data: { newEmail: string }): Promise<Act
     return { success: false, error: 'validationError' }
   }
 
+  const requestHeaders = await headers()
+  const guard = await guardCredentialOperation(requestHeaders)
+  if (!guard.ok) return { success: false, error: guard.error }
+
   try {
     await auth.api.changeEmail({
-      headers: await headers(),
+      headers: requestHeaders,
       body: { newEmail: parsed.data.newEmail, callbackURL: '/dashboard/settings' },
     })
     return { success: true, data: null }
@@ -137,9 +156,13 @@ export async function changeEmailAction(data: { newEmail: string }): Promise<Act
 }
 
 export async function revokeSessionAction(token: string): Promise<ActionResult<null>> {
+  const requestHeaders = await headers()
+  const guard = await guardCredentialOperation(requestHeaders)
+  if (!guard.ok) return { success: false, error: guard.error }
+
   try {
     await auth.api.revokeSession({
-      headers: await headers(),
+      headers: requestHeaders,
       body: { token },
     })
     return { success: true, data: null }

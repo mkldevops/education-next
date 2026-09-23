@@ -9,6 +9,7 @@ import {
   verifyRegistrationResponse,
 } from '@simplewebauthn/server'
 import { headers } from 'next/headers'
+import { isImpersonating } from '@/domain/user'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
@@ -45,6 +46,9 @@ export async function getPasskeyRegistrationOptions(passkeyName: string) {
 
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return { error: 'unauthorized' as const }
+  // Une passkey enregistrée pendant un emprunt survivrait à la session d'une heure et
+  // rouvrirait le compte à volonté.
+  if (isImpersonating(session)) return { error: 'impersonating' as const }
 
   const existingPasskeys = await db.passkey.findMany({
     where: { userId: session.user.id },
@@ -79,6 +83,7 @@ export async function verifyPasskeyRegistration(
 
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return 'unauthorized' as const
+  if (isImpersonating(session)) return 'impersonating' as const
 
   const challengeRecord = await db.verification.findUnique({
     where: { identifier: registrationChallengeKey(session.user.id) },
@@ -203,6 +208,7 @@ export async function getUserPasskeys() {
 export async function deletePasskey(passkeyId: string) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return 'unauthorized' as const
+  if (isImpersonating(session)) return 'impersonating' as const
 
   const passkey = await db.passkey.findFirst({
     where: { id: passkeyId, userId: session.user.id },

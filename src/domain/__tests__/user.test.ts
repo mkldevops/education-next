@@ -6,6 +6,7 @@ import {
   checkImpersonation,
   checkPlatformLevelChange,
   checkReactivation,
+  isImpersonating,
   isLastActiveSuperAdmin,
   type ManagedUser,
 } from '../user'
@@ -149,5 +150,19 @@ describe('user domain', () => {
     it('rejects impersonating an archived account', () => {
       expect(checkImpersonation(actor, target({ isActive: false }), false)).toBe('targetInactive')
     })
+  })
+})
+
+describe('isImpersonating', () => {
+  it('recognizes a borrowed session by its impersonatedBy', () => {
+    expect(isImpersonating({ session: { impersonatedBy: 'admin-1' } })).toBe(true)
+  })
+
+  it('treats an ordinary or missing session as not borrowed', () => {
+    expect(isImpersonating({ session: { impersonatedBy: null } })).toBe(false)
+    expect(isImpersonating({ session: {} })).toBe(false)
+    expect(isImpersonating({ session: { impersonatedBy: '' } })).toBe(false)
+    expect(isImpersonating(null)).toBe(false)
+    expect(isImpersonating(undefined)).toBe(false)
   })
 })

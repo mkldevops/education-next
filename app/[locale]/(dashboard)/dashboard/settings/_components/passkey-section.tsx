@@ -67,7 +67,7 @@ export function PasskeySection({ enabled, initialPasskeys }: Props) {
     startTransition(async () => {
       const result = await getPasskeyRegistrationOptions(newName.trim())
       if ('error' in result) {
-        setError(t('error'))
+        setError(t.has(`errors.${result.error}`) ? t(`errors.${result.error}`) : t('error'))
         return
       }
 
@@ -81,7 +81,7 @@ export function PasskeySection({ enabled, initialPasskeys }: Props) {
 
       const verifyResult = await verifyPasskeyRegistration(response, newName.trim())
       if (verifyResult !== 'OK') {
-        setError(t('error'))
+        setError(t.has(`errors.${verifyResult}`) ? t(`errors.${verifyResult}`) : t('error'))
         return
       }
 
@@ -99,7 +99,7 @@ export function PasskeySection({ enabled, initialPasskeys }: Props) {
     startTransition(async () => {
       const result = await deletePasskey(passkeyId)
       if (result !== 'OK') {
-        setError(t('deleteError'))
+        setError(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('deleteError'))
         return
       }
       // Notification plutôt que bandeau : supprimer la dernière passkey d'un drapeau éteint

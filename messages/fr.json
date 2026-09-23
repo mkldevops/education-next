@@ -2266,7 +2266,8 @@
       "linkFailed": "Impossible de connecter le compte Google",
       "unlinkFailed": "Impossible de déconnecter le compte Google",
       "logoutFailed": "Impossible de vous déconnecter, réessayez",
-      "emailChangeFailed": "Impossible de lancer le changement d'adresse"
+      "emailChangeFailed": "Impossible de lancer le changement d'adresse",
+      "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte. Les identifiants et le compte de la personne ne se modifient pas à sa place."
     },
     "passkey": {
       "title": "Clés de sécurité (Passkeys)",
@@ -2282,7 +2283,10 @@
       "registrationDisabled": "La connexion par clé de sécurité est désactivée sur cette plateforme : vous ne pouvez plus en enregistrer de nouvelle, seulement supprimer celles déjà présentes. Demandez à un administrateur de la plateforme de la réactiver.",
       "error": "Erreur lors de l'enregistrement de la clé",
       "deleteError": "Erreur lors de la suppression",
-      "cancelled": "Enregistrement annulé"
+      "cancelled": "Enregistrement annulé",
+      "errors": {
+        "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte. Les identifiants et le compte de la personne ne se modifient pas à sa place."
+      }
     },
     "apiKeys": {
       "title": "Clés API MCP",
@@ -2301,7 +2305,8 @@
       "errors": {
         "tooManyKeys": "Vous avez atteint la limite de clés actives",
         "validationError": "Le nom de la clé est invalide",
-        "mcpDisabled": "Le serveur MCP est désactivé sur cette instance"
+        "mcpDisabled": "Le serveur MCP est désactivé sur cette instance",
+        "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte. Les identifiants et le compte de la personne ne se modifient pas à sa place."
       },
       "created": {
         "title": "Votre nouvelle clé",

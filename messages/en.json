@@ -2265,7 +2265,8 @@
       "linkFailed": "Failed to connect Google account",
       "unlinkFailed": "Failed to disconnect Google account",
       "logoutFailed": "Could not sign you out, please try again",
-      "emailChangeFailed": "Could not start the email change"
+      "emailChangeFailed": "Could not start the email change",
+      "impersonating": "Unavailable while signed in as another user: return to your own account. A person's credentials and account are never changed on their behalf."
     },
     "passkey": {
       "title": "Passkeys",
@@ -2281,7 +2282,10 @@
       "registrationDisabled": "Passkey sign-in is disabled on this platform: you can no longer register a new one, only remove those already present. Ask a platform administrator to turn it back on.",
       "error": "Error registering passkey",
       "deleteError": "Error removing passkey",
-      "cancelled": "Registration cancelled"
+      "cancelled": "Registration cancelled",
+      "errors": {
+        "impersonating": "Unavailable while signed in as another user: return to your own account. A person's credentials and account are never changed on their behalf."
+      }
     },
     "apiKeys": {
       "title": "MCP API keys",
@@ -2300,7 +2304,8 @@
       "errors": {
         "tooManyKeys": "You have reached the limit of active keys",
         "validationError": "The key name is invalid",
-        "mcpDisabled": "The MCP server is disabled on this instance"
+        "mcpDisabled": "The MCP server is disabled on this instance",
+        "impersonating": "Unavailable while signed in as another user: return to your own account. A person's credentials and account are never changed on their behalf."
       },
       "created": {
         "title": "Your new key",
