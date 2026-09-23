@@ -1,5 +1,5 @@
 import { type FamilyLink, resolveDebtorFamily } from '@/domain/family-debtor'
-import type { EnrollmentStatus } from '@/generated/prisma/client'
+import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
 
@@ -99,8 +99,12 @@ export function calculateFamilyBalance(allEnrollments: BalanceEnrollment[]): Fam
   }
 }
 
-export async function getFamilyBalance(schoolId: string, familyId: string) {
-  const rows = await db.enrollment.findMany({
+export async function getFamilyBalance(
+  schoolId: string,
+  familyId: string,
+  client: Prisma.TransactionClient = db
+) {
+  const rows = await client.enrollment.findMany({
     where: {
       schoolId,
       OR: [
@@ -135,8 +139,12 @@ export async function getFamilyBalance(schoolId: string, familyId: string) {
  * reçu : il est porté sur l'inscription la plus récente de la famille, quel que soit son statut,
  * et compte donc dans `totalPaid` où un admin peut le rembourser.
  */
-export async function findLatestFamilyEnrollmentId(schoolId: string, familyId: string) {
-  const rows = await db.enrollment.findMany({
+export async function findLatestFamilyEnrollmentId(
+  schoolId: string,
+  familyId: string,
+  client: Prisma.TransactionClient = db
+) {
+  const rows = await client.enrollment.findMany({
     where: { schoolId, ...familyStudentFilter(familyId) },
     orderBy: [{ registeredAt: 'desc' }, { createdAt: 'desc' }],
     select: { id: true, student: debtorFamilySelect },

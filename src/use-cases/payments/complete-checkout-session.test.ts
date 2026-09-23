@@ -12,10 +12,14 @@ const dbMock = {
 const findPaymentTransactionByProviderSessionIdMock = vi.fn()
 const getFamilyBalanceMock = vi.fn()
 const findLatestFamilyEnrollmentIdMock = vi.fn()
+const lockFamilyForPaymentMock = vi.fn()
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/lib/db-unscoped', () => ({
   findPaymentTransactionByProviderSessionId: findPaymentTransactionByProviderSessionIdMock,
+}))
+vi.mock('@/gateways/payment-gateway', () => ({
+  paymentGateway: { lockFamilyForPayment: lockFamilyForPaymentMock },
 }))
 vi.mock('./family-balance', () => ({
   getFamilyBalance: getFamilyBalanceMock,
@@ -68,13 +72,18 @@ describe('completeCheckoutSession', () => {
     dbMock.$transaction.mockImplementation(async (callback) => callback(txMock))
     txMock.paymentTransaction.updateMany.mockResolvedValue({ count: 1 })
     findLatestFamilyEnrollmentIdMock.mockResolvedValue(null)
+    lockFamilyForPaymentMock.mockResolvedValue(true)
   })
 
   it('creates allocations and marks the transaction succeeded atomically', async () => {
     expect(await completeCheckoutSession(input)).toBe('OK')
 
     expect(findPaymentTransactionByProviderSessionIdMock).toHaveBeenCalledWith('cs_1')
-    expect(getFamilyBalanceMock).toHaveBeenCalledWith('school-1', 'family-1')
+    expect(lockFamilyForPaymentMock).toHaveBeenCalledWith(txMock, 'school-1', 'family-1')
+    expect(getFamilyBalanceMock).toHaveBeenCalledWith('school-1', 'family-1', txMock)
+    expect(lockFamilyForPaymentMock.mock.invocationCallOrder[0]).toBeLessThan(
+      getFamilyBalanceMock.mock.invocationCallOrder[0]
+    )
     expect(txMock.paymentProviderEvent.create).toHaveBeenCalledWith({
       data: {
         providerEventId: 'evt_1',
@@ -186,7 +195,7 @@ describe('completeCheckoutSession', () => {
 
     expect(await completeCheckoutSession(input)).toBe('OK')
 
-    expect(findLatestFamilyEnrollmentIdMock).toHaveBeenCalledWith('school-1', 'family-1')
+    expect(findLatestFamilyEnrollmentIdMock).toHaveBeenCalledWith('school-1', 'family-1', txMock)
     expect(txMock.payment.createMany).toHaveBeenCalledWith({
       data: [
         expect.objectContaining({
@@ -224,6 +233,13 @@ describe('completeCheckoutSession', () => {
       expect.objectContaining({ transactionId: 'transaction-1' })
     )
     errorSpy.mockRestore()
+  })
+
+  it('still records the capture when the family was archived during checkout', async () => {
+    lockFamilyForPaymentMock.mockResolvedValue(false)
+
+    expect(await completeCheckoutSession(input)).toBe('OK')
+    expect(txMock.payment.createMany).toHaveBeenCalledOnce()
   })
 
   it('treats a replayed event as a duplicate once the first one was recorded', async () => {

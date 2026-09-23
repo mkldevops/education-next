@@ -1067,9 +1067,10 @@ across that family's `PENDING` and `ACTIVE` enrollments**, proportionally to eac
   `src/use-cases/payments/locked-family-balance.ts`. Two simultaneous 720 € payments on a 720 €
   balance record one: the second waits for the first to commit, rereads a zero balance and answers
   `overpayment`. The same helper serves `commit_record_payment`, where the second draft answers
-  `overpayment` or `staleDraft`. A family missing from the school or archived → `notFound`. Every
-  other writer of a family's payments must take the same lock before reading the balance it
-  distributes.
+  `overpayment` or `staleDraft`. A family missing from the school or archived → `notFound`. The
+  Stripe webhook takes the same lock before rereading the balance it allocates, but records an
+  archived family's capture anyway (see **Online payment**). Every other writer of a family's
+  payments must take the same lock before reading the balance it distributes.
 
 ### Displaying a payment
 
