@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   startScheduled: vi.fn(),
   allPresent: vi.fn(),
   validate: vi.fn(),
+  refresh: vi.fn(),
 }))
 
 vi.mock('@peaklab/ui', () => ({
@@ -35,6 +36,7 @@ vi.mock('../../../../../_lib/attendance-actions', () => ({
   startAdhocAttendanceAction: mocks.startAdhoc,
   startScheduledAttendanceAction: mocks.startScheduled,
   markAllPresentAction: mocks.allPresent,
+  refreshAttendanceRosterAction: mocks.refresh,
   validateAttendanceAction: mocks.validate,
 }))
 

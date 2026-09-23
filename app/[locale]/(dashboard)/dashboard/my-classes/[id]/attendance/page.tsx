@@ -156,6 +156,7 @@ export default async function AttendancePage({
           attendanceDisabled: t('errors.attendanceDisabled'),
           attendanceClosed: t('errors.attendanceClosed'),
           sessionCancelled: t('sessionCancelled'),
+          invalidTransition: t('errors.invalidTransition'),
           unexpected: t('errors.unexpected'),
         },
       }}

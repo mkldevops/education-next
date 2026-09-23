@@ -14,7 +14,7 @@ const db = {
     updateMany: vi.fn(),
     deleteMany: vi.fn(),
   },
-  attendanceEntry: { updateMany: vi.fn() },
+  attendanceEntry: { updateMany: vi.fn(), findMany: vi.fn(), createMany: vi.fn() },
   $transaction: vi.fn(),
 }
 vi.mock('@/lib/db', () => ({ db }))
@@ -46,14 +46,18 @@ beforeEach(() => {
   db.classScheduleSlot.findFirst.mockResolvedValue({ id })
   db.classAssignment.findMany.mockResolvedValue([])
   db.attendanceSession.create.mockResolvedValue({ id, status: 'DRAFT', entries: [] })
-  db.attendanceSession.findUnique.mockResolvedValue(null)
+  db.attendanceSession.findUnique.mockReset().mockResolvedValue(null)
   db.attendanceSession.findFirst.mockResolvedValue({
     status: 'DRAFT',
     statusBeforeCancellation: null,
     _count: { entries: 1 },
   })
   db.$transaction.mockImplementation((callback) =>
-    callback({ classAssignment: db.classAssignment, attendanceSession: db.attendanceSession })
+    callback({
+      classAssignment: db.classAssignment,
+      attendanceSession: db.attendanceSession,
+      attendanceEntry: db.attendanceEntry,
+    })
   )
 })
 describe('attendance actions', () => {
@@ -335,7 +339,7 @@ describe('attendance actions', () => {
   })
 
   it('does not look up or update an entry outside the active school', async () => {
-    db.attendanceSession.findUnique.mockResolvedValue(null)
+    db.attendanceSession.findUnique.mockReset().mockResolvedValue(null)
 
     await expect(
       actions.updateAttendanceEntryAction({ sessionId: id, entryId: id, status: 'LATE' })
@@ -379,5 +383,199 @@ describe('attendance actions', () => {
     db.attendanceSession.updateMany.mockResolvedValue({ count: 1 })
     expect(await actions.validateAttendanceAction({ sessionId: id })).toBe('OK')
     expect(db.attendanceSession.updateMany.mock.calls[0][0].data.updatedById).toBe('u')
+  })
+
+  it('includes a student assigned to the class during the occurrence day', async () => {
+    await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
+    const where = db.classAssignment.findMany.mock.calls[0][0].where
+    expect(where.schoolId).toBe('s')
+    expect(where.startAt).toEqual({ lt: new Date('2026-01-02T00:00:00.000Z') })
+    expect(where.OR).toEqual([
+      { endAt: null },
+      { endAt: { gte: new Date('2026-01-01T00:00:00.000Z') } },
+    ])
+  })
+})
+
+describe('refreshAttendanceRosterAction', () => {
+  const assignment = (studentId: string) => ({
+    enrollment: { studentId, student: { person: { lastname: studentId, name: 'X' } } },
+  })
+  beforeEach(() => {
+    db.attendanceSession.findUnique
+      .mockResolvedValueOnce({ schoolId: 's', classPeriodId: id, status: 'DRAFT' })
+      .mockResolvedValueOnce({
+        status: 'DRAFT',
+        classPeriodId: id,
+        occurredOn: new Date('2026-01-01T00:00:00.000Z'),
+      })
+      .mockResolvedValueOnce({ id, status: 'DRAFT', entries: [] })
+    db.attendanceSession.updateMany.mockResolvedValue({ count: 1 })
+    db.classAssignment.findMany.mockResolvedValue([assignment('old'), assignment('new')])
+    db.attendanceEntry.findMany.mockResolvedValue([{ studentId: 'old' }])
+    db.attendanceEntry.createMany.mockResolvedValue({ count: 1 })
+  })
+
+  it('adds only the students assigned since the opening to a draft session', async () => {
+    await expect(actions.refreshAttendanceRosterAction({ sessionId: id })).resolves.toMatchObject({
+      id,
+    })
+    expect(db.attendanceSession.updateMany.mock.calls[0][0].where).toEqual({
+      id,
+      schoolId: 's',
+      status: 'DRAFT',
+    })
+    expect(db.attendanceEntry.findMany.mock.calls[0][0].where).toEqual({
+      attendanceSessionId: id,
+      schoolId: 's',
+    })
+    expect(db.classAssignment.findMany.mock.calls[0][0].where.startAt).toEqual({
+      lt: new Date('2026-01-02T00:00:00.000Z'),
+    })
+    expect(db.attendanceEntry.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          studentId: 'new',
+          studentName: 'new X',
+          schoolId: 's',
+          attendanceSessionId: id,
+          updatedById: 'u',
+        },
+      ],
+      skipDuplicates: true,
+    })
+  })
+
+  it('refuses a validated session without touching its entries', async () => {
+    db.attendanceSession.findUnique.mockReset()
+    db.attendanceSession.findUnique
+      .mockResolvedValueOnce({ schoolId: 's', classPeriodId: id, status: 'VALIDATED' })
+      .mockResolvedValueOnce({ status: 'VALIDATED', classPeriodId: id, occurredOn: new Date() })
+    await expect(actions.refreshAttendanceRosterAction({ sessionId: id })).resolves.toBe(
+      'invalidTransition'
+    )
+    expect(db.attendanceSession.updateMany).not.toHaveBeenCalled()
+    expect(db.attendanceEntry.createMany).not.toHaveBeenCalled()
+  })
+
+  it('refuses when the session is validated concurrently', async () => {
+    db.attendanceSession.updateMany.mockResolvedValue({ count: 0 })
+    await expect(actions.refreshAttendanceRosterAction({ sessionId: id })).resolves.toBe(
+      'invalidTransition'
+    )
+    expect(db.attendanceEntry.createMany).not.toHaveBeenCalled()
+  })
+
+  it('refuses when attendance is disabled', async () => {
+    db.config.findFirst.mockResolvedValue({ value: 'false' })
+    await expect(actions.refreshAttendanceRosterAction({ sessionId: id })).resolves.toBe('notFound')
+    expect(db.$transaction).not.toHaveBeenCalled()
+  })
+})
+
+describe('attendance cancellation transitions', () => {
+  it.each(['DRAFT', 'VALIDATED'] as const)(
+    'refuses restoring a %s session without writing',
+    async (status) => {
+      db.attendanceSession.findFirst.mockResolvedValue({
+        status,
+        statusBeforeCancellation: null,
+        _count: { entries: 2 },
+      })
+      await expect(
+        actions.setAttendanceCancellationAction({ sessionId: id, cancelled: false })
+      ).resolves.toBe('invalidTransition')
+      expect(db.attendanceSession.updateMany).not.toHaveBeenCalled()
+      expect(db.attendanceSession.deleteMany).not.toHaveBeenCalled()
+    }
+  )
+
+  it('restores only while the session is still cancelled', async () => {
+    db.attendanceSession.findFirst.mockResolvedValue({
+      status: 'CANCELLED',
+      statusBeforeCancellation: 'VALIDATED',
+      _count: { entries: 2 },
+    })
+    db.attendanceSession.updateMany.mockResolvedValue({ count: 0 })
+    await expect(
+      actions.setAttendanceCancellationAction({ sessionId: id, cancelled: false })
+    ).resolves.toBe('invalidTransition')
+    expect(db.attendanceSession.updateMany.mock.calls[0][0].where).toEqual({
+      id,
+      schoolId: 's',
+      status: 'CANCELLED',
+      statusBeforeCancellation: 'VALIDATED',
+    })
+  })
+
+  it('cancels only while the session keeps the status that was read', async () => {
+    db.attendanceSession.updateMany.mockResolvedValue({ count: 0 })
+    await expect(
+      actions.setAttendanceCancellationAction({ sessionId: id, cancelled: true })
+    ).resolves.toBe('invalidTransition')
+    expect(db.attendanceSession.updateMany.mock.calls[0][0].where).toEqual({
+      id,
+      schoolId: 's',
+      status: 'DRAFT',
+    })
+  })
+
+  it('deletes a placeholder only if it is still empty and cancelled', async () => {
+    db.attendanceSession.findFirst.mockResolvedValue({
+      status: 'CANCELLED',
+      statusBeforeCancellation: null,
+      _count: { entries: 0 },
+    })
+    db.attendanceSession.deleteMany.mockResolvedValue({ count: 0 })
+    await expect(
+      actions.setAttendanceCancellationAction({ sessionId: id, cancelled: false })
+    ).resolves.toBe('invalidTransition')
+    expect(db.attendanceSession.deleteMany.mock.calls[0][0].where).toEqual({
+      id,
+      schoolId: 's',
+      status: 'CANCELLED',
+      statusBeforeCancellation: null,
+      entries: { none: {} },
+    })
+  })
+
+  it('refuses both cancellation actions when attendance is disabled', async () => {
+    db.config.findFirst.mockResolvedValue({ value: 'false' })
+    await expect(
+      actions.setAttendanceCancellationAction({ sessionId: id, cancelled: true })
+    ).resolves.toBe('attendanceDisabled')
+    await expect(
+      actions.setAttendanceCancellationAction({ sessionId: id, cancelled: false })
+    ).resolves.toBe('attendanceDisabled')
+    await expect(
+      actions.cancelAttendanceOccurrenceAction({
+        classPeriodId: id,
+        classScheduleSlotId: id,
+        occurredOn: '2026-01-01',
+      })
+    ).resolves.toBe('attendanceDisabled')
+    expect(db.attendanceSession.findFirst).not.toHaveBeenCalled()
+    expect(db.attendanceSession.updateMany).not.toHaveBeenCalled()
+    expect(db.attendanceSession.deleteMany).not.toHaveBeenCalled()
+    expect(db.attendanceSession.create).not.toHaveBeenCalled()
+  })
+
+  it('cancels an occurrence opened concurrently instead of reporting a false success', async () => {
+    db.attendanceSession.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id, status: 'DRAFT' })
+    db.attendanceSession.create.mockRejectedValueOnce({ code: 'P2002' })
+    db.attendanceSession.updateMany.mockResolvedValue({ count: 1 })
+    await expect(
+      actions.cancelAttendanceOccurrenceAction({
+        classPeriodId: id,
+        classScheduleSlotId: id,
+        occurredOn: '2026-01-01',
+      })
+    ).resolves.toBe('OK')
+    expect(db.attendanceSession.updateMany.mock.calls[0][0]).toMatchObject({
+      where: { id, schoolId: 's', status: 'DRAFT' },
+      data: { status: 'CANCELLED', statusBeforeCancellation: 'DRAFT' },
+    })
   })
 })

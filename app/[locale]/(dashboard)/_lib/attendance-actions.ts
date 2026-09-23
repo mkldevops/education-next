@@ -3,8 +3,15 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { isAttendanceClosed } from '@/domain/attendance-closure'
+import {
+  attendanceRosterWindow,
+  canRefreshRoster,
+  missingRosterStudents,
+  planCancellationTransition,
+} from '@/domain/attendance-session'
 import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
+import type { Prisma } from '@/generated/prisma/client'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { requireSchoolAdmin, requireSchoolSession, requireTeacher } from './auth-helper'
@@ -61,6 +68,36 @@ async function enabled(schoolId: string) {
     select: { value: true },
   })
   return readsAsOptedIn(config?.value)
+}
+
+/**
+ * Active class assignments on the roster of `occurredOn`, including one created during that UTC day.
+ * Root query: always scoped by `schoolId`.
+ */
+function findRoster(
+  tx: Prisma.TransactionClient,
+  schoolId: string,
+  classPeriodId: string,
+  occurredOn: Date
+) {
+  const { startsBefore, endsFrom } = attendanceRosterWindow(occurredOn)
+  return tx.classAssignment.findMany({
+    where: {
+      schoolId,
+      classPeriodId,
+      startAt: { lt: startsBefore },
+      OR: [{ endAt: null }, { endAt: { gte: endsFrom } }],
+      enrollment: { status: 'ACTIVE' },
+    },
+    include: { enrollment: { include: { student: { include: { person: true } } } } },
+  })
+}
+
+function rosterEntry({ enrollment }: Awaited<ReturnType<typeof findRoster>>[number]) {
+  return {
+    studentId: enrollment.studentId,
+    studentName: `${enrollment.student.person.lastname} ${enrollment.student.person.name}`,
+  }
 }
 
 function isUniqueConstraint(error: unknown) {
@@ -137,16 +174,7 @@ async function openAttendance(
           include: SESSION_WITH_ENTRIES,
         })
         if (existing) return existing
-        const roster = await tx.classAssignment.findMany({
-          where: {
-            schoolId: actor.schoolId,
-            classPeriodId,
-            startAt: { lte: occurredOn },
-            OR: [{ endAt: null }, { endAt: { gte: occurredOn } }],
-            enrollment: { status: 'ACTIVE' },
-          },
-          include: { enrollment: { include: { student: { include: { person: true } } } } },
-        })
+        const roster = await findRoster(tx, actor.schoolId, classPeriodId, occurredOn)
         return tx.attendanceSession.create({
           data: {
             schoolId: actor.schoolId,
@@ -157,9 +185,8 @@ async function openAttendance(
             createdById: actor.userId,
             updatedById: actor.userId,
             entries: {
-              create: roster.map(({ enrollment }) => ({
-                studentId: enrollment.studentId,
-                studentName: `${enrollment.student.person.lastname} ${enrollment.student.person.name}`,
+              create: missingRosterStudents(roster.map(rosterEntry), []).map((entry) => ({
+                ...entry,
                 updatedById: actor.userId,
               })),
             },
@@ -257,6 +284,63 @@ export async function validateAttendanceAction(input: unknown) {
   return 'OK' as const
 }
 
+/**
+ * Adds to a DRAFT session the students assigned to its class since it was opened. Existing entries,
+ * including those of students assigned elsewhere since, are preserved.
+ */
+export async function refreshAttendanceRosterAction(input: unknown) {
+  const parsed = sessionSchema.safeParse(input)
+  if (!parsed.success) return 'validationError' as const
+  const resolved = await resolveOperableSession(parsed.data.sessionId)
+  if (typeof resolved === 'string') return resolved
+  const { actor } = resolved
+  const { sessionId } = parsed.data
+  const refreshed = await db.$transaction(async (tx) => {
+    const session = await tx.attendanceSession.findUnique({
+      where: { id_schoolId: { id: sessionId, schoolId: actor.schoolId } },
+      select: { status: true, classPeriodId: true, occurredOn: true },
+    })
+    if (!session) return 'notFound' as const
+    if (!canRefreshRoster(session.status)) return 'invalidTransition' as const
+    // Conditional write: row-locks the DRAFT session so a concurrent validation waits for the refresh.
+    const locked = await tx.attendanceSession.updateMany({
+      where: { id: sessionId, schoolId: actor.schoolId, status: 'DRAFT' },
+      data: { updatedById: actor.userId },
+    })
+    if (locked.count !== 1) return 'invalidTransition' as const
+    const [roster, existing] = await Promise.all([
+      findRoster(tx, actor.schoolId, session.classPeriodId, session.occurredOn),
+      tx.attendanceEntry.findMany({
+        where: { attendanceSessionId: sessionId, schoolId: actor.schoolId },
+        select: { studentId: true },
+      }),
+    ])
+    const missing = missingRosterStudents(
+      roster.map(rosterEntry),
+      existing.map(({ studentId }) => studentId)
+    )
+    if (missing.length > 0) {
+      await tx.attendanceEntry.createMany({
+        data: missing.map((entry) => ({
+          ...entry,
+          schoolId: actor.schoolId,
+          attendanceSessionId: sessionId,
+          updatedById: actor.userId,
+        })),
+        skipDuplicates: true,
+      })
+    }
+    return tx.attendanceSession.findUnique({
+      where: { id_schoolId: { id: sessionId, schoolId: actor.schoolId } },
+      include: SESSION_WITH_ENTRIES,
+    })
+  })
+  if (!refreshed) return 'notFound' as const
+  if (typeof refreshed === 'string') return refreshed
+  revalidateAttendance()
+  return refreshed
+}
+
 export async function setAttendanceCancellationAction(input: {
   sessionId: string
   cancelled: boolean
@@ -264,39 +348,60 @@ export async function setAttendanceCancellationAction(input: {
   const parsed = cancellationSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   const admin = await requireSchoolAdmin()
+  if (!(await enabled(admin.schoolId))) return 'attendanceDisabled' as const
+  const { sessionId } = parsed.data
   const session = await db.attendanceSession.findFirst({
-    where: { id: parsed.data.sessionId, schoolId: admin.schoolId },
+    where: { id: sessionId, schoolId: admin.schoolId },
     select: { status: true, statusBeforeCancellation: true, _count: { select: { entries: true } } },
   })
   if (!session) return 'notFound' as const
-  if (
-    !parsed.data.cancelled &&
-    session.status === 'CANCELLED' &&
-    session._count.entries === 0 &&
-    !session.statusBeforeCancellation
-  ) {
-    await db.attendanceSession.deleteMany({
-      where: { id: parsed.data.sessionId, schoolId: admin.schoolId },
-    })
-    revalidatePath('/dashboard/attendance')
-    return 'OK' as const
-  }
-  const result = await db.attendanceSession.updateMany({
-    where: { id: parsed.data.sessionId, schoolId: admin.schoolId },
-    data: parsed.data.cancelled
-      ? {
-          status: 'CANCELLED',
-          statusBeforeCancellation:
-            session.status === 'CANCELLED' ? session.statusBeforeCancellation : session.status,
-          updatedById: admin.userId,
-        }
-      : {
-          status: session.statusBeforeCancellation ?? 'DRAFT',
-          statusBeforeCancellation: null,
-          updatedById: admin.userId,
-        },
-  })
-  if (result.count !== 1) return 'notFound' as const
+  const transition = planCancellationTransition(
+    {
+      status: session.status,
+      statusBeforeCancellation: session.statusBeforeCancellation,
+      entryCount: session._count.entries,
+    },
+    parsed.data.cancelled
+  )
+  if (transition.kind === 'invalidTransition') return 'invalidTransition' as const
+  if (transition.kind === 'unchanged') return 'OK' as const
+  // Every write is conditional on the status read above: a stale tab or a double click that races
+  // another change affects no row and is reported instead of silently overwriting the session.
+  const result =
+    transition.kind === 'deletePlaceholder'
+      ? await db.attendanceSession.deleteMany({
+          where: {
+            id: sessionId,
+            schoolId: admin.schoolId,
+            status: 'CANCELLED',
+            statusBeforeCancellation: null,
+            entries: { none: {} },
+          },
+        })
+      : transition.kind === 'cancel'
+        ? await db.attendanceSession.updateMany({
+            where: { id: sessionId, schoolId: admin.schoolId, status: transition.from },
+            data: {
+              status: 'CANCELLED',
+              statusBeforeCancellation: transition.from,
+              updatedById: admin.userId,
+            },
+          })
+        : await db.attendanceSession.updateMany({
+            where: {
+              id: sessionId,
+              schoolId: admin.schoolId,
+              status: 'CANCELLED',
+              statusBeforeCancellation: session.statusBeforeCancellation,
+            },
+            data: {
+              status: transition.to,
+              statusBeforeCancellation: null,
+              ...(transition.to === 'DRAFT' ? { validatedAt: null } : {}),
+              updatedById: admin.userId,
+            },
+          })
+  if (result.count !== 1) return 'invalidTransition' as const
   revalidatePath('/dashboard/attendance')
   return 'OK' as const
 }
@@ -305,6 +410,7 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
   const parsed = openSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   const admin = await requireSchoolAdmin()
+  if (!(await enabled(admin.schoolId))) return 'attendanceDisabled' as const
   const { occurredOn } = parsed.data
   const slot = await db.classScheduleSlot.findFirst({
     where: {
@@ -324,20 +430,27 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
       occurrenceKey: slot.id,
     },
   }
-  const existing = await db.attendanceSession.findUnique({
-    where: occurrenceWhere,
-    select: { id: true, status: true },
-  })
-  if (existing?.status === 'CANCELLED') return 'OK' as const
-  if (existing) {
-    await db.attendanceSession.updateMany({
-      where: { id: existing.id, schoolId: admin.schoolId },
+  const cancelExisting = async (existing: {
+    id: string
+    status: 'DRAFT' | 'VALIDATED' | 'CANCELLED'
+  }) => {
+    if (existing.status === 'CANCELLED') return 'OK' as const
+    const updated = await db.attendanceSession.updateMany({
+      where: { id: existing.id, schoolId: admin.schoolId, status: existing.status },
       data: {
         status: 'CANCELLED',
         statusBeforeCancellation: existing.status,
         updatedById: admin.userId,
       },
     })
+    return updated.count === 1 ? ('OK' as const) : ('invalidTransition' as const)
+  }
+  const loadExisting = () =>
+    db.attendanceSession.findUnique({ where: occurrenceWhere, select: { id: true, status: true } })
+  const existing = await loadExisting()
+  let result: 'OK' | 'invalidTransition' = 'OK'
+  if (existing) {
+    result = await cancelExisting(existing)
   } else {
     try {
       await db.attendanceSession.create({
@@ -354,8 +467,12 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
       })
     } catch (error) {
       if (!isUniqueConstraint(error)) throw error
+      // A concurrent opening won the race: cancel what it created rather than reporting success.
+      const concurrent = await loadExisting()
+      result = concurrent ? await cancelExisting(concurrent) : 'invalidTransition'
     }
   }
+  if (result !== 'OK') return result
   revalidatePath('/dashboard/attendance')
   return 'OK' as const
 }

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from '@/i18n/routing'
 import {
   markAllPresentAction,
+  refreshAttendanceRosterAction,
   startAdhocAttendanceAction,
   startScheduledAttendanceAction,
   updateAttendanceEntryAction,
@@ -112,6 +113,7 @@ export function AttendancePanel({
   const [forward, setForward] = useState(true)
   const [globalPending, setGlobalPending] = useState(false)
   const [globalError, setGlobalError] = useState<string | null>(null)
+  const [rosterNotice, setRosterNotice] = useState<string | null>(null)
   const [reviewing, setReviewing] = useState(initialSession?.status === 'VALIDATED')
   const [showDateForm, setShowDateForm] = useState(!initialSession)
   const [editing, setEditing] = useState(initialSession?.status !== 'VALIDATED')
@@ -291,6 +293,40 @@ export function AttendancePanel({
       setGlobalPending(false)
     }
   }
+  const refreshRoster = async () => {
+    if (!session || globalLock.current || entryErrors) return
+    globalLock.current = true
+    setGlobalPending(true)
+    setGlobalError(null)
+    setRosterNotice(null)
+    try {
+      if (!(await flush())) return
+      const result = await refreshAttendanceRosterAction({ sessionId: session.id })
+      if (typeof result === 'string') {
+        setGlobalError(errorFor(result, labels))
+        return
+      }
+      // Keep local drafts; only the students added since the opening are new to this screen.
+      const added = result.entries.filter((entry) => !draftsRef.current[entry.id])
+      const next = {
+        ...draftsRef.current,
+        ...Object.fromEntries(added.map((entry) => [entry.id, entry])),
+      }
+      for (const entry of added) confirmed.current[entry.id] = payload(entry)
+      setDrafts(next)
+      draftsRef.current = next
+      const activeId = active?.id
+      setSession(result)
+      const nextIndex = activeId ? result.entries.findIndex((entry) => entry.id === activeId) : 0
+      setIndex(Math.max(nextIndex, 0))
+      setRosterNotice(t('rosterRefreshed', { count: added.length }))
+    } catch {
+      setGlobalError(labels.errors.unexpected)
+    } finally {
+      globalLock.current = false
+      setGlobalPending(false)
+    }
+  }
   const position = labels.studentPosition
     .replace('{current}', String(index + 1))
     .replace('{total}', String(entries.length))
@@ -417,6 +453,23 @@ export function AttendancePanel({
                   style={{ width: `${entries.length ? (recorded / entries.length) * 100 : 0}%` }}
                 />
               </div>
+              {session.status === 'DRAFT' ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    className="text-sm text-primary underline underline-offset-4 disabled:text-graphite-600"
+                    disabled={globalPending || pendingEntries || dirty || entryErrors}
+                    onClick={() => void refreshRoster()}
+                  >
+                    {t('refreshRoster')}
+                  </button>
+                  {rosterNotice ? (
+                    <p role="status" className="text-sm text-graphite-600">
+                      {rosterNotice}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               {editing && counts.NOT_RECORDED > 0 ? (
                 <button
                   type="button"

@@ -1649,6 +1649,8 @@
         "showOccurrences": "Afficher les séances",
         "progress": "{recorded} / {total} renseignés",
         "markRemainingPresent": "{count, plural, one {Marquer l’élève restant présent} other {Marquer les # élèves restants présents}}",
+        "refreshRoster": "Actualiser la liste des élèves",
+        "rosterRefreshed": "{count, plural, =0 {La liste des élèves est à jour.} one {# élève ajouté à l’appel.} other {# élèves ajoutés à l’appel.}}",
         "showUnrecorded": "Afficher uniquement les non renseignés",
         "showAll": "Afficher tous les élèves",
         "clearStatus": "Non renseigné",
@@ -1685,7 +1687,8 @@
           "attendanceDisabled": "Le suivi des appels n’est pas activé",
           "attendanceClosed": "L’école est fermée à cette date.",
           "sessionCancelled": "Cette séance est annulée.",
-          "unexpected": "L’enregistrement a échoué. Réessayez."
+          "unexpected": "L’enregistrement a échoué. Réessayez.",
+          "invalidTransition": "L’état de cette séance a changé entre-temps. Actualisez la page puis réessayez."
         },
         "returnTracking": "Retour au suivi des appels",
         "lateMinutesInvalid": "Le retard doit être un nombre entier de minutes entre 0 et 1440.",
