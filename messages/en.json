@@ -1095,6 +1095,7 @@
           "secure": "Secure payment by Stripe. The balance updates after bank confirmation.",
           "unavailable": "Online payment is not configured yet.",
           "noBalance": "This family has no outstanding balance.",
+          "paymentInProgress": "An online payment is already being confirmed. Try again in a few minutes.",
           "settled": "Your family is up to date.",
           "error": "Unable to start payment.",
           "returned": "Your payment was submitted. History will update after bank confirmation.",

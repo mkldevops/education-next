@@ -1079,19 +1079,37 @@ the checkout flow, not by the form.
   pending enrollments included; partial online payment is not offered.
 - The `PaymentTransaction` row is created **before** the Stripe session and its id is the
   idempotency key.
+- A family never holds two payable Checkout sessions. Each session charges the full balance, so a
+  second one (back button, a second parent) would charge twice. Before opening a session, every
+  `PENDING` transaction of the family is closed: a session still `open` at Stripe is expired
+  (`sessions.expire`) and its transaction marked `EXPIRED`; a session already `complete` means a
+  payment is awaiting its webhook → `paymentInProgress`, and no new session opens. If Stripe
+  cannot confirm the earlier session's state → `providerError`, never a second session.
 - The webhook refuses only what predates the money leaving the customer's card: an already-seen
   provider event → `duplicate`; a transaction already `SUCCEEDED` → `duplicate`;
   `payment_status !== 'paid'` → `notPaid`; a different amount → `amountMismatch`; a different
   currency → `currencyMismatch`.
-- Once the card is charged, the webhook never refuses on a stale balance. A manual payment
-  recorded between the checkout session and the webhook can shrink or clear what's owed;
-  `distributeReceivedPayment` (`src/domain/payment.ts`) allocates the captured amount against
-  `FamilyBalance.payableEnrollments` (every payable-status enrollment, including already-settled
-  ones) instead of `distributePayment`'s narrower, `overpayment`-refusing set. Each enrollment
-  gets its normal share, capped at its remaining balance; anything beyond that lands in full on
-  the first enrollment as an unreconciled credit. Only the impossible case — no payable-status
-  enrollment left at all — still returns `noPayableEnrollments`, and is logged with
-  `console.error` so a captured, unrecorded payment is never silent (#306).
+- **A payment captured by Stripe is always recorded.** The balance read at webhook time can be
+  smaller than the captured amount (a manual payment entered during checkout, a session paid
+  after another). `distributeReceivedPayment` (`src/domain/payment.ts`) allocates the captured
+  amount against `FamilyBalance.payableEnrollments` (every payable-status enrollment, including
+  already-settled ones) instead of `distributePayment`'s `overpayment`-refusing set. Each
+  enrollment gets its normal share, capped at its remaining balance; anything beyond lands in full
+  on the first enrollment as a visible family credit, for an admin to refund or keep.
+- When no enrollment is payable anymore (all cancelled or completed during checkout), the whole
+  amount is recorded on the family's latest enrollment whatever its status
+  (`findLatestFamilyEnrollmentId`): money received stays received and counts in `totalPaid`. It is
+  logged with `console.error` for an admin to reconcile.
+- If the family has no enrollment at all, no `Payment` can exist, but the transaction is still
+  closed `SUCCEEDED` with its provider event and `providerPaymentId` → `unallocated`, logged with
+  `console.error`. The capture stays traced and Stripe stops retrying.
+- Closing the transaction is conditional (`status` not yet `SUCCEEDED`) inside the same database
+  transaction as the allocations: two distinct events for one session (`completed` then
+  `async_payment_succeeded`, or a manual replay) record once, the second is a `duplicate`.
+- The route (`app/api/stripe/webhook/route.ts`) answers 200 for `OK`, `duplicate`, `unallocated`
+  and `notPaid` (an async payment is followed by `async_payment_succeeded`), so Stripe does not
+  retry what no retry would change. `notFound`, `amountMismatch` and `currencyMismatch` still
+  answer 422: they need investigation.
 
 ### Activating payments per school
 

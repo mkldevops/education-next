@@ -1096,6 +1096,7 @@
           "secure": "Paiement sécurisé par Stripe. Le solde est confirmé après validation bancaire.",
           "unavailable": "Le paiement en ligne n'est pas encore configuré.",
           "noBalance": "Cette famille n'a aucun solde à régler.",
+          "paymentInProgress": "Un paiement en ligne est déjà en cours de confirmation. Réessayez dans quelques minutes.",
           "settled": "Votre famille est à jour.",
           "error": "Impossible de démarrer le paiement.",
           "returned": "Votre paiement a été transmis. L'historique sera actualisé après confirmation bancaire.",

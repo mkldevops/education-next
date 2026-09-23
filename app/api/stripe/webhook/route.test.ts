@@ -72,4 +72,23 @@ describe('Stripe webhook route', () => {
     expect(response.status).toBe(200)
     expect(completeCheckoutSessionMock).not.toHaveBeenCalled()
   })
+
+  it.each(['OK', 'duplicate', 'unallocated', 'notPaid'])(
+    'acknowledges a %s result with 200 so Stripe stops retrying',
+    async (result) => {
+      completeCheckoutSessionMock.mockResolvedValue(result)
+
+      const response = await POST(createRequest())
+
+      expect(response.status).toBe(200)
+    }
+  )
+
+  it('keeps a 422 for an amount mismatch, which needs investigation', async () => {
+    completeCheckoutSessionMock.mockResolvedValue('amountMismatch')
+
+    const response = await POST(createRequest())
+
+    expect(response.status).toBe(422)
+  })
 })

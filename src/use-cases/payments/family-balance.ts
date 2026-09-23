@@ -1,4 +1,4 @@
-import { resolveDebtorFamily } from '@/domain/family-debtor'
+import { type FamilyLink, resolveDebtorFamily } from '@/domain/family-debtor'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
@@ -107,13 +107,7 @@ export async function getFamilyBalance(schoolId: string, familyId: string) {
         { status: { in: [...PAYABLE_ENROLLMENT_STATUSES] } },
         { payments: { some: { isActive: true } } },
       ],
-      student: {
-        person: {
-          families: {
-            some: { familyId },
-          },
-        },
-      },
+      ...familyStudentFilter(familyId),
     },
     select: {
       id: true,
@@ -124,21 +118,47 @@ export async function getFamilyBalance(schoolId: string, familyId: string) {
         where: { isActive: true },
         select: { amount: true },
       },
-      student: {
-        select: {
-          person: {
-            select: {
-              families: { select: { familyId: true, relationType: true } },
-            },
-          },
-        },
-      },
+      student: debtorFamilySelect,
     },
   })
 
   const enrollments = rows
-    .filter((row) => resolveDebtorFamily(row.student.person.families)?.familyId === familyId)
+    .filter((row) => isDebtor(row, familyId))
     .map(({ student: _student, ...enrollment }) => enrollment)
 
   return calculateFamilyBalance(enrollments)
+}
+
+/**
+ * Dernier recours du webhook Stripe : la carte est débitée mais plus aucune inscription de la
+ * famille n'est au statut payable (annulée ou terminée pendant le checkout). L'argent reçu reste
+ * reçu : il est porté sur l'inscription la plus récente de la famille, quel que soit son statut,
+ * et compte donc dans `totalPaid` où un admin peut le rembourser.
+ */
+export async function findLatestFamilyEnrollmentId(schoolId: string, familyId: string) {
+  const rows = await db.enrollment.findMany({
+    where: { schoolId, ...familyStudentFilter(familyId) },
+    orderBy: [{ registeredAt: 'desc' }, { createdAt: 'desc' }],
+    select: { id: true, student: debtorFamilySelect },
+  })
+
+  return rows.find((row) => isDebtor(row, familyId))?.id ?? null
+}
+
+function familyStudentFilter(familyId: string) {
+  return { student: { person: { families: { some: { familyId } } } } }
+}
+
+const debtorFamilySelect = {
+  select: {
+    person: {
+      select: {
+        families: { select: { familyId: true, relationType: true } },
+      },
+    },
+  },
+} as const
+
+function isDebtor(row: { student: { person: { families: FamilyLink[] } } }, familyId: string) {
+  return resolveDebtorFamily(row.student.person.families)?.familyId === familyId
 }
