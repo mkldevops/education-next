@@ -190,8 +190,48 @@ async function seed(suffix: string) {
     },
   })
 
+  // Un appel validé où l'enfant de la cible et l'élève partagé ont été pointés.
+  // `AttendanceEntry.student` est `Restrict` : sans effacement explicite, la suppression
+  // de l'élève échouait en P2003 dès le premier appel.
+  const attendanceSession = await raw.attendanceSession.create({
+    data: {
+      schoolId,
+      classPeriodId: classPeriod.id,
+      occurrenceKey: 'adhoc',
+      occurredOn: new Date('2026-09-14'),
+      status: 'VALIDATED',
+      validatedAt: new Date(),
+      createdById: admin.id,
+      updatedById: admin.id,
+    },
+  })
+  const attendanceEntry = await raw.attendanceEntry.create({
+    data: {
+      schoolId,
+      attendanceSessionId: attendanceSession.id,
+      studentId: student.id,
+      studentName: 'Léo Cible',
+      status: 'PRESENT',
+      updatedById: admin.id,
+    },
+  })
+  const sharedAttendanceEntry = await raw.attendanceEntry.create({
+    data: {
+      schoolId,
+      attendanceSessionId: attendanceSession.id,
+      studentId: sharedStudent.id,
+      studentName: 'Nadia Partagée',
+      status: 'LATE',
+      lateMinutes: 5,
+      updatedById: admin.id,
+    },
+  })
+
   return {
     school,
+    attendanceSession,
+    attendanceEntry,
+    sharedAttendanceEntry,
     admin,
     parentUser,
     target,
@@ -229,6 +269,7 @@ async function cleanup() {
   await raw.paymentTransaction.deleteMany({ where: { schoolId } })
   await raw.invitation.deleteMany({ where: { schoolId } })
   await raw.classAssignment.deleteMany({ where: { schoolId } })
+  await raw.attendanceSession.deleteMany({ where: { schoolId } })
   await raw.enrollment.deleteMany({ where: { schoolId } })
   await raw.classPeriod.deleteMany({ where: { schoolId } })
   await raw.period.deleteMany({ where: { schoolId } })
@@ -295,8 +336,27 @@ describe.skipIf(!databaseUrl)('familyGateway.deleteWithRelated sur base réelle'
 
   it("compte l'impact sur le même ensemble que la suppression, archives comprises", () => {
     // 2 personnes propres sur 3 rattachées — la partagée survit ; 1 élève archivé ;
-    // ses 2 inscriptions, dont une archivée ; le règlement de la famille.
-    expect(impact).toEqual({ members: 2, students: 1, enrollments: 2, payments: 1 })
+    // ses 2 inscriptions, dont une archivée ; le règlement de la famille ; sa présence,
+    // et non celle de l'élève partagé.
+    expect(impact).toEqual({
+      members: 2,
+      students: 1,
+      enrollments: 2,
+      payments: 1,
+      attendances: 1,
+    })
+  })
+
+  it("efface les présences de l'élève, même sur un appel validé, et garde la séance", async () => {
+    await expect(
+      raw.attendanceEntry.findUnique({ where: { id: fixture.attendanceEntry.id } })
+    ).resolves.toBeNull()
+    await expect(
+      raw.attendanceSession.findUnique({ where: { id: fixture.attendanceSession.id } })
+    ).resolves.toMatchObject({ status: 'VALIDATED' })
+    await expect(
+      raw.attendanceEntry.findUnique({ where: { id: fixture.sharedAttendanceEntry.id } })
+    ).resolves.not.toBeNull()
   })
 
   it("efface l'inscription archivée, que la page ne montre pas", async () => {

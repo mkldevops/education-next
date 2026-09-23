@@ -317,7 +317,8 @@
             "members": "{count, plural, =0 {No member} one {# member} other {# members}}",
             "students": "{count, plural, =0 {No student} one {# student} other {# students}}",
             "enrollments": "{count, plural, =0 {No enrollment} one {# enrollment} other {# enrollments}}",
-            "payments": "{count, plural, =0 {No payment} one {# payment} other {# payments}}"
+            "payments": "{count, plural, =0 {No payment} one {# payment} other {# payments}}",
+            "attendances": "{count, plural, =0 {No attendance record} one {# attendance record} other {# attendance records}}"
           },
           "confirmationLabel": "Type {name} to confirm",
           "confirm": "Delete permanently",
@@ -326,6 +327,7 @@
           "error": "Error deleting family",
           "errors": {
             "confirmationMismatch": "The name you typed does not match the family name",
+            "deletionBlocked": "Records linked to this family prevent its deletion. Nothing was erased: archive it instead and report the problem.",
             "notFound": "Family not found",
             "validationError": "Check the information you entered"
           }

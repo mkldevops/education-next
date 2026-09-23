@@ -318,7 +318,8 @@
             "members": "{count, plural, =0 {Aucun membre} one {# membre} other {# membres}}",
             "students": "{count, plural, =0 {Aucun élève} one {# élève} other {# élèves}}",
             "enrollments": "{count, plural, =0 {Aucune inscription} one {# inscription} other {# inscriptions}}",
-            "payments": "{count, plural, =0 {Aucun règlement} one {# règlement} other {# règlements}}"
+            "payments": "{count, plural, =0 {Aucun règlement} one {# règlement} other {# règlements}}",
+            "attendances": "{count, plural, =0 {Aucune présence pointée} one {# présence pointée} other {# présences pointées}}"
           },
           "confirmationLabel": "Saisissez {name} pour confirmer",
           "confirm": "Supprimer définitivement",
@@ -327,6 +328,7 @@
           "error": "Erreur lors de la suppression",
           "errors": {
             "confirmationMismatch": "Le nom saisi ne correspond pas à celui de la famille",
+            "deletionBlocked": "Des données liées à cette famille empêchent sa suppression. Rien n'a été effacé : archivez-la et signalez le problème.",
             "notFound": "Famille introuvable",
             "validationError": "Vérifiez les informations saisies"
           }

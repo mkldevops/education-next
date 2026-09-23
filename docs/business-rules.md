@@ -875,6 +875,9 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 - **The return link after validation depends on who validated.** An admin goes back to
   `/dashboard/attendance` for the same day; a teacher goes back to `/dashboard/my-classes`, because
   that page requires a teacher record.
+- **Attendance entries do not outlive their student.** Deleting a family for good removes its own
+  students' entries, even on a validated session; the session and its other entries stay (see
+  « Deleting a family for good »).
 
 ## Enrollments
 
@@ -1226,10 +1229,28 @@ where financial history is destroyed rather than archived.
   `dbArchived` so both states can be deleted.
 - **`familyGateway.deleteWithRelated` runs the whole graph in one transaction.** Nothing is cascaded
   by the database along that path: `Payment.family` and `PaymentTransaction.family` are `Restrict`,
-  and so are the next links — `Enrollment.student`, `ClassAssignment.enrollment`, `Invitation.person`.
-  Each table is therefore emptied explicitly, leaf first. What is `Cascade` — `UserFamily`,
-  `FamilyPerson`, `PhoneNumber`, `Invitation.family` — goes with its parent, and
-  `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives, detached.
+  and so are the next links — `Enrollment.student`, `AttendanceEntry.student`,
+  `ClassAssignment.enrollment`, `Invitation.person`, `Payment.enrollment`,
+  `Payment.paymentTransaction`. Each table is therefore emptied explicitly, leaf first. What is
+  `Cascade` — `UserFamily`, `FamilyPerson`, `PhoneNumber`, `Invitation.family` — goes with its
+  parent, and `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives, detached.
+- **Every non-cascading foreign key into the deleted graph is listed** in
+  `FAMILY_DELETION_CLEARED_RELATIONS` (`src/gateways/family-gateway.ts`).
+  `src/gateways/__tests__/family-deletion-restrict-guard.test.ts` reads `prisma/schema.prisma` and
+  fails when a relation that is `Restrict` (explicit, or implicit on a required relation) points at a
+  deleted or cascaded model without being on that list. A new table attached to a student, person,
+  family or enrollment must be emptied by the transaction, or its presence decided here, before
+  that test passes.
+- **A deleted student's attendance goes with it**, validated sessions included. The attendance rules
+  require no retention: an entry only records one child's presence at one call, and without the
+  student it designates no one. Keeping it would mean keeping the student, which is exactly what
+  the deletion erases — along with payments, a far heavier history. The `AttendanceSession` itself
+  stays, with its other entries and its validation; only the deleted child's row leaves the roster.
+  A student shared with another family keeps their attendance, like the rest of their record.
+- **A foreign key that still refuses the deletion returns `deletionBlocked`**, never an error
+  boundary. The transaction rolls back whole, so nothing is erased, and the dialog says so and
+  suggests archiving instead. Reaching it means a relation escaped the guard above; any other error
+  is rethrown.
 - **A person linked to another family survives**, along with their student and enrollments: only the
   link to the deleted family goes. Their invitations survive too — only a person actually deleted
   has theirs removed, because `Invitation.person` is `Restrict`.
@@ -1238,6 +1259,7 @@ where financial history is destroyed rather than archived.
 - **The confirmation dialog counts what the deletion will take, not what the page shows.**
   `familyGateway.countDeletionImpact` and `deleteWithRelated` share one `resolveDeletionScope`
   traversal, so the preview includes archived rows and excludes the shared persons that survive.
+  It lists members, students, enrollments, attendance records and payments.
   Deriving it from the page's own read would have announced zero students while erasing an
   archived one.
 
