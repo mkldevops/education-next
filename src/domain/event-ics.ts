@@ -6,6 +6,42 @@ const FOLD_LIMIT = 75
 // (2 147 483 647 s) de 1970 à environ 2088, loin de la portée de cette application.
 const ICS_SEQUENCE_EPOCH_MS = Date.UTC(2020, 0, 1)
 
+/**
+ * Fuseau de l'heure murale des événements. `Event.startAt`/`endAt` stockent l'heure lue sur
+ * l'affiche (« 18:00 ») dans une colonne `TIMESTAMP` sans fuseau, saisie puis relue en UTC
+ * (`parseEventInputValue`) : ce n'est PAS un instant UTC. Aucune école ne porte de fuseau
+ * (ni colonne `School`, ni clé de configuration) ; l'application ne sert que des écoles en
+ * France métropolitaine, d'où cette constante unique plutôt qu'un réglage inventé. Une école
+ * dans un autre fuseau demandera une colonne `School.timeZone` qui remplacera cette valeur.
+ */
+export const EVENT_TIME_ZONE = 'Europe/Paris'
+
+/**
+ * RFC 5545 §3.6.5 : tout `TZID` cité doit être défini par un `VTIMEZONE` dans le même flux.
+ * Règles de l'Union européenne en vigueur depuis 1996 : heure d'été le dernier dimanche de
+ * mars à 02:00 locale (01:00 UTC), retour le dernier dimanche d'octobre à 03:00 locale.
+ * Les `DTSTART` de 1970 ne sont que l'ancre des RRULE, forme usuelle (tzurl.org).
+ */
+const EVENT_TIME_ZONE_DEFINITION = [
+  'BEGIN:VTIMEZONE',
+  `TZID:${EVENT_TIME_ZONE}`,
+  'BEGIN:DAYLIGHT',
+  'TZOFFSETFROM:+0100',
+  'TZOFFSETTO:+0200',
+  'TZNAME:CEST',
+  'DTSTART:19700329T020000',
+  'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU',
+  'END:DAYLIGHT',
+  'BEGIN:STANDARD',
+  'TZOFFSETFROM:+0200',
+  'TZOFFSETTO:+0100',
+  'TZNAME:CET',
+  'DTSTART:19701025T030000',
+  'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU',
+  'END:STANDARD',
+  'END:VTIMEZONE',
+]
+
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
 
@@ -59,9 +95,18 @@ function formatIcsDateOnly(date: Date): string {
   return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}`
 }
 
-function formatIcsDateTimeUtc(date: Date): string {
+/**
+ * Heure murale « flottante » (sans `Z`) relue des composants UTC stockés, à associer à
+ * `;TZID=` : le client la place dans le fuseau de l'école puis la convertit pour son lecteur.
+ */
+function formatIcsLocalDateTime(date: Date): string {
   const time = `${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())}`
-  return `${formatIcsDateOnly(date)}T${time}Z`
+  return `${formatIcsDateOnly(date)}T${time}`
+}
+
+/** Vrai instant UTC (`DTSTAMP`, `LAST-MODIFIED`) : horodatages système, pas heure murale. */
+function formatIcsDateTimeUtc(date: Date): string {
+  return `${formatIcsLocalDateTime(date)}Z`
 }
 
 function icsLine(name: string, value: string): string {
@@ -106,8 +151,13 @@ function buildVEventLines(schoolSlug: string, event: IcsEvent, now: Date): strin
       lines.push(icsLine('DTEND;VALUE=DATE', formatIcsDateOnly(exclusiveEnd)))
     }
   } else {
-    lines.push(icsLine('DTSTART', formatIcsDateTimeUtc(event.startAt)))
-    if (event.endAt) lines.push(icsLine('DTEND', formatIcsDateTimeUtc(event.endAt)))
+    // Jamais `Z` : l'heure stockée est l'heure murale de l'école, pas un instant UTC. En `Z`,
+    // un événement à 18:00 en été apparaissait à 20:00 dans un agenda parisien.
+    const property = `;TZID=${EVENT_TIME_ZONE}`
+    lines.push(icsLine(`DTSTART${property}`, formatIcsLocalDateTime(event.startAt)))
+    if (event.endAt) {
+      lines.push(icsLine(`DTEND${property}`, formatIcsLocalDateTime(event.endAt)))
+    }
   }
 
   lines.push(icsLine('SUMMARY', escapeIcsText(event.title)))
@@ -155,7 +205,15 @@ export function buildEventsIcsFeed(
     // Google Calendar, Outlook) : sans elle, le calendrier importé porte un nom générique
     // illisible au lieu du nom de l'école.
     icsLine('X-WR-CALNAME', escapeIcsText(school.name)),
+    // Extension non normative lue par Google/Apple comme fuseau d'affichage par défaut.
+    icsLine('X-WR-TIMEZONE', EVENT_TIME_ZONE),
   ]
+
+  // Le VTIMEZONE n'est émis que s'il est cité : un flux sans événement horodaté (vide ou
+  // uniquement des journées entières, en `VALUE=DATE`) n'en a pas besoin.
+  if (events.some((event) => !event.allDay)) {
+    lines.push(...EVENT_TIME_ZONE_DEFINITION.map((line) => foldIcsLine(line)))
+  }
 
   for (const event of events) lines.push(...buildVEventLines(school.slug, event, now))
 

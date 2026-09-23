@@ -1531,8 +1531,18 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   module. `allDay` emits `DTSTART;VALUE=DATE`; RFC 5545 makes that value's `DTEND` **exclusive**,
   while `endAt` is stored **inclusive** (`normalizeEventDates`), so a multi-day all-day event's
   `DTEND` is always the stored `endAt` plus one day — omitted entirely for a single-day event, which
-  is where RFC 5545's implicit one-day default already lands correctly. A timed event emits UTC
-  instants instead. `UID` is `<id>@<school-slug>`: stable across edits, so a calendar client updates
+  is where RFC 5545's implicit one-day default already lands correctly. **A timed event emits the
+  school's wall-clock time, never a UTC instant**: `DTSTART;TZID=Europe/Paris:20260923T180000`
+  (same for `DTEND`), with one `VTIMEZONE` block for `Europe/Paris` (EU summer-time rules) placed
+  before the events and emitted only when a timed event references it, plus `X-WR-TIMEZONE`.
+  `startAt`/`endAt` store the time read on the flyer in a `TIMESTAMP` column without zone, entered
+  and read back as UTC digits (`parseEventInputValue`); exporting those digits with a `Z` suffix
+  put an 18:00 event at 20:00 in a Paris calendar in summer (19:00 in winter). The zone is the
+  single constant `EVENT_TIME_ZONE` (`src/domain/event-ics.ts`): no school carries a time zone —
+  neither a `School` column nor a configuration key — and every school served today is in
+  metropolitan France. A school in another zone needs a `School.timeZone` column replacing that
+  constant, not a second constant. `DTSTAMP` and `LAST-MODIFIED` stay real UTC instants (`Z`):
+  they are system timestamps, not wall-clock times. `UID` is `<id>@<school-slug>`: stable across edits, so a calendar client updates
   the existing entry instead of duplicating it. `SEQUENCE` is `updatedAt` in whole seconds since the
   epoch — monotonically increasing with every edit as long as two edits of the same event don't land
   in the same second, which a human editing a form never does. `STATUS:CANCELLED` mirrors the
@@ -1684,7 +1694,13 @@ Real holes, verified against the running application. Not aspirations.
   where this is a no-op, which is presumably why it has not surfaced before. A developer seeding or
   testing event dates locally on a non-UTC machine will see wrong days without any error. Reproduced
   and isolated while verifying #326's ICS feed; fixing it (forcing `TZ=UTC` on the Next.js process,
-  or moving the affected columns to `TIMESTAMPTZ`) was out of that issue's scope.
+  or moving the affected columns to `TIMESTAMPTZ`) was out of that issue's scope. The ICS feed's
+  `TZID` wall-clock export reads the same UTC digits, so on such a process it inherits the same
+  shift; it is correct wherever the process runs with `TZ=UTC`.
+- **"Upcoming" and the J-x banner compare wall-clock event times to `now` as if both were UTC**, so
+  near the boundary an event is considered started one or two hours late (Paris offset). The ICS feed
+  no longer has this defect; the comparisons would need `now` converted to `EVENT_TIME_ZONE` wall
+  clock.
 
 ## Surfacing a rule in the UI
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildEventsIcsFeed, type IcsEvent, type IcsSchool } from '../event-ics'
+import { buildEventsIcsFeed, EVENT_TIME_ZONE, type IcsEvent, type IcsSchool } from '../event-ics'
 
 const school: IcsSchool = { slug: 'ecole-du-parc', name: 'École du Parc' }
 
@@ -60,11 +60,154 @@ describe('buildEventsIcsFeed', () => {
     expect(unfold(feed)).toContain('UID:event-1@ecole-du-parc')
   })
 
-  it('emits UTC instants with a trailing Z for a timed event', () => {
-    const feedLines = unfold(buildEventsIcsFeed(school, [baseEvent]))
+  it('emits the school wall-clock time with TZID, never a UTC Z, for a summer event', () => {
+    // Stocké 18:00 « heure de l'affiche » : en `Z`, Paris (UTC+2 en été) l'affichait à 20:00.
+    const event: IcsEvent = {
+      ...baseEvent,
+      startAt: new Date('2026-09-23T18:00:00.000Z'),
+      endAt: new Date('2026-09-23T20:00:00.000Z'),
+    }
+    const feedLines = unfold(buildEventsIcsFeed(school, [event]))
 
-    expect(feedLines).toContain('DTSTART:20260901T180000Z')
-    expect(feedLines).toContain('DTEND:20260901T200000Z')
+    expect(feedLines).toContain('DTSTART;TZID=Europe/Paris:20260923T180000')
+    expect(feedLines).toContain('DTEND;TZID=Europe/Paris:20260923T200000')
+    expect(feedLines.some((line) => /^DT(START|END).*Z$/.test(line))).toBe(false)
+  })
+
+  it('emits the same wall-clock digits for a winter event, the VTIMEZONE carrying the offset', () => {
+    const event: IcsEvent = {
+      ...baseEvent,
+      startAt: new Date('2026-12-10T18:00:00.000Z'),
+      endAt: new Date('2026-12-10T19:30:00.000Z'),
+    }
+    const feedLines = unfold(buildEventsIcsFeed(school, [event]))
+
+    expect(feedLines).toContain('DTSTART;TZID=Europe/Paris:20261210T180000')
+    expect(feedLines).toContain('DTEND;TZID=Europe/Paris:20261210T193000')
+  })
+
+  it('defines the referenced TZID once, before the events, with the EU summer-time rules', () => {
+    const feedLines = unfold(
+      buildEventsIcsFeed(school, [baseEvent, { ...baseEvent, id: 'event-2' }])
+    )
+
+    expect(feedLines.filter((line) => line === 'BEGIN:VTIMEZONE')).toHaveLength(1)
+    expect(feedLines.indexOf('BEGIN:VTIMEZONE')).toBeLessThan(feedLines.indexOf('BEGIN:VEVENT'))
+    expect(feedLines).toContain(`TZID:${EVENT_TIME_ZONE}`)
+    expect(feedLines).toContain('X-WR-TIMEZONE:Europe/Paris')
+
+    const block = feedLines.slice(
+      feedLines.indexOf('BEGIN:VTIMEZONE'),
+      feedLines.indexOf('END:VTIMEZONE') + 1
+    )
+    expect(block).toEqual([
+      'BEGIN:VTIMEZONE',
+      'TZID:Europe/Paris',
+      'BEGIN:DAYLIGHT',
+      'TZOFFSETFROM:+0100',
+      'TZOFFSETTO:+0200',
+      'TZNAME:CEST',
+      'DTSTART:19700329T020000',
+      'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU',
+      'END:DAYLIGHT',
+      'BEGIN:STANDARD',
+      'TZOFFSETFROM:+0200',
+      'TZOFFSETTO:+0100',
+      'TZNAME:CET',
+      'DTSTART:19701025T030000',
+      'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU',
+      'END:STANDARD',
+      'END:VTIMEZONE',
+    ])
+  })
+
+  it('matches the VTIMEZONE rules against the runtime tz database (last Sundays of March/October at 01:00 UTC)', () => {
+    const offsetMinutes = (instant: Date) => {
+      const part = new Intl.DateTimeFormat('en-US', {
+        timeZone: EVENT_TIME_ZONE,
+        timeZoneName: 'longOffset',
+      })
+        .formatToParts(instant)
+        .find((p) => p.type === 'timeZoneName')?.value
+      const match = /GMT([+-])(\d{2}):(\d{2})/.exec(part ?? '')
+      if (!match) return 0
+      return (match[1] === '-' ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3]))
+    }
+    const lastSundayAtOneUtc = (year: number, month: number) => {
+      const last = new Date(Date.UTC(year, month + 1, 0, 1))
+      return new Date(last.getTime() - last.getUTCDay() * 86_400_000)
+    }
+
+    for (const year of [2026, 2027, 2028, 2029, 2030]) {
+      const toSummer = lastSundayAtOneUtc(year, 2)
+      const toWinter = lastSundayAtOneUtc(year, 9)
+      expect(offsetMinutes(new Date(toSummer.getTime() - 1))).toBe(60)
+      expect(offsetMinutes(toSummer)).toBe(120)
+      expect(offsetMinutes(new Date(toWinter.getTime() - 1))).toBe(120)
+      expect(offsetMinutes(toWinter)).toBe(60)
+    }
+  })
+
+  it('omits the VTIMEZONE when no timed event references it', () => {
+    const allDay: IcsEvent = {
+      ...baseEvent,
+      allDay: true,
+      startAt: new Date(Date.UTC(2026, 8, 1)),
+      endAt: null,
+    }
+
+    expect(buildEventsIcsFeed(school, [])).not.toContain('VTIMEZONE')
+    expect(buildEventsIcsFeed(school, [allDay])).not.toContain('VTIMEZONE')
+  })
+
+  it('keeps DTSTAMP and LAST-MODIFIED as true UTC instants', () => {
+    const feedLines = unfold(
+      buildEventsIcsFeed(school, [baseEvent], new Date('2026-08-15T07:30:00.000Z'))
+    )
+
+    expect(feedLines).toContain('DTSTAMP:20260815T073000Z')
+    expect(feedLines).toContain('LAST-MODIFIED:20260801T100000Z')
+  })
+
+  it('produces a structurally valid calendar: balanced components, CRLF, lines of at most 75 octets', () => {
+    const feed = buildEventsIcsFeed(school, [
+      { ...baseEvent, title: 'Réunion très longue '.repeat(8), location: 'Salle; B, 1er étage' },
+      {
+        ...baseEvent,
+        id: 'event-2',
+        allDay: true,
+        startAt: new Date(Date.UTC(2026, 9, 20)),
+        endAt: new Date(Date.UTC(2026, 10, 3)),
+      },
+      { ...baseEvent, id: 'event-3', endAt: null, status: 'CANCELLED' },
+    ])
+    const physicalLines = feed.split('\r\n').slice(0, -1)
+    const encoder = new TextEncoder()
+
+    for (const line of physicalLines) {
+      expect(encoder.encode(line).length).toBeLessThanOrEqual(75)
+    }
+
+    const stack: string[] = []
+    for (const line of unfold(feed)) {
+      if (line.startsWith('BEGIN:')) stack.push(line.slice(6))
+      if (line.startsWith('END:')) expect(stack.pop()).toBe(line.slice(4))
+    }
+    expect(stack).toEqual([])
+
+    const events = feed.split('BEGIN:VEVENT').slice(1)
+    expect(events).toHaveLength(3)
+    for (const block of events) {
+      const lines = unfold(block)
+      expect(lines.filter((line) => line.startsWith('UID:'))).toHaveLength(1)
+      expect(lines.filter((line) => line.startsWith('DTSTAMP:'))).toHaveLength(1)
+      expect(lines.filter((line) => line.startsWith('DTSTART'))).toHaveLength(1)
+    }
+
+    const tzids = new Set(
+      unfold(feed).flatMap((line) => /;TZID=([^:;]+)/.exec(line)?.slice(1) ?? [])
+    )
+    for (const tzid of tzids) expect(unfold(feed)).toContain(`TZID:${tzid}`)
   })
 
   it('omits DTEND for a timed event with no end instead of inventing a duration', () => {
