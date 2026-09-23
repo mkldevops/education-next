@@ -6,8 +6,9 @@ const authClient = createAuthClient({
   plugins: [impersonationClient()],
 })
 
-// `signUp` a disparu avec le flux `/register` : l'invitation est désormais le seul
-// chemin de création de compte, et elle passe par `auth.api.signUpEmail` côté serveur.
+// `signUp` a disparu avec le flux `/register`, et l'endpoint est fermé côté serveur
+// (`disableSignUp`) : un compte naît d'une invitation acceptée ou de `createUserAction`,
+// tous deux via `credentialUserGateway`.
 export const { signIn, signOut, linkSocial, unlinkAccount, resetPassword, requestPasswordReset } =
   authClient
 

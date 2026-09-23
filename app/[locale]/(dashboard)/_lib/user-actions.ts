@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { credentialUserGateway } from '@/gateways/credential-user-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { userGateway } from '@/gateways/user-gateway'
 import { auth } from '@/lib/auth'
-import { db } from '@/lib/db'
 import type { SchoolRole } from '@/types/enums'
 import { changePlatformLevel } from '@/use-cases/users/change-platform-level'
 import { deleteUser } from '@/use-cases/users/delete-user'
@@ -38,22 +38,16 @@ export async function createUserAction(data: {
   if (!parsed.success) return 'validation_error' as const
 
   try {
-    const res = await auth.api.signUpEmail({
-      body: {
-        name: parsed.data.name,
-        email: parsed.data.email,
-        password: parsed.data.password,
-      },
+    // Le compte naît vérifié : c'est l'administrateur qui a saisi l'adresse.
+    const created = await credentialUserGateway.create({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      password: parsed.data.password,
     })
-
-    await db.user.update({
-      where: { id: res.user.id },
-      data: { emailVerified: true },
-    })
-    await schoolMemberGateway.createMembership(res.user.id, schoolId, parsed.data.role)
+    await schoolMemberGateway.createMembership(created.id, schoolId, parsed.data.role)
 
     revalidatePath(USERS_PATH)
-    return { id: res.user.id, email: parsed.data.email }
+    return { id: created.id, email: parsed.data.email }
   } catch {
     return 'error' as const
   }

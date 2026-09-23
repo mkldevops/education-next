@@ -190,6 +190,33 @@ because hiding the resolution would leave the user in front of an unexplainable 
 
 ## Sign-in methods
 
+### Account creation is closed
+
+No sign-in method creates an account. Two server paths do, and only them: accepting an invitation
+for an unknown address (`acceptInvitationAction`) and an administrator's `createUserAction`. Both go
+through `credentialUserGateway.create()` (`src/gateways/credential-user-gateway.ts`), which writes
+the user and its `credential` `Account` through Better Auth's internal adapter — same hash, no
+session — with `emailVerified: true`, since the address is proven by the token or typed by an admin.
+
+`src/lib/auth.ts` closes every other door, because a pre-created account for a future invitee
+would let a third party keep a session on it and see the family once the invitation is accepted:
+
+- `emailAndPassword.disableSignUp` — `POST /api/auth/sign-up/email` answers `400`
+  (`EMAIL_PASSWORD_SIGN_UP_DISABLED`). It also closes `auth.api.signUpEmail` on the server, which
+  is why the two legitimate paths no longer call it.
+- Google carries `disableSignUp` (redirect callback) and `disableImplicitSignUp` (the `idToken`
+  flow, which ignores `disableSignUp`). Google signs in to, or links, an **existing** account only;
+  an unknown address is sent back with `signup_disabled`. Implicit linking also requires the local
+  account's `emailVerified` (Better Auth's `requireLocalEmailVerified`, on by default).
+- `databaseHooks.user.create.before` refuses any user creation that runs inside a Better Auth
+  endpoint, which catches an explicit `requestSignUp: true` and any future plugin route. The gateway
+  runs outside an endpoint and is the only writer left.
+- `revokeSessionsOnPasswordReset` — a password reset proves the mailbox, so every session opened
+  before it dies with the old password.
+
+`requireEmailVerification` stays false: every account is born verified, and a sign-in check would
+only block a user whose address an admin just rewrote (see **User management**).
+
 Email and password is the method this application always offers. The two alternatives are governed by
 `PlatformSetting` rows written from the **Sign-in methods** section of `/dashboard/config`. That page
 is open on `requireSchoolAdmin()`, and the platform sections are rendered only when the caller is a
@@ -361,8 +388,9 @@ Classes resolve with `requireAdmin: true`: a parent is never offered a switch to
 
 `src/lib/__tests__/school-isolation.test.ts` pins this against a real database, one case per
 tenant-scoped resource. Written with `db` mocked they would only test the mock.
-- **There is no public sign-up.** `/register` was removed: a self-created account would hold no
-  membership and be locked out of every school. Invitations are the only way in.
+- **There is no public sign-up.** `/register` was removed and the Better Auth endpoint is closed on
+  the server (see **Sign-in methods**). An account is born from an accepted invitation or from
+  `createUserAction`, nothing else.
 
 `proxy.ts` protects `/dashboard`, `/settings`, `/profile` coarsely. Its matcher **excludes `/api`**,
 so every route handler and Server Action authenticates itself.
@@ -1634,7 +1662,8 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   `unauthenticated` without a session and `emailMismatch` when the signed-in address differs — an
   invitation link is not a login, and it must not hand someone else's account a new membership. That
   path creates **no account**: one transaction writes the `SchoolMember` and, for a `PARENT`
-  invitation carrying a family, the `UserFamily`. An unknown email still goes through sign-up.
+  invitation carrying a family, the `UserFamily`. An unknown email still goes through account
+  creation (`credentialUserGateway`).
 - **The token is consumed before the membership is written.** `linkInvitedUser()` closes the
   invitation with an `updateMany` guarded by `usedAt: null`; that single conditional write is the
   only serialization point, so a link replayed twice grants one membership and answers
