@@ -31,10 +31,12 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 
 ## Multi-school
 
-Every business row belongs to exactly one `School`. Twenty-three models carry `schoolId NOT NULL`:
+Every business row belongs to exactly one `School`. Twenty-five models carry `schoolId NOT NULL`:
 `Family`, `UserFamily`, `Person`, `FamilyPerson`, `Student`, `PhoneNumber`, `Config`, `Level`,
-`Period`, `ClassPeriod`, `ClassPeriodTeacher`, `ClassScheduleSlot`, `ClassScheduleSlotTeacher`, `Enrollment`, `ClassAssignment`, `Payment`,
-`PaymentTransaction`, `Plan`, `Invitation`, `Teacher`, `TeacherExpense`, `Event`, `EventImage`.
+`Period`, `ClassPeriod`, `ClassPeriodTeacher`, `ClassScheduleSlot`, `ClassScheduleSlotTeacher`, `Enrollment`, `ClassAssignment`,
+`AttendanceSession`, `AttendanceEntry`, `Payment`, `PaymentTransaction`, `Plan`, `Invitation`,
+`Teacher`, `TeacherExpense`, `Event`, `EventImage`. All of them are in the runtime guard's
+`TENANT_SCOPED_MODELS`.
 
 `PaymentProviderEvent` is the one business model left unscoped, deliberately: its
 `paymentTransactionId` is nullable, so an unmatched provider event has no derivable school. It is a
@@ -71,6 +73,13 @@ Isolation rests on three layers. None is sufficient alone.
    A `where` satisfies it through `schoolId`, through `schoolId: { in: [...] }`, or through any
    generated compound selector containing it (`id_schoolId`, `schoolId_name`…). Reassigning a row's
    school is refused, including through the `school` relation.
+
+**The school and the target of a mutation come from the server, never from the request body.**
+Dashboard actions receive a client object typed `Omit<Input, 'schoolId' | 'id'>`, but that type does
+not exist at runtime and the use-case schemas accept `schoolId`. Actions therefore spread the client
+data **first** and write the session `schoolId` (and the `id` argument, `createdById`…) after it —
+`updateX({ ...data, id, schoolId })` — so a forged field can never override them. Regression:
+`app/[locale]/(dashboard)/_lib/tenant-override-actions.test.ts`.
 
 `SchoolMember` sits outside the guard by construction — the context must read memberships by
 `userId` before any school is known. All access goes through `src/gateways/school-member-gateway.ts`,

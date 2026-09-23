@@ -26,7 +26,7 @@ export async function createPeriodAction(data: CreatePeriodInput) {
 
 export async function updatePeriodAction(id: string, data: Omit<UpdatePeriodInput, 'id'>) {
   const { schoolId } = await requireSchoolAdmin()
-  const result = await updatePeriod({ id, ...data, schoolId })
+  const result = await updatePeriod({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/periods')
   return result

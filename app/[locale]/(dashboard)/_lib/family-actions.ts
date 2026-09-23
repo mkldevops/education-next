@@ -41,7 +41,7 @@ export async function updateFamilyAction(
   data: Omit<UpdateFamilyInput, 'schoolId' | 'id'>
 ) {
   const { schoolId } = await requireSchoolAdmin()
-  const result = await updateFamily({ schoolId, id, ...data })
+  const result = await updateFamily({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
   return result
