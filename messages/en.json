@@ -1333,7 +1333,9 @@
             "validationError": "Check the information you entered",
             "notFound": "Enrollment or class not found",
             "classFull": "This class is full",
-            "invalidStatusTransition": "Only a pending or active enrollment can change class"
+            "invalidStatusTransition": "Only a pending or active enrollment can change class",
+            "periodMismatch": "The new class must belong to the same period as the enrollment",
+            "duplicateEnrollment": "This student already has another current enrollment in this period"
           }
         },
         "applyDiscount": {

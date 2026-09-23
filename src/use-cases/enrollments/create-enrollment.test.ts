@@ -60,6 +60,7 @@ describe('createEnrollment', () => {
     enrollmentGatewayMock.findActiveInPeriod = vi.fn()
     dbMock.$transaction = vi.fn(async (cb) => {
       const tx = {
+        $queryRaw: vi.fn().mockResolvedValue([{ capacity: 10 }]),
         classAssignment: { count: vi.fn().mockResolvedValue(0), create: vi.fn() },
         enrollment: {
           create: vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440003' }),
@@ -197,6 +198,7 @@ describe('createEnrollment', () => {
     const update = vi.fn()
     dbMock.$transaction = vi.fn(async (cb) =>
       cb({
+        $queryRaw: vi.fn().mockResolvedValue([{ capacity: 10 }]),
         classAssignment: { updateMany, count: vi.fn().mockResolvedValue(0), create: vi.fn() },
         enrollment: { update, create: vi.fn().mockResolvedValue({ id: 'created' }) },
       })
@@ -228,6 +230,7 @@ describe('createEnrollment', () => {
     let committed = false
     dbMock.$transaction = vi.fn(async (cb) => {
       const result = await cb({
+        $queryRaw: vi.fn().mockResolvedValue([{ capacity: 10 }]),
         classAssignment: {
           updateMany: vi.fn(),
           count: vi.fn().mockResolvedValue(10),
@@ -246,6 +249,40 @@ describe('createEnrollment', () => {
     // l'élève garde son inscription au lieu de se retrouver sans aucune.
     expect(update).toHaveBeenCalled()
     expect(committed).toBe(false)
+  })
+
+  it('judges the last seat under the class row lock, not on the capacity read before', async () => {
+    mockValidReferences()
+    enrollmentGatewayMock.findActiveInPeriod.mockResolvedValue(null)
+    const create = vi.fn()
+    const queryRaw = vi.fn().mockResolvedValue([{ capacity: 3 }])
+    dbMock.$transaction = vi.fn(async (cb) =>
+      cb({
+        $queryRaw: queryRaw,
+        classAssignment: { count: vi.fn().mockResolvedValue(3), create: vi.fn() },
+        enrollment: { create },
+      })
+    )
+
+    expect(await createEnrollment(validInput)).toBe('classFull')
+    expect(String(queryRaw.mock.calls[0][0].join('?'))).toContain('FOR UPDATE')
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it('returns notFound when the class was archived since the first read', async () => {
+    mockValidReferences()
+    enrollmentGatewayMock.findActiveInPeriod.mockResolvedValue(null)
+    const create = vi.fn()
+    dbMock.$transaction = vi.fn(async (cb) =>
+      cb({
+        $queryRaw: vi.fn().mockResolvedValue([]),
+        classAssignment: { count: vi.fn(), create: vi.fn() },
+        enrollment: { create },
+      })
+    )
+
+    expect(await createEnrollment(validInput)).toBe('notFound')
+    expect(create).not.toHaveBeenCalled()
   })
 
   it('refuses to replace an enrollment that already received a payment', async () => {
@@ -301,6 +338,7 @@ describe('createEnrollment', () => {
       const create = vi.fn().mockResolvedValue({ id: 'created' })
       dbMock.$transaction = vi.fn(async (cb) =>
         cb({
+          $queryRaw: vi.fn().mockResolvedValue([{ capacity: 10 }]),
           classAssignment: { count: vi.fn().mockResolvedValue(0), create: vi.fn() },
           enrollment: { create },
         })

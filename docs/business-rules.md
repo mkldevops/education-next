@@ -641,7 +641,10 @@ rows still belong to.
 
 `commit_enroll_family` owns **one `db.$transaction`** with direct `tx.*` calls, like
 `create-enrollment.ts`: no gateway accepts an injected client, and chaining the four use cases would
-leave an orphan family behind the first failure.
+leave an orphan family behind the first failure. Before re-reading anything it takes, in order, the
+(school, student, period) lock of each existing student it enrolls, then the row lock of each class
+it seats children in, by increasing id (`reserveClassSeatsInOrder`); the capacity and duplicate
+checks that follow therefore cannot race a dashboard enrollment.
 
 | Body | Cause |
 |---|---|
@@ -651,7 +654,7 @@ leave an orphan family behind the first failure.
 | `checksumMismatch` | the checksum does not match the plan that was shown |
 | `commitInProgress` | a concurrent commit is still inside its transaction, and under 60 s old |
 | `notFound` | the class the preview resolved no longer exists, or the family, member, enrollment or plan it targets |
-| `classFull` | the class filled up between the preview and the commit |
+| `classFull` | the class filled up between the preview and the commit, counted under the class row lock |
 | `duplicateEnrollment` | a member of the existing family was enrolled between the preview and the commit |
 | `overpayment` / `noPayableEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
 | `staleDraft` | the recomputed split no longer matches the validated one, the enrollment or plan changed, or a member became a student |
@@ -846,7 +849,19 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   assignment, teacher assignment, schedule slot, or attendance session. Archiving is a soft delete
   (`isActive: false`), so an identifier outside the active school scope reads as `notFound`.
 - **Occupancy counts** assignments with `endAt: null` whose enrollment is `PENDING`, `ACTIVE` or
-  `COMPLETED`. Cancelled enrollments free their seat; completed ones do not.
+  `COMPLETED`. Cancelled enrollments free their seat; completed ones do not. One predicate
+  (`SEAT_HOLDING_ENROLLMENT_STATUSES` in `src/domain/class-period.ts`,
+  `seatHoldingAssignmentsWhere` in `src/gateways/class-seat-lock.ts`) serves every reader and
+  writer: the class pages, the dashboard insights, the MCP preview and commit, promotion, creation
+  and reassignment.
+- **Every write that takes a seat reserves it under a class row lock.** `reserveClassSeats`
+  (`src/gateways/class-seat-lock.ts`) runs `SELECT … FOR UPDATE` on the active `ClassPeriod` row of
+  the school, then re-counts occupancy in the same transaction: a concurrent writer waits for the
+  commit and counts the seat it took, so a class never ends above its capacity. Creation, creation
+  with a new student, reassignment, promotion and the MCP commit all go through it; a class archived
+  meanwhile answers `notFound`. **Lock order is fixed**: the (school, student, period) advisory lock
+  first, then the enrollment row, then class rows by increasing id (`reserveClassSeatsInOrder`), so
+  two writers never wait on each other in a cycle.
 - **Teachers are many-to-many.** A `ClassPeriod` may have no teacher yet, one teacher, or several
   teachers through `ClassPeriodTeacher`. Teacher assignments are scoped by the same `schoolId` as the
   class and the teacher; cross-school class staffing is rejected by composite foreign keys and by the
@@ -939,8 +954,10 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
   student cannot both find the period free. No unique index can carry this rule: the period lives
   on the assignment's class, not on `Enrollment`. A `COMPLETED` enrollment leaves re-enrollment
   open.
-- **Capacity is re-counted inside the transaction**, not before it, so two concurrent enrollments
-  cannot both pass the check → `classFull`.
+- **Capacity is re-counted inside the transaction, under the class row lock** (`reserveClassSeats`,
+  see Classes), so two concurrent enrollments of different students cannot both take the last seat
+  → `classFull`. With `replaceExisting`, a refused seat throws to roll back the cancellation of the
+  previous enrollment, since a `return` would commit it.
 - **Three entry points for a school admin**: the enrollments list (`/dashboard/enrollments`,
   « Nouvelle inscription », any active student of the school), the students list, and the family
   and student detail pages. On every one, the amount due is prefilled with the selected plan's
@@ -953,11 +970,27 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
 « Ajouter un élève » in a family enrolls the child in the same gesture when the enrollment
 section is kept ticked: `src/use-cases/students/create-enrolled-student.ts` writes the person,
 the family link, the student, the enrollment and the class assignment in **one**
-`db.$transaction`, with the same capacity re-count. A refusal — `notFound`,
+`db.$transaction`, with the same locked capacity re-count. A refusal — `notFound`,
 `discountExceedsPlan`, `classFull` — happens before the first write, so no student is left
 behind without an enrollment. Untick the section (or have no plan or no class in the selected
 period) and `createStudentAction` falls back to `create-student.ts`, which only attaches the
 child to the family.
+
+### Changing class
+
+`src/use-cases/enrollments/reassign-class.ts` moves a `PENDING` or `ACTIVE` enrollment to another
+class, in **one** `db.$transaction`: the (school, student, period) lock, then the enrollment row
+(`FOR UPDATE`, status re-read → `invalidStatusTransition`), then the target class seat.
+
+- **Same period only** → `periodMismatch`. An enrollment belongs to the period of its class (the
+  open assignment, else the latest one); moving it to another period's class would open a second
+  running enrollment there, billed twice in the family balance. The enrollment page offers only the
+  classes of that period.
+- **Another open enrollment of the student in the period** → `duplicateEnrollment`.
+- **Target full** → `classFull`, counted under the class row lock.
+- **Already in the target class** → `OK` without writing, so a double submit is harmless.
+- The current assignment is closed (`endAt`) and the new one created in the same transaction: a
+  failure leaves the student in the old class, never in none.
 
 ### Money
 
@@ -1241,6 +1274,18 @@ A student is **skipped**, with the reason reported, when:
 - **One transaction per student**, deliberately: Postgres aborts a whole transaction on any error,
   so a single batch would make a partial report impossible. A failure is reported per student and
   its seat is released back into the in-memory occupancy tally.
+- **Idempotent.** The eligibility pass reads outside any lock and only pre-filters. Each student's
+  transaction takes the (school, student, **target** period) lock of `createEnrollment`, re-reads
+  whether the student already holds an enrollment there (`enrollmentGateway.isEnrolledInPeriod`,
+  `PENDING`/`ACTIVE`/`COMPLETED` → `alreadyPromoted`) and reserves the target seat under the class
+  row lock (`targetClassFull`, or `noTargetClass` if archived meanwhile). A double click or two admins
+  running it together create one enrollment per student and never overfill a class; a refusal is
+  counted as skipped and writes nothing.
+- **The source level is the open assignment's.** `findCompletedByPeriod` includes only the
+  assignment with `endAt: null` in the source period: after a mid-year class change, the closed one
+  would name the wrong starting level.
+- **Archived students are not promoted.** The soft-delete filter does not reach nested relations,
+  so `findCompletedByPeriod` states `student: { isActive: true }` itself.
 
 ## Families, students, people
 
@@ -1785,6 +1830,14 @@ Real holes, verified against the running application. Not aspirations.
   near the boundary an event is considered started one or two hours late (Paris offset). The ICS feed
   no longer has this defect; the comparisons would need `now` converted to `EVENT_TIME_ZONE` wall
   clock.
+
+- **"One open enrollment per student per period" has no database constraint.** The period lives on
+  the assignment's class, so no unique index on `Enrollment` can express it; the advisory lock taken
+  by every writer carries it. A partial unique index on `ClassAssignment(enrollmentId) WHERE "endAt"
+  IS NULL` would at least forbid two open assignments per enrollment, but needs the existing data
+  checked first and was left out of the concurrency fix.
+- **Cancelling an enrollment is not one transaction.** `cancel-enrollment.ts` updates the status and
+  closes the assignment in two separate writes.
 
 ## Surfacing a rule in the UI
 

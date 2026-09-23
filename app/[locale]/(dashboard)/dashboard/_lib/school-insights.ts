@@ -1,3 +1,4 @@
+import { SEAT_HOLDING_ENROLLMENT_STATUSES } from '@/domain/class-period'
 import { db } from '@/lib/db'
 import { getPaymentStats, type PaymentStats } from '@/use-cases/payments/payment-stats'
 
@@ -60,7 +61,10 @@ export async function getSchoolInsights(
         _count: {
           select: {
             classAssignments: {
-              where: { endAt: null, enrollment: { status: { in: ['PENDING', 'ACTIVE'] } } },
+              where: {
+                endAt: null,
+                enrollment: { status: { in: [...SEAT_HOLDING_ENROLLMENT_STATUSES] } },
+              },
             },
           },
         },

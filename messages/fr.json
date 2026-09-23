@@ -1334,7 +1334,9 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Inscription ou classe introuvable",
             "classFull": "Cette classe est complète",
-            "invalidStatusTransition": "Seule une inscription en attente ou active peut changer de classe"
+            "invalidStatusTransition": "Seule une inscription en attente ou active peut changer de classe",
+            "periodMismatch": "La nouvelle classe doit appartenir à la même période que l'inscription",
+            "duplicateEnrollment": "Cet élève a déjà une autre inscription en cours sur cette période"
           }
         },
         "applyDiscount": {

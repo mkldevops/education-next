@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { checkCapacity } from '@/domain/class-period'
+import { reserveClassSeatsInOrder } from '@/gateways/class-seat-lock'
+import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { claimResolved, commitInTransaction, releaseDraft } from './claim-draft'
 import { countSeatsByClass, ENROLL_FAMILY_TOOL } from './preview-enroll-family'
 import type { McpScope } from './resolve-mcp-scope'
@@ -92,37 +93,36 @@ export async function commitEnrollFamily(scope: McpScope, input: Input) {
   // un client injecté, et enchaîner les use cases laisserait une famille orpheline au
   // premier échec. Précédent du dépôt : `create-enrollment.ts`.
   return commitInTransaction(schoolId, draftId, async (tx) => {
-    // Les classes sont recomptées ici, pas seulement au preview : deux brouillons
-    // calculés sur la même place libre s'engageraient sinon tous les deux. Même
-    // prédicat que `create-enrollment.ts`, et le refus sort avant la première écriture.
-    // Une par classe visée : une fratrie répartie sur trois classes ne prend pas trois
-    // places dans chacune.
-    const seatsWanted = countSeatsByClass(
-      resolved.students.map((student) => student.classPeriod.id)
-    )
-
-    for (const [classPeriodId, wanted] of seatsWanted) {
+    // Élèves existants d'abord : verrou (école, élève, période) de `createEnrollment`, pris
+    // avant les verrous de classe comme partout ailleurs, pour que la relecture des
+    // inscriptions en cours plus bas ne croise pas une inscription concurrente du dashboard.
+    const studentPeriodLocks: Array<{ studentId: string; periodId: string }> = []
+    for (const student of resolved.students) {
+      if (!student.studentId) continue
       const classPeriod = await tx.classPeriod.findUnique({
-        where: { id_schoolId: { id: classPeriodId, schoolId } },
-        select: { capacity: true },
+        where: { id_schoolId: { id: student.classPeriod.id, schoolId } },
+        select: { periodId: true },
       })
       if (!classPeriod) return 'notFound' as const
-
-      const enrolled = await tx.classAssignment.count({
-        where: {
-          schoolId,
-          classPeriodId,
-          endAt: null,
-          enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
-        },
-      })
-
-      // `checkCapacity` répond pour une place : on lui présente la classe une fois les
-      // premiers élèves assis, donc `wanted - 1` en plus.
-      if (checkCapacity(classPeriod.capacity, enrolled + wanted - 1) !== 'OK') {
-        return 'classFull' as const
-      }
+      studentPeriodLocks.push({ studentId: student.studentId, periodId: classPeriod.periodId })
     }
+    studentPeriodLocks.sort((a, b) =>
+      `${a.studentId}:${a.periodId}`.localeCompare(`${b.studentId}:${b.periodId}`)
+    )
+    for (const { studentId, periodId } of studentPeriodLocks) {
+      await enrollmentGateway.lockStudentInPeriod(tx, schoolId, studentId, periodId)
+    }
+
+    // Les classes sont recomptées ici, sous verrou de ligne, pas seulement au preview : deux
+    // brouillons calculés sur la même place libre s'engageraient sinon tous les deux. Une
+    // réservation par classe visée : une fratrie répartie sur trois classes ne prend pas trois
+    // places dans chacune. Le refus sort avant la première écriture.
+    const seats = await reserveClassSeatsInOrder(
+      tx,
+      schoolId,
+      countSeatsByClass(resolved.students.map((student) => student.classPeriod.id))
+    )
+    if (seats !== 'OK') return seats
 
     // Une famille visée par son identifiant, et chaque membre retrouvé, sont relus avant
     // la première écriture : une famille archivée ou un enfant inscrit depuis le preview

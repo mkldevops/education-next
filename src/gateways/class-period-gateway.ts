@@ -1,6 +1,6 @@
-import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
+import { seatHoldingAssignmentsWhere } from './class-seat-lock'
 
 const classPeriodInclude = {
   level: true,
@@ -93,17 +93,12 @@ export const classPeriodGateway = {
       include: classPeriodInclude,
     }),
 
+  /**
+   * Lecture hors verrou, pour l'affichage, l'aperçu MCP et la réduction de capacité. Une écriture
+   * qui prend une place passe par `reserveClassSeats`, même prédicat, sous verrou.
+   */
   countEnrolled: (schoolId: string, id: string) =>
-    db.classAssignment.count({
-      where: {
-        schoolId,
-        classPeriodId: id,
-        endAt: null,
-        enrollment: {
-          status: { in: [...OPEN_ENROLLMENT_STATUSES] },
-        },
-      },
-    }),
+    db.classAssignment.count({ where: seatHoldingAssignmentsWhere(schoolId, id) }),
 
   deactivate: (schoolId: string, id: string) =>
     db.$transaction(async (tx) => {
