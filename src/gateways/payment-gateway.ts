@@ -1,32 +1,59 @@
-import type { PaymentMethod } from '@/generated/prisma/client'
+import type { PaymentMethod, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
-export const paymentGateway = {
-  create: (
-    schoolId: string,
-    data: {
-      familyId: string
-      enrollmentId: string
-      amount: number
-      method: PaymentMethod
-      reference?: string
-      paidAt: Date
-      cashedAt?: Date
-    }
-  ) => db.payment.create({ data: { ...data, schoolId } }),
+type PaymentData = {
+  familyId: string
+  enrollmentId: string
+  amount: number
+  method: PaymentMethod
+  reference?: string
+  paidAt: Date
+  cashedAt?: Date
+}
 
-  createInTransaction: (
+export const paymentGateway = {
+  create: (schoolId: string, data: PaymentData) =>
+    db.payment.create({ data: { ...data, schoolId } }),
+
+  /**
+   * Sérialise les encaissements d'une famille jusqu'à la fin de `tx`.
+   *
+   * Le solde se lit puis s'écrit : sans verrou, deux saisies de 720 € sur un solde de 720 €
+   * lisent chacune 720 € restants et encaissent 1 440 €. La ligne `Family` sert de verrou,
+   * scopée par école comme toute requête racine — le garde tenant ne voit pas le SQL brut.
+   * `FOR NO KEY UPDATE` exclut un second encaissement sans bloquer les insertions qui
+   * référencent la famille (leur `FOR KEY SHARE` n'entre pas en conflit).
+   *
+   * Rend `false` quand la famille n'existe pas, est archivée ou appartient à une autre école.
+   */
+  lockFamilyForPayment: async (
+    tx: Prisma.TransactionClient,
     schoolId: string,
-    payments: Array<{
-      familyId: string
-      enrollmentId: string
-      amount: number
-      method: PaymentMethod
-      reference?: string
-      paidAt: Date
-      cashedAt?: Date
-    }>
-  ) => db.$transaction(payments.map((data) => db.payment.create({ data: { ...data, schoolId } }))),
+    familyId: string
+  ) => {
+    const rows = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT "id" FROM "Family"
+      WHERE "id" = ${familyId} AND "schoolId" = ${schoolId} AND "isActive" = true
+      FOR NO KEY UPDATE`
+    return rows.length === 1
+  },
+
+  /** Écrit une ligne par inscription, dans la transaction qui a relu le solde. */
+  createForFamily: async (
+    tx: Prisma.TransactionClient,
+    schoolId: string,
+    payments: PaymentData[]
+  ) => {
+    const ids: string[] = []
+    for (const data of payments) {
+      const payment = await tx.payment.create({
+        data: { ...data, schoolId },
+        select: { id: true },
+      })
+      ids.push(payment.id)
+    }
+    return ids
+  },
 
   listByFamily: (schoolId: string, familyId: string) =>
     db.payment.findMany({

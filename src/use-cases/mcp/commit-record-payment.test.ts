@@ -7,6 +7,7 @@ const release = vi.fn()
 const transaction = vi.fn()
 
 const tx = {
+  $queryRaw: vi.fn(),
   enrollment: { findMany: vi.fn() },
   payment: { create: vi.fn() },
   mcpDraft: { updateMany: vi.fn() },
@@ -49,6 +50,7 @@ function enrollment(id: string, totalAmount: number, paid: number[] = []) {
     totalAmount,
     discount: 0,
     payments: paid.map((amount) => ({ amount })),
+    student: { person: { families: [{ familyId: 'family-1', relationType: 'PARENT' }] } },
   }
 }
 
@@ -62,6 +64,7 @@ beforeEach(() => {
     resolved,
   })
   transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
+  tx.$queryRaw.mockResolvedValue([{ id: 'family-1' }])
   tx.enrollment.findMany.mockResolvedValue([enrollment('enr-1', 90), enrollment('enr-2', 90)])
   tx.payment.create
     .mockResolvedValueOnce({ id: 'payment-1' })
@@ -108,6 +111,26 @@ describe('commitRecordPayment', () => {
     expect(tx.enrollment.findMany.mock.calls[0][0].where.status).toEqual({
       in: ['PENDING', 'ACTIVE'],
     })
+  })
+
+  it('locks the family row, scoped by school, before reading its balance', async () => {
+    await commitRecordPayment(scope, input)
+
+    const [sql, ...values] = tx.$queryRaw.mock.calls[0]
+    expect(sql.join('?')).toMatch(/FROM "Family"[\s\S]*"schoolId" = \?[\s\S]*FOR NO KEY UPDATE/)
+    expect(values).toEqual(['family-1', 'school-1'])
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.enrollment.findMany.mock.invocationCallOrder[0]
+    )
+  })
+
+  it('refuses a family archived since the preview, and gives the lock back', async () => {
+    tx.$queryRaw.mockResolvedValue([])
+
+    expect(await commitRecordPayment(scope, input)).toBe('notFound')
+    expect(tx.enrollment.findMany).not.toHaveBeenCalled()
+    expect(tx.payment.create).not.toHaveBeenCalled()
+    expect(release).toHaveBeenCalledWith('school-1', input.draftId)
   })
 
   it('writes the result inside the transaction that writes the payments', async () => {

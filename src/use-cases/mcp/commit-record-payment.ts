@@ -1,5 +1,7 @@
 import { z } from 'zod'
-import { distributePayment, enrollmentBalances } from '@/domain/payment'
+import { distributePayment } from '@/domain/payment'
+import { paymentGateway } from '@/gateways/payment-gateway'
+import { readLockedFamilyBalances } from '@/use-cases/payments/locked-family-balance'
 import { claimResolved, commitInTransaction } from './claim-draft'
 import { RECORD_PAYMENT_TOOL } from './preview-record-payment'
 import type { McpScope } from './resolve-mcp-scope'
@@ -40,20 +42,15 @@ export async function commitRecordPayment(scope: McpScope, input: Input) {
   const { draftId, resolved } = claim
 
   return commitInTransaction(schoolId, draftId, async (tx) => {
-    // Les soldes sont relus ici, pas seulement au preview : deux brouillons de 100
-    // calculés sur le même solde de 100 encaisseraient sinon 200. Le refus sort avant
-    // la première écriture, comme dans `create-enrollment.ts`.
-    const enrollments = await tx.enrollment.findMany({
-      where: {
-        schoolId,
-        status: { in: ['PENDING', 'ACTIVE'] },
-        student: { person: { families: { some: { familyId: resolved.family.id } } } },
-      },
-      include: { payments: { where: { isActive: true } } },
-      orderBy: [{ registeredAt: 'asc' }, { id: 'asc' }],
-    })
+    // Les soldes sont relus ici, sous le verrou de la famille, pas seulement au preview :
+    // deux brouillons de 100 calculés sur le même solde de 100 encaisseraient sinon 200.
+    // Relire dans la transaction ne suffit pas — deux transactions lisent avant que l'une
+    // ne valide. Sous le verrou, le second commit attend le premier, relit un solde nul
+    // et refuse avant la première écriture.
+    const balances = await readLockedFamilyBalances(tx, schoolId, resolved.family.id)
+    if (balances === 'notFound') return 'notFound' as const
 
-    const distribution = distributePayment(resolved.amount, enrollmentBalances(enrollments))
+    const distribution = distributePayment(resolved.amount, balances)
     if (distribution.result !== 'OK') return distribution.result
 
     // La ventilation validée par l'humain doit rester celle qu'on écrit. Une
@@ -63,23 +60,19 @@ export async function commitRecordPayment(scope: McpScope, input: Input) {
       return 'staleDraft' as const
     }
 
-    const payments: string[] = []
-    for (const item of resolved.allocation) {
-      const payment = await tx.payment.create({
-        data: {
-          schoolId,
-          familyId: resolved.family.id,
-          enrollmentId: item.enrollmentId,
-          amount: item.amount,
-          method: resolved.method,
-          reference: resolved.reference,
-          paidAt: resolved.paidAt,
-          cashedAt: resolved.cashedAt,
-        },
-        select: { id: true },
-      })
-      payments.push(payment.id)
-    }
+    const payments = await paymentGateway.createForFamily(
+      tx,
+      schoolId,
+      resolved.allocation.map((item) => ({
+        familyId: resolved.family.id,
+        enrollmentId: item.enrollmentId,
+        amount: item.amount,
+        method: resolved.method,
+        reference: resolved.reference,
+        paidAt: resolved.paidAt,
+        cashedAt: resolved.cashedAt,
+      }))
+    )
 
     const written = {
       familyId: resolved.family.id,

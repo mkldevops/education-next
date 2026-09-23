@@ -205,9 +205,16 @@ export const enrollmentGateway = {
    * redevable. `families: { some: { familyId } }` ne suffit pas — un élève en garde partagée
    * est rattaché à plusieurs familles, et une seule d'entre elles doit porter la dette
    * (`resolveDebtorFamily`, appliqué comme dans `familiesOutstanding`).
+   *
+   * `client` reçoit la transaction d'un encaissement : lues sous `lockFamilyForPayment`, ces
+   * inscriptions et leurs paiements ne peuvent plus bouger avant l'écriture.
    */
-  findPayableByFamily: async (schoolId: string, familyId: string) => {
-    const rows = await db.enrollment.findMany({
+  findPayableByFamily: async (
+    schoolId: string,
+    familyId: string,
+    client: Prisma.TransactionClient = db
+  ) => {
+    const rows = await client.enrollment.findMany({
       where: {
         schoolId,
         status: { in: [...OPEN_ENROLLMENT_STATUSES] },

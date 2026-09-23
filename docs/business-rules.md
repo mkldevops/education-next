@@ -1008,6 +1008,16 @@ across that family's `PENDING` and `ACTIVE` enrollments**, proportionally to eac
 - **Zero is rejected** by the schema; a negative amount is a refund.
 - **Several payments are normal.** Each one is distributed against the balances left by the
   previous ones, until the family owes nothing.
+- **Payments of one family are serialized.** Reading the balance, distributing and writing the
+  `Payment` rows happen in one transaction that first locks the family row
+  (`paymentGateway.lockFamilyForPayment`, a `SELECT … FOR NO KEY UPDATE` scoped by `id` and
+  `schoolId`), through `readLockedFamilyBalances()` in
+  `src/use-cases/payments/locked-family-balance.ts`. Two simultaneous 720 € payments on a 720 €
+  balance record one: the second waits for the first to commit, rereads a zero balance and answers
+  `overpayment`. The same helper serves `commit_record_payment`, where the second draft answers
+  `overpayment` or `staleDraft`. A family missing from the school or archived → `notFound`. Every
+  other writer of a family's payments must take the same lock before reading the balance it
+  distributes.
 
 ### Displaying a payment
 
