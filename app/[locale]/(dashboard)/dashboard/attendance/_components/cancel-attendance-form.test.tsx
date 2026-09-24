@@ -67,6 +67,7 @@ const errors = {
   notFound: 'This occurrence no longer exists.',
   attendanceDisabled: 'Attendance is disabled.',
   sessionCancelled: 'This session is cancelled.',
+  invalidTransition: 'This session changed in the meantime.',
   unexpected: 'Something went wrong. Try again.',
 }
 
@@ -90,6 +91,24 @@ describe('attendance cancellation forms', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel session' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(errors.notFound)
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('explains a restore refused because the session is no longer cancelled', async () => {
+    setAttendanceCancellationActionMock.mockResolvedValue('invalidTransition')
+    render(
+      <CancelAttendanceForm
+        sessionId="00000000-0000-4000-8000-000000000001"
+        cancelled={false}
+        label="Restore session"
+        pendingLabel="Restoring session"
+        errors={errors}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore session' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(errors.invalidTransition)
     expect(refresh).not.toHaveBeenCalled()
   })
 

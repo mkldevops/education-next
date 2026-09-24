@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   startScheduled: vi.fn(),
   allPresent: vi.fn(),
   validate: vi.fn(),
+  refresh: vi.fn(),
 }))
 vi.mock('@peaklab/ui', () => ({
   Button: (props: ButtonHTMLAttributes<HTMLButtonElement>) => <button {...props} />,
@@ -22,7 +23,11 @@ vi.mock('lucide-react', () => ({
 }))
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: { count?: number }) =>
-    key === 'markRemainingPresent' ? `Mark ${values?.count} remaining` : key,
+    key === 'markRemainingPresent'
+      ? `Mark ${values?.count} remaining`
+      : key === 'rosterRefreshed'
+        ? `Added ${values?.count}`
+        : key,
 }))
 vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
@@ -34,6 +39,7 @@ vi.mock('../../../../../_lib/attendance-actions', () => ({
   startAdhocAttendanceAction: mocks.startAdhoc,
   startScheduledAttendanceAction: mocks.startScheduled,
   markAllPresentAction: mocks.allPresent,
+  refreshAttendanceRosterAction: mocks.refresh,
   validateAttendanceAction: mocks.validate,
 }))
 
@@ -90,6 +96,7 @@ const labels = {
     attendanceDisabled: 'Disabled',
     attendanceClosed: 'Closed',
     sessionCancelled: 'Cancelled',
+    invalidTransition: 'Changed meanwhile',
   },
 }
 const props = {
@@ -304,5 +311,43 @@ describe('AttendancePanel', () => {
 
     await waitFor(() => expect(mocks.validate).toHaveBeenCalledTimes(1))
     expect(screen.getByRole('status')).toHaveTextContent('Validated')
+  })
+
+  it('adds the students assigned since the opening while keeping the current student', async () => {
+    const amina = {
+      id: 'a',
+      studentName: 'Amina',
+      status: 'PRESENT' as const,
+      lateMinutes: null,
+      message: null,
+    }
+    const adam = {
+      id: 'b',
+      studentName: 'Adam',
+      status: 'NOT_RECORDED' as const,
+      lateMinutes: null,
+      message: null,
+    }
+    mocks.refresh.mockResolvedValue(makeSession([adam, amina]))
+    render(<AttendancePanel {...props} initialSession={makeSession([amina])} />)
+    expect(screen.getByText('Student 1 of 1')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'refreshRoster' }))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Added 1'))
+    expect(mocks.refresh).toHaveBeenCalledWith({ sessionId: 's' })
+    expect(screen.getByText('Student 2 of 2')).toBeInTheDocument()
+  })
+
+  it('reports a refresh refused because the session changed meanwhile', async () => {
+    mocks.refresh.mockResolvedValue('invalidTransition')
+    render(<AttendancePanel {...props} initialSession={makeSession()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'refreshRoster' }))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Changed meanwhile'))
+  })
+
+  it('does not offer a roster refresh on a validated session', () => {
+    render(
+      <AttendancePanel {...props} initialSession={{ ...makeSession(), status: 'VALIDATED' }} />
+    )
+    expect(screen.queryByRole('button', { name: 'refreshRoster' })).not.toBeInTheDocument()
   })
 })

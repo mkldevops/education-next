@@ -7,6 +7,8 @@ const release = vi.fn()
 const transaction = vi.fn()
 
 const tx = {
+  $queryRaw: vi.fn(),
+  $executeRaw: vi.fn(),
   family: { create: vi.fn(), findFirst: vi.fn() },
   person: { create: vi.fn(), findFirst: vi.fn() },
   student: { create: vi.fn() },
@@ -71,7 +73,8 @@ beforeEach(() => {
     resolved,
   })
   transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
-  tx.classPeriod.findUnique.mockResolvedValue({ capacity: 12 })
+  tx.classPeriod.findUnique.mockResolvedValue({ periodId: 'period-1' })
+  tx.$queryRaw.mockResolvedValue([{ capacity: 12 }])
   tx.classAssignment.count.mockResolvedValue(3)
   tx.mcpDraft.updateMany.mockResolvedValue({ count: 1 })
   tx.family.create.mockResolvedValue({ id: 'family-1' })
@@ -292,7 +295,7 @@ describe('commitEnrollFamily', () => {
   })
 
   it('judges each class on the seats its own siblings take, not the whole group', async () => {
-    tx.classPeriod.findUnique.mockResolvedValue({ capacity: 4 })
+    tx.$queryRaw.mockResolvedValue([{ capacity: 4 }])
     tx.classAssignment.count.mockResolvedValue(3)
     findById.mockResolvedValue({
       keyId: 'key-1',
@@ -321,6 +324,45 @@ describe('commitEnrollFamily', () => {
       .mockResolvedValueOnce({ id: 'person-student-2' })
 
     expect(await commitEnrollFamily(scope, input)).toMatchObject({ familyId: 'family-1' })
+  })
+
+  it('locks the class rows in id order and counts under the lock', async () => {
+    findById.mockResolvedValue({
+      keyId: 'key-1',
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [
+          { ...resolved.students[0], classPeriod: { id: 'class-b', name: 'C5' } },
+          { ...resolved.students[0], name: 'Manzil', classPeriod: { id: 'class-a', name: 'C2' } },
+        ],
+        payment: null,
+      },
+    })
+    tx.person.create
+      .mockReset()
+      .mockResolvedValueOnce({ id: 'person-parent' })
+      .mockResolvedValueOnce({ id: 'person-student-1' })
+      .mockResolvedValueOnce({ id: 'person-student-2' })
+
+    await commitEnrollFamily(scope, input)
+
+    // Deux commits qui visent les mêmes classes les verrouillent dans le même ordre.
+    const lockedIds = tx.$queryRaw.mock.calls.map(([sql, ...values]) => {
+      expect(sql.join('?')).toContain('FOR UPDATE')
+      return values[0]
+    })
+    expect(lockedIds).toEqual(['class-a', 'class-b'])
+    const lastLock = tx.$queryRaw.mock.invocationCallOrder.at(-1) ?? 0
+    expect(lastLock).toBeLessThan(tx.classAssignment.count.mock.invocationCallOrder.at(-1) ?? 0)
+  })
+
+  it('refuses a class archived between the preview and the commit', async () => {
+    tx.$queryRaw.mockResolvedValue([])
+
+    expect(await commitEnrollFamily(scope, input)).toBe('notFound')
+    expect(tx.family.create).not.toHaveBeenCalled()
   })
 
   it('refuses a stored split that points past the students it creates', async () => {
@@ -518,6 +560,15 @@ describe('commitEnrollFamily', () => {
         expect.objectContaining({ data: expect.objectContaining({ studentId: 'student-7' }) })
       )
       expect(result).toMatchObject({ familyId: 'family-7', studentIds: ['student-7'] })
+    })
+
+    it('locks the student in the period before the class row', async () => {
+      await commitEnrollFamily(scope, input)
+
+      const [studentLock] = tx.$executeRaw.mock.invocationCallOrder
+      const [classLock] = tx.$queryRaw.mock.invocationCallOrder
+      expect(tx.$executeRaw.mock.calls[0]).toContain('enrollment:school-1:student-7:period-1')
+      expect(studentLock).toBeLessThan(classLock)
     })
 
     it('refuses a family archived since the preview', async () => {

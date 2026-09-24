@@ -85,3 +85,22 @@ export function checkImpersonation(
   if (!target.isActive) return 'targetInactive'
   return 'OK'
 }
+
+/**
+ * Refus opposé, pendant un emprunt, à toute opération sur les identifiants ou le compte
+ * lui-même : passkey, adresse, mot de passe, comptes liés, sessions, clés API, suppression.
+ * L'emprunt sert à voir ce que voit la cible, pas à s'installer durablement chez elle.
+ */
+export type ImpersonationLock = 'impersonating'
+
+// Signature d'index : Better Auth type la session en `Record<string, any> & {...}`, qu'un
+// objet aux seuls champs optionnels refuserait comme « weak type ».
+type SessionWithImpersonation = {
+  session: { [field: string]: unknown; impersonatedBy?: unknown }
+}
+
+/** Une session est empruntée dès qu'elle porte `impersonatedBy`, posé par le plugin. */
+export function isImpersonating(session: SessionWithImpersonation | null | undefined): boolean {
+  const impersonatedBy = session?.session.impersonatedBy
+  return typeof impersonatedBy === 'string' && impersonatedBy.length > 0
+}

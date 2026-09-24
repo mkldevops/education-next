@@ -31,10 +31,12 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 
 ## Multi-school
 
-Every business row belongs to exactly one `School`. Twenty-three models carry `schoolId NOT NULL`:
+Every business row belongs to exactly one `School`. Twenty-five models carry `schoolId NOT NULL`:
 `Family`, `UserFamily`, `Person`, `FamilyPerson`, `Student`, `PhoneNumber`, `Config`, `Level`,
-`Period`, `ClassPeriod`, `ClassPeriodTeacher`, `ClassScheduleSlot`, `ClassScheduleSlotTeacher`, `Enrollment`, `ClassAssignment`, `Payment`,
-`PaymentTransaction`, `Plan`, `Invitation`, `Teacher`, `TeacherExpense`, `Event`, `EventImage`.
+`Period`, `ClassPeriod`, `ClassPeriodTeacher`, `ClassScheduleSlot`, `ClassScheduleSlotTeacher`, `Enrollment`, `ClassAssignment`,
+`AttendanceSession`, `AttendanceEntry`, `Payment`, `PaymentTransaction`, `Plan`, `Invitation`,
+`Teacher`, `TeacherExpense`, `Event`, `EventImage`. All of them are in the runtime guard's
+`TENANT_SCOPED_MODELS`.
 
 `PaymentProviderEvent` is the one business model left unscoped, deliberately: its
 `paymentTransactionId` is nullable, so an unmatched provider event has no derivable school. It is a
@@ -71,6 +73,13 @@ Isolation rests on three layers. None is sufficient alone.
    A `where` satisfies it through `schoolId`, through `schoolId: { in: [...] }`, or through any
    generated compound selector containing it (`id_schoolId`, `schoolId_name`…). Reassigning a row's
    school is refused, including through the `school` relation.
+
+**The school and the target of a mutation come from the server, never from the request body.**
+Dashboard actions receive a client object typed `Omit<Input, 'schoolId' | 'id'>`, but that type does
+not exist at runtime and the use-case schemas accept `schoolId`. Actions therefore spread the client
+data **first** and write the session `schoolId` (and the `id` argument, `createdById`…) after it —
+`updateX({ ...data, id, schoolId })` — so a forged field can never override them. Regression:
+`app/[locale]/(dashboard)/_lib/tenant-override-actions.test.ts`.
 
 `SchoolMember` sits outside the guard by construction — the context must read memberships by
 `userId` before any school is known. All access goes through `src/gateways/school-member-gateway.ts`,
@@ -180,6 +189,33 @@ names the other school; `_components/school-switch-prompt.tsx` keeps the screen 
 because hiding the resolution would leave the user in front of an unexplainable `notFound()`.
 
 ## Sign-in methods
+
+### Account creation is closed
+
+No sign-in method creates an account. Two server paths do, and only them: accepting an invitation
+for an unknown address (`acceptInvitationAction`) and an administrator's `createUserAction`. Both go
+through `credentialUserGateway.create()` (`src/gateways/credential-user-gateway.ts`), which writes
+the user and its `credential` `Account` through Better Auth's internal adapter — same hash, no
+session — with `emailVerified: true`, since the address is proven by the token or typed by an admin.
+
+`src/lib/auth.ts` closes every other door, because a pre-created account for a future invitee
+would let a third party keep a session on it and see the family once the invitation is accepted:
+
+- `emailAndPassword.disableSignUp` — `POST /api/auth/sign-up/email` answers `400`
+  (`EMAIL_PASSWORD_SIGN_UP_DISABLED`). It also closes `auth.api.signUpEmail` on the server, which
+  is why the two legitimate paths no longer call it.
+- Google carries `disableSignUp` (redirect callback) and `disableImplicitSignUp` (the `idToken`
+  flow, which ignores `disableSignUp`). Google signs in to, or links, an **existing** account only;
+  an unknown address is sent back with `signup_disabled`. Implicit linking also requires the local
+  account's `emailVerified` (Better Auth's `requireLocalEmailVerified`, on by default).
+- `databaseHooks.user.create.before` refuses any user creation that runs inside a Better Auth
+  endpoint, which catches an explicit `requestSignUp: true` and any future plugin route. The gateway
+  runs outside an endpoint and is the only writer left.
+- `revokeSessionsOnPasswordReset` — a password reset proves the mailbox, so every session opened
+  before it dies with the old password.
+
+`requireEmailVerification` stays false: every account is born verified, and a sign-in check would
+only block a user whose address an admin just rewrote (see **User management**).
 
 Email and password is the method this application always offers. The two alternatives are governed by
 `PlatformSetting` rows written from the **Sign-in methods** section of `/dashboard/config`. That page
@@ -352,8 +388,9 @@ Classes resolve with `requireAdmin: true`: a parent is never offered a switch to
 
 `src/lib/__tests__/school-isolation.test.ts` pins this against a real database, one case per
 tenant-scoped resource. Written with `db` mocked they would only test the mock.
-- **There is no public sign-up.** `/register` was removed: a self-created account would hold no
-  membership and be locked out of every school. Invitations are the only way in.
+- **There is no public sign-up.** `/register` was removed and the Better Auth endpoint is closed on
+  the server (see **Sign-in methods**). An account is born from an accepted invitation or from
+  `createUserAction`, nothing else.
 
 `proxy.ts` protects `/dashboard`, `/settings`, `/profile` coarsely. Its matcher **excludes `/api`**,
 so every route handler and Server Action authenticates itself.
@@ -604,7 +641,10 @@ rows still belong to.
 
 `commit_enroll_family` owns **one `db.$transaction`** with direct `tx.*` calls, like
 `create-enrollment.ts`: no gateway accepts an injected client, and chaining the four use cases would
-leave an orphan family behind the first failure.
+leave an orphan family behind the first failure. Before re-reading anything it takes, in order, the
+(school, student, period) lock of each existing student it enrolls, then the row lock of each class
+it seats children in, by increasing id (`reserveClassSeatsInOrder`); the capacity and duplicate
+checks that follow therefore cannot race a dashboard enrollment.
 
 | Body | Cause |
 |---|---|
@@ -614,7 +654,7 @@ leave an orphan family behind the first failure.
 | `checksumMismatch` | the checksum does not match the plan that was shown |
 | `commitInProgress` | a concurrent commit is still inside its transaction, and under 60 s old |
 | `notFound` | the class the preview resolved no longer exists, or the family, member, enrollment or plan it targets |
-| `classFull` | the class filled up between the preview and the commit |
+| `classFull` | the class filled up between the preview and the commit, counted under the class row lock |
 | `duplicateEnrollment` | a member of the existing family was enrolled between the preview and the commit |
 | `overpayment` / `noPayableEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
 | `staleDraft` | the recomputed split no longer matches the validated one, the enrollment or plan changed, or a member became a student |
@@ -743,9 +783,23 @@ roles in `src/lib/impersonation.ts`; the guard is `checkImpersonation` in `src/d
 - **Authorization follows the target.** `getSchoolContext()` resolves the borrowed session like any
   other: an impersonated parent is confined to their family, the admin's `active_school` cookie is
   honoured only if the target may use that school.
-- **Writes are attributed to the target.** Nothing is blocked while impersonating; a mutation made
-  then is recorded as the target's own (`createdBy`, `paymentInitiatedBy`). The dashboard shows a
-  banner with « Revenir à mon compte » for the whole borrowed session.
+- **Writes are attributed to the target.** A business mutation made while impersonating is recorded
+  as the target's own (`createdBy`, `paymentInitiatedBy`). The dashboard shows a banner with
+  « Revenir à mon compte » for the whole borrowed session.
+- **Credentials and the account itself are locked** (`impersonating`, tested by `isImpersonating` in
+  `src/domain/user.ts`): passkey registration and deletion, email change, password change, account
+  deletion, session revocation and MCP key creation or revocation. The server actions return the
+  typed discriminant, shown as `errors.impersonating` in settings; the plugin's `before` hook also
+  answers 403 `impersonating` on the native Better Auth routes listed in
+  `IMPERSONATION_LOCKED_AUTH_PATHS` (change/set password, change email, delete user, revoke
+  session(s), link/unlink social, access and refresh tokens), for HTTP and `auth.api` alike. Name,
+  bio and image (`updateProfileAction`) stay editable.
+- **Every impersonation leaves a durable trace** in `ImpersonationLog`: actor and target (id and
+  email snapshot), borrowed session id, IP, user agent, start and planned expiry. The row is written
+  in the same request, before any cookie is set; if the write fails the borrowed session is deleted
+  and the impersonation refused. Stop and sign-out of the borrowed session set `endedAt`; a session
+  that expires or is revoked otherwise keeps `endedAt` null and `expiresAt` bounds it. The table has
+  no foreign key to `User`, so the trace outlives an account deletion.
 
 ## Periods
 
@@ -809,7 +863,19 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   assignment, teacher assignment, schedule slot, or attendance session. Archiving is a soft delete
   (`isActive: false`), so an identifier outside the active school scope reads as `notFound`.
 - **Occupancy counts** assignments with `endAt: null` whose enrollment is `PENDING`, `ACTIVE` or
-  `COMPLETED`. Cancelled enrollments free their seat; completed ones do not.
+  `COMPLETED`. Cancelled enrollments free their seat; completed ones do not. One predicate
+  (`SEAT_HOLDING_ENROLLMENT_STATUSES` in `src/domain/class-period.ts`,
+  `seatHoldingAssignmentsWhere` in `src/gateways/class-seat-lock.ts`) serves every reader and
+  writer: the class pages, the dashboard insights, the MCP preview and commit, promotion, creation
+  and reassignment.
+- **Every write that takes a seat reserves it under a class row lock.** `reserveClassSeats`
+  (`src/gateways/class-seat-lock.ts`) runs `SELECT … FOR UPDATE` on the active `ClassPeriod` row of
+  the school, then re-counts occupancy in the same transaction: a concurrent writer waits for the
+  commit and counts the seat it took, so a class never ends above its capacity. Creation, creation
+  with a new student, reassignment, promotion and the MCP commit all go through it; a class archived
+  meanwhile answers `notFound`. **Lock order is fixed**: the (school, student, period) advisory lock
+  first, then the enrollment row, then class rows by increasing id (`reserveClassSeatsInOrder`), so
+  two writers never wait on each other in a cycle.
 - **Teachers are many-to-many.** A `ClassPeriod` may have no teacher yet, one teacher, or several
   teachers through `ClassPeriodTeacher`. Teacher assignments are scoped by the same `schoolId` as the
   class and the teacher; cross-school class staffing is rejected by composite foreign keys and by the
@@ -848,8 +914,13 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 
 ## Attendance
 
-- `attendance_enabled` is opt-in per school. When off, attendance links and pages are hidden and every server mutation refuses it.
-- A logical occurrence is unique by school, class, date and a non-null occurrence key (`adhoc` or the schedule-slot id). Opening is an atomic upsert; its roster snapshots active class assignments at that date.
+Owner: `src/domain/attendance-session.ts` (roster window, transitions),
+`app/[locale]/(dashboard)/_lib/attendance-actions.ts` (persistence).
+
+- `attendance_enabled` is opt-in per school. When off, attendance links and pages are hidden and every server mutation refuses it, including cancelling or restoring a session and cancelling a planned occurrence (`attendanceDisabled`).
+- A logical occurrence is unique by school, class, date and a non-null occurrence key (`adhoc` or the schedule-slot id). Opening is an atomic upsert; its roster snapshots the active class assignments of that **UTC calendar day**: an assignment counts when it starts before the next UTC midnight and has not ended before that day's midnight (`attendanceRosterWindow`). A student assigned during the day, even after midnight, is therefore on that day's call.
+- **A DRAFT session can take students assigned since its opening** (`refreshAttendanceRosterAction`, "Refresh student list" in the attendance panel). It only adds entries (`NOT_RECORDED`) for roster students without one and never removes or rewrites an existing entry. The refresh row-locks the session with a write conditional on `DRAFT`; a VALIDATED or concurrently validated session → `invalidTransition`, a cancelled one → `sessionCancelled`.
+- **Cancel and restore are conditional transitions** (`planCancellationTransition`). Cancelling an active session records its status in `statusBeforeCancellation` and only applies while the session still has the status that was read; cancelling an already cancelled session is a no-op. Restoring applies only to a session that is still `CANCELLED` (with the same saved status) and returns the saved status, or DRAFT (clearing `validatedAt`) when none was saved; an empty cancelled placeholder is deleted instead. Restoring a DRAFT or VALIDATED session, or losing a race with another change (stale tab, double click), writes nothing → `invalidTransition`.
 - The attendance route identifies a planned occurrence explicitly with its UTC calendar `date` and `slotId`; an exceptional occurrence uses `date` and `occurrence=adhoc`. Loading either identity only reads an existing session: creating a planned or exceptional session remains an explicit mutation. A slot must belong to the class and school **and** match the selected date's planning weekday (Monday 1 through Sunday 7).
 - Entries remain `NOT_RECORDED`, `PRESENT`, `ABSENT` or `LATE`; **All present** changes only the first state. A late entry may carry zero to 1,440 optional whole minutes and an internal optional message of at most 1,000 characters; it never notifies a parent. Changing to any other status clears late minutes while preserving its message. A validated session can be corrected and records the latest author and timestamp.
 - ADMIN may operate school classes. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
@@ -866,6 +937,9 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 - **The return link after validation depends on who validated.** An admin goes back to
   `/dashboard/attendance` for the same day; a teacher goes back to `/dashboard/my-classes`, because
   that page requires a teacher record.
+- **Attendance entries do not outlive their student.** Deleting a family for good removes its own
+  students' entries, even on a validated session; the session and its other entries stay (see
+  « Deleting a family for good »).
 
 ## Enrollments
 
@@ -894,8 +968,10 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
   student cannot both find the period free. No unique index can carry this rule: the period lives
   on the assignment's class, not on `Enrollment`. A `COMPLETED` enrollment leaves re-enrollment
   open.
-- **Capacity is re-counted inside the transaction**, not before it, so two concurrent enrollments
-  cannot both pass the check → `classFull`.
+- **Capacity is re-counted inside the transaction, under the class row lock** (`reserveClassSeats`,
+  see Classes), so two concurrent enrollments of different students cannot both take the last seat
+  → `classFull`. With `replaceExisting`, a refused seat throws to roll back the cancellation of the
+  previous enrollment, since a `return` would commit it.
 - **Three entry points for a school admin**: the enrollments list (`/dashboard/enrollments`,
   « Nouvelle inscription », any active student of the school), the students list, and the family
   and student detail pages. On every one, the amount due is prefilled with the selected plan's
@@ -908,11 +984,27 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
 « Ajouter un élève » in a family enrolls the child in the same gesture when the enrollment
 section is kept ticked: `src/use-cases/students/create-enrolled-student.ts` writes the person,
 the family link, the student, the enrollment and the class assignment in **one**
-`db.$transaction`, with the same capacity re-count. A refusal — `notFound`,
+`db.$transaction`, with the same locked capacity re-count. A refusal — `notFound`,
 `discountExceedsPlan`, `classFull` — happens before the first write, so no student is left
 behind without an enrollment. Untick the section (or have no plan or no class in the selected
 period) and `createStudentAction` falls back to `create-student.ts`, which only attaches the
 child to the family.
+
+### Changing class
+
+`src/use-cases/enrollments/reassign-class.ts` moves a `PENDING` or `ACTIVE` enrollment to another
+class, in **one** `db.$transaction`: the (school, student, period) lock, then the enrollment row
+(`FOR UPDATE`, status re-read → `invalidStatusTransition`), then the target class seat.
+
+- **Same period only** → `periodMismatch`. An enrollment belongs to the period of its class (the
+  open assignment, else the latest one); moving it to another period's class would open a second
+  running enrollment there, billed twice in the family balance. The enrollment page offers only the
+  classes of that period.
+- **Another open enrollment of the student in the period** → `duplicateEnrollment`.
+- **Target full** → `classFull`, counted under the class row lock.
+- **Already in the target class** → `OK` without writing, so a double submit is harmless.
+- The current assignment is closed (`endAt`) and the new one created in the same transaction: a
+  failure leaves the student in the old class, never in none.
 
 ### Money
 
@@ -968,6 +1060,17 @@ across that family's `PENDING` and `ACTIVE` enrollments**, proportionally to eac
 - **Zero is rejected** by the schema; a negative amount is a refund.
 - **Several payments are normal.** Each one is distributed against the balances left by the
   previous ones, until the family owes nothing.
+- **Payments of one family are serialized.** Reading the balance, distributing and writing the
+  `Payment` rows happen in one transaction that first locks the family row
+  (`paymentGateway.lockFamilyForPayment`, a `SELECT … FOR NO KEY UPDATE` scoped by `id` and
+  `schoolId`), through `readLockedFamilyBalances()` in
+  `src/use-cases/payments/locked-family-balance.ts`. Two simultaneous 720 € payments on a 720 €
+  balance record one: the second waits for the first to commit, rereads a zero balance and answers
+  `overpayment`. The same helper serves `commit_record_payment`, where the second draft answers
+  `overpayment` or `staleDraft`. A family missing from the school or archived → `notFound`. The
+  Stripe webhook takes the same lock before rereading the balance it allocates, but records an
+  archived family's capture anyway (see **Online payment**). Every other writer of a family's
+  payments must take the same lock before reading the balance it distributes.
 
 ### Displaying a payment
 
@@ -1039,19 +1142,37 @@ the checkout flow, not by the form.
   pending enrollments included; partial online payment is not offered.
 - The `PaymentTransaction` row is created **before** the Stripe session and its id is the
   idempotency key.
+- A family never holds two payable Checkout sessions. Each session charges the full balance, so a
+  second one (back button, a second parent) would charge twice. Before opening a session, every
+  `PENDING` transaction of the family is closed: a session still `open` at Stripe is expired
+  (`sessions.expire`) and its transaction marked `EXPIRED`; a session already `complete` means a
+  payment is awaiting its webhook → `paymentInProgress`, and no new session opens. If Stripe
+  cannot confirm the earlier session's state → `providerError`, never a second session.
 - The webhook refuses only what predates the money leaving the customer's card: an already-seen
   provider event → `duplicate`; a transaction already `SUCCEEDED` → `duplicate`;
   `payment_status !== 'paid'` → `notPaid`; a different amount → `amountMismatch`; a different
   currency → `currencyMismatch`.
-- Once the card is charged, the webhook never refuses on a stale balance. A manual payment
-  recorded between the checkout session and the webhook can shrink or clear what's owed;
-  `distributeReceivedPayment` (`src/domain/payment.ts`) allocates the captured amount against
-  `FamilyBalance.payableEnrollments` (every payable-status enrollment, including already-settled
-  ones) instead of `distributePayment`'s narrower, `overpayment`-refusing set. Each enrollment
-  gets its normal share, capped at its remaining balance; anything beyond that lands in full on
-  the first enrollment as an unreconciled credit. Only the impossible case — no payable-status
-  enrollment left at all — still returns `noPayableEnrollments`, and is logged with
-  `console.error` so a captured, unrecorded payment is never silent (#306).
+- **A payment captured by Stripe is always recorded.** The balance read at webhook time can be
+  smaller than the captured amount (a manual payment entered during checkout, a session paid
+  after another). `distributeReceivedPayment` (`src/domain/payment.ts`) allocates the captured
+  amount against `FamilyBalance.payableEnrollments` (every payable-status enrollment, including
+  already-settled ones) instead of `distributePayment`'s `overpayment`-refusing set. Each
+  enrollment gets its normal share, capped at its remaining balance; anything beyond lands in full
+  on the first enrollment as a visible family credit, for an admin to refund or keep.
+- When no enrollment is payable anymore (all cancelled or completed during checkout), the whole
+  amount is recorded on the family's latest enrollment whatever its status
+  (`findLatestFamilyEnrollmentId`): money received stays received and counts in `totalPaid`. It is
+  logged with `console.error` for an admin to reconcile.
+- If the family has no enrollment at all, no `Payment` can exist, but the transaction is still
+  closed `SUCCEEDED` with its provider event and `providerPaymentId` → `unallocated`, logged with
+  `console.error`. The capture stays traced and Stripe stops retrying.
+- Closing the transaction is conditional (`status` not yet `SUCCEEDED`) inside the same database
+  transaction as the allocations: two distinct events for one session (`completed` then
+  `async_payment_succeeded`, or a manual replay) record once, the second is a `duplicate`.
+- The route (`app/api/stripe/webhook/route.ts`) answers 200 for `OK`, `duplicate`, `unallocated`
+  and `notPaid` (an async payment is followed by `async_payment_succeeded`), so Stripe does not
+  retry what no retry would change. `notFound`, `amountMismatch` and `currencyMismatch` still
+  answer 422: they need investigation.
 
 ### Activating payments per school
 
@@ -1168,6 +1289,18 @@ A student is **skipped**, with the reason reported, when:
 - **One transaction per student**, deliberately: Postgres aborts a whole transaction on any error,
   so a single batch would make a partial report impossible. A failure is reported per student and
   its seat is released back into the in-memory occupancy tally.
+- **Idempotent.** The eligibility pass reads outside any lock and only pre-filters. Each student's
+  transaction takes the (school, student, **target** period) lock of `createEnrollment`, re-reads
+  whether the student already holds an enrollment there (`enrollmentGateway.isEnrolledInPeriod`,
+  `PENDING`/`ACTIVE`/`COMPLETED` → `alreadyPromoted`) and reserves the target seat under the class
+  row lock (`targetClassFull`, or `noTargetClass` if archived meanwhile). A double click or two admins
+  running it together create one enrollment per student and never overfill a class; a refusal is
+  counted as skipped and writes nothing.
+- **The source level is the open assignment's.** `findCompletedByPeriod` includes only the
+  assignment with `endAt: null` in the source period: after a mid-year class change, the closed one
+  would name the wrong starting level.
+- **Archived students are not promoted.** The soft-delete filter does not reach nested relations,
+  so `findCompletedByPeriod` states `student: { isActive: true }` itself.
 
 ## Families, students, people
 
@@ -1217,10 +1350,28 @@ where financial history is destroyed rather than archived.
   `dbArchived` so both states can be deleted.
 - **`familyGateway.deleteWithRelated` runs the whole graph in one transaction.** Nothing is cascaded
   by the database along that path: `Payment.family` and `PaymentTransaction.family` are `Restrict`,
-  and so are the next links — `Enrollment.student`, `ClassAssignment.enrollment`, `Invitation.person`.
-  Each table is therefore emptied explicitly, leaf first. What is `Cascade` — `UserFamily`,
-  `FamilyPerson`, `PhoneNumber`, `Invitation.family` — goes with its parent, and
-  `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives, detached.
+  and so are the next links — `Enrollment.student`, `AttendanceEntry.student`,
+  `ClassAssignment.enrollment`, `Invitation.person`, `Payment.enrollment`,
+  `Payment.paymentTransaction`. Each table is therefore emptied explicitly, leaf first. What is
+  `Cascade` — `UserFamily`, `FamilyPerson`, `PhoneNumber`, `Invitation.family` — goes with its
+  parent, and `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives, detached.
+- **Every non-cascading foreign key into the deleted graph is listed** in
+  `FAMILY_DELETION_CLEARED_RELATIONS` (`src/gateways/family-gateway.ts`).
+  `src/gateways/__tests__/family-deletion-restrict-guard.test.ts` reads `prisma/schema.prisma` and
+  fails when a relation that is `Restrict` (explicit, or implicit on a required relation) points at a
+  deleted or cascaded model without being on that list. A new table attached to a student, person,
+  family or enrollment must be emptied by the transaction, or its presence decided here, before
+  that test passes.
+- **A deleted student's attendance goes with it**, validated sessions included. The attendance rules
+  require no retention: an entry only records one child's presence at one call, and without the
+  student it designates no one. Keeping it would mean keeping the student, which is exactly what
+  the deletion erases — along with payments, a far heavier history. The `AttendanceSession` itself
+  stays, with its other entries and its validation; only the deleted child's row leaves the roster.
+  A student shared with another family keeps their attendance, like the rest of their record.
+- **A foreign key that still refuses the deletion returns `deletionBlocked`**, never an error
+  boundary. The transaction rolls back whole, so nothing is erased, and the dialog says so and
+  suggests archiving instead. Reaching it means a relation escaped the guard above; any other error
+  is rethrown.
 - **A person linked to another family survives**, along with their student and enrollments: only the
   link to the deleted family goes. Their invitations survive too — only a person actually deleted
   has theirs removed, because `Invitation.person` is `Restrict`.
@@ -1229,6 +1380,7 @@ where financial history is destroyed rather than archived.
 - **The confirmation dialog counts what the deletion will take, not what the page shows.**
   `familyGateway.countDeletionImpact` and `deleteWithRelated` share one `resolveDeletionScope`
   traversal, so the preview includes archived rows and excludes the shared persons that survive.
+  It lists members, students, enrollments, attendance records and payments.
   Deriving it from the page's own read would have announced zero students while erasing an
   archived one.
 
@@ -1522,8 +1674,18 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   module. `allDay` emits `DTSTART;VALUE=DATE`; RFC 5545 makes that value's `DTEND` **exclusive**,
   while `endAt` is stored **inclusive** (`normalizeEventDates`), so a multi-day all-day event's
   `DTEND` is always the stored `endAt` plus one day — omitted entirely for a single-day event, which
-  is where RFC 5545's implicit one-day default already lands correctly. A timed event emits UTC
-  instants instead. `UID` is `<id>@<school-slug>`: stable across edits, so a calendar client updates
+  is where RFC 5545's implicit one-day default already lands correctly. **A timed event emits the
+  school's wall-clock time, never a UTC instant**: `DTSTART;TZID=Europe/Paris:20260923T180000`
+  (same for `DTEND`), with one `VTIMEZONE` block for `Europe/Paris` (EU summer-time rules) placed
+  before the events and emitted only when a timed event references it, plus `X-WR-TIMEZONE`.
+  `startAt`/`endAt` store the time read on the flyer in a `TIMESTAMP` column without zone, entered
+  and read back as UTC digits (`parseEventInputValue`); exporting those digits with a `Z` suffix
+  put an 18:00 event at 20:00 in a Paris calendar in summer (19:00 in winter). The zone is the
+  single constant `EVENT_TIME_ZONE` (`src/domain/event-ics.ts`): no school carries a time zone —
+  neither a `School` column nor a configuration key — and every school served today is in
+  metropolitan France. A school in another zone needs a `School.timeZone` column replacing that
+  constant, not a second constant. `DTSTAMP` and `LAST-MODIFIED` stay real UTC instants (`Z`):
+  they are system timestamps, not wall-clock times. `UID` is `<id>@<school-slug>`: stable across edits, so a calendar client updates
   the existing entry instead of duplicating it. `SEQUENCE` is `updatedAt` in whole seconds since the
   epoch — monotonically increasing with every edit as long as two edits of the same event don't land
   in the same second, which a human editing a form never does. `STATUS:CANCELLED` mirrors the
@@ -1593,7 +1755,8 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   `unauthenticated` without a session and `emailMismatch` when the signed-in address differs — an
   invitation link is not a login, and it must not hand someone else's account a new membership. That
   path creates **no account**: one transaction writes the `SchoolMember` and, for a `PARENT`
-  invitation carrying a family, the `UserFamily`. An unknown email still goes through sign-up.
+  invitation carrying a family, the `UserFamily`. An unknown email still goes through account
+  creation (`credentialUserGateway`).
 - **The token is consumed before the membership is written.** `linkInvitedUser()` closes the
   invitation with an `updateMany` guarded by `usedAt: null`; that single conditional write is the
   only serialization point, so a link replayed twice grants one membership and answers
@@ -1675,7 +1838,21 @@ Real holes, verified against the running application. Not aspirations.
   where this is a no-op, which is presumably why it has not surfaced before. A developer seeding or
   testing event dates locally on a non-UTC machine will see wrong days without any error. Reproduced
   and isolated while verifying #326's ICS feed; fixing it (forcing `TZ=UTC` on the Next.js process,
-  or moving the affected columns to `TIMESTAMPTZ`) was out of that issue's scope.
+  or moving the affected columns to `TIMESTAMPTZ`) was out of that issue's scope. The ICS feed's
+  `TZID` wall-clock export reads the same UTC digits, so on such a process it inherits the same
+  shift; it is correct wherever the process runs with `TZ=UTC`.
+- **"Upcoming" and the J-x banner compare wall-clock event times to `now` as if both were UTC**, so
+  near the boundary an event is considered started one or two hours late (Paris offset). The ICS feed
+  no longer has this defect; the comparisons would need `now` converted to `EVENT_TIME_ZONE` wall
+  clock.
+
+- **"One open enrollment per student per period" has no database constraint.** The period lives on
+  the assignment's class, so no unique index on `Enrollment` can express it; the advisory lock taken
+  by every writer carries it. A partial unique index on `ClassAssignment(enrollmentId) WHERE "endAt"
+  IS NULL` would at least forbid two open assignments per enrollment, but needs the existing data
+  checked first and was left out of the concurrency fix.
+- **Cancelling an enrollment is not one transaction.** `cancel-enrollment.ts` updates the status and
+  closes the assignment in two separate writes.
 
 ## Surfacing a rule in the UI
 

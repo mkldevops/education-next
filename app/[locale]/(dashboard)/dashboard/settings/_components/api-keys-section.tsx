@@ -78,7 +78,7 @@ export function ApiKeysSection({ keys }: Props) {
     startTransition(async () => {
       const result = await revokeMcpApiKeyAction(id)
       if (result !== 'OK') {
-        toast.error(t('error'))
+        toast.error(t.has(`errors.${result}`) ? t(`errors.${result}`) : t('error'))
         return
       }
 

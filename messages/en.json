@@ -379,7 +379,8 @@
             "members": "{count, plural, =0 {No member} one {# member} other {# members}}",
             "students": "{count, plural, =0 {No student} one {# student} other {# students}}",
             "enrollments": "{count, plural, =0 {No enrollment} one {# enrollment} other {# enrollments}}",
-            "payments": "{count, plural, =0 {No payment} one {# payment} other {# payments}}"
+            "payments": "{count, plural, =0 {No payment} one {# payment} other {# payments}}",
+            "attendances": "{count, plural, =0 {No attendance record} one {# attendance record} other {# attendance records}}"
           },
           "confirmationLabel": "Type {name} to confirm",
           "confirm": "Delete permanently",
@@ -388,6 +389,7 @@
           "error": "Error deleting family",
           "errors": {
             "confirmationMismatch": "The name you typed does not match the family name",
+            "deletionBlocked": "Records linked to this family prevent its deletion. Nothing was erased: archive it instead and report the problem.",
             "notFound": "Family not found",
             "validationError": "Check the information you entered"
           }
@@ -1159,6 +1161,7 @@
           "secure": "Secure payment by Stripe. The balance updates after bank confirmation.",
           "unavailable": "Online payment is not configured yet.",
           "noBalance": "This family has no outstanding balance.",
+          "paymentInProgress": "An online payment is already being confirmed. Try again in a few minutes.",
           "settled": "Your family is up to date.",
           "error": "Unable to start payment.",
           "returned": "Your payment was submitted. History will update after bank confirmation.",
@@ -1396,7 +1399,9 @@
             "validationError": "Check the information you entered",
             "notFound": "Enrollment or class not found",
             "classFull": "This class is full",
-            "invalidStatusTransition": "Only a pending or active enrollment can change class"
+            "invalidStatusTransition": "Only a pending or active enrollment can change class",
+            "periodMismatch": "The new class must belong to the same period as the enrollment",
+            "duplicateEnrollment": "This student already has another current enrollment in this period"
           }
         },
         "applyDiscount": {
@@ -1713,6 +1718,8 @@
         "showOccurrences": "Show occurrences",
         "progress": "{recorded} / {total} recorded",
         "markRemainingPresent": "{count, plural, one {Mark the remaining student present} other {Mark the remaining # students present}}",
+        "refreshRoster": "Refresh student list",
+        "rosterRefreshed": "{count, plural, =0 {The student list is up to date.} one {# student added to the attendance.} other {# students added to the attendance.}}",
         "showUnrecorded": "Show only unrecorded",
         "showAll": "Show all students",
         "clearStatus": "Not recorded",
@@ -1749,7 +1756,8 @@
           "attendanceDisabled": "Attendance tracking is not enabled",
           "attendanceClosed": "The school is closed on this date.",
           "sessionCancelled": "This session is cancelled.",
-          "unexpected": "Saving failed. Please retry."
+          "unexpected": "Saving failed. Please retry.",
+          "invalidTransition": "This session changed in the meantime. Refresh the page and try again."
         },
         "returnTracking": "Back to attendance tracking",
         "lateMinutesInvalid": "Late minutes must be a whole number between 0 and 1440.",
@@ -2364,7 +2372,8 @@
       "linkFailed": "Failed to connect Google account",
       "unlinkFailed": "Failed to disconnect Google account",
       "logoutFailed": "Could not sign you out, please try again",
-      "emailChangeFailed": "Could not start the email change"
+      "emailChangeFailed": "Could not start the email change",
+      "impersonating": "Unavailable while signed in as another user: return to your own account. A person's credentials and account are never changed on their behalf."
     },
     "passkey": {
       "title": "Passkeys",
@@ -2380,7 +2389,10 @@
       "registrationDisabled": "Passkey sign-in is disabled on this platform: you can no longer register a new one, only remove those already present. Ask a platform administrator to turn it back on.",
       "error": "Error registering passkey",
       "deleteError": "Error removing passkey",
-      "cancelled": "Registration cancelled"
+      "cancelled": "Registration cancelled",
+      "errors": {
+        "impersonating": "Unavailable while signed in as another user: return to your own account. A person's credentials and account are never changed on their behalf."
+      }
     },
     "apiKeys": {
       "title": "MCP API keys",
@@ -2399,7 +2411,8 @@
       "errors": {
         "tooManyKeys": "You have reached the limit of active keys",
         "validationError": "The key name is invalid",
-        "mcpDisabled": "The MCP server is disabled on this instance"
+        "mcpDisabled": "The MCP server is disabled on this instance",
+        "impersonating": "Unavailable while signed in as another user: return to your own account. A person's credentials and account are never changed on their behalf."
       },
       "created": {
         "title": "Your new key",

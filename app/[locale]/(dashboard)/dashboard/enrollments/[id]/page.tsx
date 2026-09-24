@@ -105,9 +105,17 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const isAdmin = isActiveSchoolAdmin(context)
   const paymentsEnabled = await isPaymentsEnabled(enrollment.schoolId)
 
+  // Le changement de classe reste dans la période de l'inscription (`periodMismatch` sinon).
+  const enrollmentPeriodId = (
+    enrollment.classAssignments.find((a) => !a.endAt) ?? enrollment.classAssignments.at(-1)
+  )?.classPeriod.periodId
   const availableClasses = isAdmin
     ? await db.classPeriod.findMany({
-        where: { schoolId: enrollment.schoolId, isActive: true },
+        where: {
+          schoolId: enrollment.schoolId,
+          isActive: true,
+          ...(enrollmentPeriodId ? { periodId: enrollmentPeriodId } : {}),
+        },
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
       })

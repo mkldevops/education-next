@@ -53,4 +53,22 @@ describe('deleteFamily', () => {
     expect(result).toBe('OK')
     expect(familyGatewayMock.deleteWithRelated).toHaveBeenCalledWith('school-1', id)
   })
+
+  it('should turn a leftover foreign key refusal into a typed discriminant', async () => {
+    familyGatewayMock.deleteWithRelated.mockRejectedValue(
+      Object.assign(new Error('Foreign key constraint violated'), { code: 'P2003' })
+    )
+
+    const result = await deleteFamily({ schoolId: 'school-1', id, confirmation: 'Dupont' })
+
+    expect(result).toBe('deletionBlocked')
+  })
+
+  it('should rethrow an unexpected error rather than disguise it', async () => {
+    familyGatewayMock.deleteWithRelated.mockRejectedValue(new Error('connection lost'))
+
+    await expect(
+      deleteFamily({ schoolId: 'school-1', id, confirmation: 'Dupont' })
+    ).rejects.toThrow('connection lost')
+  })
 })

@@ -3,6 +3,8 @@ import type Stripe from 'stripe'
 import { getStripeClient } from '@/lib/stripe'
 import { completeCheckoutSession } from '@/use-cases/payments/complete-checkout-session'
 
+const ACKNOWLEDGED_RESULTS = new Set<string>(['OK', 'duplicate', 'unallocated', 'notPaid'])
+
 export async function POST(request: Request) {
   const stripe = getStripeClient()
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -32,8 +34,11 @@ export async function POST(request: Request) {
     session: event.data.object,
   })
 
-  if (result === 'OK' || result === 'duplicate') {
-    return NextResponse.json({ received: true })
+  // Tout ce qui est encaissé est enregistré (`OK`, ou `unallocated` tracé sur la transaction),
+  // et un `notPaid` sera suivi d'`async_payment_succeeded` : un 2xx évite que Stripe rejoue en
+  // boucle un événement qu'aucun rejeu ne changera.
+  if (ACKNOWLEDGED_RESULTS.has(result)) {
+    return NextResponse.json({ received: true, result })
   }
 
   return NextResponse.json({ received: false, result }, { status: 422 })

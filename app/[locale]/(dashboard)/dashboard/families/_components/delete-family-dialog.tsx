@@ -25,6 +25,7 @@ export type FamilyDeletionImpact = {
   students: number
   enrollments: number
   payments: number
+  attendances: number
 }
 
 type Props = {
@@ -92,6 +93,7 @@ function DeleteFamilyForm({
             <li>{t('impact.members', { count: impact.members })}</li>
             <li>{t('impact.students', { count: impact.students })}</li>
             <li>{t('impact.enrollments', { count: impact.enrollments })}</li>
+            <li>{t('impact.attendances', { count: impact.attendances })}</li>
             <li>{t('impact.payments', { count: impact.payments })}</li>
           </ul>
           <div className="space-y-2">

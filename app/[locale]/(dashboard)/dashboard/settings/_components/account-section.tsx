@@ -30,7 +30,10 @@ export function AccountSection({ email, linkedAccounts, googleEnabled = false }:
   // État séparé de `error` : ce dernier est affiché par la zone de danger pour
   // toute valeur non nulle, un échec du formulaire d'adresse s'y serait donc
   // aussi affiché.
-  const [emailError, setEmailError] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  // Même séparation pour les comptes liés : un refus de liaison n'a rien à faire dans la
+  // zone de danger.
+  const [linkError, setLinkError] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const locale = useLocale()
@@ -39,29 +42,29 @@ export function AccountSection({ email, linkedAccounts, googleEnabled = false }:
   const googleAccount = accounts.find((a) => a.providerId === 'google')
 
   const handleLinkGoogle = () => {
-    setError(null)
+    setLinkError(null)
     startTransition(async () => {
       const result = await linkSocial({
         provider: 'google',
         callbackURL: `/${locale}/dashboard/settings`,
       })
       if (result.error) {
-        setError('linkFailed')
+        setLinkError(result.error.code === 'impersonating' ? 'impersonating' : 'linkFailed')
       }
     })
   }
 
   const handleUnlinkGoogle = () => {
-    setError(null)
+    setLinkError(null)
     startTransition(async () => {
       if (!googleAccount) {
-        setError('unlinkFailed')
+        setLinkError('unlinkFailed')
         return
       }
 
       const result = await unlinkAccount({ accountId: googleAccount.id })
       if (result.error) {
-        setError('unlinkFailed')
+        setLinkError(result.error.code === 'impersonating' ? 'impersonating' : 'unlinkFailed')
       } else {
         setAccounts((prev) => prev.filter((a) => a.id !== googleAccount.id))
         router.refresh()
@@ -101,11 +104,11 @@ export function AccountSection({ email, linkedAccounts, googleEnabled = false }:
     const newEmail = new FormData(form).get('newEmail')
     if (typeof newEmail !== 'string') return
 
-    setEmailError(false)
+    setEmailError(null)
     startTransition(async () => {
       const result = await changeEmailAction({ newEmail })
       if (!result.success) {
-        setEmailError(true)
+        setEmailError(result.error)
         return
       }
       form.reset()
@@ -138,7 +141,13 @@ export function AccountSection({ email, linkedAccounts, googleEnabled = false }:
             <p className="mt-1 text-xs text-graphite-600">{t('account.changeEmail.hint')}</p>
           </div>
 
-          {emailError && <p className="text-sm text-red-600">{t('errors.emailChangeFailed')}</p>}
+          {emailError && (
+            <p className="text-sm text-red-600">
+              {emailError === 'impersonating'
+                ? t('errors.impersonating')
+                : t('errors.emailChangeFailed')}
+            </p>
+          )}
 
           <Button type="submit" size="sm" disabled={isPending}>
             {isPending ? '...' : t('account.changeEmail.submit')}
@@ -151,9 +160,9 @@ export function AccountSection({ email, linkedAccounts, googleEnabled = false }:
           <h2 className="text-lg font-semibold text-graphite">{t('connectedAccounts.title')}</h2>
           <p className="mt-1 text-sm text-graphite-600">{t('connectedAccounts.description')}</p>
 
-          {error && (error === 'linkFailed' || error === 'unlinkFailed') && (
+          {linkError && (
             <div className="mt-3 rounded bg-red-50 p-3 text-sm text-red-600">
-              {t(`errors.${error}`)}
+              {t(`errors.${linkError}`)}
             </div>
           )}
 

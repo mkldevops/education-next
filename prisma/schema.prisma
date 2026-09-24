@@ -124,34 +124,34 @@ model School {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members             SchoolMember[]
-  families            Family[]
-  userFamilies        UserFamily[]
-  persons             Person[]
-  familyPersons       FamilyPerson[]
-  students            Student[]
-  phoneNumbers        PhoneNumber[]
-  configs             Config[]
-  levels              Level[]
-  periods             Period[]
-  classPeriods        ClassPeriod[]
-  enrollments         Enrollment[]
-  classAssignments    ClassAssignment[]
-  payments            Payment[]
-  paymentTransactions PaymentTransaction[]
-  plans               Plan[]
-  invitations         Invitation[]
-  teachers            Teacher[]
-  classPeriodTeachers ClassPeriodTeacher[]
-  classScheduleSlots   ClassScheduleSlot[]
+  members                   SchoolMember[]
+  families                  Family[]
+  userFamilies              UserFamily[]
+  persons                   Person[]
+  familyPersons             FamilyPerson[]
+  students                  Student[]
+  phoneNumbers              PhoneNumber[]
+  configs                   Config[]
+  levels                    Level[]
+  periods                   Period[]
+  classPeriods              ClassPeriod[]
+  enrollments               Enrollment[]
+  classAssignments          ClassAssignment[]
+  payments                  Payment[]
+  paymentTransactions       PaymentTransaction[]
+  plans                     Plan[]
+  invitations               Invitation[]
+  teachers                  Teacher[]
+  classPeriodTeachers       ClassPeriodTeacher[]
+  classScheduleSlots        ClassScheduleSlot[]
   classScheduleSlotTeachers ClassScheduleSlotTeacher[]
-  teacherExpenses     TeacherExpense[]
-  mcpApiKeys          McpApiKey[]
-  mcpDrafts           McpDraft[]
-  events              Event[]
-  eventImages         EventImage[]
-  attendanceSessions  AttendanceSession[]
-  attendanceEntries   AttendanceEntry[]
+  teacherExpenses           TeacherExpense[]
+  mcpApiKeys                McpApiKey[]
+  mcpDrafts                 McpDraft[]
+  events                    Event[]
+  eventImages               EventImage[]
+  attendanceSessions        AttendanceSession[]
+  attendanceEntries         AttendanceEntry[]
 }
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
@@ -184,18 +184,18 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sessions            Session[]
-  accounts            Account[]
-  families            UserFamily[]
-  createdFamilies     Family[]             @relation("createdBy")
-  createdInvitations  Invitation[]
-  paymentTransactions PaymentTransaction[] @relation("paymentInitiatedBy")
-  passkeys            Passkey[]
-  schoolMemberships   SchoolMember[]
-  mcpApiKeys          McpApiKey[]
-  teacherProfiles     Teacher[]
-  createdAttendanceSessions AttendanceSession[] @relation("attendanceCreatedBy")
-  updatedAttendanceSessions AttendanceSession[] @relation("attendanceUpdatedBy")
+  sessions                  Session[]
+  accounts                  Account[]
+  families                  UserFamily[]
+  createdFamilies           Family[]             @relation("createdBy")
+  createdInvitations        Invitation[]
+  paymentTransactions       PaymentTransaction[] @relation("paymentInitiatedBy")
+  passkeys                  Passkey[]
+  schoolMemberships         SchoolMember[]
+  mcpApiKeys                McpApiKey[]
+  teacherProfiles           Teacher[]
+  createdAttendanceSessions AttendanceSession[]  @relation("attendanceCreatedBy")
+  updatedAttendanceSessions AttendanceSession[]  @relation("attendanceUpdatedBy")
 }
 
 model Session {
@@ -215,6 +215,30 @@ model Session {
 
   @@index([userId])
   @@index([impersonatedBy])
+}
+
+/// Trace durable d'un emprunt d'identité : qui, qui est emprunté, début, fin.
+/// Aucune relation vers `User`, volontairement : la trace doit survivre à la suppression
+/// des comptes et ne jamais bloquer celle-ci. Les adresses sont figées au démarrage.
+model ImpersonationLog {
+  id          String    @id @default(cuid())
+  actorId     String
+  actorEmail  String
+  targetId    String
+  targetEmail String
+  /// `Session.id` de la session empruntée, qui clôt la trace à l'arrêt.
+  sessionId   String    @unique
+  ipAddress   String?
+  userAgent   String?
+  startedAt   DateTime  @default(now())
+  /// Échéance de la session empruntée : borne la fin si l'arrêt n'est jamais demandé.
+  expiresAt   DateTime
+  /// Arrêt explicite ou déconnexion ; `null` tant que la session n'a pas été close.
+  endedAt     DateTime?
+
+  @@index([actorId])
+  @@index([targetId])
+  @@index([startedAt])
 }
 
 model Account {
@@ -330,22 +354,22 @@ model FamilyPerson {
 }
 
 model Student {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   schoolId           String
   personId           String
   birthday           DateTime?
-  birthplace         String?  @db.VarChar(250)
-  previousSchool     String?  @db.VarChar(250)
-  healthNotes        String?  @db.Text
-  snackAuthorization Boolean  @default(false)
-  allergies          String?  @db.VarChar(250)
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  birthplace         String?   @db.VarChar(250)
+  previousSchool     String?   @db.VarChar(250)
+  healthNotes        String?   @db.Text
+  snackAuthorization Boolean   @default(false)
+  allergies          String?   @db.VarChar(250)
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  school      School       @relation(fields: [schoolId], references: [id])
-  person      Person       @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Cascade)
-  enrollments Enrollment[]
+  school            School            @relation(fields: [schoolId], references: [id])
+  person            Person            @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  enrollments       Enrollment[]
   attendanceEntries AttendanceEntry[]
 
   @@unique([id, schoolId])
@@ -450,12 +474,12 @@ model ClassPeriod {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school           School               @relation(fields: [schoolId], references: [id])
-  level            Level                @relation(fields: [levelId, schoolId], references: [id, schoolId], onDelete: Restrict)
-  period           Period               @relation(fields: [periodId, schoolId], references: [id, schoolId], onDelete: Restrict)
-  classAssignments ClassAssignment[]
-  teachers         ClassPeriodTeacher[]
-  scheduleSlots    ClassScheduleSlot[]
+  school             School               @relation(fields: [schoolId], references: [id])
+  level              Level                @relation(fields: [levelId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  period             Period               @relation(fields: [periodId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  classAssignments   ClassAssignment[]
+  teachers           ClassPeriodTeacher[]
+  scheduleSlots      ClassScheduleSlot[]
   attendanceSessions AttendanceSession[]
 
   @@unique([id, schoolId])
@@ -476,12 +500,12 @@ model Teacher {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school       School               @relation(fields: [schoolId], references: [id])
-  user         User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
-  classPeriods ClassPeriodTeacher[]
+  school        School                     @relation(fields: [schoolId], references: [id])
+  user          User?                      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  classPeriods  ClassPeriodTeacher[]
   scheduleSlots ClassScheduleSlotTeacher[]
-  expenses     TeacherExpense[]
-  invitations  Invitation[]
+  expenses      TeacherExpense[]
+  invitations   Invitation[]
 
   @@unique([id, schoolId])
   @@unique([userId, schoolId])
@@ -518,9 +542,9 @@ model ClassScheduleSlot {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  school      School                     @relation(fields: [schoolId], references: [id])
-  classPeriod ClassPeriod                @relation(fields: [classPeriodId, schoolId], references: [id, schoolId], onDelete: Cascade)
-  teachers    ClassScheduleSlotTeacher[]
+  school             School                     @relation(fields: [schoolId], references: [id])
+  classPeriod        ClassPeriod                @relation(fields: [classPeriodId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  teachers           ClassScheduleSlotTeacher[]
   attendanceSessions AttendanceSession[]
 
   @@unique([id, schoolId])
@@ -613,19 +637,19 @@ model ClassAssignment {
 }
 
 model AttendanceSession {
-  id                  String                  @id @default(uuid())
-  schoolId            String
-  classPeriodId       String
-  classScheduleSlotId String?
-  occurrenceKey       String                  @db.VarChar(300)
-  occurredOn          DateTime                @db.Date
-  status              AttendanceSessionStatus @default(DRAFT)
+  id                       String                   @id @default(uuid())
+  schoolId                 String
+  classPeriodId            String
+  classScheduleSlotId      String?
+  occurrenceKey            String                   @db.VarChar(300)
+  occurredOn               DateTime                 @db.Date
+  status                   AttendanceSessionStatus  @default(DRAFT)
   statusBeforeCancellation AttendanceSessionStatus?
-  createdById         String
-  updatedById         String
-  validatedAt         DateTime?
-  createdAt           DateTime                @default(now())
-  updatedAt           DateTime                @updatedAt
+  createdById              String
+  updatedById              String
+  validatedAt              DateTime?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
 
   school            School             @relation(fields: [schoolId], references: [id])
   classPeriod       ClassPeriod        @relation(fields: [classPeriodId, schoolId], references: [id, schoolId], onDelete: Restrict)
@@ -760,10 +784,10 @@ model Invitation {
   teacherId   String?
   createdAt   DateTime   @default(now())
 
-  school    School  @relation(fields: [schoolId], references: [id])
-  createdBy User    @relation(fields: [createdById], references: [id])
-  family    Family? @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Cascade)
-  person    Person? @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  school    School   @relation(fields: [schoolId], references: [id])
+  createdBy User     @relation(fields: [createdById], references: [id])
+  family    Family?  @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  person    Person?  @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Restrict)
   teacher   Teacher? @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Restrict)
 
   @@index([email])
@@ -819,7 +843,7 @@ model McpApiKey {
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   // Sans `onDelete`, donc `Restrict` : la suppression d'un compte doit échouer plutôt
   // qu'effacer la trace de ses clés, comme pour `PaymentTransaction.initiatedBy`.
-  user User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   @@unique([id, schoolId])
   @@index([schoolId])

@@ -193,6 +193,48 @@ describe('findTenantViolation', () => {
     expect(findTenantViolation('Payment', 'aggregate', { where: { schoolId: 's1' } })).toBeNull()
     expect(findTenantViolation('Payment', 'groupBy', { where: { schoolId: 's1' } })).toBeNull()
   })
+
+  it.each(['AttendanceSession', 'AttendanceEntry'])('scope le modèle de présence %s', (model) => {
+    expect(findTenantViolation(model, 'findMany', { where: { id: 'a1' } })?.reason).toBe(
+      'missingScopeInWhere'
+    )
+    expect(
+      findTenantViolation(model, 'updateMany', { where: { id: 'a1' }, data: {} })?.reason
+    ).toBe('missingScopeInWhere')
+    expect(findTenantViolation(model, 'create', { data: { id: 'a1' } })?.reason).toBe(
+      'missingScopeInData'
+    )
+    expect(
+      findTenantViolation(model, 'updateMany', {
+        where: { id: 'a1', schoolId: 's1' },
+        data: { schoolId: 's2' },
+      })?.reason
+    ).toBe('tenantReassignment')
+    expect(findTenantViolation(model, 'findMany', { where: { schoolId: 's1' } })).toBeNull()
+    expect(
+      findTenantViolation(model, 'deleteMany', { where: { id: 'a1', schoolId: 's1' } })
+    ).toBeNull()
+  })
+
+  it('accepte le sélecteur composé de la séance de présence', () => {
+    expect(
+      findTenantViolation('AttendanceSession', 'findUnique', {
+        where: {
+          schoolId_classPeriodId_occurredOn_occurrenceKey: {
+            schoolId: 's1',
+            classPeriodId: 'c1',
+            occurredOn: new Date('2026-09-23'),
+            occurrenceKey: 'adhoc',
+          },
+        },
+      })
+    ).toBeNull()
+    expect(
+      findTenantViolation('AttendanceSession', 'findUnique', {
+        where: { id_schoolId: { id: 'a1', schoolId: 's1' } },
+      })
+    ).toBeNull()
+  })
 })
 
 describe('reportTenantViolation', () => {

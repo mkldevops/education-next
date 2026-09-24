@@ -6,6 +6,8 @@ const periodGatewayMock = {
 const enrollmentGatewayMock = {
   findCompletedByPeriod: vi.fn(),
   findEnrolledStudentIds: vi.fn(),
+  lockStudentInPeriod: vi.fn(),
+  isEnrolledInPeriod: vi.fn(),
 }
 const dbMock = {
   classPeriod: { findMany: vi.fn() },
@@ -56,16 +58,24 @@ function buildEnrollment(overrides: Partial<Record<string, unknown>> = {}) {
   }
 }
 
+function buildTx({
+  capacity = 10,
+  occupied = 0,
+  create = vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440099' }),
+}: {
+  capacity?: number
+  occupied?: number
+  create?: ReturnType<typeof vi.fn>
+} = {}) {
+  return {
+    $queryRaw: vi.fn().mockResolvedValue([{ capacity }]),
+    enrollment: { create },
+    classAssignment: { create: vi.fn(), count: vi.fn().mockResolvedValue(occupied) },
+  }
+}
+
 function mockTransactionSuccess() {
-  dbMock.$transaction = vi.fn(async (cb) => {
-    const tx = {
-      enrollment: {
-        create: vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440099' }),
-      },
-      classAssignment: { create: vi.fn() },
-    }
-    return cb(tx)
-  })
+  dbMock.$transaction = vi.fn(async (cb) => cb(buildTx()))
 }
 
 describe('promoteStudents / previewPromoteStudents', () => {
@@ -74,6 +84,8 @@ describe('promoteStudents / previewPromoteStudents', () => {
     periodGatewayMock.findById = vi.fn().mockResolvedValue({ id: sourcePeriodId })
     enrollmentGatewayMock.findCompletedByPeriod = vi.fn().mockResolvedValue([])
     enrollmentGatewayMock.findEnrolledStudentIds = vi.fn().mockImplementation(async () => new Set())
+    enrollmentGatewayMock.lockStudentInPeriod = vi.fn()
+    enrollmentGatewayMock.isEnrolledInPeriod = vi.fn().mockResolvedValue(false)
     dbMock.classPeriod.findMany = vi
       .fn()
       .mockResolvedValue([{ id: targetClassPeriodId, levelId: nextLevelId, capacity: 10 }])
@@ -216,22 +228,18 @@ describe('promoteStudents / previewPromoteStudents', () => {
       let callCount = 0
       dbMock.$transaction = vi.fn(async (cb) => {
         callCount++
-        const tx = {
-          enrollment: {
+        const failure = new Error(
+          "Foreign key constraint failed on the field: 'Enrollment_planId_fkey'"
+        )
+        return cb(
+          buildTx({
+            capacity: 1,
             create:
               callCount === 1
-                ? vi
-                    .fn()
-                    .mockRejectedValue(
-                      new Error(
-                        "Foreign key constraint failed on the field: 'Enrollment_planId_fkey'"
-                      )
-                    )
+                ? vi.fn().mockRejectedValue(failure)
                 : vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440099' }),
-          },
-          classAssignment: { create: vi.fn() },
-        }
-        return cb(tx)
+          })
+        )
       })
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
         buildEnrollment({ studentId: 'student-1' }),
@@ -256,6 +264,74 @@ describe('promoteStudents / previewPromoteStudents', () => {
       await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(dbMock.$transaction).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('promoteStudents under concurrency', () => {
+    it('should create nothing on a second run that read a stale pre-filter', async () => {
+      // Deux exécutions (double clic, deux admins) lisent toutes deux la période cible vide :
+      // seule la relecture sous verrou, dans la transaction, voit la première inscription.
+      const promotedStudents = new Set<string>()
+      const create = vi.fn(async ({ data }: { data: { studentId: string } }) => {
+        promotedStudents.add(data.studentId)
+        return { id: `new-${data.studentId}` }
+      })
+      enrollmentGatewayMock.isEnrolledInPeriod.mockImplementation(
+        async (_tx: unknown, _schoolId: string, studentId: string) =>
+          promotedStudents.has(studentId)
+      )
+      dbMock.$transaction = vi.fn(async (cb) => cb(buildTx({ create })))
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
+
+      const first = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+      const second = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+
+      expect(first).toEqual({ promoted: 1, skipped: 0, errors: [] })
+      expect(second).toEqual({ promoted: 0, skipped: 1, errors: [] })
+      expect(create).toHaveBeenCalledTimes(1)
+    })
+
+    it('should lock the student in the target period before re-checking and writing', async () => {
+      const tx = buildTx()
+      dbMock.$transaction = vi.fn(async (cb) => cb(tx))
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
+
+      await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+
+      expect(enrollmentGatewayMock.lockStudentInPeriod).toHaveBeenCalledWith(
+        tx,
+        schoolId,
+        defaultStudentId,
+        targetPeriodId
+      )
+      const [lockOrder] = enrollmentGatewayMock.lockStudentInPeriod.mock.invocationCallOrder
+      const [checkOrder] = enrollmentGatewayMock.isEnrolledInPeriod.mock.invocationCallOrder
+      expect(lockOrder).toBeLessThan(checkOrder)
+      expect(checkOrder).toBeLessThan(tx.enrollment.create.mock.invocationCallOrder[0])
+    })
+
+    it('should skip a class filled since the pre-filter, counted under the class row lock', async () => {
+      const tx = buildTx({ capacity: 10, occupied: 10 })
+      dbMock.$transaction = vi.fn(async (cb) => cb(tx))
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
+
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+
+      expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
+      expect(tx.enrollment.create).not.toHaveBeenCalled()
+      expect(tx.classAssignment.create).not.toHaveBeenCalled()
+    })
+
+    it('should skip a target class deactivated since the pre-filter', async () => {
+      const tx = buildTx()
+      tx.$queryRaw.mockResolvedValue([])
+      dbMock.$transaction = vi.fn(async (cb) => cb(tx))
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
+
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+
+      expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
+      expect(tx.enrollment.create).not.toHaveBeenCalled()
     })
   })
 

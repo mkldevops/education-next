@@ -380,7 +380,8 @@
             "members": "{count, plural, =0 {Aucun membre} one {# membre} other {# membres}}",
             "students": "{count, plural, =0 {Aucun élève} one {# élève} other {# élèves}}",
             "enrollments": "{count, plural, =0 {Aucune inscription} one {# inscription} other {# inscriptions}}",
-            "payments": "{count, plural, =0 {Aucun règlement} one {# règlement} other {# règlements}}"
+            "payments": "{count, plural, =0 {Aucun règlement} one {# règlement} other {# règlements}}",
+            "attendances": "{count, plural, =0 {Aucune présence pointée} one {# présence pointée} other {# présences pointées}}"
           },
           "confirmationLabel": "Saisissez {name} pour confirmer",
           "confirm": "Supprimer définitivement",
@@ -389,6 +390,7 @@
           "error": "Erreur lors de la suppression",
           "errors": {
             "confirmationMismatch": "Le nom saisi ne correspond pas à celui de la famille",
+            "deletionBlocked": "Des données liées à cette famille empêchent sa suppression. Rien n'a été effacé : archivez-la et signalez le problème.",
             "notFound": "Famille introuvable",
             "validationError": "Vérifiez les informations saisies"
           }
@@ -1160,6 +1162,7 @@
           "secure": "Paiement sécurisé par Stripe. Le solde est confirmé après validation bancaire.",
           "unavailable": "Le paiement en ligne n'est pas encore configuré.",
           "noBalance": "Cette famille n'a aucun solde à régler.",
+          "paymentInProgress": "Un paiement en ligne est déjà en cours de confirmation. Réessayez dans quelques minutes.",
           "settled": "Votre famille est à jour.",
           "error": "Impossible de démarrer le paiement.",
           "returned": "Votre paiement a été transmis. L'historique sera actualisé après confirmation bancaire.",
@@ -1397,7 +1400,9 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Inscription ou classe introuvable",
             "classFull": "Cette classe est complète",
-            "invalidStatusTransition": "Seule une inscription en attente ou active peut changer de classe"
+            "invalidStatusTransition": "Seule une inscription en attente ou active peut changer de classe",
+            "periodMismatch": "La nouvelle classe doit appartenir à la même période que l'inscription",
+            "duplicateEnrollment": "Cet élève a déjà une autre inscription en cours sur cette période"
           }
         },
         "applyDiscount": {
@@ -1714,6 +1719,8 @@
         "showOccurrences": "Afficher les séances",
         "progress": "{recorded} / {total} renseignés",
         "markRemainingPresent": "{count, plural, one {Marquer l’élève restant présent} other {Marquer les # élèves restants présents}}",
+        "refreshRoster": "Actualiser la liste des élèves",
+        "rosterRefreshed": "{count, plural, =0 {La liste des élèves est à jour.} one {# élève ajouté à l’appel.} other {# élèves ajoutés à l’appel.}}",
         "showUnrecorded": "Afficher uniquement les non renseignés",
         "showAll": "Afficher tous les élèves",
         "clearStatus": "Non renseigné",
@@ -1750,7 +1757,8 @@
           "attendanceDisabled": "Le suivi des appels n’est pas activé",
           "attendanceClosed": "L’école est fermée à cette date.",
           "sessionCancelled": "Cette séance est annulée.",
-          "unexpected": "L’enregistrement a échoué. Réessayez."
+          "unexpected": "L’enregistrement a échoué. Réessayez.",
+          "invalidTransition": "L’état de cette séance a changé entre-temps. Actualisez la page puis réessayez."
         },
         "returnTracking": "Retour au suivi des appels",
         "lateMinutesInvalid": "Le retard doit être un nombre entier de minutes entre 0 et 1440.",
@@ -2365,7 +2373,8 @@
       "linkFailed": "Impossible de connecter le compte Google",
       "unlinkFailed": "Impossible de déconnecter le compte Google",
       "logoutFailed": "Impossible de vous déconnecter, réessayez",
-      "emailChangeFailed": "Impossible de lancer le changement d'adresse"
+      "emailChangeFailed": "Impossible de lancer le changement d'adresse",
+      "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte. Les identifiants et le compte de la personne ne se modifient pas à sa place."
     },
     "passkey": {
       "title": "Clés de sécurité (Passkeys)",
@@ -2381,7 +2390,10 @@
       "registrationDisabled": "La connexion par clé de sécurité est désactivée sur cette plateforme : vous ne pouvez plus en enregistrer de nouvelle, seulement supprimer celles déjà présentes. Demandez à un administrateur de la plateforme de la réactiver.",
       "error": "Erreur lors de l'enregistrement de la clé",
       "deleteError": "Erreur lors de la suppression",
-      "cancelled": "Enregistrement annulé"
+      "cancelled": "Enregistrement annulé",
+      "errors": {
+        "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte. Les identifiants et le compte de la personne ne se modifient pas à sa place."
+      }
     },
     "apiKeys": {
       "title": "Clés API MCP",
@@ -2400,7 +2412,8 @@
       "errors": {
         "tooManyKeys": "Vous avez atteint la limite de clés actives",
         "validationError": "Le nom de la clé est invalide",
-        "mcpDisabled": "Le serveur MCP est désactivé sur cette instance"
+        "mcpDisabled": "Le serveur MCP est désactivé sur cette instance",
+        "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte. Les identifiants et le compte de la personne ne se modifient pas à sa place."
       },
       "created": {
         "title": "Votre nouvelle clé",

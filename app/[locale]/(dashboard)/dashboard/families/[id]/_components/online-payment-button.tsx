@@ -26,9 +26,7 @@ export function OnlinePaymentButton({ amount, configured, locale }: Props) {
         return
       }
 
-      const key =
-        result === 'noBalance' ? 'noBalance' : result === 'notConfigured' ? 'unavailable' : 'error'
-      toast.error(t(key))
+      toast.error(t(errorKey(result)))
     })
   }
 
@@ -51,4 +49,9 @@ export function OnlinePaymentButton({ amount, configured, locale }: Props) {
       <p className="text-xs text-graphite-600">{t('secure')}</p>
     </div>
   )
+}
+
+function errorKey(result: unknown) {
+  if (result === 'noBalance' || result === 'paymentInProgress') return result
+  return result === 'notConfigured' ? 'unavailable' : 'error'
 }

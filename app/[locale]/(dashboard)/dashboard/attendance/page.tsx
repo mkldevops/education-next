@@ -230,6 +230,7 @@ export default async function AttendanceTrackingPage({
     notFound: t('errors.notFound'),
     attendanceDisabled: t('errors.attendanceDisabled'),
     sessionCancelled: t('errors.sessionCancelled'),
+    invalidTransition: t('errors.invalidTransition'),
     unexpected: t('errors.unexpected'),
   }
   const cancelConfirmation = {

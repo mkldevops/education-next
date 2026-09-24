@@ -1,3 +1,4 @@
+import type Stripe from 'stripe'
 import { configGateway } from '@/gateways/config-gateway'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
@@ -22,6 +23,9 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
 
   const balance = await getFamilyBalance(input.schoolId, input.familyId)
   if (balance.remainingAmountInCents <= 0) return 'noBalance' as const
+
+  const previous = await closePreviousCheckoutSessions(stripe, input.schoolId, input.familyId)
+  if (previous !== 'OK') return previous
 
   const transaction = await db.paymentTransaction.create({
     data: {
@@ -84,4 +88,37 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
     await updateTransaction({ status: 'FAILED' })
     return 'providerError' as const
   }
+}
+
+/**
+ * Une famille n'a jamais deux sessions Checkout payables en même temps : chaque session payée
+ * encaisse le solde entier, donc une seconde ferait payer deux fois. Avant d'en ouvrir une, les
+ * transactions `PENDING` de la famille sont closes : une session encore ouverte est expirée chez
+ * Stripe, une session déjà terminée signale un paiement dont le webhook n'est pas encore arrivé.
+ */
+async function closePreviousCheckoutSessions(stripe: Stripe, schoolId: string, familyId: string) {
+  const pending = await db.paymentTransaction.findMany({
+    where: { schoolId, familyId, status: 'PENDING', providerSessionId: { not: null } },
+    select: { id: true, providerSessionId: true },
+  })
+
+  for (const transaction of pending) {
+    if (!transaction.providerSessionId) continue
+    try {
+      const session = await stripe.checkout.sessions.retrieve(transaction.providerSessionId)
+      if (session.status === 'complete') return 'paymentInProgress' as const
+      if (session.status === 'open') {
+        await stripe.checkout.sessions.expire(transaction.providerSessionId)
+      }
+    } catch {
+      // Dans le doute (session peut-être payée à l'instant), ne pas en ouvrir une seconde.
+      return 'providerError' as const
+    }
+    await db.paymentTransaction.update({
+      where: { id_schoolId: { id: transaction.id, schoolId } },
+      data: { status: 'EXPIRED' },
+    })
+  }
+
+  return 'OK' as const
 }

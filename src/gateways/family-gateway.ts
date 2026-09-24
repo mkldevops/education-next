@@ -2,6 +2,24 @@ import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
 import type { Prisma, PrismaClient } from '@/generated/prisma/client'
 import { db, dbArchived } from '@/lib/db'
 
+/**
+ * Clés étrangères non cascadées (`Restrict`, explicite ou implicite) qui pointent vers une
+ * ligne effacée par `deleteWithRelated`, et que la transaction vide donc elle-même avant
+ * leur cible. `family-deletion-restrict-guard.test.ts` relit `schema.prisma` et échoue si
+ * une relation de ce genre apparaît sans figurer ici : c'est le rappel qu'une nouvelle
+ * table rattachée à un élève, une personne ou une famille doit aussi être effacée.
+ */
+export const FAMILY_DELETION_CLEARED_RELATIONS = [
+  'AttendanceEntry.student',
+  'ClassAssignment.enrollment',
+  'Payment.family',
+  'Payment.enrollment',
+  'Payment.paymentTransaction',
+  'PaymentTransaction.family',
+  'Invitation.person',
+  'Enrollment.student',
+] as const
+
 /** Client applicatif ou client de transaction : la traversée ci-dessous accepte les deux. */
 type Reader = Pick<PrismaClient, 'familyPerson' | 'student' | 'enrollment'>
 
@@ -149,12 +167,18 @@ export const familyGateway = {
       id
     )
 
-    const payments = await dbArchived.payment.count({ where: paymentWhere })
+    const [payments, attendances] = await Promise.all([
+      dbArchived.payment.count({ where: paymentWhere }),
+      studentIds.length
+        ? dbArchived.attendanceEntry.count({ where: { schoolId, studentId: { in: studentIds } } })
+        : 0,
+    ])
     return {
       members: ownPersonIds.length,
       students: studentIds.length,
       enrollments: enrollmentIds.length,
       payments,
+      attendances,
     }
   },
 
@@ -163,8 +187,9 @@ export const familyGateway = {
    *
    * Aucune de ces tables n'est cascadée par la base : `Payment.family` et
    * `PaymentTransaction.family` pointent la famille en `Restrict`, `Enrollment.student`,
-   * `ClassAssignment.enrollment` et `Invitation.person` en font autant sur les maillons
-   * suivants. D'où l'effacement explicite, de la feuille vers la racine. Ce qui est en
+   * `AttendanceEntry.student`, `ClassAssignment.enrollment` et `Invitation.person` en font
+   * autant sur les maillons suivants (liste tenue dans `FAMILY_DELETION_CLEARED_RELATIONS`).
+   * D'où l'effacement explicite, de la feuille vers la racine. Ce qui est en
    * `Cascade` — `UserFamily`, `FamilyPerson`, `PhoneNumber`, `Invitation.family` — part
    * avec son parent, et `PaymentProviderEvent` est détaché en `SET NULL`.
    *
@@ -181,6 +206,14 @@ export const familyGateway = {
         schoolId,
         id
       )
+
+      // Les présences d'un élève effacé partent avec lui : sans élève, la ligne ne désigne
+      // plus personne. La séance d'appel reste, son effectif amputé de cet élève.
+      if (studentIds.length) {
+        await tx.attendanceEntry.deleteMany({
+          where: { schoolId, studentId: { in: studentIds } },
+        })
+      }
 
       if (enrollmentIds.length) {
         await tx.classAssignment.deleteMany({

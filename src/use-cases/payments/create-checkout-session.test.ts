@@ -4,9 +4,12 @@ const dbMock = {
   paymentTransaction: {
     create: vi.fn(),
     update: vi.fn(),
+    findMany: vi.fn(),
   },
 }
 const sessionsCreateMock = vi.fn()
+const sessionsRetrieveMock = vi.fn()
+const sessionsExpireMock = vi.fn()
 const getStripeClientMock = vi.fn()
 const getFamilyBalanceMock = vi.fn()
 const configGatewayMock = {
@@ -35,7 +38,13 @@ describe('createCheckoutSession', () => {
     vi.clearAllMocks()
     vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test')
     getStripeClientMock.mockReturnValue({
-      checkout: { sessions: { create: sessionsCreateMock } },
+      checkout: {
+        sessions: {
+          create: sessionsCreateMock,
+          retrieve: sessionsRetrieveMock,
+          expire: sessionsExpireMock,
+        },
+      },
     })
     getFamilyBalanceMock.mockResolvedValue({
       remainingBalance: 120,
@@ -43,6 +52,7 @@ describe('createCheckoutSession', () => {
     })
     dbMock.paymentTransaction.create.mockResolvedValue({ id: 'transaction-1' })
     dbMock.paymentTransaction.update.mockResolvedValue({})
+    dbMock.paymentTransaction.findMany.mockResolvedValue([])
     sessionsCreateMock.mockResolvedValue({
       id: 'cs_test_1',
       url: 'https://checkout.stripe.test/session',
@@ -130,6 +140,50 @@ describe('createCheckoutSession', () => {
     expect(dbMock.paymentTransaction.update).toHaveBeenCalledWith({
       where: { id_schoolId: { id: 'transaction-1', schoolId } },
       data: { status: 'FAILED' },
+    })
+  })
+
+  describe('with an earlier pending checkout for the family', () => {
+    beforeEach(() => {
+      dbMock.paymentTransaction.findMany.mockResolvedValue([
+        { id: 'transaction-0', providerSessionId: 'cs_old' },
+      ])
+    })
+
+    it('expires the still open session before opening a new one', async () => {
+      sessionsRetrieveMock.mockResolvedValue({ id: 'cs_old', status: 'open' })
+
+      const result = await createCheckoutSession(input)
+
+      expect(result).toEqual(expect.objectContaining({ result: 'OK' }))
+      expect(dbMock.paymentTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ schoolId, familyId: 'family-1', status: 'PENDING' }),
+        })
+      )
+      expect(sessionsExpireMock).toHaveBeenCalledWith('cs_old')
+      expect(dbMock.paymentTransaction.update).toHaveBeenCalledWith({
+        where: { id_schoolId: { id: 'transaction-0', schoolId } },
+        data: { status: 'EXPIRED' },
+      })
+      expect(sessionsCreateMock).toHaveBeenCalled()
+    })
+
+    it('refuses a second session while a completed one awaits its webhook', async () => {
+      sessionsRetrieveMock.mockResolvedValue({ id: 'cs_old', status: 'complete' })
+
+      expect(await createCheckoutSession(input)).toBe('paymentInProgress')
+      expect(sessionsExpireMock).not.toHaveBeenCalled()
+      expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
+      expect(sessionsCreateMock).not.toHaveBeenCalled()
+    })
+
+    it('does not open a new session when the earlier one cannot be closed', async () => {
+      sessionsRetrieveMock.mockResolvedValue({ id: 'cs_old', status: 'open' })
+      sessionsExpireMock.mockRejectedValue(new Error('session already completed'))
+
+      expect(await createCheckoutSession(input)).toBe('providerError')
+      expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
     })
   })
 })

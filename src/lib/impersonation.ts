@@ -1,14 +1,58 @@
 import type { BetterAuthPlugin } from 'better-auth'
-import { APIError, createAuthEndpoint, getAuthoritativeSessionFromCtx } from 'better-auth/api'
+import {
+  APIError,
+  createAuthEndpoint,
+  createAuthMiddleware,
+  getAuthoritativeSessionFromCtx,
+  getSessionFromCtx,
+} from 'better-auth/api'
 import { deleteSessionCookie, expireCookie, setSessionCookie } from 'better-auth/cookies'
 import { z } from 'zod'
-import { checkImpersonation, type ManagedUser } from '@/domain/user'
+import {
+  checkImpersonation,
+  type ImpersonationLock,
+  isImpersonating,
+  type ManagedUser,
+} from '@/domain/user'
+import type { ImpersonationStart } from '@/gateways/impersonation-log-gateway'
 
 const IMPERSONATION_SESSION_SECONDS = 60 * 60
 const ADMIN_SESSION_COOKIE = 'admin_session'
+const IMPERSONATING: ImpersonationLock = 'impersonating'
+
+/**
+ * Routes natives de Better Auth qui touchent aux identifiants ou au compte lui-même,
+ * refusées pendant un emprunt. Le crochet `before` s'applique aux appels HTTP de
+ * `/api/auth/*` comme aux appels serveur `auth.api.*` : les actions qui les relaient
+ * n'ont pas de chemin de contournement.
+ */
+export const IMPERSONATION_LOCKED_AUTH_PATHS: ReadonlySet<string> = new Set([
+  '/change-password',
+  '/set-password',
+  '/change-email',
+  '/delete-user',
+  '/delete-user/callback',
+  '/revoke-session',
+  '/revoke-sessions',
+  '/revoke-other-sessions',
+  '/link-social',
+  '/unlink-account',
+  '/get-access-token',
+  '/refresh-token',
+])
+
+type ImpersonationLog = {
+  recordStart: (entry: ImpersonationStart) => Promise<void>
+  recordEnd: (sessionId: string) => Promise<void>
+}
 
 type ImpersonationOptions = {
   findUser: (id: string) => Promise<ManagedUser | null>
+  log: ImpersonationLog
+}
+
+function impersonatingError() {
+  return new APIError('FORBIDDEN', { code: IMPERSONATING, message: IMPERSONATING })
 }
 
 /**
@@ -17,6 +61,10 @@ type ImpersonationOptions = {
  * Reprend la mécanique du plugin `admin` de Better Auth — mêmes routes, même cookie signé
  * de retour, même colonne `Session.impersonatedBy` — sans ses rôles : le droit se lit sur
  * `User.isSuperAdmin`, relu en base, et aucune des autres routes `/admin/*` n'est exposée.
+ *
+ * Deux ajouts par rapport à l'amont : chaque emprunt laisse une ligne `ImpersonationLog`
+ * (ouverte au démarrage, close à l'arrêt ou à la déconnexion), et les routes de
+ * `IMPERSONATION_LOCKED_AUTH_PATHS` répondent `impersonating` pendant l'emprunt.
  */
 export const impersonation = (options: ImpersonationOptions) =>
   ({
@@ -27,6 +75,26 @@ export const impersonation = (options: ImpersonationOptions) =>
           impersonatedBy: { type: 'string', required: false, input: false },
         },
       },
+    },
+    hooks: {
+      before: [
+        {
+          matcher: (ctx) => IMPERSONATION_LOCKED_AUTH_PATHS.has(ctx.path ?? ''),
+          handler: createAuthMiddleware(async (ctx) => {
+            const current = await getSessionFromCtx(ctx)
+            if (isImpersonating(current)) throw impersonatingError()
+          }),
+        },
+        {
+          // Une déconnexion pendant l'emprunt supprime la session empruntée sans passer par
+          // `/admin/stop-impersonating` : la trace doit être close ici aussi.
+          matcher: (ctx) => ctx.path === '/sign-out',
+          handler: createAuthMiddleware(async (ctx) => {
+            const current = await getSessionFromCtx(ctx)
+            if (current && isImpersonating(current)) await options.log.recordEnd(current.session.id)
+          }),
+        },
+      ],
     },
     endpoints: {
       impersonateUser: createAuthEndpoint(
@@ -46,8 +114,7 @@ export const impersonation = (options: ImpersonationOptions) =>
           if (!actor) throw new APIError('UNAUTHORIZED')
           if (!target) throw new APIError('NOT_FOUND', { code: 'notFound', message: 'notFound' })
 
-          const isImpersonating = typeof current.session.impersonatedBy === 'string'
-          const verdict = checkImpersonation(actor, target, isImpersonating)
+          const verdict = checkImpersonation(actor, target, isImpersonating(current))
           if (verdict !== 'OK') throw new APIError('FORBIDDEN', { code: verdict, message: verdict })
 
           const targetUser = await ctx.context.internalAdapter.findUserById(target.id)
@@ -64,6 +131,24 @@ export const impersonation = (options: ImpersonationOptions) =>
             true
           )
           if (!session) throw new APIError('INTERNAL_SERVER_ERROR')
+
+          // Pas d'emprunt sans trace : si la ligne ne peut être écrite, la session empruntée
+          // est retirée avant qu'un cookie ne la désigne.
+          try {
+            await options.log.recordStart({
+              actorId: current.user.id,
+              actorEmail: current.user.email,
+              targetId: targetUser.id,
+              targetEmail: targetUser.email,
+              sessionId: session.id,
+              ipAddress: session.ipAddress ?? null,
+              userAgent: session.userAgent ?? null,
+              expiresAt: session.expiresAt,
+            })
+          } catch {
+            await ctx.context.internalAdapter.deleteSession(session.token)
+            throw new APIError('INTERNAL_SERVER_ERROR')
+          }
 
           const authCookies = ctx.context.authCookies
           deleteSessionCookie(ctx)
@@ -90,7 +175,7 @@ export const impersonation = (options: ImpersonationOptions) =>
           if (!current) throw new APIError('UNAUTHORIZED')
 
           const impersonatedBy = current.session.impersonatedBy
-          if (typeof impersonatedBy !== 'string') {
+          if (!isImpersonating(current) || typeof impersonatedBy !== 'string') {
             throw new APIError('BAD_REQUEST', {
               code: 'notImpersonating',
               message: 'notImpersonating',
@@ -107,6 +192,7 @@ export const impersonation = (options: ImpersonationOptions) =>
             throw new APIError('UNAUTHORIZED')
           }
 
+          await options.log.recordEnd(current.session.id)
           await ctx.context.internalAdapter.deleteSession(current.session.token)
           await setSessionCookie(ctx, adminSession, !!dontRememberMe)
           expireCookie(ctx, adminCookie)

@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { auth } from '@/lib/auth'
+import { credentialUserGateway } from '@/gateways/credential-user-gateway'
 import { db } from '@/lib/db'
 import { findInvitationByToken } from '@/lib/db-unscoped'
 import { findAccountByEmail, normalizeEmail } from './invited-email'
@@ -41,29 +41,18 @@ export async function acceptInvitationAction(input: {
   let createdUserId: string | undefined
 
   try {
-    const res = await auth.api.signUpEmail({
-      body: {
-        name,
-        email: normalizeEmail(invitation.email),
-        password,
-      },
+    // Le compte naît vérifié : le jeton a été reçu sur cette adresse.
+    const created = await credentialUserGateway.create({
+      name,
+      email: normalizeEmail(invitation.email),
+      password,
     })
-    createdUserId = res.user.id
+    createdUserId = created.id
 
-    const outcome = await db.$transaction(async (tx) => {
-      const linked = await linkInvitedUser(tx, invitation, res.user.id)
-      if (linked !== 'OK') return linked
-
-      await tx.user.update({
-        where: { id: res.user.id },
-        data: { emailVerified: true },
-      })
-
-      return 'OK' as const
-    })
+    const outcome = await db.$transaction((tx) => linkInvitedUser(tx, invitation, created.id))
 
     if (outcome !== 'OK') {
-      await db.user.delete({ where: { id: res.user.id } }).catch(() => undefined)
+      await db.user.delete({ where: { id: created.id } }).catch(() => undefined)
       return outcome
     }
 

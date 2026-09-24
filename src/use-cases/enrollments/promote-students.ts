@@ -1,5 +1,6 @@
 import type { z } from 'zod'
-import { checkCapacity } from '@/domain/class-period'
+import { checkCapacity, SEAT_HOLDING_ENROLLMENT_STATUSES } from '@/domain/class-period'
+import { reserveClassSeats } from '@/gateways/class-seat-lock'
 import type { CompletedEnrollment } from '@/gateways/enrollment-gateway'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { periodGateway } from '@/gateways/period-gateway'
@@ -102,7 +103,7 @@ async function buildEligibilityContext(
             schoolId,
             classPeriodId: { in: classPeriodIds },
             endAt: null,
-            enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
+            enrollment: { status: { in: [...SEAT_HOLDING_ENROLLMENT_STATUSES] } },
           },
           _count: { _all: true },
         })
@@ -124,7 +125,7 @@ async function loadPromotion(input: Input) {
 
   const enrollments = await enrollmentGateway.findCompletedByPeriod(schoolId, sourcePeriodId)
   const context = await buildEligibilityContext(schoolId, enrollments, targetPeriodId)
-  return { schoolId, enrollments, context }
+  return { schoolId, targetPeriodId, enrollments, context }
 }
 
 /**
@@ -186,10 +187,18 @@ export async function previewPromoteStudents(input: Input) {
   return { promoted, skipped, skippedByReason } satisfies PromotionPreview
 }
 
+type PromotionOutcome = 'promoted' | SkipReason
+
+/** Rend à la classe la place réservée par `resolveEligibility` quand rien n'a été écrit. */
+function releaseSeat(context: EligibilityContext, classPeriodId: string) {
+  const occupancy = context.occupancyByClassPeriodId.get(classPeriodId) ?? 1
+  context.occupancyByClassPeriodId.set(classPeriodId, occupancy - 1)
+}
+
 export async function promoteStudents(input: Input) {
   const loaded = await loadPromotion(input)
   if (typeof loaded === 'string') return loaded
-  const { schoolId, enrollments, context } = loaded
+  const { schoolId, targetPeriodId, enrollments, context } = loaded
 
   let promoted = 0
   let skipped = 0
@@ -199,6 +208,11 @@ export async function promoteStudents(input: Input) {
   // any statement error, so one batch-wide transaction would make a partial report impossible —
   // a single failing student would roll back everyone and throw instead of returning errors.
   // Per-student transactions keep create + assign atomic without that blast radius.
+  //
+  // The in-memory eligibility above is only a pre-filter, read before the loop and outside any
+  // lock. Each transaction re-checks, under the (school, student, target period) lock and the
+  // target class row lock, that the student is still unenrolled and that a seat is still free:
+  // a second run (double click, two admins) creates nothing and never overfills a class.
   for (const enrollment of enrollments) {
     const eligibility = resolveEligibility(enrollment, context)
 
@@ -207,13 +221,25 @@ export async function promoteStudents(input: Input) {
       continue
     }
 
+    const { targetClassPeriodId } = eligibility
+
     try {
-      await db.$transaction(
-        async (tx) => {
+      const outcome = await db.$transaction(
+        async (tx): Promise<PromotionOutcome> => {
+          const { studentId } = enrollment
+          await enrollmentGateway.lockStudentInPeriod(tx, schoolId, studentId, targetPeriodId)
+          if (await enrollmentGateway.isEnrolledInPeriod(tx, schoolId, studentId, targetPeriodId)) {
+            return 'alreadyPromoted'
+          }
+
+          const seats = await reserveClassSeats(tx, schoolId, targetClassPeriodId)
+          if (seats === 'classFull') return 'targetClassFull'
+          if (seats === 'notFound') return 'noTargetClass'
+
           const newEnrollment = await tx.enrollment.create({
             data: {
               schoolId,
-              studentId: enrollment.studentId,
+              studentId,
               planId: enrollment.planId,
               totalAmount: enrollment.totalAmount,
               discount: enrollment.discount,
@@ -226,21 +252,25 @@ export async function promoteStudents(input: Input) {
             data: {
               schoolId,
               enrollmentId: newEnrollment.id,
-              classPeriodId: eligibility.targetClassPeriodId,
+              classPeriodId: targetClassPeriodId,
               startAt: new Date(),
             },
           })
+
+          return 'promoted'
         },
         { timeout: 10000, maxWait: 5000 }
       )
 
-      promoted++
+      if (outcome === 'promoted') {
+        promoted++
+      } else {
+        releaseSeat(context, targetClassPeriodId)
+        skipped++
+      }
     } catch (error) {
       console.error(`promoteStudents: failed to promote student ${enrollment.studentId}`, error)
-      context.occupancyByClassPeriodId.set(
-        eligibility.targetClassPeriodId,
-        (context.occupancyByClassPeriodId.get(eligibility.targetClassPeriodId) ?? 1) - 1
-      )
+      releaseSeat(context, targetClassPeriodId)
       errors.push({ studentId: enrollment.studentId, reason: 'createFailed' })
       skipped++
     }

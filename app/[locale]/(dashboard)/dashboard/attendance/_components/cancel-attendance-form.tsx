@@ -13,6 +13,7 @@ type ErrorLabels = {
   notFound: string
   attendanceDisabled: string
   sessionCancelled: string
+  invalidTransition: string
   unexpected: string
 }
 

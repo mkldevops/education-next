@@ -1,6 +1,6 @@
 import type { z } from 'zod'
-import { checkCapacity } from '@/domain/class-period'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
+import { reserveClassSeats } from '@/gateways/class-seat-lock'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
 import { studentGateway } from '@/gateways/student-gateway'
@@ -12,12 +12,16 @@ import { createEnrollmentSchema } from './schemas'
 type Input = z.input<typeof createEnrollmentSchema>
 
 /**
- * Classe pleine détectée dans la transaction de remplacement.
+ * Place refusée dans la transaction de remplacement (classe pleine ou archivée entre-temps).
  *
  * Un `return` laisse une transaction interactive Prisma se valider : il faut une exception pour
  * annuler l'inscription précédente déjà passée en `CANCELLED` quelques lignes plus haut.
  */
-class ClassFullError extends Error {}
+class SeatRefusedError extends Error {
+  constructor(readonly reason: 'notFound' | 'classFull') {
+    super(reason)
+  }
+}
 
 export async function createEnrollment(input: Input) {
   const parsed = createEnrollmentSchema.safeParse(input)
@@ -103,17 +107,10 @@ export async function createEnrollment(input: Input) {
         })
       }
 
-      const enrolledCount = await tx.classAssignment.count({
-        where: {
-          schoolId,
-          classPeriodId: parsed.data.classPeriodId,
-          endAt: null,
-          enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
-        },
-      })
-
-      const capacityCheck = checkCapacity(classPeriod.capacity, enrolledCount)
-      if (capacityCheck !== 'OK') throw new ClassFullError(capacityCheck)
+      // Place réservée sous verrou de ligne de la classe (`reserveClassSeats`) : deux élèves
+      // différents visant la dernière place ne passent plus tous les deux.
+      const seats = await reserveClassSeats(tx, schoolId, parsed.data.classPeriodId)
+      if (seats !== 'OK') throw new SeatRefusedError(seats)
 
       const enrollment = await tx.enrollment.create({
         data: {
@@ -140,7 +137,7 @@ export async function createEnrollment(input: Input) {
 
     return result
   } catch (error) {
-    if (error instanceof ClassFullError) return 'classFull' as const
+    if (error instanceof SeatRefusedError) return error.reason
     throw error
   }
 }

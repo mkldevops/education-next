@@ -4,6 +4,13 @@ import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { acquireAdvisoryLock } from './advisory-lock'
 
+/** Inscriptions qui valent « déjà dans la période cible » pour la promotion. */
+const PROMOTED_ENROLLMENT_STATUSES = [
+  'PENDING',
+  'ACTIVE',
+  'COMPLETED',
+] as const satisfies readonly EnrollmentStatus[]
+
 /** Forme retournée par `findCompletedByPeriod`, consommée par `promote-students`. */
 export type CompletedEnrollment = Prisma.EnrollmentGetPayload<{
   include: {
@@ -205,9 +212,16 @@ export const enrollmentGateway = {
    * redevable. `families: { some: { familyId } }` ne suffit pas — un élève en garde partagée
    * est rattaché à plusieurs familles, et une seule d'entre elles doit porter la dette
    * (`resolveDebtorFamily`, appliqué comme dans `familiesOutstanding`).
+   *
+   * `client` reçoit la transaction d'un encaissement : lues sous `lockFamilyForPayment`, ces
+   * inscriptions et leurs paiements ne peuvent plus bouger avant l'écriture.
    */
-  findPayableByFamily: async (schoolId: string, familyId: string) => {
-    const rows = await db.enrollment.findMany({
+  findPayableByFamily: async (
+    schoolId: string,
+    familyId: string,
+    client: Prisma.TransactionClient = db
+  ) => {
+    const rows = await client.enrollment.findMany({
       where: {
         schoolId,
         status: { in: [...OPEN_ENROLLMENT_STATUSES] },
@@ -246,12 +260,35 @@ export const enrollmentGateway = {
       where: {
         schoolId,
         studentId: { in: studentIds },
-        status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] },
+        status: { in: [...PROMOTED_ENROLLMENT_STATUSES] },
         classAssignments: { some: { classPeriod: { periodId } } },
       },
       select: { studentId: true },
     })
     return new Set(enrollments.map((enrollment) => enrollment.studentId))
+  },
+
+  /**
+   * Relecture de `findEnrolledStudentIds` pour un élève, dans la transaction de promotion et après
+   * `lockStudentInPeriod` : une promotion lancée deux fois (double clic, deux admins) ne crée pas
+   * une seconde inscription dans la période cible.
+   */
+  isEnrolledInPeriod: async (
+    tx: Prisma.TransactionClient,
+    schoolId: string,
+    studentId: string,
+    periodId: string
+  ) => {
+    const enrollment = await tx.enrollment.findFirst({
+      where: {
+        schoolId,
+        studentId,
+        status: { in: [...PROMOTED_ENROLLMENT_STATUSES] },
+        classAssignments: { some: { classPeriod: { periodId } } },
+      },
+      select: { id: true },
+    })
+    return enrollment !== null
   },
 
   findCompletedByPeriod: async (
@@ -262,6 +299,9 @@ export const enrollmentGateway = {
       where: {
         schoolId,
         status: { in: ['ACTIVE', 'COMPLETED'] },
+        // Un élève archivé n'est pas promu : le filtre soft-delete ne descend pas dans les
+        // relations, il faut le dire ici.
+        student: { isActive: true },
         classAssignments: {
           some: {
             classPeriod: { periodId },
@@ -270,10 +310,14 @@ export const enrollmentGateway = {
       },
       include: {
         student: true,
+        // L'affectation ouverte seulement : après un changement de classe en cours d'année,
+        // l'ancienne affectation (close) désignerait le mauvais niveau de départ.
         classAssignments: {
           where: {
+            endAt: null,
             classPeriod: { periodId },
           },
+          orderBy: { startAt: 'desc' },
           include: {
             classPeriod: {
               include: {

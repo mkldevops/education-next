@@ -30,7 +30,7 @@ const classPeriodId = '550e8400-e29b-41d4-a716-446655440003'
 type Tx = {
   family: { findFirst: Mock }
   plan: { findFirst: Mock }
-  classPeriod: { findFirst: Mock }
+  $queryRaw: Mock
   classAssignment: { count: Mock; create: Mock }
   person: { create: Mock }
   student: { create: Mock }
@@ -54,7 +54,7 @@ describe('createEnrolledStudent', () => {
     tx = {
       family: { findFirst: vi.fn().mockResolvedValue({ id: familyId }) },
       plan: { findFirst: vi.fn().mockResolvedValue({ amount: 180 }) },
-      classPeriod: { findFirst: vi.fn().mockResolvedValue({ capacity: 20 }) },
+      $queryRaw: vi.fn().mockResolvedValue([{ capacity: 20 }]),
       classAssignment: { count: vi.fn().mockResolvedValue(3), create: vi.fn() },
       person: { create: vi.fn().mockResolvedValue({ id: 'person-1' }) },
       student: { create: vi.fn().mockResolvedValue({ id: 'student-1' }) },
@@ -105,9 +105,10 @@ describe('createEnrolledStudent', () => {
     expect(tx.plan.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: planId, schoolId, isActive: true } })
     )
-    expect(tx.classPeriod.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: classPeriodId, schoolId, isActive: true } })
-    )
+    // Ligne de la classe verrouillée, bornée à l'école et aux classes actives.
+    const [sql, ...values] = tx.$queryRaw.mock.calls[0]
+    expect(sql.join('?')).toMatch(/"isActive" = true\s+FOR UPDATE/)
+    expect(values).toEqual([classPeriodId, schoolId])
   })
 
   it('counts the occupied seats of the school with the same predicate as createEnrollment', async () => {
@@ -175,7 +176,7 @@ describe('createEnrolledStudent', () => {
 
   it('refuses a full class before writing anything', async () => {
     // GIVEN
-    tx.classPeriod.findFirst.mockResolvedValue({ capacity: 3 })
+    tx.$queryRaw.mockResolvedValue([{ capacity: 3 }])
 
     // WHEN
     const result = await createEnrolledStudent(input())
@@ -189,10 +190,21 @@ describe('createEnrolledStudent', () => {
   it.each([
     ['family', 'family'],
     ['plan', 'plan'],
-    ['class', 'classPeriod'],
   ] as const)('returns notFound when the %s is missing', async (_label, model) => {
     // GIVEN
     tx[model].findFirst.mockResolvedValue(null)
+
+    // WHEN
+    const result = await createEnrolledStudent(input())
+
+    // THEN
+    expect(result).toBe('notFound')
+    expect(tx.person.create).not.toHaveBeenCalled()
+  })
+
+  it('returns notFound when the class is missing or archived', async () => {
+    // GIVEN
+    tx.$queryRaw.mockResolvedValue([])
 
     // WHEN
     const result = await createEnrolledStudent(input())

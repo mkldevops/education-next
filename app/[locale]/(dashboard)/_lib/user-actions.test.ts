@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const requireSchoolAdminMock = vi.fn()
-const signUpEmailMock = vi.fn()
+const createCredentialUserMock = vi.fn()
 const createMembershipMock = vi.fn()
 const sendVerificationEmailMock = vi.fn()
 const findManagedMock = vi.fn()
@@ -16,7 +16,10 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('@/lib/db', () => ({ db: dbMock, dbArchived: dbMock }))
 vi.mock('@/lib/db-unscoped', () => ({ countRowsBlockingUserDeletion: vi.fn() }))
 vi.mock('@/lib/auth', () => ({
-  auth: { api: { signUpEmail: signUpEmailMock, sendVerificationEmail: sendVerificationEmailMock } },
+  auth: { api: { sendVerificationEmail: sendVerificationEmailMock } },
+}))
+vi.mock('@/gateways/credential-user-gateway', () => ({
+  credentialUserGateway: { create: createCredentialUserMock },
 }))
 vi.mock('@/gateways/user-gateway', () => ({
   userGateway: { findManaged: findManagedMock, findByEmail: findByEmailMock, update: updateMock },
@@ -36,7 +39,7 @@ const INPUT = { name: 'Karim Benali', password: 'password123', role: 'PARENT' as
 beforeEach(() => {
   vi.clearAllMocks()
   requireSchoolAdminMock.mockResolvedValue({ schoolId: 'school-b', userId: 'admin-1' })
-  signUpEmailMock.mockResolvedValue({ user: { id: 'user-2' } })
+  createCredentialUserMock.mockResolvedValue({ id: 'user-2' })
   dbMock.user.update.mockResolvedValue({ id: 'user-2' })
   createMembershipMock.mockResolvedValue({ userId: 'user-2', schoolId: 'school-b' })
   sendVerificationEmailMock.mockResolvedValue({ status: true })
@@ -56,15 +59,18 @@ describe('createUserAction', () => {
   it('creates the account with the address in lower case', async () => {
     const result = await createUserAction({ ...INPUT, email: 'Karim.Benali@School.TEST' })
 
-    expect(signUpEmailMock).toHaveBeenCalledWith({
-      body: { name: INPUT.name, email: 'karim.benali@school.test', password: INPUT.password },
+    expect(createCredentialUserMock).toHaveBeenCalledWith({
+      name: INPUT.name,
+      email: 'karim.benali@school.test',
+      password: INPUT.password,
     })
+    expect(createMembershipMock).toHaveBeenCalledWith('user-2', 'school-b', 'PARENT')
     expect(result).toEqual({ id: 'user-2', email: 'karim.benali@school.test' })
   })
 
   it('rejects an invalid address before creating anything', async () => {
     expect(await createUserAction({ ...INPUT, email: 'nope' })).toBe('validation_error')
-    expect(signUpEmailMock).not.toHaveBeenCalled()
+    expect(createCredentialUserMock).not.toHaveBeenCalled()
   })
 })
 

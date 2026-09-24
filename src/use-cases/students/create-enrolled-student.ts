@@ -1,7 +1,7 @@
 import type { z } from 'zod'
-import { checkCapacity } from '@/domain/class-period'
 import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { validateStudentBirthday } from '@/domain/student'
+import { reserveClassSeats } from '@/gateways/class-seat-lock'
 import { planGateway } from '@/gateways/plan-gateway'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -58,11 +58,11 @@ export async function createEnrolledStudent(input: Input) {
       : null
     if (planId && !plan) return 'notFound' as const
 
-    const classPeriod = await tx.classPeriod.findFirst({
-      where: { id: enrollment.classPeriodId, schoolId, isActive: true },
-      select: { capacity: true },
-    })
-    if (!classPeriod) return 'notFound' as const
+    // Même réservation que `create-enrollment.ts`, avant la première écriture : la ligne de la
+    // classe est verrouillée jusqu'au commit, donc deux ajouts simultanés sur la dernière place
+    // ne passent pas tous les deux et aucune personne n'est créée pour rien.
+    const seats = await reserveClassSeats(tx, schoolId, enrollment.classPeriodId)
+    if (seats !== 'OK') return seats
 
     // Formule réservée de montant nul et remise déjà refusée non nulle hors drapeau
     // (FR-017) : `totalAmount` reste 0 sans repasser par `calculateTotalAmount`.
@@ -81,19 +81,6 @@ export async function createEnrolledStudent(input: Input) {
         totalAmount = calculateTotalAmount(planAmount, discount)
       }
     }
-
-    // Même prédicat et même place dans la transaction que `create-enrollment.ts` : la place
-    // est recomptée avant la première écriture, donc deux ajouts simultanés ne passent pas
-    // tous les deux et aucune personne n'est créée pour rien.
-    const enrolledCount = await tx.classAssignment.count({
-      where: {
-        schoolId,
-        classPeriodId: enrollment.classPeriodId,
-        endAt: null,
-        enrollment: { status: { in: ['PENDING', 'ACTIVE', 'COMPLETED'] } },
-      },
-    })
-    if (checkCapacity(classPeriod.capacity, enrolledCount) !== 'OK') return 'classFull' as const
 
     // La création imbriquée de `FamilyPerson` ne répète pas `schoolId` : Prisma le remplit
     // depuis la personne parente et le refuse en argument. Précédent : `personGateway.createWithFamily`.

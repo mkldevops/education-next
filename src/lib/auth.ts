@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { impersonationLogGateway } from '@/gateways/impersonation-log-gateway'
 import { userGateway } from '@/gateways/user-gateway'
 import { db } from '@/lib/db'
 import { impersonation } from '@/lib/impersonation'
@@ -11,7 +12,16 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Set to true in production
+    // Aucune inscription libre : `POST /api/auth/sign-up/email` répond 400. Les deux
+    // seuls chemins de création de compte — acceptation d'invitation et
+    // `createUserAction` — passent par `credentialUserGateway`, hors endpoint.
+    disableSignUp: true,
+    // Pas de preuve d'adresse exigée à la connexion : chaque compte naît d'une
+    // adresse déjà prouvée (voir `emailVerification` ci-dessous).
+    requireEmailVerification: false,
+    // Une réinitialisation prouve la boîte mail : toute session ouverte avant elle,
+    // par exemple par un tiers qui aurait créé le compte, doit tomber.
+    revokeSessionsOnPasswordReset: true,
     // Ces callbacks sont invoqués hors requête localisée : Better Auth ne fournit
     // pas de locale, d'où des libellés en français comme le reste des surfaces
     // plateforme.
@@ -78,6 +88,22 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+      // Google connecte ou se lie à un compte existant, il n'en crée jamais.
+      // `disableSignUp` couvre le retour de redirection ; `disableImplicitSignUp`
+      // couvre le flux `idToken`, qui ne lit pas `disableSignUp`. Le hook
+      // `databaseHooks.user.create.before` ferme le `requestSignUp` restant.
+      disableSignUp: true,
+      disableImplicitSignUp: true,
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        // Filet unique pour toute voie d'inscription, présente ou future : aucun
+        // endpoint Better Auth ne crée d'utilisateur. Seul un appel serveur hors
+        // requête (`credentialUserGateway`) s'exécute sans contexte d'endpoint.
+        before: async (_user, endpointContext) => (endpointContext ? false : undefined),
+      },
     },
   },
   session: {
@@ -97,7 +123,12 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: 'education-next',
   },
-  plugins: [impersonation({ findUser: (id) => userGateway.findManaged(id) })],
+  plugins: [
+    impersonation({
+      findUser: (id) => userGateway.findManaged(id),
+      log: impersonationLogGateway,
+    }),
+  ],
   trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'],
 })
 
