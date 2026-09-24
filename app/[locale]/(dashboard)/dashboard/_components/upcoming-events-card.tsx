@@ -26,20 +26,20 @@ export async function UpcomingEventsCard({ schoolId, viewer, locale, canManage }
   const events = (await listUpcomingEvents(schoolId, viewer)).slice(0, CARD_LIMIT)
 
   return (
-    <Card className="rounded border border-alabaster-700 bg-white p-5">
+    <Card className="p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-graphite">{t('title')}</h2>
+        <h2 className="text-sm font-semibold text-foreground">{t('title')}</h2>
         {canManage && (
           <Link
             href="/dashboard/events"
-            className="text-xs font-medium text-primary hover:underline"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             {t('manage')}
           </Link>
         )}
       </div>
       {events.length === 0 ? (
-        <p className="mt-3 text-sm text-graphite-600">{t('empty')}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t('empty')}</p>
       ) : (
         <ul className="mt-3 space-y-3">
           {events.map((event) => (
@@ -50,7 +50,7 @@ export async function UpcomingEventsCard({ schoolId, viewer, locale, canManage }
                   alt={event.images[0].alt ?? ''}
                   width={80}
                   height={60}
-                  className="h-[60px] w-20 shrink-0 rounded object-cover"
+                  className="h-[60px] w-20 shrink-0 rounded-md border border-border object-cover"
                 />
               )}
               <div
@@ -59,8 +59,8 @@ export async function UpcomingEventsCard({ schoolId, viewer, locale, canManage }
                   event.status === 'CANCELLED' && 'line-through opacity-60'
                 )}
               >
-                <p className="text-sm font-medium text-graphite">{event.title}</p>
-                <p className="text-xs text-graphite-600">
+                <p className="truncate text-sm font-medium text-foreground">{event.title}</p>
+                <p className="text-xs text-muted-foreground">
                   {formatEventDate(event, locale)} ·{' '}
                   <EventCategoryLabel category={event.category} />
                 </p>

@@ -12,14 +12,14 @@ export async function UnlinkedParentNotice({ userName, schoolName }: Props) {
 
   return (
     <Card className="mx-auto max-w-xl p-8 text-center">
-      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
-        <MailQuestion className="h-6 w-6 text-amber-700" />
+      <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-warning-subtle">
+        <MailQuestion className="size-6 text-warning" />
       </span>
-      <h1 className="mt-4 text-xl font-semibold text-graphite">
+      <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">
         {userName ? t('greeting', { name: userName }) : t('title')}
       </h1>
-      <p className="mt-2 text-sm text-graphite-600">{t('description')}</p>
-      <p className="mt-4 text-sm text-graphite-600">{t('nextStep', { schoolName })}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{t('description')}</p>
+      <p className="mt-4 text-sm text-muted-foreground">{t('nextStep', { schoolName })}</p>
     </Card>
   )
 }

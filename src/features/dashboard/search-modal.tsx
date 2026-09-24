@@ -1,11 +1,15 @@
 'use client'
 
 import { Command } from 'cmdk'
-import { User, Users } from 'lucide-react'
+import { CornerDownLeft, LoaderCircle, Search, User, Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from '@/i18n/routing'
+import { cn } from '@/lib/utils'
 import { searchStudentsAndFamilies } from '@/services/search-service'
+import { matchesQuery, resolvePaletteActions } from './palette-actions'
+import { flattenNavItems, resolveNavItems } from './sidebar-items'
+import { useSidebarStore } from './sidebar-store'
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -31,6 +35,19 @@ const ERROR_MESSAGE_KEYS: Record<SearchError, string> = {
   requestFailed: 'errorGeneric',
 }
 
+const groupClass = cn(
+  'px-2 pb-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2.5',
+  '[&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase',
+  '[&_[cmdk-group-heading]]:tracking-[0.06em] [&_[cmdk-group-heading]]:text-muted-foreground'
+)
+
+const itemClass = cn(
+  'group flex h-10 cursor-pointer select-none items-center gap-3 rounded-md px-2 text-sm text-foreground',
+  'data-[selected=true]:bg-surface-2 data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50'
+)
+
+const iconClass = 'shrink-0 text-muted-foreground group-data-[selected=true]:text-foreground'
+
 interface SearchModalProps {
   onClose?: () => void
 }
@@ -38,10 +55,13 @@ interface SearchModalProps {
 export function SearchModal({ onClose }: SearchModalProps) {
   const router = useRouter()
   const t = useTranslations('search')
+  const tNav = useTranslations('dashboard.sidebar')
+  const navScope = useSidebarStore((state) => state.navScope)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<SearchError | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setError(null)
@@ -80,136 +100,201 @@ export function SearchModal({ onClose }: SearchModalProps) {
     }
   }, [query])
 
+  // Piège de focus : la palette est une liste pilotée au clavier depuis son champ. Tab n'a donc
+  // nulle part où aller ; le focus reste dans le champ et revient au déclencheur à la fermeture.
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         onClose?.()
+        return
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        inputRef.current?.focus()
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = previousOverflow
+      previouslyFocused?.focus?.()
+    }
   }, [onClose])
 
-  const handleSelect = (result: SearchResult) => {
-    if (result.type === 'student') {
-      router.push(`/dashboard/students/${result.id}`)
-    } else {
-      router.push(`/dashboard/families/${result.id}`)
-    }
+  const navigate = (href: string) => {
+    router.push(href)
     onClose?.()
     setQuery('')
     setResults([])
   }
 
-  const groupedResults = {
-    families: results.filter((r) => r.type === 'family'),
-    students: results.filter((r) => r.type === 'student'),
-  }
+  const navItems = navScope
+    ? flattenNavItems(resolveNavItems(navScope)).filter((item) =>
+        matchesQuery(tNav(item.key), query)
+      )
+    : []
+  const actions = navScope
+    ? resolvePaletteActions(navScope).filter((action) =>
+        matchesQuery(t(`actions.${action.key}`), query)
+      )
+    : []
+
+  const families = results.filter((r) => r.type === 'family')
+  const students = results.filter((r) => r.type === 'student')
+  const hasQuery = query.trim().length > 0
+  const hasStaticMatches = navItems.length > 0 || actions.length > 0
+  const showNoResults =
+    hasQuery && !isLoading && !error && results.length === 0 && !hasStaticMatches
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center pt-24"
-      onClick={() => onClose?.()}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') {
-          onClose?.()
-        }
-      }}
-    >
+    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]">
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden="true"
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-[2px]"
+        onClick={() => onClose?.()}
+      />
       <div
-        role="document"
-        className="w-full max-w-2xl mx-4 bg-white rounded shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          e.stopPropagation()
-        }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('title')}
+        className="relative w-full max-w-xl overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
       >
-        <Command shouldFilter={false}>
-          <div className="flex items-center border-b px-4 py-3">
-            <input
-              className="flex-1 outline-none text-sm placeholder:text-graphite-700"
+        <Command shouldFilter={false} loop label={t('title')}>
+          <div className="flex h-12 items-center gap-3 border-b border-border px-4">
+            {isLoading ? (
+              <LoaderCircle
+                size={18}
+                aria-hidden="true"
+                className="shrink-0 animate-spin text-muted-foreground"
+              />
+            ) : (
+              <Search size={18} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+            )}
+            <Command.Input
+              ref={inputRef}
+              className="h-full flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-placeholder"
               placeholder={t('placeholder')}
               value={query}
-              // biome-ignore lint/a11y/noAutofocus: Modal input needs autofocus for UX
               autoFocus
-              onChange={(e) => setQuery(e.target.value)}
+              onValueChange={setQuery}
             />
+            <kbd className="hidden rounded border border-border bg-surface-2 px-1.5 py-0.5 font-sans text-[11px] text-muted-foreground sm:inline">
+              Esc
+            </kbd>
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
-            {isLoading && (
-              <div className="px-4 py-8 text-center text-sm text-graphite-600">{t('loading')}</div>
+          <Command.List className="max-h-[min(60vh,420px)] overflow-y-auto overscroll-contain py-1">
+            {isLoading && results.length === 0 && !hasStaticMatches && (
+              <div role="status" className="px-4 py-8 text-center text-sm text-muted-foreground">
+                {t('loading')}
+              </div>
             )}
 
-            {!isLoading && query && error && (
-              <div className="px-4 py-8 text-center text-sm text-red-600">
+            {!isLoading && hasQuery && error && (
+              <div role="alert" className="px-4 py-8 text-center text-sm text-danger">
                 {t(ERROR_MESSAGE_KEYS[error])}
               </div>
             )}
 
-            {!isLoading && query && !error && results.length === 0 && (
-              <div className="px-4 py-8 text-center text-sm text-graphite-600">
+            {showNoResults && (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                 {t('noResults')}
               </div>
             )}
 
-            {!isLoading && query && groupedResults.families.length > 0 && (
-              <div>
-                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-900">
-                  {t('families')}
-                </div>
-                {groupedResults.families.map((family) => (
-                  <button
-                    key={family.id}
-                    type="button"
-                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-900 text-left transition-colors border-b last:border-b-0"
-                    onClick={() => handleSelect(family)}
+            {actions.length > 0 && (
+              <Command.Group heading={t('groupActions')} className={groupClass}>
+                {actions.map((action) => (
+                  <Command.Item
+                    key={action.key}
+                    value={`action-${action.key}`}
+                    onSelect={() => navigate(action.href)}
+                    className={itemClass}
                   >
-                    <Users className="h-4 w-4 text-primary flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-graphite truncate">
-                        {family.name}
-                      </div>
-                      <div className="text-xs text-graphite-600 truncate">
-                        {t('memberCount', { count: family.memberCount })}
-                      </div>
-                    </div>
-                  </button>
+                    <action.icon size={18} aria-hidden="true" className={iconClass} />
+                    <span className="flex-1 truncate">{t(`actions.${action.key}`)}</span>
+                  </Command.Item>
                 ))}
-              </div>
+              </Command.Group>
             )}
 
-            {!isLoading && query && groupedResults.students.length > 0 && (
-              <div>
-                <div className="px-4 py-2 text-xs font-semibold text-graphite-600 uppercase bg-alabaster-900">
-                  {t('students')}
-                </div>
-                {groupedResults.students.map((student) => (
-                  <button
-                    key={student.id}
-                    type="button"
-                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-alabaster-900 text-left transition-colors border-b last:border-b-0"
-                    onClick={() => handleSelect(student)}
+            {navItems.length > 0 && (
+              <Command.Group heading={t('groupNavigation')} className={groupClass}>
+                {navItems.map((item) => (
+                  <Command.Item
+                    key={item.key}
+                    value={`nav-${item.key}`}
+                    onSelect={() => navigate(item.href)}
+                    className={itemClass}
                   >
-                    <User className="h-4 w-4 text-primary flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-graphite truncate">
-                        {student.name}
-                      </div>
-                      {student.secondaryInfo && (
-                        <div className="text-xs text-graphite-600 truncate">
-                          {student.secondaryInfo}
-                        </div>
-                      )}
-                    </div>
-                  </button>
+                    <item.icon size={18} aria-hidden="true" className={iconClass} />
+                    <span className="flex-1 truncate">{tNav(item.key)}</span>
+                  </Command.Item>
                 ))}
-              </div>
+              </Command.Group>
             )}
+
+            {hasQuery && !error && families.length > 0 && (
+              <Command.Group heading={t('families')} className={groupClass}>
+                {families.map((family) => (
+                  <Command.Item
+                    key={family.id}
+                    value={`family-${family.id}`}
+                    onSelect={() => navigate(`/dashboard/families/${family.id}`)}
+                    className={itemClass}
+                  >
+                    <Users size={18} aria-hidden="true" className={iconClass} />
+                    <span className="flex-1 truncate">{family.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {t('memberCount', { count: family.memberCount })}
+                    </span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
+
+            {hasQuery && !error && students.length > 0 && (
+              <Command.Group heading={t('students')} className={groupClass}>
+                {students.map((student) => (
+                  <Command.Item
+                    key={student.id}
+                    value={`student-${student.id}`}
+                    onSelect={() => navigate(`/dashboard/students/${student.id}`)}
+                    className={itemClass}
+                  >
+                    <User size={18} aria-hidden="true" className={iconClass} />
+                    <span className="flex-1 truncate">{student.name}</span>
+                    {student.secondaryInfo && (
+                      <span className="max-w-[45%] shrink-0 truncate text-xs text-muted-foreground">
+                        {student.secondaryInfo}
+                      </span>
+                    )}
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
+          </Command.List>
+
+          <div className="flex items-center justify-between gap-4 border-t border-border bg-background px-4 py-2 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <kbd className="rounded border border-border bg-surface px-1 font-sans">↑</kbd>
+              <kbd className="rounded border border-border bg-surface px-1 font-sans">↓</kbd>
+              {t('hintNavigate')}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <kbd className="flex items-center rounded border border-border bg-surface px-1">
+                <CornerDownLeft size={11} aria-hidden="true" />
+              </kbd>
+              {t('hintOpen')}
+            </span>
           </div>
         </Command>
       </div>

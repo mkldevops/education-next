@@ -81,6 +81,8 @@ export {
 } from './input'
 // Multi Select
 export { MultiSelect, type MultiSelectOption, type MultiSelectProps } from './multi-select'
+// Page Header
+export { PageHeader, type PageHeaderProps } from './page-header'
 // Rich Data Table
 export {
   RichDataTable,

@@ -1,4 +1,4 @@
-import { Breadcrumbs } from '@peaklab/ui'
+import { PageHeader } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
@@ -94,13 +94,14 @@ export default async function PaymentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs
-        items={[
+      <PageHeader
+        breadcrumbs={[
           { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
           { label: tBreadcrumbs('payments') },
         ]}
+        title={t('title')}
+        description={t('description')}
       />
-      <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
       <PaymentsOverview stats={stats} locale={locale} periodName={selectedPeriod?.name ?? null} />
       <PaymentsTable
         payments={paymentRows}

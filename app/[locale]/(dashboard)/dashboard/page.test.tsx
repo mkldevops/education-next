@@ -2,12 +2,17 @@ import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const schoolGatewayMock = { findActiveById: vi.fn() }
+const configGatewayMock = { get: vi.fn() }
 const authMock = { api: { getSession: vi.fn() } }
 const getSchoolContextMock = vi.fn()
 const requireSchoolScopeMock = vi.fn()
 const isPaymentsEnabledMock = vi.fn()
 const isEventsEnabledMock = vi.fn()
+const isClassScheduleEnabledMock = vi.fn()
+const getSelectedPeriodMock = vi.fn()
 const getDashboardOverviewMock = vi.fn()
+const getTodayAgendaMock = vi.fn()
+const getParentHomeMock = vi.fn()
 const isStripeConfiguredMock = vi.fn(() => true)
 const redirectMock = vi.fn()
 
@@ -27,25 +32,35 @@ vi.mock('@/i18n/routing', () => ({
   ),
 }))
 vi.mock('@/gateways/school-gateway', () => ({ schoolGateway: schoolGatewayMock }))
+vi.mock('@/gateways/config-gateway', () => ({ configGateway: configGatewayMock }))
 vi.mock('@/lib/auth', () => ({ auth: authMock }))
 vi.mock('@/lib/school-context', () => ({ getSchoolContext: getSchoolContextMock }))
 vi.mock('@/lib/stripe', () => ({ isStripeConfigured: isStripeConfiguredMock }))
+vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriod: getSelectedPeriodMock }))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
 vi.mock('@/use-cases/events/is-events-enabled', () => ({
   isEventsEnabled: isEventsEnabledMock,
 }))
+vi.mock('@/use-cases/class-schedules/is-class-schedule-enabled', () => ({
+  isClassScheduleEnabled: isClassScheduleEnabledMock,
+}))
 vi.mock('../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
 vi.mock('./_lib/dashboard-overview', () => ({ getDashboardOverview: getDashboardOverviewMock }))
-// `SchoolInsightsSection` est un composant serveur asynchrone couvert par son propre test
-// (`_components/school-insights.test.tsx`) ; le moteur de rendu client des tests ne sait
-// pas résoudre un composant serveur imbriqué.
+vi.mock('./_lib/today-agenda', () => ({ getTodayAgenda: getTodayAgendaMock }))
+vi.mock('./_lib/parent-home', () => ({ getParentHome: getParentHomeMock }))
+// Composants serveur asynchrones couverts par leurs propres tests : le moteur de rendu
+// client des tests ne sait pas résoudre un composant serveur imbriqué.
 vi.mock('./_components/school-insights', () => ({
   SchoolInsightsSection: ({ insights }: { insights: { payments: unknown } }) => (
     <div data-testid="school-insights">{insights.payments ? 'has-stats' : 'no-stats'}</div>
   ),
 }))
+vi.mock('./_components/unlinked-parent-notice', () => ({
+  UnlinkedParentNotice: () => <div data-testid="unlinked-parent" />,
+}))
+vi.mock('./_components/upcoming-events-card', () => ({ UpcomingEventsCard: () => null }))
 vi.mock('./families/[id]/_components/activate-enrollment-button', () => ({
   ActivateEnrollmentButton: () => <button type="button">activate-enrollment</button>,
 }))
@@ -55,6 +70,9 @@ vi.mock('./families/[id]/_components/online-payment-button', () => ({
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, sa factory est lazy.
 const { default: DashboardPage } = await import('./page')
+
+const renderPage = async (locale = 'fr') =>
+  render(await DashboardPage({ params: Promise.resolve({ locale }) }))
 
 const recentEnrollments = [
   {
@@ -69,84 +87,165 @@ const recentEnrollments = [
   },
 ]
 
-const overview = (paymentsEnabled: boolean, isAdmin: boolean) => ({
-  selectedPeriod: null,
+const totals = {
+  due: 1000,
+  collected: 600,
+  remaining: 400,
+  collectionRate: 60,
+  enrollmentCount: 5,
+  settledCount: 2,
+  outstandingCount: 3,
+  paymentCount: 4,
+  uncashedAmount: 0,
+  uncashedCount: 0,
+}
+
+const overview = (paymentsEnabled: boolean, pendingEnrollmentCount = 0) => ({
+  selectedPeriod: { id: 'period-1', name: '2026-2027' },
   familyCount: 3,
   studentCount: 4,
-  recentStudents: [],
   enrollmentCount: 5,
-  pendingPaymentCount: 1,
+  pendingEnrollmentCount,
   recentEnrollments,
-  parentBalance: isAdmin ? null : { remainingBalance: 75 },
-  insights: isAdmin
-    ? {
-        payments: paymentsEnabled
-          ? {
-              totals: { remaining: 400, collected: 600, collectionRate: 60 },
-              monthly: [],
-              methods: [],
-              families: [],
-            }
-          : null,
-        classes: [],
-        levels: [],
-      }
-    : null,
+  insights: {
+    payments: paymentsEnabled ? { totals, monthly: [], methods: [], families: [] } : null,
+    classes: [],
+    levels: [],
+  },
 })
+
+const adminContext = {
+  role: 'ADMIN',
+  isSuperAdmin: false,
+  schoolId: 'school-1',
+  userId: 'user-1',
+  familyId: null,
+}
+const adminScope = { schoolId: 'school-1', userId: 'user-1', isAdmin: true }
 
 beforeEach(() => {
   vi.clearAllMocks()
   isStripeConfiguredMock.mockReturnValue(true)
   isEventsEnabledMock.mockResolvedValue(false)
+  isClassScheduleEnabledMock.mockResolvedValue(false)
+  configGatewayMock.get.mockResolvedValue(null)
+  getSelectedPeriodMock.mockResolvedValue({ id: 'period-1', name: '2026-2027' })
+  getTodayAgendaMock.mockResolvedValue(null)
   schoolGatewayMock.findActiveById.mockResolvedValue({ id: 'school-1', name: 'Al-Nour' })
   authMock.api.getSession.mockResolvedValue({ user: { name: 'Jane', email: 'jane@example.com' } })
 })
 
 describe('DashboardPage, admin', () => {
   beforeEach(() => {
-    getSchoolContextMock.mockResolvedValue({
-      role: 'ADMIN',
-      isSuperAdmin: false,
-      schoolId: 'school-1',
-      userId: 'user-1',
-      familyId: null,
-    })
-    requireSchoolScopeMock.mockResolvedValue({
-      schoolId: 'school-1',
-      userId: 'user-1',
-      isAdmin: true,
-    })
+    getSchoolContextMock.mockResolvedValue(adminContext)
+    requireSchoolScopeMock.mockResolvedValue(adminScope)
   })
 
-  it('hides the outstanding-balance card, the payment column and the collection stats when payments are disabled', async () => {
-    isPaymentsEnabledMock.mockResolvedValue(false)
-    getDashboardOverviewMock.mockResolvedValue(overview(false, true))
+  it('reads the overview and the agenda for the scoped school only, never the parent home', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(true)
+    getDashboardOverviewMock.mockResolvedValue(overview(true))
 
-    render(await DashboardPage({ params: Promise.resolve({ locale: 'fr' }) }))
+    await renderPage()
+
+    expect(getDashboardOverviewMock).toHaveBeenCalledWith('school-1', true)
+    expect(getTodayAgendaMock).toHaveBeenCalledWith('school-1', {
+      periodId: 'period-1',
+      attendanceEnabled: false,
+      scheduleEnabled: false,
+    })
+    expect(configGatewayMock.get.mock.calls[0][0]).toBe('school-1')
+    expect(getParentHomeMock).not.toHaveBeenCalled()
+  })
+
+  it('hides the collection KPI, balances task, payment column and stats when payments are disabled', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(false)
+    getDashboardOverviewMock.mockResolvedValue(overview(false))
+
+    await renderPage()
 
     expect(screen.queryByText('insights.remaining')).not.toBeInTheDocument()
+    expect(screen.queryByText(/home\.todo\.outstanding/)).not.toBeInTheDocument()
     expect(screen.queryByText('table.payment')).not.toBeInTheDocument()
     expect(screen.queryByText('table.plan')).not.toBeInTheDocument()
-    expect(screen.queryByText('Standard')).not.toBeInTheDocument()
+    expect(screen.getByText('stats.pendingEnrollments')).toBeInTheDocument()
     expect(screen.getByTestId('school-insights')).toHaveTextContent('no-stats')
-    // Le reste du tableau de bord n'est pas affecté.
     expect(screen.getByText('Alice Dupont')).toBeInTheDocument()
   })
 
-  it('shows the outstanding-balance card, the payment column and the collection stats when payments are enabled', async () => {
+  it('shows the collection KPI, balances task, payment column and stats when payments are enabled', async () => {
     isPaymentsEnabledMock.mockResolvedValue(true)
-    getDashboardOverviewMock.mockResolvedValue(overview(true, true))
+    getDashboardOverviewMock.mockResolvedValue(overview(true))
 
-    render(await DashboardPage({ params: Promise.resolve({ locale: 'fr' }) }))
+    await renderPage()
 
     expect(screen.getByText('insights.remaining')).toBeInTheDocument()
+    expect(screen.getByText('home.todo.outstanding:{"count":3}')).toBeInTheDocument()
     expect(screen.getByText('table.payment')).toBeInTheDocument()
     expect(screen.getByText('table.plan')).toBeInTheDocument()
     expect(screen.getByTestId('school-insights')).toHaveTextContent('has-stats')
   })
+
+  it('lists the attendance and pending enrollment tasks and today classes', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(false)
+    isClassScheduleEnabledMock.mockResolvedValue(true)
+    configGatewayMock.get.mockResolvedValue({ value: 'true' })
+    getDashboardOverviewMock.mockResolvedValue(overview(false, 2))
+    getTodayAgendaMock.mockResolvedValue({
+      closed: false,
+      attendanceToTake: 1,
+      classes: [
+        {
+          slotId: 'slot-1',
+          classPeriodId: 'class-1',
+          className: 'CP A',
+          startTime: '09:00',
+          endTime: '11:00',
+          teachers: ['Awa Diallo'],
+          attendance: 'NOT_STARTED',
+        },
+      ],
+    })
+
+    await renderPage()
+
+    expect(getTodayAgendaMock).toHaveBeenCalledWith('school-1', {
+      periodId: 'period-1',
+      attendanceEnabled: true,
+      scheduleEnabled: true,
+    })
+    expect(screen.getByText('home.todo.attendance:{"count":1}')).toBeInTheDocument()
+    expect(screen.getByText('home.todo.pendingEnrollments:{"count":2}')).toBeInTheDocument()
+    expect(screen.getByText('home.schedule.title')).toBeInTheDocument()
+    expect(screen.getByText('CP A')).toBeInTheDocument()
+    expect(screen.getByText('notStarted')).toBeInTheDocument()
+  })
+
+  it('shows the empty to-do state when nothing is pending', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(false)
+    getDashboardOverviewMock.mockResolvedValue(overview(false))
+
+    await renderPage()
+
+    expect(screen.getByText('home.todo.empty')).toBeInTheDocument()
+    expect(screen.queryByText('home.schedule.title')).not.toBeInTheDocument()
+  })
 })
 
 describe('DashboardPage, parent', () => {
+  const parentHome = (remainingBalance: number | null) => ({
+    children: [
+      {
+        id: 'student-1',
+        firstName: 'Amine',
+        lastName: 'Benali',
+        className: 'CE1 B',
+        levelName: 'CE1',
+        nextClass: null,
+      },
+    ],
+    remainingBalance,
+  })
+
   beforeEach(() => {
     getSchoolContextMock.mockResolvedValue({
       role: 'PARENT',
@@ -163,11 +262,30 @@ describe('DashboardPage, parent', () => {
     })
   })
 
+  it('reads the home of the linked family only, never the school overview', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(true)
+    isClassScheduleEnabledMock.mockResolvedValue(true)
+    getParentHomeMock.mockResolvedValue(parentHome(75))
+
+    await renderPage()
+
+    expect(getParentHomeMock).toHaveBeenCalledWith('school-1', 'family-1', {
+      periodId: 'period-1',
+      paymentsEnabled: true,
+      scheduleEnabled: true,
+    })
+    expect(getDashboardOverviewMock).not.toHaveBeenCalled()
+    expect(getTodayAgendaMock).not.toHaveBeenCalled()
+    expect(screen.getByText('Amine Benali')).toBeInTheDocument()
+    expect(screen.getByText('CE1 B')).toBeInTheDocument()
+    expect(screen.getByText('home.children.noNextClass')).toBeInTheDocument()
+  })
+
   it('hides the balance card and the online payment button when payments are disabled', async () => {
     isPaymentsEnabledMock.mockResolvedValue(false)
-    getDashboardOverviewMock.mockResolvedValue(overview(false, false))
+    getParentHomeMock.mockResolvedValue(parentHome(null))
 
-    render(await DashboardPage({ params: Promise.resolve({ locale: 'fr' }) }))
+    await renderPage()
 
     expect(screen.queryByText('stats.remainingBalance')).not.toBeInTheDocument()
     expect(screen.queryByText('online-payment')).not.toBeInTheDocument()
@@ -175,12 +293,38 @@ describe('DashboardPage, parent', () => {
 
   it('shows the balance card and the online payment button when payments are enabled', async () => {
     isPaymentsEnabledMock.mockResolvedValue(true)
-    getDashboardOverviewMock.mockResolvedValue(overview(true, false))
+    getParentHomeMock.mockResolvedValue(parentHome(75))
 
-    render(await DashboardPage({ params: Promise.resolve({ locale: 'fr' }) }))
+    await renderPage()
 
     expect(screen.getByText('stats.remainingBalance')).toBeInTheDocument()
     expect(screen.getByText('online-payment')).toBeInTheDocument()
+  })
+
+  it('shows the empty state when no child is linked', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(false)
+    getParentHomeMock.mockResolvedValue({ children: [], remainingBalance: null })
+
+    await renderPage()
+
+    expect(screen.getByText('home.children.empty')).toBeInTheDocument()
+  })
+
+  it('denies an unlinked parent before any family or school read', async () => {
+    getSchoolContextMock.mockResolvedValue({
+      role: 'PARENT',
+      isSuperAdmin: false,
+      schoolId: 'school-1',
+      userId: 'user-1',
+      familyId: null,
+    })
+
+    await renderPage()
+
+    expect(screen.getByTestId('unlinked-parent')).toBeInTheDocument()
+    expect(requireSchoolScopeMock).not.toHaveBeenCalled()
+    expect(getParentHomeMock).not.toHaveBeenCalled()
+    expect(getDashboardOverviewMock).not.toHaveBeenCalled()
   })
 })
 
@@ -209,6 +353,7 @@ describe('DashboardPage, teacher-only membership', () => {
     expect(isPaymentsEnabledMock).not.toHaveBeenCalled()
     expect(isEventsEnabledMock).not.toHaveBeenCalled()
     expect(getDashboardOverviewMock).not.toHaveBeenCalled()
+    expect(getParentHomeMock).not.toHaveBeenCalled()
     expect(schoolGatewayMock.findActiveById).not.toHaveBeenCalled()
   })
 
@@ -219,13 +364,9 @@ describe('DashboardPage, teacher-only membership', () => {
       schoolId: 'school-1',
       userId: 'user-1',
     })
-    requireSchoolScopeMock.mockResolvedValue({
-      schoolId: 'school-1',
-      userId: 'user-1',
-      isAdmin: true,
-    })
+    requireSchoolScopeMock.mockResolvedValue(adminScope)
     isPaymentsEnabledMock.mockResolvedValue(false)
-    getDashboardOverviewMock.mockResolvedValue(overview(false, true))
+    getDashboardOverviewMock.mockResolvedValue(overview(false))
 
     await DashboardPage({ params: Promise.resolve({ locale: 'fr' }) })
 

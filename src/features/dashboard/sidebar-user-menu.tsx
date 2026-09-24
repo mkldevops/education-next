@@ -1,7 +1,7 @@
 'use client'
 
 import { useMenu } from '@peaklab/ui'
-import { ChevronsLeft, ChevronsRight, ChevronsUpDown, LogOut } from 'lucide-react'
+import { ChevronsUpDown, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/routing'
 import { cn } from '@/lib/utils'
@@ -9,7 +9,7 @@ import { toInitials } from './initials'
 import type { NavItemConfig } from './sidebar-items'
 
 const itemClass =
-  'flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm text-graphite-600 transition-colors hover:bg-alabaster-900 hover:text-graphite'
+  'flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm text-foreground transition-colors duration-(--duration-fast) hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none'
 
 export function UserMenu({
   userName,
@@ -40,20 +40,23 @@ export function UserMenu({
         aria-expanded={open}
         aria-label={expanded ? undefined : label}
         className={cn(
-          'flex w-full items-center rounded transition-colors hover:bg-alabaster-900',
-          expanded ? 'gap-3 px-3 py-2' : 'justify-center p-2'
+          'flex w-full items-center rounded-md transition-colors duration-(--duration-fast) hover:bg-surface-2',
+          'focus-visible:outline-2 focus-visible:outline-ring',
+          expanded ? 'h-10 gap-2.5 px-2' : 'mx-auto size-10 justify-center'
         )}
       >
         <span
           aria-hidden
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-xs font-bold text-white"
+          className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2 text-[11px] font-semibold text-foreground"
         >
           {toInitials(label)}
         </span>
         {expanded && (
           <>
-            <span className="flex-1 truncate text-sm font-medium text-graphite-600">{label}</span>
-            <ChevronsUpDown size={16} className="shrink-0 text-graphite-800" />
+            <span className="flex-1 truncate text-left text-sm font-medium text-foreground">
+              {label}
+            </span>
+            <ChevronsUpDown size={16} aria-hidden className="shrink-0 text-muted-foreground" />
           </>
         )}
       </button>
@@ -63,7 +66,7 @@ export function UserMenu({
           ref={menuRef}
           role="menu"
           className={cn(
-            'absolute z-40 rounded border border-alabaster-700 bg-white p-1 shadow-lg',
+            'absolute z-40 rounded-lg border border-border bg-surface p-1 shadow-lg',
             expanded ? 'bottom-full left-0 right-0 mb-2' : 'bottom-0 left-full ml-2 w-56'
           )}
         >
@@ -78,23 +81,10 @@ export function UserMenu({
                 onNavigate()
               }}
             >
-              <Icon size={18} className="shrink-0" />
+              <Icon size={16} aria-hidden className="shrink-0 text-muted-foreground" />
               {t(key)}
             </Link>
           ))}
-
-          <button
-            type="button"
-            role="menuitem"
-            className={itemClass}
-            onClick={() => {
-              close(false)
-              onSignOut()
-            }}
-          >
-            <LogOut size={18} className="shrink-0" />
-            {t('logout')}
-          </button>
 
           <button
             type="button"
@@ -106,11 +96,26 @@ export function UserMenu({
             }}
           >
             {expanded ? (
-              <ChevronsLeft size={18} className="shrink-0" />
+              <PanelLeftClose size={16} aria-hidden className="shrink-0 text-muted-foreground" />
             ) : (
-              <ChevronsRight size={18} className="shrink-0" />
+              <PanelLeftOpen size={16} aria-hidden className="shrink-0 text-muted-foreground" />
             )}
             {expanded ? t('collapse') : t('expand')}
+          </button>
+
+          <div aria-hidden="true" className="my-1 h-px bg-border" />
+
+          <button
+            type="button"
+            role="menuitem"
+            className={itemClass}
+            onClick={() => {
+              close(false)
+              onSignOut()
+            }}
+          >
+            <LogOut size={16} aria-hidden className="shrink-0 text-muted-foreground" />
+            {t('logout')}
           </button>
         </div>
       )}
