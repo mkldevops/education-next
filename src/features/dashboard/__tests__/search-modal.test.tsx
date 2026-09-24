@@ -1,12 +1,14 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const pushMock = vi.fn()
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }))
 
 vi.mock('@/i18n/routing', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: pushMock }),
 }))
 
 vi.mock('@/services/search-service', () => ({
@@ -15,11 +17,31 @@ vi.mock('@/services/search-service', () => ({
 
 import { searchStudentsAndFamilies } from '@/services/search-service'
 import { SearchModal } from '../search-modal'
+import type { NavScope } from '../sidebar-items'
+import { useSidebarStore } from '../sidebar-store'
+
+// cmdk mesure sa liste et fait défiler l'élément actif : jsdom n'implémente ni l'un ni l'autre.
+beforeAll(() => {
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver
+  Element.prototype.scrollIntoView ??= () => {}
+})
+
+const adminScope: NavScope = {
+  role: 'ADMIN',
+  isSuperAdmin: false,
+  features: { events: false, payments: true, attendance: true },
+}
 
 const search = () => screen.getByPlaceholderText('placeholder')
+const selected = () => document.querySelector('[cmdk-item][data-selected="true"]')
 
 beforeEach(() => {
   vi.clearAllMocks()
+  useSidebarStore.setState({ navScope: null })
 })
 
 describe('SearchModal', () => {
@@ -86,5 +108,48 @@ describe('SearchModal', () => {
       timeout: 2000,
     })
     expect(screen.queryByText('errorGeneric')).not.toBeInTheDocument()
+  })
+
+  it('groups actions and destinations from the sidebar scope before any query', () => {
+    useSidebarStore.setState({ navScope: adminScope })
+
+    render(<SearchModal />)
+
+    expect(screen.getByText('groupActions')).toBeInTheDocument()
+    expect(screen.getByText('groupNavigation')).toBeInTheDocument()
+    expect(screen.getByText('actions.newFamily')).toBeInTheDocument()
+    expect(screen.getByText('actions.takeAttendance')).toBeInTheDocument()
+    expect(searchStudentsAndFamilies).not.toHaveBeenCalled()
+  })
+
+  it('moves the selection with the arrow keys and opens it with Enter', () => {
+    useSidebarStore.setState({ navScope: adminScope })
+    const onClose = vi.fn()
+
+    render(<SearchModal onClose={onClose} />)
+    const first = selected()
+    expect(first).toHaveTextContent('actions.newFamily')
+
+    fireEvent.keyDown(search(), { key: 'ArrowDown' })
+    expect(selected()).not.toBe(first)
+    expect(selected()).toHaveTextContent('actions.newEnrollment')
+
+    fireEvent.keyDown(search(), { key: 'Enter' })
+    expect(pushMock).toHaveBeenCalledWith('/dashboard/enrollments?action=create')
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('traps Tab in the input and closes on Escape', () => {
+    const onClose = vi.fn()
+
+    render(<SearchModal onClose={onClose} />)
+    const input = search()
+    input.blur()
+
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(input).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledOnce()
   })
 })

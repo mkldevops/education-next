@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { NavScope } from './sidebar-items'
 
 type SidebarState = {
   expanded: boolean
@@ -7,6 +8,12 @@ type SidebarState = {
   mobileOpen: boolean
   setMobileOpen: (v: boolean) => void
   toggleMobile: () => void
+  /**
+   * Portée de navigation publiée par la barre latérale, relue par la palette ⌘K pour proposer
+   * exactement les mêmes destinations. Jamais persistée : elle suit la session serveur.
+   */
+  navScope: NavScope | null
+  setNavScope: (scope: NavScope) => void
 }
 
 export const useSidebarStore = create<SidebarState>()(
@@ -17,6 +24,8 @@ export const useSidebarStore = create<SidebarState>()(
       mobileOpen: false,
       setMobileOpen: (v) => set({ mobileOpen: v }),
       toggleMobile: () => set((s) => ({ mobileOpen: !s.mobileOpen })),
+      navScope: null,
+      setNavScope: (navScope) => set({ navScope }),
     }),
     {
       name: 'sidebar-state',

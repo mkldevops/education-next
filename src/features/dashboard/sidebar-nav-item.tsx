@@ -32,11 +32,10 @@ function Tooltip({
           <div
             id={tooltipId}
             role="tooltip"
-            className="fixed z-50 -translate-y-1/2 rounded bg-graphite px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
+            className="fixed z-50 -translate-y-1/2 rounded-md bg-foreground px-2 py-1 text-xs font-medium text-surface shadow-sm"
             style={{ top: pos.top, left: pos.left }}
           >
             {label}
-            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-graphite" />
           </div>,
           document.body
         )}
@@ -69,15 +68,15 @@ export function NavItem({
       className={cn(
         'relative flex items-center rounded-md transition-colors duration-(--duration-fast) ease-out',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-        expanded ? 'gap-3 px-3 py-2' : 'size-11 justify-center',
+        expanded ? 'h-10 gap-2.5 px-2.5 md:h-8' : 'mx-auto size-10 justify-center',
         // Fond neutre et barre d'accent : la couleur d'école, arbitraire, ne porte que l'accent.
         active
-          ? 'bg-surface-2 font-medium text-foreground before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary'
+          ? 'bg-surface-2 font-medium text-foreground before:absolute before:inset-y-1.5 before:-left-3 before:w-0.5 before:rounded-full before:bg-primary'
           : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground'
       )}
     >
-      <Icon size={20} className="shrink-0" />
-      {expanded && <span className="text-sm font-medium">{label}</span>}
+      <Icon size={20} strokeWidth={1.75} aria-hidden="true" className="shrink-0" />
+      {expanded && <span className="truncate text-sm font-medium">{label}</span>}
     </Link>
   )
 

@@ -36,7 +36,7 @@ export function PeriodSelector({ periods, selectedPeriodId }: PeriodSelectorProp
         onChange={handleChange}
         disabled={isPending}
         aria-label={t('selectAriaLabel')}
-        className="rounded border border-alabaster-700 bg-white px-3 py-1.5 text-sm text-graphite focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+        className="h-9 max-w-[11rem] truncate rounded-md border border-border bg-surface pl-2.5 pr-8 text-sm font-medium text-foreground shadow-xs transition-colors hover:border-input/60 focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50 sm:max-w-none"
       >
         {periods.map((period) => (
           <option key={period.id} value={period.id}>
@@ -45,7 +45,7 @@ export function PeriodSelector({ periods, selectedPeriodId }: PeriodSelectorProp
         ))}
       </select>
       {currentPeriodId === null && (
-        <span className="hidden text-xs text-amber-700 sm:inline">{t('betweenYears')}</span>
+        <span className="hidden text-xs text-warning lg:inline">{t('betweenYears')}</span>
       )}
     </div>
   )

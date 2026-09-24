@@ -210,7 +210,6 @@
       "pendingPayments": "Pending payments",
       "pendingEnrollments": "Enrollments to review",
       "remainingBalance": "Family balance",
-      "lastSixMonths": "Trend over 6 months",
       "scopeAll": "All periods",
       "scopePeriod": "{period} period"
     },
@@ -266,8 +265,6 @@
       "settings": "Settings",
       "logout": "Logout",
       "logoutError": "Could not sign you out, please try again",
-      "sectionGestion": "Management",
-      "sectionConfig": "Configuration",
       "collapse": "Collapse",
       "expand": "Expand",
       "openMenu": "Open menu",
@@ -279,7 +276,18 @@
       "events": "Events",
       "planning": "Schedule",
       "attendance": "Attendance tracking",
-      "superAdmins": "Super admins"
+      "superAdmins": "Super admins",
+      "navigation": "Main navigation",
+      "toggleSidebar": "Show or hide the sidebar",
+      "sections": {
+        "today": "Today",
+        "schooling": "Schooling",
+        "finance": "Finance",
+        "settings": "Settings",
+        "platform": "Platform",
+        "family": "Family space",
+        "teaching": "Teaching"
+      }
     },
     "pages": {
       "families": {
@@ -455,7 +463,8 @@
             "validationError": "Check the information you entered",
             "notFound": "Person not found"
           }
-        }
+        },
+        "description": "Enrolled households, their guardians and their balance."
       },
       "students": {
         "title": "Students",
@@ -532,7 +541,8 @@
             "notFound": "Student not found",
             "hasActiveEnrollments": "Pending or active enrollments remain: close them first"
           }
-        }
+        },
+        "description": "Every student in the school, with their class and enrollment."
       },
       "periods": {
         "title": "Periods",
@@ -827,7 +837,8 @@
             "notFound": "Enrollment or plan not found.",
             "unpricedPlan": "That plan is reserved for enrollments without a price."
           }
-        }
+        },
+        "description": "This period's enrollments, to activate, follow and settle."
       },
       "promotion": {
         "title": "Student Promotion",
@@ -916,7 +927,8 @@
             "validationError": "Check the information entered",
             "notFound": "Family not found"
           }
-        }
+        },
+        "description": "Payments received, cheques to deposit and amounts still due."
       },
       "plans": {
         "title": "Plans",
@@ -2097,6 +2109,44 @@
       "title": "Upcoming events",
       "manage": "Manage",
       "empty": "No upcoming event"
+    },
+    "home": {
+      "kpi": {
+        "label": "Key figures",
+        "collectionRate": "{rate}% collected"
+      },
+      "todo": {
+        "title": "To do today",
+        "attendance": "{count, plural, one {# register to take} other {# registers to take}}",
+        "attendanceHint": "Today's classes without a validated register",
+        "pendingEnrollments": "{count, plural, one {# enrollment to activate} other {# enrollments to activate}}",
+        "uncashed": "{count, plural, one {# cheque to deposit} other {# cheques to deposit}}",
+        "uncashedHint": "{amount} waiting to be deposited",
+        "outstanding": "{count, plural, one {# enrollment with a balance due} other {# enrollments with a balance due}}",
+        "outstandingHint": "{amount} left to collect",
+        "empty": "Nothing urgent today",
+        "emptyHint": "Registers, enrollments and collections are up to date.",
+        "emptyAction": "View enrollments"
+      },
+      "schedule": {
+        "title": "Today's classes",
+        "empty": "No class scheduled today",
+        "closed": "The school is closed today",
+        "viewAll": "View schedule",
+        "openAttendance": "Open attendance"
+      },
+      "children": {
+        "title": "Your children",
+        "class": "Class",
+        "nextClass": "Next class",
+        "noClass": "No class yet",
+        "noLevel": "Level to be confirmed",
+        "noNextClass": "No class scheduled",
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "empty": "No child linked to your family",
+        "emptyHint": "Contact the school if a child is missing."
+      }
     }
   },
   "schools": {
@@ -2437,7 +2487,17 @@
     "families": "Families",
     "students": "Students",
     "memberCount": "{count, plural, =0 {no member} one {# member} other {# members}}",
-    "shortcut": "⌘K"
+    "title": "Command palette",
+    "groupActions": "Actions",
+    "groupNavigation": "Go to",
+    "hintNavigate": "navigate",
+    "hintOpen": "open",
+    "actions": {
+      "newFamily": "Create a family",
+      "newEnrollment": "Create an enrollment",
+      "takeAttendance": "Take attendance",
+      "reviewBalances": "Review collections"
+    }
   },
   "roles": {
     "SUPER_ADMIN": "Super Admin",

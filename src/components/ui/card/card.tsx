@@ -8,7 +8,10 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 export function Card({ className, children, ...props }: CardProps) {
   return (
     <div
-      className={cn('rounded border border-alabaster-700 bg-white shadow-sm', className)}
+      className={cn(
+        'rounded-lg border border-border bg-surface text-foreground shadow-xs',
+        className
+      )}
       {...props}
     >
       {children}
@@ -34,7 +37,13 @@ export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {
 
 export function CardTitle({ className, children, ...props }: CardTitleProps) {
   return (
-    <h3 className={cn('text-xl font-semibold leading-none tracking-tight', className)} {...props}>
+    <h3
+      className={cn(
+        'text-base font-semibold leading-tight tracking-tight text-foreground',
+        className
+      )}
+      {...props}
+    >
       {children}
     </h3>
   )
@@ -46,7 +55,7 @@ export interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElemen
 
 export function CardDescription({ className, children, ...props }: CardDescriptionProps) {
   return (
-    <p className={cn('text-sm text-graphite-600', className)} {...props}>
+    <p className={cn('text-sm text-muted-foreground', className)} {...props}>
       {children}
     </p>
   )

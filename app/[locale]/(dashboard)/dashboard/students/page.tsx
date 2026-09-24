@@ -1,4 +1,4 @@
-import { Breadcrumbs } from '@peaklab/ui'
+import { PageHeader } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -83,13 +83,14 @@ export default async function StudentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs
-        items={[
+      <PageHeader
+        breadcrumbs={[
           { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
           { label: tBreadcrumbs('students') },
         ]}
+        title={t('title')}
+        description={t('description')}
       />
-      <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
       <StudentsDataTable
         data={students}
         locale={locale}

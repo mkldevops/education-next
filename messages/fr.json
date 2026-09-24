@@ -210,7 +210,6 @@
       "pendingPayments": "Paiements en attente",
       "pendingEnrollments": "Inscriptions à traiter",
       "remainingBalance": "Solde de la famille",
-      "lastSixMonths": "Évolution sur 6 mois",
       "scopeAll": "Toutes périodes",
       "scopePeriod": "Période {period}"
     },
@@ -267,8 +266,6 @@
       "settings": "Paramètres",
       "logout": "Déconnexion",
       "logoutError": "Impossible de vous déconnecter, réessayez",
-      "sectionGestion": "Gestion",
-      "sectionConfig": "Configuration",
       "collapse": "Réduire",
       "expand": "Développer",
       "openMenu": "Ouvrir le menu",
@@ -280,7 +277,18 @@
       "events": "Événements",
       "planning": "Planning",
       "attendance": "Suivi des appels",
-      "superAdmins": "Super-admins"
+      "superAdmins": "Super-admins",
+      "navigation": "Navigation principale",
+      "toggleSidebar": "Afficher ou masquer la barre latérale",
+      "sections": {
+        "today": "Aujourd'hui",
+        "schooling": "Scolarité",
+        "finance": "Finances",
+        "settings": "Paramètres",
+        "platform": "Plateforme",
+        "family": "Espace famille",
+        "teaching": "Enseignement"
+      }
     },
     "pages": {
       "families": {
@@ -456,7 +464,8 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Personne introuvable"
           }
-        }
+        },
+        "description": "Les foyers inscrits, leurs responsables et leur solde."
       },
       "students": {
         "title": "Élèves",
@@ -533,7 +542,8 @@
             "notFound": "Élève introuvable",
             "hasActiveEnrollments": "Des inscriptions en attente ou actives existent : clôturez-les d'abord"
           }
-        }
+        },
+        "description": "Tous les élèves de l’école, leur classe et leur inscription."
       },
       "periods": {
         "title": "Périodes",
@@ -828,7 +838,8 @@
             "notFound": "Inscription ou formule introuvable.",
             "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif."
           }
-        }
+        },
+        "description": "Inscriptions de la période, à activer, suivre et régler."
       },
       "promotion": {
         "title": "Promotion des élèves",
@@ -917,7 +928,8 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Famille introuvable"
           }
-        }
+        },
+        "description": "Règlements reçus, chèques à encaisser et reste dû."
       },
       "plans": {
         "title": "Plans tarifaires",
@@ -2098,6 +2110,44 @@
       "title": "Prochains événements",
       "manage": "Gérer",
       "empty": "Aucun événement à venir"
+    },
+    "home": {
+      "kpi": {
+        "label": "Indicateurs clés",
+        "collectionRate": "{rate} % encaissé"
+      },
+      "todo": {
+        "title": "À faire aujourd'hui",
+        "attendance": "{count, plural, one {# appel à faire} other {# appels à faire}}",
+        "attendanceHint": "Cours du jour sans appel validé",
+        "pendingEnrollments": "{count, plural, one {# inscription à activer} other {# inscriptions à activer}}",
+        "uncashed": "{count, plural, one {# chèque à encaisser} other {# chèques à encaisser}}",
+        "uncashedHint": "{amount} en attente de dépôt",
+        "outstanding": "{count, plural, one {# inscription avec un solde dû} other {# inscriptions avec un solde dû}}",
+        "outstandingHint": "{amount} restant à encaisser",
+        "empty": "Rien d'urgent aujourd'hui",
+        "emptyHint": "Appels, inscriptions et encaissements sont à jour.",
+        "emptyAction": "Voir les inscriptions"
+      },
+      "schedule": {
+        "title": "Cours du jour",
+        "empty": "Aucun cours prévu aujourd'hui",
+        "closed": "L'école est fermée aujourd'hui",
+        "viewAll": "Voir le planning",
+        "openAttendance": "Ouvrir l'appel"
+      },
+      "children": {
+        "title": "Vos enfants",
+        "class": "Classe",
+        "nextClass": "Prochain cours",
+        "noClass": "Pas encore de classe",
+        "noLevel": "Niveau à confirmer",
+        "noNextClass": "Aucun cours planifié",
+        "today": "Aujourd'hui",
+        "tomorrow": "Demain",
+        "empty": "Aucun enfant rattaché à votre famille",
+        "emptyHint": "Contactez l'école si un enfant manque à l'appel."
+      }
     }
   },
   "schools": {
@@ -2438,7 +2488,17 @@
     "families": "Familles",
     "students": "Élèves",
     "memberCount": "{count, plural, =0 {aucun membre} one {# membre} other {# membres}}",
-    "shortcut": "⌘K"
+    "title": "Palette de commandes",
+    "groupActions": "Actions",
+    "groupNavigation": "Aller à",
+    "hintNavigate": "naviguer",
+    "hintOpen": "ouvrir",
+    "actions": {
+      "newFamily": "Créer une famille",
+      "newEnrollment": "Créer une inscription",
+      "takeAttendance": "Faire l'appel",
+      "reviewBalances": "Suivre les encaissements"
+    }
   },
   "roles": {
     "SUPER_ADMIN": "Super Administrateur",

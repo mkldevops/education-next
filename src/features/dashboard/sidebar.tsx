@@ -1,6 +1,8 @@
 'use client'
 
+import { X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useEffect } from 'react'
 import type { AuthorizedSchool } from '@/domain/school-scope'
 import { usePathname, useRouter } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
@@ -8,7 +10,7 @@ import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import type { SchoolRole } from '@/types/enums'
 import { SchoolSwitcher } from './school-switcher'
-import { resolveNavItems } from './sidebar-items'
+import { type NavItemConfig, type NavScope, resolveNavItems } from './sidebar-items'
 import { NavItem } from './sidebar-nav-item'
 import { useSidebarStore } from './sidebar-store'
 import { UserMenu } from './sidebar-user-menu'
@@ -50,11 +52,13 @@ export function Sidebar({
   const platform = useTranslations('metadata')
   const pathname = usePathname()
   const router = useRouter()
-  const { expanded, toggle, mobileOpen, setMobileOpen } = useSidebarStore()
+  const { expanded, toggle, mobileOpen, setMobileOpen, setNavScope } = useSidebarStore()
+  // Le tiroir mobile affiche toujours les libellés : l'état replié ne concerne que le bureau.
+  const showLabels = expanded || mobileOpen
   // Repli sur l'identité plateforme, jamais sur `company` : ce namespace décrit
   // l'exploitant de la plateforme, pas une école affichée.
   const displayName = schoolName || platform('platformTitle')
-  const items = resolveNavItems({
+  const navScope: NavScope = {
     role,
     isSuperAdmin,
     familyId,
@@ -65,11 +69,26 @@ export function Sidebar({
       payments: paymentsEnabled,
       attendance: attendanceEnabled,
     },
-  })
+  }
+  const items = resolveNavItems(navScope)
+  const scopeKey = JSON.stringify(navScope)
+
+  useEffect(() => {
+    setNavScope(JSON.parse(scopeKey) as NavScope)
+  }, [scopeKey, setNavScope])
+
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [mobileOpen, setMobileOpen])
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
-    return pathname.startsWith(href)
+    return pathname === href || pathname.startsWith(`${href}/`)
   }
 
   const handleNavClick = () => setMobileOpen(false)
@@ -84,74 +103,90 @@ export function Sidebar({
     router.replace('/')
   }
 
-  const renderItems = (configs: typeof items.gestion) =>
+  const renderItems = (configs: NavItemConfig[]) =>
     configs.map((item) => (
-      <NavItem
-        key={item.key}
-        href={item.href}
-        icon={item.icon}
-        label={t(item.key)}
-        active={isActive(item.href)}
-        expanded={expanded}
-        onClick={handleNavClick}
-      />
+      <li key={item.key}>
+        <NavItem
+          href={item.href}
+          icon={item.icon}
+          label={t(item.key)}
+          active={isActive(item.href)}
+          expanded={showLabels}
+          onClick={handleNavClick}
+        />
+      </li>
     ))
 
   return (
     <>
-      {mobileOpen && (
-        <button
-          type="button"
-          aria-label={t('closeMenu')}
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
-          onClick={() => setMobileOpen(false)}
-          onKeyDown={(e) => e.key === 'Escape' && setMobileOpen(false)}
-        />
-      )}
-      <aside
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden="true"
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-alabaster-700 bg-white transition-all duration-200',
-          'md:sticky md:top-0 md:z-30',
-          expanded ? 'w-64' : 'w-64 md:w-[72px]',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          'fixed inset-0 z-40 bg-foreground/30 backdrop-blur-[2px] transition-opacity duration-(--duration-base) md:hidden',
+          mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
+        onClick={() => setMobileOpen(false)}
+      />
+      <aside
+        aria-label={t('navigation')}
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-surface',
+          'transition-[width,translate] duration-(--duration-base) ease-out',
+          'md:sticky md:top-0 md:z-30 md:bg-background',
+          expanded ? 'w-72 md:w-60' : 'w-72 md:w-[68px]',
+          mobileOpen
+            ? 'translate-x-0 shadow-lg md:shadow-none'
+            : '-translate-x-full md:translate-x-0'
         )}
       >
-        <SchoolSwitcher
-          schools={schools}
-          activeSchoolId={activeSchoolId}
-          canSwitchSchool={canSwitchSchool}
-          displayName={displayName}
-          logoUrl={logoUrl}
-          expanded={expanded}
-        />
+        <div className="flex h-14 shrink-0 items-center gap-1 px-3">
+          <div className="min-w-0 flex-1">
+            <SchoolSwitcher
+              schools={schools}
+              activeSchoolId={activeSchoolId}
+              canSwitchSchool={canSwitchSchool}
+              displayName={displayName}
+              logoUrl={logoUrl}
+              expanded={showLabels}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            aria-label={t('closeMenu')}
+            className="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring md:hidden"
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {expanded && (
-            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-graphite-600">
-              {t('sectionGestion')}
-            </p>
-          )}
-          <div className="space-y-1">{renderItems(items.gestion)}</div>
-
-          {items.config.length > 0 && (
-            <>
-              {expanded ? (
-                <p className="mb-2 mt-6 border-t border-alabaster-700 px-3 pt-4 text-xs font-semibold uppercase tracking-wider text-graphite-600">
-                  {t('sectionConfig')}
+        <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2">
+          {items.sections.map((section, index) => (
+            <div key={section.key} className={cn(index > 0 && (showLabels ? 'mt-5' : 'mt-3'))}>
+              {showLabels ? (
+                <p
+                  aria-hidden="true"
+                  className="mb-1 px-2.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground"
+                >
+                  {t(`sections.${section.key}`)}
                 </p>
               ) : (
-                <div className="my-4 border-t border-alabaster-700" />
+                index > 0 && <div aria-hidden="true" className="mx-auto mb-3 h-px w-6 bg-border" />
               )}
-              <div className="space-y-1">{renderItems(items.config)}</div>
-            </>
-          )}
+              <ul aria-label={t(`sections.${section.key}`)} className="space-y-0.5">
+                {renderItems(section.items)}
+              </ul>
+            </div>
+          ))}
         </nav>
 
-        <div className="shrink-0 border-t border-alabaster-700 p-3">
+        <div className="shrink-0 border-t border-border p-3">
           <UserMenu
             userName={userName}
             items={items.bottom}
-            expanded={expanded}
+            expanded={showLabels}
             onNavigate={handleNavClick}
             onSignOut={handleSignOut}
             onToggle={toggle}
