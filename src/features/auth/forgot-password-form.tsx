@@ -1,84 +1,140 @@
 'use client'
 
 import { Button, Input, Label } from '@peaklab/ui'
+import { Loader2, MailCheck } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
-import { Link } from '@/i18n/routing'
 import { requestPasswordReset } from '@/lib/auth-client'
+import { AuthHeading } from './auth-heading'
+import { authButtonClass, authFieldClass, authLinkClass } from './auth-styles'
+import { BackToLoginLink } from './back-to-login-link'
+import { FormAlert } from './form-alert'
 
 export function ForgotPasswordForm() {
   const t = useTranslations('auth.forgotPassword')
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [isResent, setIsResent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const sendLink = async () => {
     setIsLoading(true)
     setError(null)
 
     try {
       const { error } = await requestPasswordReset({ email, redirectTo: '/reset-password' })
-
       if (error) {
         setError(t('error'))
-      } else {
-        setIsSuccess(true)
+        return false
       }
+      return true
     } catch {
       setError(t('error'))
+      return false
     } finally {
       setIsLoading(false)
     }
   }
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (await sendLink()) setIsSuccess(true)
+  }
+
+  const handleResend = async () => {
+    setIsResent(false)
+    if (await sendLink()) setIsResent(true)
+  }
+
   if (isSuccess) {
     return (
-      <div className="text-center">
-        <div className="rounded bg-green-50 p-6">
-          <h2 className="text-lg font-medium text-green-800">{t('successTitle')}</h2>
-          <p className="mt-2 text-sm text-green-600">{t('successMessage')}</p>
+      <div className="space-y-8">
+        <AuthHeading
+          icon={<MailCheck />}
+          tone="success"
+          title={t('successTitle')}
+          description={t.rich('successMessage', {
+            email,
+            strong: (chunks) => <strong className="font-medium text-foreground">{chunks}</strong>,
+          })}
+        />
+
+        {error && <FormAlert>{error}</FormAlert>}
+        {isResent && <FormAlert tone="success">{t('resent')}</FormAlert>}
+
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="outline"
+            className={`${authButtonClass} bg-surface shadow-xs`}
+            onClick={handleResend}
+            disabled={isLoading}
+            aria-busy={isLoading}
+          >
+            {isLoading && <Loader2 aria-hidden className="size-4 animate-spin" />}
+            {isLoading ? t('submitting') : t('resend')}
+          </Button>
+          <p className="text-center text-sm text-muted-foreground">
+            {t('wrongEmail')}{' '}
+            <button
+              type="button"
+              className={authLinkClass}
+              onClick={() => {
+                setIsSuccess(false)
+                setIsResent(false)
+                setError(null)
+              }}
+            >
+              {t('changeEmail')}
+            </button>
+          </p>
         </div>
-        <Link
-          href="/login"
-          className="mt-6 inline-block text-sm text-primary hover:text-primary-hover"
-        >
-          {t('backToLogin')}
-        </Link>
+
+        <div className="border-t border-border pt-6">
+          <BackToLoginLink label={t('backToLogin')} />
+        </div>
       </div>
     )
   }
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && <div className="rounded bg-red-50 p-4 text-sm text-red-600">{error}</div>}
+    <div className="space-y-8">
+      <AuthHeading title={t('title')} description={t('subtitle')} />
 
-        <div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && <FormAlert>{error}</FormAlert>}
+
+        <div className="space-y-2">
           <Label htmlFor="email">{t('email')}</Label>
           <Input
             id="email"
             name="email"
             type="email"
             autoComplete="email"
+            inputMode="email"
+            spellCheck={false}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1"
+            className={authFieldClass}
           />
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? '...' : t('submit')}
+        <Button
+          type="submit"
+          className={`${authButtonClass} shadow-xs`}
+          disabled={isLoading}
+          aria-busy={isLoading}
+        >
+          {isLoading && <Loader2 aria-hidden className="size-4 animate-spin" />}
+          {isLoading ? t('submitting') : t('submit')}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-graphite-600">
-        <Link href="/login" className="font-medium text-primary hover:text-primary-hover">
-          {t('backToLogin')}
-        </Link>
-      </p>
-    </>
+      <div className="border-t border-border pt-6">
+        <BackToLoginLink label={t('backToLogin')} />
+      </div>
+    </div>
   )
 }

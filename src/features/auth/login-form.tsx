@@ -2,31 +2,45 @@
 
 import { Button, Input, Label } from '@peaklab/ui'
 import { startAuthentication } from '@simplewebauthn/browser'
-import { KeyRound } from 'lucide-react'
+import { KeyRound, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { getPasskeyAuthenticationOptions } from '@/actions'
 import { Link, useRouter } from '@/i18n/routing'
 import { signIn } from '@/lib/auth-client'
+import { authButtonClass, authFieldClass, authLinkClass } from './auth-styles'
+import { FormAlert } from './form-alert'
 import { GoogleIcon } from './google-icon'
+import { PasswordInput } from './password-input'
+import { DEFAULT_AUTH_REDIRECT } from './safe-redirect'
 
 type Props = {
   googleEnabled: boolean
   passkeyEnabled: boolean
+  /** Chemin interne déjà assaini par la page (`safeRedirectPath`). */
+  redirectTo?: string
 }
 
-export function LoginForm({ googleEnabled, passkeyEnabled }: Props) {
+type PendingMethod = 'password' | 'google' | 'passkey'
+
+const Spinner = () => <Loader2 aria-hidden className="size-4 animate-spin" />
+
+export function LoginForm({
+  googleEnabled,
+  passkeyEnabled,
+  redirectTo = DEFAULT_AUTH_REDIRECT,
+}: Props) {
   const t = useTranslations('auth.login')
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isPasskeyLoading, setIsPasskeyLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [pending, setPending] = useState<PendingMethod | null>(null)
+
+  const hasAlternatives = googleEnabled || passkeyEnabled
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
-    setIsLoading(true)
+    setPending('password')
 
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
@@ -38,32 +52,32 @@ export function LoginForm({ googleEnabled, passkeyEnabled }: Props) {
       if (error) {
         setError(error.status && error.status >= 500 ? t('serviceUnavailable') : t('error'))
       } else {
-        router.push('/dashboard')
+        router.push(redirectTo)
       }
     } catch {
       setError(t('error'))
     } finally {
-      setIsLoading(false)
+      setPending(null)
     }
   }
 
   const handleGoogleSignIn = async () => {
     setError(null)
-    setIsGoogleLoading(true)
+    setPending('google')
 
     try {
-      const { error } = await signIn.social({ provider: 'google', callbackURL: '/dashboard' })
+      const { error } = await signIn.social({ provider: 'google', callbackURL: redirectTo })
       if (error) setError(t('googleError'))
     } catch {
       setError(t('googleError'))
     } finally {
-      setIsGoogleLoading(false)
+      setPending(null)
     }
   }
 
   const handlePasskeySignIn = async () => {
     setError(null)
-    setIsPasskeyLoading(true)
+    setPending('passkey')
 
     try {
       const optionsData = await getPasskeyAuthenticationOptions()
@@ -86,90 +100,102 @@ export function LoginForm({ googleEnabled, passkeyEnabled }: Props) {
         return
       }
 
-      router.push('/dashboard')
+      router.push(redirectTo)
     } catch {
       setError(t('passkeyError'))
     } finally {
-      setIsPasskeyLoading(false)
+      setPending(null)
     }
   }
 
+  const isBusy = pending !== null
+
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && <div className="rounded bg-red-50 p-4 text-sm text-red-600">{error}</div>}
+      {error && <FormAlert>{error}</FormAlert>}
 
-        <div>
+      {hasAlternatives && (
+        <div className="grid gap-3">
+          {googleEnabled && (
+            <Button
+              type="button"
+              variant="outline"
+              className={`${authButtonClass} bg-surface shadow-xs`}
+              onClick={handleGoogleSignIn}
+              disabled={isBusy}
+              aria-busy={pending === 'google'}
+            >
+              {pending === 'google' ? <Spinner /> : <GoogleIcon className="size-4" />}
+              {pending === 'google' ? t('googlePending') : t('signInWithGoogle')}
+            </Button>
+          )}
+
+          {passkeyEnabled && (
+            <Button
+              type="button"
+              variant="outline"
+              className={`${authButtonClass} bg-surface shadow-xs`}
+              onClick={handlePasskeySignIn}
+              disabled={isBusy}
+              aria-busy={pending === 'passkey'}
+            >
+              {pending === 'passkey' ? <Spinner /> : <KeyRound aria-hidden className="size-4" />}
+              {pending === 'passkey' ? t('passkeyPending') : t('signInWithPasskey')}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {hasAlternatives && (
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span aria-hidden className="h-px flex-1 bg-border" />
+          <span>{t('or')}</span>
+          <span aria-hidden className="h-px flex-1 bg-border" />
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
           <Label htmlFor="email">{t('email')}</Label>
           <Input
             id="email"
             name="email"
             type="email"
-            autoComplete="email"
+            autoComplete="username"
+            inputMode="email"
+            spellCheck={false}
+            placeholder={t('emailPlaceholder')}
             required
-            className="mt-1"
+            className={authFieldClass}
           />
         </div>
 
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="password">{t('password')}</Label>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
-            className="mt-1"
+            className={authFieldClass}
           />
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className={`text-sm ${authLinkClass}`}>
+              {t('forgotPassword')}
+            </Link>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <Link href="/forgot-password" className="text-sm text-primary hover:text-primary-hover">
-            {t('forgotPassword')}
-          </Link>
-        </div>
-
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? '...' : t('submit')}
+        <Button
+          type="submit"
+          className={`${authButtonClass} shadow-xs`}
+          disabled={isBusy}
+          aria-busy={pending === 'password'}
+        >
+          {pending === 'password' && <Spinner />}
+          {pending === 'password' ? t('submitting') : t('submit')}
         </Button>
       </form>
-
-      {(googleEnabled || passkeyEnabled) && (
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-alabaster-700" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-graphite-600">{t('or')}</span>
-          </div>
-        </div>
-      )}
-
-      {googleEnabled && (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogleSignIn}
-          disabled={isGoogleLoading}
-        >
-          <GoogleIcon className="mr-2 h-4 w-4" />
-          {isGoogleLoading ? '...' : t('signInWithGoogle')}
-        </Button>
-      )}
-
-      {passkeyEnabled && (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handlePasskeySignIn}
-          disabled={isPasskeyLoading}
-        >
-          <KeyRound className="mr-2 h-4 w-4" />
-          {isPasskeyLoading ? '...' : t('signInWithPasskey')}
-        </Button>
-      )}
     </div>
   )
 }

@@ -70,22 +70,27 @@
   },
   "auth": {
     "login": {
-      "title": "Login",
-      "subtitle": "Sign in to your account",
+      "title": "Sign in",
+      "subtitle": "Sign in to your space.",
       "email": "Email",
       "password": "Password",
       "submit": "Sign in",
       "forgotPassword": "Forgot password?",
-      "noAccount": "Don't have an account?",
+      "noAccount": "No account yet?",
       "register": "Create account",
-      "contactAdmin": "Please contact an administrator to create an account.",
+      "contactAdmin": "Your school sends you an email invitation to set up your access.",
       "error": "Invalid email or password",
       "serviceUnavailable": "Service unavailable, please try again.",
-      "or": "or",
+      "or": "or with your email",
       "signInWithPasskey": "Sign in with a passkey",
-      "passkeyError": "Passkey authentication failed",
+      "passkeyError": "Passkey sign-in failed, please try again",
       "signInWithGoogle": "Sign in with Google",
-      "googleError": "Google sign-in failed, please try again"
+      "googleError": "Google sign-in failed, please try again",
+      "subtitleSchool": "Sign in to the {schoolName} space.",
+      "emailPlaceholder": "you@example.com",
+      "submitting": "Signing in…",
+      "googlePending": "Redirecting to Google…",
+      "passkeyPending": "Waiting for your passkey…"
     },
     "register": {
       "title": "Create account",
@@ -102,25 +107,73 @@
     },
     "forgotPassword": {
       "title": "Forgot password",
-      "subtitle": "Enter your email to reset your password",
+      "subtitle": "Enter your email and we'll send you a link to choose a new password.",
       "email": "Email",
       "submit": "Send link",
-      "successTitle": "Email sent",
-      "successMessage": "If an account exists with this email, you will receive a reset email.",
+      "successTitle": "Check your inbox",
+      "successMessage": "If an account exists for <strong>{email}</strong>, a reset link has just been sent.",
       "backToLogin": "Back to login",
-      "error": "Error sending email"
+      "error": "Error sending email",
+      "submitting": "Sending…",
+      "resend": "Resend link",
+      "resent": "A new link has been sent.",
+      "wrongEmail": "Wrong address?",
+      "changeEmail": "Change email"
     },
     "resetPassword": {
-      "title": "Reset password",
-      "subtitle": "Enter your new password",
+      "title": "New password",
+      "subtitle": "Choose a password you don't use anywhere else.",
       "password": "New password",
       "confirmPassword": "Confirm password",
       "submit": "Reset password",
-      "success": "Password reset successfully",
+      "success": "Your password has been reset. You can now sign in with it.",
       "backToLogin": "Back to login",
       "error": "Error resetting password",
-      "invalidToken": "Invalid or expired link",
-      "passwordMismatch": "Passwords do not match"
+      "invalidToken": "The reset link is invalid or has expired. Request a new one: it arrives within seconds.",
+      "passwordMismatch": "Passwords do not match",
+      "invalidTitle": "This link no longer works",
+      "requestNewLink": "Request a new link",
+      "successTitle": "Password updated",
+      "signIn": "Sign in",
+      "submitting": "Saving…",
+      "passwordHint": "At least {min} characters."
+    },
+    "shell": {
+      "tagline": "School life, all in one place.",
+      "features": {
+        "schedule": "Timetables and classes",
+        "attendance": "Attendance tracked day by day",
+        "payments": "Clear enrollments and payments"
+      },
+      "hostedBy": "{schoolName} space",
+      "platformNote": "School management platform"
+    },
+    "password": {
+      "show": "Show password"
+    },
+    "invite": {
+      "metaTitle": "Invitation",
+      "eyebrow": "Invitation",
+      "title": "Join {schoolName}",
+      "invitedBy": "{inviterName} invites you to join {schoolName} as {role, select, ADMIN {an administrator} PARENT {a parent} other {a member}}.",
+      "invitedBySchool": "{schoolName} invites you to join its space as {role, select, ADMIN {an administrator} PARENT {a parent} other {a member}}.",
+      "theSchool": "the school",
+      "help": "Need a new link? Ask {schoolName} to send you another invitation.",
+      "used": {
+        "title": "Invitation already accepted",
+        "description": "This link was already used to create access to {schoolName}. Sign in with the invited address.",
+        "action": "Sign in"
+      },
+      "expired": {
+        "title": "Invitation expired",
+        "description": "For your security, an invitation is only valid for 48 hours. This one can no longer be used.",
+        "action": "Go to sign in"
+      },
+      "invalid": {
+        "title": "Link not found",
+        "description": "This invitation link doesn't exist or is no longer active. Check that it is complete, exactly as received by email.",
+        "action": "Go to sign in"
+      }
     }
   },
   "dashboard": {
@@ -1405,7 +1458,9 @@
               "invalidInput": "Check the information you entered",
               "signInFailed": "Account created, but automatic sign-in failed. Sign in with this password.",
               "alreadyMember": "That account already belongs to this school"
-            }
+            },
+            "passwordHint": "At least {min} characters.",
+            "submitting": "Creating account…"
           },
           "errors": {
             "validationError": "Check the information you entered",
@@ -2074,7 +2129,8 @@
         "expired": "This invitation link has expired",
         "invalid": "This invitation link is not valid",
         "invalidInput": "Check the information you entered"
-      }
+      },
+      "submitting": "Joining…"
     },
     "admin": {
       "title": "Schools",
