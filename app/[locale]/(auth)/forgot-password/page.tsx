@@ -4,7 +4,6 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { ForgotPasswordForm } from '@/features/auth'
 import { redirect } from '@/i18n/routing'
 import { getSchoolContext } from '@/lib/school-context'
-import { AuthCard } from '../_components/auth-card'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -30,11 +29,5 @@ export default async function ForgotPasswordPage({ params }: Props) {
     redirect({ href: '/dashboard', locale })
   }
 
-  const t = await getTranslations('auth.forgotPassword')
-
-  return (
-    <AuthCard title={t('title')} subtitle={t('subtitle')}>
-      <ForgotPasswordForm />
-    </AuthCard>
-  )
+  return <ForgotPasswordForm />
 }

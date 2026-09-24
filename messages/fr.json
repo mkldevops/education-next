@@ -71,21 +71,26 @@
   "auth": {
     "login": {
       "title": "Connexion",
-      "subtitle": "Connectez-vous à votre compte",
+      "subtitle": "Connectez-vous à votre espace.",
       "email": "Email",
       "password": "Mot de passe",
       "submit": "Se connecter",
       "forgotPassword": "Mot de passe oublié ?",
       "noAccount": "Pas encore de compte ?",
       "register": "Créer un compte",
-      "contactAdmin": "Veuillez contacter un administrateur pour créer un compte.",
+      "contactAdmin": "L'école vous envoie une invitation par email pour créer votre accès.",
       "error": "Email ou mot de passe incorrect",
       "serviceUnavailable": "Service indisponible, veuillez réessayer.",
-      "or": "ou",
-      "signInWithPasskey": "Se connecter avec une clé de sécurité",
-      "passkeyError": "Authentification par clé de sécurité échouée",
+      "or": "ou avec votre email",
+      "signInWithPasskey": "Se connecter avec une clé d'accès",
+      "passkeyError": "La connexion par clé d'accès a échoué, réessayez",
       "signInWithGoogle": "Se connecter avec Google",
-      "googleError": "La connexion Google a échoué, réessayez"
+      "googleError": "La connexion Google a échoué, réessayez",
+      "subtitleSchool": "Connectez-vous à l'espace de {schoolName}.",
+      "emailPlaceholder": "vous@exemple.fr",
+      "submitting": "Connexion…",
+      "googlePending": "Redirection vers Google…",
+      "passkeyPending": "En attente de votre clé d'accès…"
     },
     "register": {
       "title": "Créer un compte",
@@ -102,25 +107,73 @@
     },
     "forgotPassword": {
       "title": "Mot de passe oublié",
-      "subtitle": "Entrez votre email pour réinitialiser votre mot de passe",
+      "subtitle": "Indiquez votre email : nous vous envoyons un lien pour choisir un nouveau mot de passe.",
       "email": "Email",
       "submit": "Envoyer le lien",
-      "successTitle": "Email envoyé",
-      "successMessage": "Si un compte existe avec cette adresse, vous recevrez un email de réinitialisation.",
+      "successTitle": "Vérifiez votre boîte mail",
+      "successMessage": "Si un compte existe pour <strong>{email}</strong>, un lien de réinitialisation vient d'y être envoyé.",
       "backToLogin": "Retour à la connexion",
-      "error": "Erreur lors de l'envoi"
+      "error": "Erreur lors de l'envoi",
+      "submitting": "Envoi…",
+      "resend": "Renvoyer le lien",
+      "resent": "Un nouveau lien a été envoyé.",
+      "wrongEmail": "Mauvaise adresse ?",
+      "changeEmail": "Changer d'email"
     },
     "resetPassword": {
-      "title": "Réinitialiser le mot de passe",
-      "subtitle": "Entrez votre nouveau mot de passe",
+      "title": "Nouveau mot de passe",
+      "subtitle": "Choisissez un mot de passe que vous n'utilisez nulle part ailleurs.",
       "password": "Nouveau mot de passe",
       "confirmPassword": "Confirmer le mot de passe",
       "submit": "Réinitialiser",
-      "success": "Mot de passe réinitialisé avec succès",
+      "success": "Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter avec.",
       "backToLogin": "Retour à la connexion",
       "error": "Erreur lors de la réinitialisation",
-      "invalidToken": "Lien invalide ou expiré",
-      "passwordMismatch": "Les mots de passe ne correspondent pas"
+      "invalidToken": "Le lien de réinitialisation est invalide ou a expiré. Demandez-en un nouveau : il arrive en quelques secondes.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "invalidTitle": "Ce lien ne fonctionne plus",
+      "requestNewLink": "Demander un nouveau lien",
+      "successTitle": "Mot de passe modifié",
+      "signIn": "Se connecter",
+      "submitting": "Enregistrement…",
+      "passwordHint": "Au moins {min} caractères."
+    },
+    "shell": {
+      "tagline": "La vie de l'école, au même endroit.",
+      "features": {
+        "schedule": "Emplois du temps et classes",
+        "attendance": "Présences suivies au jour le jour",
+        "payments": "Inscriptions et paiements en clair"
+      },
+      "hostedBy": "Espace de {schoolName}",
+      "platformNote": "Plateforme de gestion scolaire"
+    },
+    "password": {
+      "show": "Afficher le mot de passe"
+    },
+    "invite": {
+      "metaTitle": "Invitation",
+      "eyebrow": "Invitation",
+      "title": "Rejoignez {schoolName}",
+      "invitedBy": "{inviterName} vous invite à rejoindre {schoolName} en tant que {role, select, ADMIN {administrateur} PARENT {parent} other {membre}}.",
+      "invitedBySchool": "{schoolName} vous invite à rejoindre son espace en tant que {role, select, ADMIN {administrateur} PARENT {parent} other {membre}}.",
+      "theSchool": "l'école",
+      "help": "Besoin d'un nouveau lien ? Demandez à {schoolName} de vous renvoyer une invitation.",
+      "used": {
+        "title": "Invitation déjà acceptée",
+        "description": "Ce lien a déjà servi à créer un accès à {schoolName}. Connectez-vous avec l'adresse invitée.",
+        "action": "Se connecter"
+      },
+      "expired": {
+        "title": "Invitation expirée",
+        "description": "Pour votre sécurité, une invitation n'est valable que 48 heures. Celle-ci n'est plus utilisable.",
+        "action": "Aller à la connexion"
+      },
+      "invalid": {
+        "title": "Lien introuvable",
+        "description": "Ce lien d'invitation n'existe pas ou n'est plus actif. Vérifiez qu'il est complet, tel que reçu par email.",
+        "action": "Aller à la connexion"
+      }
     }
   },
   "dashboard": {
@@ -1406,7 +1459,9 @@
               "invalidInput": "Vérifiez les informations saisies",
               "signInFailed": "Compte créé, mais la connexion automatique a échoué. Connectez-vous avec ce mot de passe.",
               "alreadyMember": "Ce compte fait déjà partie de cette école"
-            }
+            },
+            "passwordHint": "Au moins {min} caractères.",
+            "submitting": "Création du compte…"
           },
           "errors": {
             "validationError": "Vérifiez les informations saisies",
@@ -2075,7 +2130,8 @@
         "expired": "Ce lien d'invitation a expiré",
         "invalid": "Ce lien d'invitation n'est pas valide",
         "invalidInput": "Vérifiez les informations saisies"
-      }
+      },
+      "submitting": "Rattachement…"
     },
     "admin": {
       "title": "Écoles",
