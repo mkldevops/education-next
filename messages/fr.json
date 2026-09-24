@@ -126,6 +126,7 @@
   "dashboard": {
     "title": "Tableau de bord",
     "greeting": "Bonjour, {name}",
+    "greetingNoName": "Bonjour",
     "greetingSubtitle": "Voici le résumé de {schoolName} aujourd'hui.",
     "parentGreetingSubtitle": "Retrouvez ici vos enfants, leurs inscriptions et le solde de votre famille.",
     "quickActions": {
@@ -1053,9 +1054,9 @@
         "emergencyContact": "Contact d'urgence",
         "authorizedPickup": "Personnes autorisées à la récupération",
         "hero": {
-          "members": "Membres",
-          "children": "Enfants",
-          "enrollments": "Inscriptions",
+          "members": "{count, plural, one {# membre} other {# membres}}",
+          "children": "{count, plural, one {# enfant} other {# enfants}}",
+          "enrollments": "{count, plural, one {# inscription} other {# inscriptions}}",
           "languagesAtHome": "Langues à la maison : {languages}",
           "edit": "Modifier",
           "addChild": "Ajouter un enfant"

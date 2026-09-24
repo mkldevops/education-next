@@ -29,20 +29,20 @@ export function DataTable<T>({
   className,
 }: DataTableProps<T>) {
   if (data.length === 0 && emptyMessage) {
-    return <div className="py-12 text-center text-graphite-600">{emptyMessage}</div>
+    return <div className="py-12 text-center text-muted-foreground">{emptyMessage}</div>
   }
 
   return (
     <div className={cn('overflow-x-auto rounded', className)}>
       <table className="w-full min-w-[600px]">
-        <thead className="bg-gradient-to-br from-primary to-primary/70">
+        <thead className="border-b border-border bg-surface-2">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
                 scope="col"
                 className={cn(
-                  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/90',
+                  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground',
                   col.headerClassName
                 )}
               >
@@ -53,10 +53,7 @@ export function DataTable<T>({
         </thead>
         <tbody>
           {data.map((item) => (
-            <tr
-              key={getRowKey(item)}
-              className="relative border-b border-alabaster-800 last:border-b-0"
-            >
+            <tr key={getRowKey(item)} className="relative border-b border-border last:border-b-0">
               {columns.map((col) => (
                 <td key={col.key} className={cn('px-4 py-4 text-sm', col.className)}>
                   {col.render ? col.render(item) : String(getCellValue(item, col.key) ?? '')}

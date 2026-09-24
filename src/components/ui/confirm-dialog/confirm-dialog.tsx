@@ -19,7 +19,8 @@ export interface ConfirmDialogProps {
   title: string
   description: string
   confirmLabel: string
-  cancelLabel?: string
+  /** Obligatoire : une primitive ne traduit pas, l'appelant fournit le libellé localisé. */
+  cancelLabel: string
   onConfirm: () => Promise<void> | void
   variant?: 'destructive' | 'default'
   restoreFocusRef?: React.RefObject<HTMLElement | null>
@@ -29,7 +30,7 @@ function ConfirmDialogContent({
   title,
   description,
   confirmLabel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   onConfirm,
   variant = 'destructive',
 }: Omit<ConfirmDialogProps, 'trigger' | 'restoreFocusRef'>) {
@@ -51,14 +52,14 @@ function ConfirmDialogContent({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <DialogBody>
-          <p className="text-sm text-graphite-600">{description}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
             {cancelLabel}
           </Button>
-          <Button type="submit" variant={variant} disabled={pending}>
-            {pending ? '...' : confirmLabel}
+          <Button type="submit" variant={variant} disabled={pending} aria-busy={pending}>
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </form>

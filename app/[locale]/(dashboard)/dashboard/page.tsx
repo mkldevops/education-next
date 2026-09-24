@@ -103,7 +103,7 @@ export default async function DashboardPage({ params }: Props) {
     ? t('stats.scopePeriod', { period: selectedPeriod.name })
     : t('stats.scopeAll')
 
-  const userName = session?.user.name || 'User'
+  const userName = session?.user.name?.trim()
   const enrollmentColumns: Column<RecentEnrollment>[] = [
     {
       key: 'student',
@@ -198,32 +198,34 @@ export default async function DashboardPage({ params }: Props) {
 
   const statsGridClassName = isAdmin
     ? paymentsEnabled
-      ? '-mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4'
-      : '-mt-14 grid gap-5 md:grid-cols-3'
+      ? 'grid gap-5 md:grid-cols-2 lg:grid-cols-4'
+      : 'grid gap-5 md:grid-cols-3'
     : paymentsEnabled
-      ? '-mt-14 grid gap-5 md:grid-cols-3'
-      : '-mt-14 grid gap-5 md:grid-cols-2'
+      ? 'grid gap-5 md:grid-cols-3'
+      : 'grid gap-5 md:grid-cols-2'
 
   return (
     <div className="space-y-8">
-      <div className="-mx-6 -mt-16 bg-gradient-to-br from-primary-light via-primary-light/50 to-alabaster-800 px-6 pb-20 pt-16">
-        <h1 className="text-3xl font-bold text-graphite">{t('greeting', { name: userName })}</h1>
-        <p className="mt-2 text-graphite-600">
-          {t(isAdmin ? 'greetingSubtitle' : 'parentGreetingSubtitle', { schoolName })}
-        </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            {userName ? t('greeting', { name: userName }) : t('greetingNoName')}
+          </h1>
+          <p className="mt-1 text-muted-foreground">
+            {t(isAdmin ? 'greetingSubtitle' : 'parentGreetingSubtitle', { schoolName })}
+          </p>
+        </div>
 
         {isAdmin && (
-          <div className="mt-6">
-            <Link
-              href="/dashboard/families?action=create"
-              className="inline-flex items-center gap-2 rounded bg-primary px-4 py-2.5 font-medium text-white shadow-sm transition hover:bg-primary-hover"
-            >
-              <Plus className="h-5 w-5" />
-              {t('quickActions.newFamily')}
-            </Link>
-          </div>
+          <Link
+            href="/dashboard/families?action=create"
+            className="inline-flex shrink-0 items-center gap-2 self-start rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:self-auto"
+          >
+            <Plus className="h-5 w-5" aria-hidden="true" />
+            {t('quickActions.newFamily')}
+          </Link>
         )}
-      </div>
+      </header>
 
       <div className={statsGridClassName}>
         {isAdmin && insights?.payments && (

@@ -155,26 +155,26 @@ export function RichDataTable<T>({
 
       <div className="overflow-x-auto rounded border border-alabaster-700 bg-white">
         <table className="w-full text-sm">
-          <thead className="bg-gradient-to-br from-primary to-primary/70">
+          <thead className="border-b border-border bg-surface-2">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left font-medium text-white/90 select-none"
+                    className="px-4 py-3 text-left font-medium text-muted-foreground select-none"
                   >
                     {header.isPlaceholder ? null : (
                       <button
                         type="button"
                         className={cn(
-                          'flex items-center gap-1',
-                          header.column.getCanSort() && 'cursor-pointer hover:text-white'
+                          'flex items-center gap-1 rounded-sm',
+                          header.column.getCanSort() && 'cursor-pointer hover:text-foreground'
                         )}
                         onClick={header.column.getToggleSortingHandler()}
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {header.column.getCanSort() && (
-                          <span className="text-white/60">
+                          <span aria-hidden="true">
                             {header.column.getIsSorted() === 'asc' ? (
                               <ChevronUp className="h-3 w-3" />
                             ) : header.column.getIsSorted() === 'desc' ? (
@@ -194,7 +194,10 @@ export function RichDataTable<T>({
           <tbody>
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-8 text-center text-graphite-600">
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-8 text-center text-muted-foreground"
+                >
                   {globalFilter ? labels.noResults : emptyMessage}
                 </td>
               </tr>
@@ -203,9 +206,10 @@ export function RichDataTable<T>({
                 <tr
                   key={row.id}
                   className={cn(
-                    'relative border-b border-alabaster-800 hover:bg-alabaster-900 transition-colors',
+                    'relative border-b border-border transition-colors last:border-b-0 hover:bg-surface-2',
+                    // Contour rentré : un décalage positif serait rogné par le conteneur défilant.
                     onRowClick &&
-                      'cursor-pointer focus-visible:outline-none focus-visible:bg-alabaster-900'
+                      'cursor-pointer focus-visible:bg-surface-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring'
                   )}
                   role={onRowClick ? 'button' : undefined}
                   tabIndex={onRowClick ? 0 : undefined}

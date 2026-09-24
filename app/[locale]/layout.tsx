@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Geist_Mono, Inter } from 'next/font/google'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { NextIntlClientProvider } from 'next-intl'
@@ -10,6 +11,21 @@ import { type Locale, routing } from '@/i18n/routing'
 import { getBrandingConfig, resolveBrandingSchoolId } from '@/lib/branding'
 import { getThemeConfigs } from '@/lib/theme-configs'
 import '@/styles/globals.css'
+
+// Branchées sur `--font-sans` et `--font-mono` par `globals.css`. `latin-ext` couvre les noms
+// de familles accentués au-delà du français.
+const inter = Inter({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  variable: '--font-inter',
+})
+
+const geistMono = Geist_Mono({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  variable: '--font-geist-mono',
+  preload: false,
+})
 
 type Props = {
   children: React.ReactNode
@@ -69,7 +85,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   ])
 
   return (
-    <html lang={locale} data-scroll-behavior="smooth">
+    <html
+      lang={locale}
+      data-scroll-behavior="smooth"
+      className={`${inter.variable} ${geistMono.variable}`}
+    >
       <body className="flex min-h-screen flex-col">
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider configs={themeConfigs} />
