@@ -65,12 +65,15 @@ export function NavItem({
       onClick={onClick}
       aria-label={expanded ? undefined : label}
       aria-describedby={describedBy}
+      aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex items-center rounded transition-all duration-150',
+        'relative flex items-center rounded-md transition-colors duration-(--duration-fast) ease-out',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
         expanded ? 'gap-3 px-3 py-2' : 'size-11 justify-center',
+        // Fond neutre et barre d'accent : la couleur d'école, arbitraire, ne porte que l'accent.
         active
-          ? 'bg-gradient-to-br from-primary to-primary-hover text-white shadow-lg shadow-primary/25'
-          : 'text-graphite-600 hover:bg-primary-light hover:text-primary-hover'
+          ? 'bg-surface-2 font-medium text-foreground before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary'
+          : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground'
       )}
     >
       <Icon size={20} className="shrink-0" />

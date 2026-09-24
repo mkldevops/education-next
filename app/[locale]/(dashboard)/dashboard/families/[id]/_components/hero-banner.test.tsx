@@ -2,9 +2,22 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Family } from '@/generated/prisma/client'
 
-vi.mock('next-intl/server', () => ({
-  getTranslations: async () => (key: string) => key,
-}))
+// Les clés sans valeurs restent brutes (noms accessibles stables) ; celles qui reçoivent `count`
+// passent par le vrai formateur ICU pour vérifier les pluriels du catalogue français.
+vi.mock('next-intl/server', async () => {
+  const { createTranslator } = await vi.importActual<typeof import('next-intl')>('next-intl')
+  const { default: messages } = await import('../../../../../../../messages/fr.json')
+  return {
+    getTranslations: async (namespace: string) => {
+      const translate = createTranslator({ locale: 'fr', messages, namespace } as never) as (
+        key: string,
+        values?: Record<string, unknown>
+      ) => string
+      return (key: string, values?: Record<string, unknown>) =>
+        values && 'count' in values ? translate(key, values) : key
+    },
+  }
+})
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }))
@@ -18,6 +31,25 @@ const { HeroBanner } = await import('./hero-banner')
 const family = { id: 'family-1', name: 'Dupont', languagesAtHome: [] } as unknown as Family
 
 describe('HeroBanner', () => {
+  it('pluralizes the family counts', async () => {
+    render(
+      await HeroBanner({
+        family,
+        membersCount: 2,
+        studentsCount: 1,
+        enrollmentsCount: 0,
+        paymentsEnabled: false,
+        remainingBalance: 0,
+        showActions: false,
+      })
+    )
+
+    expect(screen.getByText('2 membres')).toBeInTheDocument()
+    expect(screen.getByText('1 enfant')).toBeInTheDocument()
+    expect(screen.getByText('0 inscription')).toBeInTheDocument()
+    expect(screen.queryByText(/Enfants/)).not.toBeInTheDocument()
+  })
+
   it('aligns actions to the right on narrow screens', async () => {
     const { container } = render(
       await HeroBanner({

@@ -81,16 +81,30 @@ describe('Sidebar accessibility', () => {
     }
   })
 
-  it('renders an inactive nav link with an AA-passing rest color and a themed hover', () => {
+  it('renders an inactive nav link with an AA-passing rest color and a neutral hover', () => {
     renderSidebar('ADMIN')
 
     const link = screen.getByRole('link', { name: 'families' })
 
-    expect(link.className).toMatch(/(?:^|\s)text-graphite-600(?:\s|$)/)
-    expect(link.className).toMatch(/(?:^|\s)hover:text-primary-hover(?:\s|$)/)
-    expect(link.className).toMatch(/(?:^|\s)hover:bg-primary-light(?:\s|$)/)
-    expect(link.className).not.toMatch(/(?:^|\s)text-graphite-800(?:\s|$)/)
-    expect(link.className).not.toMatch(/(?:^|\s)hover:text-graphite-600(?:\s|$)/)
+    expect(link).not.toHaveAttribute('aria-current')
+    expect(link.className).toMatch(/(?:^|\s)text-muted-foreground(?:\s|$)/)
+    expect(link.className).toMatch(/(?:^|\s)hover:text-foreground(?:\s|$)/)
+    expect(link.className).toMatch(/(?:^|\s)hover:bg-surface-2(?:\s|$)/)
+    expect(link.className).not.toMatch(/(?:^|\s)hover:bg-primary-light(?:\s|$)/)
+    expect(link.className).toMatch(/(?:^|\s)focus-visible:outline-ring(?:\s|$)/)
+  })
+
+  it('marks the active nav link as the current page with a neutral fill and a primary bar', () => {
+    pathname = '/dashboard/families'
+    renderSidebar('ADMIN')
+
+    const link = screen.getByRole('link', { name: 'families' })
+
+    expect(link).toHaveAttribute('aria-current', 'page')
+    expect(link.className).toMatch(/(?:^|\s)bg-surface-2(?:\s|$)/)
+    expect(link.className).toMatch(/(?:^|\s)before:bg-primary(?:\s|$)/)
+    expect(link.className).not.toMatch(/(?:^|\s)bg-primary(?:\s|$)/)
+    pathname = '/dashboard'
   })
 
   it('exposes logout and expand through the collapsed user menu', () => {

@@ -192,8 +192,8 @@ export function MultiSelect({
 
       <div
         className={cn(
-          'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded border border-alabaster bg-white px-2 py-1.5 text-sm',
-          'focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-1',
+          'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded border border-input bg-white px-2 py-1.5 text-sm',
+          'focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25',
           isDisabled && 'cursor-not-allowed bg-alabaster-900 opacity-60'
         )}
       >
@@ -241,7 +241,7 @@ export function MultiSelect({
           }}
           onFocus={openList}
           onKeyDown={handleKeyDown}
-          className="min-w-24 flex-1 bg-transparent px-1 py-0.5 text-sm outline-none placeholder:text-graphite-700 disabled:cursor-not-allowed"
+          className="min-w-24 flex-1 bg-transparent px-1 py-0.5 text-sm outline-none placeholder:text-placeholder disabled:cursor-not-allowed"
         />
 
         <ChevronDown className="h-4 w-4 shrink-0 text-graphite-700" aria-hidden="true" />

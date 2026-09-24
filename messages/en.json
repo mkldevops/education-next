@@ -126,6 +126,7 @@
   "dashboard": {
     "title": "Dashboard",
     "greeting": "Hello, {name}",
+    "greetingNoName": "Hello",
     "greetingSubtitle": "Here is the {schoolName} summary for today.",
     "parentGreetingSubtitle": "See your children, their enrollments, and your family balance here.",
     "quickActions": {
@@ -1052,9 +1053,9 @@
         "emergencyContact": "Emergency Contact",
         "authorizedPickup": "Authorized Pickup",
         "hero": {
-          "members": "Members",
-          "children": "Children",
-          "enrollments": "Enrollments",
+          "members": "{count, plural, one {# member} other {# members}}",
+          "children": "{count, plural, one {# child} other {# children}}",
+          "enrollments": "{count, plural, one {# enrollment} other {# enrollments}}",
           "languagesAtHome": "Languages at home: {languages}",
           "edit": "Edit",
           "addChild": "Add Child"

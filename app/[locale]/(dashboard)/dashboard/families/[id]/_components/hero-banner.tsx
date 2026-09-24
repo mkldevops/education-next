@@ -34,15 +34,9 @@ export async function HeroBanner({
           {family.name}
         </h1>
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-graphite-600">
-          <span>
-            {membersCount} {t('hero.members')}
-          </span>
-          <span>
-            {studentsCount} {t('hero.children')}
-          </span>
-          <span>
-            {enrollmentsCount} {t('hero.enrollments')}
-          </span>
+          <span>{t('hero.members', { count: membersCount })}</span>
+          <span>{t('hero.children', { count: studentsCount })}</span>
+          <span>{t('hero.enrollments', { count: enrollmentsCount })}</span>
           {languagesAtHome.length > 0 && (
             <span>{t('hero.languagesAtHome', { languages: languagesAtHome.join(', ') })}</span>
           )}
