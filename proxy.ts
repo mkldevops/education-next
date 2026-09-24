@@ -32,7 +32,11 @@ export default async function proxy(request: NextRequest) {
     const session = await auth.api.getSession({ headers: request.headers })
     if (!session) {
       const loginPath = pathLocale ? `/${pathLocale}/login` : '/login'
-      return NextResponse.redirect(new URL(loginPath, request.url))
+      const loginUrl = new URL(loginPath, request.url)
+      // Sans préfixe de langue : le routeur localisé du formulaire le rajoute. La page de login
+      // repasse ce chemin par `safeRedirectPath` avant de s'en servir.
+      loginUrl.searchParams.set('redirectTo', `${pathWithoutLocale}${request.nextUrl.search}`)
+      return NextResponse.redirect(loginUrl)
     }
   }
 

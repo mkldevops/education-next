@@ -1,4 +1,4 @@
-import { Breadcrumbs } from '@peaklab/ui'
+import { PageHeader } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -127,16 +127,15 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs
-        items={[
+      <PageHeader
+        breadcrumbs={[
           { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
           { label: tBreadcrumbs('families') },
         ]}
+        title={t('title')}
+        description={t('description')}
+        actions={isAdmin && <CreateFamilyDialog defaultOpen={action === 'create'} />}
       />
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        {isAdmin && <CreateFamilyDialog defaultOpen={action === 'create'} />}
-      </div>
       <FamiliesDataTable data={familyRows} paymentsEnabled={paymentsEnabled} />
     </div>
   )

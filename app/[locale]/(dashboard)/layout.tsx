@@ -1,6 +1,7 @@
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 import {
   DashboardHeader,
@@ -95,10 +96,15 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
 export default async function DashboardLayout({ children, params }: Props) {
   await connection()
   const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'common' })
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
-      <Suspense fallback={<div className="hidden w-64 bg-white md:block" />}>
+      <Suspense
+        fallback={
+          <div className="hidden w-60 shrink-0 border-r border-border bg-background md:block" />
+        }
+      >
         <DashboardSidebarServer locale={locale} />
       </Suspense>
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
@@ -109,12 +115,22 @@ export default async function DashboardLayout({ children, params }: Props) {
           <Suspense fallback={null}>
             <EventAnnouncementBanner />
           </Suspense>
-          <Suspense fallback={<header className="h-16" />}>
+          <Suspense fallback={<header className="h-14 border-b border-border" />}>
             <DashboardHeader />
           </Suspense>
         </div>
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain p-4 sm:p-6">
-          <Suspense fallback={<div className="p-6">Loading...</div>}>{children}</Suspense>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
+          <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <Suspense
+              fallback={
+                <div role="status" className="p-6 text-muted-foreground">
+                  {t('loading')}
+                </div>
+              }
+            >
+              {children}
+            </Suspense>
+          </div>
         </main>
       </div>
     </div>

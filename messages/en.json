@@ -70,22 +70,27 @@
   },
   "auth": {
     "login": {
-      "title": "Login",
-      "subtitle": "Sign in to your account",
+      "title": "Sign in",
+      "subtitle": "Sign in to your space.",
       "email": "Email",
       "password": "Password",
       "submit": "Sign in",
       "forgotPassword": "Forgot password?",
-      "noAccount": "Don't have an account?",
+      "noAccount": "No account yet?",
       "register": "Create account",
-      "contactAdmin": "Please contact an administrator to create an account.",
+      "contactAdmin": "Your school sends you an email invitation to set up your access.",
       "error": "Invalid email or password",
       "serviceUnavailable": "Service unavailable, please try again.",
-      "or": "or",
+      "or": "or with your email",
       "signInWithPasskey": "Sign in with a passkey",
-      "passkeyError": "Passkey authentication failed",
+      "passkeyError": "Passkey sign-in failed, please try again",
       "signInWithGoogle": "Sign in with Google",
-      "googleError": "Google sign-in failed, please try again"
+      "googleError": "Google sign-in failed, please try again",
+      "subtitleSchool": "Sign in to the {schoolName} space.",
+      "emailPlaceholder": "you@example.com",
+      "submitting": "Signing in…",
+      "googlePending": "Redirecting to Google…",
+      "passkeyPending": "Waiting for your passkey…"
     },
     "register": {
       "title": "Create account",
@@ -102,30 +107,79 @@
     },
     "forgotPassword": {
       "title": "Forgot password",
-      "subtitle": "Enter your email to reset your password",
+      "subtitle": "Enter your email and we'll send you a link to choose a new password.",
       "email": "Email",
       "submit": "Send link",
-      "successTitle": "Email sent",
-      "successMessage": "If an account exists with this email, you will receive a reset email.",
+      "successTitle": "Check your inbox",
+      "successMessage": "If an account exists for <strong>{email}</strong>, a reset link has just been sent.",
       "backToLogin": "Back to login",
-      "error": "Error sending email"
+      "error": "Error sending email",
+      "submitting": "Sending…",
+      "resend": "Resend link",
+      "resent": "A new link has been sent.",
+      "wrongEmail": "Wrong address?",
+      "changeEmail": "Change email"
     },
     "resetPassword": {
-      "title": "Reset password",
-      "subtitle": "Enter your new password",
+      "title": "New password",
+      "subtitle": "Choose a password you don't use anywhere else.",
       "password": "New password",
       "confirmPassword": "Confirm password",
       "submit": "Reset password",
-      "success": "Password reset successfully",
+      "success": "Your password has been reset. You can now sign in with it.",
       "backToLogin": "Back to login",
       "error": "Error resetting password",
-      "invalidToken": "Invalid or expired link",
-      "passwordMismatch": "Passwords do not match"
+      "invalidToken": "The reset link is invalid or has expired. Request a new one: it arrives within seconds.",
+      "passwordMismatch": "Passwords do not match",
+      "invalidTitle": "This link no longer works",
+      "requestNewLink": "Request a new link",
+      "successTitle": "Password updated",
+      "signIn": "Sign in",
+      "submitting": "Saving…",
+      "passwordHint": "At least {min} characters."
+    },
+    "shell": {
+      "tagline": "School life, all in one place.",
+      "features": {
+        "schedule": "Timetables and classes",
+        "attendance": "Attendance tracked day by day",
+        "payments": "Clear enrollments and payments"
+      },
+      "hostedBy": "{schoolName} space",
+      "platformNote": "School management platform"
+    },
+    "password": {
+      "show": "Show password"
+    },
+    "invite": {
+      "metaTitle": "Invitation",
+      "eyebrow": "Invitation",
+      "title": "Join {schoolName}",
+      "invitedBy": "{inviterName} invites you to join {schoolName} as {role, select, ADMIN {an administrator} PARENT {a parent} other {a member}}.",
+      "invitedBySchool": "{schoolName} invites you to join its space as {role, select, ADMIN {an administrator} PARENT {a parent} other {a member}}.",
+      "theSchool": "the school",
+      "help": "Need a new link? Ask {schoolName} to send you another invitation.",
+      "used": {
+        "title": "Invitation already accepted",
+        "description": "This link was already used to create access to {schoolName}. Sign in with the invited address.",
+        "action": "Sign in"
+      },
+      "expired": {
+        "title": "Invitation expired",
+        "description": "For your security, an invitation is only valid for 48 hours. This one can no longer be used.",
+        "action": "Go to sign in"
+      },
+      "invalid": {
+        "title": "Link not found",
+        "description": "This invitation link doesn't exist or is no longer active. Check that it is complete, exactly as received by email.",
+        "action": "Go to sign in"
+      }
     }
   },
   "dashboard": {
     "title": "Dashboard",
     "greeting": "Hello, {name}",
+    "greetingNoName": "Hello",
     "greetingSubtitle": "Here is the {schoolName} summary for today.",
     "parentGreetingSubtitle": "See your children, their enrollments, and your family balance here.",
     "quickActions": {
@@ -156,7 +210,6 @@
       "pendingPayments": "Pending payments",
       "pendingEnrollments": "Enrollments to review",
       "remainingBalance": "Family balance",
-      "lastSixMonths": "Trend over 6 months",
       "scopeAll": "All periods",
       "scopePeriod": "{period} period"
     },
@@ -212,8 +265,6 @@
       "settings": "Settings",
       "logout": "Logout",
       "logoutError": "Could not sign you out, please try again",
-      "sectionGestion": "Management",
-      "sectionConfig": "Configuration",
       "collapse": "Collapse",
       "expand": "Expand",
       "openMenu": "Open menu",
@@ -225,7 +276,18 @@
       "events": "Events",
       "planning": "Schedule",
       "attendance": "Attendance tracking",
-      "superAdmins": "Super admins"
+      "superAdmins": "Super admins",
+      "navigation": "Main navigation",
+      "toggleSidebar": "Show or hide the sidebar",
+      "sections": {
+        "today": "Today",
+        "schooling": "Schooling",
+        "finance": "Finance",
+        "settings": "Settings",
+        "platform": "Platform",
+        "family": "Family space",
+        "teaching": "Teaching"
+      }
     },
     "pages": {
       "families": {
@@ -403,7 +465,8 @@
             "validationError": "Check the information you entered",
             "notFound": "Person not found"
           }
-        }
+        },
+        "description": "Enrolled households, their guardians and their balance."
       },
       "students": {
         "title": "Students",
@@ -480,7 +543,8 @@
             "notFound": "Student not found",
             "hasActiveEnrollments": "Pending or active enrollments remain: close them first"
           }
-        }
+        },
+        "description": "Every student in the school, with their class and enrollment."
       },
       "periods": {
         "title": "Periods",
@@ -775,7 +839,8 @@
             "notFound": "Enrollment or plan not found.",
             "unpricedPlan": "That plan is reserved for enrollments without a price."
           }
-        }
+        },
+        "description": "This period's enrollments, to activate, follow and settle."
       },
       "promotion": {
         "title": "Student Promotion",
@@ -864,7 +929,8 @@
             "validationError": "Check the information entered",
             "notFound": "Family not found"
           }
-        }
+        },
+        "description": "Payments received, cheques to deposit and amounts still due."
       },
       "plans": {
         "title": "Plans",
@@ -1054,9 +1120,9 @@
         "emergencyContact": "Emergency Contact",
         "authorizedPickup": "Authorized Pickup",
         "hero": {
-          "members": "Members",
-          "children": "Children",
-          "enrollments": "Enrollments",
+          "members": "{count, plural, one {# member} other {# members}}",
+          "children": "{count, plural, one {# child} other {# children}}",
+          "enrollments": "{count, plural, one {# enrollment} other {# enrollments}}",
           "languagesAtHome": "Languages at home: {languages}",
           "edit": "Edit",
           "addChild": "Add Child"
@@ -1409,7 +1475,9 @@
               "invalidInput": "Check the information you entered",
               "signInFailed": "Account created, but automatic sign-in failed. Sign in with this password.",
               "alreadyMember": "That account already belongs to this school"
-            }
+            },
+            "passwordHint": "At least {min} characters.",
+            "submitting": "Creating account…"
           },
           "errors": {
             "validationError": "Check the information you entered",
@@ -2049,6 +2117,44 @@
       "title": "Upcoming events",
       "manage": "Manage",
       "empty": "No upcoming event"
+    },
+    "home": {
+      "kpi": {
+        "label": "Key figures",
+        "collectionRate": "{rate}% collected"
+      },
+      "todo": {
+        "title": "To do today",
+        "attendance": "{count, plural, one {# register to take} other {# registers to take}}",
+        "attendanceHint": "Today's classes without a validated register",
+        "pendingEnrollments": "{count, plural, one {# enrollment to activate} other {# enrollments to activate}}",
+        "uncashed": "{count, plural, one {# cheque to deposit} other {# cheques to deposit}}",
+        "uncashedHint": "{amount} waiting to be deposited",
+        "outstanding": "{count, plural, one {# enrollment with a balance due} other {# enrollments with a balance due}}",
+        "outstandingHint": "{amount} left to collect",
+        "empty": "Nothing urgent today",
+        "emptyHint": "Registers, enrollments and collections are up to date.",
+        "emptyAction": "View enrollments"
+      },
+      "schedule": {
+        "title": "Today's classes",
+        "empty": "No class scheduled today",
+        "closed": "The school is closed today",
+        "viewAll": "View schedule",
+        "openAttendance": "Open attendance"
+      },
+      "children": {
+        "title": "Your children",
+        "class": "Class",
+        "nextClass": "Next class",
+        "noClass": "No class yet",
+        "noLevel": "Level to be confirmed",
+        "noNextClass": "No class scheduled",
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "empty": "No child linked to your family",
+        "emptyHint": "Contact the school if a child is missing."
+      }
     }
   },
   "schools": {
@@ -2081,7 +2187,8 @@
         "expired": "This invitation link has expired",
         "invalid": "This invitation link is not valid",
         "invalidInput": "Check the information you entered"
-      }
+      },
+      "submitting": "Joining…"
     },
     "admin": {
       "title": "Schools",
@@ -2393,7 +2500,17 @@
     "families": "Families",
     "students": "Students",
     "memberCount": "{count, plural, =0 {no member} one {# member} other {# members}}",
-    "shortcut": "⌘K"
+    "title": "Command palette",
+    "groupActions": "Actions",
+    "groupNavigation": "Go to",
+    "hintNavigate": "navigate",
+    "hintOpen": "open",
+    "actions": {
+      "newFamily": "Create a family",
+      "newEnrollment": "Create an enrollment",
+      "takeAttendance": "Take attendance",
+      "reviewBalances": "Review collections"
+    }
   },
   "roles": {
     "SUPER_ADMIN": "Super Admin",

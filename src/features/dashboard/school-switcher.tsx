@@ -10,9 +10,8 @@ import type { AuthorizedSchool } from '@/domain/school-scope'
 import { usePathname, useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
-import { toInitials } from './initials'
 import { schoolSwitchLanding } from './school-switch-landing'
-import { SidebarBrand } from './sidebar-brand'
+import { SchoolMark, SidebarBrand } from './sidebar-brand'
 
 type Props = {
   schools: AuthorizedSchool[]
@@ -81,13 +80,7 @@ export function SchoolSwitcher({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        'relative shrink-0 py-4',
-        expanded ? 'min-h-16 border-b border-alabaster-700 px-3' : 'px-2'
-      )}
-    >
+    <div ref={containerRef} className="relative">
       <button
         ref={triggerRef}
         type="button"
@@ -97,17 +90,18 @@ export function SchoolSwitcher({
         aria-expanded={open}
         aria-label={expanded ? undefined : label}
         className={cn(
-          'flex w-full items-center rounded transition-colors hover:bg-alabaster-900',
-          expanded ? 'gap-2 px-3 py-1.5' : 'justify-center p-1.5'
+          'flex w-full items-center rounded-md transition-colors duration-(--duration-fast) hover:bg-surface-2',
+          'focus-visible:outline-2 focus-visible:outline-ring',
+          expanded ? 'h-10 gap-2.5 px-2' : 'mx-auto size-10 justify-center'
         )}
       >
         <SchoolMark displayName={label} logoUrl={logoUrl} />
         {expanded && (
           <>
-            <span className="flex-1 truncate text-left text-sm font-bold text-primary">
+            <span className="flex-1 truncate text-left text-sm font-semibold text-foreground">
               {label}
             </span>
-            <ChevronsUpDown size={16} className="shrink-0 text-graphite-800" />
+            <ChevronsUpDown size={16} aria-hidden className="shrink-0 text-muted-foreground" />
           </>
         )}
       </button>
@@ -121,11 +115,11 @@ export function SchoolSwitcher({
           <div
             role="status"
             aria-live="polite"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
           >
-            <div className="flex flex-col items-center gap-3 rounded-xl bg-white px-6 py-5 shadow-lg">
-              <LoaderCircle size={28} className="animate-spin text-primary" aria-hidden />
-              <span className="text-sm font-medium text-graphite-600">
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface px-6 py-5 shadow-lg">
+              <LoaderCircle size={24} className="animate-spin text-primary" aria-hidden />
+              <span className="text-sm font-medium text-muted-foreground">
                 {target ? t('switching', { schoolName: target.name }) : t('label')}
               </span>
             </div>
@@ -139,18 +133,25 @@ export function SchoolSwitcher({
           role="menu"
           aria-label={t('label')}
           className={cn(
-            'absolute z-40 rounded border border-alabaster-700 bg-white p-1 shadow-lg',
-            expanded ? 'left-3 right-3 top-full mt-1' : 'left-full top-2 ml-2 w-56'
+            'absolute z-40 rounded-lg border border-border bg-surface p-1 shadow-lg',
+            expanded ? 'left-0 right-0 top-full mt-1' : 'left-full top-0 ml-2 w-60'
           )}
         >
+          <p
+            aria-hidden="true"
+            className="px-2 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground"
+          >
+            {t('label')}
+          </p>
           {schools.map((school) => (
             <button
               key={school.id}
               type="button"
               role="menuitem"
               onClick={() => onSelect(school.id)}
-              className="flex w-full items-center gap-3 rounded px-3 py-2 text-left text-sm text-graphite-600 transition-colors hover:bg-alabaster-900 hover:text-graphite"
+              className="flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm text-foreground transition-colors duration-(--duration-fast) hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
             >
+              <SchoolMark displayName={school.name} size="sm" />
               <span className="flex-1 truncate">{school.name}</span>
               {school.id === activeSchoolId && (
                 <Check size={16} className="shrink-0 text-primary" aria-hidden />
@@ -160,23 +161,5 @@ export function SchoolSwitcher({
         </div>
       )}
     </div>
-  )
-}
-
-function SchoolMark({ displayName, logoUrl }: { displayName: string; logoUrl?: string }) {
-  if (logoUrl) {
-    return (
-      // biome-ignore lint/performance/noImgElement: dynamic logo URL from config
-      <img src={logoUrl} alt="" aria-hidden className="size-8 rounded object-contain" />
-    )
-  }
-
-  return (
-    <span
-      aria-hidden
-      className="flex size-8 shrink-0 items-center justify-center rounded bg-gradient-to-br from-primary to-primary/70 text-[13px] font-extrabold text-white"
-    >
-      {toInitials(displayName)}
-    </span>
   )
 }

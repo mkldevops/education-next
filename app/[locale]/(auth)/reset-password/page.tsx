@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { ResetPasswordForm } from '@/features/auth'
-import { AuthCard } from '../_components/auth-card'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -23,12 +22,7 @@ export default async function ResetPasswordPage({ params, searchParams }: Props)
   await connection()
   const { locale } = await params
   setRequestLocale(locale)
-  const t = await getTranslations('auth.resetPassword')
   const { token } = await searchParams
 
-  return (
-    <AuthCard title={t('title')} subtitle={t('subtitle')}>
-      <ResetPasswordForm token={token} />
-    </AuthCard>
-  )
+  return <ResetPasswordForm token={token} />
 }

@@ -3,17 +3,18 @@ import type { ComponentPropsWithRef, ReactNode } from 'react'
 import { cn } from '../utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  // L'anneau est un contour décalé sur le fond : il reste visible sur un bouton primaire, là où
+  // l'ancien `ring` héritait du texte blanc et se fondait dans son offset blanc.
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]',
+        default: 'bg-primary text-primary-foreground hover:bg-primary-hover',
         secondary: 'bg-alabaster-800 text-graphite hover:bg-alabaster-700',
-        outline:
-          'border border-alabaster bg-transparent hover:bg-primary-light hover:text-primary-hover',
-        ghost: 'hover:bg-primary-light hover:text-primary-hover',
-        link: 'text-[var(--color-primary)] underline-offset-4 hover:underline',
-        destructive: 'bg-red-500 text-white hover:bg-red-600',
+        outline: 'border border-input bg-transparent hover:bg-surface-2 hover:text-foreground',
+        ghost: 'hover:bg-surface-2 hover:text-foreground',
+        link: 'text-primary underline-offset-4 hover:underline',
+        destructive: 'bg-danger text-white hover:bg-danger/90',
       },
       size: {
         default: 'h-10 px-4 py-2 text-sm',

@@ -38,31 +38,31 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
   return (
     <div className="space-y-5">
       {payments && (
-        <Card className="p-6">
+        <Card className="p-4 sm:p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold text-graphite">{t('collectionTitle')}</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('collectionTitle')}</h2>
             <Link
               href="/dashboard/payments"
-              className="text-sm font-medium text-primary hover:text-primary-hover"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {t('viewPayments')}
             </Link>
           </div>
           <dl className="mt-4 grid gap-4 sm:grid-cols-3">
             <div>
-              <dt className="text-xs text-graphite-600">{t('collected')}</dt>
-              <dd className="text-xl font-bold text-graphite">
+              <dt className="text-xs text-muted-foreground">{t('collected')}</dt>
+              <dd className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
                 {formatCurrency(payments.totals.collected, locale)}
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-graphite-600">{t('remaining')}</dt>
-              <dd className="text-xl font-bold text-graphite">
+              <dt className="text-xs text-muted-foreground">{t('remaining')}</dt>
+              <dd className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
                 {formatCurrency(payments.totals.remaining, locale)}
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-graphite-600">{t('collectionRate')}</dt>
+              <dt className="text-xs text-muted-foreground">{t('collectionRate')}</dt>
               <dd className="mt-2">
                 <ProgressBar value={payments.totals.collectionRate} />
               </dd>
@@ -80,18 +80,18 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
       )}
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Card className="p-6">
+        <Card className="p-4 sm:p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold text-graphite">{t('classFillTitle')}</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('classFillTitle')}</h2>
             <Link
               href="/dashboard/classes"
-              className="text-sm font-medium text-primary hover:text-primary-hover"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {t('viewClasses')}
             </Link>
           </div>
           {classes.length === 0 ? (
-            <p className="mt-4 text-graphite-600">{t('noClasses')}</p>
+            <p className="mt-4 text-sm text-muted-foreground">{t('noClasses')}</p>
           ) : (
             <ul className="mt-4 space-y-4">
               {classes.slice(0, CLASSES_LISTED).map((classPeriod) => (
@@ -99,13 +99,15 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
                   <div className="flex items-baseline justify-between gap-3">
                     <Link
                       href={`/dashboard/classes/${classPeriod.id}`}
-                      className="text-sm font-medium text-primary hover:text-primary-hover"
+                      className="truncate text-sm font-medium text-foreground hover:underline"
                     >
                       {classPeriod.name}
                     </Link>
-                    <span className="text-sm text-graphite">
+                    <span className="shrink-0 text-sm text-foreground tabular-nums">
                       {classPeriod.enrolled}/{classPeriod.capacity}
-                      <span className="ml-2 text-xs text-graphite-600">{classPeriod.level}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {classPeriod.level}
+                      </span>
                     </span>
                   </div>
                   <div className="mt-2">
@@ -117,8 +119,8 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
           )}
         </Card>
 
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-graphite">{t('levelsTitle')}</h2>
+        <Card className="p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-foreground">{t('levelsTitle')}</h2>
           <div className="mt-6">
             <BarChart
               data={levels.map((level) => ({

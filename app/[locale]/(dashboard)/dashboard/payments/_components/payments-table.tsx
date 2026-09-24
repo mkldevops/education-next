@@ -68,7 +68,7 @@ export function PaymentsTable({ payments, locale, periodName }: Props) {
           <div className="flex flex-col">
             <span className="font-medium text-graphite">{formatCurrency(amount, locale)}</span>
             {showPeriodShare && (
-              <span className="text-xs text-graphite/60">
+              <span className="text-xs text-muted-foreground">
                 {t('periodShare', {
                   amount: formatCurrency(periodAmount, locale),
                   period: periodName,

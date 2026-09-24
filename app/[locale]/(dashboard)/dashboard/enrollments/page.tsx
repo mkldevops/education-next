@@ -1,4 +1,4 @@
-import { Breadcrumbs } from '@peaklab/ui'
+import { PageHeader } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -12,6 +12,7 @@ import { EnrollmentsTable } from './_components/enrollments-table'
 
 type Props = {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ action?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -23,9 +24,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function EnrollmentsPage({ params }: Props) {
+export default async function EnrollmentsPage({ params, searchParams }: Props) {
   await connection()
   const { locale } = await params
+  const { action } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -141,23 +143,25 @@ export default async function EnrollmentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs
-        items={[
+      <PageHeader
+        breadcrumbs={[
           { label: tBreadcrumbs('dashboard'), href: '/dashboard', icon: 'home' },
           { label: tBreadcrumbs('enrollments') },
         ]}
+        title={t('title')}
+        description={t('description')}
+        actions={
+          isAdmin && (
+            <CreateEnrollmentDialog
+              students={studentOptions}
+              plans={planOptions}
+              classes={availableClasses}
+              paymentsEnabled={paymentsEnabled}
+              defaultOpen={action === 'create'}
+            />
+          )
+        }
       />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        {isAdmin && (
-          <CreateEnrollmentDialog
-            students={studentOptions}
-            plans={planOptions}
-            classes={availableClasses}
-            paymentsEnabled={paymentsEnabled}
-          />
-        )}
-      </div>
       <EnrollmentsTable
         enrollments={serializableEnrollments}
         isAdmin={isAdmin}

@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import en from '../../../../messages/en.json'
 import fr from '../../../../messages/fr.json'
-import { resolveNavItems } from '../sidebar-items'
+import {
+  flattenNavItems,
+  type NavSectionKey,
+  resolveNavItems,
+  type VisibleNavItems,
+} from '../sidebar-items'
 
 const keys = (items: { key: string }[]) => items.map((item) => item.key)
+const all = (items: VisibleNavItems) => flattenNavItems(items)
+const group = (items: VisibleNavItems, key: NavSectionKey) =>
+  items.sections.find((section) => section.key === key)?.items ?? []
+const find = (items: VisibleNavItems, key: string) => all(items).find((item) => item.key === key)
 
 describe('resolveNavItems', () => {
   it('translates the attendance navigation entry in every locale', () => {
@@ -27,9 +36,9 @@ describe('resolveNavItems', () => {
       isSuperAdmin: false,
       features: { events: false, payments: true, attendance: false },
     })
-    expect(keys(admin.gestion)).toContain('attendance')
-    expect(keys(teacher.gestion)).toContain('attendance')
-    expect(keys(disabled.gestion)).not.toContain('attendance')
+    expect(keys(group(admin, 'today'))).toContain('attendance')
+    expect(keys(group(teacher, 'teaching'))).toContain('attendance')
+    expect(keys(all(disabled))).not.toContain('attendance')
   })
   it('hides admin-only configuration from a caller without a school role', () => {
     const items = resolveNavItems({
@@ -38,8 +47,9 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(items.config).toEqual([])
-    expect(keys(items.gestion)).toContain('payments')
+    expect(keys(items.sections)).toEqual(['today', 'schooling', 'finance'])
+    expect(keys(all(items))).not.toContain('classes')
+    expect(keys(all(items))).toContain('payments')
   })
 
   it('exposes configuration to an admin of the school, minus the platform pages', () => {
@@ -49,18 +59,18 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(keys(items.config)).toEqual([
-      'periods',
-      'levels',
+    expect(keys(items.sections)).toEqual(['today', 'schooling', 'finance', 'settings'])
+    expect(keys(group(items, 'settings'))).toEqual(['periods', 'levels', 'config', 'users'])
+    expect(keys(group(items, 'schooling'))).toEqual([
+      'families',
+      'students',
+      'enrollments',
       'classes',
       'teachers',
-      'plans',
-      'config',
-      'users',
     ])
-    expect(keys(items.config)).not.toContain('schools')
-    expect(keys(items.config)).not.toContain('superAdmins')
-    expect(keys(items.config)).toContain('config')
+    expect(keys(group(items, 'finance'))).toEqual(['payments', 'plans'])
+    expect(keys(all(items))).not.toContain('schools')
+    expect(keys(all(items))).not.toContain('superAdmins')
   })
 
   it('exposes the platform pages to a super admin only', () => {
@@ -70,11 +80,9 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(keys(items.config)).toContain('schools')
-    expect(items.config.find((item) => item.key === 'schools')?.href).toBe('/dashboard/schools')
-    expect(items.config.find((item) => item.key === 'superAdmins')?.href).toBe(
-      '/dashboard/super-admins'
-    )
+    expect(keys(group(items, 'platform'))).toEqual(['schools', 'superAdmins'])
+    expect(find(items, 'schools')?.href).toBe('/dashboard/schools')
+    expect(find(items, 'superAdmins')?.href).toBe('/dashboard/super-admins')
   })
 
   it('hides the platform pages from a parent who is not a super admin', () => {
@@ -85,9 +93,9 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(keys(items.config)).not.toContain('schools')
-    expect(keys(items.config)).not.toContain('superAdmins')
-    expect(keys(items.config)).not.toContain('config')
+    expect(keys(all(items))).not.toContain('schools')
+    expect(keys(all(items))).not.toContain('superAdmins')
+    expect(keys(all(items))).not.toContain('config')
   })
 
   it('points a parent at their own family and drops the management pages', () => {
@@ -98,8 +106,9 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(keys(items.gestion)).toEqual(['dashboard', 'myFamily'])
-    expect(items.gestion[1].href).toBe('/dashboard/families/family-1')
+    expect(keys(items.sections)).toEqual(['family'])
+    expect(keys(all(items))).toEqual(['dashboard', 'myFamily'])
+    expect(find(items, 'myFamily')?.href).toBe('/dashboard/families/family-1')
     expect(keys(items.bottom)).toEqual(['profile'])
   })
 
@@ -112,7 +121,7 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(keys(items.gestion)).toEqual(['dashboard', 'myFamily', 'myClasses'])
+    expect(keys(all(items))).toEqual(['dashboard', 'myFamily', 'myClasses'])
   })
 
   it('keeps admin navigation and adds their linked teacher classes', () => {
@@ -123,7 +132,7 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(keys(items.gestion)).toContain('myClasses')
+    expect(keys(group(items, 'schooling'))).toContain('myClasses')
   })
 
   it('falls back to the families list when a parent has no linked family', () => {
@@ -133,7 +142,7 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(items.gestion[1].href).toBe('/dashboard/families')
+    expect(find(items, 'myFamily')?.href).toBe('/dashboard/families')
   })
 
   it('shows the events entry to an admin only when the feature flag is enabled', () => {
@@ -148,8 +157,8 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(keys(enabled.gestion)).toContain('events')
-    expect(keys(disabled.gestion)).not.toContain('events')
+    expect(keys(all(enabled))).toContain('events')
+    expect(keys(all(disabled))).not.toContain('events')
   })
 
   it('hides the events entry from a super admin when the feature flag is disabled', () => {
@@ -159,7 +168,7 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(keys(items.gestion)).not.toContain('events')
+    expect(keys(all(items))).not.toContain('events')
   })
 
   it('hides the events entry from a parent even when the feature flag is enabled', () => {
@@ -170,7 +179,7 @@ describe('resolveNavItems', () => {
       features: { events: true, payments: true },
     })
 
-    expect(keys(items.gestion)).not.toContain('events')
+    expect(keys(all(items))).not.toContain('events')
   })
 })
 
@@ -184,8 +193,8 @@ describe('resolveNavItems payments flag', () => {
       features: scope(true),
     })
 
-    expect(keys(items.gestion)).toContain('payments')
-    expect(keys(items.config)).toContain('plans')
+    expect(keys(all(items))).toContain('payments')
+    expect(keys(all(items))).toContain('plans')
   })
 
   it('hides payments and plans from an admin when payments are disabled', () => {
@@ -195,22 +204,22 @@ describe('resolveNavItems payments flag', () => {
       features: scope(false),
     })
 
-    expect(keys(items.gestion)).not.toContain('payments')
-    expect(keys(items.config)).not.toContain('plans')
+    expect(keys(all(items))).not.toContain('payments')
+    expect(keys(all(items))).not.toContain('plans')
   })
 
   it('shows payments and plans to a super admin when payments are enabled', () => {
     const items = resolveNavItems({ role: null, isSuperAdmin: true, features: scope(true) })
 
-    expect(keys(items.gestion)).toContain('payments')
-    expect(keys(items.config)).toContain('plans')
+    expect(keys(all(items))).toContain('payments')
+    expect(keys(all(items))).toContain('plans')
   })
 
   it('hides payments and plans from a super admin when payments are disabled', () => {
     const items = resolveNavItems({ role: null, isSuperAdmin: true, features: scope(false) })
 
-    expect(keys(items.gestion)).not.toContain('payments')
-    expect(keys(items.config)).not.toContain('plans')
+    expect(keys(all(items))).not.toContain('payments')
+    expect(keys(all(items))).not.toContain('plans')
   })
 
   it('never offers payments or plans to a parent, flag on or off', () => {
@@ -228,8 +237,38 @@ describe('resolveNavItems payments flag', () => {
     })
 
     for (const items of [enabled, disabled]) {
-      expect(keys(items.gestion)).not.toContain('payments')
-      expect(keys(items.config)).not.toContain('plans')
+      expect(keys(all(items))).not.toContain('payments')
+      expect(keys(all(items))).not.toContain('plans')
+    }
+  })
+})
+
+describe('resolveNavItems icons', () => {
+  it('gives every visible entry a distinct icon', () => {
+    const items = resolveNavItems({
+      role: 'ADMIN',
+      isSuperAdmin: true,
+      hasTeacherCapability: true,
+      features: { events: true, payments: true, attendance: true, classSchedule: true },
+    })
+    const icons = all(items).map((item) => item.icon)
+
+    expect(new Set(icons).size).toBe(icons.length)
+  })
+
+  it('labels every section in every locale', () => {
+    const sections: NavSectionKey[] = [
+      'today',
+      'schooling',
+      'finance',
+      'settings',
+      'platform',
+      'family',
+      'teaching',
+    ]
+    for (const key of sections) {
+      expect(fr.dashboard.sidebar.sections[key]).toBeTruthy()
+      expect(en.dashboard.sidebar.sections[key]).toBeTruthy()
     }
   })
 })

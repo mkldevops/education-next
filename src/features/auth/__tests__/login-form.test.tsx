@@ -65,13 +65,34 @@ describe('LoginForm handleGoogleSignIn', () => {
     )
   })
 
+  it('sends google back to the requested page after sign-in', async () => {
+    vi.mocked(signIn.social).mockResolvedValue({ data: null, error: null } as never)
+
+    render(<LoginForm googleEnabled passkeyEnabled={false} redirectTo="/invite/abc" />)
+    fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
+
+    await waitFor(() =>
+      expect(signIn.social).toHaveBeenCalledWith({ provider: 'google', callbackURL: '/invite/abc' })
+    )
+  })
+
+  it('shows a pending label while google redirects', async () => {
+    vi.mocked(signIn.social).mockReturnValue(new Promise(() => {}) as never)
+
+    render(<LoginForm googleEnabled passkeyEnabled />)
+    fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
+
+    expect(await screen.findByRole('button', { name: 'googlePending' })).toBeDisabled()
+    expect(button('signInWithPasskey')).toBeDisabled()
+  })
+
   it('shows the google error message when signIn.social rejects', async () => {
     vi.mocked(signIn.social).mockRejectedValue(new Error('network error'))
 
     render(<LoginForm googleEnabled passkeyEnabled={false} />)
     fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
 
-    expect(await screen.findByText('googleError')).not.toBeNull()
+    expect(await screen.findByRole('alert')).toHaveTextContent('googleError')
   })
 
   it('shows the google error message when signIn.social resolves with an error', async () => {

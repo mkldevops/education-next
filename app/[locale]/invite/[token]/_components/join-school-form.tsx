@@ -1,8 +1,10 @@
 'use client'
 
-import { Button, Card } from '@peaklab/ui'
+import { Button, cn } from '@peaklab/ui'
+import { Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
+import { authButtonClass } from '@/features/auth/auth-styles'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
 import { joinSchoolAction } from '../_lib/join-school-action'
@@ -40,30 +42,43 @@ export function JoinSchoolForm({ token, email, schoolName, signedInAs }: Props) 
     })
   }
 
+  // Sans session, la connexion ramène ici. Sous un autre compte, la page de connexion
+  // redirigerait aussitôt : le retour n'aurait pas de sens.
+  const signInHref = signedInAs
+    ? '/login'
+    : `/login?${new URLSearchParams({ redirectTo: `/invite/${token}` })}`
+
   return (
-    <Card className="p-8">
-      <h1 className="text-2xl font-bold text-graphite">{t('title', { schoolName })}</h1>
-      <p className="mt-2 text-sm text-graphite-600">{t('description', { email })}</p>
+    <div className="space-y-5">
+      <p className="text-sm leading-6 text-muted-foreground">{t('description', { email })}</p>
 
       {matches ? (
-        <Button type="button" onClick={handleJoin} disabled={isPending} className="mt-6 w-full">
-          {isPending ? '...' : t('submit', { schoolName })}
+        <Button
+          type="button"
+          onClick={handleJoin}
+          disabled={isPending}
+          className={cn(authButtonClass, 'shadow-xs')}
+        >
+          {isPending && <Loader2 aria-hidden className="size-4 animate-spin" />}
+          {isPending ? t('submitting') : t('submit', { schoolName })}
         </Button>
       ) : (
-        <div className="mt-6 space-y-3">
-          <p className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <div className="space-y-4">
+          <p
+            role="status"
+            className="rounded-lg border border-warning/30 bg-warning-subtle px-3.5 py-3 text-sm leading-6 text-foreground"
+          >
             {signedInAs ? t('wrongAccount', { signedInAs, email }) : t('signInRequired', { email })}
           </p>
           <Button
             type="button"
-            variant="outline"
-            onClick={() => router.push('/login')}
-            className="w-full"
+            onClick={() => router.push(signInHref)}
+            className={cn(authButtonClass, 'shadow-xs')}
           >
             {t('signIn')}
           </Button>
         </div>
       )}
-    </Card>
+    </div>
   )
 }

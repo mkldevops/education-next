@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import { db } from '@/lib/db'
@@ -20,7 +21,8 @@ export function resolveBrandingConfig(configs: Array<{ name: string; value: stri
   }
 }
 
-export async function getBrandingConfig(schoolId: string) {
+/** Mémoïsé par requête : le shell auth et sa page le lisent tous deux. */
+export const getBrandingConfig = cache(async (schoolId: string) => {
   const [configs, school] = await Promise.all([
     db.config.findMany({
       where: {
@@ -37,7 +39,7 @@ export async function getBrandingConfig(schoolId: string) {
     ...resolveBrandingConfig(configs),
     schoolName: school?.name,
   }
-}
+})
 
 /**
  * École désignée par le seul cookie, pour les surfaces qui peuvent être
