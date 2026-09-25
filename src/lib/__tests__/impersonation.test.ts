@@ -123,6 +123,7 @@ describe('impersonation lock on Better Auth routes', () => {
         '/revoke-sessions',
         '/set-password',
         '/unlink-account',
+        '/update-user',
       ].sort()
     )
   })
@@ -145,6 +146,16 @@ describe('impersonation lock on Better Auth routes', () => {
 
     const code = await refusal(() =>
       ctx.auth.api.changeEmail({ headers: borrowed, body: { newEmail: 'attacker@evil.test' } })
+    )
+
+    expect(code).toBe('impersonating')
+  })
+
+  it('refuses a profile update from a borrowed session', async () => {
+    const { borrowed } = await impersonate(ctx)
+
+    const code = await refusal(() =>
+      ctx.auth.api.updateUser({ headers: borrowed, body: { name: 'Renamed' } })
     )
 
     expect(code).toBe('impersonating')

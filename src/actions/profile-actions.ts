@@ -13,11 +13,6 @@ import { type UpdateProfileData, updateProfile } from '@/use-cases/commands/upda
 
 type ActionResult<T> = { success: true; data: T } | { success: false; error: string }
 
-async function getAuthenticatedUserId(): Promise<string | null> {
-  const session = await auth.api.getSession({ headers: await headers() })
-  return session?.user?.id ?? null
-}
-
 type CredentialGuard = { ok: true; userId: string } | { ok: false; error: string }
 
 /**
@@ -43,13 +38,11 @@ const changePasswordSchema = z
   })
 
 export async function updateProfileAction(data: UpdateProfileData): Promise<ActionResult<null>> {
-  const userId = await getAuthenticatedUserId()
-  if (!userId) {
-    return { success: false, error: 'unauthorized' }
-  }
+  const guard = await guardCredentialOperation(await headers())
+  if (!guard.ok) return { success: false, error: guard.error }
 
   const gateway = new PrismaProfileGateway(db)
-  const result = await updateProfile(userId, data, gateway)
+  const result = await updateProfile(guard.userId, data, gateway)
 
   if (result !== 'OK') {
     return { success: false, error: result }
