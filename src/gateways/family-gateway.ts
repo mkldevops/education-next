@@ -198,9 +198,24 @@ export const familyGateway = {
    *
    * Tout passe par `dbArchived` : une ligne archivée est invisible à `db` mais bloque
    * la suppression par sa clé étrangère.
+   *
+   * La ligne `Family` est verrouillée avant toute lecture, dans l'ordre que prend un
+   * encaissement (`paymentGateway.lockFamilyForPayment`, puis insertion du règlement qui
+   * pose un `KEY SHARE` sur l'inscription). Sans ce verrou, la suppression tient déjà
+   * l'inscription quand le paiement attend sur elle, et Postgres tranche par un deadlock.
+   * `FOR UPDATE` et non `FOR NO KEY UPDATE` : la ligne va disparaître. Pas de filtre
+   * `isActive`, une famille archivée reste effaçable.
+   *
+   * Rend `false` quand la famille a disparu entre la lecture du cas d'usage et le verrou.
    */
   deleteWithRelated: (schoolId: string, id: string) =>
     dbArchived.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "Family"
+        WHERE "id" = ${id} AND "schoolId" = ${schoolId}
+        FOR UPDATE`
+      if (locked.length !== 1) return false
+
       const { ownPersonIds, studentIds, enrollmentIds, paymentWhere } = await resolveDeletionScope(
         tx,
         schoolId,
@@ -253,6 +268,7 @@ export const familyGateway = {
       }
 
       await tx.family.delete({ where: { id_schoolId: { id, schoolId } } })
+      return true
     }),
 
   hasActiveEnrollments: async (schoolId: string, id: string) => {

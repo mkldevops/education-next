@@ -1412,8 +1412,13 @@ where financial history is destroyed rather than archived.
   A student shared with another family keeps their attendance, like the rest of their record.
 - **A foreign key that still refuses the deletion returns `deletionBlocked`**, never an error
   boundary. The transaction rolls back whole, so nothing is erased, and the dialog says so and
-  suggests archiving instead. Reaching it means a relation escaped the guard above; any other error
-  is rethrown.
+  suggests archiving instead. Reaching it means a relation escaped the guard above.
+- **The deletion locks the `Family` row first** (`SELECT … FOR UPDATE`, archived rows included),
+  in the order a payment takes: `paymentGateway.lockFamilyForPayment`, then the `Payment` insert
+  that key-shares the enrollment. A payment and a deletion on the same family therefore queue
+  instead of deadlocking. A family gone by the time the lock is taken returns `notFound`. A
+  residual serialization failure or deadlock (`P2034`) returns `deletionConflict`: nothing was
+  erased and the admin can retry. Any other error is rethrown.
 - **A person linked to another family survives**, along with their student and enrollments: only the
   link to the deleted family goes. Their invitations survive too — only a person actually deleted
   has theirs removed, because `Invitation.person` is `Restrict`.

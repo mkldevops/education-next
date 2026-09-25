@@ -17,7 +17,21 @@ type Input = z.infer<typeof schema>
  * laisser l'erreur remonter jusqu'à l'error boundary.
  */
 function isForeignKeyConstraintError(error: unknown) {
-  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2003'
+  return hasPrismaCode(error, 'P2003')
+}
+
+/**
+ * P2034 : Postgres a abandonné la transaction (`40001` ou `40P01`, que l'adaptateur `pg`
+ * range sous le même code). Le verrou pris en tête de `deleteWithRelated` aligne
+ * l'ordre sur celui des encaissements, mais un autre chemin peut encore croiser la
+ * suppression. Rien n'a été effacé : l'administrateur peut relancer.
+ */
+function isTransactionConflict(error: unknown) {
+  return hasPrismaCode(error, 'P2034')
+}
+
+function hasPrismaCode(error: unknown, code: string) {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === code
 }
 
 /**
@@ -39,9 +53,11 @@ export async function deleteFamily(input: Input) {
   }
 
   try {
-    await familyGateway.deleteWithRelated(parsed.data.schoolId, parsed.data.id)
+    const deleted = await familyGateway.deleteWithRelated(parsed.data.schoolId, parsed.data.id)
+    if (!deleted) return 'notFound' as const
   } catch (error) {
     if (isForeignKeyConstraintError(error)) return 'deletionBlocked' as const
+    if (isTransactionConflict(error)) return 'deletionConflict' as const
     throw error
   }
 
