@@ -9,14 +9,17 @@ type FakeSession = { id: string; status: 'open' | 'expired' }
 
 const sessions = new Map<string, FakeSession>()
 let sessionCount = 0
+const runId = Date.now().toString(36)
 const stripeLatency = () => new Promise((resolve) => setTimeout(resolve, 50))
+let releaseCreate: () => void = () => undefined
+let createGate: Promise<void> = Promise.resolve()
 const fakeStripe = {
   checkout: {
     sessions: {
       create: async () => {
-        await stripeLatency()
+        await createGate
         sessionCount += 1
-        const session: FakeSession = { id: `cs_race_${sessionCount}`, status: 'open' }
+        const session: FakeSession = { id: `cs_race_${runId}_${sessionCount}`, status: 'open' }
         sessions.set(session.id, session)
         return { ...session, url: `https://checkout.stripe.test/${session.id}` }
       },
@@ -117,10 +120,15 @@ describe.skipIf(!databaseUrl)('createCheckoutSession concurrency', () => {
       appUrl: 'http://localhost:8550',
     }
 
-    const results = await Promise.all([
-      createCheckoutSession(checkout, paymentsEnabled),
-      createCheckoutSession(checkout, paymentsEnabled),
-    ])
+    createGate = new Promise((resolve) => {
+      releaseCreate = resolve
+      setTimeout(resolve, 2_000)
+    })
+    const results = await Promise.all(
+      [0, 1].map((_) =>
+        createCheckoutSession(checkout, paymentsEnabled).finally(() => releaseCreate())
+      )
+    )
 
     expect(results).toEqual(
       expect.arrayContaining([expect.objectContaining({ result: 'OK' }), 'checkoutInProgress'])
