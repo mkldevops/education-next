@@ -22,6 +22,7 @@ const { commitUpdateEnrollment } = await import('./commit-update-enrollment')
 const scope = {
   keyId: 'key-1',
   keyPrefix: 'edu_mcp_aaaa',
+  owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
@@ -43,7 +44,9 @@ beforeEach(() => {
   vi.clearAllMocks()
   claim.mockResolvedValue({ count: 1 })
   findById.mockResolvedValue({
+    ownerKind: 'MCP_KEY',
     keyId: 'key-1',
+    userId: null,
     tool: 'update_enrollment',
     checksum: input.checksum,
     resolved,
@@ -140,7 +143,9 @@ describe('commitUpdateEnrollment', () => {
   it('returns the recorded result on a replay instead of writing again', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'update_enrollment',
       checksum: input.checksum,
       status: 'COMMITTED',
@@ -155,7 +160,9 @@ describe('commitUpdateEnrollment', () => {
   it('refuses a draft prepared by another tool', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'record_payment',
       checksum: input.checksum,
       status: 'PENDING',

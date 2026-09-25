@@ -34,6 +34,7 @@ describe.skipIf(!databaseUrl)('mcpDraftGateway.purgeExpired', () => {
     const draft = await db.mcpDraft.create({
       data: {
         schoolId,
+        ownerKind: 'MCP_KEY',
         keyId,
         tool: 'record_payment',
         checksum: 'abcdef012345',

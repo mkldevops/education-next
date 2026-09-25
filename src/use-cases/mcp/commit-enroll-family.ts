@@ -2,8 +2,8 @@ import { z } from 'zod'
 import { reserveClassSeatsInOrder } from '@/gateways/class-seat-lock'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { claimResolved, commitInTransaction, releaseDraft } from './claim-draft'
+import type { DraftScope } from './draft-scope'
 import { countSeatsByClass, ENROLL_FAMILY_TOOL } from './preview-enroll-family'
-import type { McpScope } from './resolve-mcp-scope'
 import { type commitDraftSchema, mcpPaymentMethodSchema, mcpSexSchema } from './schemas'
 
 /**
@@ -61,7 +61,7 @@ const resolvedSchema = z.object({
 
 type Input = z.infer<typeof commitDraftSchema>
 
-export async function commitEnrollFamily(scope: McpScope, input: Input) {
+export async function commitEnrollFamily(scope: DraftScope, input: Input) {
   const { schoolId } = scope
 
   const claim = await claimResolved(scope, ENROLL_FAMILY_TOOL, input, resolvedSchema)

@@ -27,6 +27,7 @@ const { DELETE, GET, POST } = await import('../route')
 const scope = {
   keyId: 'key-1',
   keyPrefix: 'edu_mcp_aaaa',
+  owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,

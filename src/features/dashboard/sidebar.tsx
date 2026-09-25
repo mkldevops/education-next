@@ -30,6 +30,7 @@ type SidebarProps = {
   classScheduleEnabled?: boolean
   eventsEnabled?: boolean
   attendanceEnabled?: boolean
+  aiAssistantEnabled?: boolean
 }
 
 export function Sidebar({
@@ -47,6 +48,7 @@ export function Sidebar({
   classScheduleEnabled = false,
   eventsEnabled = false,
   attendanceEnabled = false,
+  aiAssistantEnabled = false,
 }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const platform = useTranslations('metadata')
@@ -68,6 +70,7 @@ export function Sidebar({
       events: eventsEnabled,
       payments: paymentsEnabled,
       attendance: attendanceEnabled,
+      aiAssistant: aiAssistantEnabled,
     },
   }
   const items = resolveNavItems(navScope)

@@ -14,4 +14,7 @@ export const platformSettingGateway = {
       create: data,
       update: { value: data.value, valueType: data.valueType },
     }),
+
+  /** `deleteMany` : supprimer un réglage absent n'est pas une erreur. */
+  delete: (name: string) => db.platformSetting.deleteMany({ where: { name } }),
 }

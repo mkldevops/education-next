@@ -272,3 +272,45 @@ describe('resolveNavItems icons', () => {
     }
   })
 })
+
+describe('resolveNavItems aiAssistant flag', () => {
+  const scope = (aiAssistant: boolean) => ({ events: false, payments: true, aiAssistant })
+
+  it('translates the assistant navigation entry in every locale', () => {
+    expect(fr.dashboard.sidebar.enrollAssistant).toBe("Assistant d'inscription")
+    expect(en.dashboard.sidebar.enrollAssistant).toBe('Enrollment assistant')
+  })
+
+  it('shows the assistant to an admin and a super admin only while enabled', () => {
+    const admin = resolveNavItems({ role: 'ADMIN', isSuperAdmin: false, features: scope(true) })
+    const superAdmin = resolveNavItems({ role: null, isSuperAdmin: true, features: scope(true) })
+
+    expect(find(admin, 'enrollAssistant')?.href).toBe('/dashboard/enroll-assistant')
+    expect(keys(group(superAdmin, 'schooling'))).toContain('enrollAssistant')
+  })
+
+  it('hides the assistant from everyone while disabled or unset', () => {
+    const admin = resolveNavItems({ role: 'ADMIN', isSuperAdmin: false, features: scope(false) })
+    const unset = resolveNavItems({
+      role: null,
+      isSuperAdmin: true,
+      features: { events: false, payments: true },
+    })
+
+    expect(keys(all(admin))).not.toContain('enrollAssistant')
+    expect(keys(all(unset))).not.toContain('enrollAssistant')
+  })
+
+  it('never offers the assistant to a parent or a teacher, flag on or off', () => {
+    const parent = resolveNavItems({
+      role: 'PARENT',
+      isSuperAdmin: false,
+      features: scope(true),
+      familyId: 'family-1',
+    })
+    const teacher = resolveNavItems({ role: 'TEACHER', isSuperAdmin: false, features: scope(true) })
+
+    expect(keys(all(parent))).not.toContain('enrollAssistant')
+    expect(keys(all(teacher))).not.toContain('enrollAssistant')
+  })
+})

@@ -26,6 +26,7 @@ const { previewEnrollFamily } = await import('./preview-enroll-family')
 const scope = {
   keyId: 'key-1',
   keyPrefix: 'edu_mcp_aaaa',
+  owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
@@ -102,7 +103,7 @@ describe('previewEnrollFamily', () => {
 
     expect(createDraft).toHaveBeenCalledWith(
       'school-1',
-      expect.objectContaining({ keyId: 'key-1', tool: 'enroll_family' })
+      expect.objectContaining({ owner: { kind: 'MCP_KEY', keyId: 'key-1' }, tool: 'enroll_family' })
     )
   })
 

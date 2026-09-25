@@ -1,9 +1,9 @@
 import type { z } from 'zod'
-import { isDraftUsable, staleCommitBefore } from '@/domain/mcp-draft'
+import { type DraftOwner, isDraftUsable, ownsDraft, staleCommitBefore } from '@/domain/mcp-draft'
 import { mcpDraftGateway } from '@/gateways/mcp-draft-gateway'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
-import type { McpScope } from './resolve-mcp-scope'
+import type { DraftScope } from './draft-scope'
 import { commitDraftSchema } from './schemas'
 
 type ClaimOutcome =
@@ -25,18 +25,19 @@ type ClaimOutcome =
  * Un brouillon déjà engagé au même checksum n'est pas une erreur : sa réponse est le
  * résultat enregistré, et c'est ce qui empêche une seconde famille d'apparaître.
  *
- * Le brouillon appartient à la clé qui l'a proposé : une autre clé de la même école ne le
- * voit pas, et se l'entend refuser comme inexistant plutôt que comme interdit.
+ * Le brouillon appartient à la clé ou à la session qui l'a proposé : un autre propriétaire
+ * de la même école ne le voit pas, et se l'entend refuser comme inexistant plutôt que
+ * comme interdit.
  */
 async function claimDraft(
   schoolId: string,
-  keyId: string,
+  owner: DraftOwner,
   tool: string,
   draftId: string,
   checksum: string,
   now: Date = new Date()
 ): Promise<ClaimOutcome> {
-  const claimed = await mcpDraftGateway.claim(schoolId, keyId, draftId, tool, checksum, now)
+  const claimed = await mcpDraftGateway.claim(schoolId, owner, draftId, tool, checksum, now)
   if (claimed.count === 1) {
     const draft = await mcpDraftGateway.findById(schoolId, draftId)
     if (!draft) return { status: 'draftNotFound' }
@@ -44,7 +45,7 @@ async function claimDraft(
   }
 
   const draft = await mcpDraftGateway.findById(schoolId, draftId)
-  if (!draft || draft.tool !== tool || draft.keyId !== keyId) return { status: 'draftNotFound' }
+  if (!draft || draft.tool !== tool || !ownsDraft(draft, owner)) return { status: 'draftNotFound' }
   if (draft.checksum !== checksum) return { status: 'checksumMismatch' }
 
   if (draft.status === 'COMMITTED') {
@@ -55,7 +56,7 @@ async function claimDraft(
     // données, un verrou plus vieux que le délai d'abandon se reprend sans doublon.
     const reclaimed = await mcpDraftGateway.reclaim(
       schoolId,
-      keyId,
+      owner,
       draftId,
       tool,
       checksum,
@@ -94,17 +95,17 @@ type ResolvedClaim<S extends z.ZodTypeAny> =
  * rejoué. Un plan illisible rend le verrou avant de refuser.
  */
 export async function claimResolved<S extends z.ZodTypeAny>(
-  scope: Pick<McpScope, 'schoolId' | 'keyId'>,
+  scope: Pick<DraftScope, 'schoolId' | 'owner'>,
   tool: string,
   input: unknown,
   schema: S
 ): Promise<ResolvedClaim<S>> {
   const parsed = commitDraftSchema.safeParse(input)
   if (!parsed.success) return { done: true, value: 'validationError' as const }
-  const { schoolId, keyId } = scope
+  const { schoolId, owner } = scope
   const { draftId, checksum } = parsed.data
 
-  const outcome = await claimDraft(schoolId, keyId, tool, draftId, checksum)
+  const outcome = await claimDraft(schoolId, owner, tool, draftId, checksum)
   if (outcome.status === 'replayed') return { done: true, value: outcome.result }
   if (outcome.status !== 'claimed') return { done: true, value: outcome.status }
 

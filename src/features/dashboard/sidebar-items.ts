@@ -15,6 +15,7 @@ import {
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   UserCog,
   UserRoundCheck,
   Users,
@@ -29,8 +30,11 @@ export type NavItemConfig = {
   requiredRoles?: SchoolRole[]
   /** Surface plateforme : réservée à `isSuperAdmin`, qu'aucun rôle d'école ne couvre. */
   platformOnly?: true
-  /** Surface pilotée par un réglage d'école ; `canView` la ferme quand il est éteint. */
-  feature?: 'classSchedule' | 'events' | 'payments' | 'attendance'
+  /**
+   * Surface pilotée par un réglage ; `canView` la ferme quand il est éteint. `aiAssistant`
+   * est un réglage plateforme, les autres des réglages d'école.
+   */
+  feature?: 'classSchedule' | 'events' | 'payments' | 'attendance' | 'aiAssistant'
 }
 
 /** Clé de traduction du libellé de groupe, sous `dashboard.sidebar.sections`. */
@@ -71,6 +75,13 @@ const schoolingItems: NavItemConfig[] = [
   { href: '/dashboard/families', icon: Users, key: 'families' },
   { href: '/dashboard/students', icon: GraduationCap, key: 'students' },
   { href: '/dashboard/enrollments', icon: ClipboardList, key: 'enrollments' },
+  {
+    href: '/dashboard/enroll-assistant',
+    icon: Sparkles,
+    key: 'enrollAssistant',
+    requiredRoles: ['ADMIN'],
+    feature: 'aiAssistant',
+  },
   { href: '/dashboard/classes', icon: BookOpen, key: 'classes', requiredRoles: ['ADMIN'] },
   { href: '/dashboard/teachers', icon: UserRoundCheck, key: 'teachers', requiredRoles: ['ADMIN'] },
 ]
@@ -103,7 +114,13 @@ export type NavScope = {
   isSuperAdmin: boolean
   familyId?: string
   hasTeacherCapability?: boolean
-  features: { classSchedule?: boolean; events: boolean; payments: boolean; attendance?: boolean }
+  features: {
+    classSchedule?: boolean
+    events: boolean
+    payments: boolean
+    attendance?: boolean
+    aiAssistant?: boolean
+  }
 }
 
 export type VisibleNavItems = {

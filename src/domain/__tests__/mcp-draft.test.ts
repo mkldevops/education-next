@@ -6,6 +6,8 @@ import {
   MCP_DRAFT_COMMIT_TIMEOUT_SECONDS,
   MCP_DRAFT_COMMITTED_RETENTION_DAYS,
   MCP_DRAFT_TTL_MINUTES,
+  ownerColumns,
+  ownsDraft,
   staleCommitBefore,
 } from '../mcp-draft'
 
@@ -60,5 +62,43 @@ describe('committedRetentionBefore', () => {
     expect(now.getTime() - committedRetentionBefore(now).getTime()).toBeGreaterThan(
       MCP_DRAFT_TTL_MINUTES * 60 * 1000
     )
+  })
+})
+
+describe('ownerColumns', () => {
+  it('spreads an MCP key owner onto the key column only', () => {
+    expect(ownerColumns({ kind: 'MCP_KEY', keyId: 'key-1' })).toEqual({
+      ownerKind: 'MCP_KEY',
+      keyId: 'key-1',
+      userId: null,
+    })
+  })
+
+  it('spreads an admin session owner onto the user column only', () => {
+    expect(ownerColumns({ kind: 'ADMIN_SESSION', userId: 'user-1' })).toEqual({
+      ownerKind: 'ADMIN_SESSION',
+      keyId: null,
+      userId: 'user-1',
+    })
+  })
+})
+
+describe('ownsDraft', () => {
+  const byKey = { ownerKind: 'MCP_KEY' as const, keyId: 'key-1', userId: null }
+  const bySession = { ownerKind: 'ADMIN_SESSION' as const, keyId: null, userId: 'user-1' }
+
+  it('matches the same owner in the same access mode', () => {
+    expect(ownsDraft(byKey, { kind: 'MCP_KEY', keyId: 'key-1' })).toBe(true)
+    expect(ownsDraft(bySession, { kind: 'ADMIN_SESSION', userId: 'user-1' })).toBe(true)
+  })
+
+  it('refuses another key or another user', () => {
+    expect(ownsDraft(byKey, { kind: 'MCP_KEY', keyId: 'key-2' })).toBe(false)
+    expect(ownsDraft(bySession, { kind: 'ADMIN_SESSION', userId: 'user-2' })).toBe(false)
+  })
+
+  it('never crosses access modes, even for the same user', () => {
+    expect(ownsDraft(bySession, { kind: 'MCP_KEY', keyId: 'key-1' })).toBe(false)
+    expect(ownsDraft(byKey, { kind: 'ADMIN_SESSION', userId: 'user-1' })).toBe(false)
   })
 })

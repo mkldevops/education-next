@@ -18,6 +18,7 @@ import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
 import { ACTIVE_SCHOOL_COOKIE, getAuthorizedSchools, getSchoolContext } from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assistant-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 import { RememberActiveSchool } from './_components/remember-active-school'
 import { SignInUpgradeGate } from './_components/sign-in-upgrade-gate'
@@ -51,6 +52,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     cookieStore,
     teacher,
     attendanceEnabled,
+    aiAssistantEnabled,
   ] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
@@ -65,6 +67,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
       select: { id: true },
     }),
     readConfigFlag(context.schoolId, ATTENDANCE_ENABLED_CONFIG_KEY),
+    isAiAssistantEnabled(),
   ])
   // La page de connexion n'a pas de session : elle s'habille de l'école désignée par ce cookie.
   const rememberSchool = cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId
@@ -89,6 +92,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
         classScheduleEnabled={classScheduleEnabled}
         eventsEnabled={eventsEnabled}
         attendanceEnabled={attendanceEnabled}
+        aiAssistantEnabled={aiAssistantEnabled}
       />
     </>
   )

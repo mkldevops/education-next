@@ -3,11 +3,13 @@
 import { useTranslations } from 'next-intl'
 import { FlagToggle } from '../../../_components/flag-toggle'
 import {
+  setAiAssistantEnabledAction,
   setGoogleSignInEnabledAction,
   setMcpEnabledAction,
   setPasskeySignInEnabledAction,
   setSchoolSwitchEnabledAction,
 } from '../../../_lib/platform-settings-actions'
+import { OpenRouterKeyForm, type OpenRouterKeyStatus } from './openrouter-key-form'
 import { SettingsSection } from './settings-section'
 
 type Props = {
@@ -15,6 +17,9 @@ type Props = {
   googleConfigured: boolean
   passkeyEnabled: boolean
   mcpEnabled: boolean
+  aiAssistantEnabled: boolean
+  openRouterKeyStatus: OpenRouterKeyStatus
+  secretStorageConfigured: boolean
   schoolSwitchEnabled: boolean
   googleOnlyAccountCount: number
 }
@@ -28,6 +33,9 @@ export function PlatformSettingsPanel({
   googleConfigured,
   passkeyEnabled,
   mcpEnabled,
+  aiAssistantEnabled,
+  openRouterKeyStatus,
+  secretStorageConfigured,
   schoolSwitchEnabled,
   googleOnlyAccountCount,
 }: Props) {
@@ -82,6 +90,23 @@ export function PlatformSettingsPanel({
           hint={tIntegrations('mcp.hint')}
           enabled={mcpEnabled}
           onSave={setMcpEnabledAction}
+        />
+        <FlagToggle
+          title={tIntegrations('aiAssistant.title')}
+          description={tIntegrations('aiAssistant.description')}
+          hint={
+            openRouterKeyStatus === 'configured'
+              ? tIntegrations('aiAssistant.hint')
+              : openRouterKeyStatus === 'unreadable'
+                ? tIntegrations('aiAssistant.unreadable')
+                : tIntegrations('aiAssistant.notConfigured')
+          }
+          enabled={aiAssistantEnabled}
+          onSave={setAiAssistantEnabledAction}
+        />
+        <OpenRouterKeyForm
+          status={openRouterKeyStatus}
+          secretStorageConfigured={secretStorageConfigured}
         />
       </SettingsSection>
     </>

@@ -12,8 +12,8 @@ import { paymentGateway } from '@/gateways/payment-gateway'
 import { personGateway } from '@/gateways/person-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
 import { blockedPreview, saveDraftPreview } from './draft-response'
+import type { DraftScope } from './draft-scope'
 import { matchByName } from './match-by-name'
-import type { McpScope } from './resolve-mcp-scope'
 import { previewEnrollFamilySchema } from './schemas'
 
 // `z.input`, pas `z.infer` : l'entrée vient d'un modèle et traverse le schéma — un défaut
@@ -59,7 +59,7 @@ function findMembers(members: Member[], name: string, lastname: string) {
   return members.filter((row) => within(row.name, name) && within(row.lastname, lastname))
 }
 
-export async function previewEnrollFamily(scope: McpScope, input: Input) {
+export async function previewEnrollFamily(scope: DraftScope, input: Input) {
   const parsed = previewEnrollFamilySchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   const { schoolId, paymentsEnabled } = scope

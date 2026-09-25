@@ -29,6 +29,7 @@ const { commitEnrollFamily } = await import('./commit-enroll-family')
 const scope = {
   keyId: 'key-1',
   keyPrefix: 'edu_mcp_aaaa',
+  owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
@@ -67,7 +68,9 @@ beforeEach(() => {
   claim.mockResolvedValue({ count: 1 })
   reclaim.mockResolvedValue({ count: 0 })
   findById.mockResolvedValue({
+    ownerKind: 'MCP_KEY',
     keyId: 'key-1',
+    userId: null,
     tool: 'enroll_family',
     checksum: input.checksum,
     resolved,
@@ -186,7 +189,9 @@ describe('commitEnrollFamily', () => {
     async ({ enrolled, expected }) => {
       tx.classAssignment.count.mockResolvedValue(enrolled)
       findById.mockResolvedValue({
+        ownerKind: 'MCP_KEY',
         keyId: 'key-1',
+        userId: null,
         tool: 'enroll_family',
         checksum: input.checksum,
         resolved: {
@@ -225,7 +230,9 @@ describe('commitEnrollFamily', () => {
 
   it('seats each sibling in its own class and counts each class once', async () => {
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       resolved: {
@@ -261,7 +268,9 @@ describe('commitEnrollFamily', () => {
 
   it('writes each enrollment on the plan and total its own student carries', async () => {
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       resolved: {
@@ -298,7 +307,9 @@ describe('commitEnrollFamily', () => {
     tx.$queryRaw.mockResolvedValue([{ capacity: 4 }])
     tx.classAssignment.count.mockResolvedValue(3)
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       resolved: {
@@ -328,7 +339,9 @@ describe('commitEnrollFamily', () => {
 
   it('locks the class rows in id order and counts under the lock', async () => {
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       resolved: {
@@ -367,7 +380,9 @@ describe('commitEnrollFamily', () => {
 
   it('refuses a stored split that points past the students it creates', async () => {
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       resolved: {
@@ -392,7 +407,9 @@ describe('commitEnrollFamily', () => {
     claim.mockResolvedValue({ count: 0 })
     findById
       .mockResolvedValueOnce({
+        ownerKind: 'MCP_KEY',
         keyId: 'key-1',
+        userId: null,
         tool: 'enroll_family',
         checksum: input.checksum,
         status: 'COMMITTED',
@@ -400,7 +417,9 @@ describe('commitEnrollFamily', () => {
         expiresAt: new Date(Date.now() + 60_000),
       })
       .mockResolvedValueOnce({
+        ownerKind: 'MCP_KEY',
         keyId: 'key-1',
+        userId: null,
         tool: 'enroll_family',
         checksum: input.checksum,
         resolved,
@@ -413,7 +432,9 @@ describe('commitEnrollFamily', () => {
   it('returns the recorded result on a replay instead of a second family', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       status: 'COMMITTED',
@@ -428,7 +449,9 @@ describe('commitEnrollFamily', () => {
   it('refuses a checksum that does not match the plan the caller was shown', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: 'ffffffffffff',
       status: 'PENDING',
@@ -442,7 +465,9 @@ describe('commitEnrollFamily', () => {
   it('refuses a draft whose deadline has passed', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       status: 'PENDING',
@@ -455,7 +480,9 @@ describe('commitEnrollFamily', () => {
   it('refuses a draft proposed by another key of the same school', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-2',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       status: 'PENDING',
@@ -465,7 +492,7 @@ describe('commitEnrollFamily', () => {
     expect(await commitEnrollFamily(scope, input)).toBe('draftNotFound')
     expect(claim).toHaveBeenCalledWith(
       'school-1',
-      'key-1',
+      { kind: 'MCP_KEY', keyId: 'key-1' },
       input.draftId,
       'enroll_family',
       input.checksum,
@@ -476,7 +503,9 @@ describe('commitEnrollFamily', () => {
   it('refuses a draft that belongs to the other tool', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'record_payment',
       checksum: input.checksum,
       status: 'PENDING',
@@ -496,7 +525,9 @@ describe('commitEnrollFamily', () => {
   it('holds off while a concurrent commit is still inside its transaction', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       status: 'COMMITTED',
@@ -530,7 +561,9 @@ describe('commitEnrollFamily', () => {
 
     beforeEach(() => {
       findById.mockResolvedValue({
+        ownerKind: 'MCP_KEY',
         keyId: 'key-1',
+        userId: null,
         tool: 'enroll_family',
         checksum: input.checksum,
         resolved: attached,
@@ -609,7 +642,9 @@ describe('commitEnrollFamily', () => {
 
   it('refuses a stored plan whose shape it can no longer write', async () => {
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       resolved: {},
@@ -625,7 +660,9 @@ describe('commitEnrollFamily', () => {
   // sans relâcher la validation du cas nominal couvert par les autres tests.
   it('writes an unpriced draft with zero amounts and no payment', async () => {
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       resolved: {
@@ -667,7 +704,9 @@ describe('commitEnrollFamily', () => {
   // fermerait la fonction qu'il est censé rendre possible.
   it('still commits an unpriced draft while payments are off', async () => {
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       resolved: {

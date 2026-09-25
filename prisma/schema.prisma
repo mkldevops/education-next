@@ -859,21 +859,34 @@ enum McpDraftStatus {
   COMMITTED
 }
 
+// Qui a proposé un brouillon : une clé MCP, ou un administrateur connecté via l'assistant
+// d'inscription. Les deux ne se croisent jamais — un brouillon n'est engageable que par le
+// propriétaire du même genre et du même identifiant.
+enum McpDraftOwnerKind {
+  MCP_KEY
+  ADMIN_SESSION
+}
+
 // Plan résolu d'une écriture MCP, entre le `preview_*` qui le calcule et le `commit_*` qui
 // l'engage. Il porte le verrou à passage unique : `status` passe de PENDING à COMMITTED par
 // un `updateMany` conditionnel, et `result` garde la réponse à rendre à un rejeu.
+//
+// `keyId` et `userId` sont exclusifs selon `ownerKind` ; la contrainte CHECK vit dans la
+// migration, Prisma ne sachant pas l'exprimer.
 model McpDraft {
-  id          String         @id @default(uuid())
+  id          String            @id @default(uuid())
   schoolId    String
-  keyId       String
-  tool        String         @db.VarChar(50)
-  checksum    String         @db.VarChar(12)
+  ownerKind   McpDraftOwnerKind
+  keyId       String?
+  userId      String?
+  tool        String            @db.VarChar(50)
+  checksum    String            @db.VarChar(12)
   resolved    Json
-  status      McpDraftStatus @default(PENDING)
+  status      McpDraftStatus    @default(PENDING)
   result      Json?
   expiresAt   DateTime
   committedAt DateTime?
-  createdAt   DateTime       @default(now())
+  createdAt   DateTime          @default(now())
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 

@@ -64,6 +64,36 @@ export function draftExpiry(now: Date = new Date()): Date {
 }
 
 /**
+ * Propriétaire d'un brouillon : la clé MCP qui l'a proposé, ou l'administrateur connecté
+ * qui l'a préparé depuis l'assistant d'inscription.
+ *
+ * Deux genres distincts plutôt qu'un identifiant nu : un `userId` et un `keyId` ne se
+ * comparent pas, et une clé MCP de l'utilisateur X ne doit pas engager un brouillon que X a
+ * préparé dans le navigateur — ni l'inverse. Le genre fait partie de la condition du verrou.
+ */
+export type DraftOwner =
+  | { kind: 'MCP_KEY'; keyId: string }
+  | { kind: 'ADMIN_SESSION'; userId: string }
+
+export type DraftOwnerColumns = {
+  ownerKind: DraftOwner['kind']
+  keyId: string | null
+  userId: string | null
+}
+
+/** Colonnes persistées d'un propriétaire, exclusives selon le genre. */
+export function ownerColumns(owner: DraftOwner): DraftOwnerColumns {
+  return owner.kind === 'MCP_KEY'
+    ? { ownerKind: 'MCP_KEY', keyId: owner.keyId, userId: null }
+    : { ownerKind: 'ADMIN_SESSION', keyId: null, userId: owner.userId }
+}
+
+export function ownsDraft(draft: DraftOwnerColumns, owner: DraftOwner): boolean {
+  if (draft.ownerKind !== owner.kind) return false
+  return owner.kind === 'MCP_KEY' ? draft.keyId === owner.keyId : draft.userId === owner.userId
+}
+
+/**
  * Un refus nommé champ par champ, jamais un `validationError` opaque.
  *
  * Un modèle de vision doit pouvoir corriger sa lecture d'un chiffre ou d'un libellé de
