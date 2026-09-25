@@ -1163,6 +1163,7 @@
           "unavailable": "Online payment is not configured yet.",
           "noBalance": "This family has no outstanding balance.",
           "paymentInProgress": "An online payment is already being confirmed. Try again in a few minutes.",
+          "checkoutInProgress": "An online payment is already being opened for this family. Try again in a moment.",
           "settled": "Your family is up to date.",
           "error": "Unable to start payment.",
           "returned": "Your payment was submitted. History will update after bank confirmation.",

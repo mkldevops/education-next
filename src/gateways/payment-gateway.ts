@@ -1,5 +1,6 @@
 import type { PaymentMethod, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
+import { tryAcquireAdvisoryLock } from './advisory-lock'
 
 type PaymentData = {
   familyId: string
@@ -37,6 +38,19 @@ export const paymentGateway = {
       FOR NO KEY UPDATE`
     return rows.length === 1
   },
+
+  /**
+   * Réserve l'ouverture d'une session Checkout de la famille jusqu'à la fin de `tx`.
+   *
+   * Verrou consultatif distinct de `lockFamilyForPayment` : il est tenu pendant les appels
+   * Stripe, et ne doit donc bloquer ni la saisie manuelle ni le webhook qui encaisse. Les
+   * deux verrous ne sont jamais pris dans la même transaction : aucun interblocage possible.
+   * Sans attente : une demande concurrente échoue au lieu d'immobiliser une connexion.
+   *
+   * Rend `false` quand une autre ouverture est en cours pour cette famille.
+   */
+  tryLockFamilyCheckout: (tx: Prisma.TransactionClient, schoolId: string, familyId: string) =>
+    tryAcquireAdvisoryLock(tx, `checkout:${schoolId}:${familyId}`),
 
   /** Écrit une ligne par inscription, dans la transaction qui a relu le solde. */
   createForFamily: async (
