@@ -797,8 +797,10 @@ roles in `src/lib/impersonation.ts`; the guard is `checkImpersonation` in `src/d
 - **Every impersonation leaves a durable trace** in `ImpersonationLog`: actor and target (id and
   email snapshot), borrowed session id, IP, user agent, start and planned expiry. The row is written
   in the same request, before any cookie is set; if the write fails the borrowed session is deleted
-  and the impersonation refused. Stop and sign-out of the borrowed session set `endedAt`; a session
-  that expires or is revoked otherwise keeps `endedAt` null and `expiresAt` bounds it. The table has
+  and the impersonation refused. Stop and sign-out of the borrowed session set `endedAt`. A failure
+  to close the row on sign-out is logged and never blocks the sign-out: the borrowed session is
+  still deleted. A session that expires, is revoked otherwise, or whose sign-out could not close the
+  row keeps `endedAt` null and `expiresAt` bounds it. The table has
   no foreign key to `User`, so the trace outlives an account deletion.
 
 ## Periods
