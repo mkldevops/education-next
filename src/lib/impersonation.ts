@@ -30,6 +30,7 @@ export const IMPERSONATION_LOCKED_AUTH_PATHS: ReadonlySet<string> = new Set([
   '/change-password',
   '/set-password',
   '/change-email',
+  '/update-user',
   '/delete-user',
   '/delete-user/callback',
   '/revoke-session',

@@ -787,13 +787,13 @@ roles in `src/lib/impersonation.ts`; the guard is `checkImpersonation` in `src/d
   as the target's own (`createdBy`, `paymentInitiatedBy`). The dashboard shows a banner with
   « Revenir à mon compte » for the whole borrowed session.
 - **Credentials and the account itself are locked** (`impersonating`, tested by `isImpersonating` in
-  `src/domain/user.ts`): passkey registration and deletion, email change, password change, account
-  deletion, session revocation and MCP key creation or revocation. The server actions return the
-  typed discriminant, shown as `errors.impersonating` in settings; the plugin's `before` hook also
-  answers 403 `impersonating` on the native Better Auth routes listed in
-  `IMPERSONATION_LOCKED_AUTH_PATHS` (change/set password, change email, delete user, revoke
-  session(s), link/unlink social, access and refresh tokens), for HTTP and `auth.api` alike. Name,
-  bio and image (`updateProfileAction`) stay editable.
+  `src/domain/user.ts`): passkey registration and deletion, profile update (`updateProfileAction`:
+  name, bio, image), email change, password change, account deletion, session revocation and MCP
+  key creation or revocation. The server actions return the typed discriminant, shown as
+  `errors.impersonating` in settings; the plugin's `before` hook also answers 403 `impersonating`
+  on the native Better Auth routes listed in `IMPERSONATION_LOCKED_AUTH_PATHS` (change/set password,
+  change email, update user, delete user, revoke session(s), link/unlink social, access and refresh
+  tokens), for HTTP and `auth.api` alike.
 - **Every impersonation leaves a durable trace** in `ImpersonationLog`: actor and target (id and
   email snapshot), borrowed session id, IP, user agent, start and planned expiry. The row is written
   in the same request, before any cookie is set; if the write fails the borrowed session is deleted
