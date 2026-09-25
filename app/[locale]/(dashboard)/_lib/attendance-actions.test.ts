@@ -383,6 +383,23 @@ describe('attendance actions', () => {
     db.attendanceSession.updateMany.mockResolvedValue({ count: 1 })
     expect(await actions.validateAttendanceAction({ sessionId: id })).toBe('OK')
     expect(db.attendanceSession.updateMany.mock.calls[0][0].data.updatedById).toBe('u')
+    expect(db.attendanceSession.updateMany.mock.calls[0][0].where).toEqual({
+      id,
+      schoolId: 's',
+      status: { in: ['DRAFT', 'VALIDATED'] },
+    })
+  })
+
+  it('refuses validating a session cancelled after it was read', async () => {
+    db.attendanceSession.findUnique.mockResolvedValue({
+      schoolId: 's',
+      classPeriodId: id,
+      status: 'DRAFT',
+    })
+    db.attendanceSession.updateMany.mockResolvedValue({ count: 0 })
+    await expect(actions.validateAttendanceAction({ sessionId: id })).resolves.toBe(
+      'invalidTransition'
+    )
   })
 
   it('includes a student assigned to the class during the occurrence day', async () => {
