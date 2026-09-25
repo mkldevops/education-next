@@ -155,6 +155,25 @@ export async function changeEmailAction(data: { newEmail: string }): Promise<Act
   }
 }
 
+/**
+ * « Plus tard » sur la proposition Google / clé d'accès du tableau de bord. Le refus est
+ * durable et suit l'utilisateur sur tous ses appareils, d'où la colonne plutôt qu'un cookie.
+ * Passe par la garde des identifiants : un emprunt ne doit pas éteindre la proposition à la
+ * place de la cible, pas plus qu'il ne peut lui enregistrer une passkey.
+ */
+export async function dismissSignInUpgradeAction(): Promise<ActionResult<null>> {
+  const guard = await guardCredentialOperation(await headers())
+  if (!guard.ok) return { success: false, error: guard.error }
+
+  await db.user.update({
+    where: { id: guard.userId },
+    data: { signInUpgradeDismissedAt: new Date() },
+    select: { id: true },
+  })
+
+  return { success: true, data: null }
+}
+
 export async function revokeSessionAction(token: string): Promise<ActionResult<null>> {
   const requestHeaders = await headers()
   const guard = await guardCredentialOperation(requestHeaders)

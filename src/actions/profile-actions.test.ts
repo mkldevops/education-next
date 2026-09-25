@@ -5,10 +5,11 @@ const changePasswordMock = vi.fn()
 const changeEmailMock = vi.fn()
 const revokeSessionMock = vi.fn()
 const deleteProfileMock = vi.fn()
+const userUpdateMock = vi.fn()
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
 vi.mock('next-intl/server', () => ({ getTranslations: async () => (key: string) => key }))
-vi.mock('@/lib/db', () => ({ db: {} }))
+vi.mock('@/lib/db', () => ({ db: { user: { update: userUpdateMock } } }))
 vi.mock('@/lib/platform-email', () => ({ sendPlatformEmail: vi.fn() }))
 vi.mock('@/gateways/prisma-profile-gateway', () => ({ PrismaProfileGateway: class {} }))
 vi.mock('@/use-cases/commands/delete-profile', () => ({ deleteProfile: deleteProfileMock }))
@@ -24,8 +25,13 @@ vi.mock('@/lib/auth', () => ({
   },
 }))
 
-const { changeEmailAction, changePasswordAction, deleteProfileAction, revokeSessionAction } =
-  await import('./profile-actions')
+const {
+  changeEmailAction,
+  changePasswordAction,
+  deleteProfileAction,
+  dismissSignInUpgradeAction,
+  revokeSessionAction,
+} = await import('./profile-actions')
 
 const ownSession = {
   user: { id: 'user-1', email: 'parent@school.test' },
@@ -72,6 +78,32 @@ describe('credential operations while impersonating', () => {
   it('refuses a session revocation before Better Auth is called', async () => {
     expect(await revokeSessionAction('token-1')).toEqual(impersonating)
     expect(revokeSessionMock).not.toHaveBeenCalled()
+  })
+
+  it('refuses to dismiss the sign-in upgrade prompt on behalf of the target', async () => {
+    expect(await dismissSignInUpgradeAction()).toEqual(impersonating)
+    expect(userUpdateMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('dismissSignInUpgradeAction', () => {
+  it('records the dismissal on the authenticated user only', async () => {
+    const before = Date.now()
+
+    expect(await dismissSignInUpgradeAction()).toEqual({ success: true, data: null })
+
+    expect(userUpdateMock).toHaveBeenCalledTimes(1)
+    const call = userUpdateMock.mock.calls[0][0]
+    expect(call.where).toEqual({ id: 'user-1' })
+    expect(call.data.signInUpgradeDismissedAt).toBeInstanceOf(Date)
+    expect(call.data.signInUpgradeDismissedAt.getTime()).toBeGreaterThanOrEqual(before)
+  })
+
+  it('answers unauthorized without a session and writes nothing', async () => {
+    getSessionMock.mockResolvedValue(null)
+
+    expect(await dismissSignInUpgradeAction()).toEqual({ success: false, error: 'unauthorized' })
+    expect(userUpdateMock).not.toHaveBeenCalled()
   })
 })
 

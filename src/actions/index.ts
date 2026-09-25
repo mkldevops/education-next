@@ -9,6 +9,7 @@ export {
   changeEmailAction,
   changePasswordAction,
   deleteProfileAction,
+  dismissSignInUpgradeAction,
   revokeSessionAction,
   updateProfileAction,
 } from './profile-actions'
