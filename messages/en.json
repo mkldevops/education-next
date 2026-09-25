@@ -2442,8 +2442,45 @@
         "warning": "Copy it now: it will never be shown again.",
         "keyLabel": "Key",
         "copyKey": "Copy the key",
-        "commandLabel": "Setup command",
-        "copyCommand": "Copy the command"
+        "clientsLabel": "Connect a client",
+        "siteLabel": "Site: {host}. Every example points to this site only.",
+        "urlLabel": "MCP server URL",
+        "copyUrl": "Copy the URL",
+        "status": {
+          "ready": "Available with this key",
+          "headersBeta": "Depends on your account — request headers in beta",
+          "oauthRequired": "Requires OAuth — integration in progress"
+        },
+        "clients": {
+          "claudeCode": {
+            "label": "Claude Code",
+            "commandLabel": "Command to run in a terminal",
+            "copyCommand": "Copy the Claude Code command"
+          },
+          "codex": {
+            "label": "Codex",
+            "configLabel": "Add to ~/.codex/config.toml",
+            "copyConfig": "Copy the Codex configuration",
+            "tokenLabel": "Key to put in the {variable} variable, for instance in your shell profile",
+            "copyToken": "Copy the Codex variable",
+            "webNote": "This configuration serves Codex CLI, the IDE extension and the desktop app. ChatGPT on the web does not read it."
+          },
+          "claudeWeb": {
+            "label": "Claude Web",
+            "step1": "In Claude, open Customize › Connectors.",
+            "step2": "Click \"+\" then \"Add custom connector\", and name it {name}.",
+            "step3": "Paste the URL below.",
+            "step4": "If a \"Request headers\" section appears: choose \"No sign-in\" authentication, then the x-api-key header with the key above.",
+            "note": "Without the \"Request headers\" section (a beta limited to some accounts), Claude Web accepts OAuth only and this key is not enough. On a Team or Enterprise plan the header is shared by the whole organization: do not put your personal key there."
+          },
+          "chatgpt": {
+            "label": "ChatGPT",
+            "step1": "In ChatGPT, turn on Settings › Security and login › Developer mode.",
+            "step2": "Open Plugins, click \"+\" and name the connection {name}.",
+            "step3": "Paste the URL below: it targets this site and no other.",
+            "note": "ChatGPT connects through OAuth and does not accept an API key: this key is not enough. The ChatGPT personal plugin is being integrated."
+          }
+        }
       },
       "list": {
         "title": "Your keys",

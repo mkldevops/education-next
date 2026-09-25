@@ -2443,8 +2443,45 @@
         "warning": "Copiez-la maintenant : elle ne sera plus jamais affichée.",
         "keyLabel": "Clé",
         "copyKey": "Copier la clé",
-        "commandLabel": "Commande de configuration",
-        "copyCommand": "Copier la commande"
+        "clientsLabel": "Connecter un client",
+        "siteLabel": "Site : {host}. Chaque exemple pointe vers ce site uniquement.",
+        "urlLabel": "URL du serveur MCP",
+        "copyUrl": "Copier l'URL",
+        "status": {
+          "ready": "Disponible avec cette clé",
+          "headersBeta": "Selon votre compte — en-têtes de requête en bêta",
+          "oauthRequired": "Nécessite OAuth — intégration en cours"
+        },
+        "clients": {
+          "claudeCode": {
+            "label": "Claude Code",
+            "commandLabel": "Commande à lancer dans un terminal",
+            "copyCommand": "Copier la commande Claude Code"
+          },
+          "codex": {
+            "label": "Codex",
+            "configLabel": "À ajouter dans ~/.codex/config.toml",
+            "copyConfig": "Copier la configuration Codex",
+            "tokenLabel": "Clé à placer dans la variable {variable}, par exemple dans le profil de votre shell",
+            "copyToken": "Copier la variable Codex",
+            "webNote": "Cette configuration sert à Codex CLI, à l'extension IDE et à l'application de bureau. ChatGPT sur le web ne la lit pas."
+          },
+          "claudeWeb": {
+            "label": "Claude Web",
+            "step1": "Dans Claude, ouvrez Personnaliser › Connecteurs.",
+            "step2": "Cliquez sur « + » puis « Ajouter un connecteur personnalisé », nommez-le {name}.",
+            "step3": "Collez l'URL ci-dessous.",
+            "step4": "Si la section « En-têtes de requête » apparaît : choisissez l'authentification « Sans connexion », puis l'en-tête x-api-key avec la clé ci-dessus.",
+            "note": "Sans la section « En-têtes de requête » (bêta réservée à certains comptes), Claude Web n'accepte qu'OAuth et cette clé ne suffit pas. Sur un plan Team ou Enterprise, l'en-tête est partagé par toute l'organisation : n'y mettez pas votre clé personnelle."
+          },
+          "chatgpt": {
+            "label": "ChatGPT",
+            "step1": "Dans ChatGPT, activez Paramètres › Sécurité et connexion › Mode développeur.",
+            "step2": "Ouvrez Plugins, cliquez sur « + » et nommez la connexion {name}.",
+            "step3": "Collez l'URL ci-dessous : elle désigne ce site et aucun autre.",
+            "note": "ChatGPT se connecte par OAuth et n'accepte pas de clé API : cette clé ne suffit pas. Le plugin personnel ChatGPT est en cours d'intégration."
+          }
+        }
       },
       "list": {
         "title": "Vos clés",
