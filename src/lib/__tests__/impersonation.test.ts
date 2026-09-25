@@ -15,7 +15,7 @@ const PASSWORD = 'password-1234'
 
 type Tables = Record<string, Record<string, unknown>[]>
 
-function setup(options: { failStart?: boolean } = {}) {
+function setup(options: { failStart?: boolean; failEnd?: boolean } = {}) {
   const tables: Tables = { user: [], session: [], account: [], verification: [] }
   const superAdmins = new Set<string>()
   const starts: ImpersonationStart[] = []
@@ -32,6 +32,7 @@ function setup(options: { failStart?: boolean } = {}) {
       starts.push(entry)
     }),
     recordEnd: vi.fn(async (sessionId: string) => {
+      if (options.failEnd) throw new Error('database down')
       ends.push(sessionId)
     }),
   }
@@ -123,6 +124,7 @@ describe('impersonation lock on Better Auth routes', () => {
         '/revoke-sessions',
         '/set-password',
         '/unlink-account',
+        '/update-user',
       ].sort()
     )
   })
@@ -145,6 +147,16 @@ describe('impersonation lock on Better Auth routes', () => {
 
     const code = await refusal(() =>
       ctx.auth.api.changeEmail({ headers: borrowed, body: { newEmail: 'attacker@evil.test' } })
+    )
+
+    expect(code).toBe('impersonating')
+  })
+
+  it('refuses a profile update from a borrowed session', async () => {
+    const { borrowed } = await impersonate(ctx)
+
+    const code = await refusal(() =>
+      ctx.auth.api.updateUser({ headers: borrowed, body: { name: 'Renamed' } })
     )
 
     expect(code).toBe('impersonating')
@@ -258,6 +270,20 @@ describe('impersonation trace', () => {
     await ctx.auth.api.signOut({ headers: borrowed })
 
     expect(ctx.ends).toEqual([sessionId])
+  })
+
+  it('still removes the borrowed session when the trace cannot be closed on sign-out', async () => {
+    ctx = setup({ failEnd: true })
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { borrowed } = await impersonate(ctx)
+    const sessionId = ctx.starts[0].sessionId
+
+    await ctx.auth.api.signOut({ headers: borrowed })
+
+    expect(ctx.log.recordEnd).toHaveBeenCalledWith(sessionId)
+    expect(ctx.tables.session.some((s) => s.id === sessionId)).toBe(false)
+    expect(error).toHaveBeenCalled()
+    error.mockRestore()
   })
 
   it('does not touch the trace when an ordinary session signs out', async () => {

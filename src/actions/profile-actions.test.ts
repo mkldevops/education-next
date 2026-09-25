@@ -6,6 +6,7 @@ const changeEmailMock = vi.fn()
 const revokeSessionMock = vi.fn()
 const deleteProfileMock = vi.fn()
 const userUpdateMock = vi.fn()
+const updateProfileMock = vi.fn()
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
 vi.mock('next-intl/server', () => ({ getTranslations: async () => (key: string) => key }))
@@ -13,7 +14,7 @@ vi.mock('@/lib/db', () => ({ db: { user: { update: userUpdateMock } } }))
 vi.mock('@/lib/platform-email', () => ({ sendPlatformEmail: vi.fn() }))
 vi.mock('@/gateways/prisma-profile-gateway', () => ({ PrismaProfileGateway: class {} }))
 vi.mock('@/use-cases/commands/delete-profile', () => ({ deleteProfile: deleteProfileMock }))
-vi.mock('@/use-cases/commands/update-profile', () => ({ updateProfile: vi.fn() }))
+vi.mock('@/use-cases/commands/update-profile', () => ({ updateProfile: updateProfileMock }))
 vi.mock('@/lib/auth', () => ({
   auth: {
     api: {
@@ -31,6 +32,7 @@ const {
   deleteProfileAction,
   dismissSignInUpgradeAction,
   revokeSessionAction,
+  updateProfileAction,
 } = await import('./profile-actions')
 
 const ownSession = {
@@ -47,6 +49,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   getSessionMock.mockResolvedValue(ownSession)
   deleteProfileMock.mockResolvedValue('OK')
+  updateProfileMock.mockResolvedValue('OK')
 })
 
 describe('credential operations while impersonating', () => {
@@ -80,6 +83,11 @@ describe('credential operations while impersonating', () => {
     expect(revokeSessionMock).not.toHaveBeenCalled()
   })
 
+  it('refuses the profile update before the use case runs', async () => {
+    expect(await updateProfileAction({ name: 'Renamed' })).toEqual(impersonating)
+    expect(updateProfileMock).not.toHaveBeenCalled()
+  })
+
   it('refuses to dismiss the sign-in upgrade prompt on behalf of the target', async () => {
     expect(await dismissSignInUpgradeAction()).toEqual(impersonating)
     expect(userUpdateMock).not.toHaveBeenCalled()
@@ -108,6 +116,11 @@ describe('dismissSignInUpgradeAction', () => {
 })
 
 describe('credential operations on an ordinary session', () => {
+  it('updates the authenticated profile', async () => {
+    expect(await updateProfileAction({ name: 'Renamed' })).toEqual({ success: true, data: null })
+    expect(updateProfileMock).toHaveBeenCalledWith('user-1', { name: 'Renamed' }, expect.anything())
+  })
+
   it('deletes the authenticated account', async () => {
     expect(await deleteProfileAction()).toEqual({ success: true, data: null })
     expect(deleteProfileMock).toHaveBeenCalledWith('user-1', expect.anything())
@@ -130,7 +143,12 @@ describe('credential operations on an ordinary session', () => {
 
     expect(await deleteProfileAction()).toEqual({ success: false, error: 'unauthorized' })
     expect(await revokeSessionAction('token-1')).toEqual({ success: false, error: 'unauthorized' })
+    expect(await updateProfileAction({ name: 'Renamed' })).toEqual({
+      success: false,
+      error: 'unauthorized',
+    })
     expect(deleteProfileMock).not.toHaveBeenCalled()
+    expect(updateProfileMock).not.toHaveBeenCalled()
     expect(revokeSessionMock).not.toHaveBeenCalled()
   })
 })

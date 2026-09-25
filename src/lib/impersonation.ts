@@ -30,6 +30,7 @@ export const IMPERSONATION_LOCKED_AUTH_PATHS: ReadonlySet<string> = new Set([
   '/change-password',
   '/set-password',
   '/change-email',
+  '/update-user',
   '/delete-user',
   '/delete-user/callback',
   '/revoke-session',
@@ -87,11 +88,20 @@ export const impersonation = (options: ImpersonationOptions) =>
         },
         {
           // Une déconnexion pendant l'emprunt supprime la session empruntée sans passer par
-          // `/admin/stop-impersonating` : la trace doit être close ici aussi.
+          // `/admin/stop-impersonating` : la trace doit être close ici aussi. Un échec de la
+          // trace ne bloque pas la déconnexion, sinon la session empruntée resterait active.
           matcher: (ctx) => ctx.path === '/sign-out',
           handler: createAuthMiddleware(async (ctx) => {
             const current = await getSessionFromCtx(ctx)
-            if (current && isImpersonating(current)) await options.log.recordEnd(current.session.id)
+            if (!current || !isImpersonating(current)) return
+            try {
+              await options.log.recordEnd(current.session.id)
+            } catch (error) {
+              console.error(
+                `[impersonation] recordEnd failed on sign-out ${current.session.id}`,
+                error
+              )
+            }
           }),
         },
       ],
