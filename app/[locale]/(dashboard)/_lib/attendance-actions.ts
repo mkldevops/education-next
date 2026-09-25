@@ -275,11 +275,17 @@ export async function validateAttendanceAction(input: unknown) {
   const resolved = await resolveOperableSession(parsed.data.sessionId)
   if (typeof resolved === 'string') return resolved
   const { actor } = resolved
+  // Conditional write: a session cancelled after `resolveOperableSession` read it is refused rather
+  // than silently revived. A VALIDATED session stays re-validatable after a correction.
   const updated = await db.attendanceSession.updateMany({
-    where: { id: parsed.data.sessionId, schoolId: actor.schoolId },
+    where: {
+      id: parsed.data.sessionId,
+      schoolId: actor.schoolId,
+      status: { in: ['DRAFT', 'VALIDATED'] },
+    },
     data: { status: 'VALIDATED', validatedAt: new Date(), updatedById: actor.userId },
   })
-  if (updated.count !== 1) return 'notFound' as const
+  if (updated.count !== 1) return 'invalidTransition' as const
   revalidateAttendance()
   return 'OK' as const
 }
