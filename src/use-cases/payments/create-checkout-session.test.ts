@@ -11,7 +11,7 @@ const dbMock = {
   paymentTransaction: txMock.paymentTransaction,
   $transaction: vi.fn(),
 }
-const lockFamilyCheckoutMock = vi.fn()
+const tryLockFamilyCheckoutMock = vi.fn()
 const sessionsCreateMock = vi.fn()
 const sessionsRetrieveMock = vi.fn()
 const sessionsExpireMock = vi.fn()
@@ -26,7 +26,7 @@ vi.mock('@/lib/stripe', () => ({ getStripeClient: getStripeClientMock }))
 vi.mock('./family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
 vi.mock('@/gateways/config-gateway', () => ({ configGateway: configGatewayMock }))
 vi.mock('@/gateways/payment-gateway', () => ({
-  paymentGateway: { lockFamilyCheckout: lockFamilyCheckoutMock },
+  paymentGateway: { tryLockFamilyCheckout: tryLockFamilyCheckoutMock },
 }))
 
 const { createCheckoutSession } = await import('./create-checkout-session')
@@ -59,7 +59,7 @@ describe('createCheckoutSession', () => {
       remainingAmountInCents: 12000,
     })
     dbMock.$transaction.mockImplementation((callback: (tx: unknown) => unknown) => callback(txMock))
-    lockFamilyCheckoutMock.mockResolvedValue(1)
+    tryLockFamilyCheckoutMock.mockResolvedValue(true)
     dbMock.paymentTransaction.create.mockResolvedValue({ id: 'transaction-1' })
     dbMock.paymentTransaction.update.mockResolvedValue({})
     dbMock.paymentTransaction.findMany.mockResolvedValue([])
@@ -101,10 +101,18 @@ describe('createCheckoutSession', () => {
   it('reads the balance only under the family checkout lock', async () => {
     await createCheckoutSession(input)
 
-    expect(lockFamilyCheckoutMock).toHaveBeenCalledWith(txMock, schoolId, 'family-1')
-    expect(lockFamilyCheckoutMock.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(tryLockFamilyCheckoutMock).toHaveBeenCalledWith(txMock, schoolId, 'family-1')
+    expect(tryLockFamilyCheckoutMock.mock.invocationCallOrder[0]).toBeLessThan(
       getFamilyBalanceMock.mock.invocationCallOrder[0]
     )
+  })
+
+  it('opens nothing while another checkout of the family is being opened', async () => {
+    tryLockFamilyCheckoutMock.mockResolvedValue(false)
+
+    expect(await createCheckoutSession(input)).toBe('checkoutInProgress')
+    expect(getFamilyBalanceMock).not.toHaveBeenCalled()
+    expect(sessionsCreateMock).not.toHaveBeenCalled()
   })
 
   it('prices the checkout on the cumulated family balance', async () => {

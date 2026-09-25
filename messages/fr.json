@@ -1164,6 +1164,7 @@
           "unavailable": "Le paiement en ligne n'est pas encore configuré.",
           "noBalance": "Cette famille n'a aucun solde à régler.",
           "paymentInProgress": "Un paiement en ligne est déjà en cours de confirmation. Réessayez dans quelques minutes.",
+          "checkoutInProgress": "Un paiement en ligne est déjà en cours d'ouverture pour cette famille. Réessayez dans un instant.",
           "settled": "Votre famille est à jour.",
           "error": "Impossible de démarrer le paiement.",
           "returned": "Votre paiement a été transmis. L'historique sera actualisé après confirmation bancaire.",

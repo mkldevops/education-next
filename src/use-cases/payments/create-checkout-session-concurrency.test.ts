@@ -107,7 +107,7 @@ describe.skipIf(!databaseUrl)('createCheckoutSession concurrency', () => {
     await raw.$disconnect()
   }, 60_000)
 
-  it('leaves a single payable session after two simultaneous checkouts', async () => {
+  it('opens a single payable session for two simultaneous checkouts', async () => {
     const checkout = {
       schoolId,
       familyId,
@@ -122,10 +122,9 @@ describe.skipIf(!databaseUrl)('createCheckoutSession concurrency', () => {
       createCheckoutSession(checkout, paymentsEnabled),
     ])
 
-    expect(results).toEqual([
-      expect.objectContaining({ result: 'OK' }),
-      expect.objectContaining({ result: 'OK' }),
-    ])
+    expect(results).toEqual(
+      expect.arrayContaining([expect.objectContaining({ result: 'OK' }), 'checkoutInProgress'])
+    )
     const open = [...sessions.values()].filter((session) => session.status === 'open')
     expect(open).toHaveLength(1)
     const pending = await raw.paymentTransaction.findMany({

@@ -22,17 +22,19 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
   const stripe = getStripeClient()
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return 'notConfigured' as const
 
-  // Tout passe par `tx` : une seule connexion par demande, même quand plusieurs attendent le
-  // verrou. Si la transaction échoue après la création chez Stripe, la ligne locale disparaît
+  // Tout passe par `tx` : une seule connexion par demande. READ COMMITTED explicite : chaque
+  // requête voit la session que l'ouverture précédente a validée. Si la transaction échoue après la création chez Stripe, la ligne locale disparaît
   // au rollback : la session est alors expirée pour ne jamais rester payable sans elle.
   const opened: OpenedSession = {}
   try {
     return await db.$transaction(
       async (tx) => {
-        await paymentGateway.lockFamilyCheckout(tx, input.schoolId, input.familyId)
+        if (!(await paymentGateway.tryLockFamilyCheckout(tx, input.schoolId, input.familyId))) {
+          return 'checkoutInProgress' as const
+        }
         return openCheckoutSession(tx, stripe, input, opened)
       },
-      { timeout: CHECKOUT_LOCK_TIMEOUT_MS }
+      { timeout: CHECKOUT_LOCK_TIMEOUT_MS, isolationLevel: 'ReadCommitted' }
     )
   } catch (error) {
     if (opened.sessionId) {
@@ -46,7 +48,7 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
   }
 }
 
-/** Couvre plusieurs allers-retours Stripe, plus l'attente d'une création concurrente. */
+/** Couvre plusieurs allers-retours Stripe. */
 const CHECKOUT_LOCK_TIMEOUT_MS = 60_000
 
 type OpenedSession = { sessionId?: string }

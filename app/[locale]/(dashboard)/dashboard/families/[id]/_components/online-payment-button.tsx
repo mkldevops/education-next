@@ -52,6 +52,8 @@ export function OnlinePaymentButton({ amount, configured, locale }: Props) {
 }
 
 function errorKey(result: unknown) {
-  if (result === 'noBalance' || result === 'paymentInProgress') return result
+  if (result === 'noBalance' || result === 'paymentInProgress' || result === 'checkoutInProgress') {
+    return result
+  }
   return result === 'notConfigured' ? 'unavailable' : 'error'
 }
