@@ -184,6 +184,10 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  /// « Plus tard » sur la proposition Google / clé d'accès après connexion par mot de passe.
+  /// En base et non en cookie : le refus doit suivre l'utilisateur sur tous ses appareils.
+  signInUpgradeDismissedAt DateTime?
+
   sessions                  Session[]
   accounts                  Account[]
   families                  UserFamily[]

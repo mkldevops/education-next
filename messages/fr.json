@@ -2110,6 +2110,29 @@
       "stopping": "Retour…",
       "error": "Le retour à votre compte a échoué, reconnectez-vous"
     },
+    "signInUpgrade": {
+      "title": "Connectez-vous plus vite, plus sûrement",
+      "descriptionGoogle": "Vous vous connectez avec un mot de passe. Votre adresse est une adresse Gmail : liez votre compte Google pour vous connecter en un clic, ou créez une clé d'accès (empreinte, Face ID ou clé matérielle).",
+      "descriptionPasskey": "Vous vous connectez avec un mot de passe. Créez une clé d'accès pour vous connecter avec votre empreinte, Face ID ou une clé matérielle, sans le saisir.",
+      "continueWithGoogle": "Continuer avec Google",
+      "googlePending": "Redirection vers Google…",
+      "or": "ou",
+      "passkeyName": "Nom de la clé d'accès",
+      "passkeyDefaultName": "Ma clé d'accès",
+      "createPasskey": "Créer une clé d'accès",
+      "passkeyPending": "Création en cours…",
+      "later": "Plus tard",
+      "googleLinked": "Compte Google lié : vous pouvez maintenant vous connecter avec Google",
+      "passkeyRegistered": "Clé d'accès créée : vous pouvez maintenant vous connecter sans mot de passe",
+      "errors": {
+        "cancelled": "Création annulée ou refusée par le navigateur, vous pouvez réessayer",
+        "passkeyFailed": "La création de la clé d'accès a échoué, réessayez",
+        "nameRequired": "Indiquez un nom pour la clé d'accès",
+        "linkFailed": "La liaison avec Google a échoué, réessayez",
+        "signInDisabled": "Cette méthode de connexion a été désactivée sur la plateforme",
+        "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte."
+      }
+    },
     "eventAnnouncement": {
       "message": "{title} — {date}",
       "dismiss": "Masquer le bandeau"

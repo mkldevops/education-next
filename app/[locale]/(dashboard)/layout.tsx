@@ -20,6 +20,7 @@ import { ACTIVE_SCHOOL_COOKIE, getAuthorizedSchools, getSchoolContext } from '@/
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 import { RememberActiveSchool } from './_components/remember-active-school'
+import { SignInUpgradeGate } from './_components/sign-in-upgrade-gate'
 
 function readConfigFlag(schoolId: string, name: string) {
   return db.config
@@ -111,6 +112,9 @@ export default async function DashboardLayout({ children, params }: Props) {
         <div className="z-10 shrink-0">
           <Suspense fallback={null}>
             <ImpersonationBanner />
+          </Suspense>
+          <Suspense fallback={null}>
+            <SignInUpgradeGate />
           </Suspense>
           <Suspense fallback={null}>
             <EventAnnouncementBanner />

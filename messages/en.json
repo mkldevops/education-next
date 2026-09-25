@@ -2109,6 +2109,29 @@
       "stopping": "Returning…",
       "error": "Returning to your account failed, please sign in again"
     },
+    "signInUpgrade": {
+      "title": "Sign in faster and more safely",
+      "descriptionGoogle": "You sign in with a password. Your address is a Gmail address: link your Google account to sign in with one click, or create a passkey (fingerprint, Face ID or a hardware key).",
+      "descriptionPasskey": "You sign in with a password. Create a passkey to sign in with your fingerprint, Face ID or a hardware key, without typing it.",
+      "continueWithGoogle": "Continue with Google",
+      "googlePending": "Redirecting to Google…",
+      "or": "or",
+      "passkeyName": "Passkey name",
+      "passkeyDefaultName": "My passkey",
+      "createPasskey": "Create a passkey",
+      "passkeyPending": "Creating…",
+      "later": "Later",
+      "googleLinked": "Google account linked: you can now sign in with Google",
+      "passkeyRegistered": "Passkey created: you can now sign in without a password",
+      "errors": {
+        "cancelled": "Creation cancelled or refused by the browser, you can try again",
+        "passkeyFailed": "Creating the passkey failed, please try again",
+        "nameRequired": "Enter a name for the passkey",
+        "linkFailed": "Linking with Google failed, please try again",
+        "signInDisabled": "This sign-in method has been disabled on the platform",
+        "impersonating": "Unavailable while signed in as another user: return to your own account."
+      }
+    },
     "eventAnnouncement": {
       "message": "{title} — {date}",
       "dismiss": "Dismiss the banner"

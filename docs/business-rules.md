@@ -301,6 +301,46 @@ no platform flag. Better Auth's `resetPassword` handler creates the missing `cre
 when none exists instead of requiring one, so a Google-only account can request the reset e-mail and
 set a password from it after the flag is off, exactly as the confirmation names.
 
+### Proposing a stronger method after a password sign-in
+
+A user who only holds a password is offered a stronger method once they reach the dashboard. The
+offer is a dialog mounted in the `(dashboard)` layout, decided server-side by `SignInUpgradeGate`
+(`app/[locale]/(dashboard)/_components/sign-in-upgrade-gate.tsx`) from one `User` read (`google`
+`Account` rows, passkey count, `signInUpgradeDismissedAt`) and the two sign-in flags, and rendered by
+`SignInUpgradeDialog` (`src/features/auth/sign-in-upgrade-dialog.tsx`). The pure decision lives in
+`resolveSignInUpgradeOffer()` (`src/domain/sign-in-upgrade.ts`):
+
+- Nothing is offered once the user has dismissed the prompt, linked a Google account, or registered
+  a passkey. Each of those is read from the database, not from the session, so it holds on every
+  device.
+- Google is offered only to a `@gmail.com` address (`isGmailAddress()`, case-insensitive suffix
+  match — `googlemail.com` and Workspace domains are excluded on purpose: the offer must never
+  send a user to a Google account they do not have) and only while `isGoogleSignInAvailable()`
+  holds. Every other address is offered a passkey only.
+- A passkey is offered only while `isPasskeySignInEnabled()` holds **and** the browser exposes
+  WebAuthn (`browserSupportsWebAuthn()`, read after hydration). Without WebAuthn a non-Gmail user
+  sees no dialog at all, and that silence records nothing.
+- Impersonation shows nothing: the gate returns before reading the account when
+  `isImpersonating(session)` holds, because a passkey or Google link created in that state would
+  belong to the target. The server action keeps the same guard.
+
+"Later" is durable: `dismissSignInUpgradeAction` (`src/actions/profile-actions.ts`) stamps
+`User.signInUpgradeDismissedAt` for the session user only, behind `guardCredentialOperation`.
+Escape and a click outside the dialog are the same refusal as the button — all three go through the
+dialog primitive's close — so a user is never asked twice after any of them. A failed or cancelled
+WebAuthn ceremony, a failed passkey verification, or a failed Google link keeps the dialog open with
+an inline error and records nothing. A successful passkey registration closes the dialog with a
+notification and refreshes the route; a successful Google link returns to
+`/dashboard?signInUpgrade=google`, where the dialog shows the notification only if a `google`
+`Account` now exists, then strips the parameter. Either success leaves the timestamp untouched: the
+gate has nothing left to offer, so no refusal needs recording.
+
+Google linking reuses `linkSocial` from `@/lib/auth-client`, the same call as the account section of
+`/dashboard/settings`. Note that `src/lib/auth.ts` sets `account.accountLinking.allowDifferentEmails:
+true`, so Better Auth does **not** require the Google e-mail to match the account's e-mail during
+linking. The Gmail-only offer therefore narrows *who is invited*, not what linking accepts; the
+linking policy itself is an authentication boundary outside this feature.
+
 ## Roles and scope
 
 Roles are **per school**. `SchoolRole` is `ADMIN` or `PARENT` (`src/types/enums.ts`), carried by a
