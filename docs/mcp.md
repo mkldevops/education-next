@@ -1,6 +1,6 @@
 # MCP server
 
-`POST /api/mcp` exposes this application to an agent — Claude Code, Claude Desktop, Codex — over the
+`POST /api/mcp` exposes this application to an agent — Claude Code, Codex — over the
 Model Context Protocol. The intent is paper: an enrollment form, a class list, a payment receipt, a
 teacher sheet is photographed, and the agent turns it into typed tool calls.
 
@@ -38,26 +38,54 @@ Revoking takes effect on the next call: revocation, expiry, account deactivation
 
 ## Connecting a client
 
-Claude Code, one command — the tab prints it prefilled after a key is created:
+After a key is created, the tab offers four clients. Every snippet is built from the site the page is
+served from: the URL is `<origin>/api/mcp`, and the server name carries the host —
+`education-ecole-example-fr` for `https://ecole.example.fr` — so two deployments configured on the
+same machine stay distinct. The key appears only in the Claude Code command and the Codex variable,
+and disappears with the panel on reload or revocation.
+
+| Client | Status | Route |
+|---|---|---|
+| Claude Code | available with a key | local command |
+| Codex (CLI, IDE extension, desktop app) | available with a key | `~/.codex/config.toml` + environment variable |
+| Claude Web (claude.ai, Claude Desktop connectors) | request headers (beta, some accounts) or OAuth — not yet offered (#393) | custom connector |
+| ChatGPT | requires OAuth — not yet offered (#393) | personal plugin in developer mode |
+
+Claude Code, one command:
 
 ```bash
-claude mcp add --transport http education https://your-instance.example/api/mcp \
+claude mcp add --transport http education-ecole-example-fr https://ecole.example.fr/api/mcp \
   --header "Authorization: Bearer edu_mcp_…"
 ```
 
-Codex, or any client reading a JSON configuration:
+Codex reads a `[mcp_servers.<name>]` table. The key stays out of the file: `bearer_token_env_var`
+names the variable Codex sends as `Authorization: Bearer`.
 
-```json
-{
-  "mcpServers": {
-    "education": {
-      "type": "http",
-      "url": "https://your-instance.example/api/mcp",
-      "headers": { "Authorization": "Bearer edu_mcp_…" }
-    }
-  }
-}
+```toml
+[mcp_servers.education-ecole-example-fr]
+url = "https://ecole.example.fr/api/mcp"
+bearer_token_env_var = "EDUCATION_MCP_TOKEN_ECOLE_EXAMPLE_FR"
 ```
+
+```bash
+export EDUCATION_MCP_TOKEN_ECOLE_EXAMPLE_FR="edu_mcp_…"
+```
+
+The Codex CLI, IDE extension and Codex app share that file. ChatGPT on the web does not
+read it.
+
+Claude Web adds a server through **Customize › Connectors › + › Add custom connector**, with the
+site's `/api/mcp` URL. The connection is brokered from Anthropic's cloud. Where the dialog shows a
+**Request headers** section — a beta Anthropic opens to some accounts only — choose **No sign-in**
+and send the key as `x-api-key`. Without it, the connector authenticates through OAuth only, which
+the server does not offer yet (#393). On a Team or Enterprise plan a request header is one credential
+shared by the whole organization, so a personal key does not belong there. The tab shows the route
+and the URL, never the key inside a command.
+
+ChatGPT registers a personal plugin: **Settings › Security and login › Developer mode**, then
+**Plugins › +** with the site's `/api/mcp` URL, under a name that identifies the site. It also
+authenticates through OAuth; a pasted key is not a supported route. The account linking and the
+connection test are tracked in #393.
 
 A client that only speaks stdio goes through `mcp-remote`:
 

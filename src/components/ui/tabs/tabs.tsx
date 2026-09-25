@@ -12,9 +12,10 @@ export type Tab = {
 export type TabsProps = {
   tabs: Tab[]
   defaultIndex?: number
+  ariaLabel?: string
 }
 
-export function Tabs({ tabs, defaultIndex = 0 }: TabsProps) {
+export function Tabs({ tabs, defaultIndex = 0, ariaLabel }: TabsProps) {
   const [active, setActive] = useState(defaultIndex)
   const idPrefix = useId()
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
@@ -49,7 +50,12 @@ export function Tabs({ tabs, defaultIndex = 0 }: TabsProps) {
     <div>
       <div className="border-b border-alabaster-700">
         <div className="overflow-x-auto">
-          <div className="-mb-px flex gap-6 px-1" role="tablist" aria-orientation="horizontal">
+          <div
+            className="-mb-px flex gap-6 px-1"
+            role="tablist"
+            aria-label={ariaLabel}
+            aria-orientation="horizontal"
+          >
             {tabs.map((tab, i) => (
               <button
                 key={tab.label}

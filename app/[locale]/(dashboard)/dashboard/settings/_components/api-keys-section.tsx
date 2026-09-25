@@ -1,7 +1,6 @@
 'use client'
 
 import { Button, Card, Input, Label, Select } from '@peaklab/ui'
-import { Copy } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import {
@@ -14,6 +13,8 @@ import { formatDate, formatDateTime } from '@/lib/date'
 import { toast } from '@/lib/toast'
 import { createMcpApiKeyAction, revokeMcpApiKeyAction } from '../_lib/mcp-api-key-actions'
 import type { McpApiKeyView } from '../_lib/mcp-api-key-view'
+import { mcpSite } from '../_lib/mcp-client-setup'
+import { Field, McpClientGuides } from './mcp-client-guides'
 import { RevokeApiKeyDialog } from './revoke-api-key-dialog'
 
 type Props = {
@@ -42,10 +43,6 @@ export function ApiKeysSection({ keys }: Props) {
 
   const liveCount = rows.filter(isLive).length
   const atCapacity = liveCount >= MCP_KEY_MAX_PER_USER
-
-  const command = createdKey
-    ? `claude mcp add --transport http education ${origin()}/api/mcp --header "Authorization: Bearer ${createdKey}"`
-    : ''
 
   const copy = (value: string) => {
     navigator.clipboard.writeText(value).then(
@@ -146,10 +143,9 @@ export function ApiKeysSection({ keys }: Props) {
               copyLabel={t('created.copyKey')}
               onCopy={copy}
             />
-            <Field
-              label={t('created.commandLabel')}
-              value={command}
-              copyLabel={t('created.copyCommand')}
+            <McpClientGuides
+              site={mcpSite(window.location.origin)}
+              apiKey={createdKey}
               onCopy={copy}
             />
           </div>
@@ -195,39 +191,6 @@ export function ApiKeysSection({ keys }: Props) {
           </ul>
         )}
       </Card>
-    </div>
-  )
-}
-
-function origin() {
-  return typeof window === 'undefined' ? '' : window.location.origin
-}
-
-type FieldProps = {
-  label: string
-  value: string
-  copyLabel: string
-  onCopy: (value: string) => void
-}
-
-function Field({ label, value, copyLabel, onCopy }: FieldProps) {
-  return (
-    <div>
-      <p className="text-xs font-medium text-graphite-600">{label}</p>
-      <div className="mt-1 flex items-start gap-2">
-        <code className="min-w-0 flex-1 break-all rounded bg-alabaster-900 px-3 py-2 font-mono text-xs text-graphite">
-          {value}
-        </code>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label={copyLabel}
-          onClick={() => onCopy(value)}
-        >
-          <Copy className="h-4 w-4" aria-hidden="true" />
-        </Button>
-      </div>
     </div>
   )
 }

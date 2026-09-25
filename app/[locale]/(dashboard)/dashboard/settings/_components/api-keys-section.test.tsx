@@ -233,4 +233,94 @@ describe('ApiKeysSection', () => {
       await waitFor(() => expect(toastError).toHaveBeenCalledWith('error'))
     })
   })
+
+  describe('client guides', () => {
+    const writeText = vi.fn()
+    const secret = 'edu_mcp_secret'
+    const site = () => window.location.origin
+    const host = () => window.location.host.replace(/[^a-z0-9]+/g, '-')
+
+    const createKey = async () => {
+      createMcpApiKeyAction.mockResolvedValue({ key: secret, record: keyRow() })
+      render(<ApiKeysSection keys={[]} />)
+      fireEvent.change(screen.getByLabelText('nameLabel'), { target: { value: 'Poste admin' } })
+      fireEvent.click(screen.getByRole('button', { name: 'create' }))
+      await waitFor(() => expect(screen.getByText('created.title')).toBeInTheDocument())
+    }
+
+    beforeEach(() => {
+      writeText.mockResolvedValue(undefined)
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    })
+
+    it('offers the four clients as keyboard-reachable tabs', async () => {
+      await createKey()
+
+      const names = ['claudeCode', 'codex', 'claudeWeb', 'chatgpt'].map(
+        (client) => `clients.${client}.label`
+      )
+      expect(screen.getByRole('tablist', { name: 'clientsLabel' })).toBeInTheDocument()
+      for (const name of names) {
+        expect(screen.getByRole('tab', { name })).toBeInTheDocument()
+      }
+
+      const first = screen.getByRole('tab', { name: names[0] })
+      fireEvent.keyDown(first, { key: 'ArrowRight' })
+      expect(screen.getByRole('tab', { name: names[1] })).toHaveAttribute('aria-selected', 'true')
+    })
+
+    it('copies a Claude Code command aimed at the current site', async () => {
+      await createKey()
+
+      expect(screen.getByText('status.ready')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'clients.claudeCode.copyCommand' }))
+
+      await waitFor(() =>
+        expect(writeText).toHaveBeenCalledWith(
+          `claude mcp add --transport http education-${host()} ${site()}/api/mcp --header "Authorization: Bearer ${secret}"`
+        )
+      )
+      expect(toastSuccess).toHaveBeenCalledWith('copied')
+    })
+
+    it('keeps the key out of the Codex configuration and in its own variable', async () => {
+      await createKey()
+      fireEvent.click(screen.getByRole('tab', { name: 'clients.codex.label' }))
+      expect(screen.getByText('status.ready')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'clients.codex.copyConfig' }))
+      await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+      const config = writeText.mock.calls[0][0] as string
+      expect(config).toContain(`url = "${site()}/api/mcp"`)
+      expect(config).toContain('bearer_token_env_var')
+      expect(config).not.toContain(secret)
+
+      fireEvent.click(screen.getByRole('button', { name: 'clients.codex.copyToken' }))
+      await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
+      expect(writeText.mock.calls[1][0]).toContain(`="${secret}"`)
+      expect(screen.getByText('clients.codex.webNote')).toBeInTheDocument()
+    })
+
+    it.each([
+      ['claudeWeb', 'status.headersBeta', 4],
+      ['chatgpt', 'status.oauthRequired', 3],
+    ])(
+      'shows %s as a web procedure with status %s, without the key or a command',
+      async (client, status, steps) => {
+        await createKey()
+        fireEvent.click(screen.getByRole('tab', { name: `clients.${client}.label` }))
+
+        const panel = screen.getByRole('tabpanel', { name: `clients.${client}.label` })
+        expect(within(panel).getByText(status)).toBeInTheDocument()
+        expect(within(panel).getByText(`clients.${client}.note`)).toBeInTheDocument()
+        expect(within(panel).getAllByRole('listitem')).toHaveLength(steps)
+        expect(within(panel).getByText(`${site()}/api/mcp`)).toBeInTheDocument()
+        expect(within(panel).queryByText(new RegExp(secret))).not.toBeInTheDocument()
+        expect(within(panel).queryByText(/claude mcp add|mcp_servers/)).not.toBeInTheDocument()
+
+        fireEvent.click(screen.getByRole('button', { name: 'copyUrl' }))
+        await waitFor(() => expect(writeText).toHaveBeenCalledWith(`${site()}/api/mcp`))
+      }
+    )
+  })
 })
