@@ -390,6 +390,7 @@
           "errors": {
             "confirmationMismatch": "The name you typed does not match the family name",
             "deletionBlocked": "Records linked to this family prevent its deletion. Nothing was erased: archive it instead and report the problem.",
+            "deletionConflict": "Another operation on this family was in progress. Nothing was erased: try again.",
             "notFound": "Family not found",
             "validationError": "Check the information you entered"
           }

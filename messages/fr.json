@@ -391,6 +391,7 @@
           "errors": {
             "confirmationMismatch": "Le nom saisi ne correspond pas à celui de la famille",
             "deletionBlocked": "Des données liées à cette famille empêchent sa suppression. Rien n'a été effacé : archivez-la et signalez le problème.",
+            "deletionConflict": "Une autre opération sur cette famille était en cours. Rien n'a été effacé : réessayez.",
             "notFound": "Famille introuvable",
             "validationError": "Vérifiez les informations saisies"
           }

@@ -18,6 +18,7 @@ describe('deleteFamily', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     familyGatewayMock.findByIdIncludingArchived.mockResolvedValue({ id, name: 'Dupont' })
+    familyGatewayMock.deleteWithRelated.mockResolvedValue(true)
   })
 
   it('should fail validation with invalid input', async () => {
@@ -62,6 +63,26 @@ describe('deleteFamily', () => {
     const result = await deleteFamily({ schoolId: 'school-1', id, confirmation: 'Dupont' })
 
     expect(result).toBe('deletionBlocked')
+  })
+
+  it('should turn an aborted transaction into a typed discriminant', async () => {
+    familyGatewayMock.deleteWithRelated.mockRejectedValue(
+      Object.assign(new Error('Transaction failed due to a write conflict or a deadlock'), {
+        code: 'P2034',
+      })
+    )
+
+    const result = await deleteFamily({ schoolId: 'school-1', id, confirmation: 'Dupont' })
+
+    expect(result).toBe('deletionConflict')
+  })
+
+  it('should report a family deleted concurrently as not found', async () => {
+    familyGatewayMock.deleteWithRelated.mockResolvedValue(false)
+
+    const result = await deleteFamily({ schoolId: 'school-1', id, confirmation: 'Dupont' })
+
+    expect(result).toBe('notFound')
   })
 
   it('should rethrow an unexpected error rather than disguise it', async () => {
