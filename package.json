@@ -44,13 +44,16 @@
     ]
   },
   "dependencies": {
+    "@ai-sdk/react": "^4.0.117",
     "@aws-sdk/client-s3": "^3.1123.0",
     "@modelcontextprotocol/server": "^2.0.0",
+    "@openrouter/ai-sdk-provider": "^3.1.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.3",
     "@tanstack/react-table": "^8.21.3",
+    "ai": "^7.0.114",
     "better-auth": "^1.7.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

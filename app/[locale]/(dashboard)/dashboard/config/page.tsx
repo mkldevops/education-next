@@ -7,11 +7,14 @@ import { teacherGateway } from '@/gateways/teacher-gateway'
 import { db } from '@/lib/db'
 import { SCHOOL_CONFIG_KEYS, SCHOOL_CONFIG_VALUE_TYPES } from '@/lib/school-config'
 import { SCHOOL_CONFIG_DEFAULTS } from '@/lib/school-config-defaults'
+import { isSecretEncryptionConfigured } from '@/lib/secret-crypto'
 import { isGoogleConfigured } from '@/lib/social-providers'
+import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assistant-enabled'
 import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-sign-in-enabled'
 import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
+import { getOpenRouterKeyStatus } from '@/use-cases/platform-settings/openrouter-api-key'
 import { countGoogleOnlyAccounts } from '@/use-cases/users/count-google-only-accounts'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
@@ -36,16 +39,25 @@ export default async function ConfigPage({ params }: Props) {
 
   // Les réglages plateforme ne sont lus que pour un super-admin : la page reste ouverte
   // à un ADMIN d'école, qui n'en voit que les réglages de son école.
-  const [googleEnabled, passkeyEnabled, mcpEnabled, schoolSwitchEnabled, googleOnlyAccountCount] =
-    isSuperAdmin
-      ? await Promise.all([
-          isGoogleSignInEnabled(),
-          isPasskeySignInEnabled(),
-          isMcpEnabled(),
-          isSchoolSwitchEnabled(),
-          countGoogleOnlyAccounts(),
-        ])
-      : [false, false, false, false, 0]
+  const [
+    googleEnabled,
+    passkeyEnabled,
+    mcpEnabled,
+    aiAssistantEnabled,
+    openRouterKeyStatus,
+    schoolSwitchEnabled,
+    googleOnlyAccountCount,
+  ] = isSuperAdmin
+    ? await Promise.all([
+        isGoogleSignInEnabled(),
+        isPasskeySignInEnabled(),
+        isMcpEnabled(),
+        isAiAssistantEnabled(),
+        getOpenRouterKeyStatus(),
+        isSchoolSwitchEnabled(),
+        countGoogleOnlyAccounts(),
+      ])
+    : [false, false, false, false, 'notConfigured' as const, false, 0]
 
   const t = await getTranslations('dashboard.pages.config')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -96,6 +108,9 @@ export default async function ConfigPage({ params }: Props) {
           googleConfigured={isGoogleConfigured}
           passkeyEnabled={passkeyEnabled}
           mcpEnabled={mcpEnabled}
+          aiAssistantEnabled={aiAssistantEnabled}
+          openRouterKeyStatus={openRouterKeyStatus}
+          secretStorageConfigured={isSecretEncryptionConfigured()}
           schoolSwitchEnabled={schoolSwitchEnabled}
           googleOnlyAccountCount={googleOnlyAccountCount}
         />

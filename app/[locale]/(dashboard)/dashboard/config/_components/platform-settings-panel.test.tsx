@@ -11,6 +11,9 @@ vi.mock('../../../_lib/platform-settings-actions', () => ({
   setGoogleSignInEnabledAction: vi.fn(),
   setPasskeySignInEnabledAction: vi.fn(),
   setMcpEnabledAction: vi.fn(),
+  setAiAssistantEnabledAction: vi.fn(),
+  setOpenRouterApiKeyAction: vi.fn(),
+  deleteOpenRouterApiKeyAction: vi.fn(),
   setSchoolSwitchEnabledAction: vi.fn(),
 }))
 
@@ -21,6 +24,9 @@ const baseProps = {
   googleConfigured: true,
   passkeyEnabled: true,
   mcpEnabled: false,
+  aiAssistantEnabled: false,
+  openRouterKeyStatus: 'notConfigured' as const,
+  secretStorageConfigured: true,
   schoolSwitchEnabled: true,
   googleOnlyAccountCount: 0,
 }
@@ -54,6 +60,18 @@ describe('PlatformSettingsPanel', () => {
       screen.getByRole('button', { name: 'google.confirmDisable.confirm' })
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'google.confirmDisable.cancel' })).toBeInTheDocument()
+  })
+
+  it('names the key state under the assistant toggle: missing, unreadable or present', () => {
+    const { rerender } = render(<PlatformSettingsPanel {...baseProps} />)
+    expect(screen.getByText('aiAssistant.notConfigured')).toBeInTheDocument()
+
+    rerender(<PlatformSettingsPanel {...baseProps} openRouterKeyStatus="unreadable" />)
+    expect(screen.getByText('aiAssistant.unreadable')).toBeInTheDocument()
+    expect(screen.queryByText('aiAssistant.notConfigured')).not.toBeInTheDocument()
+
+    rerender(<PlatformSettingsPanel {...baseProps} openRouterKeyStatus="configured" />)
+    expect(screen.getByText('aiAssistant.hint')).toBeInTheDocument()
   })
 
   it('never requires confirmation for the passkey toggle, regardless of the Google count', () => {

@@ -2,11 +2,16 @@
 
 import { revalidatePath } from 'next/cache'
 import {
+  AI_ASSISTANT_ENABLED_SETTING,
   GOOGLE_SIGN_IN_SETTING,
   MCP_ENABLED_SETTING,
   PASSKEY_SIGN_IN_SETTING,
   SCHOOL_SWITCH_SETTING,
 } from '@/domain/platform-settings'
+import {
+  deleteOpenRouterApiKey,
+  setOpenRouterApiKey,
+} from '@/use-cases/platform-settings/openrouter-api-key'
 import { setPlatformSetting } from '@/use-cases/platform-settings/set-platform-setting'
 import { requirePlatformAdmin } from './auth-helper'
 
@@ -44,4 +49,31 @@ export async function setPasskeySignInEnabledAction(enabled: boolean) {
 
 export async function setMcpEnabledAction(enabled: boolean) {
   return writeFlag(MCP_ENABLED_SETTING, enabled)
+}
+
+export async function setAiAssistantEnabledAction(enabled: boolean) {
+  return writeFlag(AI_ASSISTANT_ENABLED_SETTING, enabled)
+}
+
+/**
+ * La clé traverse l'action une seule fois, à la saisie, et n'en ressort jamais : le retour
+ * est un verdict, la page ne relit qu'un état « configurée / non configurée ».
+ */
+export async function setOpenRouterApiKeyAction(apiKey: string) {
+  await requirePlatformAdmin()
+
+  const result = await setOpenRouterApiKey(apiKey)
+  if (result !== 'OK') return result
+
+  revalidatePath('/', 'layout')
+  return 'OK' as const
+}
+
+export async function deleteOpenRouterApiKeyAction() {
+  await requirePlatformAdmin()
+
+  await deleteOpenRouterApiKey()
+
+  revalidatePath('/', 'layout')
+  return 'OK' as const
 }

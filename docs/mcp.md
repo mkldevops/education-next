@@ -261,3 +261,11 @@ preview again, and no partial row was written.
 The two pairs chain: `enroll_family` creates enrollments as `PENDING`, and `record_payment` pays
 `PENDING` and `ACTIVE` ones alike, so a family just enrolled can record its next payment right away.
 A family owes one balance across its children and may settle it in several payments.
+
+## The dashboard assistant shares the drafts
+
+`/dashboard/enroll-assistant` (`docs/ai-assistant.md`) calls the same `previewEnrollFamily` and
+`commitEnrollFamily` from a server action, without going through this server. Its drafts carry
+`ownerKind: ADMIN_SESSION` and the administrator's `userId`; yours carry `ownerKind: MCP_KEY` and
+your `keyId`. A draft never crosses over: one prepared by a key is `draftNotFound` for the
+administrator's session, and the reverse, even for the same person and the same school.

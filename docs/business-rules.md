@@ -634,15 +634,24 @@ structural guard is `Student @@unique([personId, schoolId])`. Duplication is pre
 all narrow projections, because a model's context has no business holding `healthNotes` or an
 address.
 
-**The lock is single-pass**: `claim()` is a conditional `updateMany` on `(id, schoolId, keyId, tool,
+**The lock is single-pass**: `claim()` is a conditional `updateMany` on `(id, schoolId, owner, tool,
 checksum, status: PENDING, expiresAt > now)`, never a read followed by a write. A client that
 retries after a network cut must see exactly one commit win; the loser re-reads the draft and
 returns the **recorded result**, which is the correct answer to a replay, not a second family.
 
-**A draft belongs to the key that proposed it.** `keyId` is part of the claim condition, and a draft
-presented by another key of the same school is refused as `draftNotFound` rather than as forbidden.
-The resolved plan freezes the proposing key's user in `createdById`: without that binding, a revoked
-key's plan would still land, signed by its owner.
+**A draft belongs to the identity that proposed it, and that identity is discriminated.**
+`McpDraft.ownerKind` is `MCP_KEY` or `ADMIN_SESSION`, with `keyId` set for the first and `userId` for
+the second, and never both (`McpDraft_owner_check`, migration `20260925160000_add_mcp_draft_owner`;
+the rows that existed before it were all backfilled as `MCP_KEY`). The owner is part of the claim
+condition (`DraftOwner`, `src/domain/mcp-draft.ts`), and a draft presented by another key, another
+administrator, or the same person through the other access mode is refused as `draftNotFound`
+rather than as forbidden. A bare identifier would not do: a `userId` and a `keyId` never collide by
+construction today, but a key revoked and its user's session are still two distinct authorities,
+and a plan validated under one must not be engaged under the other. The enrollment assistant
+(*Enrollment assistant* below) is the `ADMIN_SESSION` owner; it reuses `previewEnrollFamily` and
+`commitEnrollFamily` with the same `DraftScope`, so the checksum, the expiry, the lock and every
+commit-time re-check are the MCP's. The resolved plan freezes the proposing user in `createdById`:
+without that binding, a revoked key's plan would still land, signed by its owner.
 
 **The lock always has an exit.** The result is written by the same transaction that writes the data,
 so a `COMMITTED` draft with a null `result` provably wrote nothing. Two ways out follow from that: a
@@ -669,8 +678,8 @@ response path, at most once every `MCP_DRAFT_PURGE_INTERVAL_MINUTES` (15 min) pe
 registered **before the platform flag**: retention does not depend on the service being open, or
 closing the MCP would freeze the sweep while personal data keeps expiring. No scheduler is deployed
 with this application, and a maintenance route would wait for a caller that does not exist;
-MCP traffic is the only available clock, and it is also the only traffic that creates
-drafts. Like the rate-limit counters, the interval is in-process: horizontal scaling multiplies the
+the two routes that create drafts, `POST /api/mcp` and the assistant's
+`POST /api/ai/enroll-assistant`, are the only available clocks. Like the rate-limit counters, the interval is in-process: horizontal scaling multiplies the
 sweeps, which an idempotent `deleteMany` does not mind.
 
 The delete itself is a named tenant-guard exception, `purgeExpiredMcpDrafts` in
@@ -689,7 +698,7 @@ checks that follow therefore cannot race a dashboard enrollment.
 | Body | Cause |
 |---|---|
 | `validationError` | malformed `draftId`/`checksum`, or a stored plan of an older shape |
-| `draftNotFound` | unknown draft, one belonging to the other tool, or one proposed by another key |
+| `draftNotFound` | unknown draft, one belonging to the other tool, or one proposed by another owner (key, administrator, or access mode) |
 | `draftExpired` | past the thirty minutes |
 | `checksumMismatch` | the checksum does not match the plan that was shown |
 | `commitInProgress` | a concurrent commit is still inside its transaction, and under 60 s old |
@@ -734,6 +743,83 @@ collecting money does not wait for it.
 
 These discriminants answer an agent, not a dialog, so they carry no `messages/*.json` entry — the
 rule in [Surfacing a rule in the UI](#surfacing-a-rule-in-the-ui) applies to screens.
+
+## Enrollment assistant (OpenRouter)
+
+`/dashboard/enroll-assistant` is a chat for a school administrator: a photographed enrollment sheet,
+or its text, goes to a vision model through OpenRouter, comes back as a **partial proposal**, is
+corrected by hand, previewed, and engaged only by an explicit *Confirm*. `docs/ai-assistant.md`
+documents the operator side. Unlike the MCP, **the image does reach the server** — it has to, the
+model is called from here — but it never reaches storage.
+
+**Two platform settings, on purpose distinct.** `ai_assistant_enabled` opens the assistant for the
+whole instance and, like `mcp_enabled`, **reads as disabled when absent** (`readsAsOptedIn`).
+`openrouter_api_key` is the provider key. Both are written from the **Integrations** section of
+`/dashboard/config`, rendered for a super-admin only and written behind `requirePlatformAdmin()`.
+Turning the assistant off does not delete the key, and entering the key does not open the assistant;
+an operator can therefore provision the key on a Friday and open the feature on Monday. A school
+administrator uses the assistant when it is open and never sees, reads or changes the key.
+
+**The key is encrypted at rest.** `PlatformSetting.value` is plain text, and a provider key has no
+business in clear in a database dump. `setOpenRouterApiKey` stores `encryptSecret(key)`
+(`src/lib/secret-crypto.ts`, AES-256-GCM, random IV per write, authenticated tag) under a 32-byte
+`SETTINGS_ENCRYPTION_KEY` that lives in the environment only. The dashboard never returns the
+stored value — only `configured`, `notConfigured`, or `unreadable` — and the key is decrypted solely
+inside the chat route, at the moment the provider client is built. `unreadable` covers a value
+written under another environment key as well as a corrupted row: in both cases the secret is lost
+to the application and the only way out is to enter it again. Without `SETTINGS_ENCRYPTION_KEY` the
+form refuses to save (`secretStorageNotConfigured`) rather than falling back to clear text.
+
+**Every call re-checks the door.** The chat route, `previewAssistantEnrollmentAction` and
+`confirmAssistantEnrollmentAction` each start from the session (`requireSchoolAdmin()`: an
+`ADMIN` or a super-admin in the active school; a parent or a teacher is refused), then the
+`ai_assistant_enabled` flag, then — for the chat — the key. The page returns `notFound()` when the
+flag is off, and the sidebar entry (`feature: 'aiAssistant'`) disappears with it. A draft prepared
+before the flag was cut cannot be confirmed afterwards: the flag is read on the confirm, not on the
+preview. `proxy.ts` excludes `/api`, so the chat route guards itself, and it also refuses a
+cross-origin JSON post (`isSameOriginJsonRequest`) — a session cookie is not a bearer token for a
+third-party page.
+
+**The model proposes, the human decides, the server writes.** The only tool exposed to the model is
+`propose_enrollment` (`src/use-cases/ai-assistant/schemas.ts`), whose `execute` does nothing but
+acknowledge: the proposal is read back from the tool call and poured into an editable form. There is
+no preview or commit tool on the model side; the preview is a server action on the form the
+administrator sees, and the commit takes only a `draftId` and a `checksum`. Every field of the
+proposal is optional, and the system prompt orders the model to leave unknown, illegible or
+ambiguous fields empty and to list them in `missing` rather than invent an identity, a date, a class,
+a plan or a payment. Attaching to an existing family is never the model's call either: the form
+carries `familyId` only after the administrator picks a family among the preview's `matches`.
+
+**Editing invalidates the preview.** The client fingerprints the exact input the preview was
+requested with; any change to the form hides *Confirm* until a new preview is requested, and any
+refusal on confirm (`draftExpired`, `checksumMismatch`, `classFull`, …) clears the preview for the
+same reason. The `key={schoolId}` on the client component remounts it on a school switch: the
+conversation, the photos and the preview do not follow the administrator into another school.
+
+**Photos are bounded, rewritten and forgotten.** The client accepts PNG, JPEG and WebP only, at most
+`maxImagesPerMessage` per message and `maxImagesPerRequest` across the conversation it resends,
+`maxImageBytes` each (`AI_ASSISTANT_LIMITS`, `src/domain/ai-assistant.ts`); the server re-checks all
+of it because the client is not trusted. Each photo is a `data:` URL — the route never downloads a
+URL the model or the client names — and `sanitizeImage` decodes it with sharp under a pixel ceiling,
+applies the EXIF rotation, drops every metadata block, caps the longest side and re-encodes to WebP,
+in memory. Nothing goes through `/api/media` or the object store, and nothing is persisted: the
+conversation lives in the browser tab. The chat panel says so, and names the model, before the first
+send.
+
+**The model is chosen server-side from a closed list.** `AI_ASSISTANT_MODELS` holds models known to
+read an image and call a tool; `AI_ASSISTANT_MODEL` may pick one of them and anything else falls back
+to the default (`resolveAiAssistantModel`). A free identifier would let an operator point at a
+text-only model, and the failure would surface at the first photo. The default is the cheapest of
+the list; which one reads real sheets best is an open point to settle on real forms, not here.
+
+**Failures are named, localized and write nothing.** The route answers a typed code — `forbiddenFile`
+(415), `imageTooLarge` (413), `unreadableImage` (422), `tooManyImages`, `tooManyMessages`,
+`messageTooLong` (400), `tooManyRequests` (429, `requestsPerMinute` per administrator and school),
+`aiAssistantDisabled` and `aiAssistantNotConfigured` (503) — and a provider failure in the stream is
+mapped by `toProviderErrorCode` to `timeout`, `quotaExceeded`, `invalidKey`, `providerRateLimited`
+or `providerError`; the raw provider message stays in the server log. A proposal that does not parse
+is reported as `invalidModelOutput` and leaves the form untouched. None of these touches a business
+row: the only writes are the technical draft of the preview and the transaction of the commit.
 
 ## User management
 

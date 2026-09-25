@@ -246,7 +246,8 @@
       "events": "Événements",
       "planning": "Planning",
       "attendance": "Suivi des appels",
-      "superAdmins": "Super-admins"
+      "superAdmins": "Super-admins",
+      "enrollAssistant": "Assistant d'inscription"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -288,7 +289,8 @@
         "platform": "Plateforme",
         "family": "Espace famille",
         "teaching": "Enseignement"
-      }
+      },
+      "enrollAssistant": "Assistant d'inscription"
     },
     "pages": {
       "families": {
@@ -2090,6 +2092,248 @@
           "title": "Serveur MCP",
           "description": "Autorise Claude et Codex à lire les données de leur école et à y écrire via une clé API. Chaque administrateur crée ses clés depuis ses paramètres.",
           "hint": "Fermée par défaut. Une écriture se fait en deux temps : l'agent propose un plan, un humain l'engage."
+        },
+        "aiAssistant": {
+          "title": "Assistant d'inscription (IA)",
+          "description": "Ouvre aux administrateurs d'école un chat qui lit une fiche d'inscription, en texte ou en photo, via OpenRouter, et prépare une inscription à confirmer.",
+          "hint": "Fermé par défaut. Rien n'est enregistré sans l'aperçu puis la confirmation d'un humain.",
+          "notConfigured": "Fermé par défaut. Sans clé OpenRouter, l'assistant reste indisponible même ouvert.",
+          "unreadable": "La clé OpenRouter enregistrée est illisible : l'assistant reste indisponible même ouvert tant qu'elle n'est pas ressaisie."
+        },
+        "openRouter": {
+          "title": "Clé OpenRouter",
+          "status": {
+            "configured": "configurée",
+            "notConfigured": "non configurée",
+            "unreadable": "illisible"
+          },
+          "description": "Clé du compte OpenRouter qui règle les appels de l'assistant. Elle est chiffrée avant enregistrement et n'est jamais réaffichée.",
+          "unreadableHint": "La clé enregistrée ne peut plus être déchiffrée : SETTINGS_ENCRYPTION_KEY a changé ou manque. Saisissez-la de nouveau.",
+          "secretStorageHint": "SETTINGS_ENCRYPTION_KEY n'est pas définie sur ce serveur : aucune clé ne peut être enregistrée.",
+          "label": "Clé API",
+          "replaceLabel": "Nouvelle clé API",
+          "placeholder": "sk-or-v1-…",
+          "save": "Enregistrer",
+          "replace": "Remplacer",
+          "delete": "Supprimer",
+          "saved": "Clé OpenRouter enregistrée",
+          "deleted": "Clé OpenRouter supprimée",
+          "confirmDelete": {
+            "title": "Supprimer la clé OpenRouter ?",
+            "description": "L'assistant d'inscription deviendra indisponible jusqu'à la saisie d'une nouvelle clé.",
+            "confirm": "Supprimer",
+            "cancel": "Annuler"
+          },
+          "errors": {
+            "validationError": "Clé invalide : au moins 20 caractères, sans espace.",
+            "secretStorageNotConfigured": "Le chiffrement des secrets n'est pas configuré sur ce serveur.",
+            "error": "Impossible d'enregistrer la clé"
+          }
+        }
+      },
+      "enrollAssistant": {
+        "title": "Assistant d'inscription",
+        "description": "Décrivez l'inscription ou photographiez la fiche : l'assistant propose un brouillon que vous corrigez, prévisualisez puis confirmez.",
+        "school": "École active : {name}",
+        "providerNotice": "Les textes et photos envoyés sont transmis à OpenRouter et au modèle {model} pour lecture. L'application ne les conserve pas.",
+        "unavailable": {
+          "title": "Assistant indisponible",
+          "description": "Aucune clé OpenRouter n'est configurée. Un super-administrateur doit la saisir dans Configuration → Intégrations."
+        },
+        "chat": {
+          "title": "Conversation",
+          "empty": "Commencez par une description ou une photo de la fiche d'inscription.",
+          "placeholder": "Décrivez la famille, les élèves, leur classe, la formule…",
+          "send": "Envoyer",
+          "stop": "Arrêter",
+          "attach": "Ajouter une photo",
+          "attachHint": "PNG, JPEG ou WebP, {count} photos par message, {size} Mo chacune",
+          "removeImage": "Retirer la photo",
+          "imageAlt": "Photo jointe {index}",
+          "reset": "Nouvelle conversation",
+          "thinking": "L'assistant lit la fiche…",
+          "you": "Vous",
+          "assistant": "Assistant",
+          "proposalReceived": "Proposition reçue : vérifiez le formulaire.",
+          "fileErrors": {
+            "type": "Seuls les fichiers PNG, JPEG et WebP sont acceptés.",
+            "size": "Chaque photo doit faire moins de {size} Mo.",
+            "count": "{count} photos maximum par message."
+          },
+          "errors": {
+            "unauthorized": "Session expirée : reconnectez-vous.",
+            "forbidden": "Cette action est réservée aux administrateurs de l'école.",
+            "aiAssistantDisabled": "L'assistant a été désactivé par un super-administrateur.",
+            "aiAssistantNotConfigured": "Aucune clé OpenRouter n'est configurée : l'assistant est indisponible.",
+            "tooManyRequests": "Trop de demandes : patientez une minute.",
+            "invalidRequest": "Requête invalide.",
+            "tooManyMessages": "La conversation est trop longue : commencez-en une nouvelle.",
+            "messageTooLong": "Le message est trop long.",
+            "forbiddenFile": "Seules les images PNG, JPEG et WebP sont acceptées.",
+            "unreadableImage": "Une image n'a pas pu être lue.",
+            "tooManyImages": "Trop de photos dans la conversation.",
+            "imageTooLarge": "Une photo dépasse la taille ou les dimensions autorisées.",
+            "invalidKey": "La clé OpenRouter est refusée par le fournisseur : prévenez un super-administrateur.",
+            "quotaExceeded": "Le crédit OpenRouter est épuisé : prévenez un super-administrateur.",
+            "providerRateLimited": "Le fournisseur limite les appels : réessayez dans un instant.",
+            "timeout": "Le modèle n'a pas répondu à temps : réessayez, si possible avec une photo plus nette.",
+            "providerError": "Le fournisseur a renvoyé une erreur : réessayez.",
+            "invalidModelOutput": "La réponse du modèle est inexploitable : reformulez ou reprenez la photo.",
+            "serverError": "Erreur interne : réessayez.",
+            "error": "L'assistant n'a pas pu répondre."
+          }
+        },
+        "proposal": {
+          "title": "Proposition à vérifier",
+          "hint": "Rien n'est enregistré avant la confirmation. Corrigez, puis demandez l'aperçu.",
+          "empty": "Aucune proposition pour l'instant : l'assistant remplira ce formulaire à partir de votre description ou de la photo.",
+          "notes": "Remarques de l'assistant",
+          "missing": {
+            "title": "À compléter",
+            "missing": "manquant",
+            "illegible": "illisible",
+            "ambiguous": "ambigu"
+          },
+          "family": {
+            "title": "Famille",
+            "newFamily": "Nouvelle famille",
+            "existingFamily": "Famille existante",
+            "name": "Nom de la famille",
+            "selected": "Rattachée à « {name} »",
+            "clear": "Ne pas rattacher",
+            "none": "Pour rattacher à une famille existante, demandez l'aperçu : les correspondances proposent un bouton « Rattacher ».",
+            "existingHint": "Une famille existante garde ses parents et son contact d’urgence : ces champs sont ignorés."
+          },
+          "parents": {
+            "title": "Parents",
+            "add": "Ajouter un parent",
+            "remove": "Retirer",
+            "name": "Prénom",
+            "lastname": "Nom",
+            "sex": "Sexe",
+            "email": "E-mail",
+            "phone": "Téléphone"
+          },
+          "students": {
+            "title": "Élèves",
+            "add": "Ajouter un élève",
+            "remove": "Retirer",
+            "name": "Prénom",
+            "lastname": "Nom",
+            "sex": "Sexe",
+            "birthday": "Date de naissance",
+            "birthplace": "Lieu de naissance",
+            "className": "Classe",
+            "planName": "Formule (si différente)"
+          },
+          "sex": {
+            "unspecified": "Non précisé",
+            "MALE": "Masculin",
+            "FEMALE": "Féminin"
+          },
+          "emergency": {
+            "title": "Contact d'urgence",
+            "name": "Nom",
+            "phone": "Téléphone"
+          },
+          "pricing": {
+            "title": "Tarification",
+            "planName": "Formule de la famille",
+            "discount": "Remise par inscription",
+            "disabled": "Les paiements sont désactivés pour cette école : formule et encaissement ne sont pas demandés."
+          },
+          "payment": {
+            "title": "Encaissement",
+            "none": "Aucun encaissement",
+            "add": "Ajouter un encaissement",
+            "remove": "Retirer",
+            "amount": "Montant",
+            "method": "Moyen",
+            "reference": "Référence",
+            "paidAt": "Date",
+            "cashedAt": "Date d'encaissement (chèque)"
+          },
+          "methods": {
+            "CASH": "Espèces",
+            "CARD": "Carte",
+            "TRANSFER": "Virement",
+            "CHECK": "Chèque"
+          },
+          "edited": "Modifié depuis le dernier aperçu : relancez l'aperçu avant de confirmer.",
+          "requestPreview": "Demander l'aperçu",
+          "requestingPreview": "Aperçu en cours…",
+          "errors": {
+            "validationError": "Champs invalides ou manquants : {fields}",
+            "aiAssistantDisabled": "L'assistant a été désactivé par un super-administrateur.",
+            "error": "Impossible de préparer l'aperçu"
+          }
+        },
+        "preview": {
+          "title": "Aperçu",
+          "ready": "Brouillon prêt à confirmer. Il expire dans {minutes} minutes.",
+          "blocked": "Aperçu bloqué : corrigez les points ci-dessous puis relancez l'aperçu.",
+          "blockers": "Blocages",
+          "warnings": "Avertissements",
+          "matches": "Correspondances existantes",
+          "matchFamily": "Famille « {name} »",
+          "useFamily": "Rattacher",
+          "matchStudent": "{name} ({kind})",
+          "matchKind": {
+            "student": "déjà élève",
+            "person": "déjà connu"
+          },
+          "finding": "{field} : « {value} » — {reason}",
+          "plan": {
+            "title": "Plan résolu",
+            "newFamily": "Nouvelle famille « {name} »",
+            "existingFamily": "Famille existante « {name} »",
+            "parents": "{count, plural, =0 {Aucun parent} one {# parent} other {# parents}}",
+            "student": "{name} → {className}, {plan} ({amount})",
+            "payment": "Encaissement : {amount} ({method})",
+            "noPayment": "Aucun encaissement"
+          },
+          "confirm": "Confirmer l'inscription",
+          "confirming": "Confirmation…"
+        },
+        "confirm": {
+          "success": "Inscription enregistrée",
+          "successDetail": "{students, plural, one {# élève inscrit} other {# élèves inscrits}}, {payments, plural, =0 {aucun encaissement} one {# encaissement} other {# encaissements}}.",
+          "openFamily": "Voir la famille",
+          "newEnrollment": "Nouvelle inscription",
+          "errors": {
+            "draftNotFound": "Brouillon introuvable : il appartient à une autre session ou a été purgé. Relancez l'aperçu.",
+            "draftExpired": "Le brouillon a expiré (30 minutes). Relancez l'aperçu.",
+            "checksumMismatch": "Le brouillon a changé depuis l'aperçu. Relancez l'aperçu.",
+            "commitInProgress": "Une confirmation est déjà en cours pour ce brouillon.",
+            "staleDraft": "Les données ont changé depuis l'aperçu. Relancez l'aperçu.",
+            "notFound": "Un élément du plan n'existe plus (classe, famille ou élève). Relancez l'aperçu.",
+            "duplicateEnrollment": "Un élève a été inscrit entre-temps. Relancez l'aperçu.",
+            "classFull": "Une classe s'est remplie entre-temps. Relancez l'aperçu.",
+            "paymentsDisabled": "Les paiements ont été désactivés : ce brouillon porte un montant et ne peut plus être confirmé.",
+            "validationError": "Brouillon inexploitable. Relancez l'aperçu.",
+            "aiAssistantDisabled": "L'assistant a été désactivé par un super-administrateur.",
+            "error": "Impossible de confirmer l'inscription"
+          }
+        },
+        "reasons": {
+          "unknownClass": "classe inconnue",
+          "ambiguousClass": "plusieurs classes portent ce nom",
+          "unknownPlan": "formule inconnue",
+          "ambiguousPlan": "plusieurs formules portent ce nom",
+          "classFull": "classe pleine",
+          "discountExceedsPlan": "la remise dépasse la formule la moins chère",
+          "birthdayNotInThePast": "date de naissance dans le futur",
+          "existingFamily": "une famille de ce nom existe déjà",
+          "existingStudent": "un élève de ce nom existe déjà",
+          "existingPerson": "une personne de ce nom existe déjà",
+          "invalidFamilyName": "nom de famille invalide",
+          "ambiguousStudent": "plusieurs membres de la famille portent ce nom",
+          "duplicateEnrollment": "cet élève a déjà une inscription en cours",
+          "paymentsDisabled": "les paiements sont désactivés pour cette école",
+          "referenceAlreadyUsed": "cette référence a déjà été encaissée",
+          "notFound": "introuvable",
+          "noPayableEnrollments": "aucune inscription à laquelle affecter le montant",
+          "other": "{reason}"
         }
       }
     },
