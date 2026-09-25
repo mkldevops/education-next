@@ -18,6 +18,7 @@ const { previewRecordPayment } = await import('./preview-record-payment')
 const scope = {
   keyId: 'key-1',
   keyPrefix: 'edu_mcp_aaaa',
+  owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
@@ -92,7 +93,10 @@ describe('previewRecordPayment', () => {
 
     expect(createDraft).toHaveBeenCalledWith(
       'school-1',
-      expect.objectContaining({ tool: 'record_payment', keyId: 'key-1' })
+      expect.objectContaining({
+        tool: 'record_payment',
+        owner: { kind: 'MCP_KEY', keyId: 'key-1' },
+      })
     )
   })
 

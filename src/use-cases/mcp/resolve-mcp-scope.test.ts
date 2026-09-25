@@ -67,6 +67,7 @@ describe('resolveMcpScope', () => {
       scope: {
         keyId: 'key-1',
         keyPrefix: 'edu_mcp_aaaa',
+        owner: { kind: 'MCP_KEY', keyId: 'key-1' },
         userId: 'user-1',
         schoolId: 'school-1',
         isSuperAdmin: false,

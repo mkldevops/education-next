@@ -23,6 +23,7 @@ const { commitRecordPayment } = await import('./commit-record-payment')
 const scope = {
   keyId: 'key-1',
   keyPrefix: 'edu_mcp_aaaa',
+  owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
@@ -58,7 +59,9 @@ beforeEach(() => {
   vi.clearAllMocks()
   claim.mockResolvedValue({ count: 1 })
   findById.mockResolvedValue({
+    ownerKind: 'MCP_KEY',
     keyId: 'key-1',
+    userId: null,
     tool: 'record_payment',
     checksum: input.checksum,
     resolved,
@@ -174,7 +177,9 @@ describe('commitRecordPayment', () => {
   it('returns the recorded result on a replay instead of banking twice', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'record_payment',
       checksum: input.checksum,
       status: 'COMMITTED',
@@ -193,7 +198,9 @@ describe('commitRecordPayment', () => {
   it('refuses a checksum altered by a single character', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'record_payment',
       checksum: 'abcdef012346',
       status: 'PENDING',
@@ -207,7 +214,9 @@ describe('commitRecordPayment', () => {
   it('refuses an expired draft', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'record_payment',
       checksum: input.checksum,
       status: 'PENDING',
@@ -220,7 +229,9 @@ describe('commitRecordPayment', () => {
   it('refuses a draft proposed by another key of the same school', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-2',
+      userId: null,
       tool: 'record_payment',
       checksum: input.checksum,
       status: 'PENDING',
@@ -233,7 +244,9 @@ describe('commitRecordPayment', () => {
   it('refuses an enrolment draft presented to the payment commit', async () => {
     claim.mockResolvedValue({ count: 0 })
     findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
       keyId: 'key-1',
+      userId: null,
       tool: 'enroll_family',
       checksum: input.checksum,
       status: 'PENDING',

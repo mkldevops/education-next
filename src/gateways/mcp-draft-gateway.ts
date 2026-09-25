@@ -1,10 +1,13 @@
+import { type DraftOwner, ownerColumns } from '@/domain/mcp-draft'
 import { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { purgeExpiredMcpDrafts } from '@/lib/db-unscoped'
 
 const draftSelect = {
   id: true,
+  ownerKind: true,
   keyId: true,
+  userId: true,
   tool: true,
   checksum: true,
   resolved: true,
@@ -23,13 +26,19 @@ export const mcpDraftGateway = {
   create: (
     schoolId: string,
     data: {
-      keyId: string
+      owner: DraftOwner
       tool: string
       checksum: string
       resolved: Prisma.InputJsonValue
       expiresAt: Date
     }
-  ) => db.mcpDraft.create({ data: { ...data, schoolId }, select: { id: true } }),
+  ) => {
+    const { owner, ...rest } = data
+    return db.mcpDraft.create({
+      data: { ...rest, ...ownerColumns(owner), schoolId },
+      select: { id: true },
+    })
+  },
 
   findById: (schoolId: string, id: string) =>
     db.mcpDraft.findUnique({
@@ -44,13 +53,29 @@ export const mcpDraftGateway = {
    * client — doivent en voir exactement un passer. `count === 1` gagne ; `count === 0`
    * renvoie l'appelant au brouillon pour distinguer rejeu, expiration et checksum faux.
    *
-   * `keyId` fait partie de la condition : un brouillon appartient à la clé qui l'a proposé.
-   * Sans lui, une clé révoquée verrait son plan engagé par une autre clé de la même école,
-   * au nom de son propre utilisateur — `createdById` est figé dans le plan résolu.
+   * Le propriétaire fait partie de la condition : un brouillon appartient à la clé ou à la
+   * session qui l'a proposé. Sans lui, une clé révoquée verrait son plan engagé par une autre
+   * clé de la même école, au nom de son propre utilisateur — `createdById` est figé dans le
+   * plan résolu. Le genre s'y ajoute : une clé MCP n'engage pas un brouillon de session.
    */
-  claim: (schoolId: string, keyId: string, id: string, tool: string, checksum: string, now: Date) =>
+  claim: (
+    schoolId: string,
+    owner: DraftOwner,
+    id: string,
+    tool: string,
+    checksum: string,
+    now: Date
+  ) =>
     db.mcpDraft.updateMany({
-      where: { id, schoolId, keyId, tool, checksum, status: 'PENDING', expiresAt: { gt: now } },
+      where: {
+        id,
+        schoolId,
+        ...ownerColumns(owner),
+        tool,
+        checksum,
+        status: 'PENDING',
+        expiresAt: { gt: now },
+      },
       data: { status: 'COMMITTED', committedAt: now },
     }),
 
@@ -63,7 +88,7 @@ export const mcpDraftGateway = {
    */
   reclaim: (
     schoolId: string,
-    keyId: string,
+    owner: DraftOwner,
     id: string,
     tool: string,
     checksum: string,
@@ -74,7 +99,7 @@ export const mcpDraftGateway = {
       where: {
         id,
         schoolId,
-        keyId,
+        ...ownerColumns(owner),
         tool,
         checksum,
         status: 'COMMITTED',

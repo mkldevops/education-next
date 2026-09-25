@@ -1,3 +1,4 @@
+import type { DraftOwner } from '@/domain/mcp-draft'
 import { isKeyUsable, isWellFormedMcpKey } from '@/domain/mcp-key'
 import { mcpApiKeyGateway } from '@/gateways/mcp-api-key-gateway'
 import { schoolGateway } from '@/gateways/school-gateway'
@@ -17,6 +18,9 @@ import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
  * `paymentsEnabled` est résolu une fois ici, jamais relu par `buildMcpServer` ni par un
  * use case : c'est le seul endroit qui consulte `isPaymentsEnabled` pour le MCP, ce qui
  * garde la construction du serveur synchrone et la décision stable pour toute la requête.
+ *
+ * `owner` est la projection de la clé en propriétaire de brouillon : c'est la seule chose
+ * que les use cases partagés avec l'assistant d'inscription lisent pour cantonner un plan.
  */
 export type McpScope =
   | {
@@ -26,6 +30,7 @@ export type McpScope =
       schoolId: string
       isSuperAdmin: true
       paymentsEnabled: boolean
+      owner: DraftOwner
     }
   | {
       keyId: string
@@ -34,6 +39,7 @@ export type McpScope =
       schoolId: string
       isSuperAdmin: false
       paymentsEnabled: boolean
+      owner: DraftOwner
     }
 
 export type McpScopeResult =
@@ -99,6 +105,7 @@ export async function resolveMcpScope(
     keyPrefix: key.prefix,
     userId: key.userId,
     schoolId: key.schoolId,
+    owner: { kind: 'MCP_KEY' as const, keyId: key.id },
   }
 
   if (user.isSuperAdmin) {

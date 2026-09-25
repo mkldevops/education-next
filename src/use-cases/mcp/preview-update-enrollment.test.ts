@@ -13,6 +13,7 @@ const { previewUpdateEnrollment } = await import('./preview-update-enrollment')
 const scope = {
   keyId: 'key-1',
   keyPrefix: 'edu_mcp_aaaa',
+  owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
@@ -68,7 +69,10 @@ describe('previewUpdateEnrollment', () => {
     })
     expect(createDraft).toHaveBeenCalledWith(
       'school-1',
-      expect.objectContaining({ tool: 'update_enrollment', keyId: 'key-1' })
+      expect.objectContaining({
+        tool: 'update_enrollment',
+        owner: { kind: 'MCP_KEY', keyId: 'key-1' },
+      })
     )
   })
 
