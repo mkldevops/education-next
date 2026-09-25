@@ -1,12 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const dbMock = {
+const txMock = {
   paymentTransaction: {
     create: vi.fn(),
     update: vi.fn(),
     findMany: vi.fn(),
   },
 }
+const dbMock = {
+  paymentTransaction: txMock.paymentTransaction,
+  $transaction: vi.fn(),
+}
+const lockFamilyCheckoutMock = vi.fn()
 const sessionsCreateMock = vi.fn()
 const sessionsRetrieveMock = vi.fn()
 const sessionsExpireMock = vi.fn()
@@ -20,6 +25,9 @@ vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/lib/stripe', () => ({ getStripeClient: getStripeClientMock }))
 vi.mock('./family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
 vi.mock('@/gateways/config-gateway', () => ({ configGateway: configGatewayMock }))
+vi.mock('@/gateways/payment-gateway', () => ({
+  paymentGateway: { lockFamilyCheckout: lockFamilyCheckoutMock },
+}))
 
 const { createCheckoutSession } = await import('./create-checkout-session')
 
@@ -50,6 +58,8 @@ describe('createCheckoutSession', () => {
       remainingBalance: 120,
       remainingAmountInCents: 12000,
     })
+    dbMock.$transaction.mockImplementation((callback: (tx: unknown) => unknown) => callback(txMock))
+    lockFamilyCheckoutMock.mockResolvedValue(1)
     dbMock.paymentTransaction.create.mockResolvedValue({ id: 'transaction-1' })
     dbMock.paymentTransaction.update.mockResolvedValue({})
     dbMock.paymentTransaction.findMany.mockResolvedValue([])
@@ -88,10 +98,19 @@ describe('createCheckoutSession', () => {
     expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
   })
 
+  it('reads the balance only under the family checkout lock', async () => {
+    await createCheckoutSession(input)
+
+    expect(lockFamilyCheckoutMock).toHaveBeenCalledWith(txMock, schoolId, 'family-1')
+    expect(lockFamilyCheckoutMock.mock.invocationCallOrder[0]).toBeLessThan(
+      getFamilyBalanceMock.mock.invocationCallOrder[0]
+    )
+  })
+
   it('prices the checkout on the cumulated family balance', async () => {
     await createCheckoutSession(input)
 
-    expect(getFamilyBalanceMock).toHaveBeenCalledWith(schoolId, 'family-1')
+    expect(getFamilyBalanceMock).toHaveBeenCalledWith(schoolId, 'family-1', txMock)
   })
 
   it('creates a server-priced checkout tied to the local transaction', async () => {
@@ -131,6 +150,16 @@ describe('createCheckoutSession', () => {
       where: { id_schoolId: { id: 'transaction-1', schoolId } },
       data: { providerSessionId: 'cs_test_1' },
     })
+  })
+
+  it('expires the created session when the transaction cannot commit', async () => {
+    dbMock.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => {
+      await callback(txMock)
+      throw new Error('Transaction already closed')
+    })
+
+    await expect(createCheckoutSession(input)).rejects.toThrow('Transaction already closed')
+    expect(sessionsExpireMock).toHaveBeenCalledWith('cs_test_1')
   })
 
   it('marks the transaction failed when Stripe rejects the request', async () => {

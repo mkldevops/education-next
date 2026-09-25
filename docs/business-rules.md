@@ -1190,6 +1190,10 @@ the checkout flow, not by the form.
   (`sessions.expire`) and its transaction marked `EXPIRED`; a session already `complete` means a
   payment is awaiting its webhook → `paymentInProgress`, and no new session opens. If Stripe
   cannot confirm the earlier session's state → `providerError`, never a second session.
+  Balance read, closing and opening run under a per-family advisory lock
+  (`paymentGateway.lockFamilyCheckout`), so two simultaneous requests open one session after the
+  other and the second expires the first. That lock is distinct from `lockFamilyForPayment`: it
+  is held across Stripe calls and must not block manual payments or the webhook.
 - The webhook refuses only what predates the money leaving the customer's card: an already-seen
   provider event → `duplicate`; a transaction already `SUCCEEDED` → `duplicate`;
   `payment_status !== 'paid'` → `notPaid`; a different amount → `amountMismatch`; a different

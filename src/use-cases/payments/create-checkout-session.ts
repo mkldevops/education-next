@@ -1,5 +1,6 @@
 import type Stripe from 'stripe'
 import { configGateway } from '@/gateways/config-gateway'
+import { paymentGateway } from '@/gateways/payment-gateway'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { getStripeClient } from '@/lib/stripe'
@@ -21,13 +22,48 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
   const stripe = getStripeClient()
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return 'notConfigured' as const
 
-  const balance = await getFamilyBalance(input.schoolId, input.familyId)
+  // Tout passe par `tx` : une seule connexion par demande, même quand plusieurs attendent le
+  // verrou. Si la transaction échoue après la création chez Stripe, la ligne locale disparaît
+  // au rollback : la session est alors expirée pour ne jamais rester payable sans elle.
+  const opened: OpenedSession = {}
+  try {
+    return await db.$transaction(
+      async (tx) => {
+        await paymentGateway.lockFamilyCheckout(tx, input.schoolId, input.familyId)
+        return openCheckoutSession(tx, stripe, input, opened)
+      },
+      { timeout: CHECKOUT_LOCK_TIMEOUT_MS }
+    )
+  } catch (error) {
+    if (opened.sessionId) {
+      try {
+        await stripe.checkout.sessions.expire(opened.sessionId)
+      } catch {
+        // Déjà payée ou Stripe injoignable : l'erreur d'origine reste celle remontée.
+      }
+    }
+    throw error
+  }
+}
+
+/** Couvre plusieurs allers-retours Stripe, plus l'attente d'une création concurrente. */
+const CHECKOUT_LOCK_TIMEOUT_MS = 60_000
+
+type OpenedSession = { sessionId?: string }
+
+async function openCheckoutSession(
+  tx: Prisma.TransactionClient,
+  stripe: Stripe,
+  input: Input,
+  opened: OpenedSession
+) {
+  const balance = await getFamilyBalance(input.schoolId, input.familyId, tx)
   if (balance.remainingAmountInCents <= 0) return 'noBalance' as const
 
-  const previous = await closePreviousCheckoutSessions(stripe, input.schoolId, input.familyId)
+  const previous = await closePreviousCheckoutSessions(tx, stripe, input.schoolId, input.familyId)
   if (previous !== 'OK') return previous
 
-  const transaction = await db.paymentTransaction.create({
+  const transaction = await tx.paymentTransaction.create({
     data: {
       schoolId: input.schoolId,
       familyId: input.familyId,
@@ -39,15 +75,16 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
   })
 
   const updateTransaction = (data: Prisma.PaymentTransactionUpdateInput) =>
-    db.paymentTransaction.update({
+    tx.paymentTransaction.update({
       where: { id_schoolId: { id: transaction.id, schoolId: input.schoolId } },
       data,
     })
 
   const familyUrl = `${input.appUrl}/${input.locale}/dashboard/families/${input.familyId}`
 
+  let session: Stripe.Checkout.Session
   try {
-    const session = await stripe.checkout.sessions.create(
+    session = await stripe.checkout.sessions.create(
       {
         mode: 'payment',
         customer_email: input.customerEmail,
@@ -75,19 +112,20 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
         idempotencyKey: transaction.id,
       }
     )
-
-    if (!session.url) {
-      await updateTransaction({ status: 'FAILED' })
-      return 'providerError' as const
-    }
-
-    await updateTransaction({ providerSessionId: session.id })
-
-    return { result: 'OK' as const, url: session.url }
   } catch {
     await updateTransaction({ status: 'FAILED' })
     return 'providerError' as const
   }
+  opened.sessionId = session.id
+
+  if (!session.url) {
+    await updateTransaction({ status: 'FAILED' })
+    return 'providerError' as const
+  }
+
+  await updateTransaction({ providerSessionId: session.id })
+
+  return { result: 'OK' as const, url: session.url }
 }
 
 /**
@@ -96,8 +134,13 @@ export async function createCheckoutSession(input: Input, configGw = configGatew
  * transactions `PENDING` de la famille sont closes : une session encore ouverte est expirée chez
  * Stripe, une session déjà terminée signale un paiement dont le webhook n'est pas encore arrivé.
  */
-async function closePreviousCheckoutSessions(stripe: Stripe, schoolId: string, familyId: string) {
-  const pending = await db.paymentTransaction.findMany({
+async function closePreviousCheckoutSessions(
+  tx: Prisma.TransactionClient,
+  stripe: Stripe,
+  schoolId: string,
+  familyId: string
+) {
+  const pending = await tx.paymentTransaction.findMany({
     where: { schoolId, familyId, status: 'PENDING', providerSessionId: { not: null } },
     select: { id: true, providerSessionId: true },
   })
@@ -114,7 +157,7 @@ async function closePreviousCheckoutSessions(stripe: Stripe, schoolId: string, f
       // Dans le doute (session peut-être payée à l'instant), ne pas en ouvrir une seconde.
       return 'providerError' as const
     }
-    await db.paymentTransaction.update({
+    await tx.paymentTransaction.update({
       where: { id_schoolId: { id: transaction.id, schoolId } },
       data: { status: 'EXPIRED' },
     })
