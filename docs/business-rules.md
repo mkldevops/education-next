@@ -462,6 +462,12 @@ The `schoolId` comes from the key and is injected into every use-case call. No t
 argument — an identifier is exactly what a vision model invents — so multi-school isolation is the
 tenant guard's, with no dedicated code.
 
+The MCP's four class-planning tools use the existing recurring `ClassScheduleSlot` use cases and
+their feature flag, time-range, teacher-assignment and overlap rules. `list_class_schedule_slots`
+publishes only slots of active classes in the requested period of the key's school, with active
+teacher identities. Create and update return only the slot ID and teacher-overlap warnings; delete
+returns a success object so the MCP does not mistake the use case's string `OK` for an error.
+
 `resolveMcpScope()` **returns** a verdict instead of navigating, because the four helpers of
 `app/[locale]/(dashboard)/_lib/auth-helper.ts` all end in `redirect()` or `notFound()` and none is
 usable from a JSON-RPC handler. It re-reads revocation, expiry, `User.isActive` and the `SchoolMember`

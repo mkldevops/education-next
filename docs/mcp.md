@@ -146,6 +146,33 @@ resolving a paper form needs an identity, not a way to contact anyone. Every col
 `src/gateways/mcp-read-gateway.ts`, so widening the surface is an edit to that file, not a
 side effect of a schema change.
 
+## Weekly class planning
+
+The MCP can read and maintain the same recurring class slots as `/dashboard/planning`. It never
+accepts a school identifier: the API key selects the school. Planning must be enabled for that
+school (`class_schedule_enabled`), otherwise these tools return `notConfigured`.
+
+| Tool | Input | Result |
+|---|---|---|
+| `list_class_schedule_slots` | `periodId` from `list_periods` | Slots with `id`, weekday, times, description, class identity and active teacher identities |
+| `create_class_schedule_slot` | `classPeriodId` from `list_class_periods`, weekday, times, `teacherIds`, optional description | New slot `id` and overlap warnings |
+| `update_class_schedule_slot` | Slot `id`, weekday, times, `teacherIds`, optional description; the class stays fixed | Slot `id` and overlap warnings |
+| `delete_class_schedule_slot` | Slot `id` | `{ "deleted": true }` |
+
+`weekday` follows ISO order: Monday is 1, Saturday 6 and Sunday 7. Times use 24-hour `HH:mm`
+without a date or timezone. A slot repeats every week of its class period; its end time is excluded,
+so `09:00–12:00` and `12:00–13:00` do not overlap. Use `teacherIds: []` for a class with no assigned
+teacher. A teacher ID must already be assigned to the class. For example, the photographed Marseille
+weekend schedule can be entered as separate slots for C1, C2, C3, C4, F/FG and H/GG; a description
+can distinguish adults from older pupils on a shared class.
+
+Creation and updating reuse the dashboard's time, class, teacher and overlap checks. Expected
+refusals are `validationError`, `invalidTimeRange`, `classPeriodNotFound`, `teacherNotFound`,
+`classOverlap`, `teacherOverlap`, and `notFound` for an unknown slot on update or delete. When teacher
+overlap is allowed by the school's configuration, the write succeeds with a warning listing the
+other slot IDs. Deleting a slot changes future expected attendance occurrences, so inspect the
+current planning before using that tool.
+
 ## Creating an event
 
 `create_event` turns a dictated or photographed announcement into an event, in one call — there is no

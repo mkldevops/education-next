@@ -1,4 +1,4 @@
-import { auth } from '../src/lib/auth'
+import { credentialUserGateway } from '../src/gateways/credential-user-gateway'
 import { unscopedDbForDataScripts } from '../src/lib/db-unscoped'
 import {
   DEMO_CLASSES,
@@ -66,12 +66,8 @@ async function purge() {
 }
 
 async function createUser(name: string, email: string, password: string) {
-  const created = await auth.api.signUpEmail({ body: { name, email, password } })
-  await prisma.user.update({
-    where: { id: created.user.id },
-    data: { emailVerified: true },
-  })
-  return created.user.id
+  const created = await credentialUserGateway.create({ name, email, password })
+  return created.id
 }
 
 const emailPart = (value: string) =>

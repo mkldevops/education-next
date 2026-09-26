@@ -2,6 +2,11 @@ import { z } from 'zod'
 import { isCurrencyAmount } from '@/domain/enrollment'
 import { MCP_DRAFT_CHECKSUM_LENGTH } from '@/domain/mcp-draft'
 import { MCP_KEY_LIFETIMES_DAYS } from '@/domain/mcp-key'
+import {
+  createClassScheduleSlotSchema,
+  deleteClassScheduleSlotSchema,
+  updateClassScheduleSlotSchema,
+} from '@/use-cases/class-schedules/schemas'
 import { EVENT_CATEGORIES, EVENT_VISIBILITIES } from '@/use-cases/events/schemas'
 
 export const createMcpApiKeySchema = z.object({
@@ -167,4 +172,16 @@ export const mcpCreateEventSchema = z.object({
   endAt: eventWallClock.optional(),
   location: z.string().trim().max(250).optional(),
   announceDaysBefore: z.number().int().nonnegative().optional(),
+})
+
+export const mcpListClassScheduleSlotsSchema = z.object({ periodId: z.uuid() })
+export const mcpCreateClassScheduleSlotSchema = createClassScheduleSlotSchema.omit({
+  schoolId: true,
+})
+export const mcpUpdateClassScheduleSlotSchema = updateClassScheduleSlotSchema.omit({
+  schoolId: true,
+  classPeriodId: true,
+})
+export const mcpDeleteClassScheduleSlotSchema = deleteClassScheduleSlotSchema.omit({
+  schoolId: true,
 })
