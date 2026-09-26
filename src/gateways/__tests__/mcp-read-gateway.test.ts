@@ -7,6 +7,7 @@ const dbMock = {
   classPeriod: { findMany: vi.fn() },
   plan: { findMany: vi.fn() },
   teacher: { findMany: vi.fn() },
+  classScheduleSlot: { findMany: vi.fn() },
 }
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
@@ -91,6 +92,27 @@ describe('mcpReadGateway', () => {
       where: { schoolId: SCHOOL, isActive: true },
       select: { id: true, firstName: true, lastName: true },
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    })
+  })
+
+  it('publishes only active-class schedule fields within the key school and selected period', async () => {
+    await mcpReadGateway.listClassScheduleSlots(SCHOOL, 'period-1')
+
+    expect(dbMock.classScheduleSlot.findMany).toHaveBeenCalledWith({
+      where: { schoolId: SCHOOL, classPeriod: { periodId: 'period-1', isActive: true } },
+      select: {
+        id: true,
+        weekday: true,
+        startTime: true,
+        endTime: true,
+        description: true,
+        classPeriod: { select: { id: true, name: true } },
+        teachers: {
+          where: { teacher: { isActive: true } },
+          select: { teacher: { select: { id: true, firstName: true, lastName: true } } },
+        },
+      },
+      orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
     })
   })
 })

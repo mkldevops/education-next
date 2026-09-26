@@ -79,4 +79,22 @@ export const mcpReadGateway = {
       select: teacherIdentity,
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     }),
+
+  listClassScheduleSlots: (schoolId: string, periodId: string) =>
+    db.classScheduleSlot.findMany({
+      where: { schoolId, classPeriod: { periodId, isActive: true } },
+      select: {
+        id: true,
+        weekday: true,
+        startTime: true,
+        endTime: true,
+        description: true,
+        classPeriod: { select: namedRef },
+        teachers: {
+          where: { teacher: { isActive: true } },
+          select: { teacher: { select: teacherIdentity } },
+        },
+      },
+      orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
+    }),
 }

@@ -21,6 +21,7 @@ const mcpReadGateway = {
   listClassPeriods: vi.fn(),
   listPlans: vi.fn(),
   listTeachers: vi.fn(),
+  listClassScheduleSlots: vi.fn(),
 }
 
 const previewEnrollFamily = vi.fn()
@@ -30,6 +31,10 @@ const commitRecordPayment = vi.fn()
 const previewUpdateEnrollment = vi.fn()
 const commitUpdateEnrollment = vi.fn()
 const createEventFromMcp = vi.fn()
+const listClassScheduleSlotsFromMcp = vi.fn()
+const createClassScheduleSlotFromMcp = vi.fn()
+const updateClassScheduleSlotFromMcp = vi.fn()
+const deleteClassScheduleSlotFromMcp = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ McpServer: FakeMcpServer }))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
@@ -40,6 +45,12 @@ vi.mock('@/use-cases/mcp/commit-record-payment', () => ({ commitRecordPayment })
 vi.mock('@/use-cases/mcp/preview-update-enrollment', () => ({ previewUpdateEnrollment }))
 vi.mock('@/use-cases/mcp/commit-update-enrollment', () => ({ commitUpdateEnrollment }))
 vi.mock('@/use-cases/mcp/create-event', () => ({ createEventFromMcp }))
+vi.mock('@/use-cases/mcp/class-schedule', () => ({
+  listClassScheduleSlotsFromMcp,
+  createClassScheduleSlotFromMcp,
+  updateClassScheduleSlotFromMcp,
+  deleteClassScheduleSlotFromMcp,
+}))
 
 const { buildMcpServer } = await import('./server')
 
@@ -72,12 +83,16 @@ beforeEach(() => {
 })
 
 describe('buildMcpServer', () => {
-  it('publishes the six reads, create_event and the three preview/commit pairs when payments are enabled', () => {
+  it('publishes schedule tools alongside the existing reads and writes', () => {
     expect([...build().keys()]).toEqual([
       'describe_school',
       'list_levels',
       'list_periods',
       'list_class_periods',
+      'list_class_schedule_slots',
+      'create_class_schedule_slot',
+      'update_class_schedule_slot',
+      'delete_class_schedule_slot',
       'list_plans',
       'list_teachers',
       'preview_enroll_family',
@@ -96,6 +111,10 @@ describe('buildMcpServer', () => {
       'list_levels',
       'list_periods',
       'list_class_periods',
+      'list_class_schedule_slots',
+      'create_class_schedule_slot',
+      'update_class_schedule_slot',
+      'delete_class_schedule_slot',
       'list_teachers',
       'preview_enroll_family',
       'commit_enroll_family',
@@ -181,6 +200,28 @@ describe('buildMcpServer', () => {
     expect(createEventFromMcp).toHaveBeenCalledWith(scope, args)
     expect(result?.isError).toBe(true)
     expect(payload(result as never)).toEqual({ error: 'notConfigured' })
+  })
+
+  it('passes schedule operations the key scope and exposes typed refusals', async () => {
+    const tools = build()
+    const periodId = '00000000-0000-4000-8000-000000000001'
+    listClassScheduleSlotsFromMcp.mockResolvedValue([{ id: 'slot-1' }])
+    createClassScheduleSlotFromMcp.mockResolvedValue('classOverlap')
+    deleteClassScheduleSlotFromMcp.mockResolvedValue({ deleted: true })
+
+    const listed = await tools.get('list_class_schedule_slots')?.handler({ periodId })
+    const created = await tools.get('create_class_schedule_slot')?.handler({ weekday: 6 })
+    const deleted = await tools.get('delete_class_schedule_slot')?.handler({ id: 'slot-1' })
+
+    expect(listClassScheduleSlotsFromMcp).toHaveBeenCalledWith(scope, { periodId })
+    expect(payload(listed as never)).toEqual([{ id: 'slot-1' }])
+    expect(createClassScheduleSlotFromMcp).toHaveBeenCalledWith(scope, { weekday: 6 })
+    expect(created?.isError).toBe(true)
+    expect(payload(created as never)).toEqual({ error: 'classOverlap' })
+    expect(payload(deleted as never)).toEqual({ deleted: true })
+    expect(tools.get('delete_class_schedule_slot')?.config.annotations).toMatchObject({
+      destructiveHint: true,
+    })
   })
 
   it('hides an unexpected throw behind a fixed refusal, never its message', async () => {
