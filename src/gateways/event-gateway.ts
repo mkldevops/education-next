@@ -30,9 +30,15 @@ export type EventImageData = {
 export const eventGateway = {
   create: (schoolId: string, data: EventData) => db.event.create({ data: { ...data, schoolId } }),
 
-  update: (schoolId: string, id: string, data: UpdateEventData) =>
+  // `expectedStatus` pose le statut lu par l'appelant dans la condition de l'écriture : une
+  // publication survenue entre la lecture et l'écriture fait échouer la mise à jour au lieu
+  // de modifier un événement déjà diffusé.
+  update: (schoolId: string, id: string, data: UpdateEventData, expectedStatus?: EventStatus) =>
     db.event.update({
-      where: { id_schoolId: { id, schoolId } },
+      where: {
+        id_schoolId: { id, schoolId },
+        ...(expectedStatus ? { status: expectedStatus } : {}),
+      },
       data,
     }),
 

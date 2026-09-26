@@ -7,7 +7,17 @@ import { updateEventSchema } from './schemas'
 
 type Input = z.infer<typeof updateEventSchema>
 
-export async function updateEvent(input: Input, gw = eventGateway, configGw = configGateway) {
+type Options = {
+  /** Réservé au MCP : un agent ne retouche jamais un événement déjà publié ou annulé. */
+  draftOnly?: boolean
+}
+
+export async function updateEvent(
+  input: Input,
+  gw = eventGateway,
+  configGw = configGateway,
+  options: Options = {}
+) {
   const parsed = updateEventSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
@@ -16,6 +26,7 @@ export async function updateEvent(input: Input, gw = eventGateway, configGw = co
 
   const event = await gw.findById(schoolId, id)
   if (!event) return 'notFound' as const
+  if (options.draftOnly && event.status !== 'DRAFT') return 'notDraft' as const
 
   const normalized = normalizeEventDates({
     allDay: data.allDay ?? event.allDay,
@@ -39,9 +50,14 @@ export async function updateEvent(input: Input, gw = eventGateway, configGw = co
     }
   }
 
-  return gw.update(schoolId, id, {
-    ...data,
-    ...normalized,
-    ...(slug !== undefined ? { slug } : {}),
-  })
+  return gw.update(
+    schoolId,
+    id,
+    {
+      ...data,
+      ...normalized,
+      ...(slug !== undefined ? { slug } : {}),
+    },
+    options.draftOnly ? 'DRAFT' : undefined
+  )
 }

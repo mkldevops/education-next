@@ -1,21 +1,10 @@
 import type { z } from 'zod'
 import { createEvent } from '@/use-cases/events/create-event'
+import { isDateOnly, publishEvent, toWallClock } from './event-fields'
 import type { McpScope } from './resolve-mcp-scope'
 import { mcpCreateEventSchema } from './schemas'
 
 type Input = z.infer<typeof mcpCreateEventSchema>
-
-const DATE_ONLY_LENGTH = 10
-
-function isDateOnly(value: string): boolean {
-  return value.length === DATE_ONLY_LENGTH
-}
-
-/** Heure murale sans fuseau lue en UTC, exactement comme `parseEventInputValue`. */
-function toWallClock(value: string): Date {
-  if (isDateOnly(value)) return new Date(`${value}T00:00:00.000Z`)
-  return new Date(value.endsWith('Z') ? value : `${value}Z`)
-}
 
 /**
  * Adaptateur MCP de `createEvent`, qui garde seul drapeau, bornes et refus `'slugTaken'` :
@@ -43,16 +32,5 @@ export async function createEventFromMcp(
   })
   if (typeof result === 'string') return result
 
-  return {
-    id: result.id,
-    slug: result.slug,
-    title: result.title,
-    category: result.category,
-    visibility: result.visibility,
-    status: result.status,
-    allDay: result.allDay,
-    startAt: result.startAt,
-    endAt: result.endAt,
-    location: result.location,
-  }
+  return publishEvent(result)
 }

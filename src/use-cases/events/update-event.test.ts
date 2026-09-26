@@ -9,6 +9,7 @@ const eventId = '123e4567-e89b-12d3-a456-426614174000'
 
 type EventFixture = {
   id: string
+  status: string
   title: string
   slug: string
   allDay: boolean
@@ -20,6 +21,7 @@ type EventFixture = {
 function baseEvent(): EventFixture {
   return {
     id: eventId,
+    status: 'DRAFT',
     title: 'Réunion de rentrée',
     slug: 'reunion-de-rentree',
     allDay: true,
@@ -35,6 +37,7 @@ class EventGatewaySpy {
   updatedSchoolId: string | null = null
   updatedId: string | null = null
   updatedData: unknown = null
+  expectedStatus: string | undefined = undefined
 
   async findById() {
     return this.eventToReturn
@@ -44,7 +47,8 @@ class EventGatewaySpy {
     return this.existingSlug?.slug === slug ? this.existingSlug : null
   }
 
-  async update(updateSchoolId: string, id: string, data: unknown) {
+  async update(updateSchoolId: string, id: string, data: unknown, expectedStatus?: string) {
+    this.expectedStatus = expectedStatus
     this.updatedSchoolId = updateSchoolId
     this.updatedId = id
     this.updatedData = data
@@ -158,5 +162,40 @@ describe('updateEvent', () => {
     )
 
     expect(result).toBe('slugTaken')
+  })
+
+  it('writes without a status condition for the dashboard', async () => {
+    await updateEvent(
+      { schoolId, id: eventId, title: 'Portes ouvertes' },
+      eventGateway as unknown as EventGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(eventGateway.expectedStatus).toBeUndefined()
+  })
+
+  it('refuses a published event when restricted to drafts', async () => {
+    eventGateway.eventToReturn = { ...baseEvent(), status: 'PUBLISHED' }
+
+    const result = await updateEvent(
+      { schoolId, id: eventId, title: 'Portes ouvertes' },
+      eventGateway as unknown as EventGw,
+      configGateway as unknown as ConfigGw,
+      { draftOnly: true }
+    )
+
+    expect(result).toBe('notDraft')
+    expect(eventGateway.updatedData).toBeNull()
+  })
+
+  it('conditions the draft-only write on the draft status, so a concurrent publish fails it', async () => {
+    await updateEvent(
+      { schoolId, id: eventId, title: 'Portes ouvertes' },
+      eventGateway as unknown as EventGw,
+      configGateway as unknown as ConfigGw,
+      { draftOnly: true }
+    )
+
+    expect(eventGateway.expectedStatus).toBe('DRAFT')
   })
 })

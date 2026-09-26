@@ -1,3 +1,4 @@
+import type { EventStatus } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 
@@ -15,6 +16,28 @@ import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 const teacherIdentity = { id: true, firstName: true, lastName: true } as const
 
 const namedRef = { id: true, name: true } as const
+
+// Aucune image : la route média sert une clé d'objet sans regarder visibilité ni statut,
+// si bien qu'une `storageKey` publiée ouvrirait l'affiche d'un brouillon à quiconque la lit.
+const eventSummary = {
+  id: true,
+  slug: true,
+  title: true,
+  category: true,
+  visibility: true,
+  status: true,
+  allDay: true,
+  startAt: true,
+  endAt: true,
+  location: true,
+} as const
+
+export type McpEventFilter = {
+  from?: Date
+  before?: Date
+  status?: EventStatus
+  take: number
+}
 
 export const mcpReadGateway = {
   // `School` n'est pas couvert par le soft-delete de `src/lib/db.ts` : le filtre est explicite.
@@ -78,5 +101,30 @@ export const mcpReadGateway = {
       where: { schoolId, isActive: true },
       select: teacherIdentity,
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    }),
+
+  listEvents: (schoolId: string, filter: McpEventFilter) =>
+    db.event.findMany({
+      where: {
+        schoolId,
+        ...(filter.status ? { status: filter.status } : {}),
+        ...(filter.from || filter.before
+          ? {
+              startAt: {
+                ...(filter.from ? { gte: filter.from } : {}),
+                ...(filter.before ? { lt: filter.before } : {}),
+              },
+            }
+          : {}),
+      },
+      select: eventSummary,
+      orderBy: [{ startAt: 'asc' }, { id: 'asc' }],
+      take: filter.take,
+    }),
+
+  getEvent: (schoolId: string, id: string) =>
+    db.event.findUnique({
+      where: { id_schoolId: { id, schoolId } },
+      select: { ...eventSummary, summary: true, description: true, announceDaysBefore: true },
     }),
 }
