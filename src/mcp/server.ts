@@ -1,6 +1,12 @@
 import { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
+import {
+  createClassScheduleSlotFromMcp,
+  deleteClassScheduleSlotFromMcp,
+  listClassScheduleSlotsFromMcp,
+  updateClassScheduleSlotFromMcp,
+} from '@/use-cases/mcp/class-schedule'
 import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
 import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
@@ -16,10 +22,14 @@ import {
   commitDraftSchema,
   MCP_EVENT_LIST_DEFAULT,
   MCP_EVENT_LIST_MAX,
+  mcpCreateClassScheduleSlotSchema,
   mcpCreateEventSchema,
+  mcpDeleteClassScheduleSlotSchema,
   mcpDuplicateEventSchema,
   mcpEventIdSchema,
+  mcpListClassScheduleSlotsSchema,
   mcpListEventsSchema,
+  mcpUpdateClassScheduleSlotSchema,
   mcpUpdateEventSchema,
   previewEnrollFamilySchema,
   previewRecordPaymentSchema,
@@ -43,6 +53,7 @@ const NON_IDEMPOTENT_WRITE = {
 }
 
 const IDEMPOTENT_COMMIT = { destructiveHint: false, idempotentHint: true, openWorldHint: false }
+const DESTRUCTIVE_WRITE = { ...NON_IDEMPOTENT_WRITE, destructiveHint: true }
 
 // Réécrit des champs saisis par un humain : un client en approbation automatique doit
 // demander avant, même si rejouer les mêmes arguments ne change plus rien.
@@ -151,6 +162,69 @@ export function buildMcpServer(scope: McpScope): McpServer {
       inputSchema: NO_ARGS,
     },
     async () => read('list_class_periods', () => mcpReadGateway.listClassPeriods(schoolId))
+  )
+
+  server.registerTool(
+    'list_class_schedule_slots',
+    {
+      title: 'Créneaux du planning',
+      description:
+        "Liste les créneaux hebdomadaires d'une période de l'école de la clé. " +
+        'Prendre `periodId` dans `list_periods`. `weekday` vaut 1 pour lundi et 7 pour dimanche. ' +
+        'Refus `notConfigured` si le planning est désactivé.',
+      inputSchema: mcpListClassScheduleSlotsSchema,
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    async (args) =>
+      write('list_class_schedule_slots', () => listClassScheduleSlotsFromMcp(scope, args))
+  )
+
+  server.registerTool(
+    'create_class_schedule_slot',
+    {
+      title: 'Créer un créneau hebdomadaire',
+      description:
+        "Ajoute un créneau récurrent à une classe de l'école de la clé. Prendre `classPeriodId` " +
+        'dans `list_class_periods`; `weekday` vaut 1 pour lundi et 7 pour dimanche; heures ' +
+        '`HH:mm`, avec fin exclue. `teacherIds` contient seulement des enseignants déjà affectés ' +
+        'à cette classe, ou `[]`. Rend `id` et les avertissements de chevauchement enseignant. ' +
+        'Refus : `notConfigured`, `classPeriodNotFound`, `teacherNotFound`, `invalidTimeRange`, ' +
+        '`classOverlap`, `teacherOverlap`, `validationError`.',
+      inputSchema: mcpCreateClassScheduleSlotSchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+    },
+    async (args) =>
+      write('create_class_schedule_slot', () => createClassScheduleSlotFromMcp(scope, args))
+  )
+
+  server.registerTool(
+    'update_class_schedule_slot',
+    {
+      title: 'Modifier un créneau hebdomadaire',
+      description:
+        "Remplace les données d'un créneau de l'école de la clé. `id` vient de " +
+        '`list_class_schedule_slots`; fournir tous les champs modifiables, y compris `teacherIds`. ' +
+        'La classe du créneau ne change pas. ' +
+        'Même validation que la création, plus `notFound`.',
+      inputSchema: mcpUpdateClassScheduleSlotSchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+    },
+    async (args) =>
+      write('update_class_schedule_slot', () => updateClassScheduleSlotFromMcp(scope, args))
+  )
+
+  server.registerTool(
+    'delete_class_schedule_slot',
+    {
+      title: 'Supprimer un créneau hebdomadaire',
+      description:
+        "Supprime un créneau de l'école de la clé par son `id`. Cette opération peut changer " +
+        'les présences attendues. Refus : `notConfigured`, `notFound`, `validationError`.',
+      inputSchema: mcpDeleteClassScheduleSlotSchema,
+      annotations: DESTRUCTIVE_WRITE,
+    },
+    async (args) =>
+      write('delete_class_schedule_slot', () => deleteClassScheduleSlotFromMcp(scope, args))
   )
 
   if (scope.paymentsEnabled) {

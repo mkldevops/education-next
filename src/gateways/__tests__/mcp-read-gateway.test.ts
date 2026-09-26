@@ -8,6 +8,7 @@ const dbMock = {
   plan: { findMany: vi.fn() },
   teacher: { findMany: vi.fn() },
   event: { findMany: vi.fn(), findUnique: vi.fn() },
+  classScheduleSlot: { findMany: vi.fn() },
 }
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
@@ -136,6 +137,27 @@ describe('mcpReadGateway', () => {
     expect(dbMock.event.findUnique).toHaveBeenCalledWith({
       where: { id_schoolId: { id: 'event-1', schoolId: SCHOOL } },
       select: { ...eventSummary, summary: true, description: true, announceDaysBefore: true },
+    })
+  })
+
+  it('publishes only active-class schedule fields within the key school and selected period', async () => {
+    await mcpReadGateway.listClassScheduleSlots(SCHOOL, 'period-1')
+
+    expect(dbMock.classScheduleSlot.findMany).toHaveBeenCalledWith({
+      where: { schoolId: SCHOOL, classPeriod: { periodId: 'period-1', isActive: true } },
+      select: {
+        id: true,
+        weekday: true,
+        startTime: true,
+        endTime: true,
+        description: true,
+        classPeriod: { select: { id: true, name: true } },
+        teachers: {
+          where: { teacher: { isActive: true } },
+          select: { teacher: { select: { id: true, firstName: true, lastName: true } } },
+        },
+      },
+      orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
     })
   })
 })
