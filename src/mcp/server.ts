@@ -11,27 +11,38 @@ import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
 import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
 import { createEventFromMcp } from '@/use-cases/mcp/create-event'
+import { duplicateEventFromMcp } from '@/use-cases/mcp/duplicate-event'
+import { getEventFromMcp } from '@/use-cases/mcp/get-event'
+import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
 import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
 import type { McpScope } from '@/use-cases/mcp/resolve-mcp-scope'
 import {
   commitDraftSchema,
+  MCP_EVENT_LIST_DEFAULT,
+  MCP_EVENT_LIST_MAX,
   mcpCreateClassScheduleSlotSchema,
   mcpCreateEventSchema,
   mcpDeleteClassScheduleSlotSchema,
+  mcpDuplicateEventSchema,
+  mcpEventIdSchema,
   mcpListClassScheduleSlotsSchema,
+  mcpListEventsSchema,
   mcpUpdateClassScheduleSlotSchema,
+  mcpUpdateEventSchema,
   previewEnrollFamilySchema,
   previewRecordPaymentSchema,
   previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
+import { updateEventFromMcp } from '@/use-cases/mcp/update-event'
 
 const SERVER_INFO = { name: 'education', version: '1.0.0' }
 
 const NO_ARGS = z.object({})
 
-// Pas `readOnlyHint` : un preview persiste son brouillon et `create_event` écrit sa ligne.
+// Pas `readOnlyHint` : un preview persiste son brouillon, `create_event` et `duplicate_event`
+// écrivent leur ligne.
 // Le dire évite qu'un client en approbation automatique fabrique des lignes sans jamais
 // demander.
 const NON_IDEMPOTENT_WRITE = {
@@ -43,6 +54,15 @@ const NON_IDEMPOTENT_WRITE = {
 
 const IDEMPOTENT_COMMIT = { destructiveHint: false, idempotentHint: true, openWorldHint: false }
 const DESTRUCTIVE_WRITE = { ...NON_IDEMPOTENT_WRITE, destructiveHint: true }
+
+// Réécrit des champs saisis par un humain : un client en approbation automatique doit
+// demander avant, même si rejouer les mêmes arguments ne change plus rien.
+const IDEMPOTENT_OVERWRITE = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: true,
+  openWorldHint: false,
+}
 
 function json(payload: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(payload) }] }
@@ -64,6 +84,15 @@ async function guard(
 }
 
 /**
+ * Les use cases rendent leurs échecs attendus sous forme de chaîne typée ; seule cette
+ * couche sait qu'une chaîne est un refus et non une valeur. Aucune projection lue ne se
+ * réduit à une chaîne, donc lectures et écritures partagent la règle.
+ */
+function toToolResult(result: unknown): ToolResult {
+  return typeof result === 'string' ? { ...json({ error: result }), isError: true } : json(result)
+}
+
+/**
  * Lecture d'outil avec frontière d'erreur.
  *
  * Un jet inattendu — `TenantScopeError`, une erreur Prisma qui recopie la requête et les
@@ -72,20 +101,12 @@ async function guard(
  * les journaux du serveur, l'appelant ne reçoit qu'un refus fixe.
  */
 function read(tool: string, load: () => Promise<unknown>) {
-  return guard(tool, load, json)
+  return guard(tool, load, toToolResult)
 }
 
-/**
- * Écriture d'outil, même frontière d'erreur que `read()`.
- *
- * Les use cases d'écriture rendent leurs échecs attendus sous forme de chaîne typée ;
- * seule cette couche sait qu'une chaîne est un refus et non une valeur. Le `catch`
- * couvre le reste, pour la raison écrite au-dessus.
- */
+/** Écriture d'outil, même frontière d'erreur et mêmes refus typés que `read()`. */
 function write(tool: string, run: () => Promise<unknown>) {
-  return guard(tool, run, (result) =>
-    typeof result === 'string' ? { ...json({ error: result }), isError: true } : json(result)
-  )
+  return guard(tool, run, toToolResult)
 }
 
 /**
@@ -262,7 +283,7 @@ export function buildMcpServer(scope: McpScope): McpServer {
     async (args) => write('commit_enroll_family', () => commitEnrollFamily(scope, args))
   )
 
-  // Déclaré même quand `events_enabled` est éteint, à l'inverse des outils d'argent : le
+  // Déclarés même quand `events_enabled` est éteint, à l'inverse des outils d'argent : le
   // refus `notConfigured` de `createEvent` est ici le contrat, identique à celui de l'action
   // serveur, et lire le drapeau ici rendrait la construction du serveur asynchrone.
   server.registerTool(
@@ -280,6 +301,62 @@ export function buildMcpServer(scope: McpScope): McpServer {
       annotations: NON_IDEMPOTENT_WRITE,
     },
     async (args) => write('create_event', () => createEventFromMcp(scope, args))
+  )
+
+  server.registerTool(
+    'list_events',
+    {
+      title: 'Événements',
+      description:
+        "Événements actifs de l'école, tous statuts, du plus proche au plus lointain. `from` " +
+        'et `to` sont des jours inclus (`2026-12-03`) bornant le début ; `status` filtre ' +
+        `(\`DRAFT\` pour relire les brouillons) ; \`limit\` vaut ${MCP_EVENT_LIST_DEFAULT} par ` +
+        `défaut, ${MCP_EVENT_LIST_MAX} au plus, et \`hasMore\` signale une page tronquée. ` +
+        'Refus : `notConfigured`, `invalidDateRange`, `validationError`.',
+      inputSchema: mcpListEventsSchema,
+    },
+    async (args) => read('list_events', () => listEventsFromMcp(scope, args))
+  )
+
+  server.registerTool(
+    'get_event',
+    {
+      title: 'Lire un événement',
+      description:
+        "Un événement de l'école avec son résumé, sa description et son annonce J-x. Refus : " +
+        '`notFound` (inconnu ou archivé), `notConfigured`, `validationError`.',
+      inputSchema: mcpEventIdSchema,
+    },
+    async (args) => read('get_event', () => getEventFromMcp(scope, args))
+  )
+
+  server.registerTool(
+    'update_event',
+    {
+      title: "Corriger un brouillon d'événement",
+      description:
+        'Modifie un événement encore en brouillon ; une clé absente garde sa valeur, `null` ' +
+        'efface un champ facultatif. Dates au format de `create_event`. Aucun `status` : la ' +
+        'publication se fait depuis le tableau de bord. Refus : `notDraft` (déjà publié ou ' +
+        'annulé), `notFound`, `slugTaken`, `invalidDateRange`, `notConfigured`, `validationError`.',
+      inputSchema: mcpUpdateEventSchema,
+      annotations: IDEMPOTENT_OVERWRITE,
+    },
+    async (args) => write('update_event', () => updateEventFromMcp(scope, args))
+  )
+
+  server.registerTool(
+    'duplicate_event',
+    {
+      title: 'Reconduire un événement',
+      description:
+        "Copie un événement à l'année suivante, en brouillon et sans image, sous un nouveau " +
+        "titre — un titre identique heurterait `slugTaken` : ajouter l'année. Refus : " +
+        '`notFound`, `slugTaken`, `notConfigured`, `validationError`.',
+      inputSchema: mcpDuplicateEventSchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+    },
+    async (args) => write('duplicate_event', () => duplicateEventFromMcp(scope, args))
   )
 
   // Les cinq outils d'argent ci-dessous ne se déclarent pas quand l'école a coupé les

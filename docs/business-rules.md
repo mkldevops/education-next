@@ -1786,6 +1786,13 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   It accepts no `status` — a dictated event is born `DRAFT` and published from the dashboard — and
   its dates are a day or a zone-less wall-clock time: an offset would be an instant, not the hour
   read on a flyer.
+- **The MCP rereads and corrects events, it never publishes them.** `list_events` and `get_event`
+  read through `src/gateways/mcp-read-gateway.ts` with explicit `select`s and no image, since the
+  media route does not check status or visibility. `update_event` runs `updateEvent` with
+  `draftOnly`: a non-`DRAFT` event is refused with `'notDraft'`, and `eventGateway.update` adds
+  `status: 'DRAFT'` to its `where`, so a publication between the read and the write fails the update
+  instead of editing a live event. `duplicate_event` is `duplicateEvent` unchanged. None of them
+  accepts a `status`.
 - **Both `Event` and `EventImage` are tenant-scoped** (`src/lib/tenant-guard.ts`); `Event` is also
   soft-deleted through the shared extension (`src/lib/db.ts`), so an archived event disappears from
   every top-level read without a filter written by hand.

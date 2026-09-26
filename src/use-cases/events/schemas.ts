@@ -12,7 +12,7 @@ export const EVENT_CATEGORIES = [
 
 export const EVENT_VISIBILITIES = ['PUBLIC', 'MEMBERS', 'STAFF'] as const
 
-const EVENT_STATUSES = ['DRAFT', 'PUBLISHED', 'CANCELLED'] as const
+export const EVENT_STATUSES = ['DRAFT', 'PUBLISHED', 'CANCELLED'] as const
 
 export const createEventSchema = z.object({
   schoolId: z.string().min(1),

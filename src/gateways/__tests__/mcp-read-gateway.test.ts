@@ -7,6 +7,7 @@ const dbMock = {
   classPeriod: { findMany: vi.fn() },
   plan: { findMany: vi.fn() },
   teacher: { findMany: vi.fn() },
+  event: { findMany: vi.fn(), findUnique: vi.fn() },
   classScheduleSlot: { findMany: vi.fn() },
 }
 
@@ -92,6 +93,50 @@ describe('mcpReadGateway', () => {
       where: { schoolId: SCHOOL, isActive: true },
       select: { id: true, firstName: true, lastName: true },
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    })
+  })
+
+  const eventSummary = {
+    id: true,
+    slug: true,
+    title: true,
+    category: true,
+    visibility: true,
+    status: true,
+    allDay: true,
+    startAt: true,
+    endAt: true,
+    location: true,
+  }
+
+  it('lists events by their start, bounded, without images or school id', async () => {
+    const from = new Date('2026-12-01T00:00:00.000Z')
+    const before = new Date('2027-01-01T00:00:00.000Z')
+
+    await mcpReadGateway.listEvents(SCHOOL, { from, before, status: 'DRAFT', take: 11 })
+
+    expect(dbMock.event.findMany).toHaveBeenCalledWith({
+      where: { schoolId: SCHOOL, status: 'DRAFT', startAt: { gte: from, lt: before } },
+      select: eventSummary,
+      orderBy: [{ startAt: 'asc' }, { id: 'asc' }],
+      take: 11,
+    })
+  })
+
+  it('lists every status and date when no filter is given', async () => {
+    await mcpReadGateway.listEvents(SCHOOL, { take: 51 })
+
+    expect(dbMock.event.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { schoolId: SCHOOL }, take: 51 })
+    )
+  })
+
+  it('reads one event of the school with its texts, never its images', async () => {
+    await mcpReadGateway.getEvent(SCHOOL, 'event-1')
+
+    expect(dbMock.event.findUnique).toHaveBeenCalledWith({
+      where: { id_schoolId: { id: 'event-1', schoolId: SCHOOL } },
+      select: { ...eventSummary, summary: true, description: true, announceDaysBefore: true },
     })
   })
 

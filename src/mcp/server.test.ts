@@ -31,6 +31,10 @@ const commitRecordPayment = vi.fn()
 const previewUpdateEnrollment = vi.fn()
 const commitUpdateEnrollment = vi.fn()
 const createEventFromMcp = vi.fn()
+const listEventsFromMcp = vi.fn()
+const getEventFromMcp = vi.fn()
+const updateEventFromMcp = vi.fn()
+const duplicateEventFromMcp = vi.fn()
 const listClassScheduleSlotsFromMcp = vi.fn()
 const createClassScheduleSlotFromMcp = vi.fn()
 const updateClassScheduleSlotFromMcp = vi.fn()
@@ -45,6 +49,10 @@ vi.mock('@/use-cases/mcp/commit-record-payment', () => ({ commitRecordPayment })
 vi.mock('@/use-cases/mcp/preview-update-enrollment', () => ({ previewUpdateEnrollment }))
 vi.mock('@/use-cases/mcp/commit-update-enrollment', () => ({ commitUpdateEnrollment }))
 vi.mock('@/use-cases/mcp/create-event', () => ({ createEventFromMcp }))
+vi.mock('@/use-cases/mcp/list-events', () => ({ listEventsFromMcp }))
+vi.mock('@/use-cases/mcp/get-event', () => ({ getEventFromMcp }))
+vi.mock('@/use-cases/mcp/update-event', () => ({ updateEventFromMcp }))
+vi.mock('@/use-cases/mcp/duplicate-event', () => ({ duplicateEventFromMcp }))
 vi.mock('@/use-cases/mcp/class-schedule', () => ({
   listClassScheduleSlotsFromMcp,
   createClassScheduleSlotFromMcp,
@@ -83,7 +91,7 @@ beforeEach(() => {
 })
 
 describe('buildMcpServer', () => {
-  it('publishes schedule tools alongside the existing reads and writes', () => {
+  it('publishes the reads, the schedule and event tools and the three preview/commit pairs when payments are enabled', () => {
     expect([...build().keys()]).toEqual([
       'describe_school',
       'list_levels',
@@ -98,6 +106,10 @@ describe('buildMcpServer', () => {
       'preview_enroll_family',
       'commit_enroll_family',
       'create_event',
+      'list_events',
+      'get_event',
+      'update_event',
+      'duplicate_event',
       'preview_record_payment',
       'commit_record_payment',
       'preview_update_enrollment',
@@ -119,6 +131,10 @@ describe('buildMcpServer', () => {
       'preview_enroll_family',
       'commit_enroll_family',
       'create_event',
+      'list_events',
+      'get_event',
+      'update_event',
+      'duplicate_event',
     ])
   })
 
@@ -200,6 +216,46 @@ describe('buildMcpServer', () => {
     expect(createEventFromMcp).toHaveBeenCalledWith(scope, args)
     expect(result?.isError).toBe(true)
     expect(payload(result as never)).toEqual({ error: 'notConfigured' })
+  })
+
+  it('hands the event tools to their use cases with the key scope', async () => {
+    const tools = build()
+    const id = '123e4567-e89b-12d3-a456-426614174000'
+
+    await tools.get('list_events')?.handler({ status: 'DRAFT' })
+    await tools.get('get_event')?.handler({ id })
+    await tools.get('update_event')?.handler({ id, title: 'Fête' })
+    await tools.get('duplicate_event')?.handler({ id, title: 'Fête 2027' })
+
+    expect(listEventsFromMcp).toHaveBeenCalledWith(scope, { status: 'DRAFT' })
+    expect(getEventFromMcp).toHaveBeenCalledWith(scope, { id })
+    expect(updateEventFromMcp).toHaveBeenCalledWith(scope, { id, title: 'Fête' })
+    expect(duplicateEventFromMcp).toHaveBeenCalledWith(scope, { id, title: 'Fête 2027' })
+  })
+
+  it('turns a read refusal into a named tool error', async () => {
+    getEventFromMcp.mockResolvedValue('notFound')
+
+    const result = await build().get('get_event')?.handler({})
+
+    expect(result?.isError).toBe(true)
+    expect(payload(result as never)).toEqual({ error: 'notFound' })
+  })
+
+  it('asks before overwriting a draft and never offers a status to publish it', () => {
+    const tools = build()
+    const schema = tools.get('update_event')?.config.inputSchema as { shape: object }
+
+    expect(tools.get('update_event')?.config.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+    })
+    expect(tools.get('duplicate_event')?.config.annotations).toMatchObject({
+      readOnlyHint: false,
+      idempotentHint: false,
+    })
+    expect(Object.keys(schema.shape)).not.toContain('status')
   })
 
   it('passes schedule operations the key scope and exposes typed refusals', async () => {

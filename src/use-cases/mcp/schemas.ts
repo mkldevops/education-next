@@ -7,7 +7,7 @@ import {
   deleteClassScheduleSlotSchema,
   updateClassScheduleSlotSchema,
 } from '@/use-cases/class-schedules/schemas'
-import { EVENT_CATEGORIES, EVENT_VISIBILITIES } from '@/use-cases/events/schemas'
+import { EVENT_CATEGORIES, EVENT_STATUSES, EVENT_VISIBILITIES } from '@/use-cases/events/schemas'
 
 export const createMcpApiKeySchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -172,6 +172,41 @@ export const mcpCreateEventSchema = z.object({
   endAt: eventWallClock.optional(),
   location: z.string().trim().max(250).optional(),
   announceDaysBefore: z.number().int().nonnegative().optional(),
+})
+
+export const MCP_EVENT_LIST_DEFAULT = 50
+export const MCP_EVENT_LIST_MAX = 100
+
+export const mcpListEventsSchema = z.object({
+  from: z.iso.date().optional(),
+  to: z.iso.date().optional(),
+  status: z.enum(EVENT_STATUSES).optional(),
+  limit: z.number().int().min(1).max(MCP_EVENT_LIST_MAX).optional(),
+})
+
+export const mcpEventIdSchema = z.object({ id: z.uuid() })
+
+/**
+ * Toujours sans `status` : la publication reste une action humaine du tableau de bord. Un
+ * `null` efface un champ facultatif, une clé absente le laisse tel quel.
+ */
+export const mcpUpdateEventSchema = z.object({
+  id: z.uuid(),
+  title: z.string().trim().min(1).max(120).optional(),
+  summary: z.string().trim().max(280).nullable().optional(),
+  description: z.string().trim().max(5000).nullable().optional(),
+  category: z.enum(EVENT_CATEGORIES).optional(),
+  visibility: z.enum(EVENT_VISIBILITIES).optional(),
+  allDay: z.boolean().optional(),
+  startAt: eventWallClock.optional(),
+  endAt: eventWallClock.nullable().optional(),
+  location: z.string().trim().max(250).nullable().optional(),
+  announceDaysBefore: z.number().int().nonnegative().nullable().optional(),
+})
+
+export const mcpDuplicateEventSchema = z.object({
+  id: z.uuid(),
+  title: z.string().trim().min(1).max(120),
 })
 
 export const mcpListClassScheduleSlotsSchema = z.object({ periodId: z.uuid() })

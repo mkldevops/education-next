@@ -192,6 +192,32 @@ school has not enabled events, `slugTaken` when an active event already has that
 `invalidDateRange`, `validationError`. The result publishes `id`, `slug`, `title`, `category`,
 `visibility`, `status`, `allDay`, `startAt`, `endAt`, `location`.
 
+## Reading and correcting events
+
+Four tools let an agent reread and fix what it dictated. They run the dashboard's own use cases, so
+`events_enabled`, the date bounds and `slugTaken` behave exactly as on screen; a disabled school
+gets `notConfigured` from each of them.
+
+| Tool | Arguments | Publishes |
+|---|---|---|
+| `list_events` | optional `from`, `to` (inclusive days bounding `startAt`), `status`, `limit` (default 50, at most 100) | `events[]` with the columns of `create_event`'s result, `hasMore` |
+| `get_event` | `id` | the same columns plus `summary`, `description`, `announceDaysBefore` |
+| `update_event` | `id` and any field of `create_event`; `null` clears an optional one | the updated event |
+| `duplicate_event` | `id`, a new `title` | the copy, one year later |
+
+- `list_events` covers every status, so a draft created earlier is found with `status: "DRAFT"`.
+  Archived events never appear. `to` before `from` is `invalidDateRange`.
+- No event tool publishes an image. The media route serves an object key without checking the
+  event's visibility or status, so a published key would expose a draft's poster.
+- `update_event` only touches a `DRAFT` (`notDraft` otherwise) and accepts no `status`: publishing
+  stays a dashboard action. The draft status is part of the write condition, so an admin publishing
+  the event between the read and the write makes the tool fail (`internalError`) rather than edit a
+  live event. Without `startAt` or `allDay`, the event keeps its `allDay`; a `startAt` sent alone
+  follows the rule of `create_event`.
+- `duplicate_event` is `duplicateEvent`: the copy is born `DRAFT`, without images, shifted by one
+  year. The source may be published. Reusing the source title is refused with `slugTaken` — put the
+  year in the new title.
+
 ## Writing: the preview/commit pairs
 
 Three pairs are shipped. `create_teacher` and `record_teacher_expense` are not — a teacher sheet and a
