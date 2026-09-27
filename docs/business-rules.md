@@ -1292,7 +1292,9 @@ the checkout flow, not by the form.
 
 `create-checkout-session.ts` / `complete-checkout-session.ts`.
 
-- Missing Stripe client or webhook secret → `notConfigured`. The feature degrades, it does not crash.
+- No usable credentials, or Stripe switched off by the school → `notConfigured`. The feature
+  degrades, it does not crash. The session metadata carries `transactionId`, `familyId` and
+  `schoolId`.
 - Nothing owed → `noBalance`. The session is always opened for the **full `remainingBalance`**,
   pending enrollments included; partial online payment is not offered.
 - The `PaymentTransaction` row is created **before** the Stripe session and its id is the
@@ -1302,7 +1304,10 @@ the checkout flow, not by the form.
   `PENDING` transaction of the family is closed: a session still `open` at Stripe is expired
   (`sessions.expire`) and its transaction marked `EXPIRED`; a session already `complete` means a
   payment is awaiting its webhook → `paymentInProgress`, and no new session opens. If Stripe
-  cannot confirm the earlier session's state → `providerError`, never a second session.
+  cannot confirm the earlier session's state → `providerError`, never a second session. A session
+  unknown to the current account (`resource_missing`: opened with other keys before the school
+  changed its Stripe account) can never be paid on it, so its transaction is closed `EXPIRED`
+  instead of locking the family; a late webhook from the former account still records it.
   Balance read, closing and opening run under a per-family advisory lock taken without waiting
   (`paymentGateway.tryLockFamilyCheckout`): a request arriving while another is opening a session
   for the same family → `checkoutInProgress`, so no database connection is held in a queue. That
@@ -1333,6 +1338,38 @@ the checkout flow, not by the form.
   and `notPaid` (an async payment is followed by `async_payment_succeeded`), so Stripe does not
   retry what no retry would change. `notFound`, `amountMismatch` and `currencyMismatch` still
   answer 422: they need investigation.
+
+#### Stripe configuration per school
+
+`src/use-cases/payments/stripe-settings.ts`, keys in `src/lib/stripe-config.ts`. Written from the
+**Paiements** section of `/dashboard/config` (`stripe-settings-actions.ts`, `requireSchoolAdmin()`,
+`schoolId` from the session, layout revalidated on success).
+
+- Three school `Config` rows: `stripe_enabled` (BOOLEAN), `stripe_secret_key` and
+  `stripe_webhook_secret` (TEXT, encrypted with `src/lib/secret-crypto.ts` like the OpenRouter key).
+  A secret is never sent back: the page receives only `configured`, `notConfigured` or `unreadable`
+  (encrypted under another `SETTINGS_ENCRYPTION_KEY`). Without that key, saving answers
+  `secretStorageNotConfigured` rather than storing in clear.
+- The secret names are **not** in `SCHOOL_CONFIG_KEYS`, so the generic editor and `setConfigAction`
+  can neither show nor write them, and `getConfig` answers `notFound` for them.
+- Input format is checked before encryption: `sk_`/`rk_` + `test`/`live` for the key (a pasted
+  publishable `pk_` key is refused), `whsec_` for the webhook secret → `validationError`.
+- **Resolution: the school's pair, else the instance pair** (`STRIPE_SECRET_KEY` +
+  `STRIPE_WEBHOOK_SECRET`), **never a mix**. A school key with the instance webhook secret would
+  sign for one account and verify for another. An unreadable school secret counts as absent.
+- **Absence of `stripe_enabled` reads as enabled** (`readsAsEnabled`), so a school already paid
+  through the instance keys keeps its button. It is effective only when configured: `available` =
+  enabled **and** a readable pair exists. The toggle is disabled with an explicit message while no
+  pair is readable, and enabling without one → `notConfigured`. Disabling is always allowed.
+- The parent « Payer en ligne » button (dashboard and family page) reads `isOnlinePaymentAvailable`;
+  `createCheckoutSession` reads `resolveCheckoutCredentials`, which returns `null` when the school
+  switched Stripe off → `notConfigured`. `payments_enabled` is checked first and still wins.
+- **Webhook per school**: `/api/stripe/webhook/{schoolId}` (URL shown and copyable in the config
+  page). The school comes from the path, validated as a UUID, and its secret verifies the
+  signature; the body is never trusted to pick the school. It resolves credentials **without**
+  reading `stripe_enabled`: a payment captured before the cut is still recorded. The verified
+  `schoolId` is passed to `completeCheckoutSession`, which answers `notFound` for a transaction of
+  another school. The legacy `/api/stripe/webhook` keeps verifying with the instance pair only.
 
 ### Activating payments per school
 

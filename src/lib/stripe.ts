@@ -1,15 +1,27 @@
 import Stripe from 'stripe'
 
-let stripeClient: Stripe | null = null
+/**
+ * Un client par clé secrète, pas un singleton : deux écoles peuvent régler sur deux comptes
+ * Stripe distincts, et une clé remplacée ouvre un nouveau client au lieu de réutiliser
+ * l'ancien.
+ */
+const clients = new Map<string, Stripe>()
 
-export function isStripeConfigured() {
-  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET)
+export function getStripeClient(secretKey: string) {
+  let client = clients.get(secretKey)
+  if (!client) {
+    client = new Stripe(secretKey)
+    clients.set(secretKey, client)
+  }
+  return client
 }
 
-export function getStripeClient() {
-  const secretKey = process.env.STRIPE_SECRET_KEY
-  if (!secretKey) return null
+export type StripeCredentials = { secretKey: string; webhookSecret: string }
 
-  stripeClient ??= new Stripe(secretKey)
-  return stripeClient
+/** Repli d'instance : les deux variables, ou rien — une moitié de configuration ne sert pas. */
+export function readEnvStripeCredentials(): StripeCredentials | null {
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!secretKey || !webhookSecret) return null
+  return { secretKey, webhookSecret }
 }

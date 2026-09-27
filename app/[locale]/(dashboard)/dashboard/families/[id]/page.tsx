@@ -9,6 +9,7 @@ import { familyGateway } from '@/gateways/family-gateway'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
+import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
@@ -77,11 +78,14 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   // `countDeletionImpact` n'est pas dérivable de `family` : la page lit par `db`, filtrée
   // sur `isActive`, alors que la suppression emporte aussi les lignes archivées.
-  const [selectedPeriodId, familyBalance, deletionImpact] = await Promise.all([
-    getSelectedPeriodId(family.schoolId),
-    getFamilyBalance(family.schoolId, family.id),
-    isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
-  ])
+  // Le bouton de paiement en ligne n'est rendu que pour un parent.
+  const [selectedPeriodId, familyBalance, deletionImpact, onlinePaymentAvailable] =
+    await Promise.all([
+      getSelectedPeriodId(family.schoolId),
+      getFamilyBalance(family.schoolId, family.id),
+      isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
+      isAdmin ? false : isOnlinePaymentAvailable(family.schoolId),
+    ])
 
   const {
     students,
@@ -224,6 +228,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 locale={locale}
                 familyId={family.id}
                 isAdmin={isAdmin}
+                onlinePaymentAvailable={onlinePaymentAvailable}
                 persons={family.persons}
                 linkedEmails={family.users.map(({ user }) => user.email)}
                 enrolledChildren={enrolledChildren}

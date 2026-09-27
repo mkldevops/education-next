@@ -2,7 +2,6 @@ import { Card } from '@peaklab/ui'
 import { BookOpen, CircleCheck, TriangleAlert, Users } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { formatCurrency } from '@/lib/decimal'
-import { isStripeConfigured } from '@/lib/stripe'
 import { familyActionHref } from '../_lib/family-action-href'
 import { FinancialSummary } from './financial-summary'
 import { KPICard } from './kpi-card'
@@ -20,6 +19,8 @@ type Props = {
   activeEnrollments: number
   canAddEnrollment: boolean
   paymentsEnabled: boolean
+  /** Stripe activé et configuré pour l'école de la famille. */
+  onlinePaymentAvailable: boolean
   totalPaid: number
   remainingBalance: number
   totalDue: number
@@ -37,6 +38,7 @@ export async function OverviewTab({
   activeEnrollments,
   canAddEnrollment,
   paymentsEnabled,
+  onlinePaymentAvailable,
   totalPaid,
   remainingBalance,
   totalDue,
@@ -129,7 +131,7 @@ export async function OverviewTab({
               <div className="mt-5 border-t border-alabaster-700 pt-5">
                 <OnlinePaymentButton
                   amount={remainingBalance}
-                  configured={isStripeConfigured()}
+                  configured={onlinePaymentAvailable}
                   locale={locale}
                 />
               </div>

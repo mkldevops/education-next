@@ -75,6 +75,15 @@ describe('completeCheckoutSession', () => {
     lockFamilyForPaymentMock.mockResolvedValue(true)
   })
 
+  it("refuses an event signed by another school's secret", async () => {
+    expect(await completeCheckoutSession({ ...input, schoolId: 'school-2' })).toBe('notFound')
+    expect(dbMock.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('records an event verified by the school owning the transaction', async () => {
+    expect(await completeCheckoutSession({ ...input, schoolId: 'school-1' })).toBe('OK')
+  })
+
   it('creates allocations and marks the transaction succeeded atomically', async () => {
     expect(await completeCheckoutSession(input)).toBe('OK')
 

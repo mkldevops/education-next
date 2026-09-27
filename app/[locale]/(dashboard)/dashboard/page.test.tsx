@@ -13,7 +13,7 @@ const getSelectedPeriodMock = vi.fn()
 const getDashboardOverviewMock = vi.fn()
 const getTodayAgendaMock = vi.fn()
 const getParentHomeMock = vi.fn()
-const isStripeConfiguredMock = vi.fn(() => true)
+const isOnlinePaymentAvailableMock = vi.fn()
 const redirectMock = vi.fn()
 
 vi.mock('next/server', () => ({ connection: async () => {} }))
@@ -35,7 +35,9 @@ vi.mock('@/gateways/school-gateway', () => ({ schoolGateway: schoolGatewayMock }
 vi.mock('@/gateways/config-gateway', () => ({ configGateway: configGatewayMock }))
 vi.mock('@/lib/auth', () => ({ auth: authMock }))
 vi.mock('@/lib/school-context', () => ({ getSchoolContext: getSchoolContextMock }))
-vi.mock('@/lib/stripe', () => ({ isStripeConfigured: isStripeConfiguredMock }))
+vi.mock('@/use-cases/payments/stripe-settings', () => ({
+  isOnlinePaymentAvailable: isOnlinePaymentAvailableMock,
+}))
 vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriod: getSelectedPeriodMock }))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
@@ -125,7 +127,7 @@ const adminScope = { schoolId: 'school-1', userId: 'user-1', isAdmin: true }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  isStripeConfiguredMock.mockReturnValue(true)
+  isOnlinePaymentAvailableMock.mockResolvedValue(true)
   isEventsEnabledMock.mockResolvedValue(false)
   isClassScheduleEnabledMock.mockResolvedValue(false)
   configGatewayMock.get.mockResolvedValue(null)

@@ -4,7 +4,10 @@ const constructEventMock = vi.fn()
 const getStripeClientMock = vi.fn()
 const completeCheckoutSessionMock = vi.fn()
 
-vi.mock('@/lib/stripe', () => ({ getStripeClient: getStripeClientMock }))
+vi.mock('@/lib/stripe', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/stripe')>()),
+  getStripeClient: getStripeClientMock,
+}))
 vi.mock('@/use-cases/payments/complete-checkout-session', () => ({
   completeCheckoutSession: completeCheckoutSessionMock,
 }))
@@ -22,6 +25,7 @@ function createRequest(signature = 'signature') {
 describe('Stripe webhook route', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_instance')
     vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test')
     getStripeClientMock.mockReturnValue({
       webhooks: { constructEvent: constructEventMock },
@@ -36,6 +40,22 @@ describe('Stripe webhook route', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs()
+  })
+
+  it('refuses every event without instance credentials', async () => {
+    vi.stubEnv('STRIPE_WEBHOOK_SECRET', '')
+
+    const response = await POST(createRequest())
+
+    expect(response.status).toBe(400)
+    expect(constructEventMock).not.toHaveBeenCalled()
+  })
+
+  it('verifies the signature with the instance secrets', async () => {
+    await POST(createRequest())
+
+    expect(getStripeClientMock).toHaveBeenCalledWith('sk_test_instance')
+    expect(constructEventMock).toHaveBeenCalledWith('{"id":"evt_1"}', 'signature', 'whsec_test')
   })
 
   it('rejects an invalid signature', async () => {
