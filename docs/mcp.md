@@ -173,6 +173,10 @@ overlap is allowed by the school's configuration, the write succeeds with a warn
 other slot IDs. Deleting a slot changes future expected attendance occurrences, so inspect the
 current planning before using that tool.
 
+A whole planning — the Saturday and Sunday of a school year read off one photograph — is entered
+through the `class_schedule` preview/commit pair described below, not slot by slot: one refused slot
+would otherwise leave a half-written weekend.
+
 ## Creating an event
 
 `create_event` turns a dictated or photographed announcement into an event, in one call — there is no
@@ -220,7 +224,7 @@ gets `notConfigured` from each of them.
 
 ## Writing: the preview/commit pairs
 
-Three pairs are shipped. `create_teacher` and `record_teacher_expense` are not — a teacher sheet and a
+Four pairs are shipped. `create_teacher` and `record_teacher_expense` are not — a teacher sheet and a
 teacher expense note still go through the dashboard.
 
 | Tool | Paper it matches | State |
@@ -228,6 +232,7 @@ teacher expense note still go through the dashboard.
 | `enroll_family` | a full enrollment form: family, parents, students, enrollment, deposit — or, by `familyId`, children of a family already entered | shipped |
 | `record_payment` | a receipt or payment slip | shipped |
 | `update_enrollment` | a correction: a child moved to another plan, a discount granted | shipped |
+| `class_schedule` | a whole weekly planning: every class, day, time and teacher of a period | shipped |
 | `create_teacher` | a teacher sheet | not shipped |
 | `record_teacher_expense` | a teacher expense note | not shipped |
 
@@ -309,6 +314,8 @@ Refusals a commit can return, as `{ "error": … }` with `isError`:
 | `checksumMismatch` | the checksum does not match the plan that was shown |
 | `commitInProgress` | a concurrent commit is still inside its transaction; retry |
 | `notFound` | the class resolved by the preview no longer exists, or the enrollment or plan it targets |
+| `teacherNotFound` | a teacher of the planning is no longer assigned to its class |
+| `classOverlap` / `teacherOverlap` | a slot of the planning now overlaps one written since the preview; nothing was written |
 | `classFull` | the class filled up between the preview and the commit |
 | `overpayment` | the amount now exceeds what the family still owes |
 | `noPayableEnrollments` | the family has no `PENDING` or `ACTIVE` enrollment left to pay |
@@ -335,6 +342,31 @@ from the target plan's current price, and payments stay on the enrollment. The p
 Its commit refuses with `staleDraft` when the enrollment or the target plan's price moved since the
 preview, `notFound` when the enrollment is no longer open or the plan no longer active, and
 `totalBelowPaid` when a payment banked in between now exceeds the new total.
+
+`class_schedule` enters a whole weekly planning in one transaction, or nothing. `periodId` comes
+from `list_periods`; each line of `slots` carries `className`, `weekday`, `startTime`, `endTime`,
+an optional `description` and `teacherNames` — labels, resolved by the preview against the classes
+of that period and the teachers assigned to each class, in either name order, by first name or by
+last name. Up to one hundred lines. The plan lists each slot with its resolved class and teachers,
+and `matches` returns the candidates of an ambiguous label and the existing slots in conflict. Its
+blockers name the line: `slots.3.className`, `slots.3.teacherNames.0`, `slots.3.startTime`.
+
+| Reason | Cause |
+|---|---|
+| `notFound` | on `periodId`, an unknown period; on a class label, no class of the period; on a teacher label, no teacher of the school |
+| `ambiguousClass` / `ambiguousTeacher` | the label resolves to several; `matches` lists them |
+| `teacherNotAssigned` | the teacher exists in the school but is not assigned to that class |
+| `invalidTimeRange` | the slot ends before it starts |
+| `duplicateSlot` | an earlier line of the batch (`slots.1`) already holds that class, day and times |
+| `alreadyExists` | a slot of the period already holds that class, day and times; its `id` is the value |
+| `classOverlap` | the slot overlaps an earlier line or an existing slot of the same class |
+| `teacherOverlap` | a teacher is booked twice, in the batch or anywhere else in the school; a warning unless the school forbids it |
+
+The commit rereads the classes and their teacher assignments, takes every class and teacher lock
+of the batch at once, then writes the slots one by one with the dashboard's overlap checks — a slot
+written earlier in the batch is seen by the next one. The first refusal rolls the whole planning
+back; the result lists each written `id` with its teacher-overlap warnings, and a replay returns it
+unchanged.
 
 A commit that refuses leaves the draft intact and unlocked: fix what the body names, or run the
 preview again, and no partial row was written.

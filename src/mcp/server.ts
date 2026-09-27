@@ -7,6 +7,7 @@ import {
   listClassScheduleSlotsFromMcp,
   updateClassScheduleSlotFromMcp,
 } from '@/use-cases/mcp/class-schedule'
+import { commitClassSchedule } from '@/use-cases/mcp/commit-class-schedule'
 import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
 import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
@@ -14,12 +15,14 @@ import { createEventFromMcp } from '@/use-cases/mcp/create-event'
 import { duplicateEventFromMcp } from '@/use-cases/mcp/duplicate-event'
 import { getEventFromMcp } from '@/use-cases/mcp/get-event'
 import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
+import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
 import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
 import type { McpScope } from '@/use-cases/mcp/resolve-mcp-scope'
 import {
   commitDraftSchema,
+  MCP_CLASS_SCHEDULE_BATCH_MAX,
   MCP_EVENT_LIST_DEFAULT,
   MCP_EVENT_LIST_MAX,
   mcpCreateClassScheduleSlotSchema,
@@ -31,6 +34,7 @@ import {
   mcpListEventsSchema,
   mcpUpdateClassScheduleSlotSchema,
   mcpUpdateEventSchema,
+  previewClassScheduleSchema,
   previewEnrollFamilySchema,
   previewRecordPaymentSchema,
   previewUpdateEnrollmentSchema,
@@ -225,6 +229,40 @@ export function buildMcpServer(scope: McpScope): McpServer {
     },
     async (args) =>
       write('delete_class_schedule_slot', () => deleteClassScheduleSlotFromMcp(scope, args))
+  )
+
+  server.registerTool(
+    'preview_class_schedule',
+    {
+      title: 'Préparer un planning complet',
+      description:
+        "Résout un planning hebdomadaire entier — le samedi et le dimanche d'une année, par " +
+        'exemple — sans rien écrire. `periodId` vient de `list_periods` ; chaque ligne de `slots` ' +
+        'porte la classe et les enseignants en libellés, `weekday` (1 lundi … 7 dimanche), des ' +
+        `heures \`HH:mm\` à fin exclue et une description facultative — ${MCP_CLASS_SCHEDULE_BATCH_MAX} ` +
+        'lignes au plus. Rend un `draftId`, un ' +
+        '`checksum`, le plan résolu, les candidats des libellés ambigus, les créneaux existants ' +
+        'en conflit, des avertissements et des `blockers` nommant la ligne à corriger ' +
+        '(`slots.3.className`). Refus : `notConfigured`, `validationError`.',
+      inputSchema: previewClassScheduleSchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+    },
+    async (args) => write('preview_class_schedule', () => previewClassSchedule(scope, args))
+  )
+
+  server.registerTool(
+    'commit_class_schedule',
+    {
+      title: 'Engager un planning complet',
+      description:
+        'Crée tous les créneaux du plan déjà prévisualisé dans une seule transaction : un seul ' +
+        "créneau refusé (`classOverlap`, `teacherOverlap`, `notFound`, `teacherNotFound`) et rien n'est " +
+        'écrit. Rejouer le même `draftId` rend le résultat enregistré au lieu de doubler le ' +
+        "planning. Le brouillon expire au bout d'une demi-heure.",
+      inputSchema: commitDraftSchema,
+      annotations: IDEMPOTENT_COMMIT,
+    },
+    async (args) => write('commit_class_schedule', () => commitClassSchedule(scope, args))
   )
 
   if (scope.paymentsEnabled) {

@@ -220,3 +220,28 @@ export const mcpUpdateClassScheduleSlotSchema = updateClassScheduleSlotSchema.om
 export const mcpDeleteClassScheduleSlotSchema = deleteClassScheduleSlotSchema.omit({
   schoolId: true,
 })
+
+export const MCP_CLASS_SCHEDULE_BATCH_MAX = 100
+
+/**
+ * Un planning se dicte en **libellés**, comme une fiche d'inscription : « C4, samedi 9h-12h,
+ * Mme Ali ». Classe et enseignants se résolvent au `preview_*`, où un libellé inconnu ou
+ * ambigu est un `blocker` qui nomme la ligne (`slots.3.className`). Seule la période vient
+ * en identifiant : elle ne se lit pas sur le planning, elle revient de `list_periods`.
+ *
+ * `teacherNames` désigne des enseignants déjà affectés à la classe, en prénom, nom ou
+ * les deux — même règle que `teacherIds` sur les outils unitaires.
+ */
+const mcpClassScheduleSlotLabelSchema = z.object({
+  className: z.string().trim().min(1).max(250),
+  weekday: createClassScheduleSlotSchema.shape.weekday,
+  startTime: createClassScheduleSlotSchema.shape.startTime,
+  endTime: createClassScheduleSlotSchema.shape.endTime,
+  description: createClassScheduleSlotSchema.shape.description,
+  teacherNames: z.array(z.string().trim().min(1).max(250)).max(10).default([]),
+})
+
+export const previewClassScheduleSchema = z.object({
+  periodId: z.uuid(),
+  slots: z.array(mcpClassScheduleSlotLabelSchema).min(1).max(MCP_CLASS_SCHEDULE_BATCH_MAX),
+})

@@ -466,7 +466,9 @@ The MCP's four class-planning tools use the existing recurring `ClassScheduleSlo
 their feature flag, time-range, teacher-assignment and overlap rules. `list_class_schedule_slots`
 publishes only slots of active classes in the requested period of the key's school, with active
 teacher identities. Create and update return only the slot ID and teacher-overlap warnings; delete
-returns a success object so the MCP does not mistake the use case's string `OK` for an error.
+returns a success object so the MCP does not mistake the use case's string `OK` for an error. A whole
+planning goes through the `class_schedule` preview/commit pair ([Write drafts](#write-drafts)): all
+its slots are written in one transaction, or none.
 
 `resolveMcpScope()` **returns** a verdict instead of navigating, because the four helpers of
 `app/[locale]/(dashboard)/_lib/auth-helper.ts` all end in `redirect()` or `notFound()` and none is
@@ -714,6 +716,8 @@ checks that follow therefore cannot race a dashboard enrollment.
 | `overpayment` / `noPayableEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
 | `staleDraft` | the recomputed split no longer matches the validated one, the enrollment or plan changed, or a member became a student |
 | `totalBelowPaid` | a payment banked since the preview exceeds the enrollment's new total |
+| `teacherNotFound` | a teacher of a planning is no longer assigned to its class |
+| `classOverlap` / `teacherOverlap` | a slot of a planning now overlaps one written since the preview |
 
 A refusal writes nothing and unlocks the draft, so the caller may fix the cause or preview again
 without waiting out the timeout.
@@ -741,6 +745,22 @@ the child in that family. Two members for one line → `ambiguousStudent`; a mem
 since the family already owns them. The commit rereads the family and each member before the first
 write (`src/use-cases/mcp/commit-enroll-family.ts`): archived family or member gone → `notFound`,
 a student created since → `staleDraft`, an enrollment opened since → `duplicateEnrollment`.
+
+**A whole planning is one write.** `class_schedule` (`src/use-cases/mcp/preview-class-schedule.ts`,
+`commit-class-schedule.ts`) enters every slot of a period's weekly planning at once, because a
+weekend read off one photograph must never be half-written: a slot refused after ten were created
+would leave a planning nobody dictated. The preview resolves each line's class among the classes of
+the named period and each teacher among the teachers **assigned to that class** — `notFound`,
+`ambiguousClass`, `ambiguousTeacher`, `teacherNotAssigned` — applies the dashboard's slot rules
+(`invalidTimeRange`, `classOverlap`, `teacherOverlap` as a warning unless
+`class_schedule_teacher_overlap_allowed` is `false`), and refuses a line that repeats an earlier one
+(`duplicateSlot`) or a slot already in the period (`alreadyExists`). Teacher overlaps are probed
+across the whole school, as the gateway refuses them. The commit rereads the classes and
+assignments in its transaction (`notFound`, `teacherNotFound`), takes every class and teacher
+advisory lock of the batch sorted before the first write, then writes the slots one by one through
+the dashboard's overlap checks (`classScheduleGateway.createManyWithOverlapValidation`); the first
+`classOverlap` or `teacherOverlap` rolls everything back. The recorded result lists each slot `id`
+with its teacher-overlap warnings, so a replay returns the same planning instead of a second one.
 
 **The two pairs chain.** `enroll_family` creates its enrollments `PENDING`, and `record_payment`
 distributes across `PENDING` and `ACTIVE` ones alike — so a family enrolled through the MCP can pay
