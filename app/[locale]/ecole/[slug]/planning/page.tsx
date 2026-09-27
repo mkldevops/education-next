@@ -162,13 +162,15 @@ export default async function PublicSchedulePage({ params, searchParams }: Props
               </div>
             )}
           </div>
-          <figure className="hidden shrink-0 flex-col items-center gap-1.5 rounded-xl border border-alabaster-700 bg-white p-3 lg:flex print:flex print:rounded-none print:border-0 print:p-0">
-            {/* biome-ignore lint/performance/noImgElement: inline SVG data URL generated server-side */}
-            <img src={qrCode.src} alt={t('print.qrAlt')} className="size-20 print:size-[26mm]" />
-            <figcaption className="max-w-24 text-center text-[0.65rem] leading-snug text-graphite-600 print:max-w-[34mm]">
-              {t('print.qrCaption')}
-            </figcaption>
-          </figure>
+          {qrCode && (
+            <figure className="hidden shrink-0 flex-col items-center gap-1.5 rounded-xl border border-alabaster-700 bg-white p-3 lg:flex print:flex print:rounded-none print:border-0 print:p-0">
+              {/* biome-ignore lint/performance/noImgElement: inline SVG data URL generated server-side */}
+              <img src={qrCode.src} alt={t('print.qrAlt')} className="size-20 print:size-[26mm]" />
+              <figcaption className="max-w-24 text-center text-[0.65rem] leading-snug text-graphite-600 print:max-w-[34mm]">
+                {t('print.qrCaption')}
+              </figcaption>
+            </figure>
+          )}
         </header>
         {result.slots.length === 0 ? (
           <EmptyState icon={CalendarDays} title={t('empty')} />
@@ -196,9 +198,11 @@ export default async function PublicSchedulePage({ params, searchParams }: Props
               labels={labels}
               focused={activeLevel !== null}
             />
-            <p className="mt-6 hidden border-t border-alabaster-700 pt-3 text-xs text-graphite-600 print:block">
-              {t('print.footer', { url: qrCode.url })}
-            </p>
+            {qrCode && (
+              <p className="mt-6 hidden border-t border-alabaster-700 pt-3 text-xs text-graphite-600 print:block">
+                {t('print.footer', { url: qrCode.url })}
+              </p>
+            )}
           </>
         )}
       </div>

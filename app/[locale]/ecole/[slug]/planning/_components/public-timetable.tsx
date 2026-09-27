@@ -140,7 +140,7 @@ export function LevelFilter({
       <Link
         href={basePath}
         aria-current={activeLevelId === null ? 'page' : undefined}
-        style={toneStyle('#2f3e46')}
+        style={toneStyle('var(--color-graphite)')}
         className={cn(
           option,
           activeLevelId === null
