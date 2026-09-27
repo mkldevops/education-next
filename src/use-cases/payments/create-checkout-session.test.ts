@@ -17,6 +17,7 @@ const sessionsRetrieveMock = vi.fn()
 const sessionsExpireMock = vi.fn()
 const getStripeClientMock = vi.fn()
 const getFamilyBalanceMock = vi.fn()
+const resolveCheckoutCredentialsMock = vi.fn()
 const configGatewayMock = {
   get: vi.fn(),
 }
@@ -24,6 +25,9 @@ const configGatewayMock = {
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/lib/stripe', () => ({ getStripeClient: getStripeClientMock }))
 vi.mock('./family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
+vi.mock('./stripe-settings', () => ({
+  resolveCheckoutCredentials: resolveCheckoutCredentialsMock,
+}))
 vi.mock('@/gateways/config-gateway', () => ({ configGateway: configGatewayMock }))
 vi.mock('@/gateways/payment-gateway', () => ({
   paymentGateway: { tryLockFamilyCheckout: tryLockFamilyCheckoutMock },
@@ -44,7 +48,10 @@ const input = {
 describe('createCheckoutSession', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test')
+    resolveCheckoutCredentialsMock.mockResolvedValue({
+      secretKey: 'sk_test_school',
+      webhookSecret: 'whsec_school',
+    })
     getStripeClientMock.mockReturnValue({
       checkout: {
         sessions: {
@@ -81,11 +88,19 @@ describe('createCheckoutSession', () => {
     expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
   })
 
-  it('returns a controlled error when Stripe is not configured', async () => {
-    getStripeClientMock.mockReturnValue(null)
+  it('returns a controlled error when Stripe is disabled or not configured for the school', async () => {
+    resolveCheckoutCredentialsMock.mockResolvedValue(null)
 
     expect(await createCheckoutSession(input)).toBe('notConfigured')
+    expect(resolveCheckoutCredentialsMock).toHaveBeenCalledWith(schoolId, configGatewayMock)
+    expect(getStripeClientMock).not.toHaveBeenCalled()
     expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
+  })
+
+  it("opens the session with the school's own secret key", async () => {
+    await createCheckoutSession(input)
+
+    expect(getStripeClientMock).toHaveBeenCalledWith('sk_test_school')
   })
 
   it('does not create a checkout without an outstanding balance', async () => {
@@ -142,6 +157,7 @@ describe('createCheckoutSession', () => {
         metadata: {
           transactionId: 'transaction-1',
           familyId: 'family-1',
+          schoolId,
         },
         line_items: [
           expect.objectContaining({

@@ -42,6 +42,11 @@ export const configGateway = {
       }
     }),
 
+  remove: (schoolId: string, name: string) =>
+    db.config.deleteMany({
+      where: { schoolId, name },
+    }),
+
   list: (schoolId: string) =>
     db.config.findMany({
       where: { schoolId, isActive: true },

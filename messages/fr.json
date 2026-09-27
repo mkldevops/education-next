@@ -1115,6 +1115,73 @@
             "emptyFile": "Le fichier est vide",
             "notConfigured": "Le stockage d'images n'est pas configuré sur ce serveur"
           }
+        },
+        "stripe": {
+          "title": "Paiements",
+          "description": "Paiement en ligne par Stripe pour les familles de l'école active.",
+          "toggle": {
+            "label": "Paiement en ligne (Stripe)",
+            "description": "Propose aux parents de régler leur solde en ligne depuis leur espace.",
+            "incomplete": "Configuration incomplète : saisissez la clé secrète et le secret de webhook Stripe pour activer le paiement en ligne.",
+            "envFallback": "L'école n'a pas saisi ses propres clés : le compte Stripe de l'instance est utilisé."
+          },
+          "status": {
+            "configured": "configurée",
+            "notConfigured": "non configurée",
+            "unreadable": "illisible"
+          },
+          "unreadableHint": "La valeur enregistrée ne peut plus être déchiffrée : SETTINGS_ENCRYPTION_KEY a changé ou manque. Saisissez-la de nouveau.",
+          "secretStorageHint": "SETTINGS_ENCRYPTION_KEY n'est pas définie sur ce serveur : aucun secret Stripe ne peut être enregistré.",
+          "save": "Enregistrer",
+          "replace": "Remplacer",
+          "delete": "Supprimer",
+          "cancel": "Annuler",
+          "errors": {
+            "error": "Impossible d'enregistrer la configuration Stripe"
+          },
+          "secretKey": {
+            "title": "Clé secrète",
+            "description": "Clé secrète du compte Stripe de l'école (Développeurs › Clés API). Chiffrée avant enregistrement, jamais réaffichée.",
+            "masked": "sk_••••••••••••",
+            "label": "Clé secrète",
+            "replaceLabel": "Nouvelle clé secrète",
+            "placeholder": "sk_live_…",
+            "saved": "Clé secrète Stripe enregistrée",
+            "deleted": "Clé secrète Stripe supprimée",
+            "confirmDelete": {
+              "title": "Supprimer la clé secrète Stripe ?",
+              "description": "Le paiement en ligne deviendra indisponible pour les parents jusqu'à la saisie d'une nouvelle clé, sauf si l'instance fournit la sienne."
+            },
+            "errors": {
+              "validationError": "Clé invalide : elle commence par sk_live_, sk_test_, rk_live_ ou rk_test_.",
+              "secretStorageNotConfigured": "Le chiffrement des secrets n'est pas configuré sur ce serveur."
+            }
+          },
+          "webhookSecret": {
+            "title": "Secret de webhook",
+            "description": "Secret de signature de l'endpoint déclaré dans Stripe (Développeurs › Webhooks). Chiffré avant enregistrement, jamais réaffiché.",
+            "masked": "whsec_••••••••••••",
+            "label": "Secret de webhook",
+            "replaceLabel": "Nouveau secret de webhook",
+            "placeholder": "whsec_…",
+            "saved": "Secret de webhook Stripe enregistré",
+            "deleted": "Secret de webhook Stripe supprimé",
+            "confirmDelete": {
+              "title": "Supprimer le secret de webhook Stripe ?",
+              "description": "Le paiement en ligne deviendra indisponible pour les parents jusqu'à la saisie d'un nouveau secret, sauf si l'instance fournit le sien."
+            },
+            "errors": {
+              "validationError": "Secret invalide : il commence par whsec_.",
+              "secretStorageNotConfigured": "Le chiffrement des secrets n'est pas configuré sur ce serveur."
+            }
+          },
+          "webhookUrl": {
+            "label": "URL du webhook",
+            "description": "À déclarer dans Stripe pour les événements checkout.session.completed et checkout.session.async_payment_succeeded.",
+            "copy": "Copier",
+            "copied": "URL du webhook copiée",
+            "copyFailed": "Impossible de copier l'URL"
+          }
         }
       },
       "familyDetails": {

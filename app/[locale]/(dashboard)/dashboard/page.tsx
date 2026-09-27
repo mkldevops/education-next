@@ -36,10 +36,10 @@ import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { getSchoolContext } from '@/lib/school-context'
-import { isStripeConfigured } from '@/lib/stripe'
 import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-schedule-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
+import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { requireSchoolScope } from '../_lib/auth-helper'
 import { KpiCard, Panel, PanelLink, TaskRow } from './_components/home-widgets'
 import { SchoolInsightsSection } from './_components/school-insights'
@@ -131,7 +131,10 @@ export default async function DashboardPage({ params }: Props) {
   )
 
   if (!scope.isAdmin) {
-    const selectedPeriod = await getSelectedPeriod(scope.schoolId)
+    const [selectedPeriod, onlinePaymentAvailable] = await Promise.all([
+      getSelectedPeriod(scope.schoolId),
+      isOnlinePaymentAvailable(scope.schoolId),
+    ])
     const home = await getParentHome(scope.schoolId, scope.familyId, {
       periodId: selectedPeriod?.id ?? null,
       paymentsEnabled,
@@ -242,7 +245,7 @@ export default async function DashboardPage({ params }: Props) {
                 <div className="mt-4">
                   <OnlinePaymentButton
                     amount={home.remainingBalance}
-                    configured={isStripeConfigured()}
+                    configured={onlinePaymentAvailable}
                     locale={locale}
                   />
                 </div>

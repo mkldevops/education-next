@@ -121,4 +121,20 @@ describe('getConfig', () => {
       valueType: 'BOOLEAN',
     })
   })
+
+  it('never returns an encrypted Stripe secret', async () => {
+    gateway.configByNameMap.stripe_secret_key = {
+      id: 'config-3',
+      name: 'stripe_secret_key',
+      value: 'v1:encrypted',
+      valueType: 'TEXT',
+    }
+
+    expect(
+      await getConfig(
+        { schoolId: SCHOOL_ID, name: 'stripe_secret_key' },
+        gateway as unknown as ConfigGw
+      )
+    ).toBe('notFound')
+  })
 })

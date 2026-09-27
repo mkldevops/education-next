@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { getStripeClient } from '@/lib/stripe'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from './family-balance'
+import { resolveCheckoutCredentials } from './stripe-settings'
 
 type Input = {
   schoolId: string
@@ -19,8 +20,11 @@ type Input = {
 export async function createCheckoutSession(input: Input, configGw = configGateway) {
   if (!(await isPaymentsEnabled(input.schoolId, configGw))) return 'paymentsDisabled' as const
 
-  const stripe = getStripeClient()
-  if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return 'notConfigured' as const
+  // Stripe coupé par l'école ou sans identifiants lisibles : même verdict, le bouton parent
+  // ne distingue pas les deux.
+  const credentials = await resolveCheckoutCredentials(input.schoolId, configGw)
+  if (!credentials) return 'notConfigured' as const
+  const stripe = getStripeClient(credentials.secretKey)
 
   // Tout passe par `tx` : une seule connexion par demande. READ COMMITTED explicite : chaque
   // requête voit la session que l'ouverture précédente a validée. Si la transaction échoue après la création chez Stripe, la ligne locale disparaît
@@ -106,6 +110,7 @@ async function openCheckoutSession(
         metadata: {
           transactionId: transaction.id,
           familyId: input.familyId,
+          schoolId: input.schoolId,
         },
         success_url: `${familyUrl}?payment=success`,
         cancel_url: `${familyUrl}?payment=cancelled`,

@@ -17,6 +17,12 @@ type Input = {
   providerEventId: string
   eventType: string
   session: CheckoutSession
+  /**
+   * École dont le secret a vérifié la signature (webhook par école). Un événement signé par
+   * une école ne clôt jamais la transaction d'une autre : qui détient le secret de webhook
+   * d'une école ne signe que pour elle.
+   */
+  schoolId?: string
 }
 
 export async function completeCheckoutSession(input: Input) {
@@ -31,6 +37,9 @@ export async function completeCheckoutSession(input: Input) {
   // retrouvée par son identifiant de session fournisseur, hors du garde tenant.
   const transaction = await findPaymentTransactionByProviderSessionId(input.session.id)
   if (!transaction) return 'notFound' as const
+  if (input.schoolId !== undefined && transaction.schoolId !== input.schoolId) {
+    return 'notFound' as const
+  }
   if (transaction.status === 'SUCCEEDED') return 'duplicate' as const
 
   const expectedAmount = Math.round(Number(transaction.amount) * 100)
