@@ -35,6 +35,8 @@ const listEventsFromMcp = vi.fn()
 const getEventFromMcp = vi.fn()
 const updateEventFromMcp = vi.fn()
 const duplicateEventFromMcp = vi.fn()
+const previewClassSchedule = vi.fn()
+const commitClassSchedule = vi.fn()
 const listClassScheduleSlotsFromMcp = vi.fn()
 const createClassScheduleSlotFromMcp = vi.fn()
 const updateClassScheduleSlotFromMcp = vi.fn()
@@ -53,6 +55,8 @@ vi.mock('@/use-cases/mcp/list-events', () => ({ listEventsFromMcp }))
 vi.mock('@/use-cases/mcp/get-event', () => ({ getEventFromMcp }))
 vi.mock('@/use-cases/mcp/update-event', () => ({ updateEventFromMcp }))
 vi.mock('@/use-cases/mcp/duplicate-event', () => ({ duplicateEventFromMcp }))
+vi.mock('@/use-cases/mcp/preview-class-schedule', () => ({ previewClassSchedule }))
+vi.mock('@/use-cases/mcp/commit-class-schedule', () => ({ commitClassSchedule }))
 vi.mock('@/use-cases/mcp/class-schedule', () => ({
   listClassScheduleSlotsFromMcp,
   createClassScheduleSlotFromMcp,
@@ -91,7 +95,7 @@ beforeEach(() => {
 })
 
 describe('buildMcpServer', () => {
-  it('publishes the reads, the schedule and event tools and the three preview/commit pairs when payments are enabled', () => {
+  it('publishes the reads, the schedule and event tools and the four preview/commit pairs when payments are enabled', () => {
     expect([...build().keys()]).toEqual([
       'describe_school',
       'list_levels',
@@ -101,6 +105,8 @@ describe('buildMcpServer', () => {
       'create_class_schedule_slot',
       'update_class_schedule_slot',
       'delete_class_schedule_slot',
+      'preview_class_schedule',
+      'commit_class_schedule',
       'list_plans',
       'list_teachers',
       'preview_enroll_family',
@@ -127,6 +133,8 @@ describe('buildMcpServer', () => {
       'create_class_schedule_slot',
       'update_class_schedule_slot',
       'delete_class_schedule_slot',
+      'preview_class_schedule',
+      'commit_class_schedule',
       'list_teachers',
       'preview_enroll_family',
       'commit_enroll_family',
@@ -143,6 +151,7 @@ describe('buildMcpServer', () => {
 
     for (const name of [
       'preview_enroll_family',
+      'preview_class_schedule',
       'preview_record_payment',
       'preview_update_enrollment',
     ]) {
@@ -153,6 +162,7 @@ describe('buildMcpServer', () => {
     }
     for (const name of [
       'commit_enroll_family',
+      'commit_class_schedule',
       'commit_record_payment',
       'commit_update_enrollment',
     ]) {
@@ -278,6 +288,31 @@ describe('buildMcpServer', () => {
     expect(tools.get('delete_class_schedule_slot')?.config.annotations).toMatchObject({
       destructiveHint: true,
     })
+  })
+
+  it('hands the planning batch pair to its use cases with the key scope, whatever the payments flag', async () => {
+    const tools = build({ paymentsEnabled: false })
+    const periodId = '00000000-0000-4000-8000-000000000001'
+    const slots = [{ className: 'C4', weekday: 6, startTime: '09:00', endTime: '12:00' }]
+    previewClassSchedule.mockResolvedValue({ draftId: 'draft-3', blockers: [] })
+    commitClassSchedule.mockResolvedValue('notConfigured')
+
+    const previewed = await tools.get('preview_class_schedule')?.handler({ periodId, slots })
+    const committed = await tools
+      .get('commit_class_schedule')
+      ?.handler({ draftId: 'draft-3', checksum: 'abcdef012345' })
+
+    expect(previewClassSchedule).toHaveBeenCalledWith(
+      { ...scope, paymentsEnabled: false },
+      { periodId, slots }
+    )
+    expect(payload(previewed as never)).toEqual({ draftId: 'draft-3', blockers: [] })
+    expect(commitClassSchedule).toHaveBeenCalledWith(
+      { ...scope, paymentsEnabled: false },
+      { draftId: 'draft-3', checksum: 'abcdef012345' }
+    )
+    expect(committed?.isError).toBe(true)
+    expect(payload(committed as never)).toEqual({ error: 'notConfigured' })
   })
 
   it('hides an unexpected throw behind a fixed refusal, never its message', async () => {

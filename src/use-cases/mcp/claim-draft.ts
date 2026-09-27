@@ -118,36 +118,48 @@ export async function claimResolved<S extends z.ZodTypeAny>(
 }
 
 /**
+ * Un refus rendu par le corps d'un commit. Prisma ne défait une transaction interactive que
+ * sur une exception : rendre la chaîne depuis le callback validerait ce qui a été écrit avant
+ * le refus. Le refus est donc levé pour annuler, puis rendu à l'appelant tel quel.
+ */
+class CommitRefused extends Error {
+  constructor(readonly refusal: string) {
+    super(refusal)
+  }
+}
+
+type CommitOptions = { timeout?: number; maxWait?: number }
+
+/**
  * Exécute l'écriture d'un brouillon engagé et y attache son résultat.
  *
- * `body` rend soit un refus (une chaîne), soit ce qui a été écrit.
+ * `body` rend soit un refus (une chaîne), soit ce qui a été écrit. Un refus annule la
+ * transaction : rien de ce que `body` a écrit avant de refuser ne survit.
  */
 export async function commitInTransaction<T extends string | object>(
   schoolId: string,
   draftId: string,
-  body: (tx: Prisma.TransactionClient) => Promise<T>
+  body: (tx: Prisma.TransactionClient) => Promise<T>,
+  options?: CommitOptions
 ): Promise<T> {
   try {
-    const result = await db.$transaction(async (tx) => {
+    return await db.$transaction(async (tx) => {
       const written = await body(tx)
-      if (typeof written === 'string') return written
+      if (typeof written === 'string') throw new CommitRefused(written)
 
       // Le résultat est écrit dans la transaction qui écrit les données : `result` nul
       // signifie alors « rien n'a été écrit », ce qui rend le verrou reprenable.
       await tx.mcpDraft.updateMany({ where: { id: draftId, schoolId }, data: { result: written } })
 
       return written
-    })
-
-    // Un refus constaté au commit n'a rien écrit : rendre le verrou laisse le client
-    // refaire un `preview_*` sans attendre le délai d'abandon.
-    if (typeof result === 'string') await releaseDraft(schoolId, draftId)
-
-    return result
+    }, options)
   } catch (error) {
     // La transaction a été annulée, résultat compris. Sans ce rattrapage le brouillon
     // resterait engagé sans résultat, donc injoignable jusqu'au délai d'abandon.
     await releaseDraft(schoolId, draftId)
+    // Un refus constaté au commit n'a rien écrit : rendre le verrou laisse le client
+    // refaire un `preview_*` sans attendre le délai d'abandon.
+    if (error instanceof CommitRefused) return error.refusal as T
     throw error
   }
 }

@@ -24,22 +24,24 @@ type SaveResult =
   | { status: 'teacherOverlap' }
   | {
       status: 'OK'
-      slot: object
+      slot: { id: string }
       teacherOverlapIds: string[]
     }
 
-async function acquireScheduleLocks(
-  tx: Prisma.TransactionClient,
-  schoolId: string,
-  data: ClassScheduleSlotData,
-  id?: string
-) {
-  const keys = [
+type BatchSaveResult =
+  | { status: 'classOverlap'; index: number }
+  | { status: 'teacherOverlap'; index: number }
+  | { status: 'OK'; slots: Array<{ id: string; teacherOverlapIds: string[] }> }
+
+function scheduleLockKeys(schoolId: string, data: ClassScheduleSlotData, id?: string) {
+  return [
     `class:${schoolId}:${data.classPeriodId}:${data.weekday}`,
     ...data.teacherIds.map((teacherId) => `teacher:${schoolId}:${teacherId}:${data.weekday}`),
     ...(id ? [`slot:${schoolId}:${id}`] : []),
   ]
+}
 
+async function acquireScheduleLocks(tx: Prisma.TransactionClient, keys: string[]) {
   for (const key of [...new Set(keys)].sort()) {
     await acquireAdvisoryLock(tx, key)
   }
@@ -52,76 +54,136 @@ async function saveWithOverlapValidation(
   id?: string
 ): Promise<SaveResult> {
   return db.$transaction(async (tx) => {
-    await acquireScheduleLocks(tx, schoolId, data, id)
+    await acquireScheduleLocks(tx, scheduleLockKeys(schoolId, data, id))
+    return saveLocked(tx, schoolId, data, teacherOverlapAllowed, id)
+  })
+}
 
-    const classOverlaps = await tx.classScheduleSlot.findMany({
-      where: {
-        schoolId,
-        classPeriodId: data.classPeriodId,
-        weekday: data.weekday,
-        startTime: { lt: data.endTime },
-        endTime: { gt: data.startTime },
-        ...(id ? { id: { not: id } } : {}),
-      },
-      select: { id: true },
-    })
-    if (classOverlaps.length > 0) return { status: 'classOverlap' } as const
+/**
+ * Écrit un planning entier dans la transaction de l'appelant, ou rien.
+ *
+ * Tous les verrous du lot sont pris d'abord, triés, pour rester dans le même ordre que les
+ * écritures unitaires et ne jamais s'interbloquer avec elles. Les créneaux sont ensuite
+ * sauvés un à un par la même logique : un créneau du lot déjà écrit est vu par les requêtes
+ * de chevauchement du suivant, donc un lot incohérent se refuse au premier conflit. Les
+ * créneaux écrits avant ce conflit sont encore dans `tx` : l'appelant doit annuler la
+ * transaction sur un statut autre que `OK`, sinon ils resteraient.
+ */
+async function createManyWithOverlapValidation(
+  tx: Prisma.TransactionClient,
+  schoolId: string,
+  slots: ClassScheduleSlotData[],
+  teacherOverlapAllowed: boolean
+): Promise<BatchSaveResult> {
+  await acquireScheduleLocks(
+    tx,
+    slots.flatMap((data) => scheduleLockKeys(schoolId, data))
+  )
 
-    const teacherOverlaps = await tx.classScheduleSlot.findMany({
-      where: {
-        schoolId,
-        weekday: data.weekday,
-        startTime: { lt: data.endTime },
-        endTime: { gt: data.startTime },
-        teachers: { some: { teacherId: { in: data.teacherIds } } },
-        ...(id ? { id: { not: id } } : {}),
-      },
-      select: { id: true },
-    })
-    if (!teacherOverlapAllowed && teacherOverlaps.length > 0) {
-      return { status: 'teacherOverlap' } as const
-    }
+  const written: Array<{ id: string; teacherOverlapIds: string[] }> = []
+  for (const [index, data] of slots.entries()) {
+    const saved = await saveLocked(tx, schoolId, data, teacherOverlapAllowed)
+    if (saved.status !== 'OK') return { status: saved.status, index }
+    written.push({ id: saved.slot.id, teacherOverlapIds: saved.teacherOverlapIds })
+  }
+  return { status: 'OK', slots: written }
+}
 
-    const { teacherIds, classPeriodId, ...slotData } = data
-    const slot = id
-      ? await (async () => {
-          await tx.classScheduleSlot.update({
-            where: { id_schoolId: { id, schoolId } },
-            data: slotData,
-          })
-          await tx.classScheduleSlotTeacher.deleteMany({
-            where: { schoolId, classScheduleSlotId: id },
-          })
-          await tx.classScheduleSlotTeacher.createMany({
-            data: teacherIds.map((teacherId) => ({ schoolId, classScheduleSlotId: id, teacherId })),
-          })
-          return tx.classScheduleSlot.findUniqueOrThrow({
-            where: { id_schoolId: { id, schoolId } },
-            include: slotInclude,
-          })
-        })()
-      : await tx.classScheduleSlot.create({
-          data: {
-            ...slotData,
-            school: { connect: { id: schoolId } },
-            classPeriod: { connect: { id_schoolId: { id: classPeriodId, schoolId } } },
-            teachers: {
-              createMany: { data: teacherIds.map((teacherId) => ({ teacherId })) },
-            },
-          },
+async function saveLocked(
+  tx: Prisma.TransactionClient,
+  schoolId: string,
+  data: ClassScheduleSlotData,
+  teacherOverlapAllowed: boolean,
+  id?: string
+): Promise<SaveResult> {
+  const classOverlaps = await tx.classScheduleSlot.findMany({
+    where: {
+      schoolId,
+      classPeriodId: data.classPeriodId,
+      weekday: data.weekday,
+      startTime: { lt: data.endTime },
+      endTime: { gt: data.startTime },
+      ...(id ? { id: { not: id } } : {}),
+    },
+    select: { id: true },
+  })
+  if (classOverlaps.length > 0) return { status: 'classOverlap' } as const
+
+  const teacherOverlaps = await tx.classScheduleSlot.findMany({
+    where: {
+      schoolId,
+      weekday: data.weekday,
+      startTime: { lt: data.endTime },
+      endTime: { gt: data.startTime },
+      teachers: { some: { teacherId: { in: data.teacherIds } } },
+      ...(id ? { id: { not: id } } : {}),
+    },
+    select: { id: true },
+  })
+  if (!teacherOverlapAllowed && teacherOverlaps.length > 0) {
+    return { status: 'teacherOverlap' } as const
+  }
+
+  const { teacherIds, classPeriodId, ...slotData } = data
+  const slot = id
+    ? await (async () => {
+        await tx.classScheduleSlot.update({
+          where: { id_schoolId: { id, schoolId } },
+          data: slotData,
+        })
+        await tx.classScheduleSlotTeacher.deleteMany({
+          where: { schoolId, classScheduleSlotId: id },
+        })
+        await tx.classScheduleSlotTeacher.createMany({
+          data: teacherIds.map((teacherId) => ({ schoolId, classScheduleSlotId: id, teacherId })),
+        })
+        return tx.classScheduleSlot.findUniqueOrThrow({
+          where: { id_schoolId: { id, schoolId } },
           include: slotInclude,
         })
+      })()
+    : await tx.classScheduleSlot.create({
+        data: {
+          ...slotData,
+          school: { connect: { id: schoolId } },
+          classPeriod: { connect: { id_schoolId: { id: classPeriodId, schoolId } } },
+          teachers: {
+            createMany: { data: teacherIds.map((teacherId) => ({ teacherId })) },
+          },
+        },
+        include: slotInclude,
+      })
 
-    return {
-      status: 'OK',
-      slot,
-      teacherOverlapIds: teacherOverlaps.map((overlap) => overlap.id),
-    } as const
-  })
+  return {
+    status: 'OK',
+    slot,
+    teacherOverlapIds: teacherOverlaps.map((overlap) => overlap.id),
+  } as const
 }
 
 export const classScheduleGateway = {
   saveWithOverlapValidation,
+  createManyWithOverlapValidation,
+
+  /**
+   * Créneaux de toute l'école portés par ces enseignants, toutes périodes confondues :
+   * c'est la portée exacte du refus `teacherOverlap` de `saveLocked`, qu'un aperçu doit
+   * annoncer avant le commit. Projection minimale — un aperçu compare des horaires.
+   */
+  listByTeachers: (schoolId: string, teacherIds: string[]) =>
+    teacherIds.length === 0
+      ? Promise.resolve([])
+      : db.classScheduleSlot.findMany({
+          where: { schoolId, teachers: { some: { teacherId: { in: teacherIds } } } },
+          select: {
+            id: true,
+            classPeriodId: true,
+            weekday: true,
+            startTime: true,
+            endTime: true,
+            teachers: { select: { teacherId: true } },
+          },
+        }),
 
   delete: (schoolId: string, id: string) =>
     db.classScheduleSlot.delete({ where: { id_schoolId: { id, schoolId } } }),

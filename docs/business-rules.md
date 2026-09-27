@@ -466,7 +466,9 @@ The MCP's four class-planning tools use the existing recurring `ClassScheduleSlo
 their feature flag, time-range, teacher-assignment and overlap rules. `list_class_schedule_slots`
 publishes only slots of active classes in the requested period of the key's school, with active
 teacher identities. Create and update return only the slot ID and teacher-overlap warnings; delete
-returns a success object so the MCP does not mistake the use case's string `OK` for an error.
+returns a success object so the MCP does not mistake the use case's string `OK` for an error. A whole
+planning goes through the `class_schedule` preview/commit pair ([Write drafts](#write-drafts)): all
+its slots are written in one transaction, or none.
 
 `resolveMcpScope()` **returns** a verdict instead of navigating, because the four helpers of
 `app/[locale]/(dashboard)/_lib/auth-helper.ts` all end in `redirect()` or `notFound()` and none is
@@ -660,7 +662,10 @@ commit-time re-check are the MCP's. The resolved plan freezes the proposing user
 without that binding, a revoked key's plan would still land, signed by its owner.
 
 **The lock always has an exit.** The result is written by the same transaction that writes the data,
-so a `COMMITTED` draft with a null `result` provably wrote nothing. Two ways out follow from that: a
+so a `COMMITTED` draft with a null `result` provably wrote nothing. A refusal returned from inside
+that transaction aborts it (`commitInTransaction` raises it and hands the string back outside), so
+whatever the commit wrote before refusing is rolled back too — Prisma would otherwise commit an
+interactive transaction whose callback merely returned. Two ways out follow from that: a
 commit that refuses on a business rule, or throws, calls `release()` and hands the lock back at once;
 one killed between the claim and the transaction is reclaimable after
 `MCP_DRAFT_COMMIT_TIMEOUT_SECONDS` (60 s, `src/domain/mcp-draft.ts`) through `reclaim()`, which
@@ -714,6 +719,8 @@ checks that follow therefore cannot race a dashboard enrollment.
 | `overpayment` / `noPayableEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
 | `staleDraft` | the recomputed split no longer matches the validated one, the enrollment or plan changed, or a member became a student |
 | `totalBelowPaid` | a payment banked since the preview exceeds the enrollment's new total |
+| `teacherNotFound` | a teacher of a planning is no longer assigned to its class |
+| `classOverlap` / `teacherOverlap` | a slot of a planning now overlaps one written since the preview |
 
 A refusal writes nothing and unlocks the draft, so the caller may fix the cause or preview again
 without waiting out the timeout.
@@ -741,6 +748,24 @@ the child in that family. Two members for one line → `ambiguousStudent`; a mem
 since the family already owns them. The commit rereads the family and each member before the first
 write (`src/use-cases/mcp/commit-enroll-family.ts`): archived family or member gone → `notFound`,
 a student created since → `staleDraft`, an enrollment opened since → `duplicateEnrollment`.
+
+**A whole planning is one write.** `class_schedule` (`src/use-cases/mcp/preview-class-schedule.ts`,
+`commit-class-schedule.ts`) enters every slot of a period's weekly planning at once, because a
+weekend read off one photograph must never be half-written: a slot refused after ten were created
+would leave a planning nobody dictated. The preview resolves each line's class among the classes of
+the named period and each teacher among the teachers **assigned to that class** — `notFound`,
+`ambiguousClass`, `ambiguousTeacher`, `teacherNotAssigned` — applies the dashboard's slot rules
+(`invalidTimeRange`, `classOverlap`, `teacherOverlap` as a warning unless
+`class_schedule_teacher_overlap_allowed` is `false`), and refuses a line that repeats an earlier one
+(`duplicateSlot`) or a slot already in the period (`alreadyExists`). Teacher overlaps are probed
+across the whole school, as the gateway refuses them. The commit rereads the classes and
+assignments in its transaction (`notFound`, `teacherNotFound`), takes every class and teacher
+advisory lock of the batch sorted before the first write, then writes the slots one by one through
+the dashboard's overlap checks (`classScheduleGateway.createManyWithOverlapValidation`); the first
+`classOverlap` or `teacherOverlap` is returned as a refusal, which aborts the transaction and takes
+the slots written before it away with it. The transaction timeout grows with the batch (5 s plus
+250 ms a slot), since a hundred lines cost three queries each. The recorded result lists each slot `id`
+with its teacher-overlap warnings, so a replay returns the same planning instead of a second one.
 
 **The two pairs chain.** `enroll_family` creates its enrollments `PENDING`, and `record_payment`
 distributes across `PENDING` and `ACTIVE` ones alike — so a family enrolled through the MCP can pay
