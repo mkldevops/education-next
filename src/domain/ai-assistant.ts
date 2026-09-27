@@ -8,6 +8,7 @@
  * la liste ; le choix définitif se valide sur de vraies fiches, pas ici.
  */
 export const AI_ASSISTANT_MODELS = [
+  'deepseek/deepseek-v4.1-flash',
   'google/gemini-2.5-flash',
   'google/gemini-2.5-pro',
   'anthropic/claude-haiku-4.5',
@@ -18,7 +19,7 @@ export const AI_ASSISTANT_MODELS = [
 
 export type AiAssistantModel = (typeof AI_ASSISTANT_MODELS)[number]
 
-export const DEFAULT_AI_ASSISTANT_MODEL: AiAssistantModel = 'google/gemini-2.5-flash'
+export const DEFAULT_AI_ASSISTANT_MODEL: AiAssistantModel = 'deepseek/deepseek-v4.1-flash'
 
 export function resolveAiAssistantModel(raw: string | undefined): AiAssistantModel {
   const candidate = raw?.trim()
@@ -53,7 +54,13 @@ export const AI_ASSISTANT_LIMITS = {
   maxTextChars: 8000,
   maxOutputTokens: 4000,
   maxSteps: 3,
+  /** Enchaînement lecture → aperçu → écriture de l'assistant général. */
+  maxAgentSteps: 8,
+  /** Résultats d'outils rejoués sur toute la conversation de l'assistant général. */
+  maxToolReplayChars: 60_000,
   timeoutMs: 60 * 1000,
+  /** Plusieurs appels au fournisseur par tour : budget plus large que l'inscription. */
+  agentTimeoutMs: 110 * 1000,
   requestsPerMinute: 20,
 } as const
 

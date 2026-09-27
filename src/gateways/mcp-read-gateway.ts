@@ -1,3 +1,4 @@
+import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
 import type { EventStatus } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
@@ -144,5 +145,76 @@ export const mcpReadGateway = {
         },
       },
       orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
+    }),
+
+  // Identité, famille et inscription ouverte : de quoi désigner un élève dans un autre outil,
+  // sans date de naissance, santé ni coordonnées.
+  findStudents: (schoolId: string, query: string, take: number) =>
+    db.student.findMany({
+      where: {
+        schoolId,
+        person: {
+          AND: query
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((word) => ({
+              OR: [
+                { name: { contains: word, mode: 'insensitive' as const } },
+                { lastname: { contains: word, mode: 'insensitive' as const } },
+              ],
+            })),
+        },
+      },
+      select: {
+        id: true,
+        person: {
+          select: {
+            name: true,
+            lastname: true,
+            families: {
+              where: { family: { isActive: true } },
+              select: { family: { select: namedRef } },
+            },
+          },
+        },
+        enrollments: {
+          where: { isActive: true, status: { in: [...OPEN_ENROLLMENT_STATUSES] } },
+          select: {
+            id: true,
+            status: true,
+            plan: { select: namedRef },
+            classAssignments: {
+              where: { endAt: null },
+              select: { classPeriod: { select: namedRef } },
+            },
+          },
+        },
+      },
+      orderBy: [{ person: { lastname: 'asc' } }, { person: { name: 'asc' } }],
+      take,
+    }),
+
+  // `online` plutôt que l'identifiant de transaction : l'agent a besoin de savoir qu'un
+  // paiement Stripe ne s'annule pas ici, pas de la référence du prestataire.
+  listFamilyPayments: (schoolId: string, familyId: string, take: number) =>
+    db.payment.findMany({
+      where: { schoolId, familyId },
+      select: {
+        id: true,
+        amount: true,
+        method: true,
+        reference: true,
+        paidAt: true,
+        cashedAt: true,
+        paymentTransactionId: true,
+        enrollment: {
+          select: {
+            id: true,
+            student: { select: { person: { select: { name: true, lastname: true } } } },
+          },
+        },
+      },
+      orderBy: [{ paidAt: 'desc' }, { createdAt: 'desc' }],
+      take,
     }),
 }

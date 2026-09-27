@@ -109,6 +109,8 @@ describe('buildMcpServer', () => {
       'commit_class_schedule',
       'list_plans',
       'list_teachers',
+      'create_teacher',
+      'find_students',
       'preview_enroll_family',
       'commit_enroll_family',
       'create_event',
@@ -120,10 +122,12 @@ describe('buildMcpServer', () => {
       'commit_record_payment',
       'preview_update_enrollment',
       'commit_update_enrollment',
+      'get_family_payments',
+      'cancel_payments',
     ])
   })
 
-  it('omits the five money tools when the school has turned payments off', () => {
+  it('omits the money tools when the school has turned payments off', () => {
     expect([...build({ paymentsEnabled: false }).keys()]).toEqual([
       'describe_school',
       'list_levels',
@@ -136,6 +140,8 @@ describe('buildMcpServer', () => {
       'preview_class_schedule',
       'commit_class_schedule',
       'list_teachers',
+      'create_teacher',
+      'find_students',
       'preview_enroll_family',
       'commit_enroll_family',
       'create_event',

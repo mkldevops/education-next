@@ -38,32 +38,37 @@ export function BarChart({
   const max = Math.max(...data.map((point) => point.value), 0)
 
   return (
-    <div className={cn('flex items-end gap-2 overflow-x-auto', className)} style={{ height }}>
+    <div className={cn('flex gap-2 overflow-x-auto pt-5', className)} style={{ height }}>
       {data.map((point) => {
         const ratio = max > 0 ? point.value / max : 0
+
+        const barHeight = Math.max(ratio * 100, point.value > 0 ? 4 : 2)
 
         return (
           <div
             key={point.label}
-            className="flex h-full min-w-10 flex-1 flex-col items-center justify-end gap-2"
+            className="flex h-full min-w-10 flex-1 flex-col items-center gap-2"
             title={point.caption ? `${point.label} · ${point.caption}` : point.label}
           >
-            <span
-              className={cn(
-                'text-xs font-medium tabular-nums',
-                point.value > 0 ? 'text-graphite' : 'text-graphite-600'
-              )}
-            >
-              {formatValue(point.value)}
-            </span>
-            <div
-              className={cn(
-                'w-full rounded-t transition-colors',
-                point.value > 0 ? 'bg-primary hover:bg-primary-hover' : 'bg-alabaster-700'
-              )}
-              style={{ height: `${Math.max(ratio * 100, point.value > 0 ? 4 : 2)}%` }}
-            />
-            <span className="line-clamp-2 h-8 text-center text-xs leading-4 text-graphite-600">
+            <div className="relative min-h-0 w-full flex-1">
+              <span
+                className={cn(
+                  'absolute inset-x-0 text-center text-xs font-medium tabular-nums',
+                  point.value > 0 ? 'text-graphite' : 'text-graphite-600'
+                )}
+                style={{ bottom: `calc(${barHeight}% + 0.375rem)` }}
+              >
+                {formatValue(point.value)}
+              </span>
+              <div
+                className={cn(
+                  'absolute inset-x-0 bottom-0 rounded-t transition-colors',
+                  point.value > 0 ? 'bg-primary hover:bg-primary-hover' : 'bg-alabaster-700'
+                )}
+                style={{ height: `${barHeight}%` }}
+              />
+            </div>
+            <span className="line-clamp-2 h-8 shrink-0 text-center text-xs leading-4 text-graphite-600">
               {point.label}
             </span>
           </div>

@@ -277,8 +277,8 @@ describe('resolveNavItems aiAssistant flag', () => {
   const scope = (aiAssistant: boolean) => ({ events: false, payments: true, aiAssistant })
 
   it('translates the assistant navigation entry in every locale', () => {
-    expect(fr.dashboard.sidebar.enrollAssistant).toBe("Assistant d'inscription")
-    expect(en.dashboard.sidebar.enrollAssistant).toBe('Enrollment assistant')
+    expect(fr.dashboard.sidebar.enrollAssistant).toBe('Assistant IA')
+    expect(en.dashboard.sidebar.enrollAssistant).toBe('AI assistant')
   })
 
   it('shows the assistant to an admin and a super admin only while enabled', () => {

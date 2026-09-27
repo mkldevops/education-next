@@ -11,7 +11,7 @@ import {
   useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
-import { useEffect, useId, useState, useTransition } from 'react'
+import { type ReactNode, useEffect, useId, useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 
@@ -39,6 +39,8 @@ type Props = {
   confirmDisable?: ConfirmDisable
   /** Interrupteur figé, par exemple tant que la configuration dont il dépend est incomplète. */
   disabled?: boolean
+  /** Réglages dépendants, repliés tant que l'interrupteur est coupé. */
+  children?: ReactNode
 }
 
 /**
@@ -55,6 +57,7 @@ export function FlagToggle({
   onSave,
   confirmDisable,
   disabled = false,
+  children,
 }: Props) {
   const t = useTranslations('dashboard.platformFlag')
   const router = useRouter()
@@ -62,6 +65,7 @@ export function FlagToggle({
   const titleId = useId()
   const descriptionId = useId()
   const hintId = useId()
+  const panelId = useId()
   const [checked, setChecked] = useState(enabled)
   const [confirming, setConfirming] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -112,64 +116,73 @@ export function FlagToggle({
   const confirmDisableNow = () => commit(false, () => setConfirming(false))
 
   return (
-    <div
-      className={
-        nested
-          ? 'ml-6 flex items-start justify-between gap-6 border-l-2 border-alabaster-700 py-5 pl-4 pr-6'
-          : 'flex items-start justify-between gap-6 px-6 py-5'
-      }
-    >
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <h3 id={titleId} className="text-sm font-semibold text-graphite">
-            {title}
-          </h3>
-          <span
-            id={`${inputId}-state`}
-            className={
-              checked
-                ? 'rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700'
-                : 'rounded-full bg-alabaster-800 px-2 py-0.5 text-xs font-medium text-graphite-600'
-            }
-          >
-            {checked ? t('enabled') : t('disabled')}
-          </span>
-        </div>
-        <p id={descriptionId} className="mt-1 text-sm text-graphite-600">
-          {description}
-        </p>
-        {hint && (
-          <p id={hintId} className="mt-2 text-xs text-orange-600">
-            {hint}
+    <div>
+      <div
+        className={
+          nested
+            ? 'ml-6 flex items-start justify-between gap-6 border-l-2 border-alabaster-700 py-5 pl-4 pr-6'
+            : 'flex items-start justify-between gap-6 px-6 py-5'
+        }
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 id={titleId} className="text-sm font-semibold text-graphite">
+              {title}
+            </h3>
+            <span
+              id={`${inputId}-state`}
+              className={
+                checked
+                  ? 'rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700'
+                  : 'rounded-full bg-alabaster-800 px-2 py-0.5 text-xs font-medium text-graphite-600'
+              }
+            >
+              {checked ? t('enabled') : t('disabled')}
+            </span>
+          </div>
+          <p id={descriptionId} className="mt-1 text-sm text-graphite-600">
+            {description}
           </p>
+          {hint && (
+            <p id={hintId} className="mt-2 text-xs text-orange-600">
+              {hint}
+            </p>
+          )}
+        </div>
+        <label
+          htmlFor={inputId}
+          className="relative inline-flex shrink-0 cursor-pointer items-center"
+        >
+          <input
+            id={inputId}
+            type="checkbox"
+            checked={checked}
+            disabled={pending || disabled}
+            onChange={(event) => onToggle(event.target.checked)}
+            aria-labelledby={`${titleId} ${inputId}-state`}
+            aria-describedby={hint ? `${descriptionId} ${hintId}` : descriptionId}
+            aria-controls={children ? panelId : undefined}
+            aria-expanded={children ? checked : undefined}
+            className="peer sr-only"
+          />
+          <span className="h-6 w-11 rounded-full bg-alabaster-700 ring-offset-2 transition-colors peer-checked:bg-emerald-600 peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-disabled:opacity-50" />
+          <span className="pointer-events-none absolute left-0.5 size-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+        </label>
+        {confirming && confirmDisable && (
+          <Dialog initialOpen>
+            <DisableConfirmation
+              confirmDisable={confirmDisable}
+              pending={pending}
+              onConfirm={confirmDisableNow}
+              onDismiss={cancelDisable}
+            />
+          </Dialog>
         )}
       </div>
-      <label
-        htmlFor={inputId}
-        className="relative inline-flex shrink-0 cursor-pointer items-center"
-      >
-        <input
-          id={inputId}
-          type="checkbox"
-          checked={checked}
-          disabled={pending || disabled}
-          onChange={(event) => onToggle(event.target.checked)}
-          aria-labelledby={`${titleId} ${inputId}-state`}
-          aria-describedby={hint ? `${descriptionId} ${hintId}` : descriptionId}
-          className="peer sr-only"
-        />
-        <span className="h-6 w-11 rounded-full bg-alabaster-700 ring-offset-2 transition-colors peer-checked:bg-emerald-600 peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-disabled:opacity-50" />
-        <span className="pointer-events-none absolute left-0.5 size-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
-      </label>
-      {confirming && confirmDisable && (
-        <Dialog initialOpen>
-          <DisableConfirmation
-            confirmDisable={confirmDisable}
-            pending={pending}
-            onConfirm={confirmDisableNow}
-            onDismiss={cancelDisable}
-          />
-        </Dialog>
+      {children && checked && (
+        <div id={panelId} className="mb-5 ml-6 border-l-2 border-alabaster-700">
+          {children}
+        </div>
       )}
     </div>
   )

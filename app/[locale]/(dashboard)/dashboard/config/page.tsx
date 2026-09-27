@@ -4,6 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { teacherGateway } from '@/gateways/teacher-gateway'
+import { formatDateTime } from '@/lib/date'
 import { db } from '@/lib/db'
 import { SCHOOL_CONFIG_KEYS, SCHOOL_CONFIG_VALUE_TYPES } from '@/lib/school-config'
 import { SCHOOL_CONFIG_DEFAULTS } from '@/lib/school-config-defaults'
@@ -16,7 +17,7 @@ import { isGoogleSignInEnabled } from '@/use-cases/platform-settings/is-google-s
 import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
-import { getOpenRouterKeyStatus } from '@/use-cases/platform-settings/openrouter-api-key'
+import { describeOpenRouterKey } from '@/use-cases/platform-settings/openrouter-api-key'
 import { countGoogleOnlyAccounts } from '@/use-cases/users/count-google-only-accounts'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
@@ -47,7 +48,7 @@ export default async function ConfigPage({ params }: Props) {
     passkeyEnabled,
     mcpEnabled,
     aiAssistantEnabled,
-    openRouterKeyStatus,
+    openRouterKey,
     schoolSwitchEnabled,
     googleOnlyAccountCount,
   ] = isSuperAdmin
@@ -56,11 +57,19 @@ export default async function ConfigPage({ params }: Props) {
         isPasskeySignInEnabled(),
         isMcpEnabled(),
         isAiAssistantEnabled(),
-        getOpenRouterKeyStatus(),
+        describeOpenRouterKey(),
         isSchoolSwitchEnabled(),
         countGoogleOnlyAccounts(),
       ])
-    : [false, false, false, false, 'notConfigured' as const, false, 0]
+    : [
+        false,
+        false,
+        false,
+        false,
+        { status: 'notConfigured' as const, hint: null, savedAt: null },
+        false,
+        0,
+      ]
 
   const t = await getTranslations('dashboard.pages.config')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -120,7 +129,10 @@ export default async function ConfigPage({ params }: Props) {
           passkeyEnabled={passkeyEnabled}
           mcpEnabled={mcpEnabled}
           aiAssistantEnabled={aiAssistantEnabled}
-          openRouterKeyStatus={openRouterKeyStatus}
+          openRouterKey={{
+            ...openRouterKey,
+            savedAt: openRouterKey.savedAt ? formatDateTime(openRouterKey.savedAt, locale) : null,
+          }}
           secretStorageConfigured={isSecretEncryptionConfigured()}
           schoolSwitchEnabled={schoolSwitchEnabled}
           googleOnlyAccountCount={googleOnlyAccountCount}

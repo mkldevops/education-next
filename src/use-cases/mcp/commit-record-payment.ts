@@ -3,8 +3,8 @@ import { distributePayment } from '@/domain/payment'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { readLockedFamilyBalances } from '@/use-cases/payments/locked-family-balance'
 import { claimResolved, commitInTransaction } from './claim-draft'
+import type { DraftScope } from './draft-scope'
 import { RECORD_PAYMENT_TOOL } from './preview-record-payment'
-import type { McpScope } from './resolve-mcp-scope'
 import { commitDraftSchema, mcpPaymentMethodSchema } from './schemas'
 
 const resolvedSchema = z.object({
@@ -29,7 +29,7 @@ function sameAllocation(stored: Allocation, fresh: Allocation): boolean {
 
 type Input = z.infer<typeof commitDraftSchema>
 
-export async function commitRecordPayment(scope: McpScope, input: Input) {
+export async function commitRecordPayment(scope: DraftScope, input: Input) {
   const parsed = commitDraftSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   // Défense en profondeur : refuse même un brouillon préparé avant la coupure (FR-024),

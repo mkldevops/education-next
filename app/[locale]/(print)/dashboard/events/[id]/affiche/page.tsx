@@ -12,7 +12,7 @@ import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
 import { requireSchoolAdmin } from '../../../../../(dashboard)/_lib/auth-helper'
 import { restrictedPageMetadata } from '../../../../../(dashboard)/_lib/page-metadata'
-import { PrintPosterButton } from './_components/print-poster-button'
+import { PrintButton } from '../../../../_components/print-button'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -78,7 +78,7 @@ export default async function EventPosterPage({ params }: Props) {
             {t('back')}
           </Link>
           <p className="text-xs text-graphite-600">{t('hint')}</p>
-          <PrintPosterButton label={t('print')} />
+          <PrintButton label={t('print')} />
         </div>
 
         <div className="w-full max-w-full overflow-x-auto print:overflow-visible">

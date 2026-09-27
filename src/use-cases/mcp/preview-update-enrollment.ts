@@ -5,8 +5,8 @@ import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { roundHalfUp } from '@/lib/decimal'
 import { blockedPreview, saveDraftPreview } from './draft-response'
+import type { DraftScope } from './draft-scope'
 import { matchByName } from './match-by-name'
-import type { McpScope } from './resolve-mcp-scope'
 import { previewUpdateEnrollmentSchema } from './schemas'
 
 // `z.input`, pas `z.infer` : l'entrée vient d'un modèle et traverse le schéma — un défaut
@@ -33,7 +33,7 @@ function describe(enrollment: Candidate) {
   }
 }
 
-export async function previewUpdateEnrollment(scope: McpScope, input: Input) {
+export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
   const parsed = previewUpdateEnrollmentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   // Défense en profondeur : l'outil n'est déjà pas déclaré quand le drapeau est coupé,

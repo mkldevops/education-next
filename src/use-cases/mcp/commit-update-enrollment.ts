@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { roundHalfUp } from '@/lib/decimal'
 import { claimResolved, commitInTransaction } from './claim-draft'
+import type { DraftScope } from './draft-scope'
 import { paidAmount, UPDATE_ENROLLMENT_TOOL } from './preview-update-enrollment'
-import type { McpScope } from './resolve-mcp-scope'
 import { commitDraftSchema } from './schemas'
 
 const pricingSchema = z.object({
@@ -19,7 +19,7 @@ const resolvedSchema = z.object({
 
 type Input = z.infer<typeof commitDraftSchema>
 
-export async function commitUpdateEnrollment(scope: McpScope, input: Input) {
+export async function commitUpdateEnrollment(scope: DraftScope, input: Input) {
   const parsed = commitDraftSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   // Défense en profondeur : refuse même un brouillon préparé avant la coupure (FR-024),

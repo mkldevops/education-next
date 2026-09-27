@@ -101,6 +101,7 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
             data={chart}
             formatValue={(value) => (value > 0 ? compact.format(value) : '—')}
             emptyMessage={t('noCollection')}
+            height={200}
           />
         </div>
       </Card>

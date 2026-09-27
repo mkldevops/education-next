@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { useEffect } from 'react'
 import { FlagToggle } from '../../../_components/flag-toggle'
 import {
   setAiAssistantEnabledAction,
@@ -9,8 +10,10 @@ import {
   setPasskeySignInEnabledAction,
   setSchoolSwitchEnabledAction,
 } from '../../../_lib/platform-settings-actions'
-import { OpenRouterKeyForm, type OpenRouterKeyStatus } from './openrouter-key-form'
+import { OpenRouterKeyForm, type OpenRouterKeyView } from './openrouter-key-form'
 import { SettingsSection } from './settings-section'
+
+const INTEGRATIONS_ANCHOR = 'integrations'
 
 type Props = {
   googleEnabled: boolean
@@ -18,7 +21,7 @@ type Props = {
   passkeyEnabled: boolean
   mcpEnabled: boolean
   aiAssistantEnabled: boolean
-  openRouterKeyStatus: OpenRouterKeyStatus
+  openRouterKey: OpenRouterKeyView
   secretStorageConfigured: boolean
   schoolSwitchEnabled: boolean
   googleOnlyAccountCount: number
@@ -34,7 +37,7 @@ export function PlatformSettingsPanel({
   passkeyEnabled,
   mcpEnabled,
   aiAssistantEnabled,
-  openRouterKeyStatus,
+  openRouterKey,
   secretStorageConfigured,
   schoolSwitchEnabled,
   googleOnlyAccountCount,
@@ -43,6 +46,13 @@ export function PlatformSettingsPanel({
   const tAuth = useTranslations('dashboard.pages.authSettings')
   const tIntegrations = useTranslations('dashboard.pages.integrations')
   const tSwitch = useTranslations('schools.admin.platformSwitch')
+
+  // Le défilement vers l'ancre fait défaut sur une navigation client : le contenu défile dans
+  // `<main>`, pas dans la fenêtre. Le lien « Configurer la clé » de l'assistant y arrive.
+  useEffect(() => {
+    if (window.location.hash !== `#${INTEGRATIONS_ANCHOR}`) return
+    document.getElementById(INTEGRATIONS_ANCHOR)?.scrollIntoView({ block: 'start' })
+  }, [])
 
   return (
     <>
@@ -83,7 +93,11 @@ export function PlatformSettingsPanel({
         />
       </SettingsSection>
 
-      <SettingsSection title={tIntegrations('title')} description={tIntegrations('description')}>
+      <SettingsSection
+        id={INTEGRATIONS_ANCHOR}
+        title={tIntegrations('title')}
+        description={tIntegrations('description')}
+      >
         <FlagToggle
           title={tIntegrations('mcp.title')}
           description={tIntegrations('mcp.description')}
@@ -95,19 +109,20 @@ export function PlatformSettingsPanel({
           title={tIntegrations('aiAssistant.title')}
           description={tIntegrations('aiAssistant.description')}
           hint={
-            openRouterKeyStatus === 'configured'
+            openRouterKey.status === 'configured'
               ? tIntegrations('aiAssistant.hint')
-              : openRouterKeyStatus === 'unreadable'
+              : openRouterKey.status === 'unreadable'
                 ? tIntegrations('aiAssistant.unreadable')
                 : tIntegrations('aiAssistant.notConfigured')
           }
           enabled={aiAssistantEnabled}
           onSave={setAiAssistantEnabledAction}
-        />
-        <OpenRouterKeyForm
-          status={openRouterKeyStatus}
-          secretStorageConfigured={secretStorageConfigured}
-        />
+        >
+          <OpenRouterKeyForm
+            openRouterKey={openRouterKey}
+            secretStorageConfigured={secretStorageConfigured}
+          />
+        </FlagToggle>
       </SettingsSection>
     </>
   )

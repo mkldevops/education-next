@@ -4,8 +4,9 @@ import { distributePayment, enrollmentBalances } from '@/domain/payment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
+import { roundHalfUp } from '@/lib/decimal'
 import { blockedPreview, saveDraftPreview } from './draft-response'
-import type { McpScope } from './resolve-mcp-scope'
+import type { DraftScope } from './draft-scope'
 import { previewRecordPaymentSchema } from './schemas'
 
 // `z.input`, pas `z.infer` : l'entrée vient d'un modèle et traverse le schéma — un défaut
@@ -14,7 +15,21 @@ type Input = z.input<typeof previewRecordPaymentSchema>
 
 export const RECORD_PAYMENT_TOOL = 'record_payment'
 
-export async function previewRecordPayment(scope: McpScope, input: Input) {
+const DEFAULT_PAYMENT_METHOD = 'CASH'
+
+type ParsedInput = z.infer<typeof previewRecordPaymentSchema>
+
+function familyLookup(data: ParsedInput) {
+  if (data.familyId) return { field: 'familyId', value: data.familyId } as const
+  if (data.studentId) return { field: 'studentId', value: data.studentId } as const
+  return { field: 'familyName', value: data.familyName ?? '' } as const
+}
+
+export async function previewRecordPayment(
+  scope: DraftScope,
+  input: Input,
+  now: () => Date = () => new Date()
+) {
   const parsed = previewRecordPaymentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   // Défense en profondeur : l'outil n'est déjà pas déclaré quand le drapeau est coupé,
@@ -26,16 +41,20 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
   const blockers: McpFinding[] = []
   const warnings: McpFinding[] = []
 
-  const candidates = data.familyId
-    ? [await familyGateway.findById(schoolId, data.familyId)].filter((row) => row !== null)
-    : await familyGateway.searchByName(schoolId, data.familyName ?? '')
+  const lookup = familyLookup(data)
+  const candidates =
+    lookup.field === 'familyId'
+      ? [await familyGateway.findById(schoolId, lookup.value)].filter((row) => row !== null)
+      : lookup.field === 'studentId'
+        ? await familyGateway.findByStudent(schoolId, lookup.value)
+        : await familyGateway.searchByName(schoolId, lookup.value)
 
   const matches = { families: candidates.map((row) => ({ id: row.id, name: row.name })) }
 
   if (candidates.length !== 1) {
     blockers.push({
-      field: data.familyId ? 'familyId' : 'familyName',
-      value: data.familyId ?? data.familyName ?? '',
+      field: lookup.field,
+      value: lookup.value,
       reason: candidates.length === 0 ? 'notFound' : 'ambiguousFamily',
     })
     return blockedPreview(matches, warnings, blockers)
@@ -43,17 +62,22 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
 
   const family = candidates[0]
   const enrollments = await enrollmentGateway.findPayableByFamily(schoolId, family.id)
+  const balances = enrollmentBalances(enrollments)
+
+  // Sans montant, la famille solde ce qu'elle doit : c'est le cas courant au guichet.
+  const amount =
+    data.amount ?? roundHalfUp(balances.reduce((sum, row) => sum + row.remainingBalance, 0))
 
   let allocation: Array<{ enrollmentId: string; amount: number }> = []
-  const distribution = distributePayment(data.amount, enrollmentBalances(enrollments))
-  if (distribution.result === 'OK') {
-    allocation = distribution.distribution
+  if (amount === 0) {
+    blockers.push({ field: 'amount', value: '0', reason: 'nothingDue' })
   } else {
-    blockers.push({
-      field: 'amount',
-      value: String(data.amount),
-      reason: distribution.result,
-    })
+    const distribution = distributePayment(amount, balances)
+    if (distribution.result === 'OK') {
+      allocation = distribution.distribution
+    } else {
+      blockers.push({ field: 'amount', value: String(amount), reason: distribution.result })
+    }
   }
 
   if (data.reference) {
@@ -74,11 +98,11 @@ export async function previewRecordPayment(scope: McpScope, input: Input) {
   const resolved = {
     tool: RECORD_PAYMENT_TOOL,
     family: { id: family.id, name: family.name },
-    method: data.method,
+    method: data.method ?? DEFAULT_PAYMENT_METHOD,
     reference: data.reference,
-    paidAt: new Date(data.paidAt).toISOString(),
+    paidAt: (data.paidAt ? new Date(data.paidAt) : now()).toISOString(),
     cashedAt: data.cashedAt ? new Date(data.cashedAt).toISOString() : undefined,
-    amount: data.amount,
+    amount,
     // La répartition résolue est ce que l'action serveur actuelle ne montre jamais :
     // l'humain valide un encaissement ventilé, pas un montant global. Le commit la
     // recalcule sur les soldes frais et refuse si elle a bougé.
