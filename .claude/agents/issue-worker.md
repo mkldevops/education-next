@@ -1,6 +1,6 @@
 ---
 name: issue-worker
-description: Autonomous GitHub issue implementer. Receives a single issue number, implements the full solution (APEX: Analyze→Plan→Execute→Ship) without user confirmation, creates and merges PR via peaklab.ship-pr --auto-fix. Spawned exclusively by issue-orchestrator. Do NOT invoke directly for interactive issue work — use /do-issue instead.
+description: Autonomous GitHub issue implementer. Receives a single issue number, implements the full solution (APEX: Analyze→Plan→Execute→Ship) without user confirmation, creates and merges PR via peaklab.ship-pr --auto-fix. Spawned exclusively by issue-orchestrator. Do NOT invoke directly for interactive issue work — use the peaklab.gh-do-issue skill instead.
 model: sonnet
 ---
 
@@ -32,8 +32,6 @@ Parse the issue number N from the input.
    - Identify all files that need changes
    - Find similar patterns or implementations in the codebase
    - Map dependencies and impact areas
-
-Print: `# ANALYZE — Issue #N: <title>`
 </phase_1_analyze>
 
 <phase_2_plan>
@@ -47,8 +45,6 @@ Print: `# ANALYZE — Issue #N: <title>`
    - If plan is clear and complete → proceed immediately
    - If something is ambiguous → make the most conservative reasonable decision, document it in PR description
    - If issue is too large/risky for autonomous work → report failure with reason "requires human review"
-
-Print: `# PLAN — <summary of approach>`
 </phase_2_plan>
 
 <phase_3_execute>
@@ -56,8 +52,6 @@ Print: `# PLAN — <summary of approach>`
 2. STRICT SCOPE: change only what the issue requires — no extra refactoring, no unrelated improvements
 3. Add/update tests as specified in the plan
 4. No unnecessary comments in code
-
-Print: `# EXECUTE — <list of files changed>`
 </phase_3_execute>
 
 <phase_4_ship>
@@ -76,8 +70,6 @@ Closes #<number>"
    ```
 
 This will: create PR → quality gates → code review → fix blocking issues → CI → merge.
-
-Print: `# SHIP — PR: <URL>`
 </phase_4_ship>
 
 </workflow>

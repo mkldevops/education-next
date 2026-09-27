@@ -21,13 +21,12 @@ Keep pages as Server Components where possible. Interactive route-only UI belong
 ## Authorization and Data Scope
 
 Do not rely on `proxy.ts` or the layout as the only authorization layer. Use `_lib/auth-helper.ts`
-before protected reads, then constrain the query to the caller's role and family:
+before protected reads, then constrain the query to the caller's scope. `requireSchoolScope()` returns
+an admin scope or a parent scope with a non-optional `familyId`, and calls `notFound()` otherwise:
 
 ```typescript
-const { role, familyId } = await getSessionWithRole()
-const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
-
-if (!isAdmin && familyId !== id) notFound()
+const scope = await requireSchoolScope()
+if (!scope.isAdmin && scope.familyId !== id) notFound()
 ```
 
 Parents may access only their linked family data. Use `notFound()` for an inaccessible resource to
@@ -42,17 +41,17 @@ before use-case or database work, preserve the use case's discriminated result, 
 after success:
 
 ```typescript
-const user = await requireAdmin()
-if (!user) return 'unauthorized' as const
+const { schoolId } = await requireSchoolAdmin()
 
-const result = await activateEnrollment(data)
+const result = await activateEnrollment({ ...data, schoolId })
 if (result !== 'OK') return result
 revalidatePath('/dashboard/enrollments')
 return 'OK' as const
 ```
 
-`invitation-actions.ts` currently performs only a session check; do not copy it as the authorization
-pattern for new admin mutations. Role provisioning must apply an explicit policy: `createUserAction`
-pairs `requireAdminActor()` with `canAssignRole` so an `ADMIN` can only create a `PARENT`, and every
-user mutation in `user-actions.ts` requires `requireSuperAdmin()`. Choose guards from the operation's
-actual authorization requirements.
+Guards redirect to login or call `notFound()` instead of returning `null`. School-level mutations use
+`requireSchoolAdmin()`; platform-level user mutations (`updateUserAction`, `deleteUserAction`,
+`changePlatformLevelAction`…) use `requirePlatformAdmin()`. Role provisioning must apply an explicit
+policy: `createUserAction` accepts only a `SchoolRole`, and platform level (`isSuperAdmin`) changes go
+through `changePlatformLevelAction`. Choose guards from the operation's actual authorization
+requirements.

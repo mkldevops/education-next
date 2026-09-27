@@ -50,19 +50,14 @@ Agent(
   subagent_type: "issue-worker",
   description: "Process issue #<number>",
   prompt: "Process issue #<number>: <title>",
-  run_in_background: true,
   isolation: "worktree"
 )
 ```
-Record `active_workers["<number>"] = agent_id`.
+Workers run in the background. Record `active_workers["<number>"] = agent_id`.
 Save state.
 
-**Step 4 — Poll active workers**
-For each agent_id in `active_workers`:
-```
-TaskOutput(task_id: agent_id, block: false)
-```
-- If result contains `╔══ WORKER REPORT ══╗`:
+**Step 4 — Collect finished workers**
+A completion notification arrives when a worker stops. When its result contains `╔══ WORKER REPORT ══╗`:
   - Parse Status field: `completed` → move to `completed[]`, `failed` → move to `failed[]`
   - Remove from `active_workers`
   - Print the worker report
@@ -72,12 +67,12 @@ TaskOutput(task_id: agent_id, block: false)
 Process any pending messages (see `<message_handling>`).
 
 **Step 6 — Decide next action**
-- If issues remain or active_workers not empty → wait 30 seconds, go to Step 1
+- If issues remain or active_workers not empty → wait for the next worker notification, then go to Step 1
 - If no issues and no active_workers → print summary and exit loop:
   ```
   ✅ All issues processed. Completed: <N>. Failed: <N>.
   ```
-- If `status === "paused"` → sleep 60s, check again (don't spawn new workers)
+- If `status === "paused"` → spawn no new workers; wait for notifications or a `resume` message
 - If `status === "stopped"` → exit immediately
 
 **Step 7 — Increment loop_count, save state**
@@ -121,11 +116,8 @@ Duration:  <start to finish>
 </output_format>
 
 <constraints>
-NEVER use AskUserQuestion.
-NEVER spawn more than 3 workers simultaneously.
-NEVER process the same issue twice (check completed[] and active_workers).
-ALWAYS use isolation: "worktree" when spawning issue-worker agents.
-ALWAYS save state after every change.
-ALWAYS respond to SendMessage commands between loop iterations.
-ALWAYS use --auto-fix when invoking issue-worker (already in worker constraints).
+Decide without AskUserQuestion: nobody is watching the loop.
+Run at most 3 workers at once, each with `isolation: "worktree"`, so parallel branches never share a checkout.
+Skip issues already in `completed[]`, `failed[]` or `active_workers`.
+Save state after every change and answer SendMessage commands between iterations.
 </constraints>

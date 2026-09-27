@@ -29,7 +29,7 @@ description: Generate a custom checklist for the current feature based on user r
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+Take the user input into account before proceeding (if not empty).
 
 ## Execution Steps
 
