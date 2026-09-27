@@ -2544,14 +2544,8 @@
     },
     "notFoundTitle": "Schedule not found",
     "title": "Class schedule",
-    "period": "{period} period",
     "empty": "No time slots are currently published",
-    "noTeachers": "No teacher",
-    "content": "Content",
-    "duration": {
-      "hours": "h",
-      "minutes": "min"
-    },
+    "noTeachers": "Teacher to be confirmed",
     "weekdays": {
       "1": "Monday",
       "2": "Tuesday",
@@ -2560,7 +2554,41 @@
       "5": "Friday",
       "6": "Saturday",
       "7": "Sunday"
-    }
+    },
+    "intro": "Class times for the {period} school year, by day and level. Pick your child's level to see only their classes.",
+    "level": "Level",
+    "teacher": "Teacher",
+    "teachers": "Teachers",
+    "program": "View the programme",
+    "courses": "{count, plural, one {# class} other {# classes}}",
+    "sessions": {
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "evening": "Evening"
+    },
+    "stats": {
+      "days": "{count, plural, one {teaching day} other {teaching days}}",
+      "levels": "{count, plural, one {level} other {levels}}",
+      "courses": "{count, plural, one {class per week} other {classes per week}}"
+    },
+    "filter": {
+      "label": "Filter by level",
+      "hint": "What is your child's level?",
+      "all": "All levels",
+      "intro": "Pick it to see only their classes, with the teacher and the programme of each session.",
+      "perWeek": "{count, plural, one {# class a week} other {# classes a week}}"
+    },
+    "print": {
+      "button": "Print the schedule",
+      "period": "{period} school year",
+      "levelPeriod": "Level {level} · {period} school year",
+      "qrAlt": "QR code to the online schedule",
+      "qrCaption": "Scan to see the latest schedule",
+      "footer": "Latest version: {url}"
+    },
+    "logoAlt": "{schoolName} logo",
+    "close": "Close",
+    "programTitle": "Programme"
   },
   "settings": {
     "title": "Settings",

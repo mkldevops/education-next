@@ -139,7 +139,7 @@ export function ScheduleGrid({
   )
 }
 
-function RichDescription({ value }: { value: string }) {
+export function RichDescription({ value }: { value: string }) {
   const nodes: ReactNode[] = []
   let bulletLines: string[] = []
 

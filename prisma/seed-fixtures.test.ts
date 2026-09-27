@@ -15,8 +15,8 @@ describe('demo seed fixtures', () => {
   it('fills every active level with a teacher and a weekly schedule', () => {
     expect(DEMO_CLASSES).toHaveLength(5)
     expect(DEMO_TEACHERS).toHaveLength(DEMO_CLASSES.length)
-    expect(DEMO_SCHEDULE_SLOTS).toHaveLength(4)
-    expect(EXPECTED_SEED_COUNTS.alNour.scheduleSlots).toBe(20)
+    expect(DEMO_SCHEDULE_SLOTS).toHaveLength(5)
+    expect(EXPECTED_SEED_COUNTS.alNour.scheduleSlots).toBe(25)
     expect(new Set(DEMO_SCHEDULE_SLOTS.map((slot) => slot.weekday)).size).toBe(4)
     expect(new Set(DEMO_CLASSES.map((classPeriod) => classPeriod.levelIndex)).size).toBe(5)
   })
@@ -42,7 +42,7 @@ describe('demo seed fixtures', () => {
       families: 17,
       students: 30,
       teachers: 10,
-      scheduleSlots: 40,
+      scheduleSlots: 50,
       events: 8,
     })
     expect(

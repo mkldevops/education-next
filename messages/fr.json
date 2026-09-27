@@ -2545,14 +2545,8 @@
     },
     "notFoundTitle": "Planning introuvable",
     "title": "Planning des classes",
-    "period": "Période {period}",
     "empty": "Aucun créneau n'est actuellement publié",
-    "noTeachers": "Aucun enseignant",
-    "content": "Contenu",
-    "duration": {
-      "hours": "h",
-      "minutes": "min"
-    },
+    "noTeachers": "Enseignant à confirmer",
     "weekdays": {
       "1": "Lundi",
       "2": "Mardi",
@@ -2561,7 +2555,41 @@
       "5": "Vendredi",
       "6": "Samedi",
       "7": "Dimanche"
-    }
+    },
+    "intro": "Horaires des cours de l'année {period}, par jour et par niveau. Choisissez le niveau de votre enfant pour n'afficher que ses cours.",
+    "level": "Niveau",
+    "teacher": "Enseignant",
+    "teachers": "Enseignants",
+    "program": "Voir le programme",
+    "courses": "{count, plural, one {# cours} other {# cours}}",
+    "sessions": {
+      "morning": "Matin",
+      "afternoon": "Après-midi",
+      "evening": "Soir"
+    },
+    "stats": {
+      "days": "{count, plural, one {jour de cours} other {jours de cours}}",
+      "levels": "{count, plural, one {niveau} other {niveaux}}",
+      "courses": "{count, plural, one {cours par semaine} other {cours par semaine}}"
+    },
+    "filter": {
+      "label": "Filtrer par niveau",
+      "hint": "Quel est le niveau de votre enfant ?",
+      "all": "Tous les niveaux",
+      "intro": "Choisissez-le pour n'afficher que ses cours, avec l'enseignant et le programme de chaque séance.",
+      "perWeek": "{count, plural, one {# cours / semaine} other {# cours / semaine}}"
+    },
+    "print": {
+      "button": "Imprimer le planning",
+      "period": "Année {period}",
+      "levelPeriod": "Niveau {level} · année {period}",
+      "qrAlt": "QR code vers le planning en ligne",
+      "qrCaption": "Scannez pour voir le planning à jour",
+      "footer": "Version à jour : {url}"
+    },
+    "logoAlt": "Logo de {schoolName}",
+    "close": "Fermer",
+    "programTitle": "Programme"
   },
   "settings": {
     "title": "Paramètres",

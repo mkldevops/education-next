@@ -261,7 +261,7 @@ export const classScheduleGateway = {
         startTime: true,
         endTime: true,
         description: true,
-        classPeriod: { select: { id: true, name: true } },
+        classPeriod: { select: { id: true, level: { select: { id: true, name: true } } } },
         teachers: {
           where: { teacher: { isActive: true } },
           select: { teacher: { select: { id: true, firstName: true, lastName: true } } },
