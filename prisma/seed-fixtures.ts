@@ -201,6 +201,12 @@ export const DEMO_SCHEDULE_SLOTS = [
     description: 'Français, lecture et expression orale.',
   },
   {
+    weekday: 1,
+    startTime: '14:00',
+    endTime: '15:30',
+    description: 'Histoire, géographie et éducation civique.',
+  },
+  {
     weekday: 2,
     startTime: '10:15',
     endTime: '11:45',

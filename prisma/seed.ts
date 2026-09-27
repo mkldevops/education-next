@@ -377,7 +377,7 @@ async function seedSchoolContent(fixture: SchoolFixture) {
     ],
   })
 
-  // Vingt créneaux par école : chaque classe possède quatre rendez-vous hebdomadaires
+  // Chaque classe possède cinq rendez-vous hebdomadaires, dont un lundi matin et après-midi,
   // et son enseignant attitré, sans chevauchement d'enseignant entre deux classes.
   await Promise.all(
     currentClasses.flatMap((classPeriod, classIndex) =>
