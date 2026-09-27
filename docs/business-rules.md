@@ -662,7 +662,10 @@ commit-time re-check are the MCP's. The resolved plan freezes the proposing user
 without that binding, a revoked key's plan would still land, signed by its owner.
 
 **The lock always has an exit.** The result is written by the same transaction that writes the data,
-so a `COMMITTED` draft with a null `result` provably wrote nothing. Two ways out follow from that: a
+so a `COMMITTED` draft with a null `result` provably wrote nothing. A refusal returned from inside
+that transaction aborts it (`commitInTransaction` raises it and hands the string back outside), so
+whatever the commit wrote before refusing is rolled back too — Prisma would otherwise commit an
+interactive transaction whose callback merely returned. Two ways out follow from that: a
 commit that refuses on a business rule, or throws, calls `release()` and hands the lock back at once;
 one killed between the claim and the transaction is reclaimable after
 `MCP_DRAFT_COMMIT_TIMEOUT_SECONDS` (60 s, `src/domain/mcp-draft.ts`) through `reclaim()`, which
@@ -759,7 +762,9 @@ across the whole school, as the gateway refuses them. The commit rereads the cla
 assignments in its transaction (`notFound`, `teacherNotFound`), takes every class and teacher
 advisory lock of the batch sorted before the first write, then writes the slots one by one through
 the dashboard's overlap checks (`classScheduleGateway.createManyWithOverlapValidation`); the first
-`classOverlap` or `teacherOverlap` rolls everything back. The recorded result lists each slot `id`
+`classOverlap` or `teacherOverlap` is returned as a refusal, which aborts the transaction and takes
+the slots written before it away with it. The transaction timeout grows with the batch (5 s plus
+250 ms a slot), since a hundred lines cost three queries each. The recorded result lists each slot `id`
 with its teacher-overlap warnings, so a replay returns the same planning instead of a second one.
 
 **The two pairs chain.** `enroll_family` creates its enrollments `PENDING`, and `record_payment`

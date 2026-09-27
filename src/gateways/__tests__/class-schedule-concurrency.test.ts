@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { classScheduleGateway } from '@/gateways/class-schedule-gateway'
 import type { PrismaClient } from '@/generated/prisma/client'
 import { createUnguardedArchivedClient } from '@/lib/db'
+import { commitInTransaction } from '@/use-cases/mcp/claim-draft'
 
 const databaseUrl = process.env.DATABASE_URL
 let raw: PrismaClient
@@ -120,5 +121,66 @@ describe.skipIf(!databaseUrl)('classScheduleGateway concurrency', () => {
     )
 
     expect(results.map((result) => result.status).sort()).toEqual(['OK', 'teacherOverlap'])
+  })
+
+  it('leaves no slot of a batch behind when a later one is refused at commit time', async () => {
+    const draft = await raw.mcpDraft.create({
+      data: {
+        schoolId,
+        ownerKind: 'MCP_KEY',
+        keyId: 'key-rollback',
+        tool: 'class_schedule',
+        checksum: 'abcdef012345',
+        resolved: {},
+        status: 'COMMITTED',
+        committedAt: new Date(),
+        expiresAt: new Date(Date.now() + 60_000),
+      },
+    })
+    const taken = await classScheduleGateway.saveWithOverlapValidation(
+      schoolId,
+      {
+        classPeriodId: classIds[0],
+        weekday: 3,
+        startTime: '09:00',
+        endTime: '11:00',
+        teacherIds: [],
+      },
+      true
+    )
+    expect(taken.status).toBe('OK')
+
+    const result = await commitInTransaction(schoolId, draft.id, async (tx) => {
+      const saved = await classScheduleGateway.createManyWithOverlapValidation(
+        tx,
+        schoolId,
+        [
+          {
+            classPeriodId: classIds[1],
+            weekday: 3,
+            startTime: '09:00',
+            endTime: '11:00',
+            teacherIds: [],
+          },
+          {
+            classPeriodId: classIds[0],
+            weekday: 3,
+            startTime: '10:00',
+            endTime: '12:00',
+            teacherIds: [],
+          },
+        ],
+        true
+      )
+      return saved.status === 'OK' ? saved : saved.status
+    })
+
+    expect(result).toBe('classOverlap')
+    await expect(
+      raw.classScheduleSlot.count({ where: { schoolId, classPeriodId: classIds[1] } })
+    ).resolves.toBe(0)
+    await expect(
+      raw.mcpDraft.findUniqueOrThrow({ where: { id: draft.id }, select: { status: true } })
+    ).resolves.toEqual({ status: 'PENDING' })
   })
 })

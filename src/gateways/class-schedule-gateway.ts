@@ -65,8 +65,9 @@ async function saveWithOverlapValidation(
  * Tous les verrous du lot sont pris d'abord, triés, pour rester dans le même ordre que les
  * écritures unitaires et ne jamais s'interbloquer avec elles. Les créneaux sont ensuite
  * sauvés un à un par la même logique : un créneau du lot déjà écrit est vu par les requêtes
- * de chevauchement du suivant, donc un lot incohérent se refuse au premier conflit et la
- * transaction de l'appelant n'a plus qu'à s'annuler.
+ * de chevauchement du suivant, donc un lot incohérent se refuse au premier conflit. Les
+ * créneaux écrits avant ce conflit sont encore dans `tx` : l'appelant doit annuler la
+ * transaction sur un statut autre que `OK`, sinon ils resteraient.
  */
 async function createManyWithOverlapValidation(
   tx: Prisma.TransactionClient,

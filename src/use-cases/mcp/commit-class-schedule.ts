@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { classScheduleGateway } from '@/gateways/class-schedule-gateway'
+import type { Prisma } from '@/generated/prisma/client'
 import { CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY } from '@/lib/class-schedule-config'
 import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-schedule-enabled'
 import { claimResolved, commitInTransaction } from './claim-draft'
@@ -29,6 +30,12 @@ type Input = z.infer<typeof commitDraftSchema>
 
 type SlotWarning = { type: 'teacherOverlap'; slotIds: string[] }
 
+// Chaque créneau coûte deux lectures de chevauchement et une écriture : le délai par défaut
+// de Prisma (5 s) ne tient pas cent lignes sur une base distante, alors qu'un lot d'une
+// ligne n'a pas à attendre trente secondes avant d'abandonner.
+const COMMIT_BASE_TIMEOUT_MS = 5_000
+const COMMIT_TIMEOUT_PER_SLOT_MS = 250
+
 export async function commitClassSchedule(scope: DraftScope, input: Input) {
   const parsed = commitDraftSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
@@ -41,7 +48,7 @@ export async function commitClassSchedule(scope: DraftScope, input: Input) {
   if (claim.done) return claim.value
   const { draftId, resolved } = claim
 
-  return commitInTransaction(schoolId, draftId, async (tx) => {
+  const write = async (tx: Prisma.TransactionClient) => {
     // Classes et affectations sont relues dans la transaction, pas seulement au preview :
     // une classe archivée ou un enseignant retiré entre-temps refuse tout le lot avant la
     // première écriture, comme le ferait l'outil unitaire.
@@ -83,6 +90,8 @@ export async function commitClassSchedule(scope: DraftScope, input: Input) {
       })),
       overlapConfig?.value !== 'false'
     )
+    // Les créneaux écrits avant le conflit sont dans la transaction : ce refus la fait
+    // annuler par `commitInTransaction`, rien ne reste.
     if (saved.status !== 'OK') return saved.status
 
     return {
@@ -95,5 +104,10 @@ export async function commitClassSchedule(scope: DraftScope, input: Input) {
         return { id: slot.id, warnings }
       }),
     }
+  }
+
+  return commitInTransaction(schoolId, draftId, write, {
+    timeout: COMMIT_BASE_TIMEOUT_MS + resolved.slots.length * COMMIT_TIMEOUT_PER_SLOT_MS,
+    maxWait: 5_000,
   })
 }

@@ -14,6 +14,17 @@ const tx = {
   mcpDraft: { updateMany: vi.fn() },
 }
 
+// Comme Prisma : le callback qui rend valide la transaction, celui qui lève l'annule.
+let rolledBack = false
+const prismaLikeTransaction = async (run: (client: typeof tx) => unknown) => {
+  try {
+    return await run(tx)
+  } catch (error) {
+    rolledBack = true
+    throw error
+  }
+}
+
 vi.mock('@/gateways/mcp-draft-gateway', () => ({
   mcpDraftGateway: { claim, findById, reclaim, release },
 }))
@@ -79,7 +90,8 @@ beforeEach(() => {
   isClassScheduleEnabled.mockResolvedValue(true)
   claim.mockResolvedValue({ count: 1 })
   findById.mockResolvedValue(draft())
-  transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
+  rolledBack = false
+  transaction.mockImplementation(prismaLikeTransaction)
   tx.classPeriod.findMany.mockResolvedValue([
     { id: 'class-c4', teachers: [{ teacherId: 'teacher-fatima' }] },
     { id: 'class-c2', teachers: [] },
@@ -165,6 +177,7 @@ describe('commitClassSchedule', () => {
     tx.classPeriod.findMany.mockResolvedValue([{ id: 'class-c4', teachers: [] }])
 
     expect(await commitClassSchedule(scope, input)).toBe('notFound')
+    expect(rolledBack).toBe(true)
     expect(createManyWithOverlapValidation).not.toHaveBeenCalled()
     expect(tx.mcpDraft.updateMany).not.toHaveBeenCalled()
     expect(release).toHaveBeenCalledWith('school-1', input.draftId)
@@ -181,12 +194,37 @@ describe('commitClassSchedule', () => {
     expect(release).toHaveBeenCalledWith('school-1', input.draftId)
   })
 
-  it('writes nothing and gives the lock back when one slot overlaps at commit time', async () => {
+  it('rolls the transaction back when a later slot overlaps at commit time, so the earlier ones vanish too', async () => {
     createManyWithOverlapValidation.mockResolvedValue({ status: 'classOverlap', index: 1 })
 
     expect(await commitClassSchedule(scope, input)).toBe('classOverlap')
+    expect(rolledBack).toBe(true)
     expect(tx.mcpDraft.updateMany).not.toHaveBeenCalled()
     expect(release).toHaveBeenCalledWith('school-1', input.draftId)
+  })
+
+  it('rolls back a teacher overlap the school forbids as well', async () => {
+    createManyWithOverlapValidation.mockResolvedValue({ status: 'teacherOverlap', index: 0 })
+
+    expect(await commitClassSchedule(scope, input)).toBe('teacherOverlap')
+    expect(rolledBack).toBe(true)
+    expect(release).toHaveBeenCalledWith('school-1', input.draftId)
+  })
+
+  it('does not roll back a planning that went through', async () => {
+    await commitClassSchedule(scope, input)
+
+    expect(rolledBack).toBe(false)
+    expect(release).not.toHaveBeenCalled()
+  })
+
+  it('sizes the transaction timeout to the batch', async () => {
+    await commitClassSchedule(scope, input)
+
+    expect(transaction).toHaveBeenCalledWith(expect.any(Function), {
+      timeout: 5_000 + 2 * 250,
+      maxWait: 5_000,
+    })
   })
 
   it('reads the teacher overlap rule fresh, inside the transaction', async () => {

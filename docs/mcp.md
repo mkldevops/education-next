@@ -297,8 +297,10 @@ the same person — is told the draft does not exist, because the plan carries t
 user as the author of everything it creates.
 
 The result is written inside the same transaction as the data, so a draft that is `COMMITTED` with
-no result wrote nothing. That is the exit for a commit killed mid-flight: after sixty seconds the
-lock is reclaimable, and a commit refused on a business rule gives the lock back immediately.
+no result wrote nothing. A refusal raised from inside that transaction aborts it, so a commit that
+refuses after writing part of its work leaves none of it behind. That is the exit for a commit
+killed mid-flight: after sixty seconds the lock is reclaimable, and a commit refused on a business
+rule gives the lock back immediately.
 
 A commit re-checks what the preview could only observe: class capacity is recounted, and a payment
 split is recomputed against fresh balances. Two drafts prepared on the same free seat, or on the
