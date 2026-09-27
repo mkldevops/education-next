@@ -8,7 +8,6 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
   useLocale: () => 'fr',
 }))
-vi.mock('@/lib/stripe', () => ({ isStripeConfigured: () => true }))
 // `OnlinePaymentButton` tire `@/i18n/routing`, qui charge `next-intl/navigation` — non
 // résolu par Node hors du bundler Next — et l'action serveur d'ouverture de paiement.
 vi.mock('@/i18n/routing', () => ({
@@ -41,6 +40,7 @@ const baseProps = {
   totalEnrollments: 3,
   activeEnrollments: 2,
   canAddEnrollment: true,
+  onlinePaymentAvailable: true,
   totalPaid: 100,
   remainingBalance: 50,
   totalDue: 150,

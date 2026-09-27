@@ -1114,6 +1114,73 @@
             "emptyFile": "The file is empty",
             "notConfigured": "Image storage is not configured on this server"
           }
+        },
+        "stripe": {
+          "title": "Payments",
+          "description": "Online payment with Stripe for the families of the active school.",
+          "toggle": {
+            "label": "Online payment (Stripe)",
+            "description": "Lets parents pay their balance online from their space.",
+            "incomplete": "Incomplete configuration: enter the Stripe secret key and webhook secret to enable online payment.",
+            "envFallback": "The school has not entered its own keys: the instance's Stripe account is used."
+          },
+          "status": {
+            "configured": "configured",
+            "notConfigured": "not configured",
+            "unreadable": "unreadable"
+          },
+          "unreadableHint": "The stored value can no longer be decrypted: SETTINGS_ENCRYPTION_KEY changed or is missing. Enter it again.",
+          "secretStorageHint": "SETTINGS_ENCRYPTION_KEY is not set on this server: no Stripe secret can be saved.",
+          "save": "Save",
+          "replace": "Replace",
+          "delete": "Delete",
+          "cancel": "Cancel",
+          "errors": {
+            "error": "Could not save the Stripe configuration"
+          },
+          "secretKey": {
+            "title": "Secret key",
+            "description": "Secret key of the school's Stripe account (Developers › API keys). Encrypted before saving, never shown again.",
+            "masked": "sk_••••••••••••",
+            "label": "Secret key",
+            "replaceLabel": "New secret key",
+            "placeholder": "sk_live_…",
+            "saved": "Stripe secret key saved",
+            "deleted": "Stripe secret key deleted",
+            "confirmDelete": {
+              "title": "Delete the Stripe secret key?",
+              "description": "Online payment will be unavailable to parents until a new key is entered, unless the instance provides its own."
+            },
+            "errors": {
+              "validationError": "Invalid key: it starts with sk_live_, sk_test_, rk_live_ or rk_test_.",
+              "secretStorageNotConfigured": "Secret encryption is not configured on this server."
+            }
+          },
+          "webhookSecret": {
+            "title": "Webhook secret",
+            "description": "Signing secret of the endpoint declared in Stripe (Developers › Webhooks). Encrypted before saving, never shown again.",
+            "masked": "whsec_••••••••••••",
+            "label": "Webhook secret",
+            "replaceLabel": "New webhook secret",
+            "placeholder": "whsec_…",
+            "saved": "Stripe webhook secret saved",
+            "deleted": "Stripe webhook secret deleted",
+            "confirmDelete": {
+              "title": "Delete the Stripe webhook secret?",
+              "description": "Online payment will be unavailable to parents until a new secret is entered, unless the instance provides its own."
+            },
+            "errors": {
+              "validationError": "Invalid secret: it starts with whsec_.",
+              "secretStorageNotConfigured": "Secret encryption is not configured on this server."
+            }
+          },
+          "webhookUrl": {
+            "label": "Webhook URL",
+            "description": "Declare it in Stripe for the checkout.session.completed and checkout.session.async_payment_succeeded events.",
+            "copy": "Copy",
+            "copied": "Webhook URL copied",
+            "copyFailed": "Could not copy the URL"
+          }
         }
       },
       "familyDetails": {

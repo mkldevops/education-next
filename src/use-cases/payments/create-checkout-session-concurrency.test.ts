@@ -37,7 +37,10 @@ const fakeStripe = {
   },
 }
 
-vi.mock('@/lib/stripe', () => ({ getStripeClient: () => fakeStripe }))
+vi.mock('@/lib/stripe', () => ({
+  getStripeClient: () => fakeStripe,
+  readEnvStripeCredentials: () => ({ secretKey: 'sk_test_instance', webhookSecret: 'whsec_test' }),
+}))
 
 const { createCheckoutSession } = await import('./create-checkout-session')
 
@@ -57,6 +60,7 @@ it("n'est jamais ignoré silencieusement en intégration continue", () => {
 
 describe.skipIf(!databaseUrl)('createCheckoutSession concurrency', () => {
   beforeAll(async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_race')
     vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_race')
     raw = createUnguardedArchivedClient()
     const suffix = `${Date.now().toString(36)}-checkout-lock`
