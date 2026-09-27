@@ -8,7 +8,7 @@ description: Execute the implementation plan by processing and executing all tas
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+Take the user input into account before proceeding (if not empty).
 
 ## Outline
 

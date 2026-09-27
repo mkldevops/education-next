@@ -11,13 +11,13 @@ result contract, and cache revalidation before considering it complete.
 
 For protected data, establish a non-optional authenticated identity or role before any database or
 use-case work. Validate untrusted input before mutation, invoke the existing use case, and revalidate
-only after success:
+only after success. Dashboard guards from `auth-helper.ts` redirect or call `notFound()` rather than
+returning `null`:
 
 ```typescript
-const user = await requireAdmin()
-if (!user) return 'unauthorized' as const
+const { schoolId } = await requireSchoolAdmin()
 
-const result = await activateEnrollment(input)
+const result = await activateEnrollment({ ...input, schoolId })
 if (result !== 'OK') return result
 
 revalidatePath('/dashboard/enrollments')

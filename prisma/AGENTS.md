@@ -24,10 +24,10 @@ pnpm db:migrate
 pnpm db:generate
 ```
 
-Commit both the schema and migration. `pnpm build:prod` is the available command that includes
-`prisma migrate deploy`, but the tracked Docker build does not invoke it; deployments must run
-migrations separately. Never use `db push` for production or shared environments. The current schema,
-not historical migrations, defines active models—`Page` was removed by the July 2026 migration.
+Commit both the schema and migration. The Docker image starts with `pnpm start:prod`, which runs
+`prisma migrate deploy` before `next start`, so a merged migration applies on the next deploy.
+`pnpm build:prod` runs the same deploy step at build time. Never use `db push` for production or
+shared environments. The current schema, not historical migrations, defines active models.
 
 `0_init` is the generated baseline: replaying `prisma/migrations/` from an empty database reproduces
 `schema.prisma` exactly. A database created with `db push` before that baseline existed must be
