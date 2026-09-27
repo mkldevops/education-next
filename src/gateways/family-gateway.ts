@@ -322,6 +322,14 @@ export const familyGateway = {
       },
     }),
 
+  /** Familles actives de l'élève : un enfant de parents séparés peut en avoir deux. */
+  findByStudent: (schoolId: string, studentId: string) =>
+    db.family.findMany({
+      where: { schoolId, persons: { some: { person: { student: { id: studentId } } } } },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+
   searchByName: (schoolId: string, name: string) =>
     db.family.findMany({
       where: { schoolId, name: { contains: name, mode: 'insensitive' } },

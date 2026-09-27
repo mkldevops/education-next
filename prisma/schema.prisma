@@ -148,6 +148,7 @@ model School {
   teacherExpenses           TeacherExpense[]
   mcpApiKeys                McpApiKey[]
   mcpDrafts                 McpDraft[]
+  aiConversations           AiConversation[]
   events                    Event[]
   eventImages               EventImage[]
   attendanceSessions        AttendanceSession[]
@@ -197,6 +198,7 @@ model User {
   passkeys                  Passkey[]
   schoolMemberships         SchoolMember[]
   mcpApiKeys                McpApiKey[]
+  aiConversations           AiConversation[]
   teacherProfiles           Teacher[]
   createdAttendanceSessions AttendanceSession[]  @relation("attendanceCreatedBy")
   updatedAttendanceSessions AttendanceSession[]  @relation("attendanceUpdatedBy")
@@ -893,6 +895,27 @@ model McpDraft {
   @@unique([id, schoolId])
   @@index([schoolId])
   @@index([expiresAt])
+}
+
+/// Conversation de l'assistant IA, propre à un administrateur dans une école.
+///
+/// `messages` garde les messages au format de l'AI SDK, sans les photos : une image
+/// envoyée devient un simple texte `[photo: nom]`. L'identifiant vient du navigateur,
+/// qui le fixe à l'ouverture de la conversation.
+model AiConversation {
+  id        String   @id @db.Uuid
+  schoolId  String
+  userId    String
+  title     String   @db.VarChar(120)
+  messages  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([id, schoolId])
+  @@index([schoolId, userId, updatedAt])
 }
 
 /// Événement de la vie de l'école : réunion, rentrée, sortie, vacances, fermeture,

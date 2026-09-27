@@ -20,6 +20,7 @@ import { ACTIVE_SCHOOL_COOKIE, getAuthorizedSchools, getSchoolContext } from '@/
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assistant-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
+import { AssistantDock } from './_components/ai-chat/assistant-dock'
 import { RememberActiveSchool } from './_components/remember-active-school'
 import { SignInUpgradeGate } from './_components/sign-in-upgrade-gate'
 
@@ -140,6 +141,9 @@ export default async function DashboardLayout({ children, params }: Props) {
             </Suspense>
           </div>
         </main>
+        <Suspense fallback={null}>
+          <AssistantDock />
+        </Suspense>
       </div>
     </div>
   )

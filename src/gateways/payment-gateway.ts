@@ -69,6 +69,19 @@ export const paymentGateway = {
     return ids
   },
 
+  findActiveByIds: (tx: Prisma.TransactionClient, schoolId: string, ids: string[]) =>
+    tx.payment.findMany({
+      where: { schoolId, id: { in: ids } },
+      select: { id: true, familyId: true, amount: true, paymentTransactionId: true },
+    }),
+
+  /** Désactive, ne supprime pas : l'encaissement annulé reste lisible pour l'audit. */
+  deactivateMany: (tx: Prisma.TransactionClient, schoolId: string, ids: string[]) =>
+    tx.payment.updateMany({
+      where: { schoolId, id: { in: ids } },
+      data: { isActive: false },
+    }),
+
   listByFamily: (schoolId: string, familyId: string) =>
     db.payment.findMany({
       where: { schoolId, familyId },

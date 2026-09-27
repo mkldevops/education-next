@@ -14,6 +14,7 @@ const CLASSES_LISTED = 6
 export async function SchoolInsightsSection({ insights, locale }: Props) {
   const t = await getTranslations('dashboard.insights')
   const { payments, classes, levels } = insights
+  const maxLevel = Math.max(...levels.map((level) => level.enrolled), 0)
 
   const monthLabel = new Intl.DateTimeFormat(locale, { month: 'short' })
   const monthCaption = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
@@ -73,7 +74,7 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
               data={chart}
               formatValue={(value) => (value > 0 ? compact.format(value) : '—')}
               emptyMessage={t('noCollection')}
-              height={140}
+              height={180}
             />
           </div>
         </Card>
@@ -121,18 +122,32 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
 
         <Card className="p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-foreground">{t('levelsTitle')}</h2>
-          <div className="mt-6">
-            <BarChart
-              data={levels.map((level) => ({
-                label: level.level,
-                value: level.enrolled,
-                caption: t('studentsCount', { count: level.enrolled }),
-              }))}
-              formatValue={(value) => String(value)}
-              emptyMessage={t('noClasses')}
-              height={140}
-            />
-          </div>
+          {levels.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">{t('noClasses')}</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {levels.map((level) => (
+                <li
+                  key={level.level}
+                  className="grid grid-cols-[4rem_1fr_2.5rem] items-center gap-3"
+                  title={t('studentsCount', { count: level.enrolled })}
+                >
+                  <span className="truncate text-sm font-medium text-foreground">
+                    {level.level}
+                  </span>
+                  <div className="h-2 rounded-full bg-alabaster-700">
+                    <div
+                      className="h-2 rounded-full bg-primary"
+                      style={{ width: `${maxLevel > 0 ? (level.enrolled / maxLevel) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-right text-sm text-foreground tabular-nums">
+                    {level.enrolled}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       </div>
     </div>

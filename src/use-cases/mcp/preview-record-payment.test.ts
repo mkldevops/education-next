@@ -2,12 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const findFamilyById = vi.fn()
 const searchFamilies = vi.fn()
+const findFamiliesByStudent = vi.fn()
 const findPayableByFamily = vi.fn()
 const findByReference = vi.fn()
 const createDraft = vi.fn()
 
 vi.mock('@/gateways/family-gateway', () => ({
-  familyGateway: { findById: findFamilyById, searchByName: searchFamilies },
+  familyGateway: {
+    findById: findFamilyById,
+    searchByName: searchFamilies,
+    findByStudent: findFamiliesByStudent,
+  },
 }))
 vi.mock('@/gateways/enrollment-gateway', () => ({ enrollmentGateway: { findPayableByFamily } }))
 vi.mock('@/gateways/payment-gateway', () => ({ paymentGateway: { findByReference } }))
@@ -46,6 +51,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   findFamilyById.mockResolvedValue(family)
   searchFamilies.mockResolvedValue([family])
+  findFamiliesByStudent.mockResolvedValue([family])
   findPayableByFamily.mockResolvedValue([enrollment('enr-1', 100, 0), enrollment('enr-2', 100, 0)])
   findByReference.mockResolvedValue([])
   createDraft.mockResolvedValue({ id: 'draft-2' })
@@ -161,6 +167,65 @@ describe('previewRecordPayment', () => {
       reason: 'referenceAlreadyUsed',
     })
     expect(result.draftId).toBe('draft-2')
+  })
+
+  it('defaults to the whole remaining balance, in cash, today', async () => {
+    findPayableByFamily.mockResolvedValue([
+      enrollment('enr-1', 100, 40),
+      enrollment('enr-2', 100, 0),
+    ])
+
+    const result = await previewRecordPayment(
+      scope,
+      { familyId: family.id },
+      () => new Date('2026-09-27T10:00:00.000Z')
+    )
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.plan).toMatchObject({
+      amount: 160,
+      method: 'CASH',
+      paidAt: '2026-09-27T10:00:00.000Z',
+      allocation: [
+        { enrollmentId: 'enr-1', amount: 60 },
+        { enrollmentId: 'enr-2', amount: 100 },
+      ],
+    })
+  })
+
+  it('blocks the default amount when the family owes nothing', async () => {
+    findPayableByFamily.mockResolvedValue([enrollment('enr-1', 100, 100)])
+
+    const result = await previewRecordPayment(scope, { familyId: family.id })
+    assertPreview(result)
+
+    expect(result.blockers).toContainEqual({ field: 'amount', value: '0', reason: 'nothingDue' })
+    expect(createDraft).not.toHaveBeenCalled()
+  })
+
+  it('resolves the family from one of its students', async () => {
+    const studentId = '33333333-3333-4333-8333-333333333333'
+
+    const result = await previewRecordPayment(scope, { studentId })
+    assertPreview(result)
+
+    expect(findFamiliesByStudent).toHaveBeenCalledWith('school-1', studentId)
+    expect(searchFamilies).not.toHaveBeenCalled()
+    expect(result.draftId).toBe('draft-2')
+  })
+
+  it('refuses to choose between the families of a shared student', async () => {
+    const studentId = '33333333-3333-4333-8333-333333333333'
+    findFamiliesByStudent.mockResolvedValue([family, { id: 'family-9', name: 'Said' }])
+
+    const result = await previewRecordPayment(scope, { studentId })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'studentId', value: studentId, reason: 'ambiguousFamily' },
+    ])
+    expect(result.matches?.families).toHaveLength(2)
   })
 
   it('rejects an input naming no family at all', async () => {

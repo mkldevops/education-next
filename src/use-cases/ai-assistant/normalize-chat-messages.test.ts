@@ -16,6 +16,25 @@ const user = (parts: unknown[]) => ({ role: 'user', parts })
 const assistant = (parts: unknown[]) => ({ role: 'assistant', parts })
 
 describe('normalizeChatMessages', () => {
+  it('keeps a sane client message id and replaces any other', async () => {
+    const result = await normalizeChatMessages(
+      {
+        messages: [
+          { ...user([{ type: 'text', text: 'Bonjour' }]), id: 'Xy_12-ab' },
+          { role: 'assistant', id: 'bad id <script>', parts: [{ type: 'text', text: 'Oui ?' }] },
+          { ...user([{ type: 'text', text: 'Merci' }]), id: 'z'.repeat(65) },
+        ],
+      },
+      okSanitizer
+    )
+
+    expect(result.status === 'OK' && result.messages.map((message) => message.id)).toEqual([
+      'Xy_12-ab',
+      'm1',
+      'm2',
+    ])
+  })
+
   it('rejects anything that is not a non-empty message list ending with the user', async () => {
     expect(await normalizeChatMessages(null, okSanitizer)).toEqual({ status: 'invalidRequest' })
     expect(await normalizeChatMessages({}, okSanitizer)).toEqual({ status: 'invalidRequest' })
@@ -173,7 +192,7 @@ describe('normalizeChatMessages', () => {
     })
   })
 
-  it('replays completed proposals of the assistant and drops incomplete ones', async () => {
+  it('drops tool parts of tools the route does not expose', async () => {
     const result = await normalizeChatMessages(
       {
         messages: [
@@ -187,8 +206,6 @@ describe('normalizeChatMessages', () => {
               input: { familyName: 'Durand' },
               output: { status: 'proposed' },
             },
-            { type: 'tool-propose_enrollment', toolCallId: 'call-2', state: 'input-streaming' },
-            { type: 'tool-something_else', toolCallId: 'call-3', state: 'output-available' },
             { type: 'text', text: 'Voici ma proposition.' },
           ]),
           user([{ type: 'text', text: 'merci' }]),
@@ -201,56 +218,8 @@ describe('normalizeChatMessages', () => {
     if (result.status !== 'OK') return
     expect(result.messages[1].parts).toEqual([
       { type: 'step-start' },
-      {
-        type: 'tool-propose_enrollment',
-        toolCallId: 'call-1',
-        state: 'output-available',
-        input: { familyName: 'Durand' },
-        output: { status: 'proposed' },
-      },
       { type: 'text', text: 'Voici ma proposition.' },
     ])
-  })
-
-  it('bounds a replayed proposal like text and requires objects', async () => {
-    const proposal = (input: unknown, output: unknown = { status: 'proposed' }) => ({
-      type: 'tool-propose_enrollment',
-      toolCallId: 'call-1',
-      state: 'output-available',
-      input,
-      output,
-    })
-    const oversized = { notes: 'x'.repeat(AI_ASSISTANT_LIMITS.maxTextChars) }
-
-    expect(
-      (
-        await normalizeChatMessages(
-          { messages: [assistant([proposal(oversized)]), user([{ type: 'text', text: 'ok' }])] },
-          okSanitizer
-        )
-      ).status
-    ).toBe('messageTooLong')
-    expect(
-      (
-        await normalizeChatMessages(
-          { messages: [assistant([proposal('Durand')]), user([{ type: 'text', text: 'ok' }])] },
-          okSanitizer
-        )
-      ).status
-    ).toBe('invalidRequest')
-    expect(
-      (
-        await normalizeChatMessages(
-          {
-            messages: [
-              assistant([proposal({ familyName: 'Durand' }, 'proposed')]),
-              user([{ type: 'text', text: 'ok' }]),
-            ],
-          },
-          okSanitizer
-        )
-      ).status
-    ).toBe('invalidRequest')
   })
 
   it('refuses a file part sent as the assistant', async () => {
@@ -265,5 +234,129 @@ describe('normalizeChatMessages', () => {
     )
 
     expect(result).toEqual({ status: 'invalidRequest' })
+  })
+
+  describe('tool replay', () => {
+    const toolNames = new Set(['list_levels', 'commit_enroll_family'])
+    const listed = {
+      type: 'tool-list_levels',
+      toolCallId: 'call-1',
+      state: 'output-available',
+      input: {},
+      output: [{ id: 'level-1', name: 'CE1' }],
+    }
+    const answered = {
+      type: 'tool-commit_enroll_family',
+      toolCallId: 'call-2',
+      state: 'approval-responded',
+      input: { draftId: 'draft-1' },
+      approval: { id: 'approval-1', approved: true, signature: 'sig', extra: 'dropped' },
+    }
+
+    it('replays a known tool result and keeps the history ending with the user', async () => {
+      const result = await normalizeChatMessages(
+        {
+          messages: [
+            user([{ type: 'text', text: 'a' }]),
+            assistant([listed]),
+            user([{ type: 'text', text: 'b' }]),
+          ],
+        },
+        okSanitizer,
+        { toolNames }
+      )
+
+      expect(result.status).toBe('OK')
+      if (result.status !== 'OK') return
+      expect(result.messages[1].parts).toEqual([listed])
+    })
+
+    it('accepts an answered approval as the last message, keeping only known fields', async () => {
+      const result = await normalizeChatMessages(
+        { messages: [user([{ type: 'text', text: 'a' }]), assistant([answered])] },
+        okSanitizer,
+        { toolNames }
+      )
+
+      expect(result.status).toBe('OK')
+      if (result.status !== 'OK') return
+      expect(result.messages[1].parts[0]).toEqual({
+        ...answered,
+        approval: { id: 'approval-1', approved: true, signature: 'sig' },
+      })
+    })
+
+    it('still refuses a plain assistant message in last position', async () => {
+      const result = await normalizeChatMessages(
+        { messages: [user([{ type: 'text', text: 'a' }]), assistant([listed])] },
+        okSanitizer,
+        { toolNames }
+      )
+
+      expect(result).toEqual({ status: 'invalidRequest' })
+    })
+
+    it('refuses a tool the route does not expose', async () => {
+      const result = await normalizeChatMessages(
+        {
+          messages: [
+            user([{ type: 'text', text: 'a' }]),
+            assistant([{ ...listed, type: 'tool-drop_database' }]),
+            user([{ type: 'text', text: 'b' }]),
+          ],
+        },
+        okSanitizer,
+        { toolNames }
+      )
+
+      expect(result).toEqual({ status: 'invalidRequest' })
+    })
+
+    it('refuses an approval without a decision', async () => {
+      const result = await normalizeChatMessages(
+        {
+          messages: [
+            user([{ type: 'text', text: 'a' }]),
+            assistant([{ ...answered, approval: { id: 'approval-1' } }]),
+          ],
+        },
+        okSanitizer,
+        { toolNames }
+      )
+
+      expect(result).toEqual({ status: 'invalidRequest' })
+    })
+
+    it('caps the replayed tool results', async () => {
+      const huge = { ...listed, output: 'x'.repeat(AI_ASSISTANT_LIMITS.maxToolReplayChars + 1) }
+      const result = await normalizeChatMessages(
+        {
+          messages: [
+            user([{ type: 'text', text: 'a' }]),
+            assistant([huge]),
+            user([{ type: 'text', text: 'b' }]),
+          ],
+        },
+        okSanitizer,
+        { toolNames }
+      )
+
+      expect(result).toEqual({ status: 'messageTooLong' })
+    })
+
+    it('refuses tool parts on a route without tools', async () => {
+      const result = await normalizeChatMessages(
+        {
+          messages: [
+            user([{ type: 'text', text: 'a' }]),
+            assistant([listed]),
+            user([{ type: 'text', text: 'b' }]),
+          ],
+        },
+        okSanitizer
+      )
+
+      expect(result).toEqual({ status: 'invalidRequest' })
+    })
   })
 })

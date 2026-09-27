@@ -1,4 +1,5 @@
-import { Breadcrumbs, Card, StatusBadge } from '@peaklab/ui'
+import { Breadcrumbs, buttonVariants, Card, StatusBadge } from '@peaklab/ui'
+import { Printer } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
@@ -171,6 +172,13 @@ export default async function ClassDetailPage({ params }: Props) {
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
+          <Link
+            href={`/dashboard/classes/${classPeriod.id}/liste`}
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+          >
+            <Printer className="h-4 w-4" />
+            {t('printList.trigger')}
+          </Link>
           <EditClassDialog
             classItem={{
               id: classPeriod.id,

@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, ConfirmDialog, Input, Label } from '@peaklab/ui'
+import { KeyRound } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useId, useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
@@ -12,16 +13,24 @@ import {
 
 export type OpenRouterKeyStatus = 'configured' | 'notConfigured' | 'unreadable'
 
-type Props = {
+export type OpenRouterKeyView = {
   status: OpenRouterKeyStatus
+  hint: string | null
+  savedAt: string | null
+}
+
+type Props = {
+  openRouterKey: OpenRouterKeyView
   secretStorageConfigured: boolean
 }
 
 /**
  * La clé ne fait que descendre : le champ est vidé après enregistrement et la page ne
- * remonte qu'un état. Un super-admin qui a perdu la clé la remplace, il ne la relit pas.
+ * remonte qu'un état et une fin de clé. Un super-admin qui a perdu la clé la remplace, il ne
+ * la relit pas.
  */
-export function OpenRouterKeyForm({ status, secretStorageConfigured }: Props) {
+export function OpenRouterKeyForm({ openRouterKey, secretStorageConfigured }: Props) {
+  const { status, hint, savedAt } = openRouterKey
   const t = useTranslations('dashboard.pages.integrations.openRouter')
   const router = useRouter()
   const inputId = useId()
@@ -64,12 +73,24 @@ export function OpenRouterKeyForm({ status, secretStorageConfigured }: Props) {
         : 'rounded-full bg-alabaster-800 px-2 py-0.5 text-xs font-medium text-graphite-600'
 
   return (
-    <div className="px-6 py-5">
+    <div className="py-1 pl-4 pr-6">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-graphite">{t('title')}</h3>
         <span className={badge}>{t(`status.${status}`)}</span>
       </div>
       <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
+      {status === 'configured' && hint && (
+        <div className="mt-3 flex max-w-xl items-center gap-2 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
+          <KeyRound aria-hidden className="size-4 shrink-0 text-emerald-700" />
+          <span className="text-graphite-600">{t('current')}</span>
+          <code className="font-mono font-medium text-graphite">{hint}</code>
+          {savedAt && (
+            <span className="ml-auto text-xs text-graphite-600">
+              {t('savedAt', { date: savedAt })}
+            </span>
+          )}
+        </div>
+      )}
       {status === 'unreadable' && (
         <p className="mt-2 text-xs text-orange-600">{t('unreadableHint')}</p>
       )}

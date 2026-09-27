@@ -655,9 +655,9 @@ condition (`DraftOwner`, `src/domain/mcp-draft.ts`), and a draft presented by an
 administrator, or the same person through the other access mode is refused as `draftNotFound`
 rather than as forbidden. A bare identifier would not do: a `userId` and a `keyId` never collide by
 construction today, but a key revoked and its user's session are still two distinct authorities,
-and a plan validated under one must not be engaged under the other. The enrollment assistant
-(*Enrollment assistant* below) is the `ADMIN_SESSION` owner; it reuses `previewEnrollFamily` and
-`commitEnrollFamily` with the same `DraftScope`, so the checksum, the expiry, the lock and every
+and a plan validated under one must not be engaged under the other. The AI assistant
+(*AI assistant* below) is the `ADMIN_SESSION` owner; it calls the MCP's preview and commit use cases
+with the same `DraftScope`, so the checksum, the expiry, the lock and every
 commit-time re-check are the MCP's. The resolved plan freezes the proposing user in `createdById`:
 without that binding, a revoked key's plan would still land, signed by its owner.
 
@@ -689,8 +689,8 @@ response path, at most once every `MCP_DRAFT_PURGE_INTERVAL_MINUTES` (15 min) pe
 registered **before the platform flag**: retention does not depend on the service being open, or
 closing the MCP would freeze the sweep while personal data keeps expiring. No scheduler is deployed
 with this application, and a maintenance route would wait for a caller that does not exist;
-the two routes that create drafts, `POST /api/mcp` and the assistant's
-`POST /api/ai/enroll-assistant`, are the only available clocks. Like the rate-limit counters, the interval is in-process: horizontal scaling multiplies the
+the two routes that create drafts, `POST /api/mcp` and the assistant's `POST /api/ai/assistant`,
+are the only available clocks. Like the rate-limit counters, the interval is in-process: horizontal scaling multiplies the
 sweeps, which an idempotent `deleteMany` does not mind.
 
 The delete itself is a named tenant-guard exception, `purgeExpiredMcpDrafts` in
@@ -775,13 +775,13 @@ collecting money does not wait for it.
 These discriminants answer an agent, not a dialog, so they carry no `messages/*.json` entry — the
 rule in [Surfacing a rule in the UI](#surfacing-a-rule-in-the-ui) applies to screens.
 
-## Enrollment assistant (OpenRouter)
+## AI assistant (OpenRouter)
 
-`/dashboard/enroll-assistant` is a chat for a school administrator: a photographed enrollment sheet,
-or its text, goes to a vision model through OpenRouter, comes back as a **partial proposal**, is
-corrected by hand, previewed, and engaged only by an explicit *Confirm*. `docs/ai-assistant.md`
-documents the operator side. Unlike the MCP, **the image does reach the server** — it has to, the
-model is called from here — but it never reaches storage.
+An administrator's chat with a model on OpenRouter, available as a floating panel on every
+dashboard page and full-width at `/dashboard/enroll-assistant`, both backed by `POST /api/ai/assistant`.
+It reads the school and proposes changes through the MCP's tools; `docs/ai-assistant.md` documents
+the operator side. Unlike the MCP, **a photo does reach the server** — it has to, the model is
+called from here — but it never reaches storage.
 
 **Two platform settings, on purpose distinct.** `ai_assistant_enabled` opens the assistant for the
 whole instance and, like `mcp_enabled`, **reads as disabled when absent** (`readsAsOptedIn`).
@@ -801,31 +801,14 @@ written under another environment key as well as a corrupted row: in both cases 
 to the application and the only way out is to enter it again. Without `SETTINGS_ENCRYPTION_KEY` the
 form refuses to save (`secretStorageNotConfigured`) rather than falling back to clear text.
 
-**Every call re-checks the door.** The chat route, `previewAssistantEnrollmentAction` and
-`confirmAssistantEnrollmentAction` each start from the session (`requireSchoolAdmin()`: an
-`ADMIN` or a super-admin in the active school; a parent or a teacher is refused), then the
-`ai_assistant_enabled` flag, then — for the chat — the key. The page returns `notFound()` when the
-flag is off, and the sidebar entry (`feature: 'aiAssistant'`) disappears with it. A draft prepared
-before the flag was cut cannot be confirmed afterwards: the flag is read on the confirm, not on the
-preview. `proxy.ts` excludes `/api`, so the chat route guards itself, and it also refuses a
-cross-origin JSON post (`isSameOriginJsonRequest`) — a session cookie is not a bearer token for a
-third-party page.
-
-**The model proposes, the human decides, the server writes.** The only tool exposed to the model is
-`propose_enrollment` (`src/use-cases/ai-assistant/schemas.ts`), whose `execute` does nothing but
-acknowledge: the proposal is read back from the tool call and poured into an editable form. There is
-no preview or commit tool on the model side; the preview is a server action on the form the
-administrator sees, and the commit takes only a `draftId` and a `checksum`. Every field of the
-proposal is optional, and the system prompt orders the model to leave unknown, illegible or
-ambiguous fields empty and to list them in `missing` rather than invent an identity, a date, a class,
-a plan or a payment. Attaching to an existing family is never the model's call either: the form
-carries `familyId` only after the administrator picks a family among the preview's `matches`.
-
-**Editing invalidates the preview.** The client fingerprints the exact input the preview was
-requested with; any change to the form hides *Confirm* until a new preview is requested, and any
-refusal on confirm (`draftExpired`, `checksumMismatch`, `classFull`, …) clears the preview for the
-same reason. The `key={schoolId}` on the client component remounts it on a school switch: the
-conversation, the photos and the preview do not follow the administrator into another school.
+**Every turn re-checks the door.** The route starts from the session (an `ADMIN` or a super-admin
+in the active school; a parent or a teacher is refused), then the `ai_assistant_enabled` flag, then
+the key, on every turn — including the turn that carries an approval, so a write approved after the
+flag was cut does not run. The page returns `notFound()` when the flag is off, and the sidebar entry
+(`feature: 'aiAssistant'`) disappears with it. `proxy.ts` excludes `/api`, so the route guards
+itself, and it also refuses a cross-origin JSON post (`isSameOriginJsonRequest`) — a session cookie
+is not a bearer token for a third-party page. The `key={schoolId}` on the chat remounts it on a
+school switch: the conversation and the photos do not follow the administrator into another school.
 
 **Photos are bounded, rewritten and forgotten.** The client accepts PNG, JPEG and WebP only, at most
 `maxImagesPerMessage` per message and `maxImagesPerRequest` across the conversation it resends,
@@ -833,9 +816,25 @@ conversation, the photos and the preview do not follow the administrator into an
 of it because the client is not trusted. Each photo is a `data:` URL — the route never downloads a
 URL the model or the client names — and `sanitizeImage` decodes it with sharp under a pixel ceiling,
 applies the EXIF rotation, drops every metadata block, caps the longest side and re-encodes to WebP,
-in memory. Nothing goes through `/api/media` or the object store, and nothing is persisted: the
-conversation lives in the browser tab. The chat panel says so, and names the model, before the first
-send.
+in memory. Nothing goes through `/api/media` or the object store, and no photo is persisted. The chat
+panel says so, and names the model, before the first send.
+
+**Conversations are kept, per administrator and school, without photos.** When a turn finishes, the
+route saves the whole conversation as one `AiConversation` row (`saveConversation`,
+`src/use-cases/ai-assistant/save-conversation.ts`): the id is the client's `z.uuid()`, the title is
+the first user text capped at 80 characters, and every photo part is replaced by `[photo: name]`
+before it reaches the database. The row is scoped by `schoolId` (tenant guard) and `userId`; save,
+list, open and delete all filter on both, so an id guessed from another administrator matches
+nothing and a save on it fails instead of overwriting. The history lists the 30 most recent; there
+is no automatic purge, and deleting a school or a user cascades. A failed save is logged and never
+breaks the answer already streamed.
+
+**Dictation stays a browser feature.** The panel's *Dicter* button drives the browser's Web Speech
+API (`useDictation`) and only fills the input; nothing is sent until the administrator sends it.
+The audio goes to the browser vendor's speech service, not to this server or to OpenRouter, and the
+button is absent where the API is (Firefox). The locale picks `fr-FR` or `en-US`.
+The `Permissions-Policy` header in `next.config.ts` allows `microphone=(self)` for this; camera and
+geolocation stay blocked. With `microphone=()` the browser refuses without showing its prompt.
 
 **The model is chosen server-side from a closed list.** `AI_ASSISTANT_MODELS` holds models known to
 read an image and call a tool; `AI_ASSISTANT_MODEL` may pick one of them and anything else falls back
@@ -848,9 +847,52 @@ the list; which one reads real sheets best is an open point to settle on real fo
 `messageTooLong` (400), `tooManyRequests` (429, `requestsPerMinute` per administrator and school),
 `aiAssistantDisabled` and `aiAssistantNotConfigured` (503) — and a provider failure in the stream is
 mapped by `toProviderErrorCode` to `timeout`, `quotaExceeded`, `invalidKey`, `providerRateLimited`
-or `providerError`; the raw provider message stays in the server log. A proposal that does not parse
-is reported as `invalidModelOutput` and leaves the form untouched. None of these touches a business
-row: the only writes are the technical draft of the preview and the transaction of the commit.
+or `providerError`; the raw provider message stays in the server log. None of these touches a
+business row.
+
+**One catalog, two surfaces.** The model's tools are `listSchoolTools(scope)`
+(`src/mcp/school-tools.ts`), the same list `buildMcpServer` registers, built with an
+`ADMIN_SESSION` `DraftScope` for the administrator and the active school. Every tenant guard,
+preview/commit re-check and draft rule of the MCP therefore applies unchanged; a typed refusal
+reaches the model as `{ error }` and an unexpected throw as `{ error: 'internalError' }`, with the
+detail in the server log.
+
+**A write runs only after a signed human approval.** Tools of kind `write` are declared
+`user-approval`: the stream stops on the call, the panel shows its input, and the tool executes only
+when the administrator validates. Because the browser resends the whole conversation, each approval
+is HMAC-signed by the server (`experimental_toolApprovalSecret`, derived from `BETTER_AUTH_SECRET`)
+and the signature is verified when it comes back; a client cannot forge an approval. Without
+`BETTER_AUTH_SECRET` the write tools are denied outright (`approvalUnavailable`) rather than trusted.
+A refused write is not retried by the model. The panel labels the refusal *Annuler*.
+
+**Payments default, then ask nothing.** `preview_record_payment` takes the family as `familyId`,
+`studentId` (the student's families; several → `ambiguousFamily`) or `familyName`. Without an
+`amount` it pays the family's whole remaining balance (half-up rounded), and a balance of zero blocks
+with `nothingDue`; without a `method` it is `CASH`; without `paidAt` it is today. The system prompt
+tells the model to use the id of the page it is on ("this student") and go straight to the preview
+then the commit: the approval card is the confirmation. The route does not leave that to the
+model: after a preview that returns a `draftId` and no blocker, `prepareStep` forces the matching
+`commit_*` as the next step (`commitAfterPreview`), so no "do you confirm?" is ever asked in text.
+The card then shows the preview's resolved plan (for a payment: family, amount, method, date) above
+the raw `draftId`/`checksum` it will send.
+
+**A new teacher needs a name, nothing else.** `create_teacher` (write, approval required) creates the
+teacher with no class and no period, like the dashboard form; assigning a class is a separate step.
+The assistant's prompt carries the current period (`getSelectedPeriod`: the selected-period cookie,
+else the period covering today), so whenever a period is needed and none is given, the model uses
+that one instead of asking.
+
+**Undoing a manual payment.** `cancel_payments` (write, approval required) deactivates payments by id
+— the soft deletion every payment read already respects, so balances fall back at once. All ids must
+be active manual payments of one family: missing → `notFound`, a Stripe payment → `onlinePayment`,
+two families → `mixedFamilies`. It takes the family payment lock, rereads the payments under it
+(`notFound` if one vanished meanwhile), then deactivates them in the same transaction.
+`get_family_payments` lists a family's active payments so the model can find the ids.
+
+**Bounded agent loop.** One turn runs at most `maxAgentSteps` tool steps within `agentTimeoutMs`;
+replayed tool results share a `maxToolReplayChars` budget, and only settled calls (done, error,
+denied, or answered approval) are replayed. The current page path is passed as a hint only after
+matching a strict path pattern; it scopes nothing.
 
 ## User management
 

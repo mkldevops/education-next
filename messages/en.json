@@ -246,7 +246,7 @@
       "planning": "Schedule",
       "attendance": "Attendance tracking",
       "superAdmins": "Super admins",
-      "enrollAssistant": "Enrollment assistant"
+      "enrollAssistant": "AI assistant"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -289,7 +289,7 @@
         "family": "Family space",
         "teaching": "Teaching"
       },
-      "enrollAssistant": "Enrollment assistant"
+      "enrollAssistant": "AI assistant"
     },
     "pages": {
       "families": {
@@ -1714,6 +1714,21 @@
             "notFound": "Class not found",
             "assignmentNotFound": "This assignment no longer exists"
           }
+        },
+        "printList": {
+          "trigger": "Print list",
+          "title": "Student list",
+          "back": "Back to class",
+          "print": "Print / PDF",
+          "hint": "A4 format — choose “Save as PDF” in the print dialog.",
+          "headcount": "Headcount",
+          "teachers": "Teachers",
+          "printedOn": "Printed on",
+          "empty": "No student assigned to this class.",
+          "lastname": "Last name",
+          "firstname": "First name",
+          "birthday": "Birth date",
+          "notes": "Notes"
         }
       },
       "myClasses": {
@@ -2176,6 +2191,8 @@
             "unreadable": "unreadable"
           },
           "description": "Key of the OpenRouter account that pays for the assistant calls. It is encrypted before storage and never shown again.",
+          "current": "Saved key",
+          "savedAt": "Saved on {date}",
           "unreadableHint": "The stored key can no longer be decrypted: SETTINGS_ENCRYPTION_KEY changed or is missing. Enter it again.",
           "secretStorageHint": "SETTINGS_ENCRYPTION_KEY is not set on this server: no key can be stored.",
           "label": "API key",
@@ -2200,208 +2217,12 @@
         }
       },
       "enrollAssistant": {
-        "title": "Enrollment assistant",
-        "description": "Describe the enrollment or photograph the form: the assistant proposes a draft you correct, preview, then confirm.",
-        "school": "Active school: {name}",
-        "providerNotice": "Texts and photos you send are transmitted to OpenRouter and to the {model} model for reading. The application does not keep them.",
+        "title": "AI assistant",
+        "description": "Ask a question or request an action on the school: classes, schedule, events, enrollments, payments. Every change waits for your approval.",
         "unavailable": {
           "title": "Assistant unavailable",
-          "description": "No OpenRouter key is configured. A super admin must enter it under Configuration → Integrations."
-        },
-        "chat": {
-          "title": "Conversation",
-          "empty": "Start with a description or a photo of the enrollment form.",
-          "placeholder": "Describe the family, the students, their class, the plan…",
-          "send": "Send",
-          "stop": "Stop",
-          "attach": "Add a photo",
-          "attachHint": "PNG, JPEG or WebP, {count} photos per message, {size} MB each",
-          "removeImage": "Remove photo",
-          "imageAlt": "Attached photo {index}",
-          "reset": "New conversation",
-          "thinking": "The assistant is reading the form…",
-          "you": "You",
-          "assistant": "Assistant",
-          "proposalReceived": "Proposal received: check the form.",
-          "fileErrors": {
-            "type": "Only PNG, JPEG and WebP files are accepted.",
-            "size": "Each photo must be under {size} MB.",
-            "count": "{count} photos at most per message."
-          },
-          "errors": {
-            "unauthorized": "Session expired: sign in again.",
-            "forbidden": "This action is reserved to school administrators.",
-            "aiAssistantDisabled": "The assistant was disabled by a super admin.",
-            "aiAssistantNotConfigured": "No OpenRouter key is configured: the assistant is unavailable.",
-            "tooManyRequests": "Too many requests: wait a minute.",
-            "invalidRequest": "Invalid request.",
-            "tooManyMessages": "The conversation is too long: start a new one.",
-            "messageTooLong": "The message is too long.",
-            "forbiddenFile": "Only PNG, JPEG and WebP images are accepted.",
-            "unreadableImage": "An image could not be read.",
-            "tooManyImages": "Too many photos in the conversation.",
-            "imageTooLarge": "A photo exceeds the allowed size or dimensions.",
-            "invalidKey": "The provider rejected the OpenRouter key: tell a super admin.",
-            "quotaExceeded": "The OpenRouter credit is exhausted: tell a super admin.",
-            "providerRateLimited": "The provider is rate limiting calls: retry in a moment.",
-            "timeout": "The model did not answer in time: retry, with a sharper photo if possible.",
-            "providerError": "The provider returned an error: retry.",
-            "invalidModelOutput": "The model answer is unusable: rephrase or retake the photo.",
-            "serverError": "Internal error: retry.",
-            "error": "The assistant could not answer."
-          }
-        },
-        "proposal": {
-          "title": "Proposal to check",
-          "hint": "Nothing is written before confirmation. Correct, then request the preview.",
-          "empty": "No proposal yet: the assistant fills this form from your description or the photo.",
-          "notes": "Assistant notes",
-          "missing": {
-            "title": "To complete",
-            "missing": "missing",
-            "illegible": "illegible",
-            "ambiguous": "ambiguous"
-          },
-          "family": {
-            "title": "Family",
-            "newFamily": "New family",
-            "existingFamily": "Existing family",
-            "name": "Family name",
-            "selected": "Attached to \"{name}\"",
-            "clear": "Do not attach",
-            "none": "To attach to an existing family, request the preview: matches offer an \"Attach\" button.",
-            "existingHint": "An existing family keeps its parents and emergency contact: these fields are ignored."
-          },
-          "parents": {
-            "title": "Parents",
-            "add": "Add a parent",
-            "remove": "Remove",
-            "name": "First name",
-            "lastname": "Last name",
-            "sex": "Sex",
-            "email": "Email",
-            "phone": "Phone"
-          },
-          "students": {
-            "title": "Students",
-            "add": "Add a student",
-            "remove": "Remove",
-            "name": "First name",
-            "lastname": "Last name",
-            "sex": "Sex",
-            "birthday": "Birthday",
-            "birthplace": "Birthplace",
-            "className": "Class",
-            "planName": "Plan (if different)"
-          },
-          "sex": {
-            "unspecified": "Unspecified",
-            "MALE": "Male",
-            "FEMALE": "Female"
-          },
-          "emergency": {
-            "title": "Emergency contact",
-            "name": "Name",
-            "phone": "Phone"
-          },
-          "pricing": {
-            "title": "Pricing",
-            "planName": "Family plan",
-            "discount": "Discount per enrollment",
-            "disabled": "Payments are disabled for this school: plan and payment are not requested."
-          },
-          "payment": {
-            "title": "Payment",
-            "none": "No payment",
-            "add": "Add a payment",
-            "remove": "Remove",
-            "amount": "Amount",
-            "method": "Method",
-            "reference": "Reference",
-            "paidAt": "Date",
-            "cashedAt": "Cashing date (check)"
-          },
-          "methods": {
-            "CASH": "Cash",
-            "CARD": "Card",
-            "TRANSFER": "Transfer",
-            "CHECK": "Check"
-          },
-          "edited": "Changed since the last preview: request the preview again before confirming.",
-          "requestPreview": "Request the preview",
-          "requestingPreview": "Previewing…",
-          "errors": {
-            "validationError": "Invalid or missing fields: {fields}",
-            "aiAssistantDisabled": "The assistant was disabled by a super admin.",
-            "error": "Could not prepare the preview"
-          }
-        },
-        "preview": {
-          "title": "Preview",
-          "ready": "Draft ready to confirm. It expires in {minutes} minutes.",
-          "blocked": "Preview blocked: fix the points below then request the preview again.",
-          "blockers": "Blockers",
-          "warnings": "Warnings",
-          "matches": "Existing matches",
-          "matchFamily": "Family \"{name}\"",
-          "useFamily": "Attach",
-          "matchStudent": "{name} ({kind})",
-          "matchKind": {
-            "student": "already a student",
-            "person": "already known"
-          },
-          "finding": "{field}: \"{value}\" — {reason}",
-          "plan": {
-            "title": "Resolved plan",
-            "newFamily": "New family \"{name}\"",
-            "existingFamily": "Existing family \"{name}\"",
-            "parents": "{count, plural, =0 {No parent} one {# parent} other {# parents}}",
-            "student": "{name} → {className}, {plan} ({amount})",
-            "payment": "Payment: {amount} ({method})",
-            "noPayment": "No payment"
-          },
-          "confirm": "Confirm the enrollment",
-          "confirming": "Confirming…"
-        },
-        "confirm": {
-          "success": "Enrollment saved",
-          "successDetail": "{students, plural, one {# student enrolled} other {# students enrolled}}, {payments, plural, =0 {no payment} one {# payment} other {# payments}}.",
-          "openFamily": "Open the family",
-          "newEnrollment": "New enrollment",
-          "errors": {
-            "draftNotFound": "Draft not found: it belongs to another session or was purged. Request the preview again.",
-            "draftExpired": "The draft expired (30 minutes). Request the preview again.",
-            "checksumMismatch": "The draft changed since the preview. Request the preview again.",
-            "commitInProgress": "A confirmation is already running for this draft.",
-            "staleDraft": "Data changed since the preview. Request the preview again.",
-            "notFound": "Part of the plan no longer exists (class, family or student). Request the preview again.",
-            "duplicateEnrollment": "A student was enrolled in the meantime. Request the preview again.",
-            "classFull": "A class filled up in the meantime. Request the preview again.",
-            "paymentsDisabled": "Payments were disabled: this draft carries an amount and can no longer be confirmed.",
-            "validationError": "Unusable draft. Request the preview again.",
-            "aiAssistantDisabled": "The assistant was disabled by a super admin.",
-            "error": "Could not confirm the enrollment"
-          }
-        },
-        "reasons": {
-          "unknownClass": "unknown class",
-          "ambiguousClass": "several classes carry this name",
-          "unknownPlan": "unknown plan",
-          "ambiguousPlan": "several plans carry this name",
-          "classFull": "class is full",
-          "discountExceedsPlan": "the discount exceeds the cheapest plan",
-          "birthdayNotInThePast": "birthday is in the future",
-          "existingFamily": "a family with this name already exists",
-          "existingStudent": "a student with this name already exists",
-          "existingPerson": "a person with this name already exists",
-          "invalidFamilyName": "invalid family name",
-          "ambiguousStudent": "several family members carry this name",
-          "duplicateEnrollment": "this student already has an open enrollment",
-          "paymentsDisabled": "payments are disabled for this school",
-          "referenceAlreadyUsed": "this reference was already banked",
-          "notFound": "not found",
-          "noPayableEnrollments": "no enrollment to allocate the amount to",
-          "other": "{reason}"
+          "description": "No OpenRouter key is configured. A super admin must enter it under Configuration → Integrations.",
+          "configure": "Configure the key"
         }
       }
     },
@@ -2490,6 +2311,126 @@
         "tomorrow": "Tomorrow",
         "empty": "No child linked to your family",
         "emptyHint": "Contact the school if a child is missing."
+      }
+    },
+    "assistant": {
+      "launcher": "Assistant",
+      "open": "Open the assistant",
+      "close": "Close the assistant",
+      "title": "AI assistant",
+      "subtitle": "Reads and acts on the school; every change waits for your approval.",
+      "providerNotice": "Messages, photos and the data read are sent to OpenRouter and the {model} model. Nothing changes without your approval.",
+      "history": {
+        "show": "History",
+        "back": "Back to the conversation",
+        "title": "Your conversations",
+        "empty": "No saved conversation.",
+        "notice": "Your conversations are saved for you only, in this school, without the photos.",
+        "delete": "Delete “{title}”",
+        "loadError": "This conversation could not be opened.",
+        "new": "New conversation"
+      },
+      "chat": {
+        "title": "Conversation",
+        "empty": "Ask a question or request an action: classes, schedule, events, enrollments, payments…",
+        "placeholder": "E.g. \"Which classes still have room?\"",
+        "send": "Send",
+        "stop": "Stop",
+        "attach": "Add a photo",
+        "attachHint": "{count} photos, {size} MB each",
+        "removeImage": "Remove the photo",
+        "imageAlt": "Attached photo {index}",
+        "reset": "New conversation",
+        "thinking": "The assistant is working…",
+        "you": "You",
+        "assistant": "Assistant",
+        "fileErrors": {
+          "type": "Only PNG, JPEG and WebP files are accepted.",
+          "size": "Each photo must be under {size} MB.",
+          "count": "{count} photos at most per message."
+        },
+        "errors": {
+          "unauthorized": "Session expired: sign in again.",
+          "forbidden": "This action is reserved to school administrators.",
+          "aiAssistantDisabled": "The assistant was disabled by a super admin.",
+          "aiAssistantNotConfigured": "No OpenRouter key is configured: the assistant is unavailable.",
+          "tooManyRequests": "Too many requests: wait a minute.",
+          "invalidRequest": "Invalid request.",
+          "tooManyMessages": "The conversation is too long: start a new one.",
+          "messageTooLong": "The message is too long.",
+          "forbiddenFile": "Only PNG, JPEG and WebP images are accepted.",
+          "unreadableImage": "An image could not be read.",
+          "tooManyImages": "Too many photos in the conversation.",
+          "imageTooLarge": "A photo exceeds the allowed size or dimensions.",
+          "invalidKey": "The provider rejected the OpenRouter key: tell a super admin.",
+          "quotaExceeded": "The OpenRouter credit is exhausted: tell a super admin.",
+          "providerRateLimited": "The provider is rate limiting calls: retry in a moment.",
+          "timeout": "The model did not answer in time: retry or split the request.",
+          "providerError": "The provider returned an error: retry.",
+          "serverError": "Internal error: retry.",
+          "error": "The assistant could not answer."
+        },
+        "dictation": {
+          "start": "Dictate",
+          "stop": "Stop dictation",
+          "hint": "Dictation uses the browser's speech service (Google for Chrome). Recognized text is added to the message, not sent.",
+          "errors": {
+            "notAllowed": "Microphone blocked: allow it in the browser.",
+            "noSpeech": "No speech detected.",
+            "failed": "Dictation failed. Try again."
+          },
+          "listening": "Listening… speak, the text is added to your message."
+        }
+      },
+      "tools": {
+        "running": "{tool}…",
+        "done": "{tool}",
+        "refusal": "{tool}: refused \"{code}\"",
+        "failed": "{tool}: failed",
+        "approved": "{tool}: approved, running…",
+        "refused": "{tool}: refused",
+        "approval": {
+          "title": "Approve \"{tool}\"?",
+          "details": "Data sent",
+          "approve": "Approve",
+          "refuse": "Cancel"
+        },
+        "names": {
+          "describe_school": "Current school",
+          "list_levels": "Levels",
+          "list_periods": "Periods",
+          "list_class_periods": "Classes",
+          "list_class_schedule_slots": "Schedule slots",
+          "create_class_schedule_slot": "Create a slot",
+          "update_class_schedule_slot": "Update a slot",
+          "delete_class_schedule_slot": "Delete a slot",
+          "list_plans": "Pricing plans",
+          "list_teachers": "Teachers",
+          "find_students": "Find a student",
+          "preview_enroll_family": "Enrollment preview",
+          "commit_enroll_family": "Enroll the family",
+          "create_event": "Create an event",
+          "list_events": "Events",
+          "get_event": "Read an event",
+          "update_event": "Update an event",
+          "duplicate_event": "Renew an event",
+          "preview_record_payment": "Payment preview",
+          "commit_record_payment": "Record the payment",
+          "preview_update_enrollment": "Enrollment change preview",
+          "commit_update_enrollment": "Update the enrollment",
+          "get_family_payments": "Family payments",
+          "cancel_payments": "Cancel payments",
+          "create_teacher": "Create a teacher",
+          "preview_class_schedule": "Prepare a full schedule",
+          "commit_class_schedule": "Commit a full schedule"
+        },
+        "summary": {
+          "family": "Family",
+          "amount": "Amount",
+          "method": "Method",
+          "paidAt": "Date",
+          "reference": "Reference"
+        }
       }
     }
   },

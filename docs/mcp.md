@@ -128,7 +128,7 @@ revoked or expired key), `403 forbidden` (deactivated account or school, or a me
 
 ## Read tools
 
-Every one of them works in the key's school and takes no arguments.
+Every one of them works in the key's school. Only the last three take arguments.
 
 | Tool | Publishes |
 |---|---|
@@ -138,6 +138,8 @@ Every one of them works in the key's school and takes no arguments.
 | `list_class_periods` | `id`, `name`, `capacity`, `level { id, name }`, `period { id, name }`, `teachers[].teacher { id, firstName, lastName }` |
 | `list_plans` | `id`, `name`, `amount` (decimal string, not cents) |
 | `list_teachers` | `id`, `firstName`, `lastName` |
+| `find_students` (`query`, `limit?`) | `id`, `name`, `lastname`, `families[] { id, name }`, open `enrollments[]` with `plan` and `classes` |
+| `get_family_payments` (`familyId`) | `family`, `remainingBalance`, per-enrollment balances, and the 20 latest active payments with `id`, `amount`, `method`, `paidAt`, `online` (money tools only) |
 
 They are the resolution layer: a label read on paper — "CE1 / 2026-2027", the name of a plan —
 becomes an identifier through these lists, before any write is attempted. That is also why the
@@ -224,8 +226,9 @@ gets `notConfigured` from each of them.
 
 ## Writing: the preview/commit pairs
 
-Four pairs are shipped. `create_teacher` and `record_teacher_expense` are not — a teacher sheet and a
-teacher expense note still go through the dashboard.
+Four pairs are shipped. `record_teacher_expense` is not — a teacher expense note still goes through
+the dashboard. `create_teacher` is shipped as a single write, without preview: it takes a first and
+last name (email and phone optional) and creates the teacher with no class, as the dashboard form does.
 
 | Tool | Paper it matches | State |
 |---|---|---|
@@ -233,7 +236,7 @@ teacher expense note still go through the dashboard.
 | `record_payment` | a receipt or payment slip | shipped |
 | `update_enrollment` | a correction: a child moved to another plan, a discount granted | shipped |
 | `class_schedule` | a whole weekly planning: every class, day, time and teacher of a period | shipped |
-| `create_teacher` | a teacher sheet | not shipped |
+| `create_teacher` | a teacher sheet | shipped, single write (no preview) |
 | `record_teacher_expense` | a teacher expense note | not shipped |
 
 The shape, and the reason for it:
@@ -377,10 +380,21 @@ The two pairs chain: `enroll_family` creates enrollments as `PENDING`, and `reco
 `PENDING` and `ACTIVE` ones alike, so a family just enrolled can record its next payment right away.
 A family owes one balance across its children and may settle it in several payments.
 
-## The dashboard assistant shares the drafts
+`preview_record_payment` defaults what a receipt often omits: the whole remaining balance
+(`nothingDue` when there is none), `CASH`, today. The family may be named by `studentId`.
 
-`/dashboard/enroll-assistant` (`docs/ai-assistant.md`) calls the same `previewEnrollFamily` and
-`commitEnrollFamily` from a server action, without going through this server. Its drafts carry
-`ownerKind: ADMIN_SESSION` and the administrator's `userId`; yours carry `ownerKind: MCP_KEY` and
-your `keyId`. A draft never crosses over: one prepared by a key is `draftNotFound` for the
-administrator's session, and the reverse, even for the same person and the same school.
+`cancel_payments` (`paymentIds`) is a direct write, not a pair: it deactivates active manual payments
+of one family, under the family payment lock. Refusals: `notFound`, `onlinePayment` (Stripe),
+`mixedFamilies`.
+
+## The dashboard assistant shares the tools and the drafts
+
+The dashboard's AI assistant (`POST /api/ai/assistant`, `docs/ai-assistant.md`) calls every tool of
+this server, from the shared catalog `src/mcp/school-tools.ts` that `buildMcpServer` also iterates.
+A tool added there is exposed on both surfaces; on the assistant side, each write tool waits for the
+administrator's explicit approval in the panel before it runs.
+
+Its drafts carry `ownerKind: ADMIN_SESSION` and the administrator's `userId`; yours carry
+`ownerKind: MCP_KEY` and your `keyId`. A draft never crosses over: one prepared by a key is
+`draftNotFound` for the administrator's session, and the reverse, even for the same person and the
+same school.

@@ -2,7 +2,9 @@ import { randomBytes } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   deleteOpenRouterApiKey,
+  describeOpenRouterKey,
   getOpenRouterKeyStatus,
+  maskOpenRouterKey,
   readOpenRouterApiKey,
   setOpenRouterApiKey,
 } from './openrouter-api-key'
@@ -98,5 +100,35 @@ describe('getOpenRouterKeyStatus', () => {
     vi.stubEnv('SETTINGS_ENCRYPTION_KEY', '')
 
     expect(await getOpenRouterKeyStatus(gateway)).toBe('unreadable')
+  })
+})
+
+describe('describeOpenRouterKey', () => {
+  it('shows only the tail of the saved key', async () => {
+    await setOpenRouterApiKey(secret, gateway)
+
+    const description = await describeOpenRouterKey(gateway)
+
+    expect(description).toEqual({ status: 'configured', hint: '…lder', savedAt: null })
+    expect(description.hint).not.toContain(secret.slice(0, -4))
+  })
+
+  it('carries no hint for a missing or unreadable key', async () => {
+    expect(await describeOpenRouterKey(gateway)).toEqual({
+      status: 'notConfigured',
+      hint: null,
+      savedAt: null,
+    })
+
+    await setOpenRouterApiKey(secret, gateway)
+    vi.stubEnv('SETTINGS_ENCRYPTION_KEY', '')
+
+    expect((await describeOpenRouterKey(gateway)).hint).toBeNull()
+  })
+})
+
+describe('maskOpenRouterKey', () => {
+  it('keeps the OpenRouter prefix and the last four characters', () => {
+    expect(maskOpenRouterKey('sk-or-v1-0123456789abcdef')).toBe('sk-or-v1-…cdef')
   })
 })

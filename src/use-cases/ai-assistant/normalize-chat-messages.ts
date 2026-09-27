@@ -6,7 +6,6 @@ import {
   isAiAssistantImageType,
 } from '@/domain/ai-assistant'
 import type { ImageSanitizer } from './sanitize-image'
-import { PROPOSE_ENROLLMENT_TOOL } from './schemas'
 
 type ChatMessageRefusal =
   | 'invalidRequest'
@@ -26,7 +25,79 @@ type UnknownRecord = Record<string, unknown>
 const isRecord = (value: unknown): value is UnknownRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-const PROPOSAL_PART_TYPE = `tool-${PROPOSE_ENROLLMENT_TOOL}`
+type ToolPart = Extract<UIMessage['parts'][number], { toolCallId: string }>
+
+type NormalizeOptions = {
+  /** Outils de l'assistant dont les appels terminés se rejouent. Absent, aucun ne l'est. */
+  toolNames?: ReadonlySet<string>
+}
+
+/**
+ * Approbation rejouée telle que le SDK l'a émise : la signature HMAC qu'elle porte est
+ * revérifiée côté serveur, un client ne peut donc pas en fabriquer une valide.
+ */
+function readApproval(raw: unknown, approved?: boolean) {
+  if (!isRecord(raw) || typeof raw.id !== 'string' || typeof raw.approved !== 'boolean') {
+    return null
+  }
+  if (approved !== undefined && raw.approved !== approved) return null
+  return {
+    id: raw.id,
+    approved: raw.approved,
+    ...(typeof raw.reason === 'string' ? { reason: raw.reason.slice(0, 500) } : {}),
+    ...(typeof raw.signature === 'string' ? { signature: raw.signature } : {}),
+    ...(typeof raw.isAutomatic === 'boolean' ? { isAutomatic: raw.isAutomatic } : {}),
+    ...('inputSchemaInput' in raw ? { inputSchemaInput: raw.inputSchemaInput } : {}),
+  }
+}
+
+/**
+ * Un appel d'outil terminé, refusé ou en attente de réponse humaine se rejoue ; un appel
+ * en cours de flux est ignoré (`null`). Une forme incohérente fait refuser la requête.
+ */
+function replayToolPart(part: UnknownRecord): ToolPart | null | 'invalid' {
+  if (typeof part.toolCallId !== 'string') return 'invalid'
+  const base = { type: part.type, toolCallId: part.toolCallId }
+
+  switch (part.state) {
+    case 'output-available': {
+      if (!isRecord(part.input) || part.output === undefined) return 'invalid'
+      const approval = part.approval === undefined ? undefined : readApproval(part.approval, true)
+      if (approval === null) return 'invalid'
+      return {
+        ...base,
+        state: 'output-available',
+        input: part.input,
+        output: part.output,
+        ...(approval ? { approval } : {}),
+      } as ToolPart
+    }
+    case 'output-error': {
+      if (typeof part.errorText !== 'string') return 'invalid'
+      const approval = part.approval === undefined ? undefined : readApproval(part.approval, true)
+      if (approval === null) return 'invalid'
+      return {
+        ...base,
+        state: 'output-error',
+        input: isRecord(part.input) ? part.input : undefined,
+        errorText: part.errorText.slice(0, 500),
+        ...(approval ? { approval } : {}),
+      } as ToolPart
+    }
+    case 'output-denied':
+    case 'approval-responded': {
+      if (!isRecord(part.input)) return 'invalid'
+      const approval = readApproval(
+        part.approval,
+        part.state === 'output-denied' ? false : undefined
+      )
+      if (!approval) return 'invalid'
+      return { ...base, state: part.state, input: part.input, approval } as ToolPart
+    }
+    default:
+      return null
+  }
+}
 
 /**
  * Rejoue la conversation reçue du navigateur en ne gardant que ce que la route sait
@@ -41,9 +112,12 @@ const PROPOSAL_PART_TYPE = `tool-${PROPOSE_ENROLLMENT_TOOL}`
  * Les URL distantes ne sont jamais suivies : seule une `data:` acceptée par le préfixe
  * strict atteint le décodeur, donc aucun téléchargement arbitraire n'est possible.
  */
+const MESSAGE_ID_PATTERN = /^[\w-]{1,64}$/
+
 export async function normalizeChatMessages(
   raw: unknown,
-  sanitize: ImageSanitizer
+  sanitize: ImageSanitizer,
+  { toolNames = new Set() }: NormalizeOptions = {}
 ): Promise<NormalizeChatMessagesResult> {
   if (!isRecord(raw) || !Array.isArray(raw.messages)) return { status: 'invalidRequest' }
   if (raw.messages.length === 0) return { status: 'invalidRequest' }
@@ -51,6 +125,8 @@ export async function normalizeChatMessages(
 
   const messages: UIMessage[] = []
   let imagesInRequest = 0
+  let toolChars = 0
+  let pendingApproval = false
 
   for (const [index, item] of raw.messages.entries()) {
     if (!isRecord(item) || !Array.isArray(item.parts)) return { status: 'invalidRequest' }
@@ -77,20 +153,21 @@ export async function normalizeChatMessages(
           parts.push({ type: 'step-start' })
           continue
         }
-        if (part.type === PROPOSAL_PART_TYPE && part.state === 'output-available') {
-          if (typeof part.toolCallId !== 'string') return { status: 'invalidRequest' }
-          if (!isRecord(part.input) || !isRecord(part.output)) return { status: 'invalidRequest' }
-          // Une proposition rejouée est du texte pour le fournisseur : elle consomme le
-          // même budget, sinon le client contournerait la borne par cette partie.
-          textChars += JSON.stringify(part.input).length + JSON.stringify(part.output).length
-          if (textChars > AI_ASSISTANT_LIMITS.maxTextChars) return { status: 'messageTooLong' }
-          parts.push({
-            type: PROPOSAL_PART_TYPE,
-            toolCallId: part.toolCallId,
-            state: 'output-available',
-            input: part.input,
-            output: part.output,
-          } as UIMessage['parts'][number])
+        const toolName = part.type.startsWith('tool-') ? part.type.slice('tool-'.length) : null
+        if (toolName !== null && toolNames.has(toolName)) {
+          const replayed = replayToolPart(part)
+          if (replayed === 'invalid') return { status: 'invalidRequest' }
+          if (replayed === null) continue
+          // Les résultats d'outils rejoués coûtent des jetons à chaque tour : leur budget est
+          // celui de la requête entière, plus large que celui d'un message saisi.
+          toolChars += JSON.stringify(replayed).length
+          if (toolChars > AI_ASSISTANT_LIMITS.maxToolReplayChars) {
+            return { status: 'messageTooLong' }
+          }
+          if (index === raw.messages.length - 1 && replayed.state === 'approval-responded') {
+            pendingApproval = true
+          }
+          parts.push(replayed)
           continue
         }
         // Les appels d'outil incomplets ou en erreur ne se rejouent pas : le fournisseur
@@ -135,10 +212,18 @@ export async function normalizeChatMessages(
     }
 
     if (parts.length === 0) return { status: 'invalidRequest' }
-    messages.push({ id: `m${index}`, role, parts })
+    // L'identifiant du client est gardé quand il est sain : la conversation enregistrée et
+    // le tour qui reprend un message après une validation doivent désigner le même.
+    const id =
+      typeof item.id === 'string' && MESSAGE_ID_PATTERN.test(item.id) ? item.id : `m${index}`
+    messages.push({ id, role, parts })
   }
 
-  if (messages[messages.length - 1]?.role !== 'user') return { status: 'invalidRequest' }
+  // Une réponse d'approbation se renvoie dans le dernier message de l'assistant, sans tour
+  // utilisateur : c'est la seule exception à la règle.
+  if (messages[messages.length - 1]?.role !== 'user' && !pendingApproval) {
+    return { status: 'invalidRequest' }
+  }
 
   return { status: 'OK', messages }
 }

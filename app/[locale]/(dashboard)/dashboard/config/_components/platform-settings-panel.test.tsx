@@ -25,7 +25,7 @@ const baseProps = {
   passkeyEnabled: true,
   mcpEnabled: false,
   aiAssistantEnabled: false,
-  openRouterKeyStatus: 'notConfigured' as const,
+  openRouterKey: { status: 'notConfigured' as const, hint: null, savedAt: null },
   secretStorageConfigured: true,
   schoolSwitchEnabled: true,
   googleOnlyAccountCount: 0,
@@ -66,12 +66,30 @@ describe('PlatformSettingsPanel', () => {
     const { rerender } = render(<PlatformSettingsPanel {...baseProps} />)
     expect(screen.getByText('aiAssistant.notConfigured')).toBeInTheDocument()
 
-    rerender(<PlatformSettingsPanel {...baseProps} openRouterKeyStatus="unreadable" />)
+    rerender(
+      <PlatformSettingsPanel
+        {...baseProps}
+        openRouterKey={{ status: 'unreadable', hint: null, savedAt: null }}
+      />
+    )
     expect(screen.getByText('aiAssistant.unreadable')).toBeInTheDocument()
     expect(screen.queryByText('aiAssistant.notConfigured')).not.toBeInTheDocument()
 
-    rerender(<PlatformSettingsPanel {...baseProps} openRouterKeyStatus="configured" />)
+    rerender(
+      <PlatformSettingsPanel
+        {...baseProps}
+        openRouterKey={{ status: 'configured', hint: 'sk-or-v1-…a1b2', savedAt: null }}
+      />
+    )
     expect(screen.getByText('aiAssistant.hint')).toBeInTheDocument()
+  })
+
+  it('folds the OpenRouter key form away while the assistant is disabled', () => {
+    const { rerender } = render(<PlatformSettingsPanel {...baseProps} aiAssistantEnabled={false} />)
+    expect(screen.queryByText('status.notConfigured')).not.toBeInTheDocument()
+
+    rerender(<PlatformSettingsPanel {...baseProps} aiAssistantEnabled key="enabled" />)
+    expect(screen.getByText('status.notConfigured')).toBeInTheDocument()
   })
 
   it('never requires confirmation for the passkey toggle, regardless of the Google count', () => {

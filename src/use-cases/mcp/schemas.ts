@@ -29,6 +29,9 @@ const phoneNumberFormat = /^\+?[\d\s().-]{6,20}$/
  */
 const isoDate = z.union([z.iso.date(), z.iso.datetime({ offset: true })])
 
+export const MCP_STUDENT_SEARCH_DEFAULT = 10
+export const MCP_STUDENT_SEARCH_MAX = 25
+
 export const mcpPaymentMethodSchema = z.enum(['CASH', 'CARD', 'TRANSFER', 'CHECK'])
 
 export const mcpSexSchema = z.enum(['MALE', 'FEMALE'])
@@ -111,14 +114,42 @@ export const previewEnrollFamilySchema = z
         data.emergencyContactPhone === undefined)
   )
 
+/**
+ * Seule la famille est exigée, désignée par son identifiant, son nom ou l'un de ses élèves.
+ *
+ * Le reste a une valeur par défaut appliquée par le use case — tout le solde restant, en
+ * espèces, daté du jour — et que le preview rend résolue : l'humain valide un encaissement
+ * complet au lieu de répondre à une question par champ.
+ */
 export const previewRecordPaymentSchema = z
   .object({
     familyId: z.uuid().optional(),
     familyName: z.string().trim().min(1).max(50).optional(),
-    ...paymentFields,
+    studentId: z.uuid().optional(),
+    amount: paymentFields.amount.optional(),
+    method: mcpPaymentMethodSchema.optional(),
+    reference: paymentFields.reference,
+    paidAt: isoDate.optional(),
+    cashedAt: paymentFields.cashedAt,
   })
-  .refine((data) => data.familyId !== undefined || data.familyName !== undefined)
-  .refine(cashedAtOnlyForCheck, { path: ['cashedAt'] })
+  .refine(
+    (data) =>
+      data.familyId !== undefined || data.familyName !== undefined || data.studentId !== undefined
+  )
+  .refine((data) => data.method === 'CHECK' || data.cashedAt === undefined, {
+    path: ['cashedAt'],
+  })
+
+export const mcpFindStudentsSchema = z.object({
+  query: z.string().trim().min(2).max(100),
+  limit: z.number().int().min(1).max(MCP_STUDENT_SEARCH_MAX).optional(),
+})
+
+export const mcpFamilyPaymentsSchema = z.object({ familyId: z.uuid() })
+
+export const mcpCancelPaymentsSchema = z.object({
+  paymentIds: z.array(z.uuid()).min(1).max(10),
+})
 
 /**
  * L'inscription se désigne par son identifiant, ou par l'élève qu'elle concerne.
@@ -244,4 +275,11 @@ const mcpClassScheduleSlotLabelSchema = z.object({
 export const previewClassScheduleSchema = z.object({
   periodId: z.uuid(),
   slots: z.array(mcpClassScheduleSlotLabelSchema).min(1).max(MCP_CLASS_SCHEDULE_BATCH_MAX),
+})
+
+export const mcpCreateTeacherSchema = z.object({
+  firstName: z.string().trim().min(1).max(250),
+  lastName: z.string().trim().min(1).max(250),
+  email: z.email().optional(),
+  phone: z.string().trim().max(20).optional(),
 })
