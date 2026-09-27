@@ -37,7 +37,10 @@ const fakeStripe = {
   },
 }
 
-vi.mock('@/lib/stripe', () => ({ getStripeClient: () => fakeStripe }))
+vi.mock('@/lib/stripe', () => ({
+  getStripeClient: () => fakeStripe,
+  readEnvStripeCredentials: () => ({ secretKey: 'sk_test_instance', webhookSecret: 'whsec_test' }),
+}))
 
 const { createCheckoutSession } = await import('./create-checkout-session')
 

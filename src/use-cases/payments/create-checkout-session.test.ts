@@ -231,6 +231,27 @@ describe('createCheckoutSession', () => {
       expect(sessionsCreateMock).not.toHaveBeenCalled()
     })
 
+    it('expires a session unknown to the current Stripe account and opens a new one', async () => {
+      sessionsRetrieveMock.mockRejectedValue(
+        Object.assign(new Error('No such checkout.session'), { code: 'resource_missing' })
+      )
+
+      expect(await createCheckoutSession(input)).toEqual(expect.objectContaining({ result: 'OK' }))
+      expect(sessionsExpireMock).not.toHaveBeenCalled()
+      expect(dbMock.paymentTransaction.update).toHaveBeenCalledWith({
+        where: { id_schoolId: { id: 'transaction-0', schoolId } },
+        data: { status: 'EXPIRED' },
+      })
+      expect(sessionsCreateMock).toHaveBeenCalled()
+    })
+
+    it('refuses a new session when Stripe cannot confirm the earlier one', async () => {
+      sessionsRetrieveMock.mockRejectedValue(new Error('Stripe unavailable'))
+
+      expect(await createCheckoutSession(input)).toBe('providerError')
+      expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
+    })
+
     it('does not open a new session when the earlier one cannot be closed', async () => {
       sessionsRetrieveMock.mockResolvedValue({ id: 'cs_old', status: 'open' })
       sessionsExpireMock.mockRejectedValue(new Error('session already completed'))

@@ -1284,7 +1284,10 @@ the checkout flow, not by the form.
   `PENDING` transaction of the family is closed: a session still `open` at Stripe is expired
   (`sessions.expire`) and its transaction marked `EXPIRED`; a session already `complete` means a
   payment is awaiting its webhook → `paymentInProgress`, and no new session opens. If Stripe
-  cannot confirm the earlier session's state → `providerError`, never a second session.
+  cannot confirm the earlier session's state → `providerError`, never a second session. A session
+  unknown to the current account (`resource_missing`: opened with other keys before the school
+  changed its Stripe account) can never be paid on it, so its transaction is closed `EXPIRED`
+  instead of locking the family; a late webhook from the former account still records it.
   Balance read, closing and opening run under a per-family advisory lock taken without waiting
   (`paymentGateway.tryLockFamilyCheckout`): a request arriving while another is opening a session
   for the same family → `checkoutInProgress`, so no database connection is held in a queue. That

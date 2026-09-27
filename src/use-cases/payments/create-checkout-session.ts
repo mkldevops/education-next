@@ -135,6 +135,10 @@ async function openCheckoutSession(
   return { result: 'OK' as const, url: session.url }
 }
 
+function isMissingStripeResource(error: unknown) {
+  return (error as { code?: unknown } | null)?.code === 'resource_missing'
+}
+
 /**
  * Une famille n'a jamais deux sessions Checkout payables en même temps : chaque session payée
  * encaisse le solde entier, donc une seconde ferait payer deux fois. Avant d'en ouvrir une, les
@@ -160,9 +164,11 @@ async function closePreviousCheckoutSessions(
       if (session.status === 'open') {
         await stripe.checkout.sessions.expire(transaction.providerSessionId)
       }
-    } catch {
+    } catch (error) {
       // Dans le doute (session peut-être payée à l'instant), ne pas en ouvrir une seconde.
-      return 'providerError' as const
+      // Sauf session inconnue du compte courant : ouverte avec d'autres clés (l'école a changé
+      // de compte), elle ne se paiera jamais sur celui-ci, et la garder bloquerait la famille.
+      if (!isMissingStripeResource(error)) return 'providerError' as const
     }
     await tx.paymentTransaction.update({
       where: { id_schoolId: { id: transaction.id, schoolId } },
