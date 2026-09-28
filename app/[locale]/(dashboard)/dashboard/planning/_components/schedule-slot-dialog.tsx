@@ -12,6 +12,10 @@ import {
   Label,
   MultiSelect,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import { Bold, Italic, List, Pencil, Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -75,6 +79,14 @@ function ScheduleSlotForm({ classes, teachersByClass, slot }: Props) {
   const [description, setDescription] = useState(slot?.description ?? '')
   const descriptionRef = useRef<HTMLDivElement>(null)
   const teacherOptions = teachersByClass[classPeriodId] ?? []
+  const classItems = classes.map((classPeriod) => ({
+    value: classPeriod.id,
+    label: classPeriod.name,
+  }))
+  const weekdayItems = Array.from({ length: 7 }, (_, index) => index + 1).map((weekday) => ({
+    value: String(weekday),
+    label: t(`weekdays.${weekday}`),
+  }))
 
   useEffect(() => {
     const editor = descriptionRef.current
@@ -118,34 +130,44 @@ function ScheduleSlotForm({ classes, teachersByClass, slot }: Props) {
             <Label htmlFor="schedule-class">{tForm('class')}</Label>
             {slot && <input type="hidden" name="classPeriodId" value={defaultClassId} />}
             <Select
-              id="schedule-class"
               name="classPeriodId"
+              items={classItems}
               value={classPeriodId}
               required
               disabled={isPending || Boolean(slot)}
-              onChange={(event) => setClassPeriodId(event.target.value)}
+              onValueChange={(value) => setClassPeriodId(value ?? '')}
             >
-              {classes.map((classPeriod) => (
-                <option key={classPeriod.id} value={classPeriod.id}>
-                  {classPeriod.name}
-                </option>
-              ))}
+              <SelectTrigger id="schedule-class">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {classItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label htmlFor="schedule-weekday">{tForm('weekday')}</Label>
               <Select
-                id="schedule-weekday"
                 name="weekday"
+                items={weekdayItems}
                 defaultValue={String(slot?.weekday ?? 1)}
                 disabled={isPending}
               >
-                {Array.from({ length: 7 }, (_, index) => index + 1).map((weekday) => (
-                  <option key={weekday} value={weekday}>
-                    {t(`weekdays.${weekday}`)}
-                  </option>
-                ))}
+                <SelectTrigger id="schedule-weekday">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {weekdayItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

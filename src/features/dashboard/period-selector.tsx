@@ -1,5 +1,6 @@
 'use client'
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@peaklab/ui'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
@@ -21,8 +22,13 @@ export function PeriodSelector({ periods, selectedPeriodId }: PeriodSelectorProp
   const now = new Date()
   const currentPeriodId = periods.find((period) => isPeriodCurrent(period, now))?.id ?? null
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value
+  const periodItems = periods.map((period) => ({
+    value: period.id,
+    label: period.id === currentPeriodId ? `${period.name} — ${t('current')}` : period.name,
+  }))
+
+  const handleChange = (value: string | null) => {
+    if (value === null) return
     startTransition(async () => {
       await setSelectedPeriod(value)
       router.refresh()
@@ -31,19 +37,26 @@ export function PeriodSelector({ periods, selectedPeriodId }: PeriodSelectorProp
 
   return (
     <div className="flex items-center gap-2">
-      <select
-        value={selectedPeriodId ?? ''}
-        onChange={handleChange}
+      <Select
+        items={periodItems}
+        value={selectedPeriodId}
+        onValueChange={handleChange}
         disabled={isPending}
-        aria-label={t('selectAriaLabel')}
-        className="h-9 max-w-[11rem] truncate rounded-md border border-border bg-surface pl-2.5 pr-8 text-sm font-medium text-foreground shadow-xs transition-colors hover:border-input/60 focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50 sm:max-w-none"
       >
-        {periods.map((period) => (
-          <option key={period.id} value={period.id}>
-            {period.id === currentPeriodId ? `${period.name} — ${t('current')}` : period.name}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger
+          aria-label={t('selectAriaLabel')}
+          className="h-9 w-auto max-w-[11rem] rounded-md border-border bg-surface pl-2.5 font-medium text-foreground shadow-xs transition-colors hover:border-input/60 sm:max-w-none"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {periodItems.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {currentPeriodId === null && (
         <span className="hidden text-xs text-warning lg:inline">{t('betweenYears')}</span>
       )}

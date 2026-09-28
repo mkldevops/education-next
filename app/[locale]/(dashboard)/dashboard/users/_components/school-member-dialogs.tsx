@@ -10,6 +10,10 @@ import {
   DialogTrigger,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
@@ -49,7 +53,13 @@ function ChangeSchoolMemberRoleForm({ userId, role }: { userId: string; role: Sc
   const tRoles = useTranslations('roles')
   const router = useRouter()
   const { isPending, close, onSubmit } = useDialogForm(t)
-  const [selectedRole, setSelectedRole] = useState(role)
+  const roleItems: Array<{ value: SchoolRole; label: string }> = [
+    { value: 'ADMIN', label: tRoles('ADMIN') },
+    { value: 'PARENT', label: tRoles('PARENT') },
+  ]
+  const [selectedRole, setSelectedRole] = useState<SchoolRole>(
+    roleItems.some((item) => item.value === role) ? role : 'ADMIN'
+  )
 
   const handleSubmit = onSubmit(() => changeSchoolMemberRoleAction(userId, selectedRole), {
     successKey: 'memberRoleUpdated',
@@ -62,13 +72,21 @@ function ChangeSchoolMemberRoleForm({ userId, role }: { userId: string; role: Sc
         <div className="space-y-2">
           <Label htmlFor="school-member-role">{t('newRole')}</Label>
           <Select
-            id="school-member-role"
+            items={roleItems}
             value={selectedRole}
-            onChange={(event) => setSelectedRole(event.target.value as SchoolRole)}
+            onValueChange={(value) => value !== null && setSelectedRole(value)}
             disabled={isPending}
           >
-            <option value="ADMIN">{tRoles('ADMIN')}</option>
-            <option value="PARENT">{tRoles('PARENT')}</option>
+            <SelectTrigger id="school-member-role">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {roleItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
       </DialogBody>

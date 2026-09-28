@@ -12,6 +12,10 @@ import {
   Input,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
@@ -97,6 +101,13 @@ function CreateStudentForm({
   const [enroll, setEnroll] = useState(canEnroll)
   const [planId, setPlanId] = useState(plans[0]?.id ?? '')
   const [totalAmount, setTotalAmount] = useState(plans[0]?.amount ?? 0)
+  const sexItems = [
+    { value: null, label: t('unspecified') },
+    { value: 'MALE', label: t('male') },
+    { value: 'FEMALE', label: t('female') },
+  ]
+  const planItems = plans.map((p) => ({ value: p.id, label: p.name }))
+  const classItems = classes.map((c) => ({ value: c.id, label: c.name }))
 
   const handleSubmit = onSubmit(
     (formData) =>
@@ -165,10 +176,17 @@ function CreateStudentForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="student-sex">{t('sex')}</Label>
-              <Select id="student-sex" name="sex" disabled={isPending}>
-                <option value="">{t('unspecified')}</option>
-                <option value="MALE">{t('male')}</option>
-                <option value="FEMALE">{t('female')}</option>
+              <Select name="sex" items={sexItems} disabled={isPending} defaultValue={null}>
+                <SelectTrigger id="student-sex">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sexItems.map((item) => (
+                    <SelectItem key={item.value ?? ''} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
@@ -222,33 +240,50 @@ function CreateStudentForm({
                       <div className="space-y-2">
                         <Label htmlFor="student-plan">{t('selectPlan')}</Label>
                         <Select
-                          id="student-plan"
                           name="planId"
+                          items={planItems}
                           required
                           disabled={isPending}
                           value={planId}
-                          onChange={(event) => {
-                            const selected = plans.find((plan) => plan.id === event.target.value)
-                            setPlanId(event.target.value)
+                          onValueChange={(value) => {
+                            const nextPlanId = value ?? ''
+                            const selected = plans.find((plan) => plan.id === nextPlanId)
+                            setPlanId(nextPlanId)
                             setTotalAmount(selected?.amount ?? 0)
                           }}
                         >
-                          {plans.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
+                          <SelectTrigger id="student-plan">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {planItems.map((item) => (
+                              <SelectItem key={item.value} value={item.value}>
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                       </div>
                     )}
                     <div className="space-y-2">
                       <Label htmlFor="student-class">{t('selectClass')}</Label>
-                      <Select id="student-class" name="classPeriodId" required disabled={isPending}>
-                        {classes.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
+                      <Select
+                        name="classPeriodId"
+                        items={classItems}
+                        required
+                        disabled={isPending}
+                        defaultValue={classItems[0]?.value}
+                      >
+                        <SelectTrigger id="student-class">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {classItems.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                       </Select>
                     </div>
                   </div>

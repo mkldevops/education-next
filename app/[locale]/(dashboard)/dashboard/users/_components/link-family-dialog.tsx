@@ -10,6 +10,10 @@ import {
   DialogTrigger,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
@@ -52,6 +56,7 @@ function LinkFamilyForm({ userId, families, onLinked }: Props) {
   const router = useRouter()
   const { isPending, close, onSubmit } = useDialogForm(t)
   const [familyId, setFamilyId] = useState(families[0]?.id ?? '')
+  const familyItems = families.map((family) => ({ value: family.id, label: family.name }))
 
   const handleSubmit = onSubmit(() => linkUserFamilyAction({ id: userId, familyId }), {
     successKey: 'familyLinked',
@@ -67,16 +72,21 @@ function LinkFamilyForm({ userId, families, onLinked }: Props) {
         <div className="space-y-2">
           <Label htmlFor="link-family">{t('family')}</Label>
           <Select
-            id="link-family"
+            items={familyItems}
             value={familyId}
-            onChange={(e) => setFamilyId(e.target.value)}
+            onValueChange={(value) => setFamilyId(value ?? '')}
             disabled={isPending}
           >
-            {families.map((family) => (
-              <option key={family.id} value={family.id}>
-                {family.name}
-              </option>
-            ))}
+            <SelectTrigger id="link-family">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {familyItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
       </DialogBody>

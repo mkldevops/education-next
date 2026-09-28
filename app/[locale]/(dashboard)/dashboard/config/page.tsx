@@ -2,10 +2,12 @@ import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { readsAsEnabled } from '@/domain/feature-flags'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { teacherGateway } from '@/gateways/teacher-gateway'
 import { formatDateTime } from '@/lib/date'
 import { db } from '@/lib/db'
+import { PAYMENTS_ENABLED_CONFIG_KEY } from '@/lib/payment-config'
 import { SCHOOL_CONFIG_KEYS, SCHOOL_CONFIG_VALUE_TYPES } from '@/lib/school-config'
 import { SCHOOL_CONFIG_DEFAULTS } from '@/lib/school-config-defaults'
 import { isSecretEncryptionConfigured } from '@/lib/secret-crypto'
@@ -110,13 +112,11 @@ export default async function ConfigPage({ params }: Props) {
         <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
       </div>
 
-      <SchoolSettingsPanel
-        settings={settings}
-        paymentFootprint={paymentFootprint}
-        teacherExpenseCount={teacherExpenseCount}
-      />
+      <SchoolSettingsPanel settings={settings} teacherExpenseCount={teacherExpenseCount} />
 
       <StripeSettingsSection
+        paymentsEnabled={readsAsEnabled(storedValues.get(PAYMENTS_ENABLED_CONFIG_KEY))}
+        paymentFootprint={paymentFootprint}
         settings={stripeSettings}
         webhookUrl={`${appUrl}${stripeWebhookPath(schoolId)}`}
         secretStorageConfigured={isSecretEncryptionConfigured()}

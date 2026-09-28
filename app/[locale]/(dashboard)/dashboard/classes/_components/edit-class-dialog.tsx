@@ -12,6 +12,10 @@ import {
   Label,
   MultiSelect,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
@@ -68,6 +72,7 @@ function EditClassForm({ classItem, levels, teachers }: EditClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.edit')
   const tCreate = useTranslations('dashboard.pages.classes.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
+  const levelItems = levels.map((level) => ({ value: level.id, label: level.name }))
 
   const handleSubmit = onSubmit((formData) =>
     updateClassPeriodAction(classItem.id, {
@@ -96,17 +101,22 @@ function EditClassForm({ classItem, levels, teachers }: EditClassDialogProps) {
           <div className="space-y-2">
             <Label htmlFor="edit-class-level">{tCreate('selectLevel')}</Label>
             <Select
-              id="edit-class-level"
               name="levelId"
+              items={levelItems}
               defaultValue={classItem.levelId}
               required
               disabled={isPending}
             >
-              {levels.map((level) => (
-                <option key={level.id} value={level.id}>
-                  {level.name}
-                </option>
-              ))}
+              <SelectTrigger id="edit-class-level">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {levelItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">

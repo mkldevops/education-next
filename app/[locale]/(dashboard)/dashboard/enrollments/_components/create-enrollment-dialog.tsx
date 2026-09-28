@@ -14,6 +14,10 @@ import {
   Input,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   useDialog,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
@@ -101,6 +105,9 @@ function CreateEnrollmentForm({
   const [planId, setPlanId] = useState(plans[0]?.id ?? '')
   const [totalAmount, setTotalAmount] = useState(plans[0]?.amount ?? 0)
   const router = useRouter()
+  const classItems = classes.map((c) => ({ value: c.id, label: c.name }))
+  const studentItems = students.map((s) => ({ value: s.id, label: s.name }))
+  const planItems = plans.map((p) => ({ value: p.id, label: p.name }))
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -132,16 +139,22 @@ function CreateEnrollmentForm({
     <div className="space-y-2">
       <Label htmlFor="enroll-class">{t('selectClass')}</Label>
       <Select
-        id="enroll-class"
         name="classPeriodId"
+        items={classItems}
         required
         disabled={isPending || classes.length === 0}
+        defaultValue={classItems[0]?.value}
       >
-        {classes.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
+        <SelectTrigger id="enroll-class">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {classItems.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
       </Select>
       {classes.length === 0 && <p className="text-xs text-amber-700">{t('noClassInPeriod')}</p>}
     </div>
@@ -156,12 +169,23 @@ function CreateEnrollmentForm({
           ) : (
             <div className="space-y-2">
               <Label htmlFor="enroll-student">{t('selectStudent')}</Label>
-              <Select id="enroll-student" name="studentId" required disabled={isPending}>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
+              <Select
+                name="studentId"
+                items={studentItems}
+                required
+                disabled={isPending}
+                defaultValue={studentItems[0]?.value}
+              >
+                <SelectTrigger id="enroll-student">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {studentItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           )}
@@ -170,22 +194,27 @@ function CreateEnrollmentForm({
               <div className="space-y-2">
                 <Label htmlFor="enroll-plan">{t('selectPlan')}</Label>
                 <Select
-                  id="enroll-plan"
                   name="planId"
+                  items={planItems}
                   required
                   disabled={isPending}
                   value={planId}
-                  onChange={(event) => {
-                    const selected = plans.find((plan) => plan.id === event.target.value)
-                    setPlanId(event.target.value)
+                  onValueChange={(value) => {
+                    const selected = plans.find((plan) => plan.id === value)
+                    setPlanId(value ?? '')
                     setTotalAmount(selected?.amount ?? 0)
                   }}
                 >
-                  {plans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
+                  <SelectTrigger id="enroll-plan">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {planItems.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               {classSelect}

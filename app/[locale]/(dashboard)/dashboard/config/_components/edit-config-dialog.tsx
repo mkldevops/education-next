@@ -11,6 +11,10 @@ import {
   Input,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
@@ -61,6 +65,12 @@ function EditConfigForm({ config }: Pick<EditConfigDialogProps, 'config'>) {
   const tVisibility = useTranslations('dashboard.pages.config.settings.class_schedule_visibility')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
+  const visibilityItems = [
+    { value: ClassScheduleVisibility.Internal, label: tVisibility('internal') },
+    { value: ClassScheduleVisibility.Public, label: tVisibility('public') },
+  ]
+  const visibilityDefault =
+    visibilityItems.find((item) => item.value === config.value)?.value ?? visibilityItems[0]?.value
 
   const handleSubmit = onSubmit(
     (formData) =>
@@ -86,13 +96,21 @@ function EditConfigForm({ config }: Pick<EditConfigDialogProps, 'config'>) {
               />
             ) : config.name === CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY ? (
               <Select
-                id="edit-config-value"
                 name="value"
-                defaultValue={config.value}
+                items={visibilityItems}
+                defaultValue={visibilityDefault}
                 disabled={isPending}
               >
-                <option value={ClassScheduleVisibility.Internal}>{tVisibility('internal')}</option>
-                <option value={ClassScheduleVisibility.Public}>{tVisibility('public')}</option>
+                <SelectTrigger id="edit-config-value">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {visibilityItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             ) : (
               <Input

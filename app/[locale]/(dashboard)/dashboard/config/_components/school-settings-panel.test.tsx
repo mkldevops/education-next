@@ -28,12 +28,7 @@ const settings: SchoolSetting[] = [
 
 /** Une école sans empreinte : aucune confirmation ne s'arme, sauf mention contraire. */
 const Panel = (props: Partial<Parameters<typeof SchoolSettingsPanel>[0]> = {}) => (
-  <SchoolSettingsPanel
-    settings={settings}
-    paymentFootprint={{ payments: 0, pendingTransactions: 0 }}
-    teacherExpenseCount={0}
-    {...props}
-  />
+  <SchoolSettingsPanel settings={settings} teacherExpenseCount={0} {...props} />
 )
 
 describe('SchoolSettingsPanel', () => {
@@ -74,26 +69,10 @@ describe('SchoolSettingsPanel', () => {
     )
   })
 
-  it('asks before cutting payments off a school that already holds one', async () => {
-    render(<Panel paymentFootprint={{ payments: 3, pendingTransactions: 0 }} />)
-
-    fireEvent.click(screen.getByLabelText('settings.payments_enabled.label'))
-
-    expect(
-      await screen.findByText('settings.payments_enabled.confirmDisable.title')
-    ).toBeInTheDocument()
-    expect(setConfigAction).not.toHaveBeenCalled()
-  })
-
-  it('cuts payments straight off a school that never took any', async () => {
-    vi.mocked(setConfigAction).mockResolvedValue({} as never)
+  it('leaves payment management to the Payments section', () => {
     render(<Panel />)
 
-    fireEvent.click(screen.getByLabelText('settings.payments_enabled.label'))
-
-    await waitFor(() =>
-      expect(setConfigAction).toHaveBeenCalledWith({ name: 'payments_enabled', value: 'false' })
-    )
+    expect(screen.queryByText('settings.payments_enabled.label')).not.toBeInTheDocument()
   })
 
   it('keeps schedule-dependent settings hidden and inactive until scheduling is enabled', () => {

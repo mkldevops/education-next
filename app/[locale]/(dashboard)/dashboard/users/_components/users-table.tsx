@@ -1,6 +1,15 @@
 'use client'
 
-import { Button, RichDataTable, Select, StatusBadge } from '@peaklab/ui'
+import {
+  Button,
+  RichDataTable,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  StatusBadge,
+} from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -45,6 +54,8 @@ interface Props {
 
 const ROLE_VALUES: SchoolRole[] = ['ADMIN', 'PARENT', 'TEACHER']
 
+type StatusFilter = 'ALL' | 'ACTIVE' | 'ARCHIVED'
+
 export function UsersTable({
   members,
   canManagePlatform,
@@ -58,7 +69,17 @@ export function UsersTable({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [roleFilter, setRoleFilter] = useState<'ALL' | SchoolRole>('ALL')
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'ARCHIVED'>('ALL')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
+
+  const roleItems: Array<{ value: 'ALL' | SchoolRole; label: string }> = [
+    { value: 'ALL', label: t('schoolRoleAll') },
+    ...ROLE_VALUES.map((role) => ({ value: role, label: tRoles(role) })),
+  ]
+  const statusItems: Array<{ value: StatusFilter; label: string }> = [
+    { value: 'ALL', label: t('statusAll') },
+    { value: 'ACTIVE', label: t('active') },
+    { value: 'ARCHIVED', label: t('inactive') },
+  ]
 
   const selectedMember = members.find((member) => member.userId === selectedId) ?? null
 
@@ -184,27 +205,36 @@ export function UsersTable({
             <legend className="sr-only">{t('filters')}</legend>
             <span className="mr-2 text-sm font-medium text-graphite-600">{t('filters')}</span>
             <Select
+              items={roleItems}
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as 'ALL' | SchoolRole)}
-              aria-label={t('filterRole')}
-              className="w-auto"
+              onValueChange={(value) => value !== null && setRoleFilter(value)}
             >
-              <option value="ALL">{t('schoolRoleAll')}</option>
-              {ROLE_VALUES.map((role) => (
-                <option key={role} value={role}>
-                  {tRoles(role)}
-                </option>
-              ))}
+              <SelectTrigger aria-label={t('filterRole')} className="w-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {roleItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
             <Select
+              items={statusItems}
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'ARCHIVED')}
-              aria-label={t('filterStatus')}
-              className="w-auto"
+              onValueChange={(value) => value !== null && setStatusFilter(value)}
             >
-              <option value="ALL">{t('statusAll')}</option>
-              <option value="ACTIVE">{t('active')}</option>
-              <option value="ARCHIVED">{t('inactive')}</option>
+              <SelectTrigger aria-label={t('filterStatus')} className="w-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </fieldset>
         }

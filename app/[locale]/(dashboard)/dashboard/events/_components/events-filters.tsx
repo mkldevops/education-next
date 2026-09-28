@@ -1,6 +1,6 @@
 'use client'
 
-import { Select } from '@peaklab/ui'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@peaklab/ui'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { usePathname, useRouter } from '@/i18n/routing'
@@ -27,20 +27,28 @@ export function EventsFilters() {
     router.push(query ? `${pathname}?${query}` : pathname)
   }
 
+  const categoryItems = [
+    { value: null, label: t('all') },
+    ...EVENT_CATEGORY_VALUES.map((category) => ({ value: category, label: tCategory(category) })),
+  ]
+
   return (
     <div className="flex flex-wrap gap-2">
       <Select
-        value={searchParams.get('category') ?? ''}
-        onChange={(e) => updateParam('category', e.target.value)}
-        aria-label={t('category')}
-        className="w-auto"
+        items={categoryItems}
+        value={searchParams.get('category') || null}
+        onValueChange={(value) => updateParam('category', value ?? '')}
       >
-        <option value="">{t('all')}</option>
-        {EVENT_CATEGORY_VALUES.map((category) => (
-          <option key={category} value={category}>
-            {tCategory(category)}
-          </option>
-        ))}
+        <SelectTrigger aria-label={t('category')} className="w-auto">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {categoryItems.map((item) => (
+            <SelectItem key={item.value ?? ''} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
       </Select>
     </div>
   )

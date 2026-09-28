@@ -1118,7 +1118,7 @@
         },
         "stripe": {
           "title": "Paiements",
-          "description": "Paiement en ligne par Stripe pour les familles de l'école active.",
+          "description": "Suivi des paiements de l'école active et paiement en ligne par Stripe.",
           "toggle": {
             "label": "Paiement en ligne (Stripe)",
             "description": "Propose aux parents de régler leur solde en ligne depuis leur espace.",
@@ -1515,6 +1515,13 @@
         "confirm": "Confirmer",
         "cancel": "Annuler",
         "noUsers": "Aucun utilisateur enregistré",
+        "empty": {
+          "title": "Aucun utilisateur pour le moment",
+          "description": "Invitez les administrateurs, enseignants et parents de l'école pour leur donner accès.",
+          "filteredTitle": "Aucun utilisateur ne correspond",
+          "filteredDescription": "Aucun résultat avec ces filtres. Modifiez-les ou réinitialisez-les.",
+          "clearFilters": "Réinitialiser les filtres"
+        },
         "userDeactivated": "Utilisateur désactivé",
         "error": "Une erreur est survenue",
         "invite": {
@@ -2345,6 +2352,7 @@
         "thinking": "L'assistant travaille…",
         "you": "Vous",
         "assistant": "Assistant",
+        "scrollToEnd": "Aller au dernier message",
         "fileErrors": {
           "type": "Seuls les fichiers PNG, JPEG et WebP sont acceptés.",
           "size": "Chaque photo doit faire moins de {size} Mo.",

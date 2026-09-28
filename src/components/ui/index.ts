@@ -80,6 +80,25 @@ export {
   type TextareaProps,
 } from './input'
 // Multi Select
+export {
+  Message,
+  MessageAvatar,
+  MessageContent,
+  MessageFooter,
+  MessageGroup,
+  MessageHeader,
+} from './message'
+export {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+  useMessageScroller,
+  useMessageScrollerScrollable,
+  useMessageScrollerVisibility,
+} from './message-scroller'
 export { MultiSelect, type MultiSelectOption, type MultiSelectProps } from './multi-select'
 // Page Header
 export { PageHeader, type PageHeaderProps } from './page-header'
@@ -90,7 +109,17 @@ export {
   type RichDataTableProps,
 } from './rich-data-table'
 // Select
-export { Select, type SelectProps } from './select'
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  type SelectProps,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from './select'
 // Status Badge
 export { StatusBadge, type StatusBadgeProps, statusBadgeVariants } from './status-badge'
 // Tabs

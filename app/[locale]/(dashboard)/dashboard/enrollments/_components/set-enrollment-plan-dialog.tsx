@@ -10,6 +10,10 @@ import {
   DialogTrigger,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
@@ -57,6 +61,7 @@ function SetPlanForm({ enrollmentId, plans }: SetEnrollmentPlanDialogProps) {
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const planItems = plans.map((p) => ({ value: p.id, label: p.name }))
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -81,12 +86,23 @@ function SetPlanForm({ enrollmentId, plans }: SetEnrollmentPlanDialogProps) {
       <DialogBody>
         <div className="space-y-2">
           <Label htmlFor="set-plan-select">{t('selectPlan')}</Label>
-          <Select id="set-plan-select" name="planId" required disabled={isPending}>
-            {plans.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+          <Select
+            name="planId"
+            items={planItems}
+            required
+            disabled={isPending}
+            defaultValue={planItems[0]?.value}
+          >
+            <SelectTrigger id="set-plan-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {planItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
       </DialogBody>

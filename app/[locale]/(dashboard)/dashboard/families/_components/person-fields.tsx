@@ -1,6 +1,14 @@
 'use client'
 
-import { Input, Label, Select } from '@peaklab/ui'
+import {
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@peaklab/ui'
 import type { useTranslations } from 'next-intl'
 import type { EditablePerson } from './edit-person-dialog'
 
@@ -12,6 +20,19 @@ interface PersonFieldsProps {
 }
 
 export function PersonFields({ t, idPrefix, isPending, defaults }: PersonFieldsProps) {
+  const sexItems = [
+    { value: null, label: t('unspecified') },
+    { value: 'MALE', label: t('male') },
+    { value: 'FEMALE', label: t('female') },
+  ]
+  const relationItems = [
+    { value: 'PARENT', label: t('parent') },
+    { value: 'TUTOR', label: t('tutor') },
+    { value: 'GRANDPARENT', label: t('grandparent') },
+    { value: 'SIBLING', label: t('sibling') },
+    { value: 'OTHER', label: t('other') },
+  ]
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -42,30 +63,42 @@ export function PersonFields({ t, idPrefix, isPending, defaults }: PersonFieldsP
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-sex`}>{t('sex')}</Label>
           <Select
-            id={`${idPrefix}-sex`}
             name="sex"
-            defaultValue={defaults?.sex ?? ''}
+            items={sexItems}
+            defaultValue={defaults?.sex ?? null}
             disabled={isPending}
           >
-            <option value="">{t('unspecified')}</option>
-            <option value="MALE">{t('male')}</option>
-            <option value="FEMALE">{t('female')}</option>
+            <SelectTrigger id={`${idPrefix}-sex`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {sexItems.map((item) => (
+                <SelectItem key={item.value ?? ''} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-relation`}>{t('relationType')}</Label>
           <Select
-            id={`${idPrefix}-relation`}
             name="relationType"
+            items={relationItems}
             required
-            defaultValue={defaults?.relationType}
+            defaultValue={defaults?.relationType ?? relationItems[0]?.value}
             disabled={isPending}
           >
-            <option value="PARENT">{t('parent')}</option>
-            <option value="TUTOR">{t('tutor')}</option>
-            <option value="GRANDPARENT">{t('grandparent')}</option>
-            <option value="SIBLING">{t('sibling')}</option>
-            <option value="OTHER">{t('other')}</option>
+            <SelectTrigger id={`${idPrefix}-relation`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {relationItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
       </div>

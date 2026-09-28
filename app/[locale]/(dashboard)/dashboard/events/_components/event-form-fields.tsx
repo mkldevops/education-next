@@ -1,6 +1,15 @@
 'use client'
 
-import { Input, Label, Select, Textarea } from '@peaklab/ui'
+import {
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { type ReactNode, useState } from 'react'
 import type { EventCategory, EventVisibility } from '@/generated/prisma/client'
@@ -68,6 +77,14 @@ export function EventFormFields({
   const t = useTranslations('dashboard.pages.events')
   const tCategory = useTranslations('eventCategory')
   const tVisibility = useTranslations('eventVisibility')
+  const categoryItems = EVENT_CATEGORY_VALUES.map((category) => ({
+    value: category,
+    label: tCategory(category),
+  }))
+  const visibilityItems = EVENT_VISIBILITY_VALUES.map((visibility) => ({
+    value: visibility,
+    label: tVisibility(visibility),
+  }))
 
   return (
     <div className="space-y-4">
@@ -86,32 +103,42 @@ export function EventFormFields({
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-category`}>{t('fields.category')}</Label>
           <Select
-            id={`${idPrefix}-category`}
             name="category"
-            defaultValue={defaults.category}
+            items={categoryItems}
+            defaultValue={defaults.category ?? categoryItems[0]?.value}
             required
             disabled={isPending}
           >
-            {EVENT_CATEGORY_VALUES.map((category) => (
-              <option key={category} value={category}>
-                {tCategory(category)}
-              </option>
-            ))}
+            <SelectTrigger id={`${idPrefix}-category`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {categoryItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-visibility`}>{t('fields.visibility')}</Label>
           <Select
-            id={`${idPrefix}-visibility`}
             name="visibility"
+            items={visibilityItems}
             defaultValue={defaults.visibility}
             disabled={isPending}
           >
-            {EVENT_VISIBILITY_VALUES.map((visibility) => (
-              <option key={visibility} value={visibility}>
-                {tVisibility(visibility)}
-              </option>
-            ))}
+            <SelectTrigger id={`${idPrefix}-visibility`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {visibilityItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
       </div>

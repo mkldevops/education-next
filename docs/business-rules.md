@@ -1439,10 +1439,12 @@ amounts, nor the progress bar (`child-card.tsx`), and its activity feed drops pa
 (`activity-feed.tsx`); only enrollment status and class remain. With payments
 on, the reserved `__unpriced__` plan renders as the « À tarifer » badge, never under its stored name.
 
-The write surface is the row `payments_enabled` owns in the **School settings** panel of
-`/dashboard/config`, open to a school `ADMIN`. The closed key list (`SCHOOL_CONFIG_KEYS`) already
-renders one toggle per boolean and writes through `setConfigAction`, so no dedicated action exists:
-a second screen for one value, accepting any string, is the mistake `school_name` already taught.
+The write surface is the first row of the **Paiements** section of `/dashboard/config`
+(`stripe-settings-section.tsx`), open to a school `ADMIN`; the **School settings** panel skips the
+key. It still writes through `setConfigAction` over the closed key list (`SCHOOL_CONFIG_KEYS`), so no
+dedicated action exists: a second screen for one value, accepting any string, is the mistake
+`school_name` already taught. The Stripe rows below it collapse while payments are off, mirroring
+the server, where `payments_enabled` wins over `stripe_enabled`.
 
 **Two flags confirm before cutting**, because they make already-recorded state invisible:
 `payments_enabled` counts payments and `PENDING` transactions (`paymentGateway.countFootprint`),
