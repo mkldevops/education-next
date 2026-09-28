@@ -12,6 +12,10 @@ import {
   Label,
   MultiSelect,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -64,6 +68,8 @@ export function CreateClassDialog({
 function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
+  const levelItems = levels.map((l) => ({ value: l.id, label: l.name }))
+  const periodItems = periods.map((p) => ({ value: p.id, label: p.name }))
 
   const handleSubmit = onSubmit((formData) =>
     createClassPeriodAction({
@@ -105,22 +111,44 @@ function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateC
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="class-level">{t('selectLevel')}</Label>
-              <Select id="class-level" name="levelId" required disabled={isPending}>
-                {levels.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
+              <Select
+                name="levelId"
+                items={levelItems}
+                required
+                disabled={isPending}
+                defaultValue={levelItems[0]?.value}
+              >
+                <SelectTrigger id="class-level">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {levelItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="class-period">{t('selectPeriod')}</Label>
-              <Select id="class-period" name="periodId" required disabled={isPending}>
-                {periods.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
+              <Select
+                name="periodId"
+                items={periodItems}
+                required
+                disabled={isPending}
+                defaultValue={periodItems[0]?.value}
+              >
+                <SelectTrigger id="class-period">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </div>

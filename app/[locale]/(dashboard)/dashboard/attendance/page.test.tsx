@@ -30,7 +30,8 @@ vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
   setRequestLocale: () => {},
 }))
-vi.mock('@peaklab/ui', () => ({
+vi.mock('@peaklab/ui', async () => ({
+  ...(await vi.importActual<typeof import('@/components/ui/select')>('@/components/ui/select')),
   Breadcrumbs: ({ items }: { items: { label: string }[] }) => (
     <nav>{items.map((item) => item.label).join(' ')}</nav>
   ),
@@ -57,8 +58,11 @@ vi.mock('@peaklab/ui', () => ({
 }))
 vi.mock('lucide-react', () => ({
   CalendarDays: () => null,
+  Check: () => null,
+  ChevronDown: () => null,
   ChevronLeft: () => null,
   ChevronRight: () => null,
+  ChevronUp: () => null,
 }))
 vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
@@ -150,8 +154,10 @@ describe('AttendanceTrackingPage', () => {
       })
     )
     expect(container.querySelector('main')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('class')).toHaveValue('')
-    expect(screen.getByLabelText('teacher')).toHaveValue('')
+    expect(screen.getByLabelText('class')).toHaveTextContent('allClasses')
+    expect(screen.getByLabelText('teacher')).toHaveTextContent('allTeachers')
+    expect(container.querySelector('input[name="classId"]')).toHaveValue('')
+    expect(container.querySelector('input[name="teacherId"]')).toHaveValue('')
     expect(screen.getByText('cancelledCalls').parentElement).toHaveTextContent('1')
     expect(screen.getByText('expectedCalls').parentElement).toHaveTextContent('1')
     expect(screen.getByText('sessionCancelled')).toBeInTheDocument()

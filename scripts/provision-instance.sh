@@ -131,6 +131,7 @@ envs.update({
     'DATABASE_URL': db._replace(path=f'/{slug}').geturl(),
     'S3_BUCKET': f'education-next-{slug}',
     'BETTER_AUTH_SECRET': secrets.token_hex(32),
+    'SETTINGS_ENCRYPTION_KEY': secrets.token_hex(32),
     'BETTER_AUTH_URL': f'https://{domain}',
     'NEXT_PUBLIC_APP_URL': f'https://{domain}',
     'NEXT_PUBLIC_APP_DOMAIN': domain,

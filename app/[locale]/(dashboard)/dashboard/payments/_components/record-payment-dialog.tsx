@@ -13,6 +13,10 @@ import {
   Input,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
 import { ArrowLeftRight, Banknote, CreditCard, FileCheck, Plus } from 'lucide-react'
@@ -84,6 +88,7 @@ function RecordPaymentForm({
   const { isPending, close, onSubmit } = useDialogForm(t)
   const [method, setMethod] = useState<ManualPaymentMethod>('CASH')
   const [amount, setAmount] = useState('')
+  const familyItems = families.map((family) => ({ value: family.id, label: family.name }))
   const router = useRouter()
 
   const handleSubmit = onSubmit(
@@ -111,12 +116,23 @@ function RecordPaymentForm({
           ) : (
             <div className="space-y-2">
               <Label htmlFor="payment-family">{t('selectFamily')}</Label>
-              <Select id="payment-family" name="familyId" required disabled={isPending}>
-                {families.map((family) => (
-                  <option key={family.id} value={family.id}>
-                    {family.name}
-                  </option>
-                ))}
+              <Select
+                name="familyId"
+                items={familyItems}
+                required
+                disabled={isPending}
+                defaultValue={familyItems[0]?.value}
+              >
+                <SelectTrigger id="payment-family">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {familyItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           )}

@@ -11,6 +11,10 @@ import {
   Input,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -50,6 +54,7 @@ export function CreateExpenseDialog({ teachers }: CreateExpenseDialogProps) {
 function CreateExpenseForm({ teachers }: CreateExpenseDialogProps) {
   const t = useTranslations('dashboard.pages.teachers.expenses.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
+  const teacherItems = teachers.map((teacher) => ({ value: teacher.id, label: teacher.name }))
 
   const handleSubmit = onSubmit((formData) => {
     const requestedAt = new Date(formData.get('requestedAt') as string)
@@ -72,16 +77,22 @@ function CreateExpenseForm({ teachers }: CreateExpenseDialogProps) {
           <div className="space-y-2">
             <Label htmlFor="expense-teacher">{t('teacher')}</Label>
             <Select
-              id="expense-teacher"
               name="teacherId"
+              items={teacherItems}
               required
               disabled={isPending || teachers.length === 0}
+              defaultValue={teacherItems[0]?.value}
             >
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}
-                </option>
-              ))}
+              <SelectTrigger id="expense-teacher">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {teacherItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">

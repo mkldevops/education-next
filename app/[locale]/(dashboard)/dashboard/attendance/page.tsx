@@ -1,4 +1,15 @@
-import { Breadcrumbs, buttonVariants, Card, EmptyState, StatusBadge } from '@peaklab/ui'
+import {
+  Breadcrumbs,
+  buttonVariants,
+  Card,
+  EmptyState,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  StatusBadge,
+} from '@peaklab/ui'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -224,6 +235,17 @@ export default async function AttendanceTrackingPage({
       slots.some((slot) => slot.id === session.classScheduleSlotId)
   )
   const filtersActive = Boolean(classId || filterTeacherId)
+  const classItems = [
+    { value: null, label: t('allClasses') },
+    ...classes.map((item) => ({ value: item.id, label: item.name })),
+  ]
+  const teacherItems = [
+    { value: null, label: t('allTeachers') },
+    ...teachers.map((item) => ({ value: item.id, label: `${item.firstName} ${item.lastName}` })),
+  ]
+  const selectedClassId = classItems.find((item) => item.value === classId)?.value ?? null
+  const selectedTeacherId =
+    teacherItems.find((item) => item.value === filterTeacherId)?.value ?? null
   const filters = { classId, teacherId: filterTeacherId }
   const errorLabels = {
     validationError: t('errors.validationError'),
@@ -319,36 +341,36 @@ export default async function AttendanceTrackingPage({
                 defaultValue={dateParam(selectedDate)}
               />
             </label>
-            <label className="grid gap-1 text-sm font-medium text-graphite">
-              {t('class')}
-              <select
-                className="h-10 rounded border border-alabaster-600 bg-white px-3 text-sm"
-                name="classId"
-                defaultValue={classId ?? ''}
-              >
-                <option value="">{t('allClasses')}</option>
-                {classes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm font-medium text-graphite">
-              {t('teacher')}
-              <select
-                className="h-10 rounded border border-alabaster-600 bg-white px-3 text-sm"
-                name="teacherId"
-                defaultValue={filterTeacherId ?? ''}
-              >
-                <option value="">{t('allTeachers')}</option>
-                {teachers.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.firstName} {item.lastName}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="grid gap-1 text-sm font-medium text-graphite">
+              <label htmlFor="attendance-class">{t('class')}</label>
+              <Select name="classId" items={classItems} defaultValue={selectedClassId}>
+                <SelectTrigger id="attendance-class" className="border-alabaster-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {classItems.map((item) => (
+                    <SelectItem key={item.value ?? ''} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1 text-sm font-medium text-graphite">
+              <label htmlFor="attendance-teacher">{t('teacher')}</label>
+              <Select name="teacherId" items={teacherItems} defaultValue={selectedTeacherId}>
+                <SelectTrigger id="attendance-teacher" className="border-alabaster-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {teacherItems.map((item) => (
+                    <SelectItem key={item.value ?? ''} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex flex-wrap gap-2">
               <button type="submit" className={buttonVariants({ className: 'min-h-11' })}>
                 {t('applyFilters')}

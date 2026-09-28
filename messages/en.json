@@ -1117,7 +1117,7 @@
         },
         "stripe": {
           "title": "Payments",
-          "description": "Online payment with Stripe for the families of the active school.",
+          "description": "Payment tracking for the active school and online payment with Stripe.",
           "toggle": {
             "label": "Online payment (Stripe)",
             "description": "Lets parents pay their balance online from their space.",
@@ -1514,6 +1514,13 @@
         "confirm": "Confirm",
         "cancel": "Cancel",
         "noUsers": "No users found",
+        "empty": {
+          "title": "No users yet",
+          "description": "Invite the school's administrators, teachers and parents to give them access.",
+          "filteredTitle": "No matching users",
+          "filteredDescription": "No results with these filters. Change or clear them.",
+          "clearFilters": "Clear filters"
+        },
         "userDeactivated": "User deactivated",
         "error": "An error occurred",
         "invite": {
@@ -2344,6 +2351,7 @@
         "thinking": "The assistant is working…",
         "you": "You",
         "assistant": "Assistant",
+        "scrollToEnd": "Jump to the latest message",
         "fileErrors": {
           "type": "Only PNG, JPEG and WebP files are accepted.",
           "size": "Each photo must be under {size} MB.",

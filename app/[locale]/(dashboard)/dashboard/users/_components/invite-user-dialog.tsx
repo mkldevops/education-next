@@ -12,6 +12,10 @@ import {
   Input,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   useDialog,
 } from '@peaklab/ui'
 import { useLocale, useTranslations } from 'next-intl'
@@ -60,6 +64,24 @@ function InviteForm({
   const [isPending, startTransition] = useTransition()
   const [role, setRole] = useState('PARENT')
 
+  const roleItems = [
+    { value: 'PARENT', label: tRoles('PARENT') },
+    { value: 'ADMIN', label: tRoles('ADMIN') },
+    { value: 'TEACHER', label: tRoles('TEACHER') },
+  ]
+  const familyItems: Array<{ value: string | null; label: string }> = [
+    { value: null, label: t('noFamily') },
+    ...families.map((family) => ({ value: family.id, label: family.name })),
+  ]
+  const teacherItems = teachers.map((teacher) => ({
+    value: teacher.id,
+    label: `${teacher.name} — ${teacher.email ?? t('missingTeacherEmail')}`,
+  }))
+  const localeItems = [
+    { value: 'fr', label: 'Français' },
+    { value: 'en', label: 'English' },
+  ]
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
@@ -100,28 +122,39 @@ function InviteForm({
           <div className="space-y-2">
             <Label htmlFor="invite-role">{t('role')}</Label>
             <Select
-              id="invite-role"
               name="role"
+              items={roleItems}
               required
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              onValueChange={(value) => setRole(value ?? '')}
               disabled={isPending}
             >
-              <option value="PARENT">{tRoles('PARENT')}</option>
-              <option value="ADMIN">{tRoles('ADMIN')}</option>
-              <option value="TEACHER">{tRoles('TEACHER')}</option>
+              <SelectTrigger id="invite-role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {roleItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           {role === 'PARENT' && families.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="invite-family">{t('family')}</Label>
-              <Select id="invite-family" name="familyId" defaultValue="" disabled={isPending}>
-                <option value="">{t('noFamily')}</option>
-                {families.map((family) => (
-                  <option key={family.id} value={family.id}>
-                    {family.name}
-                  </option>
-                ))}
+              <Select name="familyId" items={familyItems} defaultValue={null} disabled={isPending}>
+                <SelectTrigger id="invite-family">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {familyItems.map((item) => (
+                    <SelectItem key={item.value ?? ''} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
               <p className="text-xs text-graphite-600">{t('familyHint')}</p>
             </div>
@@ -129,21 +162,40 @@ function InviteForm({
           {role === 'TEACHER' && (
             <div className="space-y-2">
               <Label htmlFor="invite-teacher">{t('teacher')}</Label>
-              <Select id="invite-teacher" name="teacherId" required disabled={isPending}>
-                {teachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.id}>
-                    {teacher.name} — {teacher.email ?? t('missingTeacherEmail')}
-                  </option>
-                ))}
+              <Select
+                name="teacherId"
+                items={teacherItems}
+                required
+                disabled={isPending}
+                defaultValue={teacherItems[0]?.value}
+              >
+                <SelectTrigger id="invite-teacher">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {teacherItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
               <p className="text-xs text-graphite-600">{t('teacherHint')}</p>
             </div>
           )}
           <div className="space-y-2">
             <Label htmlFor="invite-locale">{t('language')}</Label>
-            <Select id="invite-locale" name="locale" defaultValue={locale} disabled={isPending}>
-              <option value="fr">Français</option>
-              <option value="en">English</option>
+            <Select name="locale" items={localeItems} defaultValue={locale} disabled={isPending}>
+              <SelectTrigger id="invite-locale">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {localeItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
         </div>

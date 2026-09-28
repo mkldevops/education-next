@@ -1,1 +1,11 @@
-export { Select, type SelectProps } from './select'
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  type SelectProps,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from './select'

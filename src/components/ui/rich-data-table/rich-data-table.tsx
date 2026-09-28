@@ -20,6 +20,7 @@ import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { Button } from '../button'
 import { Input } from '../input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select'
 import { cn } from '../utils'
 
 export interface RichDataTableLabels {
@@ -241,21 +242,26 @@ export function RichDataTable<T>({
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2 text-sm text-graphite-600">
             <span>{labels.rowsPerPage}</span>
-            <select
+            <Select
+              items={pageSizeOptions.map((size) => ({ value: size, label: String(size) }))}
               value={pagination.pageSize}
-              onChange={(e) => {
-                const size = Number(e.target.value)
+              onValueChange={(size) => {
+                if (size === null) return
                 window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(size))
                 table.setPageSize(size)
               }}
-              className="border border-alabaster-700 rounded px-2 py-1 text-sm bg-white"
             >
-              {pageSizeOptions.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger size="sm" aria-label={labels.rowsPerPage} className="w-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map((size) => (
+                  <SelectItem key={size} value={size}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center gap-3 text-sm text-graphite-600">
             <span>{labels.page(currentPage, totalPages || 1)}</span>

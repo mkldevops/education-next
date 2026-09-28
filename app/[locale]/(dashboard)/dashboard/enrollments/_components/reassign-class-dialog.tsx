@@ -11,6 +11,10 @@ import {
   DialogTrigger,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useDialogForm } from '@/features/forms'
@@ -64,6 +68,7 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
   const router = useRouter()
 
   const availableClasses = classes.filter((c) => c.id !== currentClassId)
+  const classItems = availableClasses.map((c) => ({ value: c.id, label: c.name }))
 
   const handleSubmit = onSubmit(
     (formData) =>
@@ -81,16 +86,22 @@ function ReassignForm({ enrollmentId, currentClassId, classes }: ReassignClassDi
           <div className="space-y-2">
             <Label htmlFor="reassign-class">{t('selectClass')}</Label>
             <Select
-              id="reassign-class"
               name="newClassPeriodId"
+              items={classItems}
               required
               disabled={isPending || availableClasses.length === 0}
+              defaultValue={classItems[0]?.value}
             >
-              {availableClasses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              <SelectTrigger id="reassign-class">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {classItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
             {availableClasses.length === 0 && (
               <p className="text-xs text-amber-700">{t('noClassAvailable')}</p>

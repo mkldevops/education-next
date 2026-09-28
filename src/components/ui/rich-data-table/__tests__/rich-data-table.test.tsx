@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ColumnDef } from '@tanstack/react-table'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { RichDataTable, type RichDataTableLabels } from '../rich-data-table'
 
@@ -67,6 +67,20 @@ describe('RichDataTable', () => {
       />
     )
     expect(screen.getAllByRole('row')).toHaveLength(6)
+  })
+
+  it('changes and remembers the page size picked in the rows-per-page select', async () => {
+    window.localStorage.removeItem('peaklab.table.pageSize')
+    render(<RichDataTable data={rows(30)} columns={columns} labels={labels} emptyMessage="empty" />)
+    expect(screen.getAllByRole('row')).toHaveLength(11)
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Rows per page' }))
+    const option = await screen.findByRole('option', { name: '25' })
+    fireEvent.pointerDown(option)
+    fireEvent.click(option)
+
+    expect(screen.getAllByRole('row')).toHaveLength(26)
+    expect(window.localStorage.getItem('peaklab.table.pageSize')).toBe('25')
   })
 
   it('keeps the "use no memo" directive ahead of every other statement', () => {

@@ -12,6 +12,10 @@ import {
   Input,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
@@ -77,6 +81,10 @@ function EditLevelForm({
   const selectableLevels = allLevels.filter(
     (l) => l.id !== level.id && (l.id === currentNextLevelId || !takenNextLevelIds.includes(l.id))
   )
+  const nextLevelItems = [
+    { value: null, label: t('noNext') },
+    ...selectableLevels.map((l) => ({ value: l.id, label: l.name })),
+  ]
 
   const notify = (result: string) => {
     if (result === 'OK') return true
@@ -133,17 +141,21 @@ function EditLevelForm({
           <div className="space-y-2">
             <Label htmlFor="edit-next-level">{t('selectNextLevel')}</Label>
             <Select
-              id="edit-next-level"
               name="nextLevelId"
-              defaultValue={currentNextLevelId ?? ''}
+              items={nextLevelItems}
+              defaultValue={currentNextLevelId}
               disabled={isPending}
             >
-              <option value="">{t('noNext')}</option>
-              {selectableLevels.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
+              <SelectTrigger id="edit-next-level">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {nextLevelItems.map((item) => (
+                  <SelectItem key={item.value ?? ''} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
             <p className="text-xs text-graphite-600">{t('nextLevelHint')}</p>
           </div>

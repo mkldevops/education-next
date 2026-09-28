@@ -5,10 +5,11 @@ const { toastSuccessMock } = vi.hoisted(() => ({ toastSuccessMock: vi.fn() }))
 
 vi.mock('next-intl', () => ({
   useTranslations: (namespace: string) => (key: string) =>
-    `${namespace.replace('dashboard.pages.config.stripe', 'stripe')}.${key}`,
+    `${namespace.replace('dashboard.pages.config.stripe', 'stripe').replace('dashboard.pages.config', 'config')}.${key}`,
 }))
 vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 vi.mock('@/lib/toast', () => ({ toast: { success: toastSuccessMock, error: vi.fn() } }))
+vi.mock('../../../_lib/config-actions', () => ({ setConfigAction: vi.fn() }))
 vi.mock('../../../_lib/stripe-settings-actions', () => ({
   setStripeEnabledAction: vi.fn(),
   setStripeSecretAction: vi.fn(),
@@ -16,6 +17,7 @@ vi.mock('../../../_lib/stripe-settings-actions', () => ({
 }))
 
 import type { StripeSettings } from '@/use-cases/payments/stripe-settings'
+import { setConfigAction } from '../../../_lib/config-actions'
 import { StripeSettingsSection } from './stripe-settings-section'
 
 const configured: StripeSettings = {
@@ -36,9 +38,22 @@ const incomplete: StripeSettings = {
 }
 const webhookUrl = 'https://school.test/api/stripe/webhook/school-1'
 
-function renderSection(settings: StripeSettings) {
+const paymentsLabel = 'config.settings.payments_enabled.label'
+
+function renderSection(
+  settings: StripeSettings,
+  {
+    paymentsEnabled = true,
+    paymentFootprint = { payments: 0, pendingTransactions: 0 },
+  }: {
+    paymentsEnabled?: boolean
+    paymentFootprint?: { payments: number; pendingTransactions: number }
+  } = {}
+) {
   return render(
     <StripeSettingsSection
+      paymentsEnabled={paymentsEnabled}
+      paymentFootprint={paymentFootprint}
       settings={settings}
       webhookUrl={webhookUrl}
       secretStorageConfigured={true}
@@ -62,16 +77,16 @@ describe('StripeSettingsSection', () => {
   it('locks the toggle and explains why while the configuration is incomplete', () => {
     renderSection(incomplete)
 
-    expect(screen.getByRole('checkbox')).toBeDisabled()
-    expect(screen.getByRole('checkbox')).not.toBeChecked()
+    expect(screen.getByLabelText('stripe.toggle.label')).toBeDisabled()
+    expect(screen.getByLabelText('stripe.toggle.label')).not.toBeChecked()
     expect(screen.getByText('stripe.toggle.incomplete')).toBeInTheDocument()
   })
 
   it('shows Stripe enabled once configured', () => {
     renderSection(configured)
 
-    expect(screen.getByRole('checkbox')).toBeEnabled()
-    expect(screen.getByRole('checkbox')).toBeChecked()
+    expect(screen.getByLabelText('stripe.toggle.label')).toBeEnabled()
+    expect(screen.getByLabelText('stripe.toggle.label')).toBeChecked()
     expect(screen.queryByText('stripe.toggle.incomplete')).not.toBeInTheDocument()
   })
 
@@ -112,5 +127,47 @@ describe('StripeSettingsSection', () => {
 
     await waitFor(() => expect(writeTextMock).toHaveBeenCalledWith(webhookUrl))
     expect(toastSuccessMock).toHaveBeenCalledWith('stripe.webhookUrl.copied')
+  })
+
+  it('collapses the Stripe settings while payment management is off', () => {
+    const { rerender } = renderSection(configured, { paymentsEnabled: false })
+
+    const toggle = screen.getByLabelText('stripe.toggle.label')
+    expect(screen.getByLabelText(paymentsLabel)).not.toBeChecked()
+    expect(toggle.closest('[aria-hidden]')).toHaveAttribute('aria-hidden', 'true')
+
+    rerender(
+      <StripeSettingsSection
+        paymentsEnabled={true}
+        paymentFootprint={{ payments: 0, pendingTransactions: 0 }}
+        settings={configured}
+        webhookUrl={webhookUrl}
+        secretStorageConfigured={true}
+      />
+    )
+
+    expect(toggle.closest('[aria-hidden]')).toHaveAttribute('aria-hidden', 'false')
+  })
+
+  it('asks before cutting payments off a school that already holds one', async () => {
+    renderSection(configured, { paymentFootprint: { payments: 3, pendingTransactions: 0 } })
+
+    fireEvent.click(screen.getByLabelText(paymentsLabel))
+
+    expect(
+      await screen.findByText('config.settings.payments_enabled.confirmDisable.title')
+    ).toBeInTheDocument()
+    expect(setConfigAction).not.toHaveBeenCalled()
+  })
+
+  it('cuts payments straight off a school that never took any', async () => {
+    vi.mocked(setConfigAction).mockResolvedValue({} as never)
+    renderSection(configured)
+
+    fireEvent.click(screen.getByLabelText(paymentsLabel))
+
+    await waitFor(() =>
+      expect(setConfigAction).toHaveBeenCalledWith({ name: 'payments_enabled', value: 'false' })
+    )
   })
 })

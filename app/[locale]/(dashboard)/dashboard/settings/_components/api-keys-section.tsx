@@ -1,6 +1,16 @@
 'use client'
 
-import { Button, Card, Input, Label, Select } from '@peaklab/ui'
+import {
+  Button,
+  Card,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@peaklab/ui'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import {
@@ -43,6 +53,10 @@ export function ApiKeysSection({ keys }: Props) {
 
   const liveCount = rows.filter(isLive).length
   const atCapacity = liveCount >= MCP_KEY_MAX_PER_USER
+  const lifetimeItems = MCP_KEY_LIFETIMES_DAYS.map((days) => ({
+    value: days as number,
+    label: t('lifetimeDays', { days }),
+  }))
 
   const copy = (value: string) => {
     navigator.clipboard.writeText(value).then(
@@ -108,16 +122,21 @@ export function ApiKeysSection({ keys }: Props) {
           <div className="space-y-1">
             <Label htmlFor="mcp-key-lifetime">{t('lifetimeLabel')}</Label>
             <Select
-              id="mcp-key-lifetime"
+              items={lifetimeItems}
               value={lifetimeDays}
               disabled={pending || atCapacity}
-              onChange={(event) => setLifetimeDays(Number(event.target.value))}
+              onValueChange={(value) => value !== null && setLifetimeDays(value)}
             >
-              {MCP_KEY_LIFETIMES_DAYS.map((days) => (
-                <option key={days} value={days}>
-                  {t('lifetimeDays', { days })}
-                </option>
-              ))}
+              <SelectTrigger id="mcp-key-lifetime">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {lifetimeItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <Button type="button" disabled={pending || atCapacity} onClick={onCreate}>

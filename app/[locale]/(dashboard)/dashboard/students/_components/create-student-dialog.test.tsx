@@ -29,9 +29,10 @@ describe('CreateStudentDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
     fireEvent.change(screen.getByLabelText('firstname'), { target: { value: 'Alice' } })
     fireEvent.change(screen.getByLabelText('lastname'), { target: { value: 'Martin' } })
-    fireEvent.change(screen.getByLabelText('selectPlan'), {
-      target: { value: '550e8400-e29b-41d4-a716-446655440003' },
-    })
+    fireEvent.click(screen.getByRole('combobox', { name: 'selectPlan' }))
+    const reducedPlan = await screen.findByRole('option', { name: 'Plan réduit' })
+    fireEvent.pointerDown(reducedPlan)
+    fireEvent.click(reducedPlan)
 
     expect(screen.getByLabelText('totalAmount')).toHaveValue(120)
 

@@ -10,6 +10,10 @@ import {
   DialogTrigger,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@peaklab/ui'
 import { Pencil } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -72,6 +76,10 @@ function EditEventForm({ event }: Props) {
   const t = useTranslations('dashboard.pages.events')
   const tEdit = useTranslations('dashboard.pages.events.edit')
   const tStatus = useTranslations('eventStatus')
+  const statusItems = EVENT_STATUS_VALUES.map((status) => ({
+    value: status,
+    label: tStatus(status),
+  }))
   const { isPending, close, onSubmit } = useDialogForm(t)
   const dates = useEventDateFields(() => ({
     allDay: event.allDay,
@@ -108,16 +116,21 @@ function EditEventForm({ event }: Props) {
             <div className="space-y-2">
               <Label htmlFor="edit-event-status">{t('fields.status')}</Label>
               <Select
-                id="edit-event-status"
                 name="status"
+                items={statusItems}
                 defaultValue={event.status}
                 disabled={isPending}
               >
-                {EVENT_STATUS_VALUES.map((status) => (
-                  <option key={status} value={status}>
-                    {tStatus(status)}
-                  </option>
-                ))}
+                <SelectTrigger id="edit-event-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           }

@@ -1,6 +1,15 @@
 'use client'
 
-import { BalanceBadge, RichDataTable, Select, StatusBadge } from '@peaklab/ui'
+import {
+  BalanceBadge,
+  RichDataTable,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  StatusBadge,
+} from '@peaklab/ui'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
@@ -41,6 +50,10 @@ export function EnrollmentsTable({
 
   const selectedEnrollment = enrollments.find((enrollment) => enrollment.id === selectedId) ?? null
   const [statusFilter, setStatusFilter] = useState<'ALL' | EnrollmentStatus>('ALL')
+  const statusItems: Array<{ value: 'ALL' | EnrollmentStatus; label: string }> = [
+    { value: 'ALL', label: t('statusAll') },
+    ...STATUS_VALUES.map((status) => ({ value: status, label: tStatus(status) })),
+  ]
 
   const filtered =
     statusFilter === 'ALL'
@@ -142,17 +155,20 @@ export function EnrollmentsTable({
         onRowClick={handleRowClick}
         toolbar={
           <Select
+            items={statusItems}
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'ALL' | EnrollmentStatus)}
-            aria-label={t('filterStatus')}
-            className="w-auto"
+            onValueChange={(value) => value !== null && setStatusFilter(value)}
           >
-            <option value="ALL">{t('statusAll')}</option>
-            {STATUS_VALUES.map((status) => (
-              <option key={status} value={status}>
-                {tStatus(status)}
-              </option>
-            ))}
+            <SelectTrigger aria-label={t('filterStatus')} className="w-auto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {statusItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         }
       />

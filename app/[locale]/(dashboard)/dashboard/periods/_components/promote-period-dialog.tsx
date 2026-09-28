@@ -9,6 +9,10 @@ import {
   DialogTitle,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
@@ -56,6 +60,7 @@ export function PromotePeriodDialogContent({
   const [targetPeriodId, setTargetPeriodId] = useState(targetOptions[0]?.id ?? '')
   const [preview, setPreview] = useState<PromotionPreview | null>(null)
   const [report, setReport] = useState<PromotionResult | null>(null)
+  const targetItems = targetOptions.map((period) => ({ value: period.id, label: period.name }))
 
   const handlePreview = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -107,17 +112,22 @@ export function PromotePeriodDialogContent({
             <div className="space-y-2">
               <Label htmlFor="promote-target-period">{t('selectTarget')}</Label>
               <Select
-                id="promote-target-period"
+                items={targetItems}
                 required
                 disabled={isPending}
                 value={targetPeriodId}
-                onChange={(e) => setTargetPeriodId(e.target.value)}
+                onValueChange={(value) => setTargetPeriodId(value ?? '')}
               >
-                {targetOptions.map((period) => (
-                  <option key={period.id} value={period.id}>
-                    {period.name}
-                  </option>
-                ))}
+                <SelectTrigger id="promote-target-period">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {targetItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </DialogBody>

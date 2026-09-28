@@ -32,8 +32,6 @@ export type SchoolSetting = {
 
 type Props = {
   settings: SchoolSetting[]
-  /** Ce que couper les paiements va masquer : paiements enregistrés et transactions en attente. */
-  paymentFootprint: { payments: number; pendingTransactions: number }
   /** Notes de frais déjà saisies, que la coupure rendrait inatteignables. */
   teacherExpenseCount: number
 }
@@ -48,13 +46,15 @@ async function saveFlag(name: SchoolConfigKey, enabled: boolean) {
  * réglage, un interrupteur pour un booléen, une modale pour les autres valeurs, et un nuancier
  * commun pour les quatre couleurs du thème.
  *
- * Deux drapeaux demandent une confirmation avant coupure, parce qu'ils rendent invisible un
- * état déjà saisi : les paiements et les notes de frais. Le comptage vient du serveur pour
- * que la confirmation énumère au lieu de laisser l'administrateur deviner.
+ * `payments_enabled` n'y figure pas : il commande la section Paiements, rendue par
+ * `StripeSettingsSection`.
+ *
+ * Les notes de frais demandent une confirmation avant coupure, parce qu'elle rend invisible un
+ * état déjà saisi. Le comptage vient du serveur pour que la confirmation énumère au lieu de
+ * laisser l'administrateur deviner.
  */
-export function SchoolSettingsPanel({ settings, paymentFootprint, teacherExpenseCount }: Props) {
+export function SchoolSettingsPanel({ settings, teacherExpenseCount }: Props) {
   const t = useTranslations('dashboard.pages.config')
-  const { payments, pendingTransactions } = paymentFootprint
   const classScheduleEnabled =
     settings.find((setting) => setting.name === CLASS_SCHEDULE_ENABLED_CONFIG_KEY)?.value === 'true'
   const classScheduleSettings = settings.filter((setting) =>
@@ -75,9 +75,6 @@ export function SchoolSettingsPanel({ settings, paymentFootprint, teacherExpense
       cancelLabel: t(`settings.${key}.confirmDisable.cancel`),
     })
 
-    if (name === PAYMENTS_ENABLED_CONFIG_KEY && (payments > 0 || pendingTransactions > 0)) {
-      return confirmation(name, { payments, pendingTransactions })
-    }
     if (name === TEACHER_EXPENSES_CONFIG_KEY && teacherExpenseCount > 0) {
       return confirmation(name, { expenses: teacherExpenseCount })
     }
@@ -135,7 +132,12 @@ export function SchoolSettingsPanel({ settings, paymentFootprint, teacherExpense
   return (
     <SettingsSection title={t('sections.school')} description={t('sections.schoolDescription')}>
       {settings.map((setting) => {
-        if (CLASS_SCHEDULE_DEPENDENT_KEYS.includes(setting.name)) return null
+        if (
+          setting.name === PAYMENTS_ENABLED_CONFIG_KEY ||
+          CLASS_SCHEDULE_DEPENDENT_KEYS.includes(setting.name)
+        ) {
+          return null
+        }
 
         const row = renderSetting(setting)
         if (setting.name !== CLASS_SCHEDULE_ENABLED_CONFIG_KEY) return row

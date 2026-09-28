@@ -1,6 +1,18 @@
 'use client'
 
-import { Button, Textarea } from '@peaklab/ui'
+import {
+  Button,
+  Message,
+  MessageContent,
+  MessageHeader,
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+  Textarea,
+} from '@peaklab/ui'
 import type { ChatStatus, FileUIPart, UIMessage } from 'ai'
 import { ImagePlus, Loader2, Mic, RotateCcw, Send, Square, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
@@ -86,21 +98,12 @@ export function ChatPanel({
   const [fileError, setFileError] = useState<FileError | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputId = useId()
-  const listRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
-  const lastMessage = messages.at(-1)
   const locale = useLocale()
   const dictation = useDictation(locale === 'en' ? 'en-US' : 'fr-FR', (spoken) => {
     if (!spoken) return
     setText((current) => (current.trim() ? `${current.trimEnd()} ${spoken}` : spoken))
   })
-
-  // Le fil suit la réponse en cours : un tour d'outils allonge le dernier message.
-  useEffect(() => {
-    const list = listRef.current
-    if (!lastMessage || !list) return
-    list.scrollTop = list.scrollHeight
-  }, [lastMessage])
 
   const busy = status === 'submitted' || status === 'streaming'
 
@@ -196,37 +199,44 @@ export function ChatPanel({
         {providerNotice}
       </p>
 
-      <div
-        ref={listRef}
-        className={cn(
-          'flex max-h-[28rem] min-h-40 flex-col gap-3 overflow-y-auto rounded border border-border bg-surface p-3',
-          listClassName
-        )}
-      >
-        {messages.length === 0 ? (
-          <p className="m-auto text-sm text-muted-foreground">{t('empty')}</p>
-        ) : (
-          messages.map((message) => (
-            <ChatMessage
-              key={message.id}
-              message={message}
-              namespace={namespace}
-              renderPart={renderPart}
-            />
-          ))
-        )}
-        {busy ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            {t('thinking')}
-          </p>
-        ) : null}
-        {errorMessage ? (
-          <p className="text-sm text-danger" role="alert">
-            {errorMessage}
-          </p>
-        ) : null}
-      </div>
+      <MessageScrollerProvider autoScroll defaultScrollPosition="end">
+        <MessageScroller
+          className={cn(
+            'h-auto max-h-[28rem] min-h-40 rounded border border-border bg-surface',
+            listClassName
+          )}
+        >
+          <MessageScrollerViewport aria-label={t('title')}>
+            <MessageScrollerContent className="gap-3 p-3">
+              {messages.length === 0 ? (
+                <p className="m-auto text-sm text-muted-foreground">{t('empty')}</p>
+              ) : (
+                messages.map((message) => (
+                  <MessageScrollerItem
+                    key={message.id}
+                    messageId={message.id}
+                    scrollAnchor={message.role === 'user'}
+                  >
+                    <ChatMessage message={message} namespace={namespace} renderPart={renderPart} />
+                  </MessageScrollerItem>
+                ))
+              )}
+              {busy ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  {t('thinking')}
+                </p>
+              ) : null}
+              {errorMessage ? (
+                <p className="text-sm text-danger" role="alert">
+                  {errorMessage}
+                </p>
+              ) : null}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+          <MessageScrollerButton aria-label={t('scrollToEnd')} title={t('scrollToEnd')} />
+        </MessageScroller>
+      </MessageScrollerProvider>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
         <label htmlFor={inputId} className="sr-only">
@@ -361,38 +371,39 @@ function ChatMessage({
   const mine = message.role === 'user'
 
   return (
-    <article
-      className={
-        mine
-          ? 'ml-auto max-w-[85%] rounded-lg bg-primary-subtle px-3 py-2 text-sm'
-          : 'mr-auto max-w-[85%] rounded-lg bg-surface-2 px-3 py-2 text-sm'
-      }
-    >
-      <p className="mb-1 text-xs font-medium text-muted-foreground">
-        {mine ? t('you') : t('assistant')}
-      </p>
-      {message.parts.map((part, index) => {
-        const key = `${message.id}-${index}`
-        if (part.type === 'text') {
-          return (
-            <p key={key} className="whitespace-pre-wrap">
-              {part.text}
-            </p>
-          )
-        }
-        if (part.type === 'file') {
-          return (
-            // biome-ignore lint/performance/noImgElement: data URL locale, jamais servie par le site
-            <img
-              key={key}
-              src={part.url}
-              alt={t('imageAlt', { index: index + 1 })}
-              className="mt-1 h-24 w-24 rounded border border-border object-cover"
-            />
-          )
-        }
-        return renderPart ? renderPart(part, key) : null
-      })}
-    </article>
+    <Message align={mine ? 'end' : 'start'}>
+      <MessageContent className="max-w-[85%] gap-1 group-data-[align=end]/message:items-end">
+        <MessageHeader className="px-0">{mine ? t('you') : t('assistant')}</MessageHeader>
+        <div
+          className={cn(
+            'w-fit max-w-full rounded-lg px-3 py-2 text-sm',
+            mine ? 'bg-primary-subtle' : 'bg-surface-2'
+          )}
+        >
+          {message.parts.map((part, index) => {
+            const key = `${message.id}-${index}`
+            if (part.type === 'text') {
+              return (
+                <p key={key} className="whitespace-pre-wrap">
+                  {part.text}
+                </p>
+              )
+            }
+            if (part.type === 'file') {
+              return (
+                // biome-ignore lint/performance/noImgElement: data URL locale, jamais servie par le site
+                <img
+                  key={key}
+                  src={part.url}
+                  alt={t('imageAlt', { index: index + 1 })}
+                  className="mt-1 h-24 w-24 rounded border border-border object-cover"
+                />
+              )
+            }
+            return renderPart ? renderPart(part, key) : null
+          })}
+        </div>
+      </MessageContent>
+    </Message>
   )
 }

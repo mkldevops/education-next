@@ -78,19 +78,20 @@ describe('UsersTable', () => {
     expect(screen.getByPlaceholderText('searchPlaceholder')).toBeInTheDocument()
   })
 
-  it('shows all statuses by default, then explains and clears an empty filtered state', () => {
+  it('shows all statuses by default, then explains and clears an empty filtered state', async () => {
     renderTable([inactiveMember])
 
     expect(screen.getByText('amina@example.test')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'filterStatus' }), {
-      target: { value: 'ACTIVE' },
-    })
+    fireEvent.click(screen.getByRole('combobox', { name: 'filterStatus' }))
+    const activeOption = await screen.findByRole('option', { name: 'active' })
+    fireEvent.pointerDown(activeOption)
+    fireEvent.click(activeOption)
 
-    expect(screen.getByText('empty.filteredTitle')).toBeInTheDocument()
+    expect(await screen.findByText('empty.filteredTitle')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'empty.clearFilters' }))
 
     expect(screen.getByText('amina@example.test')).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'filterStatus' })).toHaveValue('ALL')
+    expect(screen.getByRole('combobox', { name: 'filterStatus' })).toHaveTextContent('statusAll')
   })
 })
