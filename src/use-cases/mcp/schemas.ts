@@ -240,6 +240,15 @@ export const mcpDuplicateEventSchema = z.object({
   title: z.string().trim().min(1).max(120),
 })
 
+export const MCP_ATTENDANCE_RANGE_MAX_DAYS = 31
+
+export const mcpListAttendanceCallsSchema = z.object({
+  periodId: z.uuid(),
+  from: z.iso.date(),
+  to: z.iso.date().optional(),
+  classPeriodId: z.uuid().optional(),
+})
+
 export const mcpListClassScheduleSlotsSchema = z.object({ periodId: z.uuid() })
 export const mcpCreateClassScheduleSlotSchema = createClassScheduleSlotSchema.omit({
   schoolId: true,

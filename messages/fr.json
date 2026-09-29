@@ -2421,6 +2421,7 @@
           "create_event": "Créer un événement",
           "list_events": "Événements",
           "get_event": "Lire un événement",
+          "list_attendance_calls": "Suivi des appels",
           "update_event": "Modifier un événement",
           "duplicate_event": "Reconduire un événement",
           "preview_record_payment": "Aperçu d'encaissement",

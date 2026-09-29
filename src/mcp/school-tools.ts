@@ -19,6 +19,7 @@ import { duplicateEventFromMcp } from '@/use-cases/mcp/duplicate-event'
 import { familyPaymentsFromMcp } from '@/use-cases/mcp/family-payments'
 import { findStudentsFromMcp } from '@/use-cases/mcp/find-students'
 import { getEventFromMcp } from '@/use-cases/mcp/get-event'
+import { listAttendanceCallsFromMcp } from '@/use-cases/mcp/list-attendance-calls'
 import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
@@ -27,6 +28,7 @@ import { previewRecordTeacherExpense } from '@/use-cases/mcp/preview-record-teac
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
 import {
   commitDraftSchema,
+  MCP_ATTENDANCE_RANGE_MAX_DAYS,
   MCP_CLASS_SCHEDULE_BATCH_MAX,
   MCP_EVENT_LIST_DEFAULT,
   MCP_EVENT_LIST_MAX,
@@ -40,6 +42,7 @@ import {
   mcpEventIdSchema,
   mcpFamilyPaymentsSchema,
   mcpFindStudentsSchema,
+  mcpListAttendanceCallsSchema,
   mcpListClassScheduleSlotsSchema,
   mcpListEventsSchema,
   mcpUpdateClassScheduleSlotSchema,
@@ -243,6 +246,25 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       annotations: IDEMPOTENT_COMMIT,
       kind: 'write',
       run: (args) => commitClassSchedule(scope, args),
+    }),
+    // Lecture seule : ouvrir, saisir, valider ou annuler un appel reste une action du
+    // tableau de bord.
+    define({
+      name: 'list_attendance_calls',
+      title: 'Suivi des appels',
+      description:
+        "Appels de l'école jour par jour, comme la page de suivi des appels : créneaux " +
+        'attendus (`NOT_STARTED`, `IN_PROGRESS`, `VALIDATED`), appels exceptionnels ' +
+        '(`slotId` nul) et appels annulés (`CANCELLED`). `periodId` vient de `list_periods`, ' +
+        '`classPeriodId` facultatif de `list_class_periods` ; `from` et `to` sont des jours ' +
+        `inclus (\`2026-09-26\`), \`to\` vaut \`from\` par défaut, ${MCP_ATTENDANCE_RANGE_MAX_DAYS} ` +
+        'jours au plus. Un jour de fermeture (`closed`) ne garde que les appels déjà ouverts. ' +
+        "Aucun élève ni présence n'est publié. Refus : `notConfigured`, `notFound` (période), " +
+        '`invalidDateRange`, `rangeTooLong`, `validationError`.',
+      inputSchema: mcpListAttendanceCallsSchema,
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      kind: 'read',
+      run: (args) => listAttendanceCallsFromMcp(scope, args),
     }),
   ]
 

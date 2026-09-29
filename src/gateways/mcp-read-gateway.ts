@@ -40,6 +40,17 @@ export type McpEventFilter = {
   take: number
 }
 
+export type McpAttendanceFilter = {
+  periodId: string
+  classPeriodId?: string
+  from: Date
+  before: Date
+}
+
+function attendanceClassScope({ periodId, classPeriodId }: McpAttendanceFilter) {
+  return { isActive: true, periodId, ...(classPeriodId ? { id: classPeriodId } : {}) }
+}
+
 export const mcpReadGateway = {
   // `School` n'est pas couvert par le soft-delete de `src/lib/db.ts` : le filtre est explicite.
   describeSchool: (schoolId: string) =>
@@ -148,6 +159,57 @@ export const mcpReadGateway = {
         },
       },
       orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
+    }),
+
+  findPeriod: (schoolId: string, id: string) =>
+    db.period.findFirst({ where: { id, schoolId, isActive: true }, select: { id: true } }),
+
+  // Même périmètre que `/dashboard/attendance` : classes actives de la période, sans
+  // présences ni élèves — l'état d'un appel suffit à savoir lequel relancer.
+  listAttendanceSlots: (schoolId: string, filter: McpAttendanceFilter) =>
+    db.classScheduleSlot.findMany({
+      where: { schoolId, classPeriod: attendanceClassScope(filter) },
+      select: {
+        id: true,
+        classPeriodId: true,
+        weekday: true,
+        startTime: true,
+        endTime: true,
+        classPeriod: { select: namedRef },
+      },
+      orderBy: [{ startTime: 'asc' }, { classPeriod: { name: 'asc' } }],
+    }),
+
+  listAttendanceSessions: (schoolId: string, filter: McpAttendanceFilter) =>
+    db.attendanceSession.findMany({
+      where: {
+        schoolId,
+        classPeriod: attendanceClassScope(filter),
+        occurredOn: { gte: filter.from, lt: filter.before },
+      },
+      select: {
+        id: true,
+        classPeriodId: true,
+        occurrenceKey: true,
+        occurredOn: true,
+        status: true,
+        validatedAt: true,
+        classPeriod: { select: namedRef },
+      },
+      orderBy: [{ occurredOn: 'asc' }, { classPeriod: { name: 'asc' } }],
+    }),
+
+  listAttendanceClosures: (schoolId: string, from: Date, before: Date) =>
+    db.event.findMany({
+      where: {
+        schoolId,
+        isActive: true,
+        status: 'PUBLISHED',
+        category: 'CLOSURE',
+        startAt: { lt: before },
+        OR: [{ endAt: null }, { endAt: { gte: from } }],
+      },
+      select: { status: true, category: true, startAt: true, endAt: true },
     }),
 
   // Identité, famille et inscription ouverte : de quoi désigner un élève dans un autre outil,

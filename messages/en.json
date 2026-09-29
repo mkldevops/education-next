@@ -2420,6 +2420,7 @@
           "create_event": "Create an event",
           "list_events": "Events",
           "get_event": "Read an event",
+          "list_attendance_calls": "Attendance calls",
           "update_event": "Update an event",
           "duplicate_event": "Renew an event",
           "preview_record_payment": "Payment preview",
