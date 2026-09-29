@@ -30,7 +30,7 @@ export function Breadcrumbs({ items, className = 'mb-4' }: BreadcrumbsProps) {
               <li className="min-w-0">
                 {isLast || !item.href ? (
                   <span
-                    className="block max-w-[12rem] truncate font-medium text-foreground"
+                    className="block max-w-48 truncate font-medium text-foreground"
                     title={item.icon ? undefined : item.label}
                   >
                     {item.icon === 'home' && <Home className="inline h-4 w-4" />}
@@ -39,7 +39,7 @@ export function Breadcrumbs({ items, className = 'mb-4' }: BreadcrumbsProps) {
                 ) : (
                   <Link
                     href={item.href}
-                    className="block max-w-[12rem] truncate rounded-sm text-muted-foreground transition-colors duration-(--duration-fast) hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                    className="block max-w-48 truncate rounded-sm text-muted-foreground transition-colors duration-(--duration-fast) hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
                     title={item.icon ? undefined : item.label}
                   >
                     {item.icon === 'home' ? <Home className="inline h-4 w-4" /> : item.label}

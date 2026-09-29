@@ -32,13 +32,15 @@ Run the CI-equivalent sequence before opening a pull request:
 pnpm install --frozen-lockfile
 pnpm db:generate
 pnpm lint
+pnpm lint:tw
 pnpm type-check
 pnpm test
 pnpm knip
 pnpm build
 ```
 
-`pnpm knip` detects unused code, files, and dependencies, and is part of CI.
+`pnpm knip` detects unused code, files, and dependencies, and is part of CI. `pnpm lint:tw` flags Tailwind
+arbitrary values that have a canonical utility; `pnpm lint:tw:fix` rewrites them.
 
 ## Database and deployment
 

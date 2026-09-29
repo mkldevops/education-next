@@ -202,7 +202,7 @@ export function ChatPanel({
       <MessageScrollerProvider autoScroll defaultScrollPosition="end">
         <MessageScroller
           className={cn(
-            'h-auto max-h-[28rem] min-h-40 rounded border border-border bg-surface',
+            'h-auto max-h-112 min-h-40 rounded border border-border bg-surface',
             listClassName
           )}
         >

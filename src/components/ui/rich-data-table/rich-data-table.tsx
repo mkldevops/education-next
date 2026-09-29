@@ -133,7 +133,7 @@ export function RichDataTable<T>({
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
               {columnVisibilityOpen && (
-                <div className="absolute right-0 top-full mt-1 z-10 bg-white border border-alabaster-700 rounded shadow-md p-2 min-w-[140px]">
+                <div className="absolute right-0 top-full mt-1 z-10 bg-white border border-alabaster-700 rounded shadow-md p-2 min-w-35">
                   {table.getAllColumns().map((col) => (
                     <label
                       key={col.id}

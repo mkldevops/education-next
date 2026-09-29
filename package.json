@@ -25,7 +25,9 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "dotenv -- tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "lint:tw": "tailwind-canonical --check",
+    "lint:tw:fix": "tailwind-canonical"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -39,7 +41,11 @@
     ]
   },
   "lint-staged": {
-    "*.{js,ts,jsx,tsx,json,css,md}": [
+    "*.{js,ts,json,css,md}": [
+      "biome check --write --no-errors-on-unmatched"
+    ],
+    "*.{jsx,tsx}": [
+      "tailwind-canonical --fix",
       "biome check --write --no-errors-on-unmatched"
     ]
   },
@@ -96,6 +102,7 @@
     "mysql2": "^3.24.2",
     "postcss": "^8.5.26",
     "prisma": "^7.10.0",
+    "tailwind-canonical": "^0.7.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",

@@ -50,7 +50,7 @@ export async function UpcomingEventsCard({ schoolId, viewer, locale, canManage }
                   alt={event.images[0].alt ?? ''}
                   width={80}
                   height={60}
-                  className="h-[60px] w-20 shrink-0 rounded-md border border-border object-cover"
+                  className="h-15 w-20 shrink-0 rounded-md border border-border object-cover"
                 />
               )}
               <div

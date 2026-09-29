@@ -34,7 +34,7 @@ export function DataTable<T>({
 
   return (
     <div className={cn('overflow-x-auto rounded', className)}>
-      <table className="w-full min-w-[600px]">
+      <table className="w-full min-w-150">
         <thead className="border-b border-border bg-surface-2">
           <tr>
             {columns.map((col) => (
