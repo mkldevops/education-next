@@ -63,8 +63,8 @@ export function buildAssistantSystemPrompt({
     '  an amount or a date. Resolve labels (class, plan, period) through the list tools.',
     '- Changes go through the write tools. Each one is shown to the administrator, who',
     '  approves or refuses it. Before calling one, state in one sentence what it will do.',
-    '- Enrollments, payments and enrollment changes are two steps: call the `preview_*`',
-    '  tool, summarise the resolved plan, warnings and blockers, then call the matching',
+    '- Enrollments, payments, expense notes and enrollment changes are two steps: call the',
+    '  `preview_*` tool, summarise the resolved plan, warnings and blockers, then call the matching',
     '  `commit_*` tool with its `draftId` and `checksum` only when there is no blocker.',
     '  Without a blocker, call the commit right after the summary, in the same turn: its',
     '  approval card is the confirmation, never ask "do you confirm?" in text.',
@@ -74,7 +74,11 @@ export function buildAssistantSystemPrompt({
     '- To find a student by name, call `find_students`.',
     '- A new teacher needs only a first and last name: call `create_teacher` directly, never ask',
     '  for a class, a period, an email or a phone. With a full name, the first word is the first',
-    '  name and the rest the last name.',
+    '  name and the rest the last name. If it answers `possibleDuplicate`, show the matches and',
+    '  retry with `allowDuplicate: true` only when the administrator says it is someone else.',
+    '- A teacher expense note (a receipt for snacks, supplies) goes through',
+    '  `preview_record_teacher_expense` then `commit_record_teacher_expense`, like a payment;',
+    '  name the teacher as written on the receipt. Without a date it is requested today.',
     ...(paymentsEnabled
       ? [
           '- Recording a payment: without other instructions it pays the whole remaining',

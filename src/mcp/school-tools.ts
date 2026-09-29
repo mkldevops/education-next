@@ -10,6 +10,7 @@ import {
 import { commitClassSchedule } from '@/use-cases/mcp/commit-class-schedule'
 import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
+import { commitRecordTeacherExpense } from '@/use-cases/mcp/commit-record-teacher-expense'
 import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
 import { createEventFromMcp } from '@/use-cases/mcp/create-event'
 import { createTeacherFromMcp } from '@/use-cases/mcp/create-teacher'
@@ -22,6 +23,7 @@ import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
 import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
+import { previewRecordTeacherExpense } from '@/use-cases/mcp/preview-record-teacher-expense'
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
 import {
   commitDraftSchema,
@@ -45,6 +47,7 @@ import {
   previewClassScheduleSchema,
   previewEnrollFamilySchema,
   previewRecordPaymentSchema,
+  previewRecordTeacherExpenseSchema,
   previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
 import { updateEventFromMcp } from '@/use-cases/mcp/update-event'
@@ -272,11 +275,46 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       title: 'Créer un enseignant',
       description:
         "Crée un enseignant dans l'école, sans classe ni période : seuls le prénom et le nom " +
-        "sont requis. L'affecter à une classe est une autre opération.",
+        "sont requis. L'affecter à une classe est une autre opération. Un enseignant actif " +
+        "du même nom, dans un ordre ou l'autre, ou de la même adresse suspend la création : " +
+        'la réponse `{ created: false, reason: "possibleDuplicate", matches }` liste les ' +
+        "fiches trouvées. `allowDuplicate: true` crée quand même, sur décision de l'humain. " +
+        'Rend `id`, `firstName`, `lastName`.',
       inputSchema: mcpCreateTeacherSchema,
       annotations: NON_IDEMPOTENT_WRITE,
       kind: 'write',
       run: (args) => createTeacherFromMcp(scope, args),
+    }),
+    // Déclarés même quand `teacher_expenses_enabled` est éteint, comme les outils
+    // d'événements : le refus `notConfigured` est le contrat.
+    define({
+      name: 'preview_record_teacher_expense',
+      title: 'Préparer une note de dépense',
+      description:
+        "Résout une note de dépense d'enseignant — un ticket de goûter, de fournitures — sans " +
+        "rien écrire. L'enseignant vient en `teacherName` (prénom, nom ou les deux) ou en " +
+        "`teacherId`, jamais les deux. `amount` en décimal dans la devise de l'école ; " +
+        '`requestedAt` et `paidAt` sont des jours (`2026-09-12`), `requestedAt` vaut ' +
+        "aujourd'hui par défaut. Rend un `draftId`, un `checksum`, le plan résolu, les " +
+        "candidats d'un nom ambigu, des avertissements (`possibleDuplicateExpense` pour une " +
+        'note identique le même jour, `paidBeforeRequested`) et des `blockers` (`notFound`, ' +
+        '`ambiguousTeacher`). Refus : `notConfigured`, `validationError`.',
+      inputSchema: previewRecordTeacherExpenseSchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+      kind: 'draft',
+      run: (args) => previewRecordTeacherExpense(scope, args),
+    }),
+    define({
+      name: 'commit_record_teacher_expense',
+      title: 'Enregistrer une note de dépense',
+      description:
+        'Crée la note de dépense déjà prévisualisée. Rejouer le même `draftId` rend la note ' +
+        "enregistrée au lieu d'en créer une seconde. Refus : `notConfigured`, `notFound` " +
+        "(enseignant archivé depuis l'aperçu). Le brouillon expire au bout d'une demi-heure.",
+      inputSchema: commitDraftSchema,
+      annotations: IDEMPOTENT_COMMIT,
+      kind: 'write',
+      run: (args) => commitRecordTeacherExpense(scope, args),
     }),
     define({
       name: 'find_students',

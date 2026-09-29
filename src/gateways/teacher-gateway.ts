@@ -40,6 +40,50 @@ export const teacherGateway = {
       select: { id: true },
     }),
 
+  /**
+   * Enseignants actifs portant le même nom, dans un ordre ou l'autre, ou la même adresse.
+   * Rien d'autre que l'identité : la réponse part vers un agent.
+   */
+  findPossibleDuplicates: (
+    schoolId: string,
+    data: { firstName: string; lastName: string; email?: string }
+  ) =>
+    db.teacher.findMany({
+      where: {
+        schoolId,
+        isActive: true,
+        OR: [
+          {
+            firstName: { equals: data.firstName, mode: 'insensitive' },
+            lastName: { equals: data.lastName, mode: 'insensitive' },
+          },
+          {
+            firstName: { equals: data.lastName, mode: 'insensitive' },
+            lastName: { equals: data.firstName, mode: 'insensitive' },
+          },
+          ...(data.email ? [{ email: { equals: data.email, mode: 'insensitive' as const } }] : []),
+        ],
+      },
+      select: { id: true, firstName: true, lastName: true },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    }),
+
+  /** Notes actives du même enseignant, du même montant, demandées le même jour. */
+  findSimilarExpenses: (
+    schoolId: string,
+    data: { teacherId: string; amount: number; requestedFrom: Date; requestedBefore: Date }
+  ) =>
+    db.teacherExpense.findMany({
+      where: {
+        schoolId,
+        teacherId: data.teacherId,
+        amount: data.amount,
+        isActive: true,
+        requestedAt: { gte: data.requestedFrom, lt: data.requestedBefore },
+      },
+      select: { id: true },
+    }),
+
   createExpense: (schoolId: string, data: TeacherExpenseData) =>
     db.teacherExpense.create({
       data: { ...data, schoolId },

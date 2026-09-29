@@ -226,9 +226,12 @@ gets `notConfigured` from each of them.
 
 ## Writing: the preview/commit pairs
 
-Four pairs are shipped. `record_teacher_expense` is not — a teacher expense note still goes through
-the dashboard. `create_teacher` is shipped as a single write, without preview: it takes a first and
-last name (email and phone optional) and creates the teacher with no class, as the dashboard form does.
+Five pairs are shipped. `create_teacher` is shipped as a single write, without preview: it takes a
+first and last name (email and phone optional) and creates the teacher with no class, as the dashboard
+form does. An active teacher of the same name, in either order, or of the same email suspends the
+creation: the tool answers `{ "created": false, "reason": "possibleDuplicate", "matches": [...] }`
+with the identity of each match and writes nothing. Send `allowDuplicate: true` to create the
+homonym anyway, once the human confirms it is someone else.
 
 | Tool | Paper it matches | State |
 |---|---|---|
@@ -237,7 +240,7 @@ last name (email and phone optional) and creates the teacher with no class, as t
 | `update_enrollment` | a correction: a child moved to another plan, a discount granted | shipped |
 | `class_schedule` | a whole weekly planning: every class, day, time and teacher of a period | shipped |
 | `create_teacher` | a teacher sheet | shipped, single write (no preview) |
-| `record_teacher_expense` | a teacher expense note | not shipped |
+| `record_teacher_expense` | a teacher expense note: a receipt for snacks, supplies, goods | shipped |
 
 The shape, and the reason for it:
 
@@ -372,6 +375,26 @@ of the batch at once, then writes the slots one by one with the dashboard's over
 written earlier in the batch is seen by the next one. The first refusal rolls the whole planning
 back; the result lists each written `id` with its teacher-overlap warnings, and a replay returns it
 unchanged.
+
+`record_teacher_expense` needs `teacher_expenses_enabled` on the school: otherwise both tools return
+`notConfigured`, and a draft prepared before the switch is refused at commit without being claimed.
+The teacher comes as `teacherName` — first name, last name or both, in either order, as written on
+the receipt — or as `teacherId` from `list_teachers`, never both. `amount` is a positive decimal in
+the school's currency with at most two decimals; `category` and `description` are free text (100 and
+250 characters). `requestedAt` and `paidAt` are calendar days (`2026-09-12`), stored at midnight UTC
+like the dashboard form; `requestedAt` defaults to today. The plan shows the resolved teacher, the
+amount, both dates and the texts.
+
+| Finding | Kind | Cause |
+|---|---|---|
+| `notFound` | blocker | no active teacher of the school matches the name or the id |
+| `ambiguousTeacher` | blocker | the name matches several teachers; `matches.teachers` lists them |
+| `possibleDuplicateExpense` | warning | an active note of the same teacher, amount and day exists; its `id` is the value |
+| `paidBeforeRequested` | warning | `paidAt` is before `requestedAt`, which the dashboard accepts too |
+
+The commit rereads the teacher in its transaction (`notFound` when archived since the preview) and
+creates the note; the result is `id`, `teacherId`, `amount`, `requestedAt`, `paidAt`, and a replay
+returns it without a second note.
 
 A commit that refuses leaves the draft intact and unlocked: fix what the body names, or run the
 preview again, and no partial row was written.

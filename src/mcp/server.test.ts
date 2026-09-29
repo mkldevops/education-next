@@ -95,7 +95,7 @@ beforeEach(() => {
 })
 
 describe('buildMcpServer', () => {
-  it('publishes the reads, the schedule and event tools and the four preview/commit pairs when payments are enabled', () => {
+  it('publishes the reads, the schedule and event tools and the five preview/commit pairs when payments are enabled', () => {
     expect([...build().keys()]).toEqual([
       'describe_school',
       'list_levels',
@@ -110,6 +110,8 @@ describe('buildMcpServer', () => {
       'list_plans',
       'list_teachers',
       'create_teacher',
+      'preview_record_teacher_expense',
+      'commit_record_teacher_expense',
       'find_students',
       'preview_enroll_family',
       'commit_enroll_family',
@@ -141,6 +143,8 @@ describe('buildMcpServer', () => {
       'commit_class_schedule',
       'list_teachers',
       'create_teacher',
+      'preview_record_teacher_expense',
+      'commit_record_teacher_expense',
       'find_students',
       'preview_enroll_family',
       'commit_enroll_family',
@@ -158,6 +162,7 @@ describe('buildMcpServer', () => {
     for (const name of [
       'preview_enroll_family',
       'preview_class_schedule',
+      'preview_record_teacher_expense',
       'preview_record_payment',
       'preview_update_enrollment',
     ]) {
@@ -169,6 +174,7 @@ describe('buildMcpServer', () => {
     for (const name of [
       'commit_enroll_family',
       'commit_class_schedule',
+      'commit_record_teacher_expense',
       'commit_record_payment',
       'commit_update_enrollment',
     ]) {
