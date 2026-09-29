@@ -489,7 +489,8 @@ The 12-character `prefix` is the sole visual landmark of the list.
 - Revocation writes `revokedAt`; the row is never deleted, so the audit trail survives. The
   `userId` foreign key is therefore `Restrict`, and `mcpApiKeyGateway.countForUser` makes a key —
   revoked or not — block the permanent deletion of its holder's account. Cascading the account
-  deletion would have erased exactly the evidence this rule promises to keep.
+  deletion would have erased exactly the evidence this rule promises to keep. An OAuth connection
+  (`McpOAuthGrant`, below) follows the same rule, counted in `countRowsBlockingUserDeletion`.
 - Five live keys per (user, school) pair. The count and the insert share one `Serializable`
   transaction in `src/gateways/mcp-api-key-gateway.ts` → `tooManyKeys`, for the reason already
   written for `lastAdmin`: counting outside the write lets two concurrent creations read the same
@@ -503,8 +504,8 @@ it is a discovery table, read by `keyHash` before any school is known. Its singl
 ### Route guards
 
 The order in `app/api/mcp/route.ts` is deliberate: credential read → address rate limit, charged to
-any request that does not present a well-formed key → retention sweep → platform flag → scope →
-per-key rate limit → handler. Reading the credential and checking its shape are pure operations, so
+any request that does not present a well-formed credential (an `edu_mcp_` key or an `edu_oat_`
+access token) → retention sweep → platform flag → scope → per-credential rate limit → handler. Reading the credential and checking its shape are pure operations, so
 they select the applicable tier before the flag costs a database read; the flag is still read before
 authentication so a closed instance answers `503` without ever looking up a key. Keying the tier on
 presence alone would let `Authorization: Bearer x` escape both tiers while still paying that read on
@@ -567,13 +568,81 @@ runtime `406`, not a compile error.
 | Body | Status | Cause |
 |---|---|---|
 | `mcpDisabled` | 503 | `mcp_enabled` absent or not affirmative |
-| `unauthorized` | 401 | no key, malformed key, unknown, revoked or expired |
+| `unauthorized` | 401 | no credential, malformed, unknown, revoked or expired key or access token, revoked connection, token issued for another site |
 | `forbidden` | 403 | deactivated account, deactivated school, non-`ADMIN` membership |
-| `tooManyRequests` | 429 | address tier exhausted by traffic without a well-formed key, or key tier exhausted |
+| `tooManyRequests` | 429 | address tier exhausted by traffic without a well-formed credential, or credential tier exhausted |
 | `methodNotAllowed` | 405 | `GET` or `DELETE` |
 
-No `WWW-Authenticate: Bearer resource_metadata=…` and no `.well-known` route: the application operates no
-authorization server, and advertising that flow would send clients into a discovery loop.
+Every `401` carries `WWW-Authenticate: Bearer resource_metadata="<origin>/.well-known/oauth-protected-resource"`
+(RFC 9728), with `error="invalid_token"` when a well-formed but refused credential was presented:
+that header is how an OAuth client discovers the authorization server this application operates
+(*OAuth connections* below). The origin is `NEXT_PUBLIC_APP_URL`, never the request's `Host`, so a
+forged host cannot point a client at another authorization server. The header names the flow, not
+the cause: a bad key and a revoked connection are told apart by nothing a client can see.
+
+### OAuth connections
+
+ChatGPT, and any client that cannot hold a pasted key, authenticates through OAuth 2.1 against an
+authorization server the application operates itself (`docs/mcp.md`, *Personal ChatGPT connection*).
+Better Auth 1.7 ships no provider plugin for this, and an external identity provider would put the
+list of who may administer which school outside the database that enforces it. The pieces are the
+domain module `src/domain/mcp-oauth.ts`, the use cases under `src/use-cases/mcp/oauth/`, the routes
+under `app/api/mcp/oauth/` and `app/.well-known/`, and the consent page
+`app/[locale]/(auth)/oauth/authorize`.
+
+- **A connection is `McpOAuthGrant`: one user, one school, one client, one resource.** The school is
+  chosen on the consent page among those the signed-in account administers (`ADMIN` membership, or
+  any active school for a super-admin), never sent by the client, and the resource is this site's
+  `/api/mcp` URL. Every `/api/mcp` call re-resolves the whole chain (`resolveMcpOAuthScope`,
+  `src/use-cases/mcp/resolve-mcp-scope.ts`): token shape → token by hash, kind `ACCESS`, unexpired,
+  unrevoked → grant unrevoked → grant resource equals this deployment's resource → account active →
+  school active, payments flag → super-admin or `ADMIN` membership. Nothing is cached between calls,
+  so a revoked connection, a withdrawn role or a deactivated school refuses the next call, not the
+  next token. Site A's tokens are refused by site B as `unauthorized` before any user is read: the
+  audience is compared, not merely recorded.
+- **The resulting `DraftScope` is the key's**, with `owner: { kind: 'OAUTH_GRANT', grantId }` and the
+  grant's id as `credentialId`. Reads, writes, preview/commit pairs, duplicate protection and the
+  per-credential rate limit run unchanged on it; no tool takes a site or school argument.
+- **Public clients only, registered dynamically.** `POST /api/mcp/oauth/register` (RFC 7591) accepts
+  a `client_name`, one to five `redirect_uris` — `https`, or `http` on a loopback host, never with a
+  fragment — and `token_endpoint_auth_method: none`; nothing else, so no client secret exists to
+  leak. PKCE `S256` is mandatory on every authorization (`code_challenge_method` is refused
+  otherwise), and the code exchange checks `code_verifier`, `client_id` and `redirect_uri` against
+  what the code was issued for. `McpOAuthClient` rows are shared by every school and sit outside the
+  tenant guard.
+- **The consent page is the only place a school is chosen**, and it decides in this order:
+  validate the request (an unregistered client or a foreign `redirect_uri` is shown as an error and
+  never redirected; every other fault is shown with a link that carries the OAuth error back to the
+  registered URI, which the user follows — never an automatic redirect, since a dynamically
+  registered URI is not trusted enough to make this page a redirector, RFC 9700 §4.11) →
+  platform flag → session, else login with the whole request replayed after → the list of schools
+  → the form. The action re-validates the request from the form and redirects only to the URI it
+  validated, never to one read from the form. A super-admin impersonating cannot grant: the
+  connection would be signed by the target.
+- **Secrets are opaque, prefixed and hashed.** Authorization codes (`edu_oac_`, 5 minutes), access
+  tokens (`edu_oat_`, 1 hour) and refresh tokens (`edu_ort_`, 30 days) are 32 random bytes in
+  base64url stored as SHA-256 only, in `McpOAuthToken`, which cascades from its grant and sits
+  outside the tenant guard for the reason already written for `McpApiKey`: it is read by hash
+  before any school is known. A refresh token is rotated at each use. Presenting a consumed code or
+  a rotated refresh token a second time revokes the whole connection: a replay proves the secret
+  left the client, and the legitimate holder recovers with one consent rather than sharing a
+  compromised grant.
+- **Revocation is a `revokedAt` on the grant, never a deletion.** It happens from the Connected apps
+  panel (`revokeMcpOAuthGrantAction`, scoped by holder and school, refused under impersonation) or
+  from `POST /api/mcp/oauth/revoke` (RFC 7009, `200 {}` whether or not the token was known, so the
+  endpoint enumerates nothing). Expired tokens are swept from `/api/mcp` in `after()` like drafts,
+  at most once per interval; the grant row survives as the trace the panel shows, and its `userId`
+  foreign key is `Restrict` for the reason written under *Key lifecycle* — counted before a
+  permanent account deletion by `countRowsBlockingUserDeletion`, the platform-wide exception to the
+  tenant guard, since the question has no school.
+- **Discovery is served, not configured.** `/.well-known/oauth-protected-resource` (also under
+  `/api/mcp`) and `/.well-known/oauth-authorization-server` derive every URL from
+  `NEXT_PUBLIC_APP_URL`; no environment variable was added. The registration, token and revocation
+  endpoints answer `OPTIONS` with `access-control-allow-origin: *` for browser-based clients, never
+  cache, and turn an unexpected failure into `server_error` rather than a stack trace.
+- **Rate limits per address**: registration 10/hour (each one writes a row), token and revocation
+  60/minute. Registration and the token endpoint answer `503 temporarily_unavailable` while the
+  platform flag is off; revocation stays reachable, since refusing to revoke protects nobody.
 
 ### Reads
 
@@ -648,14 +717,16 @@ retries after a network cut must see exactly one commit win; the loser re-reads 
 returns the **recorded result**, which is the correct answer to a replay, not a second family.
 
 **A draft belongs to the identity that proposed it, and that identity is discriminated.**
-`McpDraft.ownerKind` is `MCP_KEY` or `ADMIN_SESSION`, with `keyId` set for the first and `userId` for
-the second, and never both (`McpDraft_owner_check`, migration `20260925160000_add_mcp_draft_owner`;
-the rows that existed before it were all backfilled as `MCP_KEY`). The owner is part of the claim
-condition (`DraftOwner`, `src/domain/mcp-draft.ts`), and a draft presented by another key, another
-administrator, or the same person through the other access mode is refused as `draftNotFound`
-rather than as forbidden. A bare identifier would not do: a `userId` and a `keyId` never collide by
-construction today, but a key revoked and its user's session are still two distinct authorities,
-and a plan validated under one must not be engaged under the other. The AI assistant
+`McpDraft.ownerKind` is `MCP_KEY`, `ADMIN_SESSION` or `OAUTH_GRANT`, with exactly one of `keyId`,
+`userId` or `grantId` set (`McpDraft_owner_check`, migration `20260925160000_add_mcp_draft_owner`,
+widened by `20260929090100_widen_mcp_draft_owner_check` once `20260929090000_add_mcp_oauth`
+has committed the enum value; the rows that existed before the first were all
+backfilled as `MCP_KEY`). The owner is part of the claim condition (`DraftOwner`,
+`src/domain/mcp-draft.ts`), and a draft presented by another key, another administrator, another
+connection, or the same person through another access mode is refused as `draftNotFound` rather
+than as forbidden. A bare identifier would not do: a `userId`, a `keyId` and a `grantId` never
+collide by construction today, but a key revoked and its user's session are still two distinct
+authorities, and a plan validated under one must not be engaged under the other. The AI assistant
 (*AI assistant* below) is the `ADMIN_SESSION` owner; it calls the MCP's preview and commit use cases
 with the same `DraftScope`, so the checksum, the expiry, the lock and every
 commit-time re-check are the MCP's. The resolved plan freezes the proposing user in `createdById`:
@@ -908,9 +979,10 @@ The `/dashboard/users` drawer is the single management surface. Its guards live 
   `reactivateUser` restores them. Archiving an already archived user answers `alreadyInactive`.
 - **Permanent deletion is a second, deliberate step.** `deleteUser` refuses an active account
   (`stillActive`) and refuses an account still referenced by history — families created, invitations
-  sent, payment transactions initiated, machine API keys held (`hasRelatedRecords`). The dialog also
-  requires the target's email to be typed back; a mismatch answers `confirmationMismatch`. Sessions,
-  accounts, passkeys and family links cascade with the row; `McpApiKey` deliberately does not.
+  sent, payment transactions initiated, machine API keys held, OAuth connections granted
+  (`hasRelatedRecords`). The dialog also requires the target's email to be typed back; a mismatch
+  answers `confirmationMismatch`. Sessions, accounts, passkeys and family links cascade with the
+  row; `McpApiKey` and `McpOAuthGrant` deliberately do not.
   Self-service deletion (`deleteProfile`, from `/dashboard/settings`) counts the same blockers
   through `countUserDeletionBlockers` and answers the same `hasRelatedRecords`, so neither path can
   reach the foreign key and fail raw.
@@ -2065,8 +2137,11 @@ the guard nor the filter.
 That exception does not cover every blocker. `McpApiKey` is counted through its own boundary,
 `mcpApiKeyGateway.countForUser`, because the model is outside the tenant guard and has no
 `isActive`: the ordinary `db` connection already sees all of its rows, so dropping the guard would
-buy nothing. `countUserDeletionBlockers` in `src/use-cases/users/count-deletion-blockers.ts` sums
-both counts, and both deletion paths ask it rather than counting for themselves.
+buy nothing. `McpOAuthGrant` is the opposite case: it is inside the guard, and counting it by
+`userId` alone — across schools — is exactly the platform question the exception exists for, so it
+is counted there with the families, invitations and transactions. `countUserDeletionBlockers` in
+`src/use-cases/users/count-deletion-blockers.ts` sums both counts, and both deletion paths ask it
+rather than counting for themselves.
 
 ## Known gaps
 
