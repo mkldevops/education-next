@@ -174,6 +174,33 @@
         "description": "This invitation link doesn't exist or is no longer active. Check that it is complete, exactly as received by email.",
         "action": "Go to sign in"
       }
+    },
+    "oauth": {
+      "eyebrow": "Connect an application",
+      "title": "Authorize access",
+      "subtitle": "{clientName} is asking to administer a school with your account.",
+      "account": "Signed in as",
+      "schoolLabel": "School to connect",
+      "permissions": {
+        "title": "On the chosen school, {clientName} will be able to:",
+        "read": "read families, students, enrollments, classes, schedules and payments;",
+        "write": "prepare and, after your confirmation in the application, record enrollments, payments and schedules;",
+        "revoke": "stay connected until you revoke the access in Settings › API keys."
+      },
+      "callback": "You will be sent back to {host}.",
+      "allow": "Authorize",
+      "deny": "Deny",
+      "errors": {
+        "title": "Request unavailable",
+        "invalidClient": "The application asking for access is not registered on this site.",
+        "invalidRedirectUri": "The application's return address does not match its registration.",
+        "invalidRequest": "The authorization request is incomplete or altered. Start the connection again from the application.",
+        "returnToClient": "Return to {host}",
+        "mcpDisabled": "The MCP server is disabled on this instance.",
+        "noSchool": "You administer no school on this site: only an administrator can connect an application.",
+        "forbidden": "You are not an administrator of this school.",
+        "impersonating": "Unavailable while signed in as another user: return to your own account."
+      }
     }
   },
   "dashboard": {
@@ -2709,7 +2736,7 @@
     },
     "apiKeys": {
       "title": "MCP API keys",
-      "description": "A key grants Claude or Codex the administration rights you hold on the active school. It is shown only once, when created.",
+      "description": "A key grants Claude or Codex the administration rights you hold on the active school. It is shown only once, when created. ChatGPT needs none: it connects through OAuth, see \"Connected apps\".",
       "nameLabel": "Name",
       "namePlaceholder": "Fatima's laptop",
       "nameRequired": "Give the key a name",
@@ -2727,6 +2754,39 @@
         "mcpDisabled": "The MCP server is disabled on this instance",
         "impersonating": "Unavailable while signed in as another user: return to your own account. A person's credentials and account are never changed on their behalf."
       },
+      "connections": {
+        "title": "Connected apps",
+        "description": "Apps authorized through OAuth on the active school, ChatGPT for instance. Each connection acts with your administration rights on this school, and on it alone.",
+        "empty": "No connected app yet.",
+        "setup": {
+          "title": "Connect ChatGPT",
+          "step1": "In ChatGPT, turn on Settings › Security and login › Developer mode.",
+          "step2": "Open Plugins, click \"+\", name the connection {name} and choose OAuth authentication.",
+          "step3": "Paste the URL below: it targets this site and no other.",
+          "step4": "ChatGPT opens this site: sign in with your account, pick the school, then allow.",
+          "urlLabel": "MCP server URL",
+          "copyUrl": "Copy the URL"
+        },
+        "created": "Connected {date}",
+        "lastUsed": "Last used {date}",
+        "neverUsed": "Never used",
+        "revokedLabel": "Revoked",
+        "revoke": "Revoke connection {name}",
+        "revoked": "Connection revoked",
+        "copied": "Copied",
+        "copyFailed": "Copy failed, select the text manually",
+        "error": "The operation failed, please try again",
+        "errors": {
+          "notFound": "This connection does not exist or is not yours",
+          "impersonating": "Unavailable while signed in as another user: return to your own account."
+        },
+        "revokeDialog": {
+          "title": "Revoke \"{name}\"?",
+          "warning": "This cannot be undone: the app loses access on its next call, and it must be reconnected from ChatGPT to restore it.",
+          "cancel": "Cancel",
+          "confirm": "Revoke"
+        }
+      },
       "created": {
         "title": "Your new key",
         "warning": "Copy it now: it will never be shown again.",
@@ -2739,7 +2799,7 @@
         "status": {
           "ready": "Available with this key",
           "headersBeta": "Depends on your account — request headers in beta",
-          "oauthRequired": "Requires OAuth — integration in progress"
+          "oauth": "No key needed — OAuth sign-in from ChatGPT"
         },
         "clients": {
           "claudeCode": {
@@ -2761,14 +2821,15 @@
             "step2": "Click \"+\" then \"Add custom connector\", and name it {name}.",
             "step3": "Paste the URL below.",
             "step4": "If a \"Request headers\" section appears: choose \"No sign-in\" authentication, then the x-api-key header with the key above.",
-            "note": "Without the \"Request headers\" section (a beta limited to some accounts), Claude Web accepts OAuth only and this key is not enough. On a Team or Enterprise plan the header is shared by the whole organization: do not put your personal key there."
+            "note": "Without the \"Request headers\" section (a beta limited to some accounts), Claude Web accepts OAuth only: add the connector without a header, and Claude will send you to this site's consent screen. On a Team or Enterprise plan the header is shared by the whole organization: do not put your personal key there."
           },
           "chatgpt": {
             "label": "ChatGPT",
             "step1": "In ChatGPT, turn on Settings › Security and login › Developer mode.",
-            "step2": "Open Plugins, click \"+\" and name the connection {name}.",
+            "step2": "Open Plugins, click \"+\", name the connection {name} and choose OAuth authentication.",
             "step3": "Paste the URL below: it targets this site and no other.",
-            "note": "ChatGPT connects through OAuth and does not accept an API key: this key is not enough. The ChatGPT personal plugin is being integrated."
+            "note": "ChatGPT does not use this key: the connection goes through your account and is revoked from \"Connected apps\".",
+            "step4": "ChatGPT opens this site: sign in with your account, pick the school, then allow."
           }
         }
       },

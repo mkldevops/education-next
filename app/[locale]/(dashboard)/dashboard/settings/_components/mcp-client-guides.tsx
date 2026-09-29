@@ -20,12 +20,13 @@ type Props = {
 
 const WEB_STEPS: Record<'claudeWeb' | 'chatgpt', readonly string[]> = {
   claudeWeb: ['step1', 'step2', 'step3', 'step4'],
-  chatgpt: ['step1', 'step2', 'step3'],
+  chatgpt: ['step1', 'step2', 'step3', 'step4'],
 }
 
 /**
  * Seuls les clients locaux reçoivent la clé dans leur exemple : Claude Web et ChatGPT se
  * connectent depuis le nuage de leur éditeur, donc leur parcours ne montre que l'URL du site.
+ * ChatGPT n'a même pas besoin de la clé : il passe par OAuth et l'écran de consentement.
  */
 export function McpClientGuides({ site, apiKey, onCopy }: Props) {
   const t = useTranslations('settings.apiKeys.created')
@@ -108,7 +109,7 @@ function StatusBadge({ status }: { status: McpClientStatus }) {
   return (
     <p
       className={
-        status === 'ready'
+        status === 'ready' || status === 'oauth'
           ? 'inline-block rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800'
           : 'inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800'
       }

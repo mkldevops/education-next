@@ -303,7 +303,7 @@ describe('ApiKeysSection', () => {
 
     it.each([
       ['claudeWeb', 'status.headersBeta', 4],
-      ['chatgpt', 'status.oauthRequired', 3],
+      ['chatgpt', 'status.oauth', 4],
     ])(
       'shows %s as a web procedure with status %s, without the key or a command',
       async (client, status, steps) => {
