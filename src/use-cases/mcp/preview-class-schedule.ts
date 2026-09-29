@@ -8,7 +8,7 @@ import { CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY } from '@/lib/class-s
 import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-schedule-enabled'
 import { blockedPreview, saveDraftPreview } from './draft-response'
 import type { DraftScope } from './draft-scope'
-import { matchByName } from './match-by-name'
+import { matchByName, matchTeacher } from './match-by-name'
 import { previewClassScheduleSchema } from './schemas'
 
 // `z.input`, pas `z.infer` : l'entrée vient d'un modèle et traverse le schéma — un défaut
@@ -36,26 +36,6 @@ type ExistingSlot = {
   startTime: string
   endTime: string
   teacherIds: string[]
-}
-
-/**
- * Un planning nomme un enseignant comme on le dit : « Mme Ali », « Fatima », « Ali Fatima ».
- * L'égalité sur le nom complet dans un ordre ou l'autre, le prénom seul ou le nom seul
- * passe d'abord ; la sous-chaîne sur le nom complet ensuite, et deux candidats restants
- * sont une ambiguïté à rendre, pas à trancher.
- */
-function matchTeacher(rows: Teacher[], label: string): Teacher[] {
-  const wanted = label.trim().toLowerCase()
-  const exact = rows.filter((row) =>
-    [
-      `${row.firstName} ${row.lastName}`,
-      `${row.lastName} ${row.firstName}`,
-      row.firstName,
-      row.lastName,
-    ].some((name) => name.trim().toLowerCase() === wanted)
-  )
-  if (exact.length > 0) return exact
-  return rows.filter((row) => `${row.firstName} ${row.lastName}`.toLowerCase().includes(wanted))
 }
 
 function sameRange(

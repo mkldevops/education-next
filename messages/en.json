@@ -2429,6 +2429,8 @@
           "get_family_payments": "Family payments",
           "cancel_payments": "Cancel payments",
           "create_teacher": "Create a teacher",
+          "preview_record_teacher_expense": "Expense note preview",
+          "commit_record_teacher_expense": "Record expense note",
           "preview_class_schedule": "Prepare a full schedule",
           "commit_class_schedule": "Commit a full schedule"
         },

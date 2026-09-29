@@ -282,4 +282,26 @@ export const mcpCreateTeacherSchema = z.object({
   lastName: z.string().trim().min(1).max(250),
   email: z.email().optional(),
   phone: z.string().trim().max(20).optional(),
+  // Deux enseignants homonymes existent : le second se crée en le disant, jamais par défaut.
+  allowDuplicate: z.boolean().optional(),
 })
+
+/**
+ * Une note de dépense lue sur un ticket. L'enseignant vient en libellé (`teacherName`) ou
+ * en identifiant (`teacherId`), jamais les deux. Les dates sont des jours de calendrier,
+ * rangés à minuit UTC comme le formulaire du tableau de bord.
+ */
+export const previewRecordTeacherExpenseSchema = z
+  .object({
+    teacherId: z.uuid().optional(),
+    teacherName: z.string().trim().min(1).max(250).optional(),
+    amount: z.number().positive().max(99_999_999.99).refine(isCurrencyAmount),
+    category: z.string().trim().min(1).max(100),
+    description: z.string().trim().min(1).max(250),
+    requestedAt: z.iso.date().optional(),
+    paidAt: z.iso.date().optional(),
+  })
+  .refine((data) => (data.teacherId === undefined) !== (data.teacherName === undefined), {
+    message: 'teacherId or teacherName, exactly one',
+    path: ['teacherId'],
+  })

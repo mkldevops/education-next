@@ -2430,6 +2430,8 @@
           "get_family_payments": "Paiements de la famille",
           "cancel_payments": "Annuler des paiements",
           "create_teacher": "Créer un enseignant",
+          "preview_record_teacher_expense": "Aperçu de note de dépense",
+          "commit_record_teacher_expense": "Enregistrer la note de dépense",
           "preview_class_schedule": "Préparer un planning complet",
           "commit_class_schedule": "Engager un planning complet"
         },

@@ -767,6 +767,20 @@ the slots written before it away with it. The transaction timeout grows with the
 250 ms a slot), since a hundred lines cost three queries each. The recorded result lists each slot `id`
 with its teacher-overlap warnings, so a replay returns the same planning instead of a second one.
 
+**An expense note is read before it is written.** `record_teacher_expense`
+(`src/use-cases/mcp/preview-record-teacher-expense.ts`, `commit-record-teacher-expense.ts`) enters a
+teacher expense note read off a receipt, so the human rereads the teacher, amount and dates before the
+financial write. Both halves refuse `notConfigured` unless `teacher_expenses_enabled` is on; the
+commit checks it before claiming, so a draft prepared before the switch cannot be committed after it.
+The preview resolves `teacherName` among the school's active teachers with the planning's matching
+rule (`matchTeacher`: full name in either order, first or last name, then substring) → `notFound`,
+`ambiguousTeacher`; a `teacherId` outside the school or archived is `notFound`. Dates are calendar
+days stored at midnight UTC, as the dashboard form does, and `requestedAt` defaults to today. Two
+findings are warnings, not refusals, because the dashboard accepts both: an active note of the same
+teacher, amount and day (`possibleDuplicateExpense`) and `paidAt` before `requestedAt`
+(`paidBeforeRequested`). The commit rereads the teacher in its transaction (`notFound` when archived
+since) and records the note with its result, so a replay returns the same note instead of a second one.
+
 **The two pairs chain.** `enroll_family` creates its enrollments `PENDING`, and `record_payment`
 distributes across `PENDING` and `ACTIVE` ones alike — so a family enrolled through the MCP can pay
 its next instalment before an admin validates the enrollment. Validation stays a dashboard decision;
@@ -878,6 +892,11 @@ the raw `draftId`/`checksum` it will send.
 
 **A new teacher needs a name, nothing else.** `create_teacher` (write, approval required) creates the
 teacher with no class and no period, like the dashboard form; assigning a class is a separate step.
+An active teacher of the same school with the same name, in either order, or the same email
+(`teacherGateway.findPossibleDuplicates`, case-insensitive) suspends the creation: the tool answers
+`possibleDuplicate` with the matches' identity and writes nothing, and `allowDuplicate: true` creates
+the homonym once the administrator says it is someone else. The check is advisory, not a lock: two
+concurrent calls for the same name can both create. The dashboard form does not check.
 The assistant's prompt carries the current period (`getSelectedPeriod`: the selected-period cookie,
 else the period covering today), so whenever a period is needed and none is given, the model uses
 that one instead of asking.

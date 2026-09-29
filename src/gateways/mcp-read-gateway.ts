@@ -104,6 +104,9 @@ export const mcpReadGateway = {
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     }),
 
+  findTeacher: (schoolId: string, id: string) =>
+    db.teacher.findFirst({ where: { id, schoolId, isActive: true }, select: teacherIdentity }),
+
   listEvents: (schoolId: string, filter: McpEventFilter) =>
     db.event.findMany({
       where: {
