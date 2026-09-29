@@ -3,6 +3,14 @@ import type { CSSProperties } from 'react'
 import { Link } from '@/i18n/routing'
 import { cn } from '@/lib/utils'
 import { RichDescription } from '../../../../(dashboard)/dashboard/planning/_components/schedule-grid'
+import {
+  assignLanes,
+  axisBounds,
+  groupByTimeRange,
+  printLabelEm,
+  printMinutesPerEm,
+  toMinutes,
+} from '../_lib/timetable-layout'
 
 export type PublicSlot = {
   id: string
@@ -72,17 +80,6 @@ function sessionOf(startTime: string): Session {
   if (hour < 12) return 'morning'
   if (hour < 18) return 'afternoon'
   return 'evening'
-}
-
-function groupByTimeRange(slots: PublicSlot[]) {
-  const groups: { key: string; startTime: string; endTime: string; slots: PublicSlot[] }[] = []
-  for (const slot of slots) {
-    const key = `${slot.startTime}-${slot.endTime}`
-    const group = groups.find((candidate) => candidate.key === key)
-    if (group) group.slots.push(slot)
-    else groups.push({ key, startTime: slot.startTime, endTime: slot.endTime, slots: [slot] })
-  }
-  return groups.sort((a, b) => a.startTime.localeCompare(b.startTime))
 }
 
 function toneStyle(tone: string) {
@@ -164,43 +161,22 @@ type TimetableProps = {
   focused: boolean
 }
 
-type TimeRange = ReturnType<typeof groupByTimeRange>[number]
+type TimeRange = ReturnType<typeof groupByTimeRange<PublicSlot>>[number]
 
-const SCALE = {
-  compact: { screenItem: 34, printItem: 20 },
-  focused: { screenItem: 150, printItem: 72 },
-}
+const SCREEN_ITEM_PX = { compact: 34, focused: 150 }
 const SCREEN_BLOCK_PX = 40
 const SCREEN_MIN_PX_PER_MINUTE = 1.2
-const PRINT_BLOCK_PX = 24
-const PRINT_MIN_PX_PER_MINUTE = 0.8
 
-function toMinutes(time: string) {
-  return Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5))
-}
-
-function pixelsPerMinute(ranges: TimeRange[], itemPx: number, blockPx: number, floor: number) {
+function pixelsPerMinute(ranges: TimeRange[], itemPx: number) {
   return ranges.reduce(
     (max, range) =>
       Math.max(
         max,
-        (blockPx + range.slots.length * itemPx) /
+        (SCREEN_BLOCK_PX + range.slots.length * itemPx) /
           (toMinutes(range.endTime) - toMinutes(range.startTime))
       ),
-    floor
+    SCREEN_MIN_PX_PER_MINUTE
   )
-}
-
-function assignLanes(ranges: TimeRange[]) {
-  const laneEnds: number[] = []
-  const placed = ranges.map((range) => {
-    const start = toMinutes(range.startTime)
-    let lane = laneEnds.findIndex((end) => end <= start)
-    if (lane === -1) lane = laneEnds.length
-    laneEnds[lane] = toMinutes(range.endTime)
-    return { range, lane }
-  })
-  return { placed, laneCount: Math.max(laneEnds.length, 1) }
 }
 
 export function PublicTimetable({ slots, levels, labels, focused }: TimetableProps) {
@@ -238,14 +214,17 @@ type ViewProps = {
 }
 
 function WeekCalendar({ days, labels, toneOf, focused }: ViewProps) {
-  const sizes = focused ? SCALE.focused : SCALE.compact
   const ranges = days.flatMap((day) => day.ranges)
-  const axisStart = Math.floor(Math.min(...ranges.map((r) => toMinutes(r.startTime))) / 60) * 60
-  const axisEnd = Math.ceil(Math.max(...ranges.map((r) => toMinutes(r.endTime))) / 60) * 60
+  const { start: axisStart, end: axisEnd } = axisBounds(ranges)
+  const labelEm = printLabelEm(
+    ranges.flatMap((range) => range.slots),
+    focused
+  )
   const hours = Array.from({ length: (axisEnd - axisStart) / 60 + 1 }, (_, i) => axisStart / 60 + i)
   const scale = {
-    '--m-screen': `${pixelsPerMinute(ranges, sizes.screenItem, SCREEN_BLOCK_PX, SCREEN_MIN_PX_PER_MINUTE)}px`,
-    '--m-print': `${pixelsPerMinute(ranges, sizes.printItem, PRINT_BLOCK_PX, PRINT_MIN_PX_PER_MINUTE)}px`,
+    '--m-screen': `${pixelsPerMinute(ranges, focused ? SCREEN_ITEM_PX.focused : SCREEN_ITEM_PX.compact)}px`,
+    '--m-print': 'calc(100cqh / var(--axis))',
+    '--fs-print': `clamp(9px, min(var(--m) * ${printMinutesPerEm(ranges, focused).toFixed(3)}, 100cqw / (var(--lanes, 1) * ${labelEm.toFixed(2)})), 20px)`,
     '--axis': axisEnd - axisStart,
   } as CSSProperties
   const at = (minutes: number) => `calc(var(--m) * ${minutes - axisStart})`
@@ -258,10 +237,10 @@ function WeekCalendar({ days, labels, toneOf, focused }: ViewProps) {
   return (
     <div
       style={scale}
-      className="hidden rounded-2xl border border-alabaster-700 bg-white [--m:var(--m-screen)] md:block print:block print:rounded-none print:border-0 print:[--m:var(--m-print)]"
+      className="hidden rounded-2xl border border-alabaster-700 bg-white [--m:var(--m-screen)] md:block print:flex print:min-h-0 print:flex-1 print:flex-col print:rounded-none print:border-0 print:[--m:var(--m-print)]"
     >
       <div
-        className="grid"
+        className="grid print:min-h-0 print:flex-1 print:grid-rows-[auto_minmax(0,1fr)]"
         style={{ gridTemplateColumns: `5.25rem repeat(${days.length}, minmax(0, 1fr))` }}
       >
         <div className="border-b-2 border-graphite" />
@@ -270,16 +249,14 @@ function WeekCalendar({ days, labels, toneOf, focused }: ViewProps) {
             key={day.weekday}
             className="border-b-2 border-l border-graphite border-l-alabaster-700 px-3 py-2.5 print:px-2 print:py-1.5"
           >
-            <h2 className="text-base font-bold text-graphite print:text-sm">
+            <h2 className="text-base font-bold text-graphite print:text-lg">
               {labels.weekdays[day.weekday]}
             </h2>
-            <p className="text-xs text-graphite-600 print:text-[9px]">
-              {labels.courses(day.count)}
-            </p>
+            <p className="text-xs text-graphite-600">{labels.courses(day.count)}</p>
           </div>
         ))}
 
-        <div className="relative h-[calc(var(--m)*var(--axis))] my-3 print:my-2">
+        <div className="relative my-3 h-[calc(var(--m)*var(--axis))] print:my-2 print:h-auto print:[container-type:size]">
           {hours.map((hour) => {
             const session = sessionStarts.get(hour)
             const SessionIcon = session ? SESSION_ICONS[session] : null
@@ -289,11 +266,11 @@ function WeekCalendar({ days, labels, toneOf, focused }: ViewProps) {
                 style={{ top: at(hour * 60) }}
                 className="absolute inset-x-0 -translate-y-2 pr-2 text-right print:-translate-y-1.5"
               >
-                <p className="font-mono text-xs tabular-nums text-graphite-600 print:text-[9px]">
+                <p className="font-mono text-xs tabular-nums text-graphite-600 print:text-[11px]">
                   {String(hour).padStart(2, '0')}:00
                 </p>
                 {session && SessionIcon && (
-                  <p className="flex items-center justify-end gap-0.5 whitespace-nowrap text-[0.6rem] font-semibold uppercase tracking-wider text-primary print:text-[7px]">
+                  <p className="flex items-center justify-end gap-0.5 whitespace-nowrap text-[0.6rem] font-semibold uppercase tracking-wider text-primary print:text-[9px]">
                     <SessionIcon aria-hidden="true" className="size-2.5" />
                     {labels.sessions[session]}
                   </p>
@@ -309,7 +286,8 @@ function WeekCalendar({ days, labels, toneOf, focused }: ViewProps) {
             <section
               key={day.weekday}
               aria-label={labels.weekdays[day.weekday]}
-              className="relative my-3 h-[calc(var(--m)*var(--axis))] border-l border-alabaster-700 print:my-2"
+              style={{ '--lanes': laneCount } as CSSProperties}
+              className="relative my-3 h-[calc(var(--m)*var(--axis))] border-l border-alabaster-700 print:my-2 print:h-auto print:[container-type:size]"
             >
               {hours.map((hour) => (
                 <div
@@ -328,12 +306,12 @@ function WeekCalendar({ days, labels, toneOf, focused }: ViewProps) {
                     left: `calc(${(lane / laneCount) * 100}% + 0.375rem)`,
                     width: `calc(${100 / laneCount}% - 0.75rem)`,
                   }}
-                  className="absolute flex flex-col gap-1.5 overflow-hidden rounded-xl bg-alabaster-900 p-2 ring-1 ring-alabaster-700 print:gap-0.5 print:rounded-md print:p-1"
+                  className="absolute flex flex-col gap-1.5 overflow-hidden rounded-xl bg-alabaster-900 p-2 ring-1 ring-alabaster-700 print:gap-[0.3em] print:rounded-md print:p-[0.45em] print:text-[length:var(--fs-print)]"
                 >
-                  <p className="whitespace-nowrap font-mono text-xs font-semibold tabular-nums text-graphite print:text-[9px]">
+                  <p className="whitespace-nowrap font-mono text-xs font-semibold tabular-nums text-graphite print:text-[0.85em]">
                     {range.startTime}–{range.endTime}
                   </p>
-                  <ul className="flex flex-col gap-1 print:gap-0.5">
+                  <ul className="flex flex-col gap-1 print:gap-[0.3em]">
                     {range.slots.map((slot) =>
                       focused ? (
                         <SlotDetail
@@ -442,7 +420,7 @@ function SlotChip({
     </>
   )
   const chip =
-    'flex max-w-full items-center gap-1.5 rounded-md border border-l-4 border-alabaster-700 border-l-[var(--tone)] bg-white px-2 py-1 text-sm print:gap-1 print:px-1 print:py-0 print:text-[9px]'
+    'flex max-w-full items-center gap-1.5 rounded-md border border-l-4 border-alabaster-700 border-l-[var(--tone)] bg-white px-2 py-1 text-sm print:gap-[0.35em] print:px-[0.4em] print:py-[0.15em] print:text-[1em]'
 
   if (!slot.description) {
     return (
@@ -552,14 +530,14 @@ function SlotDetail({
   return (
     <li
       style={toneStyle(tone)}
-      className="w-full list-none rounded-lg border border-l-4 border-alabaster-700 border-l-[var(--tone)] bg-white p-3 print:p-1.5"
+      className="w-full list-none rounded-lg border border-l-4 border-alabaster-700 border-l-[var(--tone)] bg-white p-3 print:p-[0.5em]"
     >
-      <p className="text-lg font-bold leading-tight text-graphite print:text-[11px]">
+      <p className="text-lg font-bold leading-tight text-graphite print:text-[1.15em]">
         <span className="sr-only">{labels.level} </span>
         {slot.classPeriod.level.name}
       </p>
-      <p className="mt-1 flex items-center gap-1.5 text-sm text-graphite-600 print:mt-0 print:text-[9px]">
-        <UserRound aria-hidden="true" className="size-3.5 shrink-0 print:size-2.5" />
+      <p className="mt-1 flex items-center gap-1.5 text-sm text-graphite-600 print:mt-0 print:text-[0.9em]">
+        <UserRound aria-hidden="true" className="size-3.5 shrink-0 print:size-[1em]" />
         <span className="sr-only">
           {slot.teachers.length > 1 ? labels.teachers : labels.teacher} :{' '}
         </span>
@@ -568,7 +546,7 @@ function SlotDetail({
       {slot.description && (
         <div
           className={cn(
-            'mt-2 border-t border-alabaster-700 pt-2 text-xs text-graphite-600 print:mt-1 print:pt-1 print:text-[8px] [&>div]:m-0 [&>div]:bg-transparent [&>div]:p-0 [&>div]:text-xs print:[&>div]:text-[8px]',
+            'mt-2 border-t border-alabaster-700 pt-2 text-xs text-graphite-600 print:mt-1 print:pt-1 print:text-[0.8em] [&>div]:m-0 [&>div]:bg-transparent [&>div]:p-0 [&>div]:text-xs print:[&>div]:text-[1em]',
             compact && 'line-clamp-4 print:line-clamp-3'
           )}
         >
