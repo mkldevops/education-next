@@ -147,6 +147,7 @@ model School {
   classScheduleSlotTeachers ClassScheduleSlotTeacher[]
   teacherExpenses           TeacherExpense[]
   mcpApiKeys                McpApiKey[]
+  mcpOAuthGrants            McpOAuthGrant[]
   mcpDrafts                 McpDraft[]
   aiConversations           AiConversation[]
   events                    Event[]
@@ -198,6 +199,7 @@ model User {
   passkeys                  Passkey[]
   schoolMemberships         SchoolMember[]
   mcpApiKeys                McpApiKey[]
+  mcpOAuthGrants            McpOAuthGrant[]
   aiConversations           AiConversation[]
   teacherProfiles           Teacher[]
   createdAttendanceSessions AttendanceSession[]  @relation("attendanceCreatedBy")
@@ -856,31 +858,111 @@ model McpApiKey {
   @@index([userId, schoolId])
 }
 
+/// Client OAuth enregistré dynamiquement (RFC 7591) : ChatGPT, ou tout client MCP qui
+/// s'enregistre à la première connexion. Public — sans secret — et prouvé par PKCE.
+///
+/// Hors garde tenant : un client n'appartient à aucune école, c'est la connexion
+/// (`McpOAuthGrant`) qui en choisit une. `src/gateways/mcp-oauth-client-gateway.ts` en est
+/// la seule frontière.
+model McpOAuthClient {
+  id           String   @id @default(uuid())
+  clientName   String   @db.VarChar(120)
+  redirectUris String[]
+  createdAt    DateTime @default(now())
+
+  grants McpOAuthGrant[]
+}
+
+/// Connexion OAuth : un utilisateur a autorisé un client à administrer UNE école de ce
+/// site. C'est l'objet que l'onglet « Clés API » liste et révoque ; les jetons en dérivent.
+///
+/// `resource` fige l'audience (l'URL `/api/mcp` du site émetteur) : un jeton émis ici n'a
+/// pas d'audience ailleurs. `schoolId` est figé comme pour `McpApiKey`.
+model McpOAuthGrant {
+  id         String    @id @default(uuid())
+  schoolId   String
+  userId     String
+  clientId   String
+  clientName String    @db.VarChar(120)
+  resource   String    @db.VarChar(255)
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  school School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  // `Restrict`, comme `McpApiKey.user` : la trace d'une connexion survit à son compte.
+  user   User           @relation(fields: [userId], references: [id])
+  client McpOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tokens McpOAuthToken[]
+
+  @@unique([id, schoolId])
+  @@index([schoolId])
+  @@index([userId, schoolId])
+  @@index([clientId])
+}
+
+enum McpOAuthTokenKind {
+  CODE
+  ACCESS
+  REFRESH
+}
+
+/// Secret dérivé d'une connexion : code d'autorisation, jeton d'accès ou jeton de
+/// rafraîchissement, en base sous forme de hachage SHA-256 uniquement.
+///
+/// `consumedAt` marque un code échangé ou un jeton de rafraîchissement tourné ; le
+/// représenter à nouveau révoque la connexion entière. `codeChallenge` et `redirectUri`
+/// ne sont portés que par un code, qui doit les revoir à l'échange.
+///
+/// Hors garde tenant : résolu par `tokenHash` avant que l'école soit connue.
+/// `src/gateways/mcp-oauth-grant-gateway.ts` en est la seule frontière.
+model McpOAuthToken {
+  id            String            @id @default(uuid())
+  grantId       String
+  kind          McpOAuthTokenKind
+  tokenHash     String            @unique @db.VarChar(64)
+  prefix        String            @db.VarChar(16)
+  codeChallenge String?           @db.VarChar(128)
+  redirectUri   String?           @db.VarChar(512)
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime          @default(now())
+
+  grant McpOAuthGrant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+
+  @@index([grantId])
+  @@index([expiresAt])
+}
+
 enum McpDraftStatus {
   PENDING
   COMMITTED
 }
 
-// Qui a proposé un brouillon : une clé MCP, ou un administrateur connecté via l'assistant
-// d'inscription. Les deux ne se croisent jamais — un brouillon n'est engageable que par le
-// propriétaire du même genre et du même identifiant.
+// Qui a proposé un brouillon : une clé MCP, un administrateur connecté via l'assistant
+// d'inscription, ou une connexion OAuth. Les genres ne se croisent jamais — un brouillon
+// n'est engageable que par le propriétaire du même genre et du même identifiant.
 enum McpDraftOwnerKind {
   MCP_KEY
   ADMIN_SESSION
+  OAUTH_GRANT
 }
 
 // Plan résolu d'une écriture MCP, entre le `preview_*` qui le calcule et le `commit_*` qui
 // l'engage. Il porte le verrou à passage unique : `status` passe de PENDING à COMMITTED par
 // un `updateMany` conditionnel, et `result` garde la réponse à rendre à un rejeu.
 //
-// `keyId` et `userId` sont exclusifs selon `ownerKind` ; la contrainte CHECK vit dans la
-// migration, Prisma ne sachant pas l'exprimer.
+// `keyId`, `userId` et `grantId` sont exclusifs selon `ownerKind` ; la contrainte CHECK vit
+// dans la migration, Prisma ne sachant pas l'exprimer.
 model McpDraft {
   id          String            @id @default(uuid())
   schoolId    String
   ownerKind   McpDraftOwnerKind
   keyId       String?
   userId      String?
+  grantId     String?
   tool        String            @db.VarChar(50)
   checksum    String            @db.VarChar(12)
   resolved    Json

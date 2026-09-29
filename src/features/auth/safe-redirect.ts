@@ -2,7 +2,7 @@ import { routing } from '@/i18n/routing'
 
 export const DEFAULT_AUTH_REDIRECT = '/dashboard'
 
-const MAX_REDIRECT_LENGTH = 512
+const MAX_REDIRECT_LENGTH = 2048
 
 const hasControlCharacter = (value: string) =>
   [...value].some((character) => (character.codePointAt(0) ?? 0) < 0x20)

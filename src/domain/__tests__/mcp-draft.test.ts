@@ -71,6 +71,7 @@ describe('ownerColumns', () => {
       ownerKind: 'MCP_KEY',
       keyId: 'key-1',
       userId: null,
+      grantId: null,
     })
   })
 
@@ -79,13 +80,29 @@ describe('ownerColumns', () => {
       ownerKind: 'ADMIN_SESSION',
       keyId: null,
       userId: 'user-1',
+      grantId: null,
+    })
+  })
+
+  it('spreads an OAuth grant owner onto the grant column only', () => {
+    expect(ownerColumns({ kind: 'OAUTH_GRANT', grantId: 'grant-1' })).toEqual({
+      ownerKind: 'OAUTH_GRANT',
+      keyId: null,
+      userId: null,
+      grantId: 'grant-1',
     })
   })
 })
 
 describe('ownsDraft', () => {
-  const byKey = { ownerKind: 'MCP_KEY' as const, keyId: 'key-1', userId: null }
-  const bySession = { ownerKind: 'ADMIN_SESSION' as const, keyId: null, userId: 'user-1' }
+  const byKey = { ownerKind: 'MCP_KEY' as const, keyId: 'key-1', userId: null, grantId: null }
+  const bySession = {
+    ownerKind: 'ADMIN_SESSION' as const,
+    keyId: null,
+    userId: 'user-1',
+    grantId: null,
+  }
+  const byGrant = { ownerKind: 'OAUTH_GRANT' as const, keyId: null, userId: null, grantId: 'g-1' }
 
   it('matches the same owner in the same access mode', () => {
     expect(ownsDraft(byKey, { kind: 'MCP_KEY', keyId: 'key-1' })).toBe(true)
@@ -100,5 +117,11 @@ describe('ownsDraft', () => {
   it('never crosses access modes, even for the same user', () => {
     expect(ownsDraft(bySession, { kind: 'MCP_KEY', keyId: 'key-1' })).toBe(false)
     expect(ownsDraft(byKey, { kind: 'ADMIN_SESSION', userId: 'user-1' })).toBe(false)
+    expect(ownsDraft(byGrant, { kind: 'MCP_KEY', keyId: 'g-1' })).toBe(false)
+  })
+
+  it('matches an OAuth grant owner on its grant only', () => {
+    expect(ownsDraft(byGrant, { kind: 'OAUTH_GRANT', grantId: 'g-1' })).toBe(true)
+    expect(ownsDraft(byGrant, { kind: 'OAUTH_GRANT', grantId: 'g-2' })).toBe(false)
   })
 })

@@ -2,15 +2,16 @@ import type { AuthInfo } from '@modelcontextprotocol/server'
 import type { McpScope } from '@/use-cases/mcp/resolve-mcp-scope'
 
 /**
- * La clé présentée ne transite **jamais** par `AuthInfo`.
+ * La preuve présentée ne transite **jamais** par `AuthInfo`.
  *
  * `authInfo` est lisible depuis chaque outil et peut finir sérialisé dans une erreur du
- * SDK : `token` porte le préfixe public de la clé, qui identifie sans authentifier.
+ * SDK : `token` porte le préfixe public de la clé ou du jeton, qui identifie sans
+ * authentifier.
  */
 export function toAuthInfo(scope: McpScope): AuthInfo {
   return {
-    token: scope.keyPrefix,
-    clientId: scope.keyId,
+    token: scope.credentialPrefix,
+    clientId: scope.credentialId,
     scopes: ['school:admin'],
     extra: { scope },
   }

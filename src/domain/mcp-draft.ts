@@ -64,8 +64,9 @@ export function draftExpiry(now: Date = new Date()): Date {
 }
 
 /**
- * Propriétaire d'un brouillon : la clé MCP qui l'a proposé, ou l'administrateur connecté
- * qui l'a préparé depuis l'assistant d'inscription.
+ * Propriétaire d'un brouillon : la clé MCP qui l'a proposé, l'administrateur connecté
+ * qui l'a préparé depuis l'assistant d'inscription, ou la connexion OAuth (ChatGPT) qui
+ * l'a obtenu.
  *
  * Deux genres distincts plutôt qu'un identifiant nu : un `userId` et un `keyId` ne se
  * comparent pas, et une clé MCP de l'utilisateur X ne doit pas engager un brouillon que X a
@@ -74,23 +75,37 @@ export function draftExpiry(now: Date = new Date()): Date {
 export type DraftOwner =
   | { kind: 'MCP_KEY'; keyId: string }
   | { kind: 'ADMIN_SESSION'; userId: string }
+  | { kind: 'OAUTH_GRANT'; grantId: string }
 
 export type DraftOwnerColumns = {
   ownerKind: DraftOwner['kind']
   keyId: string | null
   userId: string | null
+  grantId: string | null
 }
 
 /** Colonnes persistées d'un propriétaire, exclusives selon le genre. */
 export function ownerColumns(owner: DraftOwner): DraftOwnerColumns {
-  return owner.kind === 'MCP_KEY'
-    ? { ownerKind: 'MCP_KEY', keyId: owner.keyId, userId: null }
-    : { ownerKind: 'ADMIN_SESSION', keyId: null, userId: owner.userId }
+  switch (owner.kind) {
+    case 'MCP_KEY':
+      return { ownerKind: 'MCP_KEY', keyId: owner.keyId, userId: null, grantId: null }
+    case 'ADMIN_SESSION':
+      return { ownerKind: 'ADMIN_SESSION', keyId: null, userId: owner.userId, grantId: null }
+    case 'OAUTH_GRANT':
+      return { ownerKind: 'OAUTH_GRANT', keyId: null, userId: null, grantId: owner.grantId }
+  }
 }
 
 export function ownsDraft(draft: DraftOwnerColumns, owner: DraftOwner): boolean {
   if (draft.ownerKind !== owner.kind) return false
-  return owner.kind === 'MCP_KEY' ? draft.keyId === owner.keyId : draft.userId === owner.userId
+  switch (owner.kind) {
+    case 'MCP_KEY':
+      return draft.keyId === owner.keyId
+    case 'ADMIN_SESSION':
+      return draft.userId === owner.userId
+    case 'OAUTH_GRANT':
+      return draft.grantId === owner.grantId
+  }
 }
 
 /**

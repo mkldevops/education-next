@@ -65,8 +65,8 @@ describe('resolveMcpScope', () => {
     expect(await resolve(presented)).toEqual({
       status: 'OK',
       scope: {
-        keyId: 'key-1',
-        keyPrefix: 'edu_mcp_aaaa',
+        credentialId: 'key-1',
+        credentialPrefix: 'edu_mcp_aaaa',
         owner: { kind: 'MCP_KEY', keyId: 'key-1' },
         userId: 'user-1',
         schoolId: 'school-1',
@@ -127,6 +127,29 @@ describe('resolveMcpScope', () => {
 
     findMembership.mockResolvedValue(null)
     expect(await resolve(presented)).toEqual({ status: 'forbidden' })
+  })
+
+  it('hands an OAuth access token to the OAuth resolver with the same gateways', async () => {
+    const token = `edu_oat_${'t'.repeat(43)}`
+    const resolveOAuthScope = vi.fn().mockResolvedValue({ status: 'forbidden' })
+
+    expect(await resolveMcpScope(token, { ...deps, resolveOAuthScope })).toEqual({
+      status: 'forbidden',
+    })
+    expect(resolveOAuthScope).toHaveBeenCalledWith(token, {
+      userGw: deps.userGw,
+      schoolGw: deps.schoolGw,
+      memberGw: deps.memberGw,
+      checkPaymentsEnabled,
+    })
+    expect(findByHash).not.toHaveBeenCalled()
+  })
+
+  it('never reads the key table for a refresh token or an authorization code', async () => {
+    for (const secret of [`edu_ort_${'t'.repeat(43)}`, `edu_oac_${'t'.repeat(43)}`]) {
+      expect(await resolve(secret)).toEqual({ status: 'unauthenticated' })
+    }
+    expect(findByHash).not.toHaveBeenCalled()
   })
 
   it('scopes the caller to the school recorded on the key, not to a requested one', async () => {

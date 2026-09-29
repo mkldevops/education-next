@@ -20,8 +20,8 @@ vi.mock('@/gateways/mcp-draft-gateway', () => ({ mcpDraftGateway: { create: crea
 const { previewClassSchedule } = await import('./preview-class-schedule')
 
 const scope = {
-  keyId: 'key-1',
-  keyPrefix: 'edu_mcp_aaaa',
+  credentialId: 'key-1',
+  credentialPrefix: 'edu_mcp_aaaa',
   owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',

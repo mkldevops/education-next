@@ -60,15 +60,22 @@ export async function findPaymentTransactionByProviderSessionId(
  * Le décompte ignore délibérément le soft-delete : une famille archivée contraint
  * toujours la clé étrangère, donc la compter est la seule façon de prédire si la
  * suppression passera.
+ *
+ * `McpOAuthGrant` y figure aussi : la connexion est sous garde tenant, mais la compter
+ * par `userId` seul — toutes écoles, révoquées comprises — est cette même question
+ * plateforme, et sa clé étrangère `Restrict` bloque la suppression comme les autres.
  */
 export async function countRowsBlockingUserDeletion(userId: string): Promise<number> {
   const db = archivedClient()
-  const [createdFamilies, createdInvitations, paymentTransactions] = await Promise.all([
-    db.family.count({ where: { createdById: userId } }),
-    db.invitation.count({ where: { createdById: userId } }),
-    db.paymentTransaction.count({ where: { initiatedById: userId } }),
-  ])
-  return createdFamilies + createdInvitations + paymentTransactions
+  const [createdFamilies, createdInvitations, paymentTransactions, oauthGrants] = await Promise.all(
+    [
+      db.family.count({ where: { createdById: userId } }),
+      db.invitation.count({ where: { createdById: userId } }),
+      db.paymentTransaction.count({ where: { initiatedById: userId } }),
+      db.mcpOAuthGrant.count({ where: { userId } }),
+    ]
+  )
+  return createdFamilies + createdInvitations + paymentTransactions + oauthGrants
 }
 
 /**

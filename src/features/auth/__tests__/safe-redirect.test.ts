@@ -27,8 +27,16 @@ describe('safeRedirectPath', () => {
     '//evil.test',
     '/\\evil.test',
     '/dashboard\n',
-    `/${'a'.repeat(600)}`,
+    `/${'a'.repeat(2100)}`,
   ])('falls back to the dashboard for %j', (value) => {
     expect(safeRedirectPath(value)).toBe(DEFAULT_AUTH_REDIRECT)
+  })
+
+  // Une requête `/oauth/authorize` rejouée après connexion porte `state`, `code_challenge`
+  // et deux URL : elle dépasse largement une ancienne limite de 512 caractères.
+  it('keeps a long internal path such as a replayed authorization request', () => {
+    const authorize = `/oauth/authorize?state=${'s'.repeat(900)}&redirect_uri=https%3A%2F%2Fchatgpt.com%2Fcb`
+
+    expect(safeRedirectPath(authorize)).toBe(authorize)
   })
 })
