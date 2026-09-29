@@ -19,14 +19,18 @@ import {
   type PublicTimetableLabels,
 } from './_components/public-timetable'
 import { buildScheduleQrCode } from './_lib/schedule-qr-code'
+import { choosePrintOrientation, PRINT_PAGES, type PrintOrientation } from './_lib/timetable-layout'
 
-const SCHEDULE_PRINT_CSS = `
-@page { size: A4; margin: 12mm; }
+function schedulePrintCss(orientation: PrintOrientation) {
+  return `
+@page { size: A4 ${orientation}; margin: 12mm; }
 @media print {
   html, body { background: #fff !important; min-height: 0 !important; }
-  .schedule-print { print-color-adjust: exact; -webkit-print-color-adjust: exact; font-size: 11px; }
+  .schedule-print { print-color-adjust: exact; -webkit-print-color-adjust: exact; font-size: 12px; }
+  .schedule-print-page { height: ${PRINT_PAGES[orientation].heightMm}mm; }
 }
 `
+}
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>
@@ -86,6 +90,7 @@ export default async function PublicSchedulePage({ params, searchParams }: Props
     courseCounts.set(id, (courseCounts.get(id) ?? 0) + 1)
   }
   const dayCount = new Set(result.slots.map((slot) => slot.weekday)).size
+  const orientation = choosePrintOrientation(slots, activeLevel !== null)
   const basePath = `/ecole/${slug}/planning`
   const qrCode = await buildScheduleQrCode(
     getPathname({
@@ -118,9 +123,9 @@ export default async function PublicSchedulePage({ params, searchParams }: Props
 
   return (
     <div className="schedule-print min-h-screen bg-alabaster-900 print:min-h-0 print:bg-white">
-      <style>{SCHEDULE_PRINT_CSS}</style>
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
-        <header className="mb-6 flex items-start justify-between gap-6 print:mb-4 print:border-b-2 print:border-graphite print:pb-4">
+      <style>{schedulePrintCss(orientation)}</style>
+      <div className="schedule-print-page mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 print:flex print:max-w-none print:flex-col print:p-0">
+        <header className="mb-6 flex items-start justify-between gap-6 print:mb-4 print:shrink-0 print:border-b-2 print:border-graphite print:pb-4">
           <div className="min-w-0">
             <div className="flex items-center gap-4">
               {result.logoUrl && (
@@ -199,7 +204,7 @@ export default async function PublicSchedulePage({ params, searchParams }: Props
               focused={activeLevel !== null}
             />
             {qrCode && (
-              <p className="mt-6 hidden border-t border-alabaster-700 pt-3 text-xs text-graphite-600 print:block">
+              <p className="mt-6 hidden border-t border-alabaster-700 pt-3 text-xs text-graphite-600 print:mt-3 print:block print:shrink-0">
                 {t('print.footer', { url: qrCode.url })}
               </p>
             )}
