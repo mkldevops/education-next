@@ -135,7 +135,7 @@ export default async function PublicEventsPage({ params }: Props) {
                           alt={event.images[0].alt ?? ''}
                           width={96}
                           height={72}
-                          className="h-[72px] w-24 shrink-0 rounded object-cover"
+                          className="h-18 w-24 shrink-0 rounded object-cover"
                         />
                       )}
                       <div

@@ -63,7 +63,7 @@ export async function AuthShell({ schoolName, logoUrl, children }: Props) {
     <div className={cn(fraunces.variable, 'flex flex-1 bg-surface')}>
       <aside className="relative hidden w-[44%] max-w-2xl shrink-0 flex-col justify-between overflow-hidden border-r border-border bg-primary-subtle p-10 lg:flex xl:p-14">
         {/* Motif discret : deux anneaux concentriques à la couleur d'école, sans aplat derrière le texte */}
-        <div aria-hidden className="pointer-events-none absolute -right-40 -bottom-40 size-[34rem]">
+        <div aria-hidden className="pointer-events-none absolute -right-40 -bottom-40 size-136">
           <div className="absolute inset-0 rounded-full border border-primary/15" />
           <div className="absolute inset-16 rounded-full border border-primary/10" />
           <div className="absolute inset-32 rounded-full border border-primary/10" />
@@ -100,7 +100,7 @@ export async function AuthShell({ schoolName, logoUrl, children }: Props) {
           <BrandMark schoolName={schoolName} logoUrl={logoUrl} fallbackName={fallbackName} />
         </header>
         <div className="flex flex-1 items-center justify-center px-5 py-12 sm:px-8 lg:py-16">
-          <div className="w-full max-w-[25rem]">{children}</div>
+          <div className="w-full max-w-100">{children}</div>
         </div>
       </main>
     </div>

@@ -52,7 +52,7 @@ export default async function EnrollAssistantPage({ params }: Props) {
         <AssistantChat
           key={schoolId}
           model={resolveAiAssistantModel(process.env.AI_ASSISTANT_MODEL)}
-          className="h-[calc(100dvh-18rem)] min-h-[28rem]"
+          className="h-[calc(100dvh-18rem)] min-h-112"
           listClassName="max-h-none flex-1"
         />
       ) : (

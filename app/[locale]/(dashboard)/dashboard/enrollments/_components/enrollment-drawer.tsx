@@ -200,7 +200,7 @@ export function EnrollmentDrawer({
                 {t('classAssignments')}
               </h3>
               <div className="overflow-x-auto rounded border border-alabaster-700">
-                <table className="w-full min-w-[400px]">
+                <table className="w-full min-w-100">
                   <thead>
                     <tr className="border-b bg-alabaster-900 text-xs font-medium uppercase tracking-wider text-graphite-600">
                       <th className="px-3 py-2 text-left">
@@ -238,7 +238,7 @@ export function EnrollmentDrawer({
             <div>
               <h3 className="mb-3 text-base font-semibold text-graphite">{t('payments')}</h3>
               <div className="overflow-x-auto rounded border border-alabaster-700">
-                <table className="w-full min-w-[400px]">
+                <table className="w-full min-w-100">
                   <thead>
                     <tr className="border-b bg-alabaster-900 text-xs font-medium uppercase tracking-wider text-graphite-600">
                       <th className="px-3 py-2 text-left">{tDetails('paymentTable.amount')}</th>

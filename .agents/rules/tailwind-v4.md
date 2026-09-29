@@ -33,6 +33,8 @@ tokens there; do not create a `tailwind.config.ts` for ordinary colors or typogr
 Follow the surrounding component's established token form, compose conditional classes with `cn()`,
 and use CVA for reusable variants. Prefer canonical utilities such as `h-10`, `shrink-0`, and `gap-2`
 when they express the required value; use arbitrary values only for genuinely nonstandard dimensions.
+`pnpm lint:tw` (tailwind-canonical, config in `tailwind-canonical.config.mjs`) enforces this in CI and the
+pre-commit hook rewrites staged `.tsx` files.
 
 Do not add one-off hard-coded colors when an existing semantic or palette token expresses the same
 meaning.

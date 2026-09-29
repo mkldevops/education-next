@@ -45,7 +45,7 @@ export function PeriodSelector({ periods, selectedPeriodId }: PeriodSelectorProp
       >
         <SelectTrigger
           aria-label={t('selectAriaLabel')}
-          className="h-9 w-auto max-w-[11rem] rounded-md border-border bg-surface pl-2.5 font-medium text-foreground shadow-xs transition-colors hover:border-input/60 sm:max-w-none"
+          className="h-9 w-auto max-w-44 rounded-md border-border bg-surface pl-2.5 font-medium text-foreground shadow-xs transition-colors hover:border-input/60 sm:max-w-none"
         >
           <SelectValue />
         </SelectTrigger>

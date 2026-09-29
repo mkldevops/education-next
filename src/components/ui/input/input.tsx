@@ -40,7 +40,7 @@ export function Textarea({ className, ...props }: TextareaProps) {
   return (
     <textarea
       className={cn(
-        'flex min-h-[80px] w-full rounded border border-input bg-white px-3 py-2 text-sm',
+        'flex min-h-20 w-full rounded border border-input bg-white px-3 py-2 text-sm',
         'placeholder:text-placeholder',
         'focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25',
         'disabled:cursor-not-allowed disabled:opacity-50',

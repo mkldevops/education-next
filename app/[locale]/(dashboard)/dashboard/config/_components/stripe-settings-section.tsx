@@ -92,7 +92,7 @@ export function StripeSettingsSection({
         aria-hidden={!paymentsEnabled}
         inert={!paymentsEnabled}
         className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${
-          paymentsEnabled ? 'max-h-[80rem] opacity-100' : 'pointer-events-none max-h-0 opacity-0'
+          paymentsEnabled ? 'max-h-320 opacity-100' : 'pointer-events-none max-h-0 opacity-0'
         }`}
       >
         <div className="divide-y divide-alabaster-700">
