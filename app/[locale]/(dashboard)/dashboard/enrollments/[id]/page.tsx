@@ -5,11 +5,12 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { cache } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
+import { totalPaidAmount } from '@/domain/payment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
-import { formatCurrency, toNumber } from '@/lib/decimal'
+import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -62,6 +63,7 @@ const resolveEnrollment = cache((id: string) =>
             orderBy: { startAt: 'asc' as const },
           },
           payments: {
+            where: { isActive: true },
             orderBy: { paidAt: 'desc' as const },
           },
         },
@@ -136,7 +138,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
   const totalAmount = Number(enrollment.totalAmount)
   const discount = Number(enrollment.discount)
-  const totalPaid = enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
+  const totalPaid = totalPaidAmount(enrollment.payments)
   const remaining = calculateRemainingBalance(totalAmount, totalPaid)
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
   const familyContext = enrollment.student.person.families[0]?.family

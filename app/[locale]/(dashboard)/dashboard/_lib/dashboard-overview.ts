@@ -34,8 +34,9 @@ export async function getDashboardOverview(schoolId: string, paymentsEnabled: bo
         student: { include: { person: true } },
         plan: true,
         // Alimente uniquement la colonne de progression de règlement : ne pas la tirer
-        // quand elle ne sera pas affichée.
-        ...(paymentsEnabled ? { payments: true } : {}),
+        // quand elle ne sera pas affichée. Les paiements annulés sont soft-deleted et
+        // l'extension ne filtre pas les relations imbriquées : filtre explicite.
+        ...(paymentsEnabled ? { payments: { where: { isActive: true } } } : {}),
         classAssignments: {
           include: { classPeriod: { include: { level: true } } },
           orderBy: { startAt: 'desc' },

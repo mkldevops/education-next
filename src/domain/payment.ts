@@ -14,12 +14,20 @@ type PayableEnrollment = {
   payments: Array<{ amount: DecimalLike }>
 }
 
+/**
+ * Somme des paiements arrondie au centime : additionner des flottants laisse des résidus
+ * (10,10 + 20,20 = 30,299999…) qui feraient apparaître un « reste » sur une inscription soldée.
+ * Les paiements annulés sont soft-deleted : l'appelant doit les avoir filtrés (`isActive: true`)
+ * dans son include, l'extension de `src/lib/db.ts` ne le fait pas sur les relations imbriquées.
+ */
+export function totalPaidAmount(payments: ReadonlyArray<{ amount: DecimalLike }>): number {
+  return roundHalfUp(payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0))
+}
+
 export function enrollmentBalances(enrollments: PayableEnrollment[]): EnrollmentBalance[] {
   return enrollments.map((enrollment) => {
     const totalAmount = toNumber(enrollment.totalAmount)
-    const paid = roundHalfUp(
-      enrollment.payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0)
-    )
+    const paid = totalPaidAmount(enrollment.payments)
     return {
       enrollmentId: enrollment.id,
       totalAmount,
