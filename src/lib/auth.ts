@@ -2,9 +2,13 @@ import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { impersonationLogGateway } from '@/gateways/impersonation-log-gateway'
 import { userGateway } from '@/gateways/user-gateway'
+import {
+  sendChangeEmailConfirmationEmail,
+  sendResetPasswordEmail,
+  sendVerificationEmail,
+} from '@/lib/auth-emails'
 import { db } from '@/lib/db'
 import { impersonation } from '@/lib/impersonation'
-import { sendPlatformEmail } from '@/lib/platform-email'
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -22,22 +26,9 @@ export const auth = betterAuth({
     // Une réinitialisation prouve la boîte mail : toute session ouverte avant elle,
     // par exemple par un tiers qui aurait créé le compte, doit tomber.
     revokeSessionsOnPasswordReset: true,
-    // Ces callbacks sont invoqués hors requête localisée : Better Auth ne fournit
-    // pas de locale, d'où des libellés en français comme le reste des surfaces
-    // plateforme.
-    sendResetPassword: async (data) => {
-      await sendPlatformEmail(data.user.email, 'Réinitialisation de votre mot de passe', {
-        preheader: 'Lien de réinitialisation valable une heure.',
-        heading: 'Réinitialisation de votre mot de passe',
-        paragraphs: [
-          'Une réinitialisation de mot de passe a été demandée pour ce compte. Utilisez le bouton ci-dessous pour en choisir un nouveau.',
-        ],
-        cta: { label: 'Choisir un mot de passe', url: data.url },
-        notice: 'Ce lien expire dans 1 heure.',
-        footer:
-          "Message automatique. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : votre mot de passe actuel reste valable.",
-      })
-    },
+    // Chaque callback d'email reçoit la requête d'origine en second argument ; sa locale
+    // choisit la langue du message (`src/lib/auth-emails.ts`).
+    sendResetPassword: sendResetPasswordEmail,
   },
   emailVerification: {
     // Pas d'envoi à l'inscription : les deux seuls chemins de création de compte
@@ -48,19 +39,7 @@ export const auth = betterAuth({
     // `user.changeEmail`, qui s'appuie sur ce même callback.
     sendOnSignUp: false,
     autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url }) => {
-      await sendPlatformEmail(user.email, 'Confirmez votre adresse email', {
-        preheader: 'Une seule étape pour confirmer votre adresse.',
-        heading: 'Confirmez votre adresse email',
-        paragraphs: [
-          `Cette adresse a été renseignée pour le compte ${user.email}. La confirmer garantit que les messages de la plateforme — invitations, réinitialisation de mot de passe — vous parviennent.`,
-        ],
-        cta: { label: 'Confirmer mon adresse', url },
-        notice: "Sans confirmation, ce lien reste le seul moyen de valider l'adresse.",
-        footer:
-          "Message automatique. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.",
-      })
-    },
+    sendVerificationEmail,
   },
   user: {
     changeEmail: {
@@ -68,20 +47,7 @@ export const auth = betterAuth({
       // La confirmation part sur l'adresse **actuelle**, seule déjà vérifiée : un
       // détournement de compte ne peut donc pas se valider depuis la nouvelle
       // adresse choisie par l'attaquant.
-      sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
-        await sendPlatformEmail(user.email, "Confirmez le changement d'adresse email", {
-          preheader: `Nouvelle adresse demandée : ${newEmail}`,
-          heading: "Confirmez le changement d'adresse",
-          paragraphs: [
-            `Une demande de remplacement de ${user.email} par ${newEmail} a été enregistrée pour ce compte.`,
-            "Ce message part sur l'adresse actuelle : sans cette confirmation, l'adresse du compte reste inchangée.",
-          ],
-          cta: { label: 'Confirmer la nouvelle adresse', url },
-          notice: `Après confirmation, la connexion se fera avec l'adresse ${newEmail}.`,
-          footer:
-            "Message automatique. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email et changez votre mot de passe.",
-        })
-      },
+      sendChangeEmailConfirmation: sendChangeEmailConfirmationEmail,
     },
   },
   socialProviders: {

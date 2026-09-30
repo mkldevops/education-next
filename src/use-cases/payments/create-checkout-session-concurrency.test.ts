@@ -121,6 +121,7 @@ describe.skipIf(!databaseUrl)('createCheckoutSession concurrency', () => {
       initiatedById: adminId,
       customerEmail: 'parent@payment.test',
       locale: 'fr',
+      productName: 'Frais de scolarité',
       appUrl: 'http://localhost:8550',
     }
 

@@ -5,9 +5,9 @@ import type { SendEmailResult } from '@/types/email'
 /**
  * Marque des emails émis hors contexte d'école : les callbacks Better Auth
  * (réinitialisation, vérification d'adresse, confirmation de changement
- * d'adresse) n'ont ni `schoolId` ni locale de requête, et un compte peut de
- * toute façon appartenir à plusieurs écoles — aucune ne peut signer ces
- * messages à sa place.
+ * d'adresse) n'ont pas de `schoolId`, et un compte peut de toute façon
+ * appartenir à plusieurs écoles — aucune ne peut signer ces messages à sa
+ * place. Leur langue, elle, suit la requête (`src/lib/auth-emails.ts`).
  */
 const PLATFORM_BRAND = 'Education'
 

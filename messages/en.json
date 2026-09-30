@@ -1263,7 +1263,8 @@
           "settled": "Your family is up to date.",
           "error": "Unable to start payment.",
           "returned": "Your payment was submitted. History will update after bank confirmation.",
-          "cancelled": "Payment was cancelled. No payment was recorded."
+          "cancelled": "Payment was cancelled. No payment was recorded.",
+          "productName": "Tuition fees"
         },
         "alert": {
           "needsAttention": "Children Needing Attention",
@@ -2955,6 +2956,34 @@
       "body": "The password for your account was just changed. No action is needed if you made this change.",
       "notice": "Your other open sessions remain active.",
       "footer": "Automated message. If you did not make this change, reset your password immediately and contact an administrator."
+    },
+    "resetPassword": {
+      "subject": "Reset your password",
+      "preheader": "Reset link valid for one hour.",
+      "heading": "Reset your password",
+      "body": "A password reset was requested for this account. Use the button below to choose a new one.",
+      "cta": "Choose a password",
+      "notice": "This link expires in 1 hour.",
+      "footer": "Automated message. If you did not request this, ignore this email: your current password remains valid."
+    },
+    "verifyEmail": {
+      "subject": "Confirm your email address",
+      "preheader": "One step left to confirm your address.",
+      "heading": "Confirm your email address",
+      "body": "This address was entered for the account {email}. Confirming it ensures platform messages — invitations, password resets — reach you.",
+      "cta": "Confirm my address",
+      "notice": "Without confirmation, this link remains the only way to validate the address.",
+      "footer": "Automated message. If you did not request this, ignore this email."
+    },
+    "changeEmail": {
+      "subject": "Confirm your email address change",
+      "preheader": "New address requested: {newEmail}",
+      "heading": "Confirm the address change",
+      "body": "A request to replace {email} with {newEmail} was recorded for this account.",
+      "bodyCurrentAddress": "This message is sent to the current address: without this confirmation, the account address stays unchanged.",
+      "cta": "Confirm the new address",
+      "notice": "After confirmation, you will sign in with {newEmail}.",
+      "footer": "Automated message. If you did not request this, ignore this email and change your password."
     }
   },
   "publicEvent": {
