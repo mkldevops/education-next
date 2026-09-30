@@ -4,8 +4,10 @@ import { Tabs } from '@peaklab/ui'
 import { KeyRound, Monitor, Plug, Shield, User } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { McpApiKeyView } from '../_lib/mcp-api-key-view'
+import type { McpOAuthGrantView } from '../_lib/mcp-oauth-grant-view'
 import { AccountSection, type LinkedAccount } from './account-section'
 import { ApiKeysSection } from './api-keys-section'
+import { ConnectedAppsSection } from './connected-apps-section'
 import { type Passkey, PasskeySection } from './passkey-section'
 import { PasswordSection } from './password-section'
 import { ProfileSection } from './profile-section'
@@ -21,7 +23,7 @@ type Props = {
   passkeys: Passkey[]
   googleEnabled: boolean
   passkeyEnabled: boolean
-  apiKeys: McpApiKeyView[] | null
+  apiKeys: { keys: McpApiKeyView[]; connections: McpOAuthGrantView[] } | null
 }
 
 export function SettingsTabs({
@@ -77,7 +79,12 @@ export function SettingsTabs({
                 {
                   label: t('tabs.apiKeys'),
                   icon: Plug,
-                  content: <ApiKeysSection keys={apiKeys} />,
+                  content: (
+                    <div className="space-y-6">
+                      <ConnectedAppsSection connections={apiKeys.connections} />
+                      <ApiKeysSection keys={apiKeys.keys} />
+                    </div>
+                  ),
                 },
               ]
             : []),

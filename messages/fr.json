@@ -174,6 +174,33 @@
         "description": "Ce lien d'invitation n'existe pas ou n'est plus actif. Vérifiez qu'il est complet, tel que reçu par email.",
         "action": "Aller à la connexion"
       }
+    },
+    "oauth": {
+      "eyebrow": "Connexion d'une application",
+      "title": "Autoriser l'accès",
+      "subtitle": "{clientName} demande à administrer une école avec votre compte.",
+      "account": "Compte connecté",
+      "schoolLabel": "École à connecter",
+      "permissions": {
+        "title": "{clientName} pourra, sur l'école choisie :",
+        "read": "lire les familles, élèves, inscriptions, classes, plannings et paiements ;",
+        "write": "préparer puis, après votre validation dans l'application, enregistrer inscriptions, paiements et plannings ;",
+        "revoke": "rester connecté jusqu'à ce que vous révoquiez l'accès dans Paramètres › Clés API."
+      },
+      "callback": "Vous serez renvoyé vers {host}.",
+      "allow": "Autoriser",
+      "deny": "Refuser",
+      "errors": {
+        "title": "Demande impossible",
+        "invalidClient": "L'application qui demande l'accès n'est pas enregistrée sur ce site.",
+        "invalidRedirectUri": "L'adresse de retour de l'application ne correspond pas à son enregistrement.",
+        "invalidRequest": "La demande d'autorisation est incomplète ou altérée. Relancez la connexion depuis l'application.",
+        "returnToClient": "Revenir vers {host}",
+        "mcpDisabled": "Le serveur MCP est désactivé sur cette instance.",
+        "noSchool": "Vous n'administrez aucune école sur ce site : seul un administrateur peut connecter une application.",
+        "forbidden": "Vous n'êtes pas administrateur de cette école.",
+        "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte."
+      }
     }
   },
   "dashboard": {
@@ -2712,7 +2739,7 @@
     },
     "apiKeys": {
       "title": "Clés API MCP",
-      "description": "Une clé donne à Claude ou Codex les droits d'administration que vous détenez sur l'école active. Elle n'est affichée qu'à sa création.",
+      "description": "Une clé donne à Claude ou Codex les droits d'administration que vous détenez sur l'école active. Elle n'est affichée qu'à sa création. ChatGPT n'en a pas besoin : il se connecte par OAuth, voir « Applications connectées ».",
       "nameLabel": "Nom",
       "namePlaceholder": "Poste de Fatima",
       "nameRequired": "Donnez un nom à la clé",
@@ -2730,6 +2757,39 @@
         "mcpDisabled": "Le serveur MCP est désactivé sur cette instance",
         "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte. Les identifiants et le compte de la personne ne se modifient pas à sa place."
       },
+      "connections": {
+        "title": "Applications connectées",
+        "description": "Les applications autorisées par OAuth sur l'école active, ChatGPT par exemple. Chaque connexion agit avec vos droits d'administration sur cette école, et sur elle seule.",
+        "empty": "Aucune application connectée pour le moment.",
+        "setup": {
+          "title": "Connecter ChatGPT",
+          "step1": "Dans ChatGPT, activez Paramètres › Sécurité et connexion › Mode développeur.",
+          "step2": "Ouvrez Plugins, cliquez sur « + », nommez la connexion {name} et choisissez l'authentification OAuth.",
+          "step3": "Collez l'URL ci-dessous : elle désigne ce site et aucun autre.",
+          "step4": "ChatGPT ouvre ce site : connectez-vous avec votre compte, choisissez l'école, puis autorisez.",
+          "urlLabel": "URL du serveur MCP",
+          "copyUrl": "Copier l'URL"
+        },
+        "created": "Connectée le {date}",
+        "lastUsed": "Dernier usage {date}",
+        "neverUsed": "Jamais utilisée",
+        "revokedLabel": "Révoquée",
+        "revoke": "Révoquer la connexion {name}",
+        "revoked": "Connexion révoquée",
+        "copied": "Copié",
+        "copyFailed": "Copie impossible, sélectionnez le texte à la main",
+        "error": "L'opération a échoué, réessayez",
+        "errors": {
+          "notFound": "Cette connexion n'existe pas ou n'est pas la vôtre",
+          "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte."
+        },
+        "revokeDialog": {
+          "title": "Révoquer « {name} » ?",
+          "warning": "Cette action est irréversible : l'application perd l'accès dès son prochain appel, et il faudra la reconnecter depuis ChatGPT pour la rétablir.",
+          "cancel": "Annuler",
+          "confirm": "Révoquer"
+        }
+      },
       "created": {
         "title": "Votre nouvelle clé",
         "warning": "Copiez-la maintenant : elle ne sera plus jamais affichée.",
@@ -2742,7 +2802,7 @@
         "status": {
           "ready": "Disponible avec cette clé",
           "headersBeta": "Selon votre compte — en-têtes de requête en bêta",
-          "oauthRequired": "Nécessite OAuth — intégration en cours"
+          "oauth": "Sans clé — connexion OAuth depuis ChatGPT"
         },
         "clients": {
           "claudeCode": {
@@ -2764,14 +2824,15 @@
             "step2": "Cliquez sur « + » puis « Ajouter un connecteur personnalisé », nommez-le {name}.",
             "step3": "Collez l'URL ci-dessous.",
             "step4": "Si la section « En-têtes de requête » apparaît : choisissez l'authentification « Sans connexion », puis l'en-tête x-api-key avec la clé ci-dessus.",
-            "note": "Sans la section « En-têtes de requête » (bêta réservée à certains comptes), Claude Web n'accepte qu'OAuth et cette clé ne suffit pas. Sur un plan Team ou Enterprise, l'en-tête est partagé par toute l'organisation : n'y mettez pas votre clé personnelle."
+            "note": "Sans la section « En-têtes de requête » (bêta réservée à certains comptes), Claude Web n'accepte qu'OAuth : ajoutez alors le connecteur sans en-tête, Claude vous enverra sur l'écran de consentement de ce site. Sur un plan Team ou Enterprise, l'en-tête est partagé par toute l'organisation : n'y mettez pas votre clé personnelle."
           },
           "chatgpt": {
             "label": "ChatGPT",
             "step1": "Dans ChatGPT, activez Paramètres › Sécurité et connexion › Mode développeur.",
-            "step2": "Ouvrez Plugins, cliquez sur « + » et nommez la connexion {name}.",
+            "step2": "Ouvrez Plugins, cliquez sur « + », nommez la connexion {name} et choisissez l'authentification OAuth.",
             "step3": "Collez l'URL ci-dessous : elle désigne ce site et aucun autre.",
-            "note": "ChatGPT se connecte par OAuth et n'accepte pas de clé API : cette clé ne suffit pas. Le plugin personnel ChatGPT est en cours d'intégration."
+            "note": "Cette clé n'est pas utilisée par ChatGPT : la connexion passe par votre compte et se révoque depuis « Applications connectées ».",
+            "step4": "ChatGPT ouvre ce site : connectez-vous avec votre compte, choisissez l'école, puis autorisez."
           }
         }
       },

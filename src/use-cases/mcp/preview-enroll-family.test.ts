@@ -24,8 +24,8 @@ vi.mock('@/gateways/plan-gateway', () => ({ planGateway: { ensureUnpriced } }))
 const { previewEnrollFamily } = await import('./preview-enroll-family')
 
 const scope = {
-  keyId: 'key-1',
-  keyPrefix: 'edu_mcp_aaaa',
+  credentialId: 'key-1',
+  credentialPrefix: 'edu_mcp_aaaa',
   owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',

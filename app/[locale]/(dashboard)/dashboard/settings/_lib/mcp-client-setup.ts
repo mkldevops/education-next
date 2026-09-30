@@ -5,16 +5,16 @@ export type McpClient = (typeof MCP_CLIENTS)[number]
 /**
  * `ready` : le client accepte l'en-tête `Authorization` de la clé. `headersBeta` : la clé passe
  * par les en-têtes de requête du connecteur, une bêta que tous les comptes n'ont pas.
- * `oauthRequired` : le client ne se connecte que par OAuth, que le serveur n'offre pas encore
- * (#393) — la clé seule n'y suffit pas.
+ * `oauth` : le client se connecte par OAuth, sans clé — il envoie l'administrateur sur l'écran
+ * de consentement du site, où il choisit l'école.
  */
-export type McpClientStatus = 'ready' | 'headersBeta' | 'oauthRequired'
+export type McpClientStatus = 'ready' | 'headersBeta' | 'oauth'
 
 export const MCP_CLIENT_STATUS: Record<McpClient, McpClientStatus> = {
   claudeCode: 'ready',
   codex: 'ready',
   claudeWeb: 'headersBeta',
-  chatgpt: 'oauthRequired',
+  chatgpt: 'oauth',
 }
 
 export type McpSite = {

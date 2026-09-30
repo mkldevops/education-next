@@ -16,9 +16,12 @@
  */
 
 /**
- * Les 27 modèles portant un `schoolId`. `SchoolMember` en est volontairement absent :
+ * Les 28 modèles portant un `schoolId`. `SchoolMember` en est volontairement absent :
  * c'est la table de découverte, lue par `userId` avant qu'une école soit connue.
  * `McpApiKey` aussi : la clé est résolue par son hachage avant que l'école soit connue.
+ * `McpOAuthGrant` y figure : un jeton se résout par `McpOAuthToken`, sans `schoolId`, et
+ * toute requête qui vise la connexion elle-même connaît déjà son école — sauf le décompte
+ * avant suppression d'un compte, exception 3 de `src/lib/db-unscoped.ts`.
  */
 const TENANT_SCOPED_MODELS: Record<string, true> = {
   Family: true,
@@ -45,6 +48,7 @@ const TENANT_SCOPED_MODELS: Record<string, true> = {
   ClassScheduleSlotTeacher: true,
   TeacherExpense: true,
   McpDraft: true,
+  McpOAuthGrant: true,
   AiConversation: true,
   Event: true,
   EventImage: true,

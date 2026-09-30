@@ -48,8 +48,8 @@ and disappears with the panel on reload or revocation.
 |---|---|---|
 | Claude Code | available with a key | local command |
 | Codex (CLI, IDE extension, desktop app) | available with a key | `~/.codex/config.toml` + environment variable |
-| Claude Web (claude.ai, Claude Desktop connectors) | request headers (beta, some accounts) or OAuth — not yet offered (#393) | custom connector |
-| ChatGPT | requires OAuth — not yet offered (#393) | personal plugin in developer mode |
+| Claude Web (claude.ai, Claude Desktop connectors) | request headers (beta, some accounts) or OAuth | custom connector |
+| ChatGPT | available through OAuth, no key | personal plugin in developer mode |
 
 Claude Code, one command:
 
@@ -77,15 +77,13 @@ read it.
 Claude Web adds a server through **Customize › Connectors › + › Add custom connector**, with the
 site's `/api/mcp` URL. The connection is brokered from Anthropic's cloud. Where the dialog shows a
 **Request headers** section — a beta Anthropic opens to some accounts only — choose **No sign-in**
-and send the key as `x-api-key`. Without it, the connector authenticates through OAuth only, which
-the server does not offer yet (#393). On a Team or Enterprise plan a request header is one credential
+and send the key as `x-api-key`. Without it, the connector authenticates through the same OAuth
+flow as ChatGPT, described below. On a Team or Enterprise plan a request header is one credential
 shared by the whole organization, so a personal key does not belong there. The tab shows the route
 and the URL, never the key inside a command.
 
-ChatGPT registers a personal plugin: **Settings › Security and login › Developer mode**, then
-**Plugins › +** with the site's `/api/mcp` URL, under a name that identifies the site. It also
-authenticates through OAuth; a pasted key is not a supported route. The account linking and the
-connection test are tracked in #393.
+ChatGPT never takes a key: it links the account through OAuth, from the **Connected apps** panel of
+the same tab. See [Personal ChatGPT connection (OAuth)](#personal-chatgpt-connection-oauth).
 
 A client that only speaks stdio goes through `mcp-remote`:
 
@@ -108,6 +106,144 @@ Some clients reserve `Authorization` for their own OAuth flow. `X-API-Key: edu_m
 a fallback, and is read only when no `Authorization` header is present.
 
 Locally the URL is `http://localhost:8550/api/mcp`.
+
+## Personal ChatGPT connection (OAuth)
+
+ChatGPT connects to this server as a personal plugin and authenticates through OAuth 2.1, the
+route OpenAI documents for MCP connectors. The server is its own authorization server: no external
+identity provider, no shared secret, no key to paste. What ChatGPT holds is a **connection** — one
+user, one school, one site — that the administrator grants on a consent page and can revoke at any
+time.
+
+### One connection per site
+
+A deployment is selected by its URL and by nothing else. `https://ecole-a.example/api/mcp` and
+`https://ecole-b.example/api/mcp` are two plugins in ChatGPT, each with its own consent and its own
+tokens: a token issued by site A carries site A's `/api/mcp` URL as its audience and is refused by
+site B as unauthenticated, before any user or school is read. No tool takes a site or a school
+argument, so ChatGPT cannot be talked into routing a request elsewhere.
+
+The URL must be HTTPS, because ChatGPT reaches the site from OpenAI's infrastructure and the
+consent page is served to the administrator's browser. Locally, the flow works on
+`http://localhost:8550` only for clients that run on the same machine (the MCP Inspector, for
+instance); ChatGPT itself needs a public HTTPS origin.
+
+### Prerequisites
+
+1. The platform flag **MCP** is on (`/dashboard/config`, Integrations, super-admin). While it is off,
+   registration and token exchange answer `503 temporarily_unavailable`, the consent page refuses,
+   and existing tokens are refused by `/api/mcp` like a key would be.
+2. The person linking the account is an **`ADMIN` of the school** to connect (or a super-admin). A
+   parent, a teacher, or an admin of another school sees no school to pick and cannot grant.
+
+### Linking
+
+1. In ChatGPT, turn on **Settings › Security and login › Developer mode**.
+2. **Plugins › +**: name the connection after the site (the tab suggests
+   `education-ecole-example-fr`), paste `<origin>/api/mcp`, choose **OAuth** authentication.
+   ChatGPT discovers the rest — the metadata documents below — and registers itself as a client;
+   there is no client ID or secret to enter.
+3. ChatGPT opens `<origin>/oauth/authorize` in the browser. Sign in if needed (the request is
+   replayed after login), pick the **school** the connection will administer, and **Authorize**. The
+   page names the client, the account, the school and the permissions granted.
+4. ChatGPT is sent back to its callback with a one-shot code and exchanges it for tokens. The
+   connection now appears under **Connected apps** in the API keys tab of `/dashboard/settings`,
+   with the client's name, the grant date and the last use.
+
+The same person can link several schools: one plugin per site, one consent per school, and each
+connection is listed on the school it was granted for.
+
+### What the connection can do
+
+Exactly what a key can, on the chosen school and on it alone: the read tools, the class planning,
+the events, and the `preview_*`/`commit_*` pairs. Drafts prepared through a connection carry
+`ownerKind: OAUTH_GRANT` and are `draftNotFound` for a key or for the dashboard assistant, and the
+reverse, even for the same administrator. Payment tools appear only when payments are enabled for
+the school, as for a key.
+
+Every call re-resolves the connection: the access token's expiry, the connection's revocation, the
+account, the school's activity, the `ADMIN` membership, the platform flag and the audience are
+re-read each time. Losing the membership makes the connection answer `403 forbidden` on the next
+call, without waiting for the token to expire.
+
+### Tokens
+
+| Secret | Prefix | Lifetime | Use |
+|---|---|---|---|
+| authorization code | `edu_oac_` | 5 minutes, one exchange | returned to ChatGPT's callback |
+| access token | `edu_oat_` | 1 hour | `Authorization: Bearer` on `/api/mcp` |
+| refresh token | `edu_ort_` | 30 days, rotated at each use | `grant_type=refresh_token` on the token endpoint |
+
+Only the SHA-256 of each secret is stored. A code or a refresh token presented twice revokes the
+whole connection: a replay means the secret leaked, and the legitimate client reconnects with one
+consent. Expired secrets are swept in the background on the MCP route, like drafts; the connection
+row itself stays, revoked or not, as the trace the tab shows.
+
+### Revoking
+
+- **From the dashboard**: Connected apps › revoke. The connection answers `401` on its next call,
+  access token still valid or not, and ChatGPT proposes to reconnect.
+- **From the client**: ChatGPT (or any client) may call `POST /api/mcp/oauth/revoke` with
+  `token=<access or refresh token>` (RFC 7009). The whole connection is revoked, and the endpoint
+  answers `200 {}` whether the token was known or not.
+- Deactivating the account or the school, or withdrawing the `ADMIN` role, refuses the connection
+  on the next call without touching it; it can be revoked afterwards for the record.
+
+A revoked connection is never deleted, and it blocks the permanent deletion of its holder's account
+like a key does (`hasRelatedRecords`).
+
+### Endpoints
+
+| Path | Standard | Role |
+|---|---|---|
+| `/.well-known/oauth-protected-resource` and `…/api/mcp` | RFC 9728 | names `/api/mcp` as the resource and this origin as its authorization server |
+| `/.well-known/oauth-authorization-server` | RFC 8414 | authorization, token, registration and revocation endpoints; `S256` only; public clients only |
+| `POST /api/mcp/oauth/register` | RFC 7591 | dynamic registration: `client_name`, HTTPS `redirect_uris` (or loopback `http://localhost`), `token_endpoint_auth_method: none` |
+| `GET /oauth/authorize` | RFC 6749 §3.1, PKCE (RFC 7636) | consent page, `response_type=code`, `code_challenge_method=S256`, optional `resource` (RFC 8707) that must be this site's `/api/mcp` |
+| `POST /api/mcp/oauth/token` | RFC 6749 §4.1.3, §6 | code exchange (`code_verifier`, `redirect_uri`, `client_id`) and refresh rotation |
+| `POST /api/mcp/oauth/revoke` | RFC 7009 | revokes the connection behind the token |
+
+An unauthenticated `POST /api/mcp` answers `401` with
+`WWW-Authenticate: Bearer resource_metadata="<origin>/.well-known/oauth-protected-resource"`, and
+`error="invalid_token"` when a well-formed but refused token was presented: that header is how a
+client finds the authorization server. The origin comes from `NEXT_PUBLIC_APP_URL`, never from the
+`Host` header, so a request forged with another host still points at this site.
+
+### Expected errors
+
+On the consent page:
+
+| Message | Cause |
+|---|---|
+| The application asking for access is not registered on this site | unknown `client_id` — registration happened on another site, or the flag was off when ChatGPT tried |
+| The application's return address does not match its registration | `redirect_uri` outside the registered list |
+| The authorization request is incomplete or altered | missing `client_id` or `redirect_uri`; or missing PKCE, a method other than `S256`, a scope other than `school:admin`, a `resource` naming another site — then a **Return to** link carries the OAuth error back to the application, and nothing redirects on its own |
+| You administer no school on this site | the signed-in account is not `ADMIN` anywhere on this site |
+| The MCP server is disabled on this instance | flag off |
+| Unavailable while signed in as another user | a super-admin impersonating cannot grant on behalf of the target |
+
+On the token endpoint, RFC 6749 §5.2 bodies: `invalid_grant` (unknown, expired, consumed or
+mismatched code or refresh token, wrong `code_verifier`, wrong `redirect_uri`), `invalid_client`
+(`401`, code issued to another client), `invalid_target` (`resource` names another site),
+`unsupported_grant_type`, `invalid_request`, `too_many_requests` (`429`), `temporarily_unavailable`
+(`503`, flag off).
+
+On `/api/mcp`, the same refusals as a key: `401 unauthorized` (missing, malformed, expired or
+revoked token, revoked connection, token issued for another site), `403 forbidden` (deactivated
+account or school, membership no longer `ADMIN`), `503 mcpDisabled`, `429 tooManyRequests`.
+
+### Demo: one administrator, two sites
+
+1. Deploy two instances, `https://ecole-a.example` and `https://ecole-b.example`, each with its own
+   `NEXT_PUBLIC_APP_URL`, and enable MCP on both.
+2. In ChatGPT, add two plugins — `education-ecole-a-example` and `education-ecole-b-example` — each
+   with its own `/api/mcp` URL and OAuth. Each opens its own consent page; pick the school on each.
+3. Ask ChatGPT to enroll a family from a photographed form on site A: `preview_enroll_family` then,
+   after the plan is validated, `commit_enroll_family`. Repeat on site B. Each write lands on the
+   school chosen at consent, and `describe_school` on each plugin names that school.
+4. Revoke the site A connection from its Connected apps panel: the site A plugin answers `401` and
+   asks to reconnect; the site B plugin is untouched. Presenting the site B token to site A (with
+   `curl`) answers `401` with `error="invalid_token"`.
 
 ## Checking the connection
 
@@ -417,7 +553,8 @@ this server, from the shared catalog `src/mcp/school-tools.ts` that `buildMcpSer
 A tool added there is exposed on both surfaces; on the assistant side, each write tool waits for the
 administrator's explicit approval in the panel before it runs.
 
-Its drafts carry `ownerKind: ADMIN_SESSION` and the administrator's `userId`; yours carry
-`ownerKind: MCP_KEY` and your `keyId`. A draft never crosses over: one prepared by a key is
-`draftNotFound` for the administrator's session, and the reverse, even for the same person and the
-same school.
+Its drafts carry `ownerKind: ADMIN_SESSION` and the administrator's `userId`; a key's carry
+`ownerKind: MCP_KEY` and the `keyId`; a ChatGPT connection's carry `ownerKind: OAUTH_GRANT` and the
+`grantId`. A draft never crosses over: one prepared by a key is `draftNotFound` for the
+administrator's session or for a connection, and the reverse, even for the same person and the same
+school.

@@ -1,11 +1,13 @@
 import type { DraftOwner } from '@/domain/mcp-draft'
 import { isKeyUsable, isWellFormedMcpKey } from '@/domain/mcp-key'
+import { isWellFormedAccessToken } from '@/domain/mcp-oauth'
 import { mcpApiKeyGateway } from '@/gateways/mcp-api-key-gateway'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { userGateway } from '@/gateways/user-gateway'
 import { hashMcpKey } from '@/lib/mcp-key-crypto'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { resolveMcpOAuthScope } from './oauth/resolve-oauth-scope'
 
 /**
  * Portée d'un appelant machine, calquée sur `SchoolContext` **moins la variante
@@ -19,13 +21,15 @@ import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
  * use case : c'est le seul endroit qui consulte `isPaymentsEnabled` pour le MCP, ce qui
  * garde la construction du serveur synchrone et la décision stable pour toute la requête.
  *
- * `owner` est la projection de la clé en propriétaire de brouillon : c'est la seule chose
- * que les use cases partagés avec l'assistant d'inscription lisent pour cantonner un plan.
+ * `credentialId` et `credentialPrefix` désignent la clé API ou la connexion OAuth qui a
+ * authentifié l'appel — budget de limitation et identifiant côté SDK. `owner` est la
+ * projection de cette preuve en propriétaire de brouillon : c'est la seule chose que les
+ * use cases partagés avec l'assistant d'inscription lisent pour cantonner un plan.
  */
 export type McpScope =
   | {
-      keyId: string
-      keyPrefix: string
+      credentialId: string
+      credentialPrefix: string
       userId: string
       schoolId: string
       isSuperAdmin: true
@@ -33,8 +37,8 @@ export type McpScope =
       owner: DraftOwner
     }
   | {
-      keyId: string
-      keyPrefix: string
+      credentialId: string
+      credentialPrefix: string
       userId: string
       schoolId: string
       isSuperAdmin: false
@@ -57,23 +61,28 @@ type Deps = {
   schoolGw?: Pick<typeof schoolGateway, 'findActiveById'>
   memberGw?: Pick<typeof schoolMemberGateway, 'findMembership'>
   checkPaymentsEnabled?: (schoolId: string) => Promise<boolean>
+  resolveOAuthScope?: typeof resolveMcpOAuthScope
 }
 
 /**
- * Authentifie une clé présentée et en déduit la portée.
+ * Authentifie une preuve présentée et en déduit la portée.
  *
  * Un use case qui authentifie est le précédent de `authenticate-with-passkey` : il prend
  * une preuve opaque et rend un verdict typé, sans toucher aux en-têtes ni rediriger. Les
  * quatre gardes de `auth-helper.ts` se terminent toutes par une navigation Next, donc
  * aucune n'est utilisable depuis un gestionnaire JSON-RPC.
  *
+ * Le préfixe décide du chemin : `edu_mcp_` est une clé API, `edu_oat_` un jeton d'accès
+ * OAuth — même verdict, mêmes gardes, table différente. Les deux preuves coexistent : une
+ * clé déjà distribuée reste valable.
+ *
  * Révocation, expiration, compte désactivé et appartenance retirée sont tous relus à
- * chaque appel : une clé durable ne doit jamais survivre à la perte du droit qui la
+ * chaque appel : une preuve durable ne doit jamais survivre à la perte du droit qui la
  * justifiait.
  */
 export async function resolveMcpScope(
   presentedKey: string | null,
-  { keyGw, userGw, schoolGw, memberGw, checkPaymentsEnabled }: Deps = {}
+  { keyGw, userGw, schoolGw, memberGw, checkPaymentsEnabled, resolveOAuthScope }: Deps = {}
 ): Promise<McpScopeResult> {
   const keys = keyGw ?? mcpApiKeyGateway
   const users = userGw ?? userGateway
@@ -83,7 +92,16 @@ export async function resolveMcpScope(
 
   // Forme vérifiée avant tout accès base : une chaîne quelconque ne doit pas coûter
   // une requête.
-  if (!presentedKey || !isWellFormedMcpKey(presentedKey)) return { status: 'unauthenticated' }
+  if (!presentedKey) return { status: 'unauthenticated' }
+  if (isWellFormedAccessToken(presentedKey)) {
+    return (resolveOAuthScope ?? resolveMcpOAuthScope)(presentedKey, {
+      userGw: users,
+      schoolGw: schools,
+      memberGw: members,
+      checkPaymentsEnabled: readPaymentsEnabled,
+    })
+  }
+  if (!isWellFormedMcpKey(presentedKey)) return { status: 'unauthenticated' }
 
   const key = await keys.findByHash(hashMcpKey(presentedKey))
   if (!key || !isKeyUsable(key)) return { status: 'unauthenticated' }
@@ -101,8 +119,8 @@ export async function resolveMcpScope(
   if (!school) return { status: 'forbidden' }
 
   const scope = {
-    keyId: key.id,
-    keyPrefix: key.prefix,
+    credentialId: key.id,
+    credentialPrefix: key.prefix,
     userId: key.userId,
     schoolId: key.schoolId,
     owner: { kind: 'MCP_KEY' as const, keyId: key.id },

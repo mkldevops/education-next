@@ -6,11 +6,13 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { getSchoolContext } from '@/lib/school-context'
 import { listMcpApiKeys } from '@/use-cases/mcp/list-mcp-api-keys'
+import { listMcpOAuthGrants } from '@/use-cases/mcp/oauth/grants'
 import { isGoogleSignInAvailable } from '@/use-cases/platform-settings/is-google-sign-in-available'
 import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey-sign-in-enabled'
 import { SettingsTabs } from './_components/settings-tabs'
 import { toMcpApiKeyView } from './_lib/mcp-api-key-view'
+import { toMcpOAuthGrantView } from './_lib/mcp-oauth-grant-view'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -101,7 +103,10 @@ async function loadApiKeys() {
   if (!context.isSuperAdmin && context.role !== 'ADMIN') return null
   if (!(await isMcpEnabled())) return null
 
-  const keys = await listMcpApiKeys(context.userId, context.schoolId)
+  const [keys, grants] = await Promise.all([
+    listMcpApiKeys(context.userId, context.schoolId),
+    listMcpOAuthGrants(context.userId, context.schoolId),
+  ])
 
-  return keys.map(toMcpApiKeyView)
+  return { keys: keys.map(toMcpApiKeyView), connections: grants.map(toMcpOAuthGrantView) }
 }

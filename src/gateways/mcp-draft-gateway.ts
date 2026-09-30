@@ -8,6 +8,7 @@ const draftSelect = {
   ownerKind: true,
   keyId: true,
   userId: true,
+  grantId: true,
   tool: true,
   checksum: true,
   resolved: true,

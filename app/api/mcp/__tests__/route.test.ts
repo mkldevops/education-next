@@ -8,6 +8,8 @@ const fetchMock = vi.fn()
 const createMcpHandlerMock = vi.fn(() => ({ fetch: fetchMock }))
 const afterMock = vi.fn()
 const purgeExpiredDraftsMock = vi.fn()
+const grantTouchMock = vi.fn()
+const purgeExpiredOAuthTokensMock = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ createMcpHandler: createMcpHandlerMock }))
 vi.mock('next/server', async (importOriginal) => ({
@@ -16,21 +18,36 @@ vi.mock('next/server', async (importOriginal) => ({
 }))
 vi.mock('@/mcp/server', () => ({ buildMcpServer: buildMcpServerMock }))
 vi.mock('@/gateways/mcp-api-key-gateway', () => ({ mcpApiKeyGateway: { touch: touchMock } }))
+vi.mock('@/gateways/mcp-oauth-grant-gateway', () => ({
+  mcpOAuthGrantGateway: { touch: grantTouchMock },
+}))
+vi.mock('@/use-cases/mcp/oauth/purge-expired-tokens', () => ({
+  purgeExpiredOAuthTokens: purgeExpiredOAuthTokensMock,
+}))
 vi.mock('@/use-cases/mcp/resolve-mcp-scope', () => ({ resolveMcpScope: resolveMcpScopeMock }))
 vi.mock('@/use-cases/platform-settings/is-mcp-enabled', () => ({ isMcpEnabled: isMcpEnabledMock }))
 vi.mock('@/use-cases/mcp/purge-expired-drafts', () => ({
   purgeExpiredDrafts: purgeExpiredDraftsMock,
 }))
 
+vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://ecole-a.example')
+
 const { DELETE, GET, POST } = await import('../route')
 
 const scope = {
-  keyId: 'key-1',
-  keyPrefix: 'edu_mcp_aaaa',
+  credentialId: 'key-1',
+  credentialPrefix: 'edu_mcp_aaaa',
   owner: { kind: 'MCP_KEY' as const, keyId: 'key-1' },
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false as const,
+}
+
+const oauthScope = {
+  ...scope,
+  credentialId: 'grant-1',
+  credentialPrefix: 'edu_oat_tttt',
+  owner: { kind: 'OAUTH_GRANT' as const, grantId: 'grant-1' },
 }
 
 const request = (headers: Record<string, string> = {}) =>
@@ -42,6 +59,8 @@ const request = (headers: Record<string, string> = {}) =>
 
 /** Une clé réelle : la route choisit l'étage de limitation sur la forme de la clé. */
 const presentedKey = `edu_mcp_${'k'.repeat(43)}`
+/** Un jeton d'accès OAuth bien formé : même étage qu'une clé. */
+const presentedToken = `edu_oat_${'t'.repeat(43)}`
 
 /** Les étages sont module-level et leur fenêtre glisse sur 60 s : une adresse par test. */
 let addressSeq = 0
@@ -80,6 +99,33 @@ describe('POST /api/mcp', () => {
     expect(response.status).toBe(401)
     expect(await response.json()).toEqual({ error: 'unauthorized' })
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  /**
+   * RFC 9728 §5.1 : c'est par cet en-tête qu'un client OAuth découvre où s'enregistrer et
+   * s'autoriser. L'origine vient de la configuration, jamais de `Host`.
+   */
+  it('points an anonymous caller at the protected resource metadata', async () => {
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+
+    const response = await POST(
+      new Request('http://attacker.example/api/mcp', { method: 'POST', body: '{}' })
+    )
+
+    expect(response.headers.get('www-authenticate')).toBe(
+      'Bearer resource_metadata="https://ecole-a.example/.well-known/oauth-protected-resource"'
+    )
+  })
+
+  it('names the refused credential as invalid_token so the client re-authorizes', async () => {
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+
+    const response = await POST(request({ authorization: `Bearer ${presentedToken}` }))
+
+    expect(response.status).toBe(401)
+    expect(response.headers.get('www-authenticate')).toBe(
+      'Bearer error="invalid_token", resource_metadata="https://ecole-a.example/.well-known/oauth-protected-resource"'
+    )
   })
 
   it('answers 403 for an authenticated key whose holder lost the right', async () => {
@@ -178,13 +224,30 @@ describe('POST /api/mcp', () => {
     expect(touchMock).toHaveBeenCalledWith('key-1', expect.any(Date), expect.any(Date))
   })
 
-  it('sweeps expired drafts off the response path', async () => {
+  it('records an OAuth connection usage on its own table, scoped to its school', async () => {
+    resolveMcpScopeMock.mockResolvedValue({ status: 'OK', scope: oauthScope })
+
+    await POST(request({ authorization: `Bearer ${presentedToken}` }))
+    runAfterCallbacks()
+
+    expect(grantTouchMock).toHaveBeenCalledWith(
+      'grant-1',
+      'school-1',
+      expect.any(Date),
+      expect.any(Date)
+    )
+    expect(touchMock).not.toHaveBeenCalled()
+  })
+
+  it('sweeps expired drafts and OAuth secrets off the response path', async () => {
     await POST(authorized())
 
     expect(purgeExpiredDraftsMock).not.toHaveBeenCalled()
+    expect(purgeExpiredOAuthTokensMock).not.toHaveBeenCalled()
 
     runAfterCallbacks()
     expect(purgeExpiredDraftsMock).toHaveBeenCalledWith(expect.any(Date))
+    expect(purgeExpiredOAuthTokensMock).toHaveBeenCalledWith(expect.any(Date))
   })
 
   /**
@@ -251,6 +314,21 @@ describe('POST /api/mcp', () => {
 
     expect(response.status).toBe(200)
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps an OAuth token budget out of the shared address budget as well', async () => {
+    const address = nextAddress()
+    const from = (headers: Record<string, string> = {}) =>
+      request({ 'x-forwarded-for': address, ...headers })
+    resolveMcpScopeMock.mockResolvedValue({ status: 'unauthenticated' })
+    for (let i = 0; i < 120; i += 1) await POST(from())
+    expect((await POST(from())).status).toBe(429)
+
+    resolveMcpScopeMock.mockResolvedValue({ status: 'OK', scope: oauthScope })
+    const response = await POST(from({ authorization: `Bearer ${presentedToken}` }))
+
+    expect(response.status).toBe(200)
+    expect(fetchMock.mock.calls[0][1].authInfo.clientId).toBe('grant-1')
   })
 
   it('damps credential-less traffic before reading the platform flag', async () => {
