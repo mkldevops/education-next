@@ -82,7 +82,8 @@
   /* Primaire d'école : accent seulement (action principale, sélection, focus) */
   --primary: var(--theme-primary, #3c6e71);
   --primary-hover: var(--theme-primary-hover, color-mix(in oklab, var(--primary) 82%, black));
-  --primary-foreground: oklch(0.99 0 0);
+  /* Noir ou blanc selon la luminance du primaire : lisible quel que soit le nuancier d'école */
+  --primary-foreground: oklch(from var(--primary) round(1.21 - l) 0 0);
   --primary-subtle: color-mix(in oklab, var(--primary) 10%, var(--surface));
   /* Opaque : un anneau translucide tomberait sous 3:1 avec un primaire clair (WCAG 2.4.11) */
   --ring: var(--primary);
@@ -106,6 +107,13 @@
   --theme-secondary: #284b63;
   --theme-secondary-hover: #203c4e;
   --theme-accent: #539a9e;
+}
+
+/* Sans couleur relative (navigateurs antérieurs à 2024), le texte sur primaire reste blanc */
+@supports not (color: oklch(from red l c h)) {
+  :root {
+    --primary-foreground: oklch(0.99 0 0);
+  }
 }
 
 @theme inline {

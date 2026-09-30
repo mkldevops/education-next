@@ -172,7 +172,7 @@ function EventImagesManager({ eventId, images: initialImages }: Pick<Props, 'eve
                         className="h-28 w-full object-cover"
                       />
                       {isCover && (
-                        <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-white">
+                        <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
                           {t('images.cover')}
                         </span>
                       )}
