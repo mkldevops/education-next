@@ -52,28 +52,40 @@ export async function inviteUserAction(input: {
   const parsed = inviteSchema.safeParse(input)
   if (!parsed.success) return 'invalidInput'
 
-  const { email, role, familyId, personId, teacherId } = parsed.data
-  if ((familyId || personId) && role !== 'PARENT') return 'invalidInput'
-  if (personId && !familyId) return 'invalidInput'
+  const { email, role, familyId, teacherId } = parsed.data
+  if ((familyId || parsed.data.personId) && role !== 'PARENT') return 'invalidInput'
+  if (parsed.data.personId && !familyId) return 'invalidInput'
   if (teacherId && role !== 'TEACHER') return 'invalidInput'
   if (role === 'TEACHER' && !teacherId) return 'invalidInput'
 
-  if (familyId && personId) {
-    const familyPerson = await db.familyPerson.findUnique({
-      where: { familyId_personId: { familyId, personId }, schoolId },
-      include: { person: true },
+  // Une famille ne se rattache jamais seule : l'invitation doit nommer le parent de
+  // cette famille dont l'adresse est celle invitée. Le formulaire des utilisateurs ne
+  // choisit que la famille ; le parent est alors résolu ici par l'adresse. Sans cette
+  // correspondance, un tiers recevrait l'accès aux enfants et aux paiements de la famille.
+  let personId: string | undefined
+  if (familyId) {
+    const familyPerson = await db.familyPerson.findFirst({
+      where: {
+        familyId,
+        schoolId,
+        ...(parsed.data.personId ? { personId: parsed.data.personId } : {}),
+        person: { email: { equals: email, mode: 'insensitive' } },
+      },
+      select: { personId: true },
     })
-    if (!familyPerson || familyPerson.person.email?.toLowerCase() !== email) {
-      return 'invalidInput'
-    }
+    if (!familyPerson) return 'invalidInput'
+    personId = familyPerson.personId
   }
 
   if (teacherId) {
+    // `Teacher` n'est pas couvert par l'extension soft-delete : l'archivage se vérifie ici.
     const teacher = await db.teacher.findUnique({
       where: { id_schoolId: { id: teacherId, schoolId } },
-      select: { id: true, email: true, userId: true },
+      select: { id: true, email: true, userId: true, isActive: true },
     })
-    if (!teacher || teacher.userId || teacher.email?.toLowerCase() !== email) return 'invalidInput'
+    if (!teacher?.isActive || teacher.userId || teacher.email?.toLowerCase() !== email) {
+      return 'invalidInput'
+    }
   }
 
   // Une adresse déjà connue n'est plus un refus : un compte peut appartenir à

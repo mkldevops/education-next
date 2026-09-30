@@ -1595,7 +1595,7 @@
           "language": "Invitation language",
           "family": "Family to link",
           "noFamily": "None for now",
-          "familyHint": "Without a family the parent can sign in but will see no data.",
+          "familyHint": "The address must belong to a parent of this family. Without a family the parent can sign in but will see no data.",
           "teacher": "Teacher to invite",
           "missingTeacherEmail": "email missing",
           "teacherHint": "Access is limited to classes currently assigned to this teacher."
