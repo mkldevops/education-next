@@ -1382,10 +1382,21 @@ Screens show what the family handed over instead: `groupFamilyPayments()` in
 - **One enrollment appears at most once per payment**, so two identical cash payments recorded back
   to back stay two payments.
 - Enrollment pages still show the part that enrollment received.
-- **The period filter never cuts a payment in half.** The `/dashboard/payments` list groups every
-  active payment first, then keeps a family payment as soon as one of its rows falls in the
-  selected period — through `filterFamilyPaymentsByPeriod()` — and shows the full amount, with the
-  part specific to that period underneath when it differs.
+- **The period filter never cuts a payment in half.** The `/dashboard/payments` list keeps a
+  family payment as soon as one of its rows falls in the selected period — through
+  `filterFamilyPaymentsByPeriod()` — and shows the full amount, with the part specific to that
+  period underneath when it differs.
+- **The list is bounded by the period, not by the school's history.** `listSchoolPayments()` in
+  `src/use-cases/payments/list-school-payments.ts` asks the database for the rows whose enrollment
+  is assigned to the period, then rereads the sibling rows of those payments (same family, same
+  payment date, hence the same grouping key) before grouping; only the displayed fields are
+  selected. Without a period, the whole history is listed as before.
+- **The families list aggregates payments in the database.** `/dashboard/families` sums each
+  enrollment's active payments with a `groupBy` (the soft-delete extension does not cover
+  `groupBy`, so `isActive` is explicit there), counts them the same way, and reads only the five
+  latest rows of each enrollment for the preview — the latest payments of a family are always
+  among the latest of its enrollments. `calculateFamilyBalance()` accepts that aggregated `paid`
+  total in place of the payment rows.
 
 ### Collection statistics
 

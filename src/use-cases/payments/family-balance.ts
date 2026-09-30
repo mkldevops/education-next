@@ -1,15 +1,20 @@
 import { type FamilyLink, resolveDebtorFamily } from '@/domain/family-debtor'
 import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
-import { roundHalfUp } from '@/lib/decimal'
+import { type DecimalLike, roundHalfUp, toNumber } from '@/lib/decimal'
+
+/**
+ * Ce qu'une inscription a reçu : ses lignes de paiement actives, ou leur somme déjà
+ * agrégée en base (`paid`, `null` sans aucun paiement) quand la liste ne lit pas les lignes.
+ */
+type ReceivedPayments = { payments: Array<{ amount: DecimalLike }> } | { paid: DecimalLike | null }
 
 type BalanceEnrollment = {
   id: string
   status: EnrollmentStatus
-  totalAmount: number | { toString(): string }
-  discount: number | { toString(): string }
-  payments: Array<{ amount: number | { toString(): string } }>
-}
+  totalAmount: DecimalLike
+  discount: DecimalLike
+} & ReceivedPayments
 
 type FamilyEnrollmentBalance = {
   enrollmentId: string
@@ -45,8 +50,11 @@ export function isPayableEnrollment(status: EnrollmentStatus) {
   return (PAYABLE_ENROLLMENT_STATUSES as readonly EnrollmentStatus[]).includes(status)
 }
 
-function sumPayments(enrollment: BalanceEnrollment) {
-  return roundHalfUp(enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0))
+function sumPayments(enrollment: ReceivedPayments) {
+  if ('paid' in enrollment) return roundHalfUp(toNumber(enrollment.paid ?? 0))
+  return roundHalfUp(
+    enrollment.payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0)
+  )
 }
 
 /**
@@ -60,8 +68,8 @@ export function calculateFamilyBalance(allEnrollments: BalanceEnrollment[]): Fam
     .reduce((sum, enrollment) => sum + sumPayments(enrollment), 0)
 
   const balances = enrollments.map((enrollment) => {
-    const totalAmount = Number(enrollment.totalAmount)
-    const discount = Number(enrollment.discount)
+    const totalAmount = toNumber(enrollment.totalAmount)
+    const discount = toNumber(enrollment.discount)
     const paidAmount = sumPayments(enrollment)
     const remainingBalance = Math.max(0, roundHalfUp(totalAmount - paidAmount))
 

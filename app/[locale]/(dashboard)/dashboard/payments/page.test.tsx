@@ -1,12 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const dbMock = {
-  payment: { findMany: vi.fn() },
-}
 const requireSchoolScopeMock = vi.fn()
 const isPaymentsEnabledMock = vi.fn()
 const getSelectedPeriodMock = vi.fn()
 const getPaymentStatsMock = vi.fn()
+const listSchoolPaymentsMock = vi.fn()
 
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next/navigation', () => ({
@@ -25,9 +23,11 @@ vi.mock('@/i18n/routing', () => ({
     throw new Error('redirect')
   },
 }))
-vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriod: getSelectedPeriodMock }))
 vi.mock('@/use-cases/payments/payment-stats', () => ({ getPaymentStats: getPaymentStatsMock }))
+vi.mock('@/use-cases/payments/list-school-payments', () => ({
+  listSchoolPayments: listSchoolPaymentsMock,
+}))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
@@ -55,14 +55,14 @@ describe('PaymentsPage', () => {
 
     expect(isPaymentsEnabledMock).toHaveBeenCalledWith('school-1')
     expect(getSelectedPeriodMock).not.toHaveBeenCalled()
-    expect(dbMock.payment.findMany).not.toHaveBeenCalled()
+    expect(listSchoolPaymentsMock).not.toHaveBeenCalled()
     expect(getPaymentStatsMock).not.toHaveBeenCalled()
   })
 
   it('proceeds past the flag guard and reads business data when payments are enabled', async () => {
     isPaymentsEnabledMock.mockResolvedValue(true)
-    getSelectedPeriodMock.mockResolvedValue(null)
-    dbMock.payment.findMany.mockResolvedValue([])
+    getSelectedPeriodMock.mockResolvedValue({ id: 'period-1', name: '2026-2027' })
+    listSchoolPaymentsMock.mockResolvedValue([])
     getPaymentStatsMock.mockResolvedValue({
       totals: { collected: 0, remaining: 0, collectionRate: 0 },
       monthly: [],
@@ -73,6 +73,7 @@ describe('PaymentsPage', () => {
     await PaymentsPage({ params: Promise.resolve({ locale: 'fr' }) })
 
     expect(getSelectedPeriodMock).toHaveBeenCalledWith('school-1')
-    expect(dbMock.payment.findMany).toHaveBeenCalled()
+    expect(listSchoolPaymentsMock).toHaveBeenCalledWith('school-1', 'period-1')
+    expect(getPaymentStatsMock).toHaveBeenCalledWith('school-1', 'period-1')
   })
 })
