@@ -977,6 +977,12 @@ that one instead of asking.
 be active manual payments of one family: missing → `notFound`, a Stripe payment → `onlinePayment`,
 two families → `mixedFamilies`. It takes the family payment lock, rereads the payments under it
 (`notFound` if one vanished meanwhile), then deactivates them in the same transaction.
+**The amount paid on an enrollment never goes negative** (`paymentGateway.sumActiveByEnrollment`):
+under the same lock, the tool recomputes what each touched enrollment would still hold once the
+ids are deactivated, and refuses with `refundExceedsPaid` — the refund rule's own code — when a
+cancelled payment would leave an active refund exceeding what is paid. Cancelling +100 while −100
+stays active would otherwise make the remaining balance exceed the total (100 → 200) and let a
+later `record_payment` accept it. Cancel the refund with the payment, or the refund alone.
 `get_family_payments` lists a family's active payments so the model can find the ids.
 
 **Bounded agent loop.** One turn runs at most `maxAgentSteps` tool steps within `agentTimeoutMs`;
