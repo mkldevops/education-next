@@ -194,9 +194,19 @@ because hiding the resolution would leave the user in front of an unexplainable 
 
 No sign-in method creates an account. Two server paths do, and only them: accepting an invitation
 for an unknown address (`acceptInvitationAction`) and an administrator's `createUserAction`. Both go
-through `credentialUserGateway.create()` (`src/gateways/credential-user-gateway.ts`), which writes
-the user and its `credential` `Account` through Better Auth's internal adapter — same hash, no
-session — with `emailVerified: true`, since the address is proven by the token or typed by an admin.
+through `credentialUserGateway` (`src/gateways/credential-user-gateway.ts`), which writes the user
+through Better Auth's internal adapter — no session — with `emailVerified: true`, since the address
+is proven by the token or typed by an admin:
+
+- `create()` (invitation): the invitee chose the password, so the `credential` `Account` is written
+  alongside the user, with the same hash as the sign-up endpoint would produce.
+- `createWithoutPassword()` (`createUserAction`): **no `Account` at all**. An administrator never
+  chooses a password — an account is platform-wide, so a password known to school A's admin would
+  later sign them in as whatever member school B makes of that address (see **User management**).
+  The action then calls `auth.api.requestPasswordReset`, and Better Auth's `resetPassword` creates
+  the missing `credential` when the mailbox owner follows the link. Until then nobody can sign in
+  with a password on that account; only the mailbox owner (reset link) or the owner of the Google
+  account with that address (implicit linking) can reach it.
 
 `src/lib/auth.ts` closes every other door, because a pre-created account for a future invitee
 would let a third party keep a session on it and see the family once the invitation is accepted:
@@ -1017,6 +1027,16 @@ The `/dashboard/users` drawer is the single management surface. Its guards live 
   case. Editing a row written before the rule rewrites it in lower case as a side effect.
 - **Passwords are never set by an administrator.** `sendPasswordResetAction` triggers the Better
   Auth reset email; the user chooses their own password. It refuses an archived account.
+  `createUserAction` accepts no password either: it creates the user without any `Account` and
+  mails the same reset link (see **Sign-in methods**). This closes a cross-school takeover: an
+  admin of school A who created `victim@school-b.fr` with a password of their choosing would keep
+  that password after school B invited the address and the victim joined through Google, since
+  implicit linking neither removes the `credential` nor revokes sessions. A failed send answers
+  `emailError` while the account and membership remain, like an invitation whose mail failed: the
+  user can use « Mot de passe oublié », and a super admin `sendPasswordResetAction`.
+  The reset email itself reads `userGateway.hasCredentialAccount()`: without a `credential` —
+  admin-created account, or Google-only — it is worded as a first password to define rather than
+  a reset the recipient never asked for.
 - **Assigning `SUPER_ADMIN` is reserved to a super admin** (`canAssignRole`), so the policy holds
   even if the use case is ever reached by another caller.
 - **An address changed by an administrator is re-verified, and loses its verified flag.**
