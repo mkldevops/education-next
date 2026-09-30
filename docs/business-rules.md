@@ -1319,7 +1319,9 @@ Owner: `src/use-cases/plans/`.
 
 - **A plan an open enrollment uses cannot be archived** → `planInUse`. Open means `PENDING` or
   `ACTIVE`: those are still billed and still editable, so their plan must stay selectable. A
-  `COMPLETED` or `CANCELLED` enrollment keeps its archived plan — nested reads return it.
+  `COMPLETED` or `CANCELLED` enrollment keeps its archived plan — nested reads return it. The
+  converse holds too: **no open enrollment is created on an archived plan** — promotion skips the
+  student (`planArchived`, see **Promotion**) rather than copying a plan it could not select.
 - Archiving is a soft delete (`isActive: false`). Plan names are unique among active plans only, so
   an archived duplicate frees its name.
 
@@ -1622,6 +1624,7 @@ A student is **skipped**, with the reason reported, when:
 | Reason | Meaning |
 |---|---|
 | `alreadyPromoted` | Already enrolled in the target period. |
+| `planArchived` | The source plan is archived, so the `PENDING` copy would carry a plan it cannot select. |
 | `noClassAssignment` | No class in the source period, so no level to move from. |
 | `noNextLevel` | The level has no successor, or the successor is archived. |
 | `noTargetClass` | No active class for that successor in the target period. |
@@ -1629,6 +1632,13 @@ A student is **skipped**, with the reason reported, when:
 
 - New enrollments are created `PENDING`, carrying the source plan, amount, discount and
   `canLeaveAlone`. They are not active until someone validates them.
+- **The source plan must still be active.** A `COMPLETED` enrollment may keep an archived plan
+  (end of year: the admin archives last year's plan, which `deactivatePlan` allows once nothing is
+  open on it), but an open enrollment may not. The eligibility pass loads the active plans of the
+  source list in one query and skips the others (`planArchived`); each student's transaction
+  re-reads the plan under `isActive: true` before taking the class row lock, so a plan archived
+  between preview and execution is refused without writing or holding a seat. The admin reactivates
+  or replaces the plan, then runs the promotion again.
 - **One transaction per student**, deliberately: Postgres aborts a whole transaction on any error,
   so a single batch would make a partial report impossible. A failure is reported per student and
   its seat is released back into the in-memory occupancy tally.
