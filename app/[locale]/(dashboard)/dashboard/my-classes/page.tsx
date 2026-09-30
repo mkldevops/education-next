@@ -88,7 +88,7 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
               {attendanceEnabled && (
                 <div className="border-t border-alabaster-800 bg-alabaster-900/50 p-4">
                   <Link
-                    className="group flex min-h-12 items-center justify-between gap-3 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white motion-safe:transition-colors motion-safe:duration-150 hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                    className="group flex min-h-12 items-center justify-between gap-3 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground motion-safe:transition-colors motion-safe:duration-150 hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
                     href={`/dashboard/my-classes/${classPeriod.id}/attendance?date=${today}`}
                     aria-label={t('attendanceFor', { name: classPeriod.name })}
                   >
