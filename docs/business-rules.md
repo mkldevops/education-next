@@ -1230,6 +1230,12 @@ Owner: `src/domain/attendance-session.ts` (roster window, transitions),
 - **The return link after validation depends on who validated.** An admin goes back to
   `/dashboard/attendance` for the same day; a teacher goes back to `/dashboard/my-classes`, because
   that page requires a teacher record.
+- **The MCP reads the tracking, never a roster.** `list_attendance_calls`
+  (`src/use-cases/mcp/list-attendance-calls.ts`) applies the same derivation as
+  `/dashboard/attendance` — active classes of a period, UTC days, closures keeping only opened calls —
+  over at most 31 days (`MCP_ATTENDANCE_RANGE_MAX_DAYS`). It publishes each call's class, slot, status
+  and session id, not its students or entries, and is refused with `notConfigured` when
+  `attendance_enabled` is off.
 - **Attendance entries do not outlive their student.** Deleting a family for good removes its own
   students' entries, even on a validated session; the session and its other entries stay (see
   « Deleting a family for good »).

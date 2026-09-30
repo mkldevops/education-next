@@ -32,6 +32,7 @@ const previewUpdateEnrollment = vi.fn()
 const commitUpdateEnrollment = vi.fn()
 const createEventFromMcp = vi.fn()
 const listEventsFromMcp = vi.fn()
+const listAttendanceCallsFromMcp = vi.fn()
 const getEventFromMcp = vi.fn()
 const updateEventFromMcp = vi.fn()
 const duplicateEventFromMcp = vi.fn()
@@ -52,6 +53,7 @@ vi.mock('@/use-cases/mcp/preview-update-enrollment', () => ({ previewUpdateEnrol
 vi.mock('@/use-cases/mcp/commit-update-enrollment', () => ({ commitUpdateEnrollment }))
 vi.mock('@/use-cases/mcp/create-event', () => ({ createEventFromMcp }))
 vi.mock('@/use-cases/mcp/list-events', () => ({ listEventsFromMcp }))
+vi.mock('@/use-cases/mcp/list-attendance-calls', () => ({ listAttendanceCallsFromMcp }))
 vi.mock('@/use-cases/mcp/get-event', () => ({ getEventFromMcp }))
 vi.mock('@/use-cases/mcp/update-event', () => ({ updateEventFromMcp }))
 vi.mock('@/use-cases/mcp/duplicate-event', () => ({ duplicateEventFromMcp }))
@@ -107,6 +109,7 @@ describe('buildMcpServer', () => {
       'delete_class_schedule_slot',
       'preview_class_schedule',
       'commit_class_schedule',
+      'list_attendance_calls',
       'list_plans',
       'list_teachers',
       'create_teacher',
@@ -141,6 +144,7 @@ describe('buildMcpServer', () => {
       'delete_class_schedule_slot',
       'preview_class_schedule',
       'commit_class_schedule',
+      'list_attendance_calls',
       'list_teachers',
       'create_teacher',
       'preview_record_teacher_expense',
@@ -253,6 +257,14 @@ describe('buildMcpServer', () => {
     expect(getEventFromMcp).toHaveBeenCalledWith(scope, { id })
     expect(updateEventFromMcp).toHaveBeenCalledWith(scope, { id, title: 'Fête' })
     expect(duplicateEventFromMcp).toHaveBeenCalledWith(scope, { id, title: 'Fête 2027' })
+  })
+
+  it('hands list_attendance_calls to its use case with the key scope', async () => {
+    const args = { periodId: '123e4567-e89b-12d3-a456-426614174000', from: '2026-09-26' }
+
+    await build().get('list_attendance_calls')?.handler(args)
+
+    expect(listAttendanceCallsFromMcp).toHaveBeenCalledWith(scope, args)
   })
 
   it('turns a read refusal into a named tool error', async () => {

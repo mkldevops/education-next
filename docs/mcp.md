@@ -360,6 +360,25 @@ gets `notConfigured` from each of them.
   year. The source may be published. Reusing the source title is refused with `slugTaken` — put the
   year in the new title.
 
+## Reading attendance calls
+
+`list_attendance_calls` rereads `/dashboard/attendance` day by day, so an agent can tell which call
+is still to be taken or left open. It only reads: opening, entering, validating and cancelling a
+call stay dashboard actions. A school without `attendance_enabled` gets `notConfigured`.
+
+| Argument | Shape |
+|---|---|
+| `periodId` | required, from `list_periods`; another school's period is `notFound` |
+| `classPeriodId` | optional, from `list_class_periods` |
+| `from`, `to` | inclusive UTC days, `2026-09-26`; `to` defaults to `from`, 31 days at most |
+
+The result is `days[]` with `date`, `closed` and `calls[]`; a day without any call is omitted. A call
+publishes `classPeriod { id, name }`, `slotId`, `startTime`, `endTime`, `status`, `sessionId` and
+`validatedAt`. `status` is `NOT_STARTED`, `IN_PROGRESS` or `VALIDATED` for a scheduled slot,
+`CANCELLED` for a cancelled one; an exceptional call has a null `slotId`. On a closure day only the
+calls already opened remain. No student, entry or roster is published. `to` before `from` is
+`invalidDateRange`, a longer range `rangeTooLong`.
+
 ## Writing: the preview/commit pairs
 
 Five pairs are shipped. `create_teacher` is shipped as a single write, without preview: it takes a
