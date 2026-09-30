@@ -775,7 +775,12 @@ rows still belong to.
 leave an orphan family behind the first failure. Before re-reading anything it takes, in order, the
 (school, student, period) lock of each existing student it enrolls, then the row lock of each class
 it seats children in, by increasing id (`reserveClassSeatsInOrder`); the capacity and duplicate
-checks that follow therefore cannot race a dashboard enrollment.
+checks that follow therefore cannot race a dashboard enrollment. Before its first write it also
+re-reads the family, each existing member, and **every plan the draft carries** — one active-plan
+read per distinct plan, the same re-read as `update_enrollment`: archiving a plan is allowed while
+no open enrollment carries it, and the one being committed does not exist yet, so a plan archived
+since the preview → `notFound`, and a price that moved → `staleDraft`. The enrollment is written
+with the draft's `planId` and `totalAmount` only once the database confirms them.
 
 | Body | Cause |
 |---|---|
