@@ -5,6 +5,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { cache } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
+import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
@@ -15,7 +16,7 @@ import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
-import { adminOrLinkedTo, resolveDeepLink } from '../../../_lib/deep-link'
+import { adminOrLinkedTo, familyLinksVisibleTo, resolveDeepLink } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { EnrollmentActions } from '../_components/enrollment-actions'
@@ -47,7 +48,7 @@ const resolveEnrollment = cache((id: string) =>
             include: {
               person: {
                 include: {
-                  families: { include: { family: true } },
+                  families: { where: familyLinksVisibleTo(access), include: { family: true } },
                 },
               },
             },
@@ -139,7 +140,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const totalPaid = enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
   const remaining = calculateRemainingBalance(totalAmount, totalPaid)
   const currentClassId = enrollment.classAssignments.find((a) => !a.endAt)?.classPeriod.id ?? null
-  const familyContext = enrollment.student.person.families[0]?.family
+  const familyContext = resolveDebtorFamily(enrollment.student.person.families)?.family
   const familyName = familyContext?.name ?? '-'
 
   return (

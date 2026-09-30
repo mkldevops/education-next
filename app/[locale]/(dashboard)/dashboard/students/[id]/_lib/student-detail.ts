@@ -1,11 +1,12 @@
 import { cache } from 'react'
 import { languagesOf } from '@/domain/family'
+import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { enrollmentBalances } from '@/domain/payment'
 import { calculateAge } from '@/lib/date'
 import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
-import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
+import { adminOrLinkedTo, familyLinksVisibleTo, resolveDeepLink } from '../../../../_lib/deep-link'
 
 /**
  * Résolveur unique de la page ET de `generateMetadata`.
@@ -13,6 +14,9 @@ import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
  * Le rattachement parent passe par `UserFamily` plutôt que par le `familyId` de l'école
  * active : c'est la seule forme qui reste vraie quand la ressource vit dans une autre
  * école autorisée.
+ *
+ * Les familles incluses sont filtrées par le même critère : le garde de racine ouvre
+ * la fiche, il ne borne pas ce qu'elle embarque.
  */
 export const resolveStudent = cache((id: string) =>
   resolveDeepLink({
@@ -32,6 +36,7 @@ export const resolveStudent = cache((id: string) =>
           person: {
             include: {
               families: {
+                where: familyLinksVisibleTo(access),
                 include: {
                   family: {
                     include: {
@@ -116,10 +121,13 @@ export function deriveStudentDetail(student: StudentDetail) {
     0
   )
   const activeEnrollments = student.enrollments.filter((e) => e.status === 'ACTIVE')
+  // Un parent ne reçoit que ses propres rattachements ; un administrateur les reçoit
+  // tous, sans ordre garanti par Postgres. La famille affichée est la redevable.
+  const family = resolveDebtorFamily(student.person.families)?.family ?? null
 
   return {
     fullName: `${student.person.name} ${student.person.lastname}`,
-    family: student.person.families[0]?.family ?? null,
+    family,
     birthday,
     age: birthday ? calculateAge(birthday, new Date()) : null,
     totalDue,
@@ -131,6 +139,6 @@ export function deriveStudentDetail(student: StudentDetail) {
         student.enrollments.filter((e) => e.status === 'PENDING' || e.status === 'ACTIVE')
       ).reduce((sum, balance) => sum + balance.remainingBalance, 0)
     ),
-    languagesAtHome: languagesOf(student.person.families[0]?.family.languagesAtHome).join(', '),
+    languagesAtHome: languagesOf(family?.languagesAtHome).join(', '),
   }
 }
