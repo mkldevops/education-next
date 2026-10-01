@@ -626,6 +626,7 @@
           "skippedCount": "{count, plural, =0 {Aucun élève ignoré} one {# élève ignoré} other {# élèves ignorés}}",
           "reasons": {
             "alreadyPromoted": "{count, plural, one {# déjà inscrit dans la période d'arrivée} other {# déjà inscrits dans la période d'arrivée}}",
+            "planArchived": "{count, plural, one {# avec une formule archivée} other {# avec une formule archivée}}",
             "noClassAssignment": "{count, plural, one {# sans affectation de classe} other {# sans affectation de classe}}",
             "noNextLevel": "{count, plural, one {# sans niveau suivant actif} other {# sans niveau suivant actif}}",
             "noTargetClass": "{count, plural, one {# sans classe cible dans la période d'arrivée} other {# sans classe cible dans la période d'arrivée}}",
@@ -1596,7 +1597,7 @@
           "language": "Langue de l'invitation",
           "family": "Famille à rattacher",
           "noFamily": "Aucune pour le moment",
-          "familyHint": "Sans famille, le parent pourra se connecter mais ne verra aucune donnée.",
+          "familyHint": "L'adresse doit être celle d'un parent de cette famille. Sans famille, le parent pourra se connecter mais ne verra aucune donnée.",
           "teacher": "Enseignant à inviter",
           "missingTeacherEmail": "email manquant",
           "teacherHint": "L'accès est limité aux classes actuellement affectées à cet enseignant."
