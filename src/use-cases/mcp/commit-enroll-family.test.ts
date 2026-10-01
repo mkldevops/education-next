@@ -13,6 +13,7 @@ const tx = {
   person: { create: vi.fn(), findFirst: vi.fn() },
   student: { create: vi.fn() },
   enrollment: { create: vi.fn() },
+  plan: { findFirst: vi.fn() },
   classPeriod: { findUnique: vi.fn() },
   classAssignment: { create: vi.fn(), count: vi.fn() },
   payment: { create: vi.fn() },
@@ -77,6 +78,12 @@ beforeEach(() => {
   })
   transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
   tx.classPeriod.findUnique.mockResolvedValue({ periodId: 'period-1' })
+  // La base répond au prix que le brouillon a photographié : chaque test de refus fait
+  // bouger ou disparaître une formule explicitement.
+  const planAmounts: Record<string, number> = { 'plan-1': 100, 'plan-2': 90, 'plan-unpriced': 0 }
+  tx.plan.findFirst.mockImplementation(async ({ where }: { where: { id: string } }) =>
+    where.id in planAmounts ? { amount: planAmounts[where.id] } : null
+  )
   tx.$queryRaw.mockResolvedValue([{ capacity: 12 }])
   tx.classAssignment.count.mockResolvedValue(3)
   tx.mcpDraft.updateMany.mockResolvedValue({ count: 1 })
@@ -376,6 +383,70 @@ describe('commitEnrollFamily', () => {
 
     expect(await commitEnrollFamily(scope, input)).toBe('notFound')
     expect(tx.family.create).not.toHaveBeenCalled()
+  })
+
+  // Archiver une formule est autorisé tant qu'aucune inscription ouverte ne la porte, et
+  // celle du brouillon n'existe pas encore : le commit doit la relire, pas la croire.
+  it('refuses a plan archived between the preview and the commit', async () => {
+    tx.plan.findFirst.mockResolvedValue(null)
+
+    expect(await commitEnrollFamily(scope, input)).toBe('notFound')
+    expect(tx.plan.findFirst).toHaveBeenCalledWith({
+      where: { id: 'plan-1', schoolId: 'school-1', isActive: true },
+      select: { amount: true },
+    })
+    expect(tx.family.create).not.toHaveBeenCalled()
+    expect(tx.enrollment.create).not.toHaveBeenCalled()
+    expect(release).toHaveBeenCalledWith('school-1', input.draftId)
+  })
+
+  it('refuses a plan whose price moved since the preview', async () => {
+    tx.plan.findFirst.mockResolvedValue({ amount: 120 })
+
+    expect(await commitEnrollFamily(scope, input)).toBe('staleDraft')
+    expect(tx.family.create).not.toHaveBeenCalled()
+    expect(tx.enrollment.create).not.toHaveBeenCalled()
+    expect(release).toHaveBeenCalledWith('school-1', input.draftId)
+  })
+
+  it('re-reads each plan once, before the first write', async () => {
+    findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
+      keyId: 'key-1',
+      userId: null,
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [
+          resolved.students[0],
+          { ...resolved.students[0], name: 'Manzil', classPeriod: { id: 'class-2', name: 'C2' } },
+          {
+            ...resolved.students[0],
+            name: 'Nour',
+            classPeriod: { id: 'class-2', name: 'C2' },
+            plan: { id: 'plan-2', name: 'Forfait Grand élèves', amount: 90 },
+            totalAmount: 90,
+          },
+        ],
+        payment: null,
+      },
+    })
+    tx.person.create
+      .mockReset()
+      .mockResolvedValueOnce({ id: 'person-parent' })
+      .mockResolvedValueOnce({ id: 'person-student-1' })
+      .mockResolvedValueOnce({ id: 'person-student-2' })
+      .mockResolvedValueOnce({ id: 'person-student-3' })
+
+    expect(await commitEnrollFamily(scope, input)).toMatchObject({ familyId: 'family-1' })
+
+    expect(tx.plan.findFirst.mock.calls.map(([args]) => args.where.id)).toEqual([
+      'plan-1',
+      'plan-2',
+    ])
+    const lastPlanRead = tx.plan.findFirst.mock.invocationCallOrder.at(-1) ?? 0
+    expect(lastPlanRead).toBeLessThan(tx.family.create.mock.invocationCallOrder[0] ?? 0)
   })
 
   it('refuses a stored split that points past the students it creates', async () => {
