@@ -395,6 +395,16 @@ unrepresentable in the database as well as in the types.
   already used for `Invitation.id`. Business models keep `z.uuid()`: Prisma does generate those.
 - A resource outside a parent's family answers `notFound()`, never `forbidden()` — the existence of
   another family's student is not disclosed. The same holds across schools.
+- **The families a detail page embeds are scoped like its root.** The root guard only decides
+  whether the student or enrollment opens; it says nothing about the `person.families` it includes.
+  A student under shared custody is linked to two households, and the parent of one used to read
+  the other's contacts, whichever Postgres returned first. `familyLinksVisibleTo()`
+  (`app/[locale]/(dashboard)/_lib/deep-link.ts`) filters that include with the same
+  `adminOrLinkedTo()` clause: an admin of the school sees every link, a parent only the families
+  their account is linked to. The family the page then shows — panel, breadcrumb, « Payer » link,
+  languages at home — is `resolveDebtorFamily()` over the visible links, never `families[0]`, so two
+  admins see the same household. `app/[locale]/(dashboard)/__tests__/render-reads.test.tsx` pins
+  both readers against a real database.
 
 ### Deep links
 
