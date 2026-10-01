@@ -33,6 +33,15 @@ const baseEnrollment: EnrollmentDrawerData = {
   payments: [],
 }
 
+const payment = (id: string, amount: number): EnrollmentDrawerData['payments'][number] => ({
+  id,
+  amount,
+  method: 'CASH',
+  reference: null,
+  paidAt: new Date('2026-01-02T00:00:00Z'),
+  cashedAt: null,
+})
+
 const reservedEnrollment: EnrollmentDrawerData = {
   ...baseEnrollment,
   id: 'enrollment-2',
@@ -58,6 +67,44 @@ describe('EnrollmentsTable with payments enabled', () => {
 
     expect(screen.getByText('unpriced.badge')).toBeInTheDocument()
     expect(screen.queryByText('__unpriced__')).not.toBeInTheDocument()
+  })
+
+  it('shows no balance badge when cents-split payments settle the enrollment (#424)', () => {
+    render(
+      <EnrollmentsTable
+        enrollments={[
+          {
+            ...baseEnrollment,
+            totalAmount: 30.3,
+            payments: [payment('p1', 10.1), payment('p2', 20.2)],
+          },
+        ]}
+        isAdmin={true}
+        availableClasses={[]}
+        availablePlans={[]}
+        paymentsEnabled={true}
+        locale="fr"
+        periodName={null}
+      />
+    )
+
+    expect(screen.queryByText(/balanceBadge/)).not.toBeInTheDocument()
+  })
+
+  it('shows the balance badge while money is still owed', () => {
+    render(
+      <EnrollmentsTable
+        enrollments={[{ ...baseEnrollment, totalAmount: 30.3, payments: [payment('p1', 10.1)] }]}
+        isAdmin={true}
+        availableClasses={[]}
+        availablePlans={[]}
+        paymentsEnabled={true}
+        locale="fr"
+        periodName={null}
+      />
+    )
+
+    expect(screen.getByText(/balanceBadge/)).toBeInTheDocument()
   })
 
   it('names a priced plan normally', () => {

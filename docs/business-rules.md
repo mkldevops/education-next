@@ -1321,6 +1321,16 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
 - `totalAmount = plan.amount - discount`, computed at creation and recomputed on every discount
   change against the **plan's current price** — not against the stored total.
 - `remainingBalance = max(0, totalAmount - totalPaid)`. It never goes negative.
+- **Both figures are half-up rounded to the cent** (`totalPaidAmount` in `src/domain/payment.ts`,
+  `calculateRemainingBalance` in `src/domain/enrollment.ts`). Summing floats leaves residue —
+  10.10 + 20.20 = 30.299999… — that would otherwise show a « Reste 0,00 € » badge on a settled
+  enrollment (#424).
+- **`totalPaid` counts active payments only.** A cancelled payment is soft-deleted
+  (`cancel_payments`), and the shared extension does not filter nested relations, so every
+  enrollment read that sums `payments` — the enrollment page and drawer, the enrollments list, the
+  home progress column, the family and student pages, the gateways — carries an explicit
+  `where: { isActive: true }` on that include. Without it a cancelled 180 € payment still reads as
+  « Payé 180 € / Reste 0 € » while the family balance already shows 180 € owed.
 - Changing a plan's price does not retroactively change existing enrollments. Applying a discount
   does, because it recomputes from the plan.
 

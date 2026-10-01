@@ -26,6 +26,7 @@ import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { readsAsOptedIn } from '@/domain/feature-flags'
+import { totalPaidAmount } from '@/domain/payment'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { configGateway } from '@/gateways/config-gateway'
 import { schoolGateway } from '@/gateways/school-gateway'
@@ -389,7 +390,7 @@ export default async function DashboardPage({ params }: Props) {
             header: t('table.payment'),
             render: (item) => {
               const finalAmount = Number(item.totalAmount)
-              const totalPaid = (item.payments ?? []).reduce((sum, p) => sum + Number(p.amount), 0)
+              const totalPaid = totalPaidAmount(item.payments ?? [])
               const ratio = finalAmount > 0 ? (totalPaid / finalAmount) * 100 : 0
               return <ProgressBar value={ratio} />
             },

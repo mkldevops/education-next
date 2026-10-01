@@ -124,6 +124,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
         },
       },
       payments: {
+        where: { isActive: true },
         orderBy: { paidAt: 'desc' },
       },
     },

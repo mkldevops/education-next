@@ -65,11 +65,13 @@ describe('getDashboardOverview', () => {
     expect(call.include).not.toHaveProperty('payments')
   })
 
-  it('requests the payments relation on recent enrollments when payments are enabled', async () => {
+  it('requests only active payments on recent enrollments when payments are enabled', async () => {
     await getDashboardOverview('school-1', true)
 
+    // Un paiement annulé est soft-deleted : sans filtre explicite sur la relation imbriquée,
+    // la barre de progression le compterait encore (#424).
     const call = dbMock.enrollment.findMany.mock.calls[0][0]
-    expect(call.include.payments).toBe(true)
+    expect(call.include.payments).toEqual({ where: { isActive: true } })
   })
 
   it('forwards the flag to getSchoolInsights', async () => {
