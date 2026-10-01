@@ -13,6 +13,18 @@ vi.mock('@/lib/platform-email', () => ({ sendPlatformEmail: sendPlatformEmailMoc
 vi.mock('@/gateways/user-gateway', () => ({
   userGateway: { findManaged: vi.fn(), hasCredentialAccount: hasCredentialAccountMock },
 }))
+// Les emails passent par `src/lib/auth-emails.ts` : vrais catalogues, hors runtime Next.
+vi.mock('next-intl/server', async () => {
+  const { createTranslator } = await vi.importActual<typeof import('next-intl')>('next-intl')
+  const catalogs = {
+    fr: (await import('../../../messages/fr.json')).default,
+    en: (await import('../../../messages/en.json')).default,
+  }
+  return {
+    getTranslations: async ({ locale, namespace }: { locale: 'fr' | 'en'; namespace: string }) =>
+      createTranslator({ locale, messages: catalogs[locale], namespace } as never),
+  }
+})
 
 const memory: Record<string, Record<string, unknown>[]> = {
   user: [],

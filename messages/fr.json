@@ -1265,7 +1265,8 @@
           "settled": "Votre famille est à jour.",
           "error": "Impossible de démarrer le paiement.",
           "returned": "Votre paiement a été transmis. L'historique sera actualisé après confirmation bancaire.",
-          "cancelled": "Le paiement a été annulé. Aucun règlement n'a été enregistré."
+          "cancelled": "Le paiement a été annulé. Aucun règlement n'a été enregistré.",
+          "productName": "Frais de scolarité"
         },
         "alert": {
           "needsAttention": "Enfants nécessitant une attention",
@@ -2957,6 +2958,43 @@
       "body": "Le mot de passe de votre compte vient d'être changé. Aucune action n'est nécessaire si vous êtes à l'origine de ce changement.",
       "notice": "Vos autres sessions ouvertes restent actives.",
       "footer": "Message automatique. Si vous n'êtes pas à l'origine de ce changement, réinitialisez immédiatement votre mot de passe et contactez un administrateur."
+    },
+    "resetPassword": {
+      "subject": "Réinitialisation de votre mot de passe",
+      "preheader": "Lien de réinitialisation valable une heure.",
+      "heading": "Réinitialisation de votre mot de passe",
+      "body": "Une réinitialisation de mot de passe a été demandée pour ce compte. Utilisez le bouton ci-dessous pour en choisir un nouveau.",
+      "cta": "Choisir un mot de passe",
+      "notice": "Ce lien expire dans 1 heure.",
+      "footer": "Message automatique. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : votre mot de passe actuel reste valable."
+    },
+    "setPassword": {
+      "subject": "Définissez votre mot de passe",
+      "preheader": "Lien de définition du mot de passe valable une heure.",
+      "heading": "Définissez votre mot de passe",
+      "body": "Un accès à la plateforme est prêt pour {email}, mais aucun mot de passe n'est encore défini. Utilisez le bouton ci-dessous pour choisir le vôtre et vous connecter.",
+      "cta": "Choisir un mot de passe",
+      "notice": "Ce lien expire dans 1 heure. Passé ce délai, « Mot de passe oublié » sur la page de connexion en renvoie un.",
+      "footer": "Message automatique. Si vous n'attendiez pas cet accès, ignorez cet email : aucun mot de passe ne sera défini."
+    },
+    "verifyEmail": {
+      "subject": "Confirmez votre adresse email",
+      "preheader": "Une seule étape pour confirmer votre adresse.",
+      "heading": "Confirmez votre adresse email",
+      "body": "Cette adresse a été renseignée pour le compte {email}. La confirmer garantit que les messages de la plateforme — invitations, réinitialisation de mot de passe — vous parviennent.",
+      "cta": "Confirmer mon adresse",
+      "notice": "Sans confirmation, ce lien reste le seul moyen de valider l'adresse.",
+      "footer": "Message automatique. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email."
+    },
+    "changeEmail": {
+      "subject": "Confirmez le changement d'adresse email",
+      "preheader": "Nouvelle adresse demandée : {newEmail}",
+      "heading": "Confirmez le changement d'adresse",
+      "body": "Une demande de remplacement de {email} par {newEmail} a été enregistrée pour ce compte.",
+      "bodyCurrentAddress": "Ce message part sur l'adresse actuelle : sans cette confirmation, l'adresse du compte reste inchangée.",
+      "cta": "Confirmer la nouvelle adresse",
+      "notice": "Après confirmation, la connexion se fera avec l'adresse {newEmail}.",
+      "footer": "Message automatique. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email et changez votre mot de passe."
     }
   },
   "publicEvent": {

@@ -2,6 +2,7 @@ import type Stripe from 'stripe'
 import { configGateway } from '@/gateways/config-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import type { Prisma } from '@/generated/prisma/client'
+import { isLocale } from '@/i18n/locales'
 import { db } from '@/lib/db'
 import { getStripeClient } from '@/lib/stripe'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -14,7 +15,18 @@ type Input = {
   initiatedById: string
   customerEmail: string
   locale: string
+  /** Libellé de la ligne Checkout, déjà traduit par l'appelant dans la langue du parent. */
+  productName: string
   appUrl: string
+}
+
+/**
+ * Stripe n'accepte qu'une liste fermée de locales pour Checkout ; `fr` et `en` en font partie.
+ * Toute autre valeur retombe sur `auto` (détection navigateur côté Stripe) plutôt que de faire
+ * échouer l'ouverture de la session.
+ */
+function toStripeCheckoutLocale(locale: string): Stripe.Checkout.SessionCreateParams.Locale {
+  return isLocale(locale) ? locale : 'auto'
 }
 
 export async function createCheckoutSession(input: Input, configGw = configGateway) {
@@ -95,6 +107,7 @@ async function openCheckoutSession(
         mode: 'payment',
         customer_email: input.customerEmail,
         client_reference_id: transaction.id,
+        locale: toStripeCheckoutLocale(input.locale),
         line_items: [
           {
             quantity: 1,
@@ -102,7 +115,7 @@ async function openCheckoutSession(
               currency: 'eur',
               unit_amount: balance.remainingAmountInCents,
               product_data: {
-                name: 'Frais de scolarité',
+                name: input.productName,
               },
             },
           },

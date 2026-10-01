@@ -1089,9 +1089,13 @@ styles, Outlook VML button, hidden preheader, plain-text twin — and carries th
   resend, which uses the distinct `emails.invitationReminder` copy — `resendInvitationAction` issues
   a new token, so the reminder must say the previous link no longer works.
 - **Platform-signed messages** go through `sendPlatformEmail` (`src/lib/platform-email.ts`) and are
-  branded « Education »: password reset, address verification, address-change confirmation. Their
-  Better Auth callbacks receive no request locale and no school context — an account may belong to
-  several schools — so their copy is French in source rather than translated.
+  branded « Education »: password reset (`emails.resetPassword`), address verification
+  (`emails.verifyEmail`), address-change confirmation (`emails.changeEmail`). Their Better Auth
+  callbacks have no school context — an account may belong to several schools — but they do receive
+  the originating request: `src/lib/auth-emails.ts` picks the language from it through
+  `resolveRequestLocale` (`src/i18n/request-locale.ts`): `NEXT_LOCALE` cookie, then
+  `Accept-Language`, then the default locale. A server-side call without a request falls back to
+  the default locale.
 - **A password change notifies its owner.** `changePasswordAction` mails `emails.passwordChanged`
   after the change succeeded. The send is deliberately not part of the result: the password is
   already replaced, and reporting a mail failure would invite the user to change it twice.
@@ -1514,6 +1518,10 @@ the checkout flow, not by the form.
   `schoolId`.
 - Nothing owed → `noBalance`. The session is always opened for the **full `remainingBalance`**,
   pending enrollments included; partial online payment is not offered.
+- The Checkout page and its line item follow the parent's language: `createOnlinePaymentAction`
+  translates the label (`dashboard.pages.familyDetails.onlinePayment.productName`) and the use case
+  passes the page locale to Stripe (`locale`), falling back to `auto` for any value Stripe does not
+  list.
 - The `PaymentTransaction` row is created **before** the Stripe session and its id is the
   idempotency key.
 - A family never holds two payable Checkout sessions. Each session charges the full balance, so a

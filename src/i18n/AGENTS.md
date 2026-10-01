@@ -4,14 +4,19 @@ This directory defines supported locales, request message loading, and locale-aw
 
 ## Locale Source of Truth
 
-`routing.ts` defines `fr` and `en`, with `fr` as the default:
+`locales.ts` defines `fr` and `en`, with `fr` as the default, without any next-intl import;
+`routing.ts` builds the routing configuration and navigation helpers from it:
 
 ```typescript
 export const routing = defineRouting({
-  locales: ['fr', 'en'],
-  defaultLocale: 'fr',
+  locales,
+  defaultLocale,
 })
 ```
+
+Code that runs outside the `[locale]` segment (Better Auth email callbacks, `/api/*`) resolves the
+language with `resolveRequestLocale(request)` from `request-locale.ts`: `NEXT_LOCALE` cookie, then
+`Accept-Language`, then the default locale.
 
 When adding or changing a message key, update both `messages/fr.json` and `messages/en.json`. Keep
 namespaces aligned across locales.

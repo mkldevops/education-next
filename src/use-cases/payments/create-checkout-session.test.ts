@@ -42,6 +42,7 @@ const input = {
   initiatedById: 'user-1',
   customerEmail: 'parent@example.com',
   locale: 'fr',
+  productName: 'Frais de scolarité',
   appUrl: 'http://localhost:8550',
 }
 
@@ -174,6 +175,34 @@ describe('createCheckoutSession', () => {
       where: { id_schoolId: { id: 'transaction-1', schoolId } },
       data: { providerSessionId: 'cs_test_1' },
     })
+  })
+
+  it("labels the line item and the Checkout page in the parent's language", async () => {
+    await createCheckoutSession({ ...input, locale: 'en', productName: 'Tuition fees' })
+
+    expect(sessionsCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        locale: 'en',
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({
+              product_data: { name: 'Tuition fees' },
+            }),
+          }),
+        ],
+        success_url: 'http://localhost:8550/en/dashboard/families/family-1?payment=success',
+      }),
+      expect.anything()
+    )
+  })
+
+  it('lets Stripe detect the language when the locale is not one it supports', async () => {
+    await createCheckoutSession({ ...input, locale: 'xx' })
+
+    expect(sessionsCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: 'auto' }),
+      expect.anything()
+    )
   })
 
   it('expires the created session when the transaction cannot commit', async () => {
