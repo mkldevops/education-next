@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server'
+import { userGateway } from '@/gateways/user-gateway'
 import { resolveRequestLocale } from '@/i18n/request-locale'
 import { sendPlatformEmail } from '@/lib/platform-email'
 
@@ -9,21 +10,32 @@ import { sendPlatformEmail } from '@/lib/platform-email'
  * la plateforme. Un appel serveur sans requête tombe sur la locale par défaut.
  */
 
-type EmailNamespace = 'emails.resetPassword' | 'emails.verifyEmail' | 'emails.changeEmail'
+type EmailNamespace =
+  | 'emails.resetPassword'
+  | 'emails.setPassword'
+  | 'emails.verifyEmail'
+  | 'emails.changeEmail'
 
 async function translator(namespace: EmailNamespace, request?: Request) {
   return getTranslations({ locale: resolveRequestLocale(request), namespace })
 }
 
+/**
+ * Même lien, deux situations : un compte sans `credential` — créé par `createUserAction`,
+ * ou Google seul — n'a rien à « réinitialiser ». Le présenter ainsi ferait ignorer le
+ * message par son destinataire, qui n'a rien demandé ; on lui dit qu'il définit son premier
+ * mot de passe.
+ */
 export async function sendResetPasswordEmail(
-  data: { user: { email: string }; url: string },
+  data: { user: { id: string; email: string }; url: string },
   request?: Request
 ) {
-  const t = await translator('emails.resetPassword', request)
+  const firstPassword = !(await userGateway.hasCredentialAccount(data.user.id))
+  const t = await translator(firstPassword ? 'emails.setPassword' : 'emails.resetPassword', request)
   await sendPlatformEmail(data.user.email, t('subject'), {
     preheader: t('preheader'),
     heading: t('heading'),
-    paragraphs: [t('body')],
+    paragraphs: [t('body', { email: data.user.email })],
     cta: { label: t('cta'), url: data.url },
     notice: t('notice'),
     footer: t('footer'),

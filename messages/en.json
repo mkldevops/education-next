@@ -625,6 +625,7 @@
           "skippedCount": "{count, plural, =0 {No students skipped} one {# student skipped} other {# students skipped}}",
           "reasons": {
             "alreadyPromoted": "{count, plural, one {# already enrolled in the destination period} other {# already enrolled in the destination period}}",
+            "planArchived": "{count, plural, one {# with an archived plan} other {# with an archived plan}}",
             "noClassAssignment": "{count, plural, one {# with no class assignment} other {# with no class assignment}}",
             "noNextLevel": "{count, plural, one {# with no active next level} other {# with no active next level}}",
             "noTargetClass": "{count, plural, one {# with no target class in the destination period} other {# with no target class in the destination period}}",
@@ -1596,7 +1597,7 @@
           "language": "Invitation language",
           "family": "Family to link",
           "noFamily": "None for now",
-          "familyHint": "Without a family the parent can sign in but will see no data.",
+          "familyHint": "The address must belong to a parent of this family. Without a family the parent can sign in but will see no data.",
           "teacher": "Teacher to invite",
           "missingTeacherEmail": "email missing",
           "teacherHint": "Access is limited to classes currently assigned to this teacher."
@@ -2965,6 +2966,15 @@
       "cta": "Choose a password",
       "notice": "This link expires in 1 hour.",
       "footer": "Automated message. If you did not request this, ignore this email: your current password remains valid."
+    },
+    "setPassword": {
+      "subject": "Set your password",
+      "preheader": "Password setup link valid for one hour.",
+      "heading": "Set your password",
+      "body": "Access to the platform is ready for {email}, but no password has been set yet. Use the button below to choose yours and sign in.",
+      "cta": "Choose a password",
+      "notice": "This link expires in 1 hour. After that, use “Forgot password” on the sign-in page to get a new one.",
+      "footer": "Automated message. If you were not expecting this access, ignore this email: no password will be set."
     },
     "verifyEmail": {
       "subject": "Confirm your email address",

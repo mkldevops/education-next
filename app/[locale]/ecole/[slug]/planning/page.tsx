@@ -5,11 +5,13 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { cache } from 'react'
+import { ThemeProvider } from '@/components/theme-provider'
 import { isPeriodCurrent } from '@/domain/period'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { getPathname } from '@/i18n/routing'
 import { getBrandingConfig } from '@/lib/branding'
 import { db } from '@/lib/db'
+import { getThemeConfigs } from '@/lib/theme-configs'
 import { listPublicClassSchedule } from '@/use-cases/class-schedules/list-public-class-schedule'
 import { PrintButton } from '../../../(print)/_components/print-button'
 import {
@@ -77,7 +79,10 @@ export default async function PublicSchedulePage({ params, searchParams }: Props
   const result = await resolvePublicSchedule(slug)
   if (!result) notFound()
 
-  const t = await getTranslations('publicSchedule')
+  const [themeConfigs, t] = await Promise.all([
+    getThemeConfigs(result.school.id),
+    getTranslations('publicSchedule'),
+  ])
   const levels = collectLevels(result.slots, result.levelProgression)
   const { niveau } = await searchParams
   const activeLevel = levels.find((level) => level.id === niveau) ?? null
@@ -123,6 +128,9 @@ export default async function PublicSchedulePage({ params, searchParams }: Props
 
   return (
     <div className="schedule-print min-h-screen bg-alabaster-900 print:min-h-0 print:bg-white">
+      {/* Le layout habille la page avec l'école du visiteur (souvent aucune) : celle du
+          `slug` prime ici, déclarée après et donc gagnante sur `:root`. */}
+      <ThemeProvider configs={themeConfigs} />
       <style>{schedulePrintCss(orientation)}</style>
       <div className="schedule-print-page mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 print:flex print:max-w-none print:flex-col print:p-0">
         <header className="mb-6 flex items-start justify-between gap-6 print:mb-4 print:shrink-0 print:border-b-2 print:border-graphite print:pb-4">

@@ -168,6 +168,47 @@ describe('calculateFamilyBalance', () => {
     expect(balance.remainingBalance).toBe(100.09)
     expect(balance.remainingAmountInCents).toBe(10009)
   })
+
+  it('accepts a paid total aggregated in the database instead of the payment rows', () => {
+    const fromRows = calculateFamilyBalance([
+      {
+        id: 'active',
+        status: 'ACTIVE',
+        totalAmount: 180,
+        discount: 0,
+        payments: [{ amount: 40.1 }, { amount: 19.9 }],
+      },
+      {
+        id: 'cancelled',
+        status: 'CANCELLED',
+        totalAmount: 180,
+        discount: 0,
+        payments: [{ amount: 25 }],
+      },
+    ])
+    const fromTotals = calculateFamilyBalance([
+      {
+        id: 'active',
+        status: 'ACTIVE',
+        totalAmount: 180,
+        discount: 0,
+        paid: { toString: () => '60.00' },
+      },
+      { id: 'cancelled', status: 'CANCELLED', totalAmount: 180, discount: 0, paid: 25 },
+    ])
+
+    expect(fromTotals).toEqual(fromRows)
+    expect(fromTotals).toMatchObject({ totalPaid: 85, remainingBalance: 120 })
+  })
+
+  it('treats an enrollment without any payment as unpaid when the total is null', () => {
+    const balance = calculateFamilyBalance([
+      { id: 'enrollment-1', status: 'PENDING', totalAmount: 180, discount: 0, paid: null },
+    ])
+
+    expect(balance.totalPaid).toBe(0)
+    expect(balance.remainingBalance).toBe(180)
+  })
 })
 
 describe('getFamilyBalance', () => {

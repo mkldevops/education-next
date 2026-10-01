@@ -162,6 +162,30 @@ async function seedSchool(label: string, suffix: string) {
     data: { schoolId: school.id, personId: person.id, phoneNumber: '0600000000' },
   })
 
+  // Garde alternée : le même élève est rattaché à un second foyer, lu par un autre
+  // parent. Les deux rattachements sont `PARENT` pour que seul l'ordre de Postgres
+  // les départage — c'est précisément ce qui ne doit pas décider de la famille affichée.
+  const otherParent = await raw.user.create({
+    data: { email: `other-parent-${label}-${suffix}@render.test`, name: `other parent ${label}` },
+  })
+  await raw.schoolMember.create({
+    data: { userId: otherParent.id, schoolId: school.id, role: 'PARENT' },
+  })
+  const otherFamily = await raw.family.create({
+    data: { schoolId: school.id, name: `other fam ${label}`, createdById: admin.id },
+  })
+  await raw.userFamily.create({
+    data: { userId: otherParent.id, familyId: otherFamily.id, schoolId: school.id },
+  })
+  await raw.familyPerson.create({
+    data: {
+      familyId: otherFamily.id,
+      personId: person.id,
+      schoolId: school.id,
+      relationType: 'PARENT',
+    },
+  })
+
   const plan = await raw.plan.create({
     data: { schoolId: school.id, name: `plan ${label}`, amount: 100 },
   })
@@ -267,6 +291,8 @@ async function seedSchool(label: string, suffix: string) {
     parent,
     superAdmin,
     family,
+    otherParent,
+    otherFamily,
     person,
     student,
     plan,
@@ -302,7 +328,11 @@ async function cleanup(fixture: Fixture) {
   await raw.schoolMember.deleteMany({ where: { schoolId } })
   await raw.school.delete({ where: { id: schoolId } })
   await raw.user.deleteMany({
-    where: { id: { in: [fixture.admin.id, fixture.parent.id, fixture.superAdmin.id] } },
+    where: {
+      id: {
+        in: [fixture.admin.id, fixture.parent.id, fixture.otherParent.id, fixture.superAdmin.id],
+      },
+    },
   })
 }
 
@@ -576,6 +606,42 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
       await expect(
         Page({ params: Promise.resolve({ locale: 'fr', id: a.classPeriod.id }) })
       ).rejects.toBeInstanceOf(NotFoundSentinel)
+    })
+  })
+
+  // Garde alternée : l'élève de A est rattaché à `a.family` et à `a.otherFamily`. Le garde
+  // de racine ouvre la fiche aux deux parents ; ce bloc vérifie que l'inclusion des
+  // familles est bornée elle aussi, et que l'administrateur voit une famille déterministe.
+  describe('student detail family scope, under shared custody', () => {
+    async function familiesSeenOn(studentId: string) {
+      const { resolveStudent } = await import('../dashboard/students/[id]/_lib/student-detail')
+      const resolution = await resolveStudent(studentId)
+      if (resolution.status !== 'found') throw new Error(`unexpected ${resolution.status}`)
+      return resolution.resource.person.families.map((link) => link.familyId)
+    }
+
+    it('shows a parent only the household their account is linked to', async () => {
+      signIn(a.parent, a.school.id)
+      expect(await familiesSeenOn(a.student.id)).toEqual([a.family.id])
+
+      signIn(a.otherParent, a.school.id)
+      expect(await familiesSeenOn(a.student.id)).toEqual([a.otherFamily.id])
+    })
+
+    it('shows the admin every household and derives the debtor family', async () => {
+      signIn(a.admin, a.school.id)
+      const { deriveStudentDetail, resolveStudent } = await import(
+        '../dashboard/students/[id]/_lib/student-detail'
+      )
+
+      const resolution = await resolveStudent(a.student.id)
+      if (resolution.status !== 'found') throw new Error(`unexpected ${resolution.status}`)
+
+      expect(resolution.resource.person.families.map((link) => link.familyId).sort()).toEqual(
+        [a.family.id, a.otherFamily.id].sort()
+      )
+      const [debtorId] = [a.family.id, a.otherFamily.id].sort()
+      expect(deriveStudentDetail(resolution.resource).family?.id).toBe(debtorId)
     })
   })
 

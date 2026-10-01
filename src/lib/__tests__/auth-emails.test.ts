@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const sendPlatformEmailMock = vi.fn()
+const hasCredentialAccountMock = vi.fn()
 
 vi.mock('@/lib/platform-email', () => ({ sendPlatformEmail: sendPlatformEmailMock }))
+vi.mock('@/gateways/user-gateway', () => ({
+  userGateway: { hasCredentialAccount: hasCredentialAccountMock },
+}))
 
 // Vrai formateur ICU sur les deux catalogues : le test prouve que chaque clé existe en
 // français et en anglais, et que les valeurs (`email`, `newEmail`) sont bien interpolées.
@@ -25,12 +29,13 @@ function requestWith(headers: Record<string, string>) {
   return new Request('http://localhost/api/auth/request-password-reset', { headers })
 }
 
-const user = { email: 'parent@example.com' }
+const user = { id: 'user-1', email: 'parent@example.com' }
 const url = 'http://localhost:8550/reset-password?token=abc'
 
 describe('auth emails', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    hasCredentialAccountMock.mockResolvedValue(true)
   })
 
   it('sends the password reset in the language of the request cookie', async () => {
@@ -64,6 +69,30 @@ describe('auth emails', () => {
       2,
       'parent@example.com',
       'Réinitialisation de votre mot de passe',
+      expect.objectContaining({ cta: { label: 'Choisir un mot de passe', url } })
+    )
+  })
+
+  it('invites an account without a password to set its first one, in the request language', async () => {
+    hasCredentialAccountMock.mockResolvedValue(false)
+
+    await sendResetPasswordEmail({ user, url }, requestWith({ cookie: 'NEXT_LOCALE=en' }))
+    await sendResetPasswordEmail({ user, url })
+
+    expect(hasCredentialAccountMock).toHaveBeenCalledWith('user-1')
+    expect(sendPlatformEmailMock).toHaveBeenNthCalledWith(
+      1,
+      'parent@example.com',
+      'Set your password',
+      expect.objectContaining({
+        paragraphs: [expect.stringContaining('parent@example.com')],
+        cta: { label: 'Choose a password', url },
+      })
+    )
+    expect(sendPlatformEmailMock).toHaveBeenNthCalledWith(
+      2,
+      'parent@example.com',
+      'Définissez votre mot de passe',
       expect.objectContaining({ cta: { label: 'Choisir un mot de passe', url } })
     )
   })

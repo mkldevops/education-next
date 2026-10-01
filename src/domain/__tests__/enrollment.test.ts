@@ -85,6 +85,15 @@ describe('enrollment domain', () => {
       const result = calculateRemainingBalance(totalAmount, 200)
       expect(result).toBe(50)
     })
+
+    it('rounds to the cent so float residue never shows a phantom balance (#424)', () => {
+      expect(calculateRemainingBalance(30.3, 10.1 + 20.2)).toBe(0)
+      expect(calculateRemainingBalance(30.3, 30.299999999999997)).toBe(0)
+    })
+
+    it('keeps a real cent of balance after rounding', () => {
+      expect(calculateRemainingBalance(30.3, 30.29)).toBe(0.01)
+    })
   })
 
   describe('validateTransition', () => {

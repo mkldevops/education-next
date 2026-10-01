@@ -626,6 +626,7 @@
           "skippedCount": "{count, plural, =0 {Aucun élève ignoré} one {# élève ignoré} other {# élèves ignorés}}",
           "reasons": {
             "alreadyPromoted": "{count, plural, one {# déjà inscrit dans la période d'arrivée} other {# déjà inscrits dans la période d'arrivée}}",
+            "planArchived": "{count, plural, one {# avec une formule archivée} other {# avec une formule archivée}}",
             "noClassAssignment": "{count, plural, one {# sans affectation de classe} other {# sans affectation de classe}}",
             "noNextLevel": "{count, plural, one {# sans niveau suivant actif} other {# sans niveau suivant actif}}",
             "noTargetClass": "{count, plural, one {# sans classe cible dans la période d'arrivée} other {# sans classe cible dans la période d'arrivée}}",
@@ -1597,7 +1598,7 @@
           "language": "Langue de l'invitation",
           "family": "Famille à rattacher",
           "noFamily": "Aucune pour le moment",
-          "familyHint": "Sans famille, le parent pourra se connecter mais ne verra aucune donnée.",
+          "familyHint": "L'adresse doit être celle d'un parent de cette famille. Sans famille, le parent pourra se connecter mais ne verra aucune donnée.",
           "teacher": "Enseignant à inviter",
           "missingTeacherEmail": "email manquant",
           "teacherHint": "L'accès est limité aux classes actuellement affectées à cet enseignant."
@@ -2966,6 +2967,15 @@
       "cta": "Choisir un mot de passe",
       "notice": "Ce lien expire dans 1 heure.",
       "footer": "Message automatique. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : votre mot de passe actuel reste valable."
+    },
+    "setPassword": {
+      "subject": "Définissez votre mot de passe",
+      "preheader": "Lien de définition du mot de passe valable une heure.",
+      "heading": "Définissez votre mot de passe",
+      "body": "Un accès à la plateforme est prêt pour {email}, mais aucun mot de passe n'est encore défini. Utilisez le bouton ci-dessous pour choisir le vôtre et vous connecter.",
+      "cta": "Choisir un mot de passe",
+      "notice": "Ce lien expire dans 1 heure. Passé ce délai, « Mot de passe oublié » sur la page de connexion en renvoie un.",
+      "footer": "Message automatique. Si vous n'attendiez pas cet accès, ignorez cet email : aucun mot de passe ne sera défini."
     },
     "verifyEmail": {
       "subject": "Confirmez votre adresse email",
