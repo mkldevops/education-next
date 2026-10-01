@@ -1201,7 +1201,7 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 - An active `Teacher` profile linked to a user in the same school grants teacher capability. It can complement an existing `ADMIN` or `PARENT` membership, or accompany a `TEACHER`-only membership.
 - Its dashboard surfaces are **My classes** and **Attendance tracking**. Both are scoped by the school and current profile's active `ClassPeriodTeacher` assignments; removing an assignment removes that class and its attendance access immediately.
 - A `TEACHER`-only member entering `/dashboard` is redirected to **My classes**. A parent who also has teacher capability retains the parent dashboard, as do school and platform administrators.
-- A teacher invitation names the unlinked teacher profile and binds it atomically when accepted. Revoking teacher access unlinks that profile without changing an ADMIN/PARENT membership; for a `TEACHER`-only member, it also removes the now-capabilityless membership. Removing any school membership clears the profile link, revoking access and making the profile available for a replacement.
+- A teacher invitation names an active, unlinked teacher profile and binds it atomically when accepted; a profile archived in the meantime is no longer bound (see **Invitations**). Revoking teacher access unlinks that profile without changing an ADMIN/PARENT membership; for a `TEACHER`-only member, it also removes the now-capabilityless membership. Removing any school membership clears the profile link, revoking access and making the profile available for a replacement.
 - Teacher memberships never authorize families, payments, users, configuration, classes administration, or other schools.
 - **Archiving a teacher preserves history** (`isActive: false`) while clearing `Teacher.userId` and
   removing a `TEACHER`-only school membership. Existing class, planning, expense, and invitation
@@ -2123,8 +2123,19 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   `alreadyUsed`. A caller already a member of the target school is refused before it → `alreadyMember`.
 - **The invitation email names the school it grants**, since the same message now reaches accounts
   that already exist elsewhere on the platform.
-- A `PARENT` invitation carrying `familyId`/`personId` must match a real `FamilyPerson` whose email
-  equals the invited address → `invalidInput`. Either both are supplied or neither.
+- **A family is never attached on its own.** A `PARENT` invitation carrying `familyId` must name a
+  real `FamilyPerson` of that family whose email equals the invited address → `invalidInput`. When
+  the caller names `personId` (family page), it must be that person; when it gives only `familyId`
+  (users page), the person is resolved from the invited address. The stored invitation always
+  carries both or neither — `personId` without `familyId` is refused, and `familyId` without a
+  matching parent is refused, since `linkInvitedUser()` would otherwise hand a third party the
+  family's children and payments (#429).
+- **A teacher invitation names an active, unlinked profile.** `Teacher` is outside the soft-deletion
+  extension, so `inviteUserAction` checks `isActive` itself, and `linkInvitedUser()` binds the
+  profile with `updateMany` guarded by `isActive: true` — a profile archived between sending and
+  acceptance is not bound (`teacherLinkUnavailable` → `error`), rather than linking an account to
+  an archived profile, granting a capabilityless `TEACHER` membership, and blocking permanent
+  deletion through `teacherInUse` (#429).
 - **Resending mints a new token** and restarts the 48 hours; the previous link stops working.
   Resending or revoking an already accepted invitation → `alreadyUsed`.
 - **The invitation carries its own language** (`Invitation.locale`, default `fr`), chosen when

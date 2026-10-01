@@ -1596,7 +1596,7 @@
           "language": "Langue de l'invitation",
           "family": "Famille à rattacher",
           "noFamily": "Aucune pour le moment",
-          "familyHint": "Sans famille, le parent pourra se connecter mais ne verra aucune donnée.",
+          "familyHint": "L'adresse doit être celle d'un parent de cette famille. Sans famille, le parent pourra se connecter mais ne verra aucune donnée.",
           "teacher": "Enseignant à inviter",
           "missingTeacherEmail": "email manquant",
           "teacherHint": "L'accès est limité aux classes actuellement affectées à cet enseignant."
