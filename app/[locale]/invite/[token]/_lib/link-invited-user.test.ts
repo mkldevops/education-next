@@ -85,9 +85,27 @@ describe('linkInvitedUser', () => {
 
     expect(tx.schoolMember.create).not.toHaveBeenCalled()
     expect(tx.teacher.updateMany).toHaveBeenCalledWith({
-      where: { id: 'teacher-1', schoolId: 'school-b', userId: null },
+      where: { id: 'teacher-1', schoolId: 'school-b', userId: null, isActive: true },
       data: { userId: 'user-1' },
     })
+  })
+
+  it('refuses to bind a teacher profile archived since the invitation was sent', async () => {
+    // L'extension soft-delete ne couvre pas `updateMany` : une fiche archivée n'est
+    // trouvée que parce que le `where` porte `isActive: true` ; sinon le compte serait
+    // lié à une fiche archivée et l'appartenance TEACHER créée sans capacité.
+    const tx = createTx()
+    tx.teacher.updateMany.mockResolvedValue({ count: 0 })
+
+    await expect(
+      linkInvitedUser(
+        asTx(tx),
+        { ...INVITATION, role: 'TEACHER', familyId: null, teacherId: 'teacher-1' },
+        'user-1'
+      )
+    ).rejects.toThrow('teacherLinkUnavailable')
+
+    expect(tx.userFamily.upsert).not.toHaveBeenCalled()
   })
 
   it('skips the family link when the invitation carries no family', async () => {
