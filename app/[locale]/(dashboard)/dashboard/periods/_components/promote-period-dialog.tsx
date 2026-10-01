@@ -41,6 +41,7 @@ interface PromotePeriodDialogProps {
 
 const SKIP_REASONS: SkipReason[] = [
   'alreadyPromoted',
+  'planArchived',
   'noClassAssignment',
   'noNextLevel',
   'noTargetClass',

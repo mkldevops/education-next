@@ -7,7 +7,7 @@ const sendInvitationEmailMock = vi.fn()
 
 const dbMock = {
   user: { findUnique: vi.fn() },
-  familyPerson: { findUnique: vi.fn() },
+  familyPerson: { findFirst: vi.fn() },
   teacher: { findUnique: vi.fn() },
   invitation: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
 }
@@ -31,6 +31,8 @@ const { inviteUserAction } = await import('./invitation-actions')
 
 const INPUT = { email: 'parent@school.test', role: 'PARENT' }
 const TEACHER_ID = '11111111-1111-4111-8111-111111111111'
+const FAMILY_ID = '22222222-2222-4222-8222-222222222222'
+const PERSON_ID = '33333333-3333-4333-8333-333333333333'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -38,16 +40,142 @@ beforeEach(() => {
   findActiveByIdMock.mockResolvedValue({ id: 'school-b', name: 'Horizon', slug: 'horizon' })
   dbMock.user.findUnique.mockResolvedValue(null)
   dbMock.invitation.create.mockResolvedValue({ id: 'invitation-1' })
+  dbMock.familyPerson.findFirst.mockResolvedValue({ personId: PERSON_ID })
   findMembershipMock.mockResolvedValue(null)
   sendInvitationEmailMock.mockResolvedValue('OK')
   dbMock.teacher.findUnique.mockResolvedValue({
     id: TEACHER_ID,
     email: 'teacher@school.test',
     userId: null,
+    isActive: true,
   })
 })
 
 describe('inviteUserAction', () => {
+  describe('family scope', () => {
+    it('resolves the parent of the family from the invited address when only the family is given', async () => {
+      // Le formulaire des utilisateurs ne choisit que la famille : le parent est
+      // retrouvé par l'adresse, jamais rattaché à l'aveugle.
+      expect(await inviteUserAction({ ...INPUT, familyId: FAMILY_ID })).toBe('OK')
+
+      expect(dbMock.familyPerson.findFirst).toHaveBeenCalledWith({
+        where: {
+          familyId: FAMILY_ID,
+          schoolId: 'school-b',
+          person: { email: { equals: 'parent@school.test', mode: 'insensitive' } },
+        },
+        select: { personId: true },
+      })
+      expect(dbMock.invitation.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ familyId: FAMILY_ID, personId: PERSON_ID }),
+        })
+      )
+    })
+
+    it('refuses a family whose parents do not carry the invited address', async () => {
+      // Scénario de l'issue #429 : `{ role: PARENT, familyId, email: quelconque }` donnait
+      // à un tiers l'accès aux enfants et aux paiements de la famille.
+      dbMock.familyPerson.findFirst.mockResolvedValue(null)
+
+      expect(
+        await inviteUserAction({
+          email: 'stranger@example.test',
+          role: 'PARENT',
+          familyId: FAMILY_ID,
+        })
+      ).toBe('invalidInput')
+      expect(dbMock.invitation.create).not.toHaveBeenCalled()
+      expect(sendInvitationEmailMock).not.toHaveBeenCalled()
+    })
+
+    it('requires the named person to belong to the family under the invited address', async () => {
+      await inviteUserAction({ ...INPUT, familyId: FAMILY_ID, personId: PERSON_ID })
+
+      expect(dbMock.familyPerson.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            familyId: FAMILY_ID,
+            personId: PERSON_ID,
+            person: { email: { equals: 'parent@school.test', mode: 'insensitive' } },
+          }),
+        })
+      )
+    })
+
+    it('refuses a named person whose address is not the invited one', async () => {
+      dbMock.familyPerson.findFirst.mockResolvedValue(null)
+
+      expect(await inviteUserAction({ ...INPUT, familyId: FAMILY_ID, personId: PERSON_ID })).toBe(
+        'invalidInput'
+      )
+      expect(dbMock.invitation.create).not.toHaveBeenCalled()
+    })
+
+    it('refuses a person without its family', async () => {
+      expect(await inviteUserAction({ ...INPUT, personId: PERSON_ID })).toBe('invalidInput')
+      expect(dbMock.familyPerson.findFirst).not.toHaveBeenCalled()
+      expect(dbMock.invitation.create).not.toHaveBeenCalled()
+    })
+
+    it('refuses a family on a non-parent invitation', async () => {
+      expect(await inviteUserAction({ ...INPUT, role: 'ADMIN', familyId: FAMILY_ID })).toBe(
+        'invalidInput'
+      )
+      expect(dbMock.invitation.create).not.toHaveBeenCalled()
+    })
+
+    it('stores neither family nor person when no family is given', async () => {
+      await inviteUserAction(INPUT)
+
+      expect(dbMock.familyPerson.findFirst).not.toHaveBeenCalled()
+      expect(dbMock.invitation.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ familyId: undefined, personId: undefined }),
+        })
+      )
+    })
+  })
+
+  describe('teacher scope', () => {
+    it('refuses an archived teacher profile', async () => {
+      // `Teacher` échappe à l'extension soft-delete : le `findUnique` renvoie la fiche
+      // archivée et l'action doit la refuser elle-même.
+      dbMock.teacher.findUnique.mockResolvedValue({
+        id: TEACHER_ID,
+        email: 'teacher@school.test',
+        userId: null,
+        isActive: false,
+      })
+
+      expect(
+        await inviteUserAction({
+          email: 'teacher@school.test',
+          role: 'TEACHER',
+          teacherId: TEACHER_ID,
+        })
+      ).toBe('invalidInput')
+      expect(dbMock.invitation.create).not.toHaveBeenCalled()
+    })
+
+    it('refuses a teacher profile already linked to an account', async () => {
+      dbMock.teacher.findUnique.mockResolvedValue({
+        id: TEACHER_ID,
+        email: 'teacher@school.test',
+        userId: 'user-9',
+        isActive: true,
+      })
+
+      expect(
+        await inviteUserAction({
+          email: 'teacher@school.test',
+          role: 'TEACHER',
+          teacherId: TEACHER_ID,
+        })
+      ).toBe('invalidInput')
+    })
+  })
+
   it('invites an account that already exists in another school', async () => {
     dbMock.user.findUnique.mockResolvedValue({ id: 'user-1' })
 

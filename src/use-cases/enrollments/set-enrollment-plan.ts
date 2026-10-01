@@ -2,9 +2,10 @@ import type { z } from 'zod'
 import { calculateTotalAmount } from '@/domain/enrollment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
-import { roundHalfUp } from '@/lib/decimal'
+import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { readLockedPaidAmount } from './locked-paid-amount'
 import { setEnrollmentPlanSchema } from './schemas'
 
 type Input = z.infer<typeof setEnrollmentPlanSchema>
@@ -38,13 +39,16 @@ export async function setEnrollmentPlan(input: Input) {
 
   // Le solde ne descend jamais sous zéro : un total inférieur à ce qui est déjà encaissé
   // ferait disparaître un trop-perçu que personne n'a décidé de rembourser — même règle
-  // que `commit_update_enrollment`.
-  const paid = roundHalfUp(
-    enrollment.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
-  )
-  if (paid > totalAmount) return 'totalBelowPaid' as const
+  // que `commit_update_enrollment`. Le déjà-payé se relit sous le verrou de la famille,
+  // dans la transaction qui écrit : un encaissement simultané attend puis voit le nouveau
+  // total, au lieu de passer sur l'ancien (#425).
+  return db.$transaction(async (tx) => {
+    const paid = await readLockedPaidAmount(tx, schoolId, enrollmentId)
+    if (paid === 'notFound') return 'notFound' as const
+    if (paid > totalAmount) return 'totalBelowPaid' as const
 
-  await enrollmentGateway.assignPlan(schoolId, enrollmentId, planId, totalAmount)
+    await enrollmentGateway.assignPlan(schoolId, enrollmentId, planId, totalAmount, tx)
 
-  return 'OK' as const
+    return 'OK' as const
+  })
 }
