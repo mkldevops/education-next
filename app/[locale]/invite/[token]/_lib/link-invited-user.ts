@@ -42,8 +42,16 @@ export async function linkInvitedUser(
   }
 
   if (invitation.teacherId) {
+    // L'extension soft-delete ne couvre pas `updateMany` : sans `isActive: true`, une
+    // fiche archivée entre l'envoi et l'acceptation serait liée au compte, qui
+    // obtiendrait une appartenance TEACHER sans aucune capacité.
     const linked = await tx.teacher.updateMany({
-      where: { id: invitation.teacherId, schoolId: invitation.schoolId, userId: null },
+      where: {
+        id: invitation.teacherId,
+        schoolId: invitation.schoolId,
+        userId: null,
+        isActive: true,
+      },
       data: { userId },
     })
     if (linked.count !== 1) throw new Error('teacherLinkUnavailable')

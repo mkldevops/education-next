@@ -2,11 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const findActiveByIds = vi.fn()
 const lockFamilyForPayment = vi.fn()
+const sumActiveByEnrollment = vi.fn()
 const deactivateMany = vi.fn()
 const tx = {}
 
 vi.mock('@/gateways/payment-gateway', () => ({
-  paymentGateway: { findActiveByIds, lockFamilyForPayment, deactivateMany },
+  paymentGateway: { findActiveByIds, lockFamilyForPayment, sumActiveByEnrollment, deactivateMany },
 }))
 vi.mock('@/lib/db', () => ({
   db: { $transaction: (fn: (client: unknown) => unknown) => fn(tx) },
@@ -24,9 +25,16 @@ const scope = {
 const idA = '11111111-1111-4111-8111-111111111111'
 const idB = '22222222-2222-4222-8222-222222222222'
 
-const payment = (id: string, amount: number, familyId = 'family-1', online = false) => ({
+const payment = (
+  id: string,
+  amount: number,
+  familyId = 'family-1',
+  online = false,
+  enrollmentId = 'enrollment-1'
+) => ({
   id,
   familyId,
+  enrollmentId,
   amount,
   paymentTransactionId: online ? 'tx-1' : null,
 })
@@ -35,6 +43,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   findActiveByIds.mockResolvedValue([payment(idA, 90), payment(idB, 30.5)])
   lockFamilyForPayment.mockResolvedValue(true)
+  sumActiveByEnrollment.mockResolvedValue(new Map())
   deactivateMany.mockResolvedValue({ count: 2 })
 })
 
@@ -44,7 +53,68 @@ describe('cancelPaymentsFromMcp', () => {
 
     expect(result).toEqual({ familyId: 'family-1', cancelledPaymentIds: [idA, idB], amount: 120.5 })
     expect(lockFamilyForPayment).toHaveBeenCalledWith(tx, 'school-1', 'family-1')
+    expect(sumActiveByEnrollment).toHaveBeenCalledWith(tx, 'school-1', ['enrollment-1'], [idA, idB])
     expect(deactivateMany).toHaveBeenCalledWith(tx, 'school-1', [idA, idB])
+  })
+
+  it('refuses to cancel a payment when an active refund would leave the enrollment negative', async () => {
+    // Inscription 100 € : +100 (idA) puis −100 (idB). Annuler seulement +100 laisserait −100.
+    findActiveByIds.mockResolvedValue([payment(idA, 100)])
+    sumActiveByEnrollment.mockResolvedValue(new Map([['enrollment-1', -100]]))
+
+    expect(await cancelPaymentsFromMcp(scope as never, { paymentIds: [idA] })).toBe(
+      'refundExceedsPaid'
+    )
+    expect(sumActiveByEnrollment).toHaveBeenCalledWith(tx, 'school-1', ['enrollment-1'], [idA])
+    expect(deactivateMany).not.toHaveBeenCalled()
+  })
+
+  it('checks every enrollment touched by the cancelled payments', async () => {
+    findActiveByIds.mockResolvedValue([
+      payment(idA, 60, 'family-1', false, 'enrollment-1'),
+      payment(idB, 40, 'family-1', false, 'enrollment-2'),
+    ])
+    sumActiveByEnrollment.mockResolvedValue(
+      new Map([
+        ['enrollment-1', 20],
+        ['enrollment-2', -40],
+      ])
+    )
+
+    expect(await cancelPaymentsFromMcp(scope as never, { paymentIds: [idA, idB] })).toBe(
+      'refundExceedsPaid'
+    )
+    expect(sumActiveByEnrollment).toHaveBeenCalledWith(
+      tx,
+      'school-1',
+      ['enrollment-1', 'enrollment-2'],
+      [idA, idB]
+    )
+    expect(deactivateMany).not.toHaveBeenCalled()
+  })
+
+  it('cancels a payment and its refund together, the enrollment ending at zero', async () => {
+    findActiveByIds.mockResolvedValue([payment(idA, 100), payment(idB, -100)])
+    sumActiveByEnrollment.mockResolvedValue(new Map())
+
+    expect(await cancelPaymentsFromMcp(scope as never, { paymentIds: [idA, idB] })).toEqual({
+      familyId: 'family-1',
+      cancelledPaymentIds: [idA, idB],
+      amount: 0,
+    })
+    expect(deactivateMany).toHaveBeenCalledWith(tx, 'school-1', [idA, idB])
+  })
+
+  it('cancels a refund alone, which only raises the amount paid', async () => {
+    findActiveByIds.mockResolvedValue([payment(idB, -40)])
+    sumActiveByEnrollment.mockResolvedValue(new Map([['enrollment-1', 100]]))
+
+    expect(await cancelPaymentsFromMcp(scope as never, { paymentIds: [idB] })).toEqual({
+      familyId: 'family-1',
+      cancelledPaymentIds: [idB],
+      amount: -40,
+    })
+    expect(deactivateMany).toHaveBeenCalledWith(tx, 'school-1', [idB])
   })
 
   it('refuses when one payment is missing, inactive or from another school', async () => {
