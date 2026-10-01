@@ -159,6 +159,25 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
       }
     }
 
+    // La formule aussi, une relecture par formule visée : entre le preview et le commit,
+    // l'admin peut l'archiver (autorisé tant qu'aucune inscription ouverte ne la porte —
+    // et celle-ci n'existe pas encore) ou changer son prix. Sans cette relecture, l'inscription
+    // naîtrait sur une formule morte ou au montant validé sur un prix périmé. Même règle que
+    // `commit-update-enrollment.ts` : disparue → `notFound`, prix bougé → `staleDraft`.
+    const currentPlanAmounts = new Map<string, number | null>()
+    for (const { plan } of resolved.students) {
+      if (!currentPlanAmounts.has(plan.id)) {
+        const current = await tx.plan.findFirst({
+          where: { id: plan.id, schoolId, isActive: true },
+          select: { amount: true },
+        })
+        currentPlanAmounts.set(plan.id, current ? Number(current.amount) : null)
+      }
+      const currentAmount = currentPlanAmounts.get(plan.id)
+      if (currentAmount === null) return 'notFound' as const
+      if (currentAmount !== plan.amount) return 'staleDraft' as const
+    }
+
     const family =
       'id' in resolved.family
         ? await tx.family.findFirst({

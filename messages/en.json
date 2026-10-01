@@ -625,6 +625,7 @@
           "skippedCount": "{count, plural, =0 {No students skipped} one {# student skipped} other {# students skipped}}",
           "reasons": {
             "alreadyPromoted": "{count, plural, one {# already enrolled in the destination period} other {# already enrolled in the destination period}}",
+            "planArchived": "{count, plural, one {# with an archived plan} other {# with an archived plan}}",
             "noClassAssignment": "{count, plural, one {# with no class assignment} other {# with no class assignment}}",
             "noNextLevel": "{count, plural, one {# with no active next level} other {# with no active next level}}",
             "noTargetClass": "{count, plural, one {# with no target class in the destination period} other {# with no target class in the destination period}}",
@@ -1595,7 +1596,7 @@
           "language": "Invitation language",
           "family": "Family to link",
           "noFamily": "None for now",
-          "familyHint": "Without a family the parent can sign in but will see no data.",
+          "familyHint": "The address must belong to a parent of this family. Without a family the parent can sign in but will see no data.",
           "teacher": "Teacher to invite",
           "missingTeacherEmail": "email missing",
           "teacherHint": "Access is limited to classes currently assigned to this teacher."

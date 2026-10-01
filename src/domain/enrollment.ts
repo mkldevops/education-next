@@ -1,4 +1,5 @@
 import type { EnrollmentStatus } from '@/generated/prisma/client'
+import { roundHalfUp } from '@/lib/decimal'
 
 export const OPEN_ENROLLMENT_STATUSES = [
   'PENDING',
@@ -51,6 +52,7 @@ export function pricingFromTotalAmount(
   return { totalAmount, discount: planAmount - totalAmount }
 }
 
+// Arrondi au centime : 30,30 − 30,299999… vaut 0, pas un « reste » fantôme (#424).
 export function calculateRemainingBalance(totalAmount: number, totalPaid: number): number {
-  return Math.max(0, totalAmount - totalPaid)
+  return Math.max(0, roundHalfUp(totalAmount - totalPaid))
 }

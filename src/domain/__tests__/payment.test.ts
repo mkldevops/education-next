@@ -1,5 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { distributePayment, distributeReceivedPayment, type EnrollmentBalance } from '../payment'
+import {
+  distributePayment,
+  distributeReceivedPayment,
+  type EnrollmentBalance,
+  totalPaidAmount,
+} from '../payment'
+
+describe('totalPaidAmount', () => {
+  it('sums payments to the cent without float residue (#424)', () => {
+    expect(totalPaidAmount([{ amount: 10.1 }, { amount: 20.2 }])).toBe(30.3)
+  })
+
+  it('accepts Decimal-like amounts', () => {
+    expect(totalPaidAmount([{ amount: { toString: () => '0.1' } }, { amount: 0.2 }])).toBe(0.3)
+  })
+
+  it('returns zero without payments', () => {
+    expect(totalPaidAmount([])).toBe(0)
+  })
+})
 
 describe('payment distribution', () => {
   describe('distributePayment with positive amounts', () => {

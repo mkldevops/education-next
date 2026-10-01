@@ -3,11 +3,10 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { filterFamilyPaymentsByPeriod, groupFamilyPayments } from '@/domain/payment'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
-import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { listSchoolPayments } from '@/use-cases/payments/list-school-payments'
 import { getPaymentStats } from '@/use-cases/payments/payment-stats'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { PaymentsOverview } from './_components/payments-overview'
@@ -45,36 +44,11 @@ export default async function PaymentsPage({ params }: Props) {
   const selectedPeriodId = selectedPeriod?.id ?? null
 
   const [payments, stats] = await Promise.all([
-    db.payment.findMany({
-      where: { schoolId: scope.schoolId, isActive: true },
-      include: {
-        family: true,
-        enrollment: {
-          include: {
-            student: {
-              include: {
-                person: true,
-              },
-            },
-            classAssignments: { select: { classPeriod: { select: { periodId: true } } } },
-          },
-        },
-      },
-      orderBy: { paidAt: 'desc' },
-    }),
+    listSchoolPayments(scope.schoolId, selectedPeriodId),
     getPaymentStats(scope.schoolId, selectedPeriodId),
   ])
 
-  const familyPayments = groupFamilyPayments(payments)
-  const scopedPayments = selectedPeriodId
-    ? filterFamilyPaymentsByPeriod(familyPayments, (line) =>
-        line.enrollment.classAssignments.some(
-          (assignment) => assignment.classPeriod.periodId === selectedPeriodId
-        )
-      )
-    : familyPayments.map((payment) => ({ ...payment, periodAmount: payment.amount }))
-
-  const paymentRows = scopedPayments.map((payment) => ({
+  const paymentRows = payments.map((payment) => ({
     id: payment.id,
     familyId: payment.familyId,
     familyName: payment.lines[0].family.name,

@@ -405,6 +405,16 @@ unrepresentable in the database as well as in the types.
   already used for `Invitation.id`. Business models keep `z.uuid()`: Prisma does generate those.
 - A resource outside a parent's family answers `notFound()`, never `forbidden()` — the existence of
   another family's student is not disclosed. The same holds across schools.
+- **The families a detail page embeds are scoped like its root.** The root guard only decides
+  whether the student or enrollment opens; it says nothing about the `person.families` it includes.
+  A student under shared custody is linked to two households, and the parent of one used to read
+  the other's contacts, whichever Postgres returned first. `familyLinksVisibleTo()`
+  (`app/[locale]/(dashboard)/_lib/deep-link.ts`) filters that include with the same
+  `adminOrLinkedTo()` clause: an admin of the school sees every link, a parent only the families
+  their account is linked to. The family the page then shows — panel, breadcrumb, « Payer » link,
+  languages at home — is `resolveDebtorFamily()` over the visible links, never `families[0]`, so two
+  admins see the same household. `app/[locale]/(dashboard)/__tests__/render-reads.test.tsx` pins
+  both readers against a real database.
 
 ### Deep links
 
@@ -785,7 +795,12 @@ rows still belong to.
 leave an orphan family behind the first failure. Before re-reading anything it takes, in order, the
 (school, student, period) lock of each existing student it enrolls, then the row lock of each class
 it seats children in, by increasing id (`reserveClassSeatsInOrder`); the capacity and duplicate
-checks that follow therefore cannot race a dashboard enrollment.
+checks that follow therefore cannot race a dashboard enrollment. Before its first write it also
+re-reads the family, each existing member, and **every plan the draft carries** — one active-plan
+read per distinct plan, the same re-read as `update_enrollment`: archiving a plan is allowed while
+no open enrollment carries it, and the one being committed does not exist yet, so a plan archived
+since the preview → `notFound`, and a price that moved → `staleDraft`. The enrollment is written
+with the draft's `planId` and `totalAmount` only once the database confirms them.
 
 | Body | Cause |
 |---|---|
@@ -987,6 +1002,12 @@ that one instead of asking.
 be active manual payments of one family: missing → `notFound`, a Stripe payment → `onlinePayment`,
 two families → `mixedFamilies`. It takes the family payment lock, rereads the payments under it
 (`notFound` if one vanished meanwhile), then deactivates them in the same transaction.
+**The amount paid on an enrollment never goes negative** (`paymentGateway.sumActiveByEnrollment`):
+under the same lock, the tool recomputes what each touched enrollment would still hold once the
+ids are deactivated, and refuses with `refundExceedsPaid` — the refund rule's own code — when a
+cancelled payment would leave an active refund exceeding what is paid. Cancelling +100 while −100
+stays active would otherwise make the remaining balance exceed the total (100 → 200) and let a
+later `record_payment` accept it. Cancel the refund with the payment, or the refund alone.
 `get_family_payments` lists a family's active payments so the model can find the ids.
 
 **Bounded agent loop.** One turn runs at most `maxAgentSteps` tool steps within `agentTimeoutMs`;
@@ -1216,7 +1237,7 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 - An active `Teacher` profile linked to a user in the same school grants teacher capability. It can complement an existing `ADMIN` or `PARENT` membership, or accompany a `TEACHER`-only membership.
 - Its dashboard surfaces are **My classes** and **Attendance tracking**. Both are scoped by the school and current profile's active `ClassPeriodTeacher` assignments; removing an assignment removes that class and its attendance access immediately.
 - A `TEACHER`-only member entering `/dashboard` is redirected to **My classes**. A parent who also has teacher capability retains the parent dashboard, as do school and platform administrators.
-- A teacher invitation names the unlinked teacher profile and binds it atomically when accepted. Revoking teacher access unlinks that profile without changing an ADMIN/PARENT membership; for a `TEACHER`-only member, it also removes the now-capabilityless membership. Removing any school membership clears the profile link, revoking access and making the profile available for a replacement.
+- A teacher invitation names an active, unlinked teacher profile and binds it atomically when accepted; a profile archived in the meantime is no longer bound (see **Invitations**). Revoking teacher access unlinks that profile without changing an ADMIN/PARENT membership; for a `TEACHER`-only member, it also removes the now-capabilityless membership. Removing any school membership clears the profile link, revoking access and making the profile available for a replacement.
 - Teacher memberships never authorize families, payments, users, configuration, classes administration, or other schools.
 - **Archiving a teacher preserves history** (`isActive: false`) while clearing `Teacher.userId` and
   removing a `TEACHER`-only school membership. Existing class, planning, expense, and invitation
@@ -1330,6 +1351,16 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
 - `totalAmount = plan.amount - discount`, computed at creation and recomputed on every discount
   change against the **plan's current price** — not against the stored total.
 - `remainingBalance = max(0, totalAmount - totalPaid)`. It never goes negative.
+- **Both figures are half-up rounded to the cent** (`totalPaidAmount` in `src/domain/payment.ts`,
+  `calculateRemainingBalance` in `src/domain/enrollment.ts`). Summing floats leaves residue —
+  10.10 + 20.20 = 30.299999… — that would otherwise show a « Reste 0,00 € » badge on a settled
+  enrollment (#424).
+- **`totalPaid` counts active payments only.** A cancelled payment is soft-deleted
+  (`cancel_payments`), and the shared extension does not filter nested relations, so every
+  enrollment read that sums `payments` — the enrollment page and drawer, the enrollments list, the
+  home progress column, the family and student pages, the gateways — carries an explicit
+  `where: { isActive: true }` on that include. Without it a cancelled 180 € payment still reads as
+  « Payé 180 € / Reste 0 € » while the family balance already shows 180 € owed.
 - Changing a plan's price does not retroactively change existing enrollments. Applying a discount
   does, because it recomputes from the plan.
 
@@ -1339,7 +1370,9 @@ Owner: `src/use-cases/plans/`.
 
 - **A plan an open enrollment uses cannot be archived** → `planInUse`. Open means `PENDING` or
   `ACTIVE`: those are still billed and still editable, so their plan must stay selectable. A
-  `COMPLETED` or `CANCELLED` enrollment keeps its archived plan — nested reads return it.
+  `COMPLETED` or `CANCELLED` enrollment keeps its archived plan — nested reads return it. The
+  converse holds too: **no open enrollment is created on an archived plan** — promotion skips the
+  student (`planArchived`, see **Promotion**) rather than copying a plan it could not select.
 - Archiving is a soft delete (`isActive: false`). Plan names are unique among active plans only, so
   an archived duplicate frees its name.
 
@@ -1390,6 +1423,15 @@ across that family's `PENDING` and `ACTIVE` enrollments**, proportionally to eac
   Stripe webhook takes the same lock before rereading the balance it allocates, but records an
   archived family's capture anyway (see **Online payment**). Every other writer of a family's
   payments must take the same lock before reading the balance it distributes.
+- **Lowering a total takes the same lock.** `applyDiscount` and `setEnrollmentPlan` decide
+  `totalBelowPaid` inside the transaction that writes the new total, after locking the
+  enrollment's debtor family (`resolveDebtorFamily`) and rereading its active payments through
+  `readLockedPaidAmount()` in `src/use-cases/enrollments/locked-paid-amount.ts`. Without it, a
+  discount bringing 100 € down to 50 € and a 100 € payment launched together both passed their
+  checks against the old state and left 100 € banked for 50 € due (#425). Whichever runs second
+  now rereads what the first wrote and answers `totalBelowPaid` or `overpayment`. A student with
+  no debtor family has nothing to lock, since no payment can target the enrollment; an archived
+  family, or an enrollment closed meanwhile → `notFound`.
 
 ### Displaying a payment
 
@@ -1402,10 +1444,21 @@ Screens show what the family handed over instead: `groupFamilyPayments()` in
 - **One enrollment appears at most once per payment**, so two identical cash payments recorded back
   to back stay two payments.
 - Enrollment pages still show the part that enrollment received.
-- **The period filter never cuts a payment in half.** The `/dashboard/payments` list groups every
-  active payment first, then keeps a family payment as soon as one of its rows falls in the
-  selected period — through `filterFamilyPaymentsByPeriod()` — and shows the full amount, with the
-  part specific to that period underneath when it differs.
+- **The period filter never cuts a payment in half.** The `/dashboard/payments` list keeps a
+  family payment as soon as one of its rows falls in the selected period — through
+  `filterFamilyPaymentsByPeriod()` — and shows the full amount, with the part specific to that
+  period underneath when it differs.
+- **The list is bounded by the period, not by the school's history.** `listSchoolPayments()` in
+  `src/use-cases/payments/list-school-payments.ts` asks the database for the rows whose enrollment
+  is assigned to the period, then rereads the sibling rows of those payments (same family, same
+  payment date, hence the same grouping key) before grouping; only the displayed fields are
+  selected. Without a period, the whole history is listed as before.
+- **The families list aggregates payments in the database.** `/dashboard/families` sums each
+  enrollment's active payments with a `groupBy` (the soft-delete extension does not cover
+  `groupBy`, so `isActive` is explicit there), counts them the same way, and reads only the five
+  latest rows of each enrollment for the preview — the latest payments of a family are always
+  among the latest of its enrollments. `calculateFamilyBalance()` accepts that aggregated `paid`
+  total in place of the payment rows.
 
 ### Collection statistics
 
@@ -1628,7 +1681,9 @@ born priced; renaming the reserved row out would have a second one created at th
 Re-enabling exposes those enrollments as *needing a plan*, and `setEnrollmentPlan`
 (`src/use-cases/enrollments/set-enrollment-plan.ts`) prices them against the plan's **current**
 amount minus the discount they already carry, refusing `totalBelowPaid` on the same rule as the
-MCP `update_enrollment` path. Without it the flag would create a state the UI could not repair.
+MCP `update_enrollment` path — decided under the family lock, like `applyDiscount` (see
+**Lowering a total takes the same lock**). Without it the flag would create a state the UI could
+not repair.
 
 ## Promotion
 
@@ -1642,6 +1697,7 @@ A student is **skipped**, with the reason reported, when:
 | Reason | Meaning |
 |---|---|
 | `alreadyPromoted` | Already enrolled in the target period. |
+| `planArchived` | The source plan is archived, so the `PENDING` copy would carry a plan it cannot select. |
 | `noClassAssignment` | No class in the source period, so no level to move from. |
 | `noNextLevel` | The level has no successor, or the successor is archived. |
 | `noTargetClass` | No active class for that successor in the target period. |
@@ -1649,6 +1705,13 @@ A student is **skipped**, with the reason reported, when:
 
 - New enrollments are created `PENDING`, carrying the source plan, amount, discount and
   `canLeaveAlone`. They are not active until someone validates them.
+- **The source plan must still be active.** A `COMPLETED` enrollment may keep an archived plan
+  (end of year: the admin archives last year's plan, which `deactivatePlan` allows once nothing is
+  open on it), but an open enrollment may not. The eligibility pass loads the active plans of the
+  source list in one query and skips the others (`planArchived`); each student's transaction
+  re-reads the plan under `isActive: true` before taking the class row lock, so a plan archived
+  between preview and execution is refused without writing or holding a seat. The admin reactivates
+  or replaces the plan, then runs the promotion again.
 - **One transaction per student**, deliberately: Postgres aborts a whole transaction on any error,
   so a single batch would make a partial report impossible. A failure is reported per student and
   its seat is released back into the in-memory occupancy tally.
@@ -2138,8 +2201,19 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   `alreadyUsed`. A caller already a member of the target school is refused before it → `alreadyMember`.
 - **The invitation email names the school it grants**, since the same message now reaches accounts
   that already exist elsewhere on the platform.
-- A `PARENT` invitation carrying `familyId`/`personId` must match a real `FamilyPerson` whose email
-  equals the invited address → `invalidInput`. Either both are supplied or neither.
+- **A family is never attached on its own.** A `PARENT` invitation carrying `familyId` must name a
+  real `FamilyPerson` of that family whose email equals the invited address → `invalidInput`. When
+  the caller names `personId` (family page), it must be that person; when it gives only `familyId`
+  (users page), the person is resolved from the invited address. The stored invitation always
+  carries both or neither — `personId` without `familyId` is refused, and `familyId` without a
+  matching parent is refused, since `linkInvitedUser()` would otherwise hand a third party the
+  family's children and payments (#429).
+- **A teacher invitation names an active, unlinked profile.** `Teacher` is outside the soft-deletion
+  extension, so `inviteUserAction` checks `isActive` itself, and `linkInvitedUser()` binds the
+  profile with `updateMany` guarded by `isActive: true` — a profile archived between sending and
+  acceptance is not bound (`teacherLinkUnavailable` → `error`), rather than linking an account to
+  an archived profile, granting a capabilityless `TEACHER` membership, and blocking permanent
+  deletion through `teacherInUse` (#429).
 - **Resending mints a new token** and restarts the 48 hours; the previous link stops working.
   Resending or revoking an already accepted invitation → `alreadyUsed`.
 - **The invitation carries its own language** (`Invitation.locale`, default `fr`), chosen when

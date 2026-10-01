@@ -14,6 +14,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
+import { totalPaidAmount } from '@/domain/payment'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import { useTableLabels } from '@/features/tables'
 import type { EnrollmentStatus } from '@/generated/prisma/client'
@@ -110,7 +111,7 @@ export function EnrollmentsTable({
     cell: ({ row }) => {
       const remaining = calculateRemainingBalance(
         toNumber(row.original.totalAmount),
-        row.original.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
+        totalPaidAmount(row.original.payments)
       )
       return (
         <div className="flex flex-wrap items-center gap-2">

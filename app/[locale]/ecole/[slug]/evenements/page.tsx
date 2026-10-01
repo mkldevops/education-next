@@ -5,8 +5,10 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { ThemeProvider } from '@/components/theme-provider'
 import { EventCategoryLabel, EventStatusBadge } from '@/features/enums'
 import { formatEventDate } from '@/lib/date'
+import { getThemeConfigs } from '@/lib/theme-configs'
 import { cn } from '@/lib/utils'
 import { listPublicEvents, type PublicEvent } from '@/use-cases/events/list-public-events'
 
@@ -95,11 +97,17 @@ export default async function PublicEventsPage({ params }: Props) {
   if (result === 'notFound' || result === 'notConfigured') notFound()
 
   const { school, events } = result
-  const t = await getTranslations('publicEvents')
+  const [themeConfigs, t] = await Promise.all([
+    getThemeConfigs(school.id),
+    getTranslations('publicEvents'),
+  ])
   const groups = groupByMonth(events, locale)
 
   return (
     <div className="min-h-screen bg-alabaster-900">
+      {/* Le layout habille la page avec l'école du visiteur (souvent aucune) : celle du
+          `slug` prime ici, déclarée après et donc gagnante sur `:root`. */}
+      <ThemeProvider configs={themeConfigs} />
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <header className="mb-8">
           <p className="text-sm font-medium text-primary">{school.name}</p>

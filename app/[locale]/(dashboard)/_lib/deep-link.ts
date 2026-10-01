@@ -60,3 +60,17 @@ export function adminOrLinkedTo<W extends object>(
 ): { OR: ({ schoolId: { in: string[] } } | W)[] } {
   return { OR: [{ schoolId: { in: access.adminSchoolIds } }, linkedToViewer] }
 }
+
+/**
+ * Rattachements `FamilyPerson` que le lecteur a le droit de voir, à poser en `where`
+ * sur un `include` de `person.families`.
+ *
+ * Le garde de racine n'ouvre que la fiche : il ne contraint pas ses inclusions. Un
+ * élève en garde alternée est rattaché à deux foyers, et sans ce filtre le parent
+ * de l'un lisait les coordonnées de l'autre — celui que Postgres rendait en premier.
+ * Un administrateur de l'école voit tous les rattachements ; un parent ne voit que
+ * les familles auxquelles son compte est lié.
+ */
+export function familyLinksVisibleTo(access: DeepLinkAccess) {
+  return adminOrLinkedTo(access, { family: { users: { some: { userId: access.userId } } } })
+}
