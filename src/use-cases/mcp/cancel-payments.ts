@@ -39,6 +39,16 @@ export async function cancelPaymentsFromMcp(scope: DraftScope, input: Input) {
     // Relu sous le verrou : une annulation concurrente a pu passer entre-temps.
     const locked = await paymentGateway.findActiveByIds(tx, schoolId, ids)
     if (locked.length !== ids.length) return 'notFound' as const
+
+    // Annuler un encaissement alors qu'un remboursement reste actif rendrait l'encaissé de
+    // l'inscription négatif, donc un reste dû supérieur au total et une saisie qui l'accepte.
+    // Un remboursement ne dépasse jamais le payé : même règle qu'à la saisie, même refus.
+    const enrollmentIds = [...new Set(locked.map((payment) => payment.enrollmentId))]
+    const remaining = await paymentGateway.sumActiveByEnrollment(tx, schoolId, enrollmentIds, ids)
+    if (enrollmentIds.some((enrollmentId) => roundHalfUp(remaining.get(enrollmentId) ?? 0) < 0)) {
+      return 'refundExceedsPaid' as const
+    }
+
     await paymentGateway.deactivateMany(tx, schoolId, ids)
 
     return {

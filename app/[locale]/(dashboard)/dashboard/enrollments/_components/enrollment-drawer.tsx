@@ -15,6 +15,7 @@ import {
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { calculateRemainingBalance } from '@/domain/enrollment'
+import { totalPaidAmount } from '@/domain/payment'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import type { EnrollmentStatus, PaymentMethod } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
@@ -91,7 +92,7 @@ export function EnrollmentDrawer({
 
   const familyName = enrollment.student.person.families[0]?.family.name ?? '-'
 
-  const totalPaid = enrollment.payments.reduce((sum, p) => sum + toNumber(p.amount), 0)
+  const totalPaid = totalPaidAmount(enrollment.payments)
   const totalAmountNum = toNumber(enrollment.totalAmount)
   const discountNum = toNumber(enrollment.discount)
 

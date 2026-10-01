@@ -230,6 +230,22 @@ describe.skipIf(!databaseUrl)('intégrité des inscriptions sur base réelle', (
     expect(await raw.enrollment.count({ where: { schoolId: school.schoolId, studentId } })).toBe(1)
   }, 60_000)
 
+  it("n'ouvre pas d'inscription sur une formule archivée", async () => {
+    // GIVEN une année terminée dont la formule a été archivée depuis (autorisé : rien d'ouvert)
+    const school = await createSchool()
+    const studentId = await school.createStudent('Archived plan')
+    await school.enroll(studentId, [{ classPeriodId: school.classes.sourceL1.id, endAt: null }])
+    await raw.plan.update({ where: { id: school.planId }, data: { isActive: false } })
+
+    // WHEN
+    const result = await promoteStudents(school.promotion)
+
+    // THEN l'élève est ignoré, rien n'est écrit dans la période cible
+    expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
+    expect(await school.openInTarget(studentId)).toBe(0)
+    expect(await school.seatsTaken(school.classes.targetL2.id)).toBe(0)
+  }, 60_000)
+
   it('ne donne la dernière place qu’à une création quand deux élèves la visent', async () => {
     // GIVEN une classe à une place
     const school = await createSchool({ targetCapacity: 1 })

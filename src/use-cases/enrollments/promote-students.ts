@@ -11,6 +11,7 @@ type Input = z.infer<typeof promoteStudentsSchema>
 
 export type SkipReason =
   | 'alreadyPromoted'
+  | 'planArchived'
   | 'noClassAssignment'
   | 'noNextLevel'
   | 'noTargetClass'
@@ -40,6 +41,7 @@ interface TargetClassPeriod {
 
 interface EligibilityContext {
   alreadyPromotedStudentIds: Set<string>
+  activePlanIds: Set<string>
   targetClassPeriodByLevelId: Map<string, TargetClassPeriod>
   occupancyByClassPeriodId: Map<string, number>
 }
@@ -48,7 +50,7 @@ type Eligibility =
   | { outcome: 'eligible'; targetClassPeriodId: string }
   | { outcome: 'skipped'; reason: SkipReason }
 
-// Loads everything resolveEligibility needs in three batched queries (instead of two per
+// Loads everything resolveEligibility needs in four batched queries (instead of several per
 // student), and seeds an in-memory occupancy tally that both previewPromoteStudents and
 // promoteStudents mutate identically as they walk the same enrollment list, so their totals
 // cannot drift from each other.
@@ -63,6 +65,18 @@ async function buildEligibilityContext(
     targetPeriodId,
     studentIds
   )
+
+  // The new enrollment is born PENDING, so it must carry a selectable plan: a COMPLETED source
+  // may legitimately keep an archived one (see business rules, Plans), the copy may not.
+  const planIds = [...new Set(enrollments.map((enrollment) => enrollment.planId))]
+  const activePlans =
+    planIds.length === 0
+      ? []
+      : await db.plan.findMany({
+          where: { schoolId, id: { in: planIds }, isActive: true },
+          select: { id: true },
+        })
+  const activePlanIds = new Set(activePlans.map((plan) => plan.id))
 
   const nextLevelIds = [
     ...new Set(
@@ -112,7 +126,12 @@ async function buildEligibilityContext(
     occupancyGroups.map((group) => [group.classPeriodId, group._count._all])
   )
 
-  return { alreadyPromotedStudentIds, targetClassPeriodByLevelId, occupancyByClassPeriodId }
+  return {
+    alreadyPromotedStudentIds,
+    activePlanIds,
+    targetClassPeriodByLevelId,
+    occupancyByClassPeriodId,
+  }
 }
 
 async function loadPromotion(input: Input) {
@@ -138,6 +157,10 @@ function resolveEligibility(
 ): Eligibility {
   if (context.alreadyPromotedStudentIds.has(enrollment.studentId)) {
     return { outcome: 'skipped', reason: 'alreadyPromoted' }
+  }
+
+  if (!context.activePlanIds.has(enrollment.planId)) {
+    return { outcome: 'skipped', reason: 'planArchived' }
   }
 
   const classAssignment = enrollment.classAssignments[0]
@@ -167,6 +190,7 @@ export async function previewPromoteStudents(input: Input) {
   let promoted = 0
   const skippedByReason: Record<SkipReason, number> = {
     alreadyPromoted: 0,
+    planArchived: 0,
     noClassAssignment: 0,
     noNextLevel: 0,
     noTargetClass: 0,
@@ -231,6 +255,14 @@ export async function promoteStudents(input: Input) {
           if (await enrollmentGateway.isEnrolledInPeriod(tx, schoolId, studentId, targetPeriodId)) {
             return 'alreadyPromoted'
           }
+
+          // Re-read before taking the class row lock: a plan archived between the pre-filter and
+          // this transaction must not be attached to an open enrollment, nor hold a seat for nothing.
+          const plan = await tx.plan.findFirst({
+            where: { id: enrollment.planId, schoolId, isActive: true },
+            select: { id: true },
+          })
+          if (!plan) return 'planArchived'
 
           const seats = await reserveClassSeats(tx, schoolId, targetClassPeriodId)
           if (seats === 'classFull') return 'targetClassFull'

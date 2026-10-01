@@ -10,6 +10,7 @@ const enrollmentGatewayMock = {
   isEnrolledInPeriod: vi.fn(),
 }
 const dbMock = {
+  plan: { findMany: vi.fn() },
   classPeriod: { findMany: vi.fn() },
   classAssignment: { groupBy: vi.fn() },
   $transaction: vi.fn(),
@@ -35,12 +36,13 @@ const targetPeriodId = '550e8400-e29b-41d4-a716-446655440001'
 const targetClassPeriodId = '550e8400-e29b-41d4-a716-446655440002'
 const nextLevelId = '550e8400-e29b-41d4-a716-446655440021'
 const defaultStudentId = '550e8400-e29b-41d4-a716-446655440011'
+const defaultPlanId = '550e8400-e29b-41d4-a716-446655440012'
 
 function buildEnrollment(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: '550e8400-e29b-41d4-a716-446655440010',
     studentId: defaultStudentId,
-    planId: '550e8400-e29b-41d4-a716-446655440012',
+    planId: defaultPlanId,
     totalAmount: 100,
     discount: 0,
     canLeaveAlone: false,
@@ -61,14 +63,17 @@ function buildEnrollment(overrides: Partial<Record<string, unknown>> = {}) {
 function buildTx({
   capacity = 10,
   occupied = 0,
+  planActive = true,
   create = vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440099' }),
 }: {
   capacity?: number
   occupied?: number
+  planActive?: boolean
   create?: ReturnType<typeof vi.fn>
 } = {}) {
   return {
     $queryRaw: vi.fn().mockResolvedValue([{ capacity }]),
+    plan: { findFirst: vi.fn().mockResolvedValue(planActive ? { id: defaultPlanId } : null) },
     enrollment: { create },
     classAssignment: { create: vi.fn(), count: vi.fn().mockResolvedValue(occupied) },
   }
@@ -86,6 +91,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
     enrollmentGatewayMock.findEnrolledStudentIds = vi.fn().mockImplementation(async () => new Set())
     enrollmentGatewayMock.lockStudentInPeriod = vi.fn()
     enrollmentGatewayMock.isEnrolledInPeriod = vi.fn().mockResolvedValue(false)
+    dbMock.plan.findMany = vi.fn().mockResolvedValue([{ id: defaultPlanId }])
     dbMock.classPeriod.findMany = vi
       .fn()
       .mockResolvedValue([{ id: targetClassPeriodId, levelId: nextLevelId, capacity: 10 }])
@@ -156,6 +162,20 @@ describe('promoteStudents / previewPromoteStudents', () => {
         skippedByReason: expect.objectContaining({ alreadyPromoted: 1 }),
       })
       expect(execution).toEqual({ promoted: 1, skipped: 1, errors: [] })
+    })
+
+    it('should skip a student whose source plan is archived, without opening a transaction', async () => {
+      dbMock.plan.findMany.mockResolvedValue([])
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
+
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+
+      expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
+      expect(dbMock.$transaction).not.toHaveBeenCalled()
+      expect(dbMock.plan.findMany).toHaveBeenCalledWith({
+        where: { schoolId, id: { in: [defaultPlanId] }, isActive: true },
+        select: { id: true },
+      })
     })
 
     it('should skip when there is no class assignment', async () => {
@@ -322,6 +342,24 @@ describe('promoteStudents / previewPromoteStudents', () => {
       expect(tx.classAssignment.create).not.toHaveBeenCalled()
     })
 
+    it('should skip a plan archived since the pre-filter, re-read in the transaction', async () => {
+      const tx = buildTx({ planActive: false })
+      dbMock.$transaction = vi.fn(async (cb) => cb(tx))
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([buildEnrollment()])
+
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+
+      expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
+      expect(tx.plan.findFirst).toHaveBeenCalledWith({
+        where: { id: defaultPlanId, schoolId, isActive: true },
+        select: { id: true },
+      })
+      // Refused before the class row lock: an archived plan holds no seat.
+      expect(tx.$queryRaw).not.toHaveBeenCalled()
+      expect(tx.enrollment.create).not.toHaveBeenCalled()
+      expect(tx.classAssignment.create).not.toHaveBeenCalled()
+    })
+
     it('should skip a target class deactivated since the pre-filter', async () => {
       const tx = buildTx()
       tx.$queryRaw.mockResolvedValue([])
@@ -372,6 +410,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         skipped: 0,
         skippedByReason: {
           alreadyPromoted: 0,
+          planArchived: 0,
           noClassAssignment: 0,
           noNextLevel: 0,
           noTargetClass: 0,
@@ -380,7 +419,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
       })
     })
 
-    it('should break down skip reasons, including already-promoted students', async () => {
+    it('should break down skip reasons, including already-promoted students and archived plans', async () => {
       enrollmentGatewayMock.findEnrolledStudentIds.mockResolvedValue(new Set(['student-3']))
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
         buildEnrollment({ studentId: 'student-1', classAssignments: [] }),
@@ -389,15 +428,17 @@ describe('promoteStudents / previewPromoteStudents', () => {
           classAssignments: [{ classPeriod: { level: { id: 'level-1', nextLevel: null } } }],
         }),
         buildEnrollment({ studentId: 'student-3' }),
+        buildEnrollment({ studentId: 'student-4', planId: 'archived-plan' }),
       ])
 
       const result = await previewPromoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
 
       expect(result).toEqual({
         promoted: 0,
-        skipped: 3,
+        skipped: 4,
         skippedByReason: {
           alreadyPromoted: 1,
+          planArchived: 1,
           noClassAssignment: 1,
           noNextLevel: 1,
           noTargetClass: 0,
