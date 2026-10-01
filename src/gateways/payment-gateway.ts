@@ -72,8 +72,39 @@ export const paymentGateway = {
   findActiveByIds: (tx: Prisma.TransactionClient, schoolId: string, ids: string[]) =>
     tx.payment.findMany({
       where: { schoolId, id: { in: ids } },
-      select: { id: true, familyId: true, amount: true, paymentTransactionId: true },
+      select: {
+        id: true,
+        familyId: true,
+        enrollmentId: true,
+        amount: true,
+        paymentTransactionId: true,
+      },
     }),
+
+  /**
+   * Encaissé actif par inscription, sans les paiements `excludedIds` : ce que chaque
+   * inscription aurait encore reçu une fois ceux-ci désactivés. `groupBy` n'est pas couvert
+   * par le soft-delete du client, d'où le filtre `isActive` explicite. Une inscription sans
+   * autre paiement actif n'a pas de ligne : elle vaut zéro.
+   */
+  sumActiveByEnrollment: async (
+    tx: Prisma.TransactionClient,
+    schoolId: string,
+    enrollmentIds: string[],
+    excludedIds: string[]
+  ) => {
+    const rows = await tx.payment.groupBy({
+      by: ['enrollmentId'],
+      where: {
+        schoolId,
+        enrollmentId: { in: enrollmentIds },
+        id: { notIn: excludedIds },
+        isActive: true,
+      },
+      _sum: { amount: true },
+    })
+    return new Map(rows.map((row) => [row.enrollmentId, Number(row._sum.amount ?? 0)]))
+  },
 
   /** Désactive, ne supprime pas : l'encaissement annulé reste lisible pour l'audit. */
   deactivateMany: (tx: Prisma.TransactionClient, schoolId: string, ids: string[]) =>
