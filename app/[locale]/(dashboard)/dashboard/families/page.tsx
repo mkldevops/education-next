@@ -49,36 +49,43 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
 
   const isAdmin = scope.isAdmin
 
-  const families = await db.family.findMany({
-    where: { schoolId: scope.schoolId, isActive: true },
-    select: {
-      id: true,
-      name: true,
-      emergencyContactName: true,
-      emergencyContactPhone: true,
-      persons: {
-        select: {
-          person: {
-            select: {
-              families: { select: { familyId: true, relationType: true } },
-              student: {
-                select: {
-                  enrollments: {
-                    // Payments on a cancelled or completed enrollment stay in the paid total.
-                    where: {
-                      OR: [
-                        { status: { in: [...PAYABLE_ENROLLMENT_STATUSES] } },
-                        { payments: { some: { isActive: true } } },
-                      ],
-                    },
-                    select: {
-                      id: true,
-                      status: true,
-                      totalAmount: true,
-                      discount: true,
-                      payments: {
-                        where: { isActive: true },
-                        select: { amount: true, method: true, paidAt: true, cashedAt: true },
+  const [families, paidByEnrollment] = await Promise.all([
+    db.family.findMany({
+      where: { schoolId: scope.schoolId, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        emergencyContactName: true,
+        emergencyContactPhone: true,
+        persons: {
+          select: {
+            person: {
+              select: {
+                families: { select: { familyId: true, relationType: true } },
+                student: {
+                  select: {
+                    enrollments: {
+                      // Payments on a cancelled or completed enrollment stay in the paid total.
+                      where: {
+                        OR: [
+                          { status: { in: [...PAYABLE_ENROLLMENT_STATUSES] } },
+                          { payments: { some: { isActive: true } } },
+                        ],
+                      },
+                      select: {
+                        id: true,
+                        status: true,
+                        totalAmount: true,
+                        discount: true,
+                        // Les derniers paiements de la famille sont parmi les derniers de
+                        // chacune de ses inscriptions : ce `take` par inscription suffit.
+                        payments: {
+                          where: { isActive: true },
+                          select: { amount: true, method: true, paidAt: true, cashedAt: true },
+                          orderBy: [{ paidAt: 'desc' }, { createdAt: 'desc' }],
+                          take: PAYMENTS_PREVIEWED,
+                        },
+                        _count: { select: { payments: { where: { isActive: true } } } },
                       },
                     },
                   },
@@ -88,9 +95,17 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
           },
         },
       },
-    },
-    orderBy: { name: 'asc' },
-  })
+      orderBy: { name: 'asc' },
+    }),
+    // `groupBy` n'est pas couvert par l'extension soft-delete : `isActive` est explicite.
+    db.payment.groupBy({
+      by: ['enrollmentId'],
+      where: { schoolId: scope.schoolId, isActive: true },
+      _sum: { amount: true },
+    }),
+  ])
+
+  const paid = new Map(paidByEnrollment.map((row) => [row.enrollmentId, row._sum.amount]))
 
   const familyRows: FamilyRow[] = families.map((family) => {
     const enrollments = family.persons.flatMap((fp) => {
@@ -99,7 +114,9 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
       const debtorFamilyId = resolveDebtorFamily(fp.person.families)?.familyId
       return debtorFamilyId === family.id ? studentEnrollments : []
     })
-    const balance = calculateFamilyBalance(enrollments)
+    const balance = calculateFamilyBalance(
+      enrollments.map((enrollment) => ({ ...enrollment, paid: paid.get(enrollment.id) ?? null }))
+    )
     const payments = enrollments
       .flatMap((enrollment) => enrollment.payments)
       .sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime())
@@ -121,7 +138,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
         paidAt: payment.paidAt,
         cashedAt: payment.cashedAt,
       })),
-      paymentCount: payments.length,
+      paymentCount: enrollments.reduce((sum, enrollment) => sum + enrollment._count.payments, 0),
     }
   })
 
