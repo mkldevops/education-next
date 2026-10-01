@@ -46,6 +46,14 @@ export const userGateway = {
     dbArchived.user.count({ where: { isSuperAdmin: true, isActive: true } }),
 
   /**
+   * Le compte possède-t-il déjà un mot de passe ? Lu par l'email de réinitialisation
+   * pour distinguer une réinitialisation d'une première définition (compte créé par
+   * `createUserAction`, ou Google seul). `Account` n'a pas de `isActive` : `db` suffit.
+   */
+  hasCredentialAccount: async (userId: string) =>
+    (await db.account.count({ where: { userId, providerId: 'credential' } })) > 0,
+
+  /**
    * Comptes qui perdraient tout accès si la connexion Google était coupée : au moins un
    * `Account` `google`, aucun autre (`credential` ou un autre fournisseur). Lu par `db`
    * et non `dbArchived` — l'extension de `src/lib/db.ts` y force `isActive: true` — un

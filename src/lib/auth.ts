@@ -26,6 +26,26 @@ export const auth = betterAuth({
     // pas de locale, d'où des libellés en français comme le reste des surfaces
     // plateforme.
     sendResetPassword: async (data) => {
+      // Même lien, deux situations : un compte sans `credential` — créé par
+      // `createUserAction`, ou Google seul — n'a rien à « réinitialiser ». Le
+      // présenter ainsi ferait ignorer le message par son destinataire, qui n'a
+      // rien demandé ; on lui dit qu'il définit son premier mot de passe.
+      if (!(await userGateway.hasCredentialAccount(data.user.id))) {
+        await sendPlatformEmail(data.user.email, 'Définissez votre mot de passe', {
+          preheader: 'Lien de définition du mot de passe valable une heure.',
+          heading: 'Définissez votre mot de passe',
+          paragraphs: [
+            `Un accès à la plateforme est prêt pour ${data.user.email}, mais aucun mot de passe n'est encore défini. Utilisez le bouton ci-dessous pour choisir le vôtre et vous connecter.`,
+          ],
+          cta: { label: 'Choisir un mot de passe', url: data.url },
+          notice:
+            'Ce lien expire dans 1 heure. Passé ce délai, « Mot de passe oublié » sur la page de connexion en renvoie un.',
+          footer:
+            "Message automatique. Si vous n'attendiez pas cet accès, ignorez cet email : aucun mot de passe ne sera défini.",
+        })
+        return
+      }
+
       await sendPlatformEmail(data.user.email, 'Réinitialisation de votre mot de passe', {
         preheader: 'Lien de réinitialisation valable une heure.',
         heading: 'Réinitialisation de votre mot de passe',
