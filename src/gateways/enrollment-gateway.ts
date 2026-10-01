@@ -146,8 +146,52 @@ export const enrollmentGateway = {
       },
     }),
 
-  updateDiscount: (schoolId: string, id: string, discount: number, totalAmount: number) =>
-    db.enrollment.update({
+  /**
+   * Famille redevable d'une inscription (`resolveDebtorFamily`), à verrouiller avant de
+   * toucher son total : c'est la ligne que `recordPayment` tient pendant qu'il répartit un
+   * règlement (`readLockedPaidAmount`). `null` quand l'inscription n'existe pas dans cette
+   * école ; `familyId` nul quand l'élève n'est rattaché à aucune famille.
+   */
+  findDebtorFamily: async (tx: Prisma.TransactionClient, schoolId: string, id: string) => {
+    const row = await tx.enrollment.findFirst({
+      where: { schoolId, id },
+      select: {
+        student: {
+          select: {
+            person: {
+              select: {
+                families: { select: { familyId: true, relationType: true } },
+              },
+            },
+          },
+        },
+      },
+    })
+    if (!row) return null
+
+    return { familyId: resolveDebtorFamily(row.student.person.families)?.familyId ?? null }
+  },
+
+  /**
+   * Paiements actifs d'une inscription ouverte, à relire dans la transaction qui abaisse
+   * son total, après `lockFamilyForPayment` : lus avant, ils ne protègent pas d'un
+   * encaissement concurrent (#425). `null` quand l'inscription n'est plus ouverte.
+   */
+  findOpenActivePayments: (tx: Prisma.TransactionClient, schoolId: string, id: string) =>
+    tx.enrollment.findFirst({
+      where: { schoolId, id, status: { in: [...OPEN_ENROLLMENT_STATUSES] } },
+      select: { payments: { where: { isActive: true }, select: { amount: true } } },
+    }),
+
+  /** `client` reçoit la transaction qui a relu le déjà-payé sous le verrou de la famille. */
+  updateDiscount: (
+    schoolId: string,
+    id: string,
+    discount: number,
+    totalAmount: number,
+    client: Prisma.TransactionClient = db
+  ) =>
+    client.enrollment.update({
       where: { id_schoolId: { id, schoolId } },
       data: { discount, totalAmount },
     }),
@@ -156,19 +200,26 @@ export const enrollmentGateway = {
    * Inscription ouverte ciblée par l'affectation de formule dashboard
    * (`setEnrollmentPlan`). Statut filtré dans la lecture plutôt que vérifié après coup :
    * une inscription `COMPLETED` ou `CANCELLED` ne se distingue pas d'une inscription
-   * inexistante, comme `findOpenForMcp`.
+   * inexistante, comme `findOpenForMcp`. Sans ses paiements : ils se relisent sous le
+   * verrou de la famille (`findOpenActivePayments`), jamais ici.
    */
   findOpenById: (schoolId: string, id: string) =>
     db.enrollment.findFirst({
       where: { schoolId, id, status: { in: [...OPEN_ENROLLMENT_STATUSES] } },
-      include: {
-        payments: { where: { isActive: true }, select: { amount: true } },
-      },
     }),
 
-  /** Affecte une formule et le total recalculé qui va avec ; la remise ne bouge pas. */
-  assignPlan: (schoolId: string, id: string, planId: string, totalAmount: number) =>
-    db.enrollment.update({
+  /**
+   * Affecte une formule et le total recalculé qui va avec ; la remise ne bouge pas.
+   * `client` reçoit la transaction qui a relu le déjà-payé sous le verrou de la famille.
+   */
+  assignPlan: (
+    schoolId: string,
+    id: string,
+    planId: string,
+    totalAmount: number,
+    client: Prisma.TransactionClient = db
+  ) =>
+    client.enrollment.update({
       where: { id_schoolId: { id, schoolId } },
       data: { planId, totalAmount },
     }),

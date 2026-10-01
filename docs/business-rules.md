@@ -1377,6 +1377,15 @@ across that family's `PENDING` and `ACTIVE` enrollments**, proportionally to eac
   Stripe webhook takes the same lock before rereading the balance it allocates, but records an
   archived family's capture anyway (see **Online payment**). Every other writer of a family's
   payments must take the same lock before reading the balance it distributes.
+- **Lowering a total takes the same lock.** `applyDiscount` and `setEnrollmentPlan` decide
+  `totalBelowPaid` inside the transaction that writes the new total, after locking the
+  enrollment's debtor family (`resolveDebtorFamily`) and rereading its active payments through
+  `readLockedPaidAmount()` in `src/use-cases/enrollments/locked-paid-amount.ts`. Without it, a
+  discount bringing 100 € down to 50 € and a 100 € payment launched together both passed their
+  checks against the old state and left 100 € banked for 50 € due (#425). Whichever runs second
+  now rereads what the first wrote and answers `totalBelowPaid` or `overpayment`. A student with
+  no debtor family has nothing to lock, since no payment can target the enrollment; an archived
+  family, or an enrollment closed meanwhile → `notFound`.
 
 ### Displaying a payment
 
@@ -1615,7 +1624,9 @@ born priced; renaming the reserved row out would have a second one created at th
 Re-enabling exposes those enrollments as *needing a plan*, and `setEnrollmentPlan`
 (`src/use-cases/enrollments/set-enrollment-plan.ts`) prices them against the plan's **current**
 amount minus the discount they already carry, refusing `totalBelowPaid` on the same rule as the
-MCP `update_enrollment` path. Without it the flag would create a state the UI could not repair.
+MCP `update_enrollment` path — decided under the family lock, like `applyDiscount` (see
+**Lowering a total takes the same lock**). Without it the flag would create a state the UI could
+not repair.
 
 ## Promotion
 
