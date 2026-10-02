@@ -13,6 +13,7 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   reactCompiler: true,
   experimental: {
     // Le défaut de Next est 1 Mo pour le corps COMPLET d'une action serveur, pièce jointe
