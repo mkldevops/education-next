@@ -34,6 +34,7 @@ import {
   isAiAssistantAttachmentType,
 } from '@/domain/ai-assistant'
 import { cn } from '@/lib/utils'
+import { MessageText } from './message-text'
 import { useDictation } from './use-dictation'
 import { VoiceMeter, voiceRingClass } from './voice-meter'
 
@@ -542,11 +543,7 @@ function ChatMessage({
           {message.parts.map((part, index) => {
             const key = `${message.id}-${index}`
             if (part.type === 'text') {
-              return (
-                <p key={key} className="whitespace-pre-wrap">
-                  {part.text}
-                </p>
-              )
+              return <MessageText key={key} text={part.text} />
             }
             if (part.type === 'file') return null
             return renderPart ? renderPart(part, key) : null

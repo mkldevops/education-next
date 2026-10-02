@@ -151,6 +151,16 @@ export const classPeriodGateway = {
       orderBy: { teacher: { lastName: 'asc' } },
     }),
 
+  // Ajoute une affectation sans toucher aux autres, à l'inverse de `update` qui remplace la
+  // liste. `skipDuplicates` rend l'appel rejouable : `false` signale une affectation déjà là.
+  assignTeacher: async (schoolId: string, classPeriodId: string, teacherId: string) => {
+    const { count } = await db.classPeriodTeacher.createMany({
+      data: [{ schoolId, classPeriodId, teacherId }],
+      skipDuplicates: true,
+    })
+    return count > 0
+  },
+
   // Seul chemin qui retire une ligne `ClassPeriodTeacher` d'un enseignant désactivé :
   // `update` ci-dessus l'épargne délibérément (#252). Le filtre `teacher.isActive:
   // false` est structurel, pas seulement porté par l'UI qui n'expose le bouton que
