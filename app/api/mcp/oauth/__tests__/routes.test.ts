@@ -209,23 +209,40 @@ describe('POST /api/mcp/oauth/token', () => {
 describe('POST /api/mcp/oauth/revoke', () => {
   it('revokes the presented token and answers an empty 200 either way', async () => {
     const response = await revoke.POST(
-      formRequest('/api/mcp/oauth/revoke', { token: tokens.access_token })
+      formRequest('/api/mcp/oauth/revoke', { token: tokens.access_token, client_id: CLIENT_ID })
     )
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({})
-    expect(revokeOAuthTokenMock).toHaveBeenCalledWith(tokens.access_token)
+    expect(revokeOAuthTokenMock).toHaveBeenCalledWith({
+      token: tokens.access_token,
+      clientId: CLIENT_ID,
+    })
+  })
+
+  it('answers invalid_client with a 401 when the client cannot revoke the token', async () => {
+    revokeOAuthTokenMock.mockResolvedValue('invalid_client')
+
+    const response = await revoke.POST(
+      formRequest('/api/mcp/oauth/revoke', { token: tokens.access_token })
+    )
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: 'invalid_client' })
   })
 
   it('stays reachable while the platform flag is off', async () => {
     isMcpEnabledMock.mockResolvedValue(false)
 
     const response = await revoke.POST(
-      formRequest('/api/mcp/oauth/revoke', { token: tokens.refresh_token })
+      formRequest('/api/mcp/oauth/revoke', { token: tokens.refresh_token, client_id: CLIENT_ID })
     )
 
     expect(response.status).toBe(200)
-    expect(revokeOAuthTokenMock).toHaveBeenCalledWith(tokens.refresh_token)
+    expect(revokeOAuthTokenMock).toHaveBeenCalledWith({
+      token: tokens.refresh_token,
+      clientId: CLIENT_ID,
+    })
   })
 
   it('refuses a body it cannot read', async () => {

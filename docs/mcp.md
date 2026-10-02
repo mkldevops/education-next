@@ -145,7 +145,9 @@ instance); ChatGPT itself needs a public HTTPS origin.
    there is no client ID or secret to enter.
 3. ChatGPT opens `<origin>/oauth/authorize` in the browser. Sign in if needed (the request is
    replayed after login), pick the **school** the connection will administer, and **Authorize**. The
-   page names the client, the account, the school and the permissions granted.
+   page names the client, the account, the school, the permissions granted and, highlighted, the
+   host the browser will return to — authorize only if you recognize it. **Deny** creates nothing
+   and shows a **Return to** link that reports `access_denied` to the application.
 4. ChatGPT is sent back to its callback with a one-shot code and exchanges it for tokens. The
    connection now appears under **Connected apps** in the API keys tab of `/dashboard/settings`,
    with the client's name, the grant date and the last use.
@@ -184,8 +186,9 @@ row itself stays, revoked or not, as the trace the tab shows.
 - **From the dashboard**: Connected apps › revoke. The connection answers `401` on its next call,
   access token still valid or not, and ChatGPT proposes to reconnect.
 - **From the client**: ChatGPT (or any client) may call `POST /api/mcp/oauth/revoke` with
-  `token=<access or refresh token>` (RFC 7009). The whole connection is revoked, and the endpoint
-  answers `200 {}` whether the token was known or not.
+  `token=<access or refresh token>` and its `client_id` (RFC 7009). The whole connection is revoked,
+  and the endpoint answers `200 {}` whether the token was known or not. A missing `client_id`, or a
+  token issued to another client, answers `401 invalid_client` and revokes nothing.
 - Deactivating the account or the school, or withdrawing the `ADMIN` role, refuses the connection
   on the next call without touching it; it can be revoked afterwards for the record.
 
@@ -201,7 +204,7 @@ like a key does (`hasRelatedRecords`).
 | `POST /api/mcp/oauth/register` | RFC 7591 | dynamic registration: `client_name`, HTTPS `redirect_uris` (or loopback `http://localhost`), `token_endpoint_auth_method: none` |
 | `GET /oauth/authorize` | RFC 6749 §3.1, PKCE (RFC 7636) | consent page, `response_type=code`, `code_challenge_method=S256`, optional `resource` (RFC 8707) that must be this site's `/api/mcp` |
 | `POST /api/mcp/oauth/token` | RFC 6749 §4.1.3, §6 | code exchange (`code_verifier`, `redirect_uri`, `client_id`) and refresh rotation |
-| `POST /api/mcp/oauth/revoke` | RFC 7009 | revokes the connection behind the token |
+| `POST /api/mcp/oauth/revoke` | RFC 7009 | `token` + `client_id`: revokes the connection behind the token, only for the client it was issued to |
 
 An unauthenticated `POST /api/mcp` answers `401` with
 `WWW-Authenticate: Bearer resource_metadata="<origin>/.well-known/oauth-protected-resource"`, and
@@ -215,7 +218,7 @@ On the consent page:
 
 | Message | Cause |
 |---|---|
-| The application asking for access is not registered on this site | unknown `client_id` — registration happened on another site, or the flag was off when ChatGPT tried |
+| The application asking for access is not registered on this site | unknown `client_id` — registration happened on another site, the flag was off when ChatGPT tried, or the client was purged after a day without any connection (reconnect from ChatGPT to register again) |
 | The application's return address does not match its registration | `redirect_uri` outside the registered list |
 | The authorization request is incomplete or altered | missing `client_id` or `redirect_uri`; or missing PKCE, a method other than `S256`, a scope other than `school:admin`, a `resource` naming another site — then a **Return to** link carries the OAuth error back to the application, and nothing redirects on its own |
 | You administer no school on this site | the signed-in account is not `ADMIN` anywhere on this site |

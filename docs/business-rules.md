@@ -629,15 +629,18 @@ under `app/api/mcp/oauth/` and `app/.well-known/`, and the consent page
   leak. PKCE `S256` is mandatory on every authorization (`code_challenge_method` is refused
   otherwise), and the code exchange checks `code_verifier`, `client_id` and `redirect_uri` against
   what the code was issued for. `McpOAuthClient` rows are shared by every school and sit outside the
-  tenant guard.
+  tenant guard. Registration being anonymous, a client still without any connection a day after
+  registering is deleted by the same sweep as expired tokens (`purgeExpiredOAuthTokens`); a client
+  holding a connection, even revoked, stays.
 - **The consent page is the only place a school is chosen**, and it decides in this order:
   validate the request (an unregistered client or a foreign `redirect_uri` is shown as an error and
   never redirected; every other fault is shown with a link that carries the OAuth error back to the
   registered URI, which the user follows — never an automatic redirect, since a dynamically
   registered URI is not trusted enough to make this page a redirector, RFC 9700 §4.11) →
   platform flag → session, else login with the whole request replayed after → the list of schools
-  → the form. The action re-validates the request from the form and redirects only to the URI it
-  validated, never to one read from the form. A super-admin impersonating cannot grant: the
+  → the form, which shows the registered callback host prominently. The action re-validates the
+  request from the form and redirects only to the URI it validated, never to one read from the form;
+  a **denial** redirects nowhere and returns the same user-followed link carrying `access_denied`. A super-admin impersonating cannot grant: the
   connection would be signed by the target.
 - **Secrets are opaque, prefixed and hashed.** Authorization codes (`edu_oac_`, 5 minutes), access
   tokens (`edu_oat_`, 1 hour) and refresh tokens (`edu_ort_`, 30 days) are 32 random bytes in
@@ -650,7 +653,8 @@ under `app/api/mcp/oauth/` and `app/.well-known/`, and the consent page
 - **Revocation is a `revokedAt` on the grant, never a deletion.** It happens from the Connected apps
   panel (`revokeMcpOAuthGrantAction`, scoped by holder and school, refused under impersonation) or
   from `POST /api/mcp/oauth/revoke` (RFC 7009, `200 {}` whether or not the token was known, so the
-  endpoint enumerates nothing). Expired tokens are swept from `/api/mcp` in `after()` like drafts,
+  endpoint enumerates nothing; the public client identifies itself by `client_id` and only revokes
+  its own tokens, otherwise `401 invalid_client`). Expired tokens are swept from `/api/mcp` in `after()` like drafts,
   at most once per interval; the grant row survives as the trace the panel shows, and its `userId`
   foreign key is `Restrict` for the reason written under *Key lifecycle* — counted before a
   permanent account deletion by `countRowsBlockingUserDeletion`, the platform-wide exception to the

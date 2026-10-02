@@ -21,6 +21,7 @@ import {
   protectedResourceMetadataUrl,
   refreshTokenExpiry,
   registerClientSchema,
+  unusedClientCutoff,
 } from '../mcp-oauth'
 
 const body = 'a'.repeat(43)
@@ -64,6 +65,10 @@ describe('lifecycle', () => {
       MCP_OAUTH_ACCESS_TOKEN_TTL_SECONDS * 1000
     )
     expect(refreshTokenExpiry(now).toISOString()).toBe('2026-10-29T10:00:00.000Z')
+  })
+
+  it('keeps an unused client for one day', () => {
+    expect(unusedClientCutoff(now).toISOString()).toBe('2026-09-28T10:00:00.000Z')
   })
 })
 
