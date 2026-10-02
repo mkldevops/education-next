@@ -20,6 +20,7 @@ let familyId: string
 let planId: string
 let cheaperPlanId: string
 let enrollmentId: string
+let adminId: string | undefined
 
 it("n'est jamais ignoré silencieusement en intégration continue", () => {
   expect(Boolean(process.env.CI) && !databaseUrl).toBe(false)
@@ -43,6 +44,7 @@ describe.skipIf(!databaseUrl)('enrollment pricing vs payment concurrency', () =>
     })
 
     const admin = await raw.user.create({ data: { email: `admin-${suffix}@pricing.test` } })
+    adminId = admin.id
     const [plan, cheaperPlan] = await Promise.all([
       raw.plan.create({ data: { schoolId, name: `plan ${suffix}`, amount: 100 } }),
       raw.plan.create({ data: { schoolId, name: `cheaper ${suffix}`, amount: 50 } }),
@@ -84,7 +86,7 @@ describe.skipIf(!databaseUrl)('enrollment pricing vs payment concurrency', () =>
     await raw.person.deleteMany({ where: { schoolId } })
     await raw.family.deleteMany({ where: { schoolId } })
     await raw.config.deleteMany({ where: { schoolId } })
-    await raw.user.deleteMany({ where: { email: { endsWith: '-price-lock@pricing.test' } } })
+    if (adminId) await raw.user.delete({ where: { id: adminId } })
     await raw.school.deleteMany({ where: { id: schoolId } })
     await raw.$disconnect()
   }, 60_000)
