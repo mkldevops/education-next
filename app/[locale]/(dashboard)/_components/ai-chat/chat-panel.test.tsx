@@ -101,6 +101,49 @@ describe('ChatPanel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('fileErrors.count')
   })
 
+  it('attaches a screenshot pasted from the clipboard', async () => {
+    renderPanel()
+    const shot = new File([new Uint8Array([137, 80, 78, 71])], 'image.png', { type: 'image/png' })
+
+    fireEvent.paste(screen.getByPlaceholderText('placeholder'), {
+      clipboardData: { files: [shot] },
+    })
+    expect(await screen.findByAltText('imageAlt:{"index":1}')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'send' }))
+
+    expect(onSend).toHaveBeenCalledWith('', [
+      expect.objectContaining({
+        mediaType: 'image/png',
+        filename: expect.stringMatching(/^capture-.*\.png$/),
+      }),
+    ])
+  })
+
+  it('accepts a PDF dropped on the panel', async () => {
+    renderPanel()
+    const pdf = new File(['%PDF-1.7'], 'liste.pdf', { type: 'application/pdf' })
+
+    fireEvent.drop(screen.getByPlaceholderText('placeholder'), {
+      dataTransfer: { types: ['Files'], files: [pdf] },
+    })
+
+    expect(await screen.findByText('liste.pdf')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'send' }))
+    expect(onSend).toHaveBeenCalledWith('', [
+      expect.objectContaining({ mediaType: 'application/pdf', filename: 'liste.pdf' }),
+    ])
+  })
+
+  it('places a suggestion in the input without sending it', () => {
+    renderPanel({ suggestions: ['Quelles classes ?'] })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quelles classes ?' }))
+
+    expect(screen.getByPlaceholderText('placeholder')).toHaveValue('Quelles classes ?')
+    expect(onSend).not.toHaveBeenCalled()
+  })
+
   it('offers stop while streaming and reset once a conversation exists', () => {
     const { rerender } = renderPanel({ status: 'streaming' })
 

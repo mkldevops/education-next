@@ -8,6 +8,7 @@ import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 import { normalizeChatMessages } from '@/use-cases/ai-assistant/normalize-chat-messages'
 import { sanitizeImage } from '@/use-cases/ai-assistant/sanitize-image'
 import { saveConversation } from '@/use-cases/ai-assistant/save-conversation'
+import { findSelectedFamily } from '@/use-cases/ai-assistant/selected-family'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { purgeExpiredDrafts } from '@/use-cases/mcp/purge-expired-drafts'
 import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assistant-enabled'
@@ -45,6 +46,10 @@ function denied(error: string, status: number) {
 
 function readConversationId(body: unknown) {
   return typeof body === 'object' && body !== null && 'id' in body ? body.id : null
+}
+
+function readFamilyId(body: unknown) {
+  return typeof body === 'object' && body !== null && 'familyId' in body ? body.familyId : null
 }
 
 function readPage(body: unknown) {
@@ -111,7 +116,10 @@ export async function POST(request: Request) {
       ignoreIncompleteToolCalls: true,
     })
 
-    const period = await getSelectedPeriod(context.schoolId)
+    const [period, family] = await Promise.all([
+      getSelectedPeriod(context.schoolId),
+      findSelectedFamily(context.schoolId, readFamilyId(body)),
+    ])
     const openrouter = createOpenRouter({ apiKey })
     const result = streamText({
       model: openrouter(resolveAiAssistantModel(process.env.AI_ASSISTANT_MODEL)),
@@ -120,6 +128,7 @@ export async function POST(request: Request) {
         today: now.toISOString().slice(0, 10),
         page: readPage(body),
         period,
+        family,
       }),
       messages,
       tools,

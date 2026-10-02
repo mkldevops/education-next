@@ -54,6 +54,20 @@ describe('saveConversation', () => {
 })
 
 describe('conversationTitle', () => {
+  it('marks a PDF as a file, not a photo', () => {
+    const [stored] = withoutImages([
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [
+          { type: 'file', mediaType: 'application/pdf', filename: 'liste.pdf', url: 'data:x' },
+        ],
+      },
+    ])
+
+    expect(stored.parts).toEqual([{ type: 'text', text: '[fichier: liste.pdf]' }])
+  })
+
   it('falls back to a photo marker and truncates long requests', () => {
     expect(
       conversationTitle(withoutImages([{ ...messages[0], parts: [messages[0].parts[1]] }]))

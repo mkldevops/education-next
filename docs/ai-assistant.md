@@ -47,11 +47,16 @@ and `/dashboard/enroll-assistant` shows the chat full-width (the button is hidde
   of the current page. Say otherwise ("150 € par chèque") to change it.
 - A manual payment recorded by mistake can be undone: "annule le dernier paiement de cette famille".
   Online (Stripe) payments cannot.
-- Photos of an enrollment sheet: PNG, JPEG or WebP, up to 4 per message and 8 per conversation,
-  6 MiB each. The panel states, before the first send, that messages and photos go to OpenRouter and
-  names the model. Photos are re-encoded in memory (rotation applied, metadata stripped, longest
-  side capped) and never stored. The model does not guess an illegible field; it asks.
+- Attachments: photos (PNG, JPEG, WebP) and PDF files, up to 4 per message and 8 per conversation,
+  6 MiB each. Add them with the paperclip, by pasting from the clipboard (a screenshot becomes
+  `capture-<time>.png`) or by dropping them on the panel. The panel states, before the first send,
+  that messages and attachments go to OpenRouter and names the model. Photos are re-encoded in memory
+  (rotation applied, metadata stripped, longest side capped); PDF files are checked, then sent as is.
+  Nothing is stored. The model does not guess an illegible field; it asks.
+- *Famille* in the composer picks a family as the conversation's context: the assistant uses it
+  directly and never asks which family. It wins over the page. The cross removes it.
 - The page you are on is sent as a hint, so "this class" or "these payments" resolve.
+- An empty conversation offers a few example requests; a click fills the input without sending.
 - The current period is the default: the assistant never asks which one. "Nouvel enseignant
   Prénom Nom" goes straight to the approval card — no class, no email, no phone asked.
 - After an approved write, the page refreshes. Enter sends, Shift+Enter adds a line. The cursor
@@ -61,15 +66,15 @@ and `/dashboard/enroll-assistant` shows the chat full-width (the button is hidde
   the audio leaves through the browser vendor, never through this application.
   The first click asks for microphone access; if it was refused, allow it from the address bar.
 - *Historique* lists your 30 latest conversations in this school, to reopen or delete. They are
-  saved on the server without their photos; nobody else sees them. Switching school starts a new one.
+  saved on the server without their attachments; nobody else sees them. Switching school starts a new one.
 
 ## Refusals seen in the UI
 
 | Message | Cause |
 |---|---|
 | assistant disabled / not configured | toggle off, or no readable key |
-| forbidden file / image too large / unreadable image | outside PNG, JPEG, WebP; above 6 MiB; not decodable |
-| too many photos / too many messages / message too long | conversation limits |
+| forbidden file / file too large / unreadable file | outside PNG, JPEG, WebP, PDF; above 6 MiB; not decodable |
+| too many attachments / too many messages / message too long | conversation limits |
 | too many requests | 20 requests per minute per administrator and school |
 | invalid key / quota exceeded / provider rate limited / timeout / provider error | OpenRouter answer; details in the server log only |
 | approval unavailable | `BETTER_AUTH_SECRET` missing: writes are refused, reads still work |
