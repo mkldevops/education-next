@@ -2358,13 +2358,13 @@
       "close": "Fermer l'assistant",
       "title": "Assistant IA",
       "subtitle": "Consulte et agit sur l'école ; chaque modification attend votre validation.",
-      "providerNotice": "Les messages, photos et données consultées sont transmis à OpenRouter et au modèle {model}. Rien n'est modifié sans votre validation.",
+      "providerNotice": "Messages, photos, PDF et données consultées passent par OpenRouter ({model}). Rien n'est modifié sans votre validation.",
       "history": {
         "show": "Historique",
         "back": "Retour à la conversation",
         "title": "Vos conversations",
         "empty": "Aucune conversation enregistrée.",
-        "notice": "Vos conversations sont enregistrées pour vous seul, dans cette école, sans les photos.",
+        "notice": "Vos conversations sont enregistrées pour vous seul, dans cette école, sans les pièces jointes.",
         "delete": "Supprimer « {title} »",
         "loadError": "Impossible d'ouvrir cette conversation.",
         "new": "Nouvelle conversation"
@@ -2372,12 +2372,12 @@
       "chat": {
         "title": "Conversation",
         "empty": "Posez une question ou demandez une action : classes, planning, événements, inscriptions, paiements…",
-        "placeholder": "Ex. : « Quelles classes ont encore de la place ? »",
+        "placeholder": "Demandez n'importe quoi, collez une capture ou glissez un PDF",
         "send": "Envoyer",
         "stop": "Arrêter",
-        "attach": "Ajouter une photo",
-        "attachHint": "{count} photos, {size} Mo chacune",
-        "removeImage": "Retirer la photo",
+        "attach": "Joindre une photo ou un PDF",
+        "attachHint": "{count} fichiers (PNG, JPEG, WebP, PDF), {size} Mo chacun",
+        "removeImage": "Retirer la pièce jointe",
         "imageAlt": "Photo jointe {index}",
         "reset": "Nouvelle conversation",
         "thinking": "L'assistant travaille…",
@@ -2385,9 +2385,9 @@
         "assistant": "Assistant",
         "scrollToEnd": "Aller au dernier message",
         "fileErrors": {
-          "type": "Seuls les fichiers PNG, JPEG et WebP sont acceptés.",
-          "size": "Chaque photo doit faire moins de {size} Mo.",
-          "count": "{count} photos maximum par message."
+          "type": "Seuls les images PNG, JPEG, WebP et les PDF sont acceptés.",
+          "size": "Chaque fichier doit faire moins de {size} Mo.",
+          "count": "{count} fichiers maximum par message."
         },
         "errors": {
           "unauthorized": "Session expirée : reconnectez-vous.",
@@ -2398,10 +2398,10 @@
           "invalidRequest": "Requête invalide.",
           "tooManyMessages": "La conversation est trop longue : commencez-en une nouvelle.",
           "messageTooLong": "Le message est trop long.",
-          "forbiddenFile": "Seules les images PNG, JPEG et WebP sont acceptées.",
-          "unreadableImage": "Une image n'a pas pu être lue.",
-          "tooManyImages": "Trop de photos dans la conversation.",
-          "imageTooLarge": "Une photo dépasse la taille ou les dimensions autorisées.",
+          "forbiddenFile": "Seuls les images PNG, JPEG, WebP et les PDF sont acceptés.",
+          "unreadableImage": "Un fichier joint n'a pas pu être lu.",
+          "tooManyImages": "Trop de pièces jointes dans la conversation.",
+          "imageTooLarge": "Un fichier dépasse la taille ou les dimensions autorisées.",
           "invalidKey": "La clé OpenRouter est refusée par le fournisseur : prévenez un super-administrateur.",
           "quotaExceeded": "Le crédit OpenRouter est épuisé : prévenez un super-administrateur.",
           "providerRateLimited": "Le fournisseur limite les appels : réessayez dans un instant.",
@@ -2420,6 +2420,22 @@
             "failed": "La dictée a échoué. Réessayez."
           },
           "listening": "À l’écoute… parlez, le texte s’ajoute au message."
+        },
+        "emptyTitle": "Comment puis-je vous aider ?",
+        "dropHere": "Déposez vos photos ou PDF ici",
+        "suggestions": [
+          "Quelles classes ont encore de la place ?",
+          "Inscris cette fiche d'inscription",
+          "Enregistre un paiement pour la famille",
+          "Quels sont les prochains événements ?"
+        ],
+        "family": {
+          "choose": "Famille",
+          "search": "Rechercher une famille…",
+          "results": "Familles trouvées",
+          "none": "Aucune famille trouvée.",
+          "hint": "La famille choisie sert de contexte à toute la conversation.",
+          "clear": "Retirer la famille {name}"
         }
       },
       "tools": {

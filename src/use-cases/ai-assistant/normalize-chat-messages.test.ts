@@ -132,6 +132,49 @@ describe('normalizeChatMessages', () => {
     expect(result).toEqual({ status: 'forbiddenFile' })
   })
 
+  it('passes a PDF through untouched once its signature is checked', async () => {
+    const sanitize = vi.fn(okSanitizer)
+    const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.7\n').toString('base64')}`
+    const result = await normalizeChatMessages(
+      {
+        messages: [
+          user([{ type: 'file', mediaType: 'application/pdf', filename: 'fiche.pdf', url: pdf }]),
+        ],
+      },
+      sanitize
+    )
+
+    expect(result).toEqual({
+      status: 'OK',
+      messages: [
+        {
+          id: 'm0',
+          role: 'user',
+          parts: [{ type: 'file', mediaType: 'application/pdf', filename: 'fiche.pdf', url: pdf }],
+        },
+      ],
+    })
+    expect(sanitize).not.toHaveBeenCalled()
+  })
+
+  it('refuses a PDF without its signature or whose prefix disagrees with its type', async () => {
+    const fake = `data:application/pdf;base64,${Buffer.from('<html>').toString('base64')}`
+    expect(
+      await normalizeChatMessages(
+        { messages: [user([{ type: 'file', mediaType: 'application/pdf', url: fake }])] },
+        okSanitizer
+      )
+    ).toEqual({ status: 'unreadableImage' })
+
+    const mismatched = `data:application/pdf;base64,${Buffer.from('%PDF-1.7').toString('base64')}`
+    expect(
+      await normalizeChatMessages(
+        { messages: [user([{ type: 'file', mediaType: 'image/png', url: mismatched }])] },
+        okSanitizer
+      )
+    ).toEqual({ status: 'forbiddenFile' })
+  })
+
   it('surfaces the sanitizer verdict', async () => {
     const sanitize: ImageSanitizer = async () => ({ status: 'unreadableImage' })
 

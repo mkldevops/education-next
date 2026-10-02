@@ -8,16 +8,21 @@ const TITLE_MAX = 80
 export const conversationIdSchema = z.uuid()
 
 /**
- * Les photos ne sont pas conservées : chacune devient un texte qui dit qu'il y en avait
- * une. Rouvrir la conversation la montre donc sans l'image, et le modèle sait qu'elle a
- * existé sans pouvoir la relire.
+ * Les photos et les PDF ne sont pas conservés : chacun devient un texte qui dit qu'il y en
+ * avait un. Rouvrir la conversation le montre donc sans la pièce jointe, et le modèle sait
+ * qu'elle a existé sans pouvoir la relire.
  */
 export function withoutImages(messages: UIMessage[]): UIMessage[] {
   return messages.map((message) => ({
     ...message,
     parts: message.parts.map((part) =>
       part.type === 'file'
-        ? { type: 'text' as const, text: `[photo: ${part.filename ?? 'image'}]` }
+        ? {
+            type: 'text' as const,
+            text: part.mediaType.startsWith('image/')
+              ? `[photo: ${part.filename ?? 'image'}]`
+              : `[fichier: ${part.filename ?? 'document'}]`,
+          }
         : part
     ),
   }))

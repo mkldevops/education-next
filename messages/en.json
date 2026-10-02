@@ -2357,13 +2357,13 @@
       "close": "Close the assistant",
       "title": "AI assistant",
       "subtitle": "Reads and acts on the school; every change waits for your approval.",
-      "providerNotice": "Messages, photos and the data read are sent to OpenRouter and the {model} model. Nothing changes without your approval.",
+      "providerNotice": "Messages, photos, PDFs and the data read go through OpenRouter ({model}). Nothing changes without your approval.",
       "history": {
         "show": "History",
         "back": "Back to the conversation",
         "title": "Your conversations",
         "empty": "No saved conversation.",
-        "notice": "Your conversations are saved for you only, in this school, without the photos.",
+        "notice": "Your conversations are saved for you only, in this school, without the attachments.",
         "delete": "Delete “{title}”",
         "loadError": "This conversation could not be opened.",
         "new": "New conversation"
@@ -2371,12 +2371,12 @@
       "chat": {
         "title": "Conversation",
         "empty": "Ask a question or request an action: classes, schedule, events, enrollments, payments…",
-        "placeholder": "E.g. \"Which classes still have room?\"",
+        "placeholder": "Ask anything, paste a screenshot or drop a PDF",
         "send": "Send",
         "stop": "Stop",
-        "attach": "Add a photo",
-        "attachHint": "{count} photos, {size} MB each",
-        "removeImage": "Remove the photo",
+        "attach": "Attach a photo or a PDF",
+        "attachHint": "{count} files (PNG, JPEG, WebP, PDF), {size} MB each",
+        "removeImage": "Remove the attachment",
         "imageAlt": "Attached photo {index}",
         "reset": "New conversation",
         "thinking": "The assistant is working…",
@@ -2384,9 +2384,9 @@
         "assistant": "Assistant",
         "scrollToEnd": "Jump to the latest message",
         "fileErrors": {
-          "type": "Only PNG, JPEG and WebP files are accepted.",
-          "size": "Each photo must be under {size} MB.",
-          "count": "{count} photos at most per message."
+          "type": "Only PNG, JPEG, WebP images and PDFs are accepted.",
+          "size": "Each file must be under {size} MB.",
+          "count": "{count} files at most per message."
         },
         "errors": {
           "unauthorized": "Session expired: sign in again.",
@@ -2397,10 +2397,10 @@
           "invalidRequest": "Invalid request.",
           "tooManyMessages": "The conversation is too long: start a new one.",
           "messageTooLong": "The message is too long.",
-          "forbiddenFile": "Only PNG, JPEG and WebP images are accepted.",
-          "unreadableImage": "An image could not be read.",
-          "tooManyImages": "Too many photos in the conversation.",
-          "imageTooLarge": "A photo exceeds the allowed size or dimensions.",
+          "forbiddenFile": "Only PNG, JPEG, WebP images and PDFs are accepted.",
+          "unreadableImage": "An attached file could not be read.",
+          "tooManyImages": "Too many attachments in the conversation.",
+          "imageTooLarge": "A file exceeds the allowed size or dimensions.",
           "invalidKey": "The provider rejected the OpenRouter key: tell a super admin.",
           "quotaExceeded": "The OpenRouter credit is exhausted: tell a super admin.",
           "providerRateLimited": "The provider is rate limiting calls: retry in a moment.",
@@ -2419,6 +2419,22 @@
             "failed": "Dictation failed. Try again."
           },
           "listening": "Listening… speak, the text is added to your message."
+        },
+        "emptyTitle": "How can I help?",
+        "dropHere": "Drop your photos or PDFs here",
+        "suggestions": [
+          "Which classes still have room?",
+          "Enroll this registration form",
+          "Record a payment for the family",
+          "What are the upcoming events?"
+        ],
+        "family": {
+          "choose": "Family",
+          "search": "Search a family…",
+          "results": "Families found",
+          "none": "No family found.",
+          "hint": "The chosen family is the context of the whole conversation.",
+          "clear": "Remove the family {name}"
         }
       },
       "tools": {

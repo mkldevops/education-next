@@ -18,6 +18,7 @@ import { chatErrorCode } from './chat-error'
 import { ChatPanel, type ChatPartRenderer } from './chat-panel'
 import { ConversationHistory } from './conversation-history'
 import { draftIdOf, draftPlans } from './draft-plans'
+import { type ChatFamily, FamilyPicker } from './family-picker'
 import { ToolPart } from './tool-part'
 
 const CHAT_NAMESPACE = 'dashboard.assistant.chat'
@@ -103,16 +104,22 @@ function ChatSession({ session, model, listClassName, onNew }: SessionProps) {
   const pathname = usePathname()
   const router = useRouter()
   const pageRef = useRef(pathname)
+  const [family, setFamily] = useState<ChatFamily | null>(null)
+  const familyRef = useRef(family)
 
   useEffect(() => {
     pageRef.current = pathname
   }, [pathname])
 
+  useEffect(() => {
+    familyRef.current = family
+  }, [family])
+
   const [transport] = useState(
     () =>
       new DefaultChatTransport({
         api: '/api/ai/assistant',
-        body: () => ({ page: pageRef.current }),
+        body: () => ({ page: pageRef.current, familyId: familyRef.current?.id }),
       })
   )
 
@@ -173,6 +180,14 @@ function ChatSession({ session, model, listClassName, onNew }: SessionProps) {
       status={status}
       errorMessage={chatError}
       providerNotice={t('providerNotice', { model })}
+      suggestions={t.raw('chat.suggestions') as string[]}
+      composerTools={
+        <FamilyPicker
+          value={family}
+          onChange={setFamily}
+          disabled={status === 'submitted' || status === 'streaming'}
+        />
+      }
       onSend={handleSend}
       onStop={stop}
       onReset={reset}

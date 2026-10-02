@@ -3,9 +3,14 @@ import {
   AI_ASSISTANT_DATA_URL_PREFIX,
   AI_ASSISTANT_LIMITS,
   AI_ASSISTANT_MAX_IMAGE_BASE64_LENGTH,
-  isAiAssistantImageType,
+  AI_ASSISTANT_PDF_TYPE,
+  isAiAssistantAttachmentType,
 } from '@/domain/ai-assistant'
 import type { ImageSanitizer } from './sanitize-image'
+
+const PDF_SIGNATURE = [0x25, 0x50, 0x44, 0x46, 0x2d]
+
+const isPdf = (bytes: Uint8Array) => PDF_SIGNATURE.every((byte, index) => bytes[index] === byte)
 
 type ChatMessageRefusal =
   | 'invalidRequest'
@@ -176,7 +181,7 @@ export async function normalizeChatMessages(
       }
 
       if (part.type !== 'file') return { status: 'forbiddenFile' }
-      if (typeof part.mediaType !== 'string' || !isAiAssistantImageType(part.mediaType)) {
+      if (typeof part.mediaType !== 'string' || !isAiAssistantAttachmentType(part.mediaType)) {
         return { status: 'forbiddenFile' }
       }
       if (typeof part.url !== 'string') return { status: 'forbiddenFile' }
@@ -200,13 +205,27 @@ export async function normalizeChatMessages(
         return { status: bytes.byteLength === 0 ? 'unreadableImage' : 'imageTooLarge' }
       }
 
+      const filename = typeof part.filename === 'string' ? part.filename.slice(0, 120) : undefined
+
+      if (part.mediaType === AI_ASSISTANT_PDF_TYPE || match[1] === AI_ASSISTANT_PDF_TYPE) {
+        if (part.mediaType !== match[1]) return { status: 'forbiddenFile' }
+        if (!isPdf(bytes)) return { status: 'unreadableImage' }
+        parts.push({
+          type: 'file',
+          mediaType: AI_ASSISTANT_PDF_TYPE,
+          filename,
+          url: part.url,
+        } satisfies FileUIPart)
+        continue
+      }
+
       const sanitized = await sanitize(bytes)
       if (sanitized.status !== 'OK') return { status: sanitized.status }
 
       parts.push({
         type: 'file',
         mediaType: 'image/webp',
-        filename: typeof part.filename === 'string' ? part.filename.slice(0, 120) : undefined,
+        filename,
         url: sanitized.dataUrl,
       } satisfies FileUIPart)
     }

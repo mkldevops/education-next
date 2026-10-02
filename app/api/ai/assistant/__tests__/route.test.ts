@@ -15,6 +15,7 @@ const createOpenRouterMock = vi.fn()
 const modelFactoryMock = vi.fn()
 const listSchoolToolsMock = vi.fn()
 const getSelectedPeriodMock = vi.fn()
+const findSelectedFamilyMock = vi.fn()
 
 vi.mock('next/server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/server')>()),
@@ -45,6 +46,9 @@ vi.mock('@/use-cases/mcp/purge-expired-drafts', () => ({
 vi.mock('@/use-cases/ai-assistant/sanitize-image', () => ({ sanitizeImage: sanitizeImageMock }))
 vi.mock('@/mcp/school-tools', () => ({ listSchoolTools: listSchoolToolsMock }))
 vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriod: getSelectedPeriodMock }))
+vi.mock('@/use-cases/ai-assistant/selected-family', () => ({
+  findSelectedFamily: findSelectedFamilyMock,
+}))
 
 const { GET, POST } = await import('../route')
 
@@ -206,6 +210,15 @@ describe('POST /api/ai/assistant', () => {
 
     expect(getSelectedPeriodMock).toHaveBeenCalledWith('school-1')
     expect(streamOptions().system).toContain('"2026-2027" (`period-1`)')
+  })
+
+  it('names the family chosen in the chat once the school confirms it', async () => {
+    findSelectedFamilyMock.mockResolvedValueOnce({ id: 'family-9', name: 'Martin' })
+
+    await POST(request({ messages: [textTurn], familyId: 'family-9' }))
+
+    expect(findSelectedFamilyMock).toHaveBeenCalledWith('school-1', 'family-9')
+    expect(streamOptions().system).toContain('"Martin" (`familyId` = `family-9`)')
   })
 
   it('accepts an approval answered in the last assistant message', async () => {

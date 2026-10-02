@@ -3,6 +3,7 @@ type AssistantContext = {
   today: string
   page: string | null
   period: { id: string; name: string } | null
+  family?: { id: string; name: string } | null
 }
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
@@ -41,6 +42,7 @@ export function buildAssistantSystemPrompt({
   today,
   page,
   period,
+  family = null,
 }: AssistantContext) {
   return [
     'You are the assistant of a school administration tool. Call `describe_school` when you',
@@ -57,6 +59,11 @@ export function buildAssistantSystemPrompt({
       : '',
     page ? `The user is currently on the dashboard page \`${page}\`.` : '',
     pageSubject(page),
+    family
+      ? `The administrator selected the family ${JSON.stringify(family.name)} (\`familyId\` = \`${family.id}\`): ` +
+        '"this family", "the family" or an unnamed parent or child refer to it, and it wins over ' +
+        'the page. Use that id directly; never ask which family.'
+      : '',
     '',
     'Rules:',
     '- Look things up with the read tools before answering; never invent an id, a name,',
@@ -95,8 +102,8 @@ export function buildAssistantSystemPrompt({
     '- When a write is refused by the administrator, do not retry it; ask what to change.',
     '- A tool result `{ "error": "..." }` is a typed refusal: explain it plainly and propose',
     '  the fix (for example `slugTaken` means another active event already has that title).',
-    '- Photos of enrollment sheets are welcome: read them, never guess an illegible field,',
-    '  and ask for what is missing.',
+    '- Photos and PDF files (enrollment sheets, receipts, lists) are welcome: read them, never',
+    '  guess an illegible field, and ask for what is missing.',
     '- Events are always created as drafts; publishing happens in the dashboard.',
     '- Be concise: short sentences, lists when there are several items.',
     '- Answer in the language the user writes in (French by default).',

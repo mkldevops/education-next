@@ -933,11 +933,22 @@ applies the EXIF rotation, drops every metadata block, caps the longest side and
 in memory. Nothing goes through `/api/media` or the object store, and no photo is persisted. The chat
 panel says so, and names the model, before the first send.
 
+**PDF files share the photo budget but are not rewritten.** A PDF (`application/pdf`) counts against
+the same per-message, per-request and size limits as a photo. The server requires the `data:` prefix
+and the declared media type to agree and the bytes to start with `%PDF-`; anything else is refused.
+The PDF is passed to the provider as is — there is no PDF sanitizer — and, like a photo, never stored.
+
+**The selected family is a hint, re-checked every turn.** The composer can attach one family as the
+conversation's context; the client sends only its `familyId`. The route parses it with `z.uuid()` and
+reloads it through `findSelectedFamily` (`src/use-cases/ai-assistant/selected-family.ts`), scoped to
+the active school and to active families. A foreign, inactive or malformed id is dropped silently and
+the turn runs without a family. The family grants no right: every tool still checks the school scope.
+
 **Conversations are kept, per administrator and school, without photos.** When a turn finishes, the
 route saves the whole conversation as one `AiConversation` row (`saveConversation`,
 `src/use-cases/ai-assistant/save-conversation.ts`): the id is the client's `z.uuid()`, the title is
 the first user text capped at 80 characters, and every photo part is replaced by `[photo: name]`
-before it reaches the database. The row is scoped by `schoolId` (tenant guard) and `userId`; save,
+(a PDF by `[fichier: name]`) before it reaches the database. The row is scoped by `schoolId` (tenant guard) and `userId`; save,
 list, open and delete all filter on both, so an id guessed from another administrator matches
 nothing and a save on it fails instead of overwriting. The history lists the 30 most recent; there
 is no automatic purge, and deleting a school or a user cascades. A failed save is logged and never

@@ -36,15 +36,25 @@ export function isAiAssistantImageType(value: string): value is AiAssistantImage
 }
 
 /**
+ * Un PDF n'est pas réencodé : OpenRouter l'analyse lui-même, quel que soit le modèle. Seule
+ * la signature `%PDF-` est vérifiée, pour qu'un autre format ne passe pas sous ce type.
+ */
+export const AI_ASSISTANT_PDF_TYPE = 'application/pdf'
+
+export function isAiAssistantAttachmentType(value: string) {
+  return isAiAssistantImageType(value) || value === AI_ASSISTANT_PDF_TYPE
+}
+
+/**
  * Bornes d'une requête de chat. Elles s'appliquent à la conversation entière, puisque le
  * client la renvoie à chaque tour : une photo acceptée hier compte encore aujourd'hui.
  */
 export const AI_ASSISTANT_LIMITS = {
-  /** Photos jointes à un seul message. */
+  /** Pièces jointes (photos et PDF) à un seul message. */
   maxImagesPerMessage: 4,
-  /** Photos sur toute la conversation renvoyée. */
+  /** Pièces jointes sur toute la conversation renvoyée. */
   maxImagesPerRequest: 8,
-  /** Poids d'une photo telle que reçue, avant réencodage. */
+  /** Poids d'une pièce jointe telle que reçue, avant réencodage. */
   maxImageBytes: 6 * 1024 * 1024,
   /** Surface décodée : 6000 × 6000, au-delà sharp refuse avant d'allouer. */
   maxImagePixels: 6000 * 6000,
@@ -64,7 +74,8 @@ export const AI_ASSISTANT_LIMITS = {
   requestsPerMinute: 20,
 } as const
 
-export const AI_ASSISTANT_DATA_URL_PREFIX = /^data:(image\/(?:png|jpeg|webp));base64,/
+export const AI_ASSISTANT_DATA_URL_PREFIX =
+  /^data:(image\/(?:png|jpeg|webp)|application\/pdf);base64,/
 
 /** Longueur base64 maximale déduite du poids brut : 4 caractères pour 3 octets. */
 export const AI_ASSISTANT_MAX_IMAGE_BASE64_LENGTH = Math.ceil(
