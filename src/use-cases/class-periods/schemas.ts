@@ -22,6 +22,12 @@ export const updateClassPeriodSchema = z.object({
   teacherIds: teacherIdsSchema.optional(),
 })
 
+export const assignClassPeriodTeacherSchema = z.object({
+  schoolId: z.string().min(1),
+  id: z.string().uuid(),
+  teacherId: z.string().uuid(),
+})
+
 export const unassignClassPeriodTeacherSchema = z.object({
   schoolId: z.string().min(1),
   id: z.string().uuid(),

@@ -314,3 +314,8 @@ export const previewRecordTeacherExpenseSchema = z
     message: 'teacherId or teacherName, exactly one',
     path: ['teacherId'],
   })
+
+export const mcpAssignTeacherSchema = z.object({
+  classPeriodId: z.string().uuid(),
+  teacherId: z.string().uuid(),
+})

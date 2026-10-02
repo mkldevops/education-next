@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
+import { assignTeacherFromMcp } from '@/use-cases/mcp/assign-teacher'
 import { cancelPaymentsFromMcp } from '@/use-cases/mcp/cancel-payments'
 import {
   createClassScheduleSlotFromMcp,
@@ -33,6 +34,7 @@ import {
   MCP_EVENT_LIST_DEFAULT,
   MCP_EVENT_LIST_MAX,
   MCP_STUDENT_SEARCH_MAX,
+  mcpAssignTeacherSchema,
   mcpCancelPaymentsSchema,
   mcpCreateClassScheduleSlotSchema,
   mcpCreateEventSchema,
@@ -72,6 +74,13 @@ const NON_IDEMPOTENT_WRITE = {
   readOnlyHint: false,
   destructiveHint: false,
   idempotentHint: false,
+  openWorldHint: false,
+}
+
+const IDEMPOTENT_WRITE = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
   openWorldHint: false,
 }
 
@@ -306,6 +315,20 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       annotations: NON_IDEMPOTENT_WRITE,
       kind: 'write',
       run: (args) => createTeacherFromMcp(scope, args),
+    }),
+    define({
+      name: 'assign_teacher_to_class',
+      title: 'Affecter un enseignant à une classe',
+      description:
+        "Ajoute un enseignant actif aux enseignants d'une classe de l'école, sans retirer ceux " +
+        'déjà affectés. `classPeriodId` vient de `list_class_periods`, `teacherId` de ' +
+        '`list_teachers` ou de `create_teacher`. Rend `classPeriodId`, `teacherId` et ' +
+        "`alreadyAssigned` (vrai si l'affectation existait : rien n'est écrit). Refus : " +
+        '`notFound` (classe), `teacherNotFound`, `validationError`.',
+      inputSchema: mcpAssignTeacherSchema,
+      annotations: IDEMPOTENT_WRITE,
+      kind: 'write',
+      run: (args) => assignTeacherFromMcp(scope, args),
     }),
     // Déclarés même quand `teacher_expenses_enabled` est éteint, comme les outils
     // d'événements : le refus `notConfigured` est le contrat.

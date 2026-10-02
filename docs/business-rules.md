@@ -1002,12 +1002,18 @@ The card then shows the preview's resolved plan (for a payment: family, amount, 
 the raw `draftId`/`checksum` it will send.
 
 **A new teacher needs a name, nothing else.** `create_teacher` (write, approval required) creates the
-teacher with no class and no period, like the dashboard form; assigning a class is a separate step.
+teacher with no class and no period, like the dashboard form; assigning a class is a separate step
+(`assign_teacher_to_class`, write, approval required), which the assistant chains in the same turn.
 An active teacher of the same school with the same name, in either order, or the same email
 (`teacherGateway.findPossibleDuplicates`, case-insensitive) suspends the creation: the tool answers
 `possibleDuplicate` with the matches' identity and writes nothing, and `allowDuplicate: true` creates
 the homonym once the administrator says it is someone else. The check is advisory, not a lock: two
 concurrent calls for the same name can both create. The dashboard form does not check.
+**Assistant answers link to the records they name.** The prompt lists each entity's dashboard path
+(detail page when one exists, list page otherwise) and asks for Markdown links. The chat renders only
+links and bold (`app/[locale]/(dashboard)/_components/ai-chat/message-text.tsx`), and only a link
+whose target is a `/dashboard/…` path: any other target — invented by the model or injected by a read
+document — stays plain text.
 The assistant's prompt carries the current period (`getSelectedPeriod`: the selected-period cookie,
 else the period covering today), so whenever a period is needed and none is given, the model uses
 that one instead of asking.
@@ -1247,7 +1253,14 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
   that gateway call's `where` — `{ schoolId, classPeriodId, teacherId, teacher: { isActive: false } }`
   — not only by the page hiding the button next to an active one: calling the action directly on an
   active teacher's assignment deletes nothing (`count` stays 0, same as a missing assignment). This
-  keeps `classPeriodGateway.update` the sole path that ever touches an active-teacher assignment.
+  keeps `classPeriodGateway.update` the sole path that ever replaces or removes an active-teacher
+  assignment.
+- **Assigning one teacher adds, never replaces.** `assignClassPeriodTeacher`
+  (`src/use-cases/class-periods/assign-teacher.ts`, exposed as the `assign_teacher_to_class`
+  MCP/assistant write) checks the class (`notFound`) and that the teacher is active in the same school
+  (`teacherNotFound`), then inserts one `ClassPeriodTeacher` row with `skipDuplicates`
+  (`classPeriodGateway.assignTeacher`). The class's other teachers are untouched; an existing
+  assignment answers `alreadyAssigned: true` and writes nothing, so a replay is harmless.
 
 ## Teacher access
 
