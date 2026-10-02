@@ -16,17 +16,20 @@ import {
 import { isMcpEnabled } from '@/use-cases/platform-settings/is-mcp-enabled'
 import { authorizePath, pickAuthorizeQuery } from './authorize-query'
 
-export type ConsentState = {
-  error: 'forbidden' | 'invalidRequest' | 'impersonating' | 'mcpDisabled'
-} | null
+export type ConsentState =
+  | { error: 'forbidden' | 'invalidRequest' | 'impersonating' | 'mcpDisabled' }
+  | { denied: { returnUrl: string; host: string } }
+  | null
 
 /**
  * Le seul geste qui crée une connexion. Tout est revérifié depuis le formulaire : la
  * session, l'emprunt d'identité, le drapeau plateforme, puis — dans le use case — le
  * client, l'URI, la ressource et le droit sur l'école choisie.
  *
- * Un refus explicite renvoie `access_denied` au client sur son URI enregistrée, jamais
- * sur une URI lue dans le formulaire.
+ * Un refus explicite rapporte `access_denied` au client sur son URI enregistrée, jamais
+ * sur une URI lue dans le formulaire — et par un lien que l'utilisateur suit lui-même,
+ * comme les erreurs de la page : un client enregistré anonymement ne doit pas faire du
+ * bouton « Refuser » un redirecteur (RFC 9700 §4.11).
  */
 export async function consentAction(
   _previous: ConsentState,
@@ -45,12 +48,16 @@ export async function consentAction(
     const validation = await validateAuthorizeRequest(query, origin)
     if (validation.status !== 'OK') return { error: 'invalidRequest' }
 
-    redirect(
-      authorizationResponseUrl(validation.request.redirect_uri, origin, {
-        error: 'access_denied',
-        state: validation.request.state,
-      })
-    )
+    const { redirect_uri, state } = validation.request
+    return {
+      denied: {
+        returnUrl: authorizationResponseUrl(redirect_uri, origin, {
+          error: 'access_denied',
+          state,
+        }),
+        host: new URL(redirect_uri).host,
+      },
+    }
   }
 
   // Une connexion accordée pendant un emprunt ouvrirait le MCP sous l'identité de la

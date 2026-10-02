@@ -14,4 +14,15 @@ export const mcpOAuthClientGateway = {
     db.mcpOAuthClient.create({ data, select: clientSelect }),
 
   findById: (id: string) => db.mcpOAuthClient.findUnique({ where: { id }, select: clientSelect }),
+
+  /**
+   * Un client sans connexion n'a jamais rien obtenu : le supprimer ne coupe personne. Ceux
+   * qui portent une connexion, même révoquée, restent — elle en garde la trace.
+   */
+  purgeUnused: async (createdBefore: Date) => {
+    const { count } = await db.mcpOAuthClient.deleteMany({
+      where: { createdAt: { lt: createdBefore }, grants: { none: {} } },
+    })
+    return count
+  },
 }

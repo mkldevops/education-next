@@ -187,9 +187,11 @@
         "write": "prepare and, after your confirmation in the application, record enrollments, payments and schedules;",
         "revoke": "stay connected until you revoke the access in Settings › API keys."
       },
-      "callback": "You will be sent back to {host}.",
+      "callbackLabel": "Application return address",
+      "callbackHint": "Only authorize if you recognize this address as {clientName}'s.",
       "allow": "Authorize",
       "deny": "Deny",
+      "denied": "Access denied: no connection was created.",
       "errors": {
         "title": "Request unavailable",
         "invalidClient": "The application asking for access is not registered on this site.",

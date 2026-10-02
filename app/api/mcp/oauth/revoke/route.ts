@@ -20,7 +20,8 @@ export async function POST(request: Request) {
     const body = await readOAuthBody(request)
     if (!body) return oauthError('invalid_request')
 
-    await revokeOAuthToken(body.token)
+    const result = await revokeOAuthToken({ token: body.token, clientId: body.client_id })
+    if (result === 'invalid_client') return oauthError('invalid_client', 401)
 
     return oauthJson({})
   } catch (error) {

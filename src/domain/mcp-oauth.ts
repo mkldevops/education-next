@@ -27,6 +27,13 @@ export const MCP_OAUTH_CODE_TTL_SECONDS = 5 * 60
 export const MCP_OAUTH_ACCESS_TOKEN_TTL_SECONDS = 60 * 60
 const MCP_OAUTH_REFRESH_TOKEN_TTL_DAYS = 30
 
+/**
+ * L'enregistrement est anonyme : un client qui n'a obtenu aucune connexion dans la journée
+ * ne sert plus à rien et tombe à la purge. Un client légitime enregistre puis consent dans
+ * la foulée ; s'il revient plus tard, il se réenregistre.
+ */
+const MCP_OAUTH_UNUSED_CLIENT_TTL_DAYS = 1
+
 /** Seule portée existante : le MCP n'ouvre que l'administration d'école. */
 export const MCP_OAUTH_SCOPE = 'school:admin'
 
@@ -77,6 +84,11 @@ export function accessTokenExpiry(now: Date = new Date()): Date {
 
 export function refreshTokenExpiry(now: Date = new Date()): Date {
   return new Date(now.getTime() + MCP_OAUTH_REFRESH_TOKEN_TTL_DAYS * DAY_MS)
+}
+
+/** Les clients enregistrés avant cette date et sans aucune connexion sont purgés. */
+export function unusedClientCutoff(now: Date = new Date()): Date {
+  return new Date(now.getTime() - MCP_OAUTH_UNUSED_CLIENT_TTL_DAYS * DAY_MS)
 }
 
 /**

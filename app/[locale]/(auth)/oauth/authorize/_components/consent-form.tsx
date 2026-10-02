@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, cn } from '@peaklab/ui'
+import { Button, buttonVariants, cn } from '@peaklab/ui'
 import { Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useActionState, useState } from 'react'
@@ -29,6 +29,17 @@ export function ConsentForm({ query, schools, account, clientName, callbackHost 
 
   const noSchool = schools.length === 0
 
+  if (state && 'denied' in state) {
+    return (
+      <div className="space-y-6">
+        <FormAlert>{t('denied')}</FormAlert>
+        <a href={state.denied.returnUrl} className={cn(buttonVariants({ variant: 'outline' }))}>
+          {t('errors.returnToClient', { host: state.denied.host })}
+        </a>
+      </div>
+    )
+  }
+
   return (
     <form action={formAction} className="space-y-6">
       {AUTHORIZE_PARAMS.map((name) =>
@@ -37,7 +48,7 @@ export function ConsentForm({ query, schools, account, clientName, callbackHost 
         )
       )}
 
-      {state?.error && <FormAlert>{t(`errors.${state.error}`)}</FormAlert>}
+      {state && 'error' in state && <FormAlert>{t(`errors.${state.error}`)}</FormAlert>}
 
       <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm leading-6">
         <p className="text-muted-foreground">{t('account')}</p>
@@ -83,7 +94,12 @@ export function ConsentForm({ query, schools, account, clientName, callbackHost 
           <li>{t('permissions.write')}</li>
           <li>{t('permissions.revoke')}</li>
         </ul>
-        <p className="text-xs">{t('callback', { host: callbackHost })}</p>
+      </div>
+
+      <div className="rounded-lg border border-warning/30 bg-warning-subtle px-4 py-3 text-sm leading-6">
+        <p className="text-muted-foreground">{t('callbackLabel')}</p>
+        <p className="break-all font-mono font-medium text-foreground">{callbackHost}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t('callbackHint', { clientName })}</p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">

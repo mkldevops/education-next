@@ -109,13 +109,15 @@ describe('consentAction', () => {
     )
   })
 
-  it('returns access_denied to the registered URI, never to one read from the form', async () => {
-    await expect(
-      consentAction(null, approve({ decision: 'deny', redirect_uri: 'https://evil.example/cb' }))
-    ).rejects.toBeInstanceOf(RedirectSignal)
+  it('reports access_denied by a link to the registered URI, never by a redirect', async () => {
+    const result = await consentAction(
+      null,
+      approve({ decision: 'deny', redirect_uri: 'https://evil.example/cb' })
+    )
 
-    const [to] = redirectMock.mock.calls[0]
-    const url = new URL(to)
+    expect(redirectMock).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ denied: { host: 'chatgpt.com' } })
+    const url = new URL(result && 'denied' in result ? result.denied.returnUrl : '')
     expect(`${url.origin}${url.pathname}`).toBe(REDIRECT_URI)
     expect(url.searchParams.get('error')).toBe('access_denied')
     expect(url.searchParams.get('state')).toBe('xyz')

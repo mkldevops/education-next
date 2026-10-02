@@ -187,9 +187,11 @@
         "write": "préparer puis, après votre validation dans l'application, enregistrer inscriptions, paiements et plannings ;",
         "revoke": "rester connecté jusqu'à ce que vous révoquiez l'accès dans Paramètres › Clés API."
       },
-      "callback": "Vous serez renvoyé vers {host}.",
+      "callbackLabel": "Adresse de retour de l'application",
+      "callbackHint": "N'autorisez que si vous reconnaissez cette adresse comme celle de {clientName}.",
       "allow": "Autoriser",
       "deny": "Refuser",
+      "denied": "Accès refusé : aucune connexion n'a été créée.",
       "errors": {
         "title": "Demande impossible",
         "invalidClient": "L'application qui demande l'accès n'est pas enregistrée sur ce site.",
