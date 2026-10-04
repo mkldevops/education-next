@@ -190,4 +190,56 @@ describe('ClassDetailPage, ressource dans l’école active', () => {
     expect(screen.queryByText('plan') !== null).toBe(visible)
     expect(screen.queryByText('unpriced.badge') !== null).toBe(visible)
   })
+
+  it('shows each student age and sex, with a dash when unknown', async () => {
+    dbMock.classPeriod.findFirst.mockResolvedValue({
+      id: 'class-1',
+      schoolId: AL_NOUR.id,
+      name: 'CP-A',
+      capacity: 20,
+      levelId: 'level-1',
+      periodId: 'period-1',
+      level: { name: 'CP' },
+      period: { name: '2026-2027' },
+      classAssignments: [
+        {
+          id: 'assignment-1',
+          startAt: new Date('2026-09-15'),
+          enrollment: {
+            id: 'enrollment-1',
+            status: 'ACTIVE',
+            plan: { name: 'Forfait' },
+            student: {
+              id: 'student-1',
+              birthday: new Date('2018-03-02'),
+              person: { name: 'Yasmine', lastname: 'Benali', sex: 'FEMALE' },
+            },
+          },
+        },
+        {
+          id: 'assignment-2',
+          startAt: new Date('2026-09-15'),
+          enrollment: {
+            id: 'enrollment-2',
+            status: 'ACTIVE',
+            plan: { name: 'Forfait' },
+            student: {
+              id: 'student-2',
+              birthday: null,
+              person: { name: 'Adam', lastname: 'Kaci', sex: null },
+            },
+          },
+        },
+      ],
+      teachers: [],
+    })
+    dbMock.teacher.findMany.mockResolvedValue([])
+    dbMock.classPeriodTeacher.findMany.mockResolvedValue([])
+
+    render(await ClassDetailPage({ params: Promise.resolve({ locale: 'fr', id: 'class-1' }) }))
+
+    expect(screen.getByText('ageValue')).toBeInTheDocument()
+    expect(screen.getByText('female')).toBeInTheDocument()
+    expect(screen.getAllByText('—')).toHaveLength(2)
+  })
 })

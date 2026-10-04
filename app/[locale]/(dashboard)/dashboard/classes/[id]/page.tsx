@@ -1,5 +1,5 @@
 import { Breadcrumbs, buttonVariants, Card, StatusBadge } from '@peaklab/ui'
-import { Printer } from 'lucide-react'
+import { Eye, Printer } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
@@ -8,7 +8,7 @@ import { cache } from 'react'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { Link } from '@/i18n/routing'
-import { formatDate } from '@/lib/date'
+import { calculateAge, formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -136,10 +136,13 @@ export default async function ClassDetailPage({ params }: Props) {
       status: assignment.enrollment.status,
       planName: assignment.enrollment.plan.name,
       studentId: assignment.enrollment.student.id,
+      birthday: assignment.enrollment.student.birthday,
+      sex: assignment.enrollment.student.person.sex,
       studentName: `${assignment.enrollment.student.person.name} ${assignment.enrollment.student.person.lastname}`,
     }))
     .sort((a, b) => a.studentName.localeCompare(b.studentName, locale))
 
+  const today = new Date()
   const seatsLeft = Math.max(0, classPeriod.capacity - roster.length)
 
   const kpis = [
@@ -271,10 +274,12 @@ export default async function ClassDetailPage({ params }: Props) {
               <thead className="bg-alabaster-900">
                 <tr className="text-xs font-medium uppercase tracking-wide text-graphite-600">
                   <th className="px-4 py-3">{t('student')}</th>
+                  <th className="px-4 py-3">{t('age')}</th>
+                  <th className="px-4 py-3">{t('sex')}</th>
                   {paymentsEnabled && <th className="px-4 py-3">{t('plan')}</th>}
                   <th className="px-4 py-3">{t('status')}</th>
                   <th className="px-4 py-3">{t('since')}</th>
-                  <th className="px-4 py-3 text-right">{t('enrollment')}</th>
+                  <th className="px-4 py-3 text-right">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-alabaster-800">
@@ -287,6 +292,14 @@ export default async function ClassDetailPage({ params }: Props) {
                       >
                         {row.studentName}
                       </Link>
+                    </td>
+                    <td className="px-4 py-3 text-graphite tabular-nums">
+                      {row.birthday
+                        ? t('ageValue', { age: calculateAge(row.birthday, today) })
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-graphite">
+                      {row.sex === 'MALE' ? t('male') : row.sex === 'FEMALE' ? t('female') : '—'}
                     </td>
                     {paymentsEnabled && (
                       <td className="px-4 py-3 text-graphite">
@@ -306,9 +319,11 @@ export default async function ClassDetailPage({ params }: Props) {
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/dashboard/enrollments/${row.enrollmentId}`}
-                        className="text-sm text-primary hover:underline"
+                        aria-label={t('openEnrollmentOf', { student: row.studentName })}
+                        title={t('openEnrollment')}
+                        className={buttonVariants({ variant: 'ghost', size: 'icon' })}
                       >
-                        {t('openEnrollment')}
+                        <Eye className="h-4 w-4" />
                       </Link>
                     </td>
                   </tr>
