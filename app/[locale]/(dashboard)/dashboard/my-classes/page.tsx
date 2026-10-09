@@ -1,5 +1,5 @@
 import { Breadcrumbs } from '@peaklab/ui'
-import { ArrowRight, CalendarDays, ClipboardCheck, GraduationCap } from 'lucide-react'
+import { ArrowRight, CalendarDays, ClipboardCheck, GraduationCap, Users } from 'lucide-react'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { readsAsOptedIn } from '@/domain/feature-flags'
@@ -84,6 +84,13 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
                     <span className="min-w-0 break-words">{classPeriod.period.name}</span>
                   </p>
                 </div>
+                <Link
+                  href={`/dashboard/my-classes/${classPeriod.id}`}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                >
+                  <Users aria-hidden="true" className="size-4 shrink-0" />
+                  {t('viewClass')}
+                </Link>
               </div>
               {attendanceEnabled && (
                 <div className="border-t border-alabaster-800 bg-alabaster-900/50 p-4">

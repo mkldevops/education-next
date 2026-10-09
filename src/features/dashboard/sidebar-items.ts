@@ -58,6 +58,12 @@ const MY_CLASSES: NavItemConfig = {
   key: 'myClasses',
 }
 
+const MY_FAMILIES: NavItemConfig = {
+  href: '/dashboard/my-families',
+  icon: Users,
+  key: 'myFamilies',
+}
+
 const todayItems: NavItemConfig[] = [
   { href: '/dashboard', icon: House, key: 'dashboard' },
   { href: '/dashboard/attendance', icon: ClipboardCheck, key: 'attendance', feature: 'attendance' },
@@ -175,7 +181,7 @@ export function resolveNavItems({
           ...(features.classSchedule
             ? [{ href: '/dashboard/planning', icon: CalendarRange, key: 'planning' }]
             : []),
-          ...(hasTeacherCapability ? [MY_CLASSES] : []),
+          ...(hasTeacherCapability ? [MY_CLASSES, MY_FAMILIES] : []),
         ]),
         ...administration,
       ],
@@ -187,9 +193,13 @@ export function resolveNavItems({
     return {
       sections: section('teaching', [
         MY_CLASSES,
+        ...(features.classSchedule
+          ? [{ href: '/dashboard/planning', icon: CalendarRange, key: 'planning' }]
+          : []),
         ...(features.attendance
           ? [{ href: '/dashboard/attendance', icon: ClipboardCheck, key: 'attendance' }]
           : []),
+        MY_FAMILIES,
       ]),
       bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }],
     }

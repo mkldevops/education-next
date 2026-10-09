@@ -7,6 +7,7 @@ import { type CSSProperties, useEffect, useState } from 'react'
 import { ArchiveTeacherDialog } from './archive-teacher-dialog'
 import { DeleteTeacherDialog } from './delete-teacher-dialog'
 import { EditTeacherDialog } from './edit-teacher-dialog'
+import { InviteTeacherButton } from './invite-teacher-button'
 
 interface Props {
   teacher: {
@@ -17,11 +18,12 @@ interface Props {
     phone: string | null
     userId: string | null
   }
+  invitationPending: boolean
 }
 
 const MENU_WIDTH = 224
 
-export function TeacherActionsMenu({ teacher }: Props) {
+export function TeacherActionsMenu({ teacher, invitationPending }: Props) {
   const t = useTranslations('dashboard.pages.teachers')
   const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
   const [anchor, setAnchor] = useState<CSSProperties>()
@@ -68,6 +70,14 @@ export function TeacherActionsMenu({ teacher }: Props) {
           open ? '' : 'hidden'
         }`}
       >
+        {!teacher.userId && (
+          <InviteTeacherButton
+            teacherId={teacher.id}
+            hasEmail={Boolean(teacher.email)}
+            pending={invitationPending}
+            triggerRole="menuitem"
+          />
+        )}
         <EditTeacherDialog teacher={teacher} triggerRole="menuitem" restoreFocusRef={triggerRef} />
         <ArchiveTeacherDialog
           teacherId={teacher.id}

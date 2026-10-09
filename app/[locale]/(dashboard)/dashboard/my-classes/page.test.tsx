@@ -57,7 +57,11 @@ describe('MyClassesPage', () => {
   it('does not offer attendance when the feature is disabled', async () => {
     mocks.config.mockResolvedValue({ value: 'false' })
     await renderPage()
-    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /attendanceFor/ })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'viewClass' })[0]).toHaveAttribute(
+      'href',
+      '/dashboard/my-classes/class-1'
+    )
     expect(screen.getByText('subtitleReadOnly')).toBeInTheDocument()
   })
 

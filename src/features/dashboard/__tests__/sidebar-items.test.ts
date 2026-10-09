@@ -121,7 +121,28 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true },
     })
 
-    expect(keys(all(items))).toEqual(['dashboard', 'myFamily', 'myClasses'])
+    expect(keys(all(items))).toEqual(['dashboard', 'myFamily', 'myClasses', 'myFamilies'])
+  })
+
+  it('gives a teacher their planning and the families they registered', () => {
+    const items = resolveNavItems({
+      role: 'TEACHER',
+      isSuperAdmin: false,
+      features: { events: false, payments: true, classSchedule: true, attendance: true },
+    })
+    const withoutSchedule = resolveNavItems({
+      role: 'TEACHER',
+      isSuperAdmin: false,
+      features: { events: false, payments: true },
+    })
+
+    expect(keys(group(items, 'teaching'))).toEqual([
+      'myClasses',
+      'planning',
+      'attendance',
+      'myFamilies',
+    ])
+    expect(keys(all(withoutSchedule))).toEqual(['myClasses', 'myFamilies'])
   })
 
   it('keeps admin navigation and adds their linked teacher classes', () => {

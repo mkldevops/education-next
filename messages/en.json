@@ -275,7 +275,8 @@
       "planning": "Schedule",
       "attendance": "Attendance tracking",
       "superAdmins": "Super admins",
-      "enrollAssistant": "AI assistant"
+      "enrollAssistant": "AI assistant",
+      "myFamilies": "My families"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -318,7 +319,8 @@
         "family": "Family space",
         "teaching": "Teaching"
       },
-      "enrollAssistant": "AI assistant"
+      "enrollAssistant": "AI assistant",
+      "myFamilies": "My families"
     },
     "pages": {
       "families": {
@@ -1784,7 +1786,8 @@
         "attendanceFor": "Take attendance — {name}",
         "empty": "No class is currently assigned to you.",
         "details": "{level} · {period}",
-        "attendance": "Take attendance"
+        "attendance": "Take attendance",
+        "viewClass": "View class"
       },
       "attendance": {
         "title": "Attendance",
@@ -1912,7 +1915,8 @@
           "classes": "Classes",
           "classLabel": "{className} ({level} — {period})",
           "noClasses": "No class",
-          "empty": "No teacher registered"
+          "empty": "No teacher registered",
+          "access": "Access"
         },
         "create": {
           "title": "New teacher",
@@ -1925,8 +1929,12 @@
           "success": "Teacher created",
           "error": "Error creating teacher",
           "errors": {
-            "validationError": "Check the information you entered"
-          }
+            "validationError": "Check the information you entered",
+            "missingEmail": "Add an email to send the invitation",
+            "invitationFailed": "Teacher created, but the invitation could not be sent"
+          },
+          "invite": "Send an invitation to create their access",
+          "inviteHint": "The teacher receives a link valid for 48 hours. Requires an email."
         },
         "edit": {
           "title": "Edit",
@@ -1997,6 +2005,29 @@
               "notFound": "Teacher not found",
               "notConfigured": "Expense notes are not enabled"
             }
+          }
+        },
+        "access": {
+          "active": "Active access",
+          "invited": "Invitation sent",
+          "expired": "Invitation expired",
+          "none": "No access"
+        },
+        "invite": {
+          "action": "Invite",
+          "resend": "Resend invitation",
+          "success": "Invitation sent",
+          "resent": "Invitation resent",
+          "pending": "Invitation pending",
+          "missingEmailHint": "Add an email to the teacher to invite them",
+          "error": "The invitation could not be sent",
+          "errors": {
+            "invalidInput": "Check the information entered",
+            "notFound": "Teacher not found or archived",
+            "alreadyLinked": "This teacher already has access",
+            "missingEmail": "Add an email to the teacher to invite them",
+            "emailError": "The invitation email could not be sent",
+            "alreadyMember": "This account already belongs to this school"
           }
         }
       },
@@ -2079,7 +2110,8 @@
           "classOverlap": "This class already has an overlapping time slot",
           "teacherOverlap": "A teacher already has an overlapping time slot",
           "notFound": "Time slot not found"
-        }
+        },
+        "teacherHint": "Your slots will appear here once your classes are scheduled."
       },
       "events": {
         "title": "Events",
@@ -2267,6 +2299,98 @@
           "title": "Assistant unavailable",
           "description": "No OpenRouter key is configured. A super admin must enter it under Configuration → Integrations.",
           "configure": "Configure the key"
+        }
+      },
+      "myClassDetails": {
+        "title": "My class",
+        "count": "{count, plural, =0 {No students} one {# student} other {# students}}",
+        "takeAttendance": "Take attendance",
+        "tabs": {
+          "students": "Students",
+          "contacts": "Parent contacts",
+          "history": "Attendance history"
+        },
+        "noStudents": "No students in this class.",
+        "student": "Student",
+        "age": "Age",
+        "ageValue": "{age} years",
+        "sex": "Sex",
+        "male": "Boy",
+        "female": "Girl",
+        "allergies": "Allergies",
+        "canLeaveAlone": "Leaves alone",
+        "yes": "Yes",
+        "no": "No",
+        "noContacts": "No contact provided",
+        "family": "{name} family",
+        "relation": {
+          "PARENT": "Parent",
+          "TUTOR": "Guardian"
+        },
+        "emergencyContact": "Emergency: {name} — {phone}",
+        "history": {
+          "empty": "No attendance taken for this class.",
+          "date": "Date",
+          "slot": "Slot",
+          "status": "Status",
+          "counts": "Present / late / absent",
+          "countsValue": "{present} / {late} / {absent}",
+          "rate": "Attendance",
+          "open": "Open",
+          "adhoc": "Unscheduled",
+          "statuses": {
+            "DRAFT": "Draft",
+            "VALIDATED": "Validated",
+            "CANCELLED": "Cancelled"
+          }
+        }
+      },
+      "myFamilies": {
+        "title": "My families",
+        "description": "Families you registered. The office then enrolls them in a class.",
+        "empty": "You have not registered any family yet.",
+        "contacts": "Contacts",
+        "students": "Students",
+        "noContacts": "No contacts",
+        "noStudents": "No students",
+        "age": "{age} years",
+        "enrolled": "Enrolled",
+        "awaitingEnrollment": "Awaiting enrollment",
+        "createFamily": {
+          "title": "Add a family",
+          "name": "Family name",
+          "parent": "Parent or guardian",
+          "firstname": "First name",
+          "lastname": "Last name",
+          "phone": "Phone",
+          "email": "Email",
+          "hint": "Then add the students from the family card.",
+          "cancel": "Cancel",
+          "submit": "Create",
+          "success": "Family created",
+          "error": "The family could not be created",
+          "errors": {
+            "validationError": "Check the information entered"
+          }
+        },
+        "createStudent": {
+          "title": "Add a student",
+          "firstname": "First name",
+          "lastname": "Last name",
+          "sex": "Sex",
+          "unspecified": "Not specified",
+          "male": "Boy",
+          "female": "Girl",
+          "birthday": "Date of birth",
+          "allergies": "Allergies",
+          "cancel": "Cancel",
+          "submit": "Add",
+          "success": "Student added",
+          "error": "The student could not be added",
+          "errors": {
+            "validationError": "Check the information entered",
+            "notFound": "Family not found"
+          }
         }
       }
     },

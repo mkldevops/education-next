@@ -252,6 +252,16 @@ export const classScheduleGateway = {
     }))
   },
 
+  listByTeacherAndPeriod: (schoolId: string, teacherId: string, periodId: string) =>
+    db.classScheduleSlot.findMany({
+      where: {
+        schoolId,
+        classPeriod: { periodId, isActive: true, teachers: { some: { teacherId } } },
+      },
+      include: slotInclude,
+      orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
+    }),
+
   listPublicBySchoolAndPeriod: (schoolId: string, periodId: string) =>
     db.classScheduleSlot.findMany({
       where: { schoolId, classPeriod: { periodId } },

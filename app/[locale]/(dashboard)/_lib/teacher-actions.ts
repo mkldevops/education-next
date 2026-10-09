@@ -14,17 +14,27 @@ import type {
 } from '@/use-cases/teachers/schemas'
 import { updateTeacher } from '@/use-cases/teachers/update-teacher'
 import { requireSchoolAdmin } from './auth-helper'
+import { inviteTeacherAction } from './invitation-actions'
 
 type CreateTeacherInput = z.infer<typeof createTeacherSchema>
 type UpdateTeacherInput = z.infer<typeof updateTeacherSchema>
 type CreateTeacherExpenseInput = z.infer<typeof createTeacherExpenseSchema>
 
-export async function createTeacherAction(data: Omit<CreateTeacherInput, 'schoolId'>) {
+export async function createTeacherAction(
+  data: Omit<CreateTeacherInput, 'schoolId'>,
+  options: { invite?: boolean } = {}
+) {
   const { schoolId } = await requireSchoolAdmin()
+  if (options.invite && !data.email) return 'missingEmail' as const
   const result = await createTeacher({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/teachers')
-  return result
+  if (!options.invite) return result
+
+  // La fiche existe déjà : un échec d'envoi ne l'annule pas. Le résultat reste un succès
+  // pour fermer le formulaire, sans quoi une nouvelle soumission doublerait l'enseignant.
+  const invited = await inviteTeacherAction({ teacherId: result.id })
+  return { ...result, invitationSent: invited === 'OK' }
 }
 
 export async function updateTeacherAction(
