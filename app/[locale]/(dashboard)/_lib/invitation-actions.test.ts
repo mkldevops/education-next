@@ -9,7 +9,13 @@ const dbMock = {
   user: { findUnique: vi.fn() },
   familyPerson: { findFirst: vi.fn() },
   teacher: { findUnique: vi.fn() },
-  invitation: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  invitation: {
+    create: vi.fn(),
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
 }
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
@@ -27,7 +33,7 @@ vi.mock('./invitation-email', () => ({
   sendInvitationEmail: sendInvitationEmailMock,
 }))
 
-const { inviteUserAction } = await import('./invitation-actions')
+const { inviteTeacherAction, inviteUserAction } = await import('./invitation-actions')
 
 const INPUT = { email: 'parent@school.test', role: 'PARENT' }
 const TEACHER_ID = '11111111-1111-4111-8111-111111111111'
@@ -43,6 +49,7 @@ beforeEach(() => {
   dbMock.familyPerson.findFirst.mockResolvedValue({ personId: PERSON_ID })
   findMembershipMock.mockResolvedValue(null)
   sendInvitationEmailMock.mockResolvedValue('OK')
+  dbMock.invitation.findFirst.mockResolvedValue(null)
   dbMock.teacher.findUnique.mockResolvedValue({
     id: TEACHER_ID,
     email: 'teacher@school.test',
@@ -251,5 +258,54 @@ describe('inviteUserAction', () => {
     expect(dbMock.invitation.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ schoolId: 'school-b' }) })
     )
+  })
+})
+
+describe('inviteTeacherAction', () => {
+  it('invites the address recorded on the teacher record', async () => {
+    expect(await inviteTeacherAction({ teacherId: TEACHER_ID })).toBe('OK')
+    expect(dbMock.invitation.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          email: 'teacher@school.test',
+          role: 'TEACHER',
+          teacherId: TEACHER_ID,
+        }),
+      })
+    )
+  })
+
+  it('resends the open invitation instead of creating a second one', async () => {
+    dbMock.invitation.findFirst.mockResolvedValue({
+      id: 'invitation-1',
+      email: 'teacher@school.test',
+    })
+    dbMock.invitation.findUnique.mockResolvedValue({
+      id: 'invitation-1',
+      email: 'teacher@school.test',
+      locale: 'fr',
+      usedAt: null,
+    })
+
+    expect(await inviteTeacherAction({ teacherId: TEACHER_ID })).toBe('OK')
+    expect(dbMock.invitation.update).toHaveBeenCalled()
+    expect(dbMock.invitation.create).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [{ userId: 'user-1' }, 'alreadyLinked'],
+    [{ email: null }, 'missingEmail'],
+    [{ isActive: false }, 'notFound'],
+  ])('refuses a teacher record %o with %s', async (override, expected) => {
+    dbMock.teacher.findUnique.mockResolvedValue({
+      id: TEACHER_ID,
+      email: 'teacher@school.test',
+      userId: null,
+      isActive: true,
+      ...override,
+    })
+
+    expect(await inviteTeacherAction({ teacherId: TEACHER_ID })).toBe(expected)
+    expect(dbMock.invitation.create).not.toHaveBeenCalled()
   })
 })

@@ -1,4 +1,4 @@
-import { Breadcrumbs, Card, type Column, DataTable, Tabs } from '@peaklab/ui'
+import { Breadcrumbs, Card, type Column, DataTable, StatusBadge, Tabs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -37,7 +37,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.teachers')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const [teachers, expenses, expensesEnabled] = await Promise.all([
+  const [teachers, expenses, expensesEnabled, pendingInvitations] = await Promise.all([
     db.teacher.findMany({
       where: { schoolId, isActive: true },
       include: {
@@ -62,7 +62,29 @@ export default async function TeachersPage({ params, searchParams }: Props) {
       orderBy: { requestedAt: 'desc' },
     }),
     isTeacherExpensesEnabled(schoolId),
+    db.invitation.findMany({
+      where: { schoolId, usedAt: null, teacherId: { not: null } },
+      select: { teacherId: true, expiresAt: true },
+      orderBy: { createdAt: 'asc' },
+    }),
   ])
+
+  const invitationExpiry = new Map(
+    pendingInvitations.map((invitation) => [invitation.teacherId, invitation.expiresAt])
+  )
+  const now = new Date()
+  const accessStatus = (teacher: { id: string; userId: string | null }) => {
+    if (teacher.userId) return 'active' as const
+    const expiresAt = invitationExpiry.get(teacher.id)
+    if (!expiresAt) return 'none' as const
+    return expiresAt > now ? ('invited' as const) : ('expired' as const)
+  }
+  const ACCESS_BADGE = {
+    active: 'green',
+    invited: 'blue',
+    expired: 'amber',
+    none: 'gray',
+  } as const
 
   const teacherOptions = teachers.map((teacher) => ({
     id: teacher.id,
@@ -106,6 +128,14 @@ export default async function TeachersPage({ params, searchParams }: Props) {
           : t('teachers.noClasses'),
     },
     {
+      key: 'access',
+      header: t('teachers.access'),
+      render: (teacher) => {
+        const status = accessStatus(teacher)
+        return <StatusBadge status={ACCESS_BADGE[status]} label={t(`access.${status}`)} />
+      },
+    },
+    {
       key: 'actions',
       header: t('actions'),
       headerClassName: 'text-right',
@@ -120,6 +150,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
             phone: teacher.phone,
             userId: teacher.userId,
           }}
+          invitationPending={invitationExpiry.has(teacher.id)}
         />
       ),
     },

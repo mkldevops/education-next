@@ -1267,10 +1267,13 @@ Owner: `src/domain/class-period.ts`, `src/use-cases/class-periods/`.
 Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
 
 - An active `Teacher` profile linked to a user in the same school grants teacher capability. It can complement an existing `ADMIN` or `PARENT` membership, or accompany a `TEACHER`-only membership.
-- Its dashboard surfaces are **My classes** and **Attendance tracking**. Both are scoped by the school and current profile's active `ClassPeriodTeacher` assignments; removing an assignment removes that class and its attendance access immediately.
+- Its dashboard surfaces are **My classes**, a class sheet per class (`/dashboard/my-classes/[id]`), **Attendance tracking**, the **Planning** and **My families**. Class surfaces are scoped by the school and current profile's active `ClassPeriodTeacher` assignments; removing an assignment removes that class, its sheet, its planning slots and its attendance access immediately. Another class answers `notFound()`.
+- **The class sheet is read-only.** It lists the class roster (same window as the admin class page: open assignment, `PENDING`/`ACTIVE`/`COMPLETED` enrollment, active student) with age, sex, allergies and "leaves alone"; the `PARENT`/`TUTOR` contacts of each student's active families (phones, email, emergency contact); and, when attendance is enabled, the last 60 calls with counts and a presence rate (`summarizeAttendance`, `src/domain/attendance-summary.ts`: present + late over recorded entries, none without a recorded entry).
+- **The planning shows only the teacher's classes** (`classScheduleGateway.listByTeacherAndPeriod`), read-only, with attendance links when attendance is enabled. Staff keep the school planning and a parent with a linked family keeps the family planning, even with teacher capability.
+- **A teacher may register a family and its students, never enroll them.** `createFamilyAsTeacherAction` writes the family with `createdById` = the teacher's user and one parent; `createStudentAsTeacherAction` only accepts a family the same user created in the school (`notFound` otherwise). **My families** lists only those families; enrollment, plans and payments stay with the administration, which sees them in **Families**.
 - A `TEACHER`-only member entering `/dashboard` is redirected to **My classes**. A parent who also has teacher capability retains the parent dashboard, as do school and platform administrators.
 - A teacher invitation names an active, unlinked teacher profile and binds it atomically when accepted; a profile archived in the meantime is no longer bound (see **Invitations**). Revoking teacher access unlinks that profile without changing an ADMIN/PARENT membership; for a `TEACHER`-only member, it also removes the now-capabilityless membership. Removing any school membership clears the profile link, revoking access and making the profile available for a replacement.
-- Teacher memberships never authorize families, payments, users, configuration, classes administration, or other schools.
+- Teacher memberships never authorize the families list, payments, users, configuration, classes administration, or other schools. Their family access is limited to the parent contacts of their own classes and the families they registered.
 - **Archiving a teacher preserves history** (`isActive: false`) while clearing `Teacher.userId` and
   removing a `TEACHER`-only school membership. Existing class, planning, expense, and invitation
   rows remain attached and therefore auditable.
@@ -2004,7 +2007,7 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
 - **Visibility is an ordered scale, not a set of independent tags**: `PUBLIC ⊂ MEMBERS ⊂ STAFF`
   (`EventVisibility`, `prisma/schema.prisma`). `visibleEventVisibilities()` (`src/domain/event.ts`)
   turns a viewer into the list of visibilities it may read, which replaces a viewer × category
-  matrix. There is no `TEACHER` audience yet: teacher capability is restricted to **My classes**, so a
+  matrix. There is no `TEACHER` audience yet: teacher capability does not open **Events**, so a
   teacher-only event visibility would be unreachable by its intended audience.
 - **`EventCategory` is purely presentational** — icon, color, filter — and never restricts who can
   see an event. Confidentiality lives exclusively in `EventVisibility`; keeping the two axes separate
@@ -2207,8 +2210,14 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
 - Issuing, resending and revoking an invitation require an admin. **Accepting one is intentionally
   public** — that is the point of the link — but only on the path that creates the account. When the
   invited address already has one, acceptance requires a session (see below).
-- **An invitation can only grant `ADMIN` or `PARENT`** — now guaranteed by the `SchoolRole` type
-  itself rather than by a validation branch. Platform level is not grantable by invitation.
+- **An invitation grants `ADMIN`, `PARENT` or `TEACHER`**; a `TEACHER` invitation must name a
+  teacher profile. Platform level is not grantable by invitation.
+- **The teachers page invites from the profile** (`inviteTeacherAction`): the address is the
+  profile's email, never a client value (`missingEmail` without one, `alreadyLinked` once bound). An
+  open invitation for that profile and address is resent rather than doubled. Creating a teacher can
+  send the invitation in the same step; when the email fails the creation still succeeds
+  (`invitationSent: false`, shown as a warning) so a resubmission cannot duplicate the profile. The teachers list shows each profile's access: active, invited, expired or
+  none.
 - **An invitation carries its school** (`Invitation.schoolId`, taken from the issuer's active
   school). Accepting it creates the `SchoolMember` first, then the `UserFamily` — that order is
   imposed by the composite foreign key `UserFamily → SchoolMember`.

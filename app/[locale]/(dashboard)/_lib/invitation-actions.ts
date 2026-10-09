@@ -126,7 +126,41 @@ export async function inviteUserAction(input: {
 
   revalidatePath('/dashboard/users')
   if (familyId) revalidatePath(`/dashboard/families/${familyId}`)
+  if (teacherId) revalidatePath('/dashboard/teachers')
   return 'OK'
+}
+
+/**
+ * Invitation depuis la fiche enseignant : l'adresse est celle de la fiche, jamais une
+ * saisie du client. Une invitation encore ouverte pour cette fiche est renvoyée plutôt
+ * que doublée, ce qui invalide l'ancien lien.
+ */
+export async function inviteTeacherAction(input: { teacherId: string }) {
+  const { schoolId } = await requireSchoolAdmin()
+
+  const parsed = z.object({ teacherId: z.uuid() }).safeParse(input)
+  if (!parsed.success) return 'invalidInput'
+
+  const teacher = await db.teacher.findUnique({
+    where: { id_schoolId: { id: parsed.data.teacherId, schoolId } },
+    select: { id: true, email: true, userId: true, isActive: true },
+  })
+  if (!teacher?.isActive) return 'notFound'
+  if (teacher.userId) return 'alreadyLinked'
+  if (!teacher.email) return 'missingEmail'
+
+  const pending = await db.invitation.findFirst({
+    where: { schoolId, teacherId: teacher.id, usedAt: null },
+    select: { id: true, email: true },
+    orderBy: { createdAt: 'desc' },
+  })
+  if (pending && pending.email === teacher.email.toLowerCase()) {
+    const resent = await resendInvitationAction({ id: pending.id })
+    if (resent === 'OK') revalidatePath('/dashboard/teachers')
+    return resent
+  }
+
+  return inviteUserAction({ email: teacher.email, role: 'TEACHER', teacherId: teacher.id })
 }
 
 export async function resendInvitationAction(input: { id: string }) {

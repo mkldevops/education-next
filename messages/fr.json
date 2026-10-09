@@ -276,7 +276,8 @@
       "planning": "Planning",
       "attendance": "Suivi des appels",
       "superAdmins": "Super-admins",
-      "enrollAssistant": "Assistant IA"
+      "enrollAssistant": "Assistant IA",
+      "myFamilies": "Mes familles"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -319,7 +320,8 @@
         "family": "Espace famille",
         "teaching": "Enseignement"
       },
-      "enrollAssistant": "Assistant IA"
+      "enrollAssistant": "Assistant IA",
+      "myFamilies": "Mes familles"
     },
     "pages": {
       "families": {
@@ -1785,7 +1787,8 @@
         "attendanceFor": "Faire l’appel — {name}",
         "empty": "Aucune classe ne vous est actuellement affectée.",
         "details": "{level} · {period}",
-        "attendance": "Faire l’appel"
+        "attendance": "Faire l’appel",
+        "viewClass": "Voir la classe"
       },
       "attendance": {
         "title": "Appel",
@@ -1913,7 +1916,8 @@
           "classes": "Classes",
           "classLabel": "{className} ({level} — {period})",
           "noClasses": "Aucune classe",
-          "empty": "Aucun enseignant enregistré"
+          "empty": "Aucun enseignant enregistré",
+          "access": "Accès"
         },
         "create": {
           "title": "Nouvel enseignant",
@@ -1926,8 +1930,12 @@
           "success": "Enseignant créé",
           "error": "Erreur lors de la création",
           "errors": {
-            "validationError": "Vérifiez les informations saisies"
-          }
+            "validationError": "Vérifiez les informations saisies",
+            "missingEmail": "Ajoutez un email pour envoyer l'invitation",
+            "invitationFailed": "Enseignant créé, mais l'invitation n'a pas pu être envoyée"
+          },
+          "invite": "Envoyer une invitation pour créer son accès",
+          "inviteHint": "L'enseignant reçoit un lien valable 48 h. Nécessite un email."
         },
         "edit": {
           "title": "Modifier",
@@ -1998,6 +2006,29 @@
               "notFound": "Enseignant introuvable",
               "notConfigured": "Les notes de frais ne sont pas activées"
             }
+          }
+        },
+        "access": {
+          "active": "Accès actif",
+          "invited": "Invitation envoyée",
+          "expired": "Invitation expirée",
+          "none": "Aucun accès"
+        },
+        "invite": {
+          "action": "Inviter",
+          "resend": "Renvoyer l'invitation",
+          "success": "Invitation envoyée",
+          "resent": "Invitation renvoyée",
+          "pending": "Invitation en attente",
+          "missingEmailHint": "Ajoutez un email à l'enseignant pour l'inviter",
+          "error": "L'invitation n'a pas pu être envoyée",
+          "errors": {
+            "invalidInput": "Vérifiez les informations saisies",
+            "notFound": "Enseignant introuvable ou archivé",
+            "alreadyLinked": "Cet enseignant a déjà un accès",
+            "missingEmail": "Ajoutez un email à l'enseignant pour l'inviter",
+            "emailError": "L'email d'invitation n'a pas pu être envoyé",
+            "alreadyMember": "Ce compte fait déjà partie de cette école"
           }
         }
       },
@@ -2080,7 +2111,8 @@
           "classOverlap": "Cette classe a déjà un créneau qui se chevauche",
           "teacherOverlap": "Un enseignant a déjà un créneau qui se chevauche",
           "notFound": "Créneau introuvable"
-        }
+        },
+        "teacherHint": "Vos créneaux apparaîtront ici dès que vos classes seront planifiées."
       },
       "events": {
         "title": "Événements",
@@ -2268,6 +2300,98 @@
           "title": "Assistant indisponible",
           "description": "Aucune clé OpenRouter n'est configurée. Un super-administrateur doit la saisir dans Configuration → Intégrations.",
           "configure": "Configurer la clé"
+        }
+      },
+      "myClassDetails": {
+        "title": "Ma classe",
+        "count": "{count, plural, =0 {Aucun élève} one {# élève} other {# élèves}}",
+        "takeAttendance": "Faire l’appel",
+        "tabs": {
+          "students": "Élèves",
+          "contacts": "Contacts parents",
+          "history": "Historique des appels"
+        },
+        "noStudents": "Aucun élève dans cette classe.",
+        "student": "Élève",
+        "age": "Âge",
+        "ageValue": "{age} ans",
+        "sex": "Sexe",
+        "male": "Garçon",
+        "female": "Fille",
+        "allergies": "Allergies",
+        "canLeaveAlone": "Sort seul",
+        "yes": "Oui",
+        "no": "Non",
+        "noContacts": "Aucun contact renseigné",
+        "family": "Famille {name}",
+        "relation": {
+          "PARENT": "Parent",
+          "TUTOR": "Tuteur"
+        },
+        "emergencyContact": "Urgence : {name} — {phone}",
+        "history": {
+          "empty": "Aucun appel pour cette classe.",
+          "date": "Date",
+          "slot": "Créneau",
+          "status": "Statut",
+          "counts": "Présents / retards / absents",
+          "countsValue": "{present} / {late} / {absent}",
+          "rate": "Présence",
+          "open": "Ouvrir",
+          "adhoc": "Hors planning",
+          "statuses": {
+            "DRAFT": "Brouillon",
+            "VALIDATED": "Validé",
+            "CANCELLED": "Annulé"
+          }
+        }
+      },
+      "myFamilies": {
+        "title": "Mes familles",
+        "description": "Familles que vous avez enregistrées. L'administration les inscrit ensuite dans une classe.",
+        "empty": "Vous n'avez enregistré aucune famille.",
+        "contacts": "Contacts",
+        "students": "Élèves",
+        "noContacts": "Aucun contact",
+        "noStudents": "Aucun élève",
+        "age": "{age} ans",
+        "enrolled": "Inscrit",
+        "awaitingEnrollment": "En attente d'inscription",
+        "createFamily": {
+          "title": "Ajouter une famille",
+          "name": "Nom de la famille",
+          "parent": "Parent ou tuteur",
+          "firstname": "Prénom",
+          "lastname": "Nom",
+          "phone": "Téléphone",
+          "email": "Email",
+          "hint": "Ajoutez ensuite les élèves depuis la carte de la famille.",
+          "cancel": "Annuler",
+          "submit": "Créer",
+          "success": "Famille créée",
+          "error": "La famille n’a pas pu être créée",
+          "errors": {
+            "validationError": "Vérifiez les informations saisies"
+          }
+        },
+        "createStudent": {
+          "title": "Ajouter un élève",
+          "firstname": "Prénom",
+          "lastname": "Nom",
+          "sex": "Sexe",
+          "unspecified": "Non précisé",
+          "male": "Garçon",
+          "female": "Fille",
+          "birthday": "Date de naissance",
+          "allergies": "Allergies",
+          "cancel": "Annuler",
+          "submit": "Ajouter",
+          "success": "Élève ajouté",
+          "error": "L'élève n'a pas pu être ajouté",
+          "errors": {
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Famille introuvable"
+          }
         }
       }
     },
