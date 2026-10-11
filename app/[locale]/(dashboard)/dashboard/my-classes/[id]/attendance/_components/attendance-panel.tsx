@@ -455,14 +455,14 @@ export function AttendancePanel({
               </div>
               {session.status === 'DRAFT' ? (
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    className="text-sm text-primary underline underline-offset-4 disabled:text-graphite-600"
+                  <Button
+                    variant="outline"
+                    size="sm"
                     disabled={globalPending || pendingEntries || dirty || entryErrors}
                     onClick={() => void refreshRoster()}
                   >
                     {t('refreshRoster')}
-                  </button>
+                  </Button>
                   {rosterNotice ? (
                     <p role="status" className="text-sm text-graphite-600">
                       {rosterNotice}
@@ -471,9 +471,9 @@ export function AttendancePanel({
                 </div>
               ) : null}
               {editing && counts.NOT_RECORDED > 0 ? (
-                <button
-                  type="button"
-                  className="text-sm text-primary underline underline-offset-4 disabled:text-graphite-600"
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={globalPending || pendingEntries || dirty || entryErrors}
                   onClick={() =>
                     void global(
@@ -497,7 +497,7 @@ export function AttendancePanel({
                   }
                 >
                   {t('markRemainingPresent', { count: counts.NOT_RECORDED })}
-                </button>
+                </Button>
               ) : null}
             </section>
           ) : null}

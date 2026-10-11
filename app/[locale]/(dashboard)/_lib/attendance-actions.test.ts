@@ -195,6 +195,7 @@ describe('attendance actions', () => {
 
     expect(db.attendanceSession.create.mock.calls[0][0].data.entries.create).toEqual([
       {
+        status: 'PRESENT',
         studentId: 'student-1',
         studentName: 'Benali Yasmine',
         updatedById: 'u',
@@ -207,7 +208,12 @@ describe('attendance actions', () => {
     ])
     await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
     const entry = db.attendanceSession.create.mock.calls[0][0].data.entries.create[0]
-    expect(entry).toEqual({ studentId: 'student-1', studentName: 'A B', updatedById: 'u' })
+    expect(entry).toEqual({
+      status: 'PRESENT',
+      studentId: 'student-1',
+      studentName: 'A B',
+      updatedById: 'u',
+    })
     expect(entry).not.toHaveProperty('schoolId')
   })
   it('denies an unassigned teacher before opening a class in this tenant', async () => {
@@ -433,7 +439,7 @@ describe('refreshAttendanceRosterAction', () => {
     db.attendanceEntry.createMany.mockResolvedValue({ count: 1 })
   })
 
-  it('adds only the students assigned since the opening to a draft session', async () => {
+  it('adds only the students assigned since the opening, present by default, to a draft session', async () => {
     await expect(actions.refreshAttendanceRosterAction({ sessionId: id })).resolves.toMatchObject({
       id,
     })
@@ -452,6 +458,7 @@ describe('refreshAttendanceRosterAction', () => {
     expect(db.attendanceEntry.createMany).toHaveBeenCalledWith({
       data: [
         {
+          status: 'PRESENT',
           studentId: 'new',
           studentName: 'new X',
           schoolId: 's',

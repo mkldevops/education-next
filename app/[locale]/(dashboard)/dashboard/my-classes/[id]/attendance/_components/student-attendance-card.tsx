@@ -194,14 +194,6 @@ export function StudentAttendanceCard({
                 )
               })}
             </section>
-            <button
-              type="button"
-              className="text-xs text-graphite-600 underline underline-offset-4"
-              disabled={globalPending || pending}
-              onClick={() => onStatus('NOT_RECORDED')}
-            >
-              {labels.unrecorded}
-            </button>
             {entry.status === 'LATE' ? (
               <label className="flex items-center gap-3 text-sm font-medium">
                 {labels.lateMinutes}

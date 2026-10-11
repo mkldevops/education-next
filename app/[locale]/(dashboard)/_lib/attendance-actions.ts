@@ -93,8 +93,10 @@ function findRoster(
   })
 }
 
+/** Students start present: the teacher only marks the absences and late arrivals. */
 function rosterEntry({ enrollment }: Awaited<ReturnType<typeof findRoster>>[number]) {
   return {
+    status: 'PRESENT' as const,
     studentId: enrollment.studentId,
     studentName: `${enrollment.student.person.lastname} ${enrollment.student.person.name}`,
   }

@@ -348,7 +348,7 @@ describe('AttendancePanel R2 regressions', () => {
     expect(screen.getByText('1 missing')).toBeInTheDocument()
   })
 
-  it('resets late minutes while preserving its message when set back to not recorded', async () => {
+  it('resets late minutes while preserving its message when set back to present', async () => {
     mocks.update.mockResolvedValue('OK')
     render(
       <AttendancePanel
@@ -359,12 +359,12 @@ describe('AttendancePanel R2 regressions', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Not recorded' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Present' }))
     await waitFor(() =>
       expect(mocks.update).toHaveBeenCalledWith({
         sessionId: 'session',
         entryId: 'a',
-        status: 'NOT_RECORDED',
+        status: 'PRESENT',
         lateMinutes: null,
         message: 'Bus',
       })
