@@ -6,6 +6,9 @@ export const OPEN_ENROLLMENT_STATUSES = [
   'ACTIVE',
 ] as const satisfies readonly EnrollmentStatus[]
 
+/** An admin enrolls a child, from a form or through the assistant: the enrollment is in force at once. */
+export const NEW_ENROLLMENT_STATUS = 'ACTIVE' as const satisfies EnrollmentStatus
+
 export const VALID_TRANSITIONS: Record<EnrollmentStatus, EnrollmentStatus[]> = {
   PENDING: ['ACTIVE', 'CANCELLED'],
   ACTIVE: ['COMPLETED', 'CANCELLED'],

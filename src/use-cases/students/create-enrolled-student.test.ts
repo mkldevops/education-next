@@ -84,7 +84,12 @@ describe('createEnrolledStudent', () => {
     )
     expect(tx.enrollment.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ studentId: 'student-1', planId, totalAmount: 180 }),
+        data: expect.objectContaining({
+          studentId: 'student-1',
+          planId,
+          totalAmount: 180,
+          status: 'ACTIVE',
+        }),
       })
     )
     expect(tx.classAssignment.create).toHaveBeenCalledWith(

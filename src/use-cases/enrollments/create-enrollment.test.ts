@@ -334,7 +334,7 @@ describe('createEnrollment', () => {
       planGatewayMock.ensureUnpriced.mockResolvedValue(reservedPlan)
     })
 
-    it('resolves the reserved plan inside the open transaction and writes null amounts', async () => {
+    it('resolves the reserved plan inside the open transaction and writes an active enrollment with null amounts', async () => {
       const create = vi.fn().mockResolvedValue({ id: 'created' })
       dbMock.$transaction = vi.fn(async (cb) =>
         cb({
@@ -357,6 +357,7 @@ describe('createEnrollment', () => {
           totalAmount: 0,
           discount: 0,
           canLeaveAlone: false,
+          status: 'ACTIVE',
         },
       })
     })

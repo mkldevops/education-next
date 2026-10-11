@@ -876,7 +876,7 @@
             "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif."
           }
         },
-        "description": "Inscriptions de la période, à activer, suivre et régler."
+        "description": "Inscriptions de la période, à suivre et régler."
       },
       "promotion": {
         "title": "Promotion des élèves",

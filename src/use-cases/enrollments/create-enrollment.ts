@@ -1,4 +1,5 @@
 import type { z } from 'zod'
+import { NEW_ENROLLMENT_STATUS } from '@/domain/enrollment'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { reserveClassSeats } from '@/gateways/class-seat-lock'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
@@ -120,6 +121,7 @@ export async function createEnrollment(input: Input) {
           totalAmount,
           discount,
           canLeaveAlone: parsed.data.canLeaveAlone,
+          status: NEW_ENROLLMENT_STATUS,
         },
       })
 
