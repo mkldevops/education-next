@@ -45,6 +45,8 @@ arbitrary values that have a canonical utility; `pnpm lint:tw:fix` rewrites them
 ## Database and deployment
 
 - `pnpm db:seed` deletes existing records before creating fixtures. Disposable local data only.
+- `pnpm db:seed:demo` creates or rebuilds only the `ecole-demo` school and its three `@ecole-demo.test`
+  accounts, leaving other schools intact; `--remove` deletes them. Dates are relative to the run day.
 - `pnpm db:push` is local prototyping. Shared and production schema changes need a reviewed migration.
 - Docker Compose runs PostgreSQL and Mailpit, not the application.
 - Branding image uploads go to the shared MinIO at `S3_ENDPOINT` in every environment, local included.
