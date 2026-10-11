@@ -875,7 +875,7 @@
             "unpricedPlan": "That plan is reserved for enrollments without a price."
           }
         },
-        "description": "This period's enrollments, to activate, follow and settle."
+        "description": "This period's enrollments, to follow and settle."
       },
       "promotion": {
         "title": "Student Promotion",

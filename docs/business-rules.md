@@ -881,10 +881,9 @@ teacher, amount and day (`possibleDuplicateExpense`) and `paidAt` before `reques
 (`paidBeforeRequested`). The commit rereads the teacher in its transaction (`notFound` when archived
 since) and records the note with its result, so a replay returns the same note instead of a second one.
 
-**The two pairs chain.** `enroll_family` creates its enrollments `PENDING`, and `record_payment`
-distributes across `PENDING` and `ACTIVE` ones alike — so a family enrolled through the MCP can pay
-its next instalment before an admin validates the enrollment. Validation stays a dashboard decision;
-collecting money does not wait for it.
+**The two pairs chain.** `enroll_family` creates its enrollments `ACTIVE`, like the dashboard forms:
+the admin who confirms the plan has validated it. `record_payment` distributes across `PENDING` and
+`ACTIVE` enrollments alike, so a promotion's pending enrollment can collect its instalment too.
 
 These discriminants answer an agent, not a dialog, so they carry no `messages/*.json` entry — the
 rule in [Surfacing a rule in the UI](#surfacing-a-rule-in-the-ui) applies to screens.
@@ -1353,6 +1352,11 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
   « Nouvelle inscription », any active student of the school), the students list, and the family
   and student detail pages. On every one, the amount due is prefilled with the selected plan's
   price.
+- **A new enrollment is `ACTIVE` at once** (`NEW_ENROLLMENT_STATUS` in
+  `src/domain/enrollment.ts`): the admin who enrolls the child has already validated it, so the
+  student is on the class roster and the attendance call without a second « Activer » step. `PENDING`
+  remains for the next-period enrollments of a promotion, which await a decision per family. The MCP
+  `enroll_family` commit follows the same rule.
 - `createEnrollmentAction` returns only `{ id }` on success, or a typed error code string on
   failure.
 
@@ -1361,7 +1365,7 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
 « Ajouter un élève » in a family enrolls the child in the same gesture when the enrollment
 section is kept ticked: `src/use-cases/students/create-enrolled-student.ts` writes the person,
 the family link, the student, the enrollment and the class assignment in **one**
-`db.$transaction`, with the same locked capacity re-count. A refusal — `notFound`,
+`db.$transaction`, with the same locked capacity re-count, and the enrollment is `ACTIVE` too. A refusal — `notFound`,
 `discountExceedsPlan`, `classFull` — happens before the first write, so no student is left
 behind without an enrollment. Untick the section (or have no plan or no class in the selected
 period) and `createStudentAction` falls back to `create-student.ts`, which only attaches the

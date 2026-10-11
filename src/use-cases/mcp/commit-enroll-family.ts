@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { NEW_ENROLLMENT_STATUS } from '@/domain/enrollment'
 import { reserveClassSeatsInOrder } from '@/gateways/class-seat-lock'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { claimResolved, commitInTransaction, releaseDraft } from './claim-draft'
@@ -243,6 +244,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
           planId: plan.id,
           totalAmount,
           discount: resolved.discount,
+          status: NEW_ENROLLMENT_STATUS,
         },
         select: { id: true },
       })

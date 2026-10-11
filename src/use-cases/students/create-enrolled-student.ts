@@ -1,5 +1,10 @@
 import type { z } from 'zod'
-import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
+import {
+  calculateTotalAmount,
+  NEW_ENROLLMENT_STATUS,
+  pricingFromTotalAmount,
+  validateDiscount,
+} from '@/domain/enrollment'
 import { validateStudentBirthday } from '@/domain/student'
 import { reserveClassSeats } from '@/gateways/class-seat-lock'
 import { planGateway } from '@/gateways/plan-gateway'
@@ -106,6 +111,7 @@ export async function createEnrolledStudent(input: Input) {
         totalAmount,
         discount,
         canLeaveAlone: enrollment.canLeaveAlone,
+        status: NEW_ENROLLMENT_STATUS,
       },
       select: { id: true },
     })

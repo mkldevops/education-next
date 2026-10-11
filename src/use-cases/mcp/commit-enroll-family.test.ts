@@ -112,6 +112,14 @@ describe('commitEnrollFamily', () => {
     })
   })
 
+  it('creates the enrollment active, without a separate activation step', async () => {
+    await commitEnrollFamily(scope, input)
+
+    expect(tx.enrollment.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'ACTIVE' }) })
+    )
+  })
+
   it('scopes every write to the school carried by the key', async () => {
     await commitEnrollFamily(scope, input)
 
