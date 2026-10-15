@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import {
   Dialog,
   DialogBody,
@@ -189,5 +189,63 @@ describe('MultiSelect inside a Dialog', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
 
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('MultiSelect creation', () => {
+  function renderCreatable(
+    onCreate: (query: string) => Promise<{ id: string; name: string } | null>
+  ) {
+    return render(
+      <form aria-label="class form">
+        <MultiSelect
+          name="teacherIds"
+          options={teachers}
+          onCreate={onCreate}
+          createLabel={(query) => `Créer « ${query} »`}
+        />
+      </form>
+    )
+  }
+
+  it('creates and selects a missing option from the query', async () => {
+    const onCreate = vi.fn(async (query: string) => ({ id: '9', name: query }))
+    renderCreatable(onCreate)
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: ' Kaniza ' } })
+    fireEvent.click(screen.getByRole('option', { name: /Créer « Kaniza »/ }))
+
+    await waitFor(() => expect(submittedIds()).toEqual(['9']))
+    expect(onCreate).toHaveBeenCalledWith('Kaniza')
+  })
+
+  it('creates the option with Enter once it is the active item', async () => {
+    const onCreate = vi.fn(async (query: string) => ({ id: '9', name: query }))
+    renderCreatable(onCreate)
+
+    const input = screen.getByRole('combobox')
+    fireEvent.change(input, { target: { value: 'Rahma' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    await waitFor(() => expect(submittedIds()).toEqual(['9']))
+  })
+
+  it('offers no creation when an option already has that exact name', () => {
+    renderCreatable(vi.fn())
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'chanrani anissa' } })
+
+    expect(screen.queryByRole('option', { name: /Créer/ })).toBeNull()
+  })
+
+  it('selects nothing when the creation fails', async () => {
+    const onCreate = vi.fn(async () => null)
+    renderCreatable(onCreate)
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Kaniza' } })
+    fireEvent.click(screen.getByRole('option', { name: /Créer « Kaniza »/ }))
+
+    await waitFor(() => expect(onCreate).toHaveBeenCalled())
+    expect(submittedIds()).toEqual([])
   })
 })

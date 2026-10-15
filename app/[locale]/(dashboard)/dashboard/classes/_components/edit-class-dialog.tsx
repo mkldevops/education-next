@@ -20,6 +20,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { updateClassPeriodAction } from '../../../_lib/class-period-actions'
+import { useCreateTeacherOption } from './use-create-teacher-option'
 
 interface TeacherOption {
   id: string
@@ -72,6 +73,7 @@ function EditClassForm({ classItem, levels, teachers }: EditClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.edit')
   const tCreate = useTranslations('dashboard.pages.classes.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
+  const createTeacherOption = useCreateTeacherOption()
   const levelItems = levels.map((level) => ({ value: level.id, label: level.name }))
 
   const handleSubmit = onSubmit((formData) =>
@@ -144,6 +146,8 @@ function EditClassForm({ classItem, levels, teachers }: EditClassDialogProps) {
               emptyMessage={tCreate('teachersEmpty')}
               noResultsMessage={tCreate('teachersNoResults')}
               removeLabel={tCreate('teachersRemove')}
+              onCreate={createTeacherOption.onCreate}
+              createLabel={createTeacherOption.createLabel}
             />
             <p className="text-xs text-graphite-600">{tCreate('teachersHint')}</p>
           </div>

@@ -21,6 +21,7 @@ import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { createClassPeriodAction } from '../../../_lib/class-period-actions'
+import { useCreateTeacherOption } from './use-create-teacher-option'
 
 interface Option {
   id: string
@@ -68,6 +69,7 @@ export function CreateClassDialog({
 function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateClassDialogProps) {
   const t = useTranslations('dashboard.pages.classes.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
+  const createTeacherOption = useCreateTeacherOption()
   const levelItems = levels.map((l) => ({ value: l.id, label: l.name }))
   const periodItems = periods.map((p) => ({ value: p.id, label: p.name }))
 
@@ -164,6 +166,8 @@ function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateC
               emptyMessage={t('teachersEmpty')}
               noResultsMessage={t('teachersNoResults')}
               removeLabel={t('teachersRemove')}
+              onCreate={createTeacherOption.onCreate}
+              createLabel={createTeacherOption.createLabel}
             />
             <p className="text-xs text-graphite-600">{t('teachersHint')}</p>
           </div>

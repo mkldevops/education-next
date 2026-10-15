@@ -1267,6 +1267,9 @@ Owner: `src/lib/school-context.ts`, `app/[locale]/(dashboard)/_lib/auth-helper.t
 
 - **Only the first name is required for a teacher** (`createTeacherSchema`, `mcpCreateTeacherSchema`):
   a missing last name is stored as an empty string and every display trims the composed name.
+- **A teacher can be created from the class form's teacher picker** (`useCreateTeacherOption`): the
+  typed text is split by `splitTeacherName` (`src/domain/teacher.ts`), first word as first name, the
+  rest as last name, and the new teacher is selected for the class.
 - An active `Teacher` profile linked to a user in the same school grants teacher capability. It can complement an existing `ADMIN` or `PARENT` membership, or accompany a `TEACHER`-only membership.
 - Its dashboard surfaces are **My classes**, a class sheet per class (`/dashboard/my-classes/[id]`), **Attendance tracking**, the **Planning** and **My families**. Class surfaces are scoped by the school and current profile's active `ClassPeriodTeacher` assignments; removing an assignment removes that class, its sheet, its planning slots and its attendance access immediately. Another class answers `notFound()`.
 - **The class sheet is read-only.** It lists the class roster (same window as the admin class page: open assignment, `PENDING`/`ACTIVE`/`COMPLETED` enrollment, active student) with age, sex, allergies and "leaves alone"; the `PARENT`/`TUTOR` contacts of each student's active families (phones, email, emergency contact); and, when attendance is enabled, the last 60 calls with counts and a presence rate (`summarizeAttendance`, `src/domain/attendance-summary.ts`: present + late over recorded entries, none without a recorded entry).

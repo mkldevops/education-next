@@ -761,7 +761,10 @@
           "teachersSearch": "Add...",
           "teachersEmpty": "No teacher available",
           "teachersNoResults": "No teacher found",
-          "teachersRemove": "Remove"
+          "teachersRemove": "Remove",
+          "teachersCreate": "Create teacher “{name}”",
+          "teachersCreated": "Teacher “{name}” created",
+          "teachersCreateError": "Could not create the teacher"
         },
         "edit": {
           "title": "Edit Class",
