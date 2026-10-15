@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, ChevronDown, X } from 'lucide-react'
+import { Check, ChevronDown, Plus, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '../utils'
@@ -22,6 +22,8 @@ export interface MultiSelectProps {
   noResultsMessage?: string
   removeLabel?: string
   className?: string
+  onCreate?: (query: string) => Promise<MultiSelectOption | null>
+  createLabel?: (query: string) => string
 }
 
 interface ListPosition {
@@ -68,6 +70,8 @@ export function MultiSelect({
   noResultsMessage,
   removeLabel,
   className,
+  onCreate,
+  createLabel,
 }: MultiSelectProps) {
   const generatedId = useId()
   const inputId = id ?? generatedId
@@ -78,23 +82,35 @@ export function MultiSelect({
   const [query, setQuery] = useState('')
   const [position, setPosition] = useState<ListPosition | null>(null)
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [createdOptions, setCreatedOptions] = useState<MultiSelectOption[]>([])
+  const [isCreating, setIsCreating] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const isDisabled = disabled || options.length === 0
+  const allOptions = [
+    ...options,
+    ...createdOptions.filter((created) => !options.some((option) => option.id === created.id)),
+  ]
+  const isDisabled = disabled || isCreating || (allOptions.length === 0 && !onCreate)
   const open = position !== null
 
   const selected = selectedIds
-    .map((selectedId) => options.find((option) => option.id === selectedId))
+    .map((selectedId) => allOptions.find((option) => option.id === selectedId))
     .filter((option): option is MultiSelectOption => option !== undefined)
 
   const search = normalize(query.trim())
   const results = search
-    ? options.filter((option) => normalize(option.name).includes(search))
-    : options
+    ? allOptions.filter((option) => normalize(option.name).includes(search))
+    : allOptions
+  const canCreate =
+    onCreate !== undefined &&
+    search !== '' &&
+    !allOptions.some((option) => normalize(option.name.trim()) === search)
+  const itemCount = results.length + (canCreate ? 1 : 0)
   const activeOption = activeIndex >= 0 ? results[activeIndex] : undefined
+  const isCreateActive = canCreate && activeIndex === results.length
 
   const openList = () => {
     if (isDisabled || !containerRef.current) return
@@ -132,7 +148,12 @@ export function MultiSelect({
     }
   }, [open])
 
-  const activeOptionId = activeOption ? optionId(activeOption.id) : undefined
+  const createOptionId = `${listboxId}-create`
+  const activeOptionId = activeOption
+    ? optionId(activeOption.id)
+    : isCreateActive
+      ? createOptionId
+      : undefined
 
   useEffect(() => {
     if (!activeOptionId) return
@@ -148,6 +169,24 @@ export function MultiSelect({
     setQuery('')
     setActiveIndex(-1)
     inputRef.current?.focus()
+  }
+
+  const create = async () => {
+    if (!onCreate || isCreating) return
+    setIsCreating(true)
+    try {
+      const created = await onCreate(query.trim())
+      if (!created) return
+      setCreatedOptions((current) => [...current, created])
+      setSelectedIds((current) =>
+        current.includes(created.id) ? current : [...current, created.id]
+      )
+      setQuery('')
+      setActiveIndex(-1)
+    } finally {
+      setIsCreating(false)
+      inputRef.current?.focus()
+    }
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -169,11 +208,11 @@ export function MultiSelect({
         setActiveIndex(0)
         return
       }
-      if (results.length === 0) return
+      if (itemCount === 0) return
       setActiveIndex((current) => {
-        if (current < 0) return event.key === 'ArrowDown' ? 0 : results.length - 1
+        if (current < 0) return event.key === 'ArrowDown' ? 0 : itemCount - 1
         const next = event.key === 'ArrowDown' ? current + 1 : current - 1
-        return (next + results.length) % results.length
+        return (next + itemCount) % itemCount
       })
       return
     }
@@ -181,6 +220,12 @@ export function MultiSelect({
     if (event.key === 'Enter' && activeOption) {
       event.preventDefault()
       toggle(activeOption.id)
+      return
+    }
+
+    if (event.key === 'Enter' && isCreateActive) {
+      event.preventDefault()
+      void create()
     }
   }
 
@@ -228,7 +273,7 @@ export function MultiSelect({
           disabled={isDisabled}
           value={query}
           placeholder={
-            options.length === 0
+            allOptions.length === 0 && !onCreate
               ? emptyMessage
               : selected.length === 0
                 ? placeholder
@@ -264,7 +309,7 @@ export function MultiSelect({
             }}
             className="fixed z-[60] overflow-y-auto rounded border border-alabaster-700 bg-white py-1 shadow-lg"
           >
-            {results.length === 0 && (
+            {results.length === 0 && !canCreate && (
               <p className="px-3 py-2 text-sm text-graphite-600">{noResultsMessage}</p>
             )}
             {results.map((option, index) => {
@@ -290,6 +335,25 @@ export function MultiSelect({
                 </button>
               )
             })}
+            {canCreate && (
+              <button
+                id={createOptionId}
+                type="button"
+                role="option"
+                tabIndex={-1}
+                aria-selected={false}
+                disabled={isCreating}
+                onMouseEnter={() => setActiveIndex(results.length)}
+                onClick={() => void create()}
+                className={cn(
+                  'flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-primary',
+                  isCreateActive ? 'bg-alabaster-800' : 'bg-transparent'
+                )}
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                {createLabel ? createLabel(query.trim()) : query.trim()}
+              </button>
+            )}
           </div>,
           document.body
         )}

@@ -762,7 +762,10 @@
           "teachersSearch": "Ajouter...",
           "teachersEmpty": "Aucun enseignant disponible",
           "teachersNoResults": "Aucun enseignant trouvé",
-          "teachersRemove": "Retirer"
+          "teachersRemove": "Retirer",
+          "teachersCreate": "Créer l'enseignant « {name} »",
+          "teachersCreated": "Enseignant « {name} » créé",
+          "teachersCreateError": "Impossible de créer l'enseignant"
         },
         "edit": {
           "title": "Modifier la classe",
