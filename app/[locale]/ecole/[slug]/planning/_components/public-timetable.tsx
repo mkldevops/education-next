@@ -398,8 +398,8 @@ function SlotChip({
   labels: PublicTimetableLabels
   popover?: boolean
 }) {
-  const teacherNames = slot.teachers.map(
-    ({ teacher }) => `${teacher.firstName} ${teacher.lastName}`
+  const teacherNames = slot.teachers.map(({ teacher }) =>
+    `${teacher.firstName} ${teacher.lastName}`.trim()
   )
   const content = (
     <>
@@ -512,7 +512,9 @@ function SlotChip({
 }
 
 function teacherLabel(slot: PublicSlot, labels: PublicTimetableLabels) {
-  const names = slot.teachers.map(({ teacher }) => `${teacher.firstName} ${teacher.lastName}`)
+  const names = slot.teachers.map(({ teacher }) =>
+    `${teacher.firstName} ${teacher.lastName}`.trim()
+  )
   return names.length > 0 ? names.join(', ') : labels.noTeachers
 }
 

@@ -47,7 +47,7 @@ export function TeacherActionsMenu({ teacher, invitationPending }: Props) {
     toggle()
   }
 
-  const teacherName = `${teacher.lastName} ${teacher.firstName}`
+  const teacherName = `${teacher.lastName} ${teacher.firstName}`.trim()
 
   return (
     <div className="relative z-10 flex justify-end" ref={containerRef}>

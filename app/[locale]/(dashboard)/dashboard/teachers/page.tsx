@@ -20,7 +20,7 @@ type Props = {
 const TAB_KEYS = ['teachers', 'expenses'] as const
 
 const teacherName = (person: { firstName: string; lastName: string }) =>
-  `${person.lastName} ${person.firstName}`
+  `${person.lastName} ${person.firstName}`.trim()
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params

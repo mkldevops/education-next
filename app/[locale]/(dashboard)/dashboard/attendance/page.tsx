@@ -241,7 +241,10 @@ export default async function AttendanceTrackingPage({
   ]
   const teacherItems = [
     { value: null, label: t('allTeachers') },
-    ...teachers.map((item) => ({ value: item.id, label: `${item.firstName} ${item.lastName}` })),
+    ...teachers.map((item) => ({
+      value: item.id,
+      label: `${item.firstName} ${item.lastName}`.trim(),
+    })),
   ]
   const selectedClassId = classItems.find((item) => item.value === classId)?.value ?? null
   const selectedTeacherId =

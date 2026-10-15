@@ -78,7 +78,7 @@ export default async function UsersPage({ params }: Props) {
   }))
   const teacherOptions = teachers.map((teacher) => ({
     id: teacher.id,
-    name: `${teacher.lastName} ${teacher.firstName}`,
+    name: `${teacher.lastName} ${teacher.firstName}`.trim(),
     email: teacher.email,
   }))
 

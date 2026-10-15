@@ -90,7 +90,7 @@ export default async function ClassRosterPrintPage({ params }: Props) {
         a.firstname.localeCompare(b.firstname, locale)
     )
   const teachers = classPeriod.teachers
-    .map(({ teacher }) => `${teacher.lastName} ${teacher.firstName}`)
+    .map(({ teacher }) => `${teacher.lastName} ${teacher.firstName}`.trim())
     .join(', ')
   const { logoUrl, schoolName } = branding
 

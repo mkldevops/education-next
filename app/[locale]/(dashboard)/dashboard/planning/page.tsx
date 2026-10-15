@@ -153,7 +153,7 @@ export default async function PlanningPage({ params }: Props) {
       classPeriod.id,
       classPeriod.teachers.map(({ teacher }) => ({
         id: teacher.id,
-        name: `${teacher.lastName} ${teacher.firstName}`,
+        name: `${teacher.lastName} ${teacher.firstName}`.trim(),
       })),
     ])
   )

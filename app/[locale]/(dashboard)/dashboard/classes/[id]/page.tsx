@@ -117,15 +117,15 @@ export default async function ClassDetailPage({ params }: Props) {
   ])
   const teacherOptions = teachers.map((teacher) => ({
     id: teacher.id,
-    name: `${teacher.lastName} ${teacher.firstName}`,
+    name: `${teacher.lastName} ${teacher.firstName}`.trim(),
   }))
   const assignedTeachers = classPeriod.teachers.map(({ teacher }) => ({
     id: teacher.id,
-    name: `${teacher.lastName} ${teacher.firstName}`,
+    name: `${teacher.lastName} ${teacher.firstName}`.trim(),
   }))
   const inactiveAssignments = inactiveTeacherAssignments.map((assignment) => ({
     teacherId: assignment.teacherId,
-    name: `${assignment.teacher.lastName} ${assignment.teacher.firstName}`,
+    name: `${assignment.teacher.lastName} ${assignment.teacher.firstName}`.trim(),
   }))
 
   const roster = classPeriod.classAssignments
