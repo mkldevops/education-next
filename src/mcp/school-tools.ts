@@ -305,8 +305,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       name: 'create_teacher',
       title: 'Créer un enseignant',
       description:
-        "Crée un enseignant dans l'école, sans classe ni période : seuls le prénom et le nom " +
-        "sont requis. L'affecter à une classe est une autre opération. Un enseignant actif " +
+        "Crée un enseignant dans l'école, sans classe ni période : seul le prénom est requis, " +
+        "le nom est facultatif. L'affecter à une classe est une autre opération. Un enseignant actif " +
         "du même nom, dans un ordre ou l'autre, ou de la même adresse suspend la création : " +
         'la réponse `{ created: false, reason: "possibleDuplicate", matches }` liste les ' +
         "fiches trouvées. `allowDuplicate: true` crée quand même, sur décision de l'humain. " +

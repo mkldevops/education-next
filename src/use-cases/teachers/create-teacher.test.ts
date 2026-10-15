@@ -32,6 +32,25 @@ describe('createTeacher', () => {
     expect(result).toBe('validationError')
   })
 
+  it('fails validation when the first name is missing', async () => {
+    const result = await createTeacher(
+      { schoolId, firstName: '', lastName: 'Benali' },
+      gateway as unknown as TeacherGw
+    )
+
+    expect(result).toBe('validationError')
+  })
+
+  it('creates a teacher with a first name only', async () => {
+    const result = await createTeacher(
+      { schoolId, firstName: 'Kaniza' } as Parameters<typeof createTeacher>[0],
+      gateway as unknown as TeacherGw
+    )
+
+    expect(result).toMatchObject({ id: 'teacher-1' })
+    expect(gateway.createdData).toEqual({ firstName: 'Kaniza', lastName: '' })
+  })
+
   it('fails validation when email exceeds the storage limit', async () => {
     const result = await createTeacher(
       {

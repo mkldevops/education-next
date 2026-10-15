@@ -85,7 +85,7 @@ export default async function ClassesPage({ params }: Props) {
   })
   const teacherOptions = teachers.map((teacher) => ({
     id: teacher.id,
-    name: `${teacher.lastName} ${teacher.firstName}`,
+    name: `${teacher.lastName} ${teacher.firstName}`.trim(),
   }))
 
   const columns: Column<(typeof classes)[0]>[] = [
@@ -120,7 +120,7 @@ export default async function ClassesPage({ params }: Props) {
       render: (item) =>
         item.teachers.length > 0
           ? item.teachers
-              .map(({ teacher }) => `${teacher.lastName} ${teacher.firstName}`)
+              .map(({ teacher }) => `${teacher.lastName} ${teacher.firstName}`.trim())
               .join(', ')
           : t('noTeachers'),
     },

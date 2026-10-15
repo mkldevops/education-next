@@ -65,7 +65,7 @@ export function ScheduleGrid({
             <ul className="space-y-3 bg-white p-3">
               {daySlots.map((slot) => {
                 const teacherNames = slot.teachers
-                  .map(({ teacher }) => `${teacher.lastName} ${teacher.firstName}`)
+                  .map(({ teacher }) => `${teacher.lastName} ${teacher.firstName}`.trim())
                   .join(', ')
                 const duration = formatDuration(slot.startTime, slot.endTime, durationUnits)
                 return (

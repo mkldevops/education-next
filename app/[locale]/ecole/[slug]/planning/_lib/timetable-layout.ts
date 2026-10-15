@@ -76,7 +76,7 @@ export function printMinutesPerEm(ranges: Range[], focused: boolean) {
 export function printLabelEm(slots: LayoutSlot[], focused: boolean) {
   const widest = slots.reduce((max, slot) => {
     const teachers = slot.teachers
-      .map(({ teacher }) => `${teacher.firstName} ${teacher.lastName}`)
+      .map(({ teacher }) => `${teacher.firstName} ${teacher.lastName}`.trim())
       .join(', ')
     const teacherChars = teachers.length || MISSING_TEACHER_CHARS
     const level = slot.classPeriod.level.name.length

@@ -288,7 +288,7 @@ export const previewClassScheduleSchema = z.object({
 
 export const mcpCreateTeacherSchema = z.object({
   firstName: z.string().trim().min(1).max(250),
-  lastName: z.string().trim().min(1).max(250),
+  lastName: z.string().trim().max(250).default(''),
   email: z.email().optional(),
   phone: z.string().trim().max(20).optional(),
   // Deux enseignants homonymes existent : le second se crée en le disant, jamais par défaut.

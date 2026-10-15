@@ -51,6 +51,24 @@ describe('updateTeacher', () => {
     expect(result).toBe('notFound')
   })
 
+  it('keeps the last name untouched when the update omits it', async () => {
+    await updateTeacher(
+      { schoolId, id: teacherId, firstName: 'Amina' },
+      gateway as unknown as TeacherGw
+    )
+
+    expect(gateway.updatedData).toEqual({ firstName: 'Amina' })
+  })
+
+  it('clears the last name when the update sends an empty one', async () => {
+    await updateTeacher(
+      { schoolId, id: teacherId, firstName: 'Amina', lastName: '' },
+      gateway as unknown as TeacherGw
+    )
+
+    expect(gateway.updatedData).toEqual({ firstName: 'Amina', lastName: '' })
+  })
+
   it('updates teacher data without leaking id or schoolId into the payload', async () => {
     const result = await updateTeacher(
       { schoolId, id: teacherId, firstName: 'Amina', lastName: 'Benali', email: '', phone: '' },

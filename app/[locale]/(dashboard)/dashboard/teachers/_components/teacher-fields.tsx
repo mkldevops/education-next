@@ -42,7 +42,6 @@ export function TeacherFields({
           id={`${idPrefix}-last-name`}
           name="lastName"
           defaultValue={defaults?.lastName}
-          required
           maxLength={250}
           disabled={disabled}
         />
