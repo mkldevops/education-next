@@ -24,6 +24,7 @@ export interface MultiSelectProps {
   className?: string
   onCreate?: (query: string) => Promise<MultiSelectOption | null>
   createLabel?: (query: string) => string
+  createHint?: string
 }
 
 interface ListPosition {
@@ -72,6 +73,7 @@ export function MultiSelect({
   className,
   onCreate,
   createLabel,
+  createHint,
 }: MultiSelectProps) {
   const generatedId = useId()
   const inputId = id ?? generatedId
@@ -353,6 +355,12 @@ export function MultiSelect({
                 <Plus className="h-4 w-4" aria-hidden="true" />
                 {createLabel ? createLabel(query.trim()) : query.trim()}
               </button>
+            )}
+            {onCreate && createHint && search === '' && (
+              <p className="sticky bottom-0 flex items-center gap-2 border-t border-alabaster-700 bg-white px-3 py-2 text-xs text-graphite-600">
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                {createHint}
+              </p>
             )}
           </div>,
           document.body

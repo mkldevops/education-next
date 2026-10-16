@@ -148,6 +148,7 @@ function EditClassForm({ classItem, levels, teachers }: EditClassDialogProps) {
               removeLabel={tCreate('teachersRemove')}
               onCreate={createTeacherOption.onCreate}
               createLabel={createTeacherOption.createLabel}
+              createHint={createTeacherOption.createHint}
             />
             <p className="text-xs text-graphite-600">{tCreate('teachersHint')}</p>
           </div>

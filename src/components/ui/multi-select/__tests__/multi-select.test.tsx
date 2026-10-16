@@ -203,6 +203,7 @@ describe('MultiSelect creation', () => {
           options={teachers}
           onCreate={onCreate}
           createLabel={(query) => `Créer « ${query} »`}
+          createHint="Tapez un nom pour le créer"
         />
       </form>
     )
@@ -228,6 +229,17 @@ describe('MultiSelect creation', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
 
     await waitFor(() => expect(submittedIds()).toEqual(['9']))
+  })
+
+  it('shows the creation hint until a name is typed', () => {
+    renderCreatable(vi.fn())
+
+    const input = screen.getByRole('combobox')
+    fireEvent.focus(input)
+    expect(screen.getByText('Tapez un nom pour le créer')).toBeInTheDocument()
+
+    fireEvent.change(input, { target: { value: 'Kaniza' } })
+    expect(screen.queryByText('Tapez un nom pour le créer')).toBeNull()
   })
 
   it('offers no creation when an option already has that exact name', () => {

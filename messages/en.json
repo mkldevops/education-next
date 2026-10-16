@@ -756,7 +756,7 @@
             "teacherNotFound": "One selected teacher was not found"
           },
           "teachers": "Teachers",
-          "teachersHint": "Search for a teacher then select them. Multiple choices allowed.",
+          "teachersHint": "Search for a teacher then select them, or type a new name to create one. Multiple choices allowed.",
           "teachersPlaceholder": "Search for a teacher...",
           "teachersSearch": "Add...",
           "teachersEmpty": "No teacher available",
@@ -764,7 +764,8 @@
           "teachersRemove": "Remove",
           "teachersCreate": "Create teacher “{name}”",
           "teachersCreated": "Teacher “{name}” created",
-          "teachersCreateError": "Could not create the teacher"
+          "teachersCreateError": "Could not create the teacher",
+          "teachersCreateHint": "Not listed? Type their name to create them"
         },
         "edit": {
           "title": "Edit Class",
