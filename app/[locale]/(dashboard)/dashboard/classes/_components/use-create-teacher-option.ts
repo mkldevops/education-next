@@ -19,5 +19,9 @@ export function useCreateTeacherOption() {
     return { id: result.id, name: `${result.lastName} ${result.firstName}`.trim() }
   }
 
-  return { onCreate, createLabel: (name: string) => t('teachersCreate', { name }) }
+  return {
+    onCreate,
+    createLabel: (name: string) => t('teachersCreate', { name }),
+    createHint: t('teachersCreateHint'),
+  }
 }

@@ -168,6 +168,7 @@ function CreateClassForm({ levels, periods, teachers, defaultCapacity }: CreateC
               removeLabel={t('teachersRemove')}
               onCreate={createTeacherOption.onCreate}
               createLabel={createTeacherOption.createLabel}
+              createHint={createTeacherOption.createHint}
             />
             <p className="text-xs text-graphite-600">{t('teachersHint')}</p>
           </div>

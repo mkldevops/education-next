@@ -757,7 +757,7 @@
             "teacherNotFound": "Un enseignant sélectionné est introuvable"
           },
           "teachers": "Enseignants",
-          "teachersHint": "Recherchez un enseignant puis sélectionnez-le. Plusieurs choix possibles.",
+          "teachersHint": "Recherchez un enseignant puis sélectionnez-le, ou tapez un nouveau nom pour le créer. Plusieurs choix possibles.",
           "teachersPlaceholder": "Rechercher un enseignant...",
           "teachersSearch": "Ajouter...",
           "teachersEmpty": "Aucun enseignant disponible",
@@ -765,7 +765,8 @@
           "teachersRemove": "Retirer",
           "teachersCreate": "Créer l'enseignant « {name} »",
           "teachersCreated": "Enseignant « {name} » créé",
-          "teachersCreateError": "Impossible de créer l'enseignant"
+          "teachersCreateError": "Impossible de créer l'enseignant",
+          "teachersCreateHint": "Absent de la liste ? Tapez son nom pour le créer"
         },
         "edit": {
           "title": "Modifier la classe",
