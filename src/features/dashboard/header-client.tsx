@@ -2,7 +2,7 @@
 
 import { Menu, PanelLeft, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { PeriodSelector } from '@/features/dashboard/period-selector'
 import { SearchModal } from '@/features/dashboard/search-modal'
 import { useSidebarStore } from '@/features/dashboard/sidebar-store'
@@ -11,12 +11,17 @@ import { useSearchShortcutLabel } from './shortcut'
 interface DashboardHeaderClientProps {
   periods: { id: string; name: string; startAt: Date; endAt: Date }[]
   selectedPeriodId: string | null
+  news?: ReactNode
 }
 
 const iconButton =
   'flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-(--duration-fast) hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring'
 
-export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHeaderClientProps) {
+export function DashboardHeaderClient({
+  periods,
+  selectedPeriodId,
+  news,
+}: DashboardHeaderClientProps) {
   const t = useTranslations('dashboard.sidebar')
   const [searchOpen, setSearchOpen] = useState(false)
   const toggleMobile = useSidebarStore((state) => state.toggleMobile)
@@ -59,6 +64,7 @@ export function DashboardHeaderClient({ periods, selectedPeriodId }: DashboardHe
       </div>
 
       <div className="flex items-center gap-2">
+        {news}
         <button
           type="button"
           onClick={() => setSearchOpen(true)}

@@ -190,6 +190,10 @@ model User {
   /// En base et non en cookie : le refus doit suivre l'utilisateur sur tous ses appareils.
   signInUpgradeDismissedAt DateTime?
 
+  /// Dernière consultation des nouveautés de la plateforme (Directus central). Une annonce publiée
+  /// après cette date est « nouvelle » ; `null` se lit comme `createdAt`.
+  announcementsSeenAt DateTime?
+
   sessions                  Session[]
   accounts                  Account[]
   families                  UserFamily[]

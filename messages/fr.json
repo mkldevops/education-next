@@ -277,7 +277,8 @@
       "attendance": "Suivi des appels",
       "superAdmins": "Super-admins",
       "enrollAssistant": "Assistant IA",
-      "myFamilies": "Mes familles"
+      "myFamilies": "Mes familles",
+      "news": "Nouveautés"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -2625,6 +2626,20 @@
           "reference": "Référence"
         }
       }
+    },
+    "announcements": {
+      "buttonLabel": "Nouveautés",
+      "buttonLabelUnread": "Nouveautés ({count, plural, one {# non lue} other {# non lues}})",
+      "dialogEyebrow": "Nouveauté",
+      "discover": "Découvrir",
+      "seeAll": "Toutes les nouveautés",
+      "close": "Fermer",
+      "title": "Nouveautés",
+      "subtitle": "Les dernières fonctionnalités ajoutées à la plateforme.",
+      "new": "Nouveau",
+      "publishedOn": "Publié le {date}",
+      "emptyTitle": "Aucune nouveauté pour le moment",
+      "empty": "Les prochaines fonctionnalités apparaîtront ici dès leur mise en ligne."
     }
   },
   "schools": {
