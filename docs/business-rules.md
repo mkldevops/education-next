@@ -1035,6 +1035,38 @@ replayed tool results share a `maxToolReplayChars` budget, and only settled call
 denied, or answered approval) are replayed. The current page path is passed as a hint only after
 matching a strict path pattern; it scopes nothing.
 
+## Platform announcements
+
+Platform announcements ("Nouveautés") present newly shipped features. They are written once in the
+central Directus (`DIRECTUS_URL`, read with the read-only `DIRECTUS_TOKEN`) and read by every
+instance, so no school database stores them. `listAnnouncements()`
+(`src/gateways/announcement-gateway.ts`) reads them; the pure rules live in
+`src/domain/announcement.ts`:
+
+- Directus publishes an item only when `status = published` and `published_at <= $NOW`; the token's
+  policy enforces this server-side, so a draft or a scheduled item never reaches an instance.
+- Text resolves to the user's locale, then French, then the first available translation. An item
+  without a translation or a publication date is dropped.
+- `audience` lists the school roles (`ADMIN`, `TEACHER`, `PARENT`) that see an item; an empty
+  audience reaches nobody. A super-admin sees every item regardless of audience.
+- An item is unread when published after `User.announcementsSeenAt`, or after `User.createdAt`
+  while that is `null`: a new account never inherits a backlog.
+- The header entry links to `/dashboard/news` and shows a dot while unread items remain.
+- The dialog mounted in the `(dashboard)` layout (`AnnouncementGate`) shows the newest unread item
+  flagged `highlight`, and nothing otherwise. Every close — button, Escape, a click outside, or
+  following its link — stamps `announcementsSeenAt`.
+- Opening `/dashboard/news` with unread items stamps it as well; the page keeps its "New" badges
+  for that visit.
+- `link` is followed only when it is an internal `/dashboard` path (`safeAnnouncementLink()`);
+  markdown links in the body open in a new tab and raw HTML is not rendered.
+- A translation may carry a `video`, so each language gets its own; it takes precedence over the
+  item's `image`, which becomes its poster. It loops muted, with controls so it can be paused.
+  Images and videos are served by Directus `/assets`, readable by its Public policy.
+- Impersonation shows no dialog and `markAnnouncementsSeenAction` refuses to write: the stamp would
+  belong to the target.
+- The list is cached for ten minutes per instance. A missing configuration, an unreachable Directus
+  or an unexpected response yields an empty list, never an error page.
+
 ## User management
 
 The `/dashboard/users` drawer is the single management surface. Its guards live in

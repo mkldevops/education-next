@@ -276,7 +276,8 @@
       "attendance": "Attendance tracking",
       "superAdmins": "Super admins",
       "enrollAssistant": "AI assistant",
-      "myFamilies": "My families"
+      "myFamilies": "My families",
+      "news": "What's new"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -2624,6 +2625,20 @@
           "reference": "Reference"
         }
       }
+    },
+    "announcements": {
+      "buttonLabel": "What's new",
+      "buttonLabelUnread": "What's new ({count, plural, one {# unread} other {# unread}})",
+      "dialogEyebrow": "New",
+      "discover": "Try it",
+      "seeAll": "All updates",
+      "close": "Close",
+      "title": "What's new",
+      "subtitle": "The latest features added to the platform.",
+      "new": "New",
+      "publishedOn": "Published on {date}",
+      "emptyTitle": "No updates yet",
+      "empty": "Upcoming features will show up here as soon as they ship."
     }
   },
   "schools": {

@@ -21,6 +21,8 @@ import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assistant-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 import { AssistantDock } from './_components/ai-chat/assistant-dock'
+import { AnnouncementGate } from './_components/announcement-gate'
+import { AnnouncementsButton } from './_components/announcements-button'
 import { RememberActiveSchool } from './_components/remember-active-school'
 import { SignInUpgradeGate } from './_components/sign-in-upgrade-gate'
 
@@ -122,10 +124,19 @@ export default async function DashboardLayout({ children, params }: Props) {
             <SignInUpgradeGate />
           </Suspense>
           <Suspense fallback={null}>
+            <AnnouncementGate locale={locale} />
+          </Suspense>
+          <Suspense fallback={null}>
             <EventAnnouncementBanner />
           </Suspense>
           <Suspense fallback={<header className="h-14 border-b border-border" />}>
-            <DashboardHeader />
+            <DashboardHeader
+              news={
+                <Suspense fallback={null}>
+                  <AnnouncementsButton locale={locale} />
+                </Suspense>
+              }
+            />
           </Suspense>
         </div>
         <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
