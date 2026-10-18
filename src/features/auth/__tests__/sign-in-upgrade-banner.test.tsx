@@ -41,16 +41,17 @@ vi.mock('@simplewebauthn/browser', () => ({
 }))
 vi.mock('@/lib/toast', () => ({ toast: { success: (message: string) => toastSuccess(message) } }))
 
-const { SignInUpgradeDialog } = await import('../sign-in-upgrade-dialog')
+const { SignInUpgradeBanner } = await import('../sign-in-upgrade-banner')
 
-const renderDialog = (offer: { google: boolean; passkey: boolean } | null, googleLinked = false) =>
-  render(<SignInUpgradeDialog offer={offer} googleLinked={googleLinked} />)
+const renderBanner = (offer: { google: boolean; passkey: boolean } | null, googleLinked = false) =>
+  render(<SignInUpgradeBanner offer={offer} googleLinked={googleLinked} />)
 
+const banner = () => screen.queryByRole('region', { name: 'title' })
 const googleButton = () => screen.queryByRole('button', { name: 'continueWithGoogle' })
 const passkeyButton = () => screen.queryByRole('button', { name: 'createPasskey' })
 const laterButton = () => screen.getByRole('button', { name: 'later' })
 
-describe('SignInUpgradeDialog', () => {
+describe('SignInUpgradeBanner', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     searchParams.delete('signInUpgrade')
@@ -62,71 +63,60 @@ describe('SignInUpgradeDialog', () => {
     verifyPasskeyRegistration.mockResolvedValue('OK')
   })
 
-  it('offers both methods to a Gmail user', async () => {
-    renderDialog({ google: true, passkey: true })
+  it('offers both methods to a Gmail user without blocking the page', () => {
+    renderBanner({ google: true, passkey: true })
 
-    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(banner()).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(googleButton()).toBeInTheDocument()
     expect(passkeyButton()).toBeInTheDocument()
     expect(screen.getByText('descriptionGoogle')).toBeInTheDocument()
   })
 
-  it('offers only a passkey outside Gmail', async () => {
-    renderDialog({ google: false, passkey: true })
+  it('offers only a passkey outside Gmail', () => {
+    renderBanner({ google: false, passkey: true })
 
-    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(banner()).toBeInTheDocument()
     expect(googleButton()).not.toBeInTheDocument()
     expect(passkeyButton()).toBeInTheDocument()
     expect(screen.getByText('descriptionPasskey')).toBeInTheDocument()
   })
 
-  it('hides the passkey without WebAuthn and keeps Google', async () => {
+  it('hides the passkey without WebAuthn and keeps Google', () => {
     browserSupportsWebAuthn.mockReturnValue(false)
-    renderDialog({ google: true, passkey: true })
+    renderBanner({ google: true, passkey: true })
 
-    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(banner()).toBeInTheDocument()
     expect(googleButton()).toBeInTheDocument()
     expect(passkeyButton()).not.toBeInTheDocument()
   })
 
   it('shows nothing and records nothing without WebAuthn outside Gmail', () => {
     browserSupportsWebAuthn.mockReturnValue(false)
-    renderDialog({ google: false, passkey: true })
+    renderBanner({ google: false, passkey: true })
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(banner()).not.toBeInTheDocument()
     expect(dismissSignInUpgradeAction).not.toHaveBeenCalled()
   })
 
   it('shows nothing without an offer', () => {
-    renderDialog(null)
+    renderBanner(null)
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(banner()).not.toBeInTheDocument()
     expect(dismissSignInUpgradeAction).not.toHaveBeenCalled()
   })
 
-  it('records "later" and closes', async () => {
-    renderDialog({ google: true, passkey: true })
-    await screen.findByRole('dialog')
+  it('records "later" and hides the banner', async () => {
+    renderBanner({ google: true, passkey: true })
 
     fireEvent.click(laterButton())
 
-    await waitFor(() => expect(dismissSignInUpgradeAction).toHaveBeenCalledTimes(1))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  })
-
-  it('treats Escape as "later"', async () => {
-    renderDialog({ google: true, passkey: true })
-    const dialog = await screen.findByRole('dialog')
-
-    fireEvent.keyDown(dialog, { key: 'Escape' })
-
-    await waitFor(() => expect(dismissSignInUpgradeAction).toHaveBeenCalledTimes(1))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(banner()).not.toBeInTheDocument())
+    expect(dismissSignInUpgradeAction).toHaveBeenCalledTimes(1)
   })
 
   it('starts the Google link back to the dashboard', async () => {
-    renderDialog({ google: true, passkey: true })
-    await screen.findByRole('dialog')
+    renderBanner({ google: true, passkey: true })
 
     fireEvent.click(googleButton() as HTMLElement)
 
@@ -140,21 +130,19 @@ describe('SignInUpgradeDialog', () => {
     expect(dismissSignInUpgradeAction).not.toHaveBeenCalled()
   })
 
-  it('keeps the dialog on a Google link failure', async () => {
+  it('keeps the banner on a Google link failure', async () => {
     linkSocial.mockResolvedValue({ data: null, error: { code: 'boom' } })
-    renderDialog({ google: true, passkey: true })
-    await screen.findByRole('dialog')
+    renderBanner({ google: true, passkey: true })
 
     fireEvent.click(googleButton() as HTMLElement)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('errors.linkFailed')
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(banner()).toBeInTheDocument()
     expect(dismissSignInUpgradeAction).not.toHaveBeenCalled()
   })
 
-  it('registers a passkey, confirms and closes without recording a refusal', async () => {
-    renderDialog({ google: false, passkey: true })
-    await screen.findByRole('dialog')
+  it('registers a passkey, confirms and hides without recording a refusal', async () => {
+    renderBanner({ google: false, passkey: true })
 
     fireEvent.click(passkeyButton() as HTMLElement)
 
@@ -164,20 +152,19 @@ describe('SignInUpgradeDialog', () => {
       { id: 'credential-1' },
       'passkeyDefaultName'
     )
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(banner()).not.toBeInTheDocument()
     expect(dismissSignInUpgradeAction).not.toHaveBeenCalled()
     expect(refresh).toHaveBeenCalled()
   })
 
-  it('keeps the dialog when the WebAuthn ceremony is cancelled', async () => {
+  it('keeps the banner when the WebAuthn ceremony is cancelled', async () => {
     startRegistration.mockRejectedValue(new Error('NotAllowedError'))
-    renderDialog({ google: false, passkey: true })
-    await screen.findByRole('dialog')
+    renderBanner({ google: false, passkey: true })
 
     fireEvent.click(passkeyButton() as HTMLElement)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('errors.cancelled')
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(banner()).toBeInTheDocument()
     expect(verifyPasskeyRegistration).not.toHaveBeenCalled()
     expect(dismissSignInUpgradeAction).not.toHaveBeenCalled()
     expect(toastSuccess).not.toHaveBeenCalled()
@@ -185,28 +172,27 @@ describe('SignInUpgradeDialog', () => {
 
   it('surfaces a verification failure inline', async () => {
     verifyPasskeyRegistration.mockResolvedValue('verificationFailed')
-    renderDialog({ google: false, passkey: true })
-    await screen.findByRole('dialog')
+    renderBanner({ google: false, passkey: true })
 
     fireEvent.click(passkeyButton() as HTMLElement)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('errors.verificationFailed')
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(banner()).toBeInTheDocument()
     expect(dismissSignInUpgradeAction).not.toHaveBeenCalled()
   })
 
   it('confirms a Google link on return and strips the parameter', async () => {
     searchParams.set('signInUpgrade', 'google')
-    renderDialog(null, true)
+    renderBanner(null, true)
 
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('googleLinked'))
     expect(replace).toHaveBeenCalledWith('/fr/dashboard')
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(banner()).not.toBeInTheDocument()
   })
 
   it('shows the Google error on return and keeps the offer', async () => {
     searchParams.set('signInUpgrade', 'google-error')
-    renderDialog({ google: true, passkey: true })
+    renderBanner({ google: true, passkey: true })
 
     expect(await screen.findByRole('alert')).toHaveTextContent('errors.linkFailed')
     expect(toastSuccess).not.toHaveBeenCalled()
