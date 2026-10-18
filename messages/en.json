@@ -362,7 +362,6 @@
           "cancel": "Cancel",
           "success": "Family created successfully",
           "error": "Error creating family",
-          "nextStepHint": "After creation, add guardians and students directly from the family record.",
           "parentsTitle": "Parents",
           "addParent": "Add a parent",
           "removeParent": "Remove",
@@ -378,9 +377,39 @@
           "postCode": "Postal code",
           "city": "City",
           "errors": {
-            "validationError": "Check the information you entered",
-            "notFound": "Item not found"
-          }
+            "validationError": "Please check the information entered",
+            "notFound": "Plan or class not found",
+            "classFull": "One of the selected classes is full",
+            "totalAmountExceedsPlan": "The amount due exceeds the plan price",
+            "invalidCurrencyAmount": "The amount must have at most two decimals",
+            "discountExceedsPlan": "The discount exceeds the plan amount",
+            "paymentsDisabled": "Payment management is disabled for this school"
+          },
+          "steps": {
+            "guardian": "Guardian",
+            "children": "Children",
+            "summary": "Summary"
+          },
+          "guardianTitle": "Main guardian",
+          "guardianOptionalHint": "Optional: leave empty to create the family with its name only. The family name and emergency contact are prefilled from the guardian.",
+          "guardianInvalid": "Enter the guardian's first and last name, and check their phone and email",
+          "secondaryTitle": "Additional information",
+          "unspecified": "Not specified",
+          "birthday": "Date of birth",
+          "childrenTitle": "Children",
+          "noChildren": "No children yet. You can also add them from the family page.",
+          "childTitle": "Child {index}",
+          "removeChild": "Remove child {index}",
+          "addChild": "Add a child",
+          "enrollNow": "Enroll in a class now",
+          "enrollUnavailable": "No plan or no class in the selected period: children will be created without enrollment.",
+          "selectPlan": "Pricing plan",
+          "selectClass": "Class",
+          "notEnrolled": "not enrolled",
+          "none": "None",
+          "back": "Back",
+          "next": "Next",
+          "successWithChildren": "Family and children created successfully"
         },
         "edit": {
           "title": "Edit Family",

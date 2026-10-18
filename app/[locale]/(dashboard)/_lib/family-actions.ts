@@ -4,13 +4,13 @@ import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
 import { personGateway } from '@/gateways/person-gateway'
 import { addPersonToFamily } from '@/use-cases/families/add-person-to-family'
-import { createFamily } from '@/use-cases/families/create-family'
+import { createFullFamily } from '@/use-cases/families/create-full-family'
+import type { createFullFamilySchema } from '@/use-cases/families/create-full-family-schema'
 import { deactivateFamily } from '@/use-cases/families/deactivate-family'
 import { deleteFamily } from '@/use-cases/families/delete-family'
 import { linkUserToFamily } from '@/use-cases/families/link-user-to-family'
 import type {
   addPersonToFamilySchema,
-  createFamilySchema,
   linkUserToFamilySchema,
   updateFamilyPersonSchema,
   updateFamilySchema,
@@ -20,19 +20,26 @@ import { updateFamily } from '@/use-cases/families/update-family'
 import { updateFamilyPerson } from '@/use-cases/families/update-family-person'
 import { requireSchoolAdmin } from './auth-helper'
 
-type CreateFamilyInput = z.infer<typeof createFamilySchema>
+type CreateFamilyInput = z.input<typeof createFullFamilySchema>
 type UpdateFamilyInput = z.infer<typeof updateFamilySchema>
 type AddPersonToFamilyInput = z.infer<typeof addPersonToFamilySchema>
 type LinkUserToFamilyInput = z.infer<typeof linkUserToFamilySchema>
 type UpdateFamilyPersonInput = z.infer<typeof updateFamilyPersonSchema>
 
-export async function createFamilyAction(
-  data: Omit<CreateFamilyInput, 'schoolId' | 'createdById'> & { name: string }
-) {
+/**
+ * Parcours « Créer une famille » : responsable, enfants et inscriptions en une transaction.
+ * Sans enfant ni responsable, c'est l'ancien formulaire « nom seul ».
+ */
+export async function createFamilyAction(data: Omit<CreateFamilyInput, 'schoolId'>) {
   const { schoolId, userId } = await requireSchoolAdmin()
-  const result = await createFamily({ ...data, schoolId, createdById: userId })
+  const result = await createFullFamily({ ...data, schoolId, createdById: userId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
+  if (result.studentIds.length > 0) {
+    revalidatePath('/dashboard/students')
+    revalidatePath('/dashboard/enrollments')
+    revalidatePath('/dashboard')
+  }
   return result
 }
 

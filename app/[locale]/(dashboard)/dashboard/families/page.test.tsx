@@ -32,6 +32,10 @@ vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
 vi.mock('../../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
+vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriodId: async () => 'period-1' }))
+vi.mock('./[id]/_lib/family-detail', () => ({
+  getFamilyDialogData: async () => ({ plans: [], classes: [] }),
+}))
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, sa factory est lazy.
 const { default: FamiliesPage } = await import('./page')

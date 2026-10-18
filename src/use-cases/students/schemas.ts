@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { isCurrencyAmount } from '@/domain/enrollment'
 import { personInputSchema } from '../families/schemas'
 
-const studentInputSchema = z.object({
+export const studentInputSchema = z.object({
   birthday: z.coerce.date().nullish(),
   birthplace: z.string().max(250).optional(),
   previousSchool: z.string().max(250).optional(),
@@ -24,7 +24,7 @@ export const createStudentSchema = z.object({
  * Volontairement plus étroit que `createEnrollmentSchema` : un élève qui vient d'être créé
  * n'a aucune inscription à remplacer, donc `replaceExisting` n'a pas de sens ici.
  */
-const newStudentEnrollmentSchema = z.object({
+export const newStudentEnrollmentSchema = z.object({
   // Facultatif pour la même raison que `createEnrollmentSchema.planId` : une école qui a
   // coupé les paiements inscrit sans formule, et le use case restaure l'obligation drapeau actif.
   planId: z.string().uuid().optional(),

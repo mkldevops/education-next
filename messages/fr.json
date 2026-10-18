@@ -363,7 +363,6 @@
           "cancel": "Annuler",
           "success": "Famille créée avec succès",
           "error": "Erreur lors de la création de la famille",
-          "nextStepHint": "Après la création, ajoutez les responsables et les élèves directement depuis la fiche famille.",
           "parentsTitle": "Parents",
           "addParent": "Ajouter un parent",
           "removeParent": "Retirer",
@@ -380,8 +379,38 @@
           "city": "Ville",
           "errors": {
             "validationError": "Vérifiez les informations saisies",
-            "notFound": "Élément introuvable"
-          }
+            "notFound": "Plan ou classe introuvable",
+            "classFull": "Une des classes choisies est complète",
+            "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
+            "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
+            "discountExceedsPlan": "La réduction dépasse le montant du plan",
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
+          },
+          "steps": {
+            "guardian": "Responsable",
+            "children": "Enfants",
+            "summary": "Récapitulatif"
+          },
+          "guardianTitle": "Responsable principal",
+          "guardianOptionalHint": "Facultatif : laissez vide pour créer la famille avec son seul nom. Le nom de famille et le contact d'urgence sont préremplis depuis le responsable.",
+          "guardianInvalid": "Renseignez le prénom et le nom du responsable, et vérifiez son téléphone et son email",
+          "secondaryTitle": "Informations complémentaires",
+          "unspecified": "Non renseigné",
+          "birthday": "Date de naissance",
+          "childrenTitle": "Enfants",
+          "noChildren": "Aucun enfant pour l'instant. Vous pourrez aussi les ajouter depuis la fiche famille.",
+          "childTitle": "Enfant {index}",
+          "removeChild": "Retirer l'enfant {index}",
+          "addChild": "Ajouter un enfant",
+          "enrollNow": "Inscrire dans une classe dès maintenant",
+          "enrollUnavailable": "Aucun plan ou aucune classe sur la période sélectionnée : les enfants seront créés sans inscription.",
+          "selectPlan": "Plan tarifaire",
+          "selectClass": "Classe",
+          "notEnrolled": "sans inscription",
+          "none": "Aucun",
+          "back": "Retour",
+          "next": "Suivant",
+          "successWithChildren": "Famille et enfants créés avec succès"
         },
         "edit": {
           "title": "Modifier la famille",
