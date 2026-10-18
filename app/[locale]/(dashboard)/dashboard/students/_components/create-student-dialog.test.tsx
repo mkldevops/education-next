@@ -27,8 +27,8 @@ describe('CreateStudentDialog', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
-    fireEvent.change(screen.getByLabelText('firstname'), { target: { value: 'Alice' } })
-    fireEvent.change(screen.getByLabelText('lastname'), { target: { value: 'Martin' } })
+    fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Alice' } })
+    fireEvent.change(screen.getByLabelText(/^lastname/), { target: { value: 'Martin' } })
     fireEvent.click(screen.getByRole('combobox', { name: 'selectPlan' }))
     const reducedPlan = await screen.findByRole('option', { name: 'Plan réduit' })
     fireEvent.pointerDown(reducedPlan)
@@ -44,7 +44,7 @@ describe('CreateStudentDialog', () => {
     fireEvent.click(ce1)
     expect(screen.getByRole('button', { name: 'submit' })).toBeEnabled()
 
-    fireEvent.submit(screen.getByLabelText('firstname').closest('form') as HTMLFormElement)
+    fireEvent.submit(screen.getByLabelText(/^firstname/).closest('form') as HTMLFormElement)
 
     await waitFor(() => {
       expect(createStudentAction).toHaveBeenCalledWith(
@@ -54,6 +54,59 @@ describe('CreateStudentDialog', () => {
             totalAmount: 120,
             classPeriodId: '550e8400-e29b-41d4-a716-446655440004',
           }),
+        })
+      )
+    })
+  })
+
+  it('prefills the last name with the family name and marks the required fields', () => {
+    render(
+      <CreateStudentDialog
+        familyId="550e8400-e29b-41d4-a716-446655440001"
+        familyName="Martin"
+        classes={[{ id: '550e8400-e29b-41d4-a716-446655440004', name: 'CE1' }]}
+        paymentsEnabled={false}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'title' }))
+
+    const lastname = screen.getByLabelText(/^lastname/)
+    expect(lastname).toHaveValue('Martin')
+    fireEvent.change(lastname, { target: { value: 'Martin-Durand' } })
+    expect(lastname).toHaveValue('Martin-Durand')
+
+    for (const label of ['firstname', 'lastname', 'selectClass']) {
+      expect(screen.getByText(label).closest('label')).toHaveTextContent(`${label} *`)
+    }
+    expect(screen.getByText('sex').closest('label')).toHaveTextContent(/^sex$/)
+  })
+
+  it('folds health fields into a collapsed section and still submits them', async () => {
+    createStudentAction.mockClear()
+    render(
+      <CreateStudentDialog
+        familyId="550e8400-e29b-41d4-a716-446655440001"
+        familyName="Martin"
+        paymentsEnabled={false}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'title' }))
+
+    const section = screen.getByText('healthSection').closest('details') as HTMLDetailsElement
+    expect(section.open).toBe(false)
+    expect(section).toContainElement(screen.getByLabelText('allergies'))
+    expect(section).toContainElement(screen.getByLabelText('healthNotes'))
+    expect(section).toContainElement(screen.getByLabelText('snackAuthorization'))
+
+    fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Alice' } })
+    fireEvent.change(screen.getByLabelText('allergies'), { target: { value: 'Arachides' } })
+    fireEvent.submit(screen.getByLabelText(/^firstname/).closest('form') as HTMLFormElement)
+
+    await waitFor(() => {
+      expect(createStudentAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          person: expect.objectContaining({ name: 'Alice', lastname: 'Martin' }),
+          student: expect.objectContaining({ allergies: 'Arachides' }),
         })
       )
     })
