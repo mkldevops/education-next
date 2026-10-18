@@ -22,7 +22,7 @@ export function AddPersonDialog({ familyId }: { familyId: string }) {
   return (
     <Dialog>
       <DialogTrigger>
-        <Button size="sm">
+        <Button size="sm" variant="outline">
           <Plus className="h-4 w-4" />
           {t('title')}
         </Button>

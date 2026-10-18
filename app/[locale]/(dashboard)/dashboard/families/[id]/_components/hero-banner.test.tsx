@@ -115,4 +115,39 @@ describe('HeroBanner', () => {
 
     expect(screen.queryByRole('button', { name: 'pay' })).not.toBeInTheDocument()
   })
+
+  it('keeps the payment as the only filled header button', async () => {
+    render(
+      await HeroBanner({
+        family,
+        membersCount: 2,
+        studentsCount: 1,
+        enrollmentsCount: 1,
+        paymentsEnabled: true,
+        remainingBalance: 100,
+        showActions: true,
+      })
+    )
+
+    expect(screen.getByRole('button', { name: 'pay' })).toHaveClass('bg-primary')
+    expect(screen.getAllByRole('button', { name: 'newStudent' })).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'newStudent' })).not.toHaveClass('bg-primary')
+    expect(screen.getByRole('button', { name: 'newStudent' })).toHaveClass('border')
+  })
+
+  it('fills the student action when the school does not manage payments', async () => {
+    render(
+      await HeroBanner({
+        family,
+        membersCount: 2,
+        studentsCount: 1,
+        enrollmentsCount: 1,
+        paymentsEnabled: false,
+        remainingBalance: 0,
+        showActions: true,
+      })
+    )
+
+    expect(screen.getByRole('button', { name: 'newStudent' })).toHaveClass('bg-primary')
+  })
 })

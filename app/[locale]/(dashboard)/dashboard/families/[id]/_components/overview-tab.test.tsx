@@ -27,6 +27,10 @@ vi.mock('./parents-section', () => ({
   ParentsSection: () => <div data-testid="parents-section" />,
 }))
 
+vi.mock('./children-summary', () => ({
+  ChildrenSummary: () => <div data-testid="children-summary" />,
+}))
+
 // Import dynamique obligatoire : `vi.mock` est hoisté, sa factory est lazy.
 const { OverviewTab } = await import('./overview-tab')
 
@@ -35,6 +39,7 @@ const baseProps = {
   familyId: 'family-1',
   isAdmin: false,
   persons: [],
+  students: [],
   linkedEmails: [],
   enrolledChildren: 2,
   totalEnrollments: 3,
@@ -48,13 +53,12 @@ const baseProps = {
 }
 
 describe('OverviewTab', () => {
-  it('offers relevant student and enrollment actions to administrators', async () => {
+  it('offers enrollment creation to administrators without repeating the header student action', async () => {
     render(await OverviewTab({ ...baseProps, isAdmin: true, paymentsEnabled: true }))
 
-    expect(screen.getByRole('link', { name: 'actions.newStudent' })).toHaveAttribute(
-      'href',
-      '/dashboard/families/family-1?action=addStudent'
-    )
+    expect(screen.queryByRole('link', { name: 'actions.newStudent' })).not.toBeInTheDocument()
+    expect(screen.getByText('sections.childrenTitle')).toBeInTheDocument()
+    expect(screen.getByTestId('children-summary')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'actions.addEnrollment' })).toHaveAttribute(
       'href',
       '/dashboard/families/family-1?action=addEnrollment'
@@ -71,7 +75,6 @@ describe('OverviewTab', () => {
       })
     )
 
-    expect(screen.getByRole('link', { name: 'actions.newStudent' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'actions.addEnrollment' })).not.toBeInTheDocument()
   })
 

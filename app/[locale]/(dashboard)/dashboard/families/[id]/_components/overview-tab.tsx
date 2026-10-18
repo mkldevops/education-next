@@ -3,6 +3,8 @@ import { BookOpen, CircleCheck, TriangleAlert, Users } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { formatCurrency } from '@/lib/decimal'
 import { familyActionHref } from '../_lib/family-action-href'
+import type { FamilyDetailStudent } from '../_lib/family-detail'
+import { ChildrenSummary } from './children-summary'
 import { FinancialSummary } from './financial-summary'
 import { KPICard } from './kpi-card'
 import { OnlinePaymentButton } from './online-payment-button'
@@ -13,6 +15,7 @@ type Props = {
   familyId: string
   isAdmin: boolean
   persons: PersonWithRelation[]
+  students: FamilyDetailStudent[]
   linkedEmails: string[]
   enrolledChildren: number
   totalEnrollments: number
@@ -32,6 +35,7 @@ export async function OverviewTab({
   familyId,
   isAdmin,
   persons,
+  students,
   linkedEmails,
   enrolledChildren,
   totalEnrollments,
@@ -55,19 +59,7 @@ export async function OverviewTab({
             : 'grid grid-cols-1 md:grid-cols-2 gap-4'
         }
       >
-        <KPICard
-          label={t('kpis.enrolledChildren')}
-          value={enrolledChildren}
-          icon={Users}
-          action={
-            isAdmin
-              ? {
-                  href: familyActionHref(familyId, 'addStudent'),
-                  label: t('actions.newStudent'),
-                }
-              : undefined
-          }
-        />
+        <KPICard label={t('kpis.enrolledChildren')} value={enrolledChildren} icon={Users} />
         <KPICard
           label={t('kpis.totalEnrollments')}
           value={totalEnrollments}
@@ -99,6 +91,11 @@ export async function OverviewTab({
           </>
         )}
       </div>
+      {/* « Ajouter un élève » ne vit que dans l'en-tête : le répéter ici doublait l'action. */}
+      <Card className="p-6">
+        <h2 className="mb-4 text-lg font-semibold text-graphite">{t('sections.childrenTitle')}</h2>
+        <ChildrenSummary students={students} locale={locale} paymentsEnabled={paymentsEnabled} />
+      </Card>
       <div
         className={
           paymentsEnabled ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'grid grid-cols-1 gap-6'

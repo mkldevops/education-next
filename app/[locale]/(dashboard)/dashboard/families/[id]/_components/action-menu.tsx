@@ -87,10 +87,13 @@ export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment }: Prop
   return (
     <>
       <div className="hidden items-center gap-2 md:flex">
-        {primaryActions.map(({ key, label, icon: Icon, action, disabled, title }) => (
+        {/* Un seul bouton plein en en-tête : le premier (le règlement quand l'école gère
+            l'argent), les suivants en contour pour ne pas se disputer l'attention. */}
+        {primaryActions.map(({ key, label, icon: Icon, action, disabled, title }, index) => (
           <Button
             key={key}
             size="sm"
+            variant={index === 0 ? 'default' : 'outline'}
             disabled={disabled}
             title={title ?? label}
             aria-label={label}

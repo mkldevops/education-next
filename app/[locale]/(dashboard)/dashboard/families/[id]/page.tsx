@@ -238,6 +238,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 isAdmin={isAdmin}
                 onlinePaymentAvailable={onlinePaymentAvailable}
                 persons={family.persons}
+                students={students}
                 linkedEmails={family.users.map(({ user }) => user.email)}
                 enrolledChildren={enrolledChildren}
                 totalEnrollments={allEnrollments.length}
