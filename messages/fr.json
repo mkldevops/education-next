@@ -1369,7 +1369,8 @@
             "viewClass": "Voir la classe",
             "viewStudent": "Voir l'élève",
             "previousEnrollments": "Autres inscriptions"
-          }
+          },
+          "settled": "À jour"
         },
         "payments": {
           "amount": "Montant",

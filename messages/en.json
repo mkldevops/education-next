@@ -1368,7 +1368,8 @@
             "viewClass": "View class",
             "viewStudent": "View student",
             "previousEnrollments": "Other enrollments"
-          }
+          },
+          "settled": "Paid up"
         },
         "payments": {
           "amount": "Amount",
