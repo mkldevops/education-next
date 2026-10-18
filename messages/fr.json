@@ -968,7 +968,10 @@
           "outstandingSubtitle": "Restant dû décroissant",
           "outOf": "sur {amount}",
           "noCollection": "Aucun encaissement sur ce périmètre",
-          "noOutstanding": "Toutes les familles sont à jour"
+          "noOutstanding": "Toutes les familles sont à jour",
+          "recordFor": "Enregistrer un règlement pour {family}",
+          "callFamily": "Appeler la famille {family}",
+          "noPhone": "Aucun téléphone"
         },
         "summary": {
           "remaining": "Solde restant",

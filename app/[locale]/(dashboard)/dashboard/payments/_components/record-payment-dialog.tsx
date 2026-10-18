@@ -21,7 +21,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { ArrowLeftRight, Banknote, CreditCard, FileCheck, Plus } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
 import type { ManualPaymentMethod } from '@/use-cases/payments/schemas'
@@ -45,12 +45,15 @@ export function RecordPaymentDialog({
   redirectTo = '/dashboard/payments',
   showTrigger = true,
   remainingAmount,
+  trigger,
 }: {
   families: Option[]
   defaultOpen?: boolean
   redirectTo?: string
   showTrigger?: boolean
   remainingAmount?: number
+  /** Bouton d'ouverture à la place du bouton principal, pour un point d'entrée secondaire. */
+  trigger?: ReactNode
 }) {
   const t = useTranslations('dashboard.pages.payments.record')
 
@@ -59,10 +62,12 @@ export function RecordPaymentDialog({
       <DialogRouteOpener open={defaultOpen} cleanUrl={redirectTo} />
       {showTrigger && (
         <DialogTrigger>
-          <Button>
-            <Plus className="h-4 w-4" />
-            {t('title')}
-          </Button>
+          {trigger ?? (
+            <Button>
+              <Plus className="h-4 w-4" />
+              {t('title')}
+            </Button>
+          )}
         </DialogTrigger>
       )}
       <DialogContent>
