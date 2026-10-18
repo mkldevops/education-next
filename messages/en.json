@@ -1807,7 +1807,6 @@
         "teacher": "Teacher",
         "allClasses": "All classes",
         "allTeachers": "All teachers",
-        "applyFilters": "Apply filters",
         "expectedCalls": "{count, plural, =0 {No expected attendance} one {# expected attendance} other {# expected attendance sessions}}",
         "callsDescription": "Status of the sessions scheduled for this day.",
         "cancelledCalls": "{count, plural, =0 {No cancelled session} one {# cancelled session} other {# cancelled sessions}}",

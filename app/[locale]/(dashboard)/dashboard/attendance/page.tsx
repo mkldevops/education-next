@@ -1,15 +1,4 @@
-import {
-  Breadcrumbs,
-  buttonVariants,
-  Card,
-  EmptyState,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  StatusBadge,
-} from '@peaklab/ui'
+import { Breadcrumbs, buttonVariants, Card, EmptyState, StatusBadge } from '@peaklab/ui'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -28,6 +17,7 @@ import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 import { requireSchoolSession, requireTeacher } from '../../_lib/auth-helper'
+import { AttendanceFilters } from './_components/attendance-filters'
 import { CancelAttendanceForm, CancelOccurrenceForm } from './_components/cancel-attendance-form'
 
 type SearchParams = { date?: string; classId?: string; teacherId?: string }
@@ -334,53 +324,17 @@ export default async function AttendanceTrackingPage({
 
       {admin && (
         <Card className="p-4">
-          <form method="get" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
-            <label className="grid gap-1 text-sm font-medium text-graphite">
-              {t('date')}
-              <input
-                className="h-10 rounded border border-alabaster-600 bg-white px-3 text-sm"
-                type="date"
-                name="date"
-                defaultValue={dateParam(selectedDate)}
-              />
-            </label>
-            <div className="grid gap-1 text-sm font-medium text-graphite">
-              <label htmlFor="attendance-class">{t('class')}</label>
-              <Select name="classId" items={classItems} defaultValue={selectedClassId}>
-                <SelectTrigger id="attendance-class" className="border-alabaster-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {classItems.map((item) => (
-                    <SelectItem key={item.value ?? ''} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1 text-sm font-medium text-graphite">
-              <label htmlFor="attendance-teacher">{t('teacher')}</label>
-              <Select name="teacherId" items={teacherItems} defaultValue={selectedTeacherId}>
-                <SelectTrigger id="attendance-teacher" className="border-alabaster-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {teacherItems.map((item) => (
-                    <SelectItem key={item.value ?? ''} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="submit" className={buttonVariants({ className: 'min-h-11' })}>
-                {t('applyFilters')}
-              </button>
-              {filtersActive && resetFiltersLink}
-            </div>
-          </form>
+          <AttendanceFilters
+            key={`${dateParam(selectedDate)}|${selectedClassId ?? ''}|${selectedTeacherId ?? ''}`}
+            date={dateParam(selectedDate)}
+            classId={selectedClassId}
+            teacherId={selectedTeacherId}
+            classItems={classItems}
+            teacherItems={teacherItems}
+            labels={{ date: t('date'), class: t('class'), teacher: t('teacher') }}
+          >
+            {filtersActive && resetFiltersLink}
+          </AttendanceFilters>
         </Card>
       )}
 
