@@ -1397,10 +1397,12 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
   enrollment in the period is flagged and can only be submitted with « Remplacer l'inscription
   existante » ticked, the case `duplicateEnrollment` would otherwise refuse. The class picker lists
   the **suggested level** first (`suggestLevelId` in
-  `app/[locale]/(dashboard)/dashboard/enrollments/_lib/enrollment-options.ts`): the level of the
+  `app/[locale]/(dashboard)/_lib/class-options.ts`): the level of the
   student's latest non-cancelled assignment when it is in the target period, otherwise that level's
-  `nextLevelId` (the same level at the end of the chain); no history, no suggestion. The schema
-  holds no age-to-level mapping, so age is not used. Each class shows its remaining seats
+  `nextLevelId` (the same level at the end of the chain); no history, no suggestion, and the classes
+  are then grouped by level. The schema holds no age-to-level mapping, so age is not used. The
+  picker (`app/[locale]/(dashboard)/_components/class-select.tsx`) is shared by « Nouvelle
+  inscription », « Ajouter un élève » and « Créer une famille ». Each class shows its remaining seats
   (« 2/18 places libres », the shared occupancy predicate read without lock) and a full class is
   flagged « Complète » but stays selectable — the locked re-count at commit remains the authority
   (`classFull`).
@@ -1440,6 +1442,10 @@ first write, so a refused step never leaves an orphan family behind.
 - **Enrollment is optional per child** and follows the same payment rules as « Ajouter un élève »:
   a plan is required while payments are enabled, refused (`paymentsDisabled`) while they are off,
   where the unpriced plan is used instead. Enrollments are `ACTIVE` at once.
+- **Each enrolled child's class is chosen explicitly, never preselected**, with the shared class
+  picker (grouped by level, remaining seats, a full class flagged but selectable). The children
+  step cannot be left while an enrolled child has no class; the plan keeps its default, the first
+  plan. No level is suggested: a child created here has no class history.
 - **The guardian and the children are optional**: a family name alone still creates the family, as
   the former single-field form did. Authorized pickup and languages at home are folded away.
 - The teacher flow (`createFamilyAsTeacherAction`) still uses `create-family.ts`.

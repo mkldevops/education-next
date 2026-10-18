@@ -27,9 +27,11 @@ import { RequiredMark, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { createFullFamilySchema } from '@/use-cases/families/create-full-family-schema'
+import { ClassSelect } from '../../../_components/class-select'
+import type { ClassOption } from '../../../_lib/class-options'
 import { createFamilyAction } from '../../../_lib/family-actions'
 
-interface Option {
+interface PlanOption {
   id: string
   name: string
   amount?: number
@@ -38,8 +40,8 @@ interface Option {
 interface CreateFamilyDialogProps {
   defaultOpen?: boolean
   /** Plans et classes de la période sélectionnée : vides, l'inscription n'est pas proposée. */
-  plans?: Option[]
-  classes?: Option[]
+  plans?: PlanOption[]
+  classes?: ClassOption[]
   /** Faux, l'inscription se fait sans formule. */
   paymentsEnabled?: boolean
 }
@@ -54,7 +56,8 @@ interface ChildDraft {
   birthday: string
   enroll: boolean
   planId: string
-  classPeriodId: string
+  /** `null` tant que la classe n'est pas choisie : aucune présélection (#482). */
+  classPeriodId: string | null
 }
 
 const STEPS = ['guardian', 'children', 'summary'] as const
@@ -139,7 +142,7 @@ function CreateFamilyWizard({
         birthday: '',
         enroll: canEnroll,
         planId: plans[0]?.id ?? '',
-        classPeriodId: classes[0]?.id ?? '',
+        classPeriodId: null,
       },
     ])
 
@@ -187,8 +190,15 @@ function CreateFamilyWizard({
     }
   }
 
+  // Un enfant inscrit exige une classe choisie explicitement.
+  const missingClass = canEnroll && children.some((c) => c.enroll && c.classPeriodId === null)
+
   const goNext = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (step === 1 && missingClass) {
+      toast.error(t('classRequired'))
+      return
+    }
     if (step === 0) {
       const parsed = createFullFamilySchema
         .pick({ name: true, emergencyContactPhone: true, parents: true })
@@ -210,6 +220,10 @@ function CreateFamilyWizard({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (missingClass) {
+      toast.error(t('classRequired'))
+      return
+    }
     const parsed = createFullFamilySchema.omit({ schoolId: true }).safeParse(buildPayload())
     if (!parsed.success) {
       toast.error(t('errors.validationError'))
@@ -222,9 +236,8 @@ function CreateFamilyWizard({
   }
 
   const planName = (id: string) => plans.find((p) => p.id === id)?.name ?? ''
-  const className = (id: string) => classes.find((c) => c.id === id)?.name ?? ''
+  const className = (id: string | null) => classes.find((c) => c.id === id)?.name ?? ''
   const planItems = plans.map((p) => ({ value: p.id, label: p.name }))
-  const classItems = classes.map((c) => ({ value: c.id, label: c.name }))
   const sexItems = [
     { value: null, label: t('unspecified') },
     { value: 'MALE', label: t('male') },
@@ -479,25 +492,18 @@ function CreateFamilyWizard({
                             </div>
                           )}
                           <div className="space-y-2">
-                            <Label htmlFor={`${prefix}-class`}>{t('selectClass')}</Label>
-                            <Select
-                              items={classItems}
+                            <Label htmlFor={`${prefix}-class`}>
+                              {t('selectClass')}
+                              <RequiredMark />
+                            </Label>
+                            <ClassSelect
+                              id={`${prefix}-class`}
+                              classes={classes}
                               value={child.classPeriodId}
                               onValueChange={(value) =>
-                                updateChild(child.key, { classPeriodId: value ?? '' })
+                                updateChild(child.key, { classPeriodId: value })
                               }
-                            >
-                              <SelectTrigger id={`${prefix}-class`}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {classItems.map((item) => (
-                                  <SelectItem key={item.value} value={item.value}>
-                                    {item.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            />
                           </div>
                         </div>
                       )}

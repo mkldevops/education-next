@@ -1,10 +1,10 @@
 import { SEAT_HOLDING_ENROLLMENT_STATUSES } from '@/domain/class-period'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
-import { suggestLevelId } from './enrollment-options'
+import { suggestLevelId } from './class-options'
 
 /**
- * Projection Prisma d'une classe pour les sélecteurs d'inscription : niveau, capacité et places
+ * Projection Prisma d'une classe pour le sélecteur partagé : niveau, capacité et places
  * occupées, au prédicat d'occupation commun (`seatHoldingAssignmentsWhere`).
  */
 export const classOptionSelect = {
@@ -12,6 +12,7 @@ export const classOptionSelect = {
   name: true,
   capacity: true,
   levelId: true,
+  level: { select: { name: true } },
   _count: {
     select: {
       classAssignments: {
@@ -31,6 +32,7 @@ export function toClassOption(row: ClassOptionRow, name: string = row.name) {
     id: row.id,
     name,
     levelId: row.levelId,
+    levelName: row.level.name,
     capacity: row.capacity,
     enrolled: row._count.classAssignments,
   }

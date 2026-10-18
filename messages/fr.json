@@ -404,6 +404,7 @@
           "addChild": "Ajouter un enfant",
           "enrollNow": "Inscrire dans une classe dès maintenant",
           "enrollUnavailable": "Aucun plan ou aucune classe sur la période sélectionnée : les enfants seront créés sans inscription.",
+          "classRequired": "Choisissez la classe de chaque enfant à inscrire",
           "selectPlan": "Plan tarifaire",
           "selectClass": "Classe",
           "notEnrolled": "sans inscription",

@@ -23,9 +23,9 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { DialogFormActions, RequiredMark, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
+import { ClassSelect } from '../../../_components/class-select'
+import type { ClassOption } from '../../../_lib/class-options'
 import { createStudentAction } from '../../../_lib/student-actions'
-import { ClassSelect } from '../../enrollments/_components/class-select'
-import type { ClassOption } from '../../enrollments/_lib/enrollment-options'
 
 interface Option {
   id: string
