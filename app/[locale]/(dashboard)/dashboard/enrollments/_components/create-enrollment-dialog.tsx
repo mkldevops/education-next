@@ -25,9 +25,10 @@ import { useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'
+import { ClassSelect } from '../../../_components/class-select'
+import type { ClassOption } from '../../../_lib/class-options'
 import { createEnrollmentAction } from '../../../_lib/enrollment-actions'
-import type { ClassOption, StudentOption } from '../_lib/enrollment-options'
-import { ClassSelect } from './class-select'
+import type { StudentOption } from '../_lib/enrollment-options'
 import { StudentCombobox } from './student-combobox'
 
 interface PlanOption {

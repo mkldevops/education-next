@@ -12,10 +12,11 @@ import {
 import { useTranslations } from 'next-intl'
 import {
   type ClassOption,
+  groupClassesByLevel,
   isClassFull,
   rankClasses,
   remainingSeats,
-} from '../_lib/enrollment-options'
+} from '../_lib/class-options'
 
 interface ClassSelectProps {
   id: string
@@ -27,8 +28,9 @@ interface ClassSelectProps {
 }
 
 /**
- * Sélecteur de classe sans présélection : les classes du niveau suggéré viennent d'abord, chaque
- * classe affiche ses places restantes et une classe complète est signalée.
+ * Sélecteur de classe sans présélection : les classes du niveau suggéré viennent d'abord, sinon
+ * elles sont regroupées par niveau ; chaque classe affiche ses places restantes et une classe
+ * complète est signalée, mais reste sélectionnable.
  */
 export function ClassSelect({
   id,
@@ -40,6 +42,7 @@ export function ClassSelect({
 }: ClassSelectProps) {
   const t = useTranslations('dashboard.pages.enrollments.classPicker')
   const { suggested, others } = rankClasses(classes, suggestedLevelId)
+  const levelGroups = suggested.length > 0 ? [] : groupClassesByLevel(classes)
   const items = classes.map((c) => ({ value: c.id, label: c.name }))
 
   const renderItem = (option: ClassOption) => {
@@ -83,6 +86,13 @@ export function ClassSelect({
               </SelectGroup>
             )}
           </>
+        ) : levelGroups.length > 0 ? (
+          levelGroups.map((group) => (
+            <SelectGroup key={group.levelName}>
+              <SelectLabel>{group.levelName}</SelectLabel>
+              {group.classes.map(renderItem)}
+            </SelectGroup>
+          ))
         ) : (
           others.map(renderItem)
         )}

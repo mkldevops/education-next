@@ -2,8 +2,8 @@ import { cache } from 'react'
 import { db } from '@/lib/db'
 import type { DecimalLike } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
+import { classOptionSelect } from '../../../../_lib/class-options-loader'
 import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
-import { classOptionSelect } from '../../../enrollments/_lib/load-enrollment-options'
 
 /**
  * Résolveur unique de la page ET de `generateMetadata`.

@@ -6,8 +6,8 @@ import { calculateAge } from '@/lib/date'
 import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
+import { classOptionSelect, toClassOption } from '../../../../_lib/class-options-loader'
 import { adminOrLinkedTo, familyLinksVisibleTo, resolveDeepLink } from '../../../../_lib/deep-link'
-import { classOptionSelect, toClassOption } from '../../../enrollments/_lib/load-enrollment-options'
 
 /**
  * Résolveur unique de la page ET de `generateMetadata`.

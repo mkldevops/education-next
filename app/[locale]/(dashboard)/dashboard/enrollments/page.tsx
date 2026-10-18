@@ -8,13 +8,13 @@ import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolScope } from '../../_lib/auth-helper'
-import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
-import { EnrollmentsTable } from './_components/enrollments-table'
 import {
   classOptionSelect,
   loadSuggestedLevels,
   toClassOption,
-} from './_lib/load-enrollment-options'
+} from '../../_lib/class-options-loader'
+import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
+import { EnrollmentsTable } from './_components/enrollments-table'
 
 type Props = {
   params: Promise<{ locale: string }>

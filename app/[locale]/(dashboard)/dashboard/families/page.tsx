@@ -13,6 +13,7 @@ import {
   PAYABLE_ENROLLMENT_STATUSES,
 } from '@/use-cases/payments/family-balance'
 import { requireSchoolScope } from '../../_lib/auth-helper'
+import { toClassOption } from '../../_lib/class-options-loader'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
 import { FamiliesDataTable, type FamilyRow } from './_components/families-data-table'
 import { getFamilyDialogData } from './[id]/_lib/family-detail'
@@ -164,10 +165,9 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
             <CreateFamilyDialog
               defaultOpen={action === 'create'}
               plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
-              classes={classes.map((c) => ({
-                id: c.id,
-                name: `${c.name} (${c.level.name} — ${c.period.name})`,
-              }))}
+              classes={classes.map((c) =>
+                toClassOption(c, `${c.name} (${c.level.name} — ${c.period.name})`)
+              )}
               paymentsEnabled={paymentsEnabled}
             />
           )

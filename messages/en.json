@@ -403,6 +403,7 @@
           "addChild": "Add a child",
           "enrollNow": "Enroll in a class now",
           "enrollUnavailable": "No plan or no class in the selected period: children will be created without enrollment.",
+          "classRequired": "Choose a class for each child you enroll",
           "selectPlan": "Pricing plan",
           "selectClass": "Class",
           "notEnrolled": "not enrolled",
