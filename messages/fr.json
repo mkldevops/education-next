@@ -1808,7 +1808,6 @@
         "teacher": "Enseignant",
         "allClasses": "Toutes les classes",
         "allTeachers": "Tous les enseignants",
-        "applyFilters": "Appliquer les filtres",
         "expectedCalls": "{count, plural, =0 {Aucun appel attendu} one {# appel attendu} other {# appels attendus}}",
         "callsDescription": "État des séances prévues pour cette journée.",
         "cancelledCalls": "{count, plural, =0 {Aucune séance annulée} one {# séance annulée} other {# séances annulées}}",

@@ -158,6 +158,7 @@ describe('AttendanceTrackingPage', () => {
     expect(screen.getByLabelText('teacher')).toHaveTextContent('allTeachers')
     expect(container.querySelector('input[name="classId"]')).toHaveValue('')
     expect(container.querySelector('input[name="teacherId"]')).toHaveValue('')
+    expect(screen.queryByRole('button', { name: 'applyFilters' })).not.toBeInTheDocument()
     expect(screen.getByText('cancelledCalls').parentElement).toHaveTextContent('1')
     expect(screen.getByText('expectedCalls').parentElement).toHaveTextContent('1')
     expect(screen.getByText('sessionCancelled')).toBeInTheDocument()
