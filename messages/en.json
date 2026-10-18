@@ -874,7 +874,8 @@
             "paymentsDisabled": "Payment management is turned off for this school"
           },
           "replaceExistingHintNoPayments": "The current enrollment is cancelled, then recreated.",
-          "totalAmount": "Amount due (€)"
+          "totalAmount": "Amount due (€)",
+          "alreadyEnrolledHint": "This student already has a current enrollment for this period: tick “Replace the existing enrollment” to recreate it."
         },
         "drawer": {
           "title": "Enrollment Details",
@@ -909,7 +910,20 @@
             "unpricedPlan": "That plan is reserved for enrollments without a price."
           }
         },
-        "description": "This period's enrollments, to follow and settle."
+        "description": "This period's enrollments, to follow and settle.",
+        "classPicker": {
+          "placeholder": "Choose a class",
+          "suggested": "Suggested level",
+          "others": "Other classes",
+          "seats": "{remaining}/{capacity} seats left",
+          "full": "Full"
+        },
+        "studentPicker": {
+          "placeholder": "Search a student or a family",
+          "open": "Show students",
+          "empty": "No student found",
+          "alreadyEnrolled": "Already enrolled"
+        }
       },
       "promotion": {
         "title": "Student Promotion",

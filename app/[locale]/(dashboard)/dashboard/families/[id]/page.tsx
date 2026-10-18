@@ -15,6 +15,7 @@ import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
+import { loadSuggestedLevels, toClassOption } from '../../enrollments/_lib/load-enrollment-options'
 import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
 import { CreateStudentDialog } from '../../students/_components/create-student-dialog'
 import { DeactivateFamilyButton } from '../_components/deactivate-family-button'
@@ -105,21 +106,26 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
      Sans période sélectionnée — une école sans aucune période active — il n'y a pas de cible :
      `getFamilyDialogData` ne rend alors aucune classe, le dialogue est insoumettable et le
      bouton inerte. Ne pas élargir cette branche en « tout le monde peut s'inscrire ». */
-  const [{ plans, classes }, studentsEnrolledInSelectedPeriod] = await Promise.all([
-    getFamilyDialogData(family.schoolId, isAdmin, selectedPeriodId),
-    isAdmin && selectedPeriodId !== null
-      ? enrollmentGateway.findStudentIdsEnrolledInPeriod(
-          family.schoolId,
-          students.map((s) => s.person.student.id),
-          selectedPeriodId
-        )
-      : new Set<string>(),
-  ])
+  const studentIds = students.map((s) => s.person.student.id)
+  const [{ plans, classes }, studentsEnrolledInSelectedPeriod, suggestedLevels] = await Promise.all(
+    [
+      getFamilyDialogData(family.schoolId, isAdmin, selectedPeriodId),
+      isAdmin && selectedPeriodId !== null
+        ? enrollmentGateway.findStudentIdsEnrolledInPeriod(
+            family.schoolId,
+            studentIds,
+            selectedPeriodId
+          )
+        : new Set<string>(),
+      isAdmin
+        ? loadSuggestedLevels(family.schoolId, studentIds, selectedPeriodId)
+        : new Map<string, string>(),
+    ]
+  )
 
-  const classOptions = classes.map((c) => ({
-    id: c.id,
-    name: `${c.name} (${c.level.name} — ${c.period.name})`,
-  }))
+  const classOptions = classes.map((c) =>
+    toClassOption(c, `${c.name} (${c.level.name} — ${c.period.name})`)
+  )
   const planOptions = plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))
   const familyHref = `/dashboard/families/${family.id}`
 
@@ -148,6 +154,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               students={students.map((s) => ({
                 id: s.person.student.id,
                 name: `${s.person.lastname} ${s.person.name}`,
+                suggestedLevelId: suggestedLevels.get(s.person.student.id) ?? null,
+                enrolledInPeriod: studentsEnrolledInSelectedPeriod.has(s.person.student.id),
               }))}
               plans={planOptions}
               classes={classOptions}

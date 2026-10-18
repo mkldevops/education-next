@@ -24,6 +24,8 @@ import { useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
 import { createStudentAction } from '../../../_lib/student-actions'
+import { ClassSelect } from '../../enrollments/_components/class-select'
+import type { ClassOption } from '../../enrollments/_lib/enrollment-options'
 
 interface Option {
   id: string
@@ -35,7 +37,7 @@ interface CreateStudentDialogProps {
   familyId: string
   /** Plans et classes de la période sélectionnée : vides, l'inscription n'est pas proposée. */
   plans?: Option[]
-  classes?: Option[]
+  classes?: ClassOption[]
   /** Faux, l'inscription immédiate se fait sans formule ni remise. */
   paymentsEnabled: boolean
   defaultOpen?: boolean
@@ -89,7 +91,7 @@ function CreateStudentForm({
 }: {
   familyId: string
   plans: Option[]
-  classes: Option[]
+  classes: ClassOption[]
   paymentsEnabled: boolean
 }) {
   const t = useTranslations('dashboard.pages.students.create')
@@ -106,10 +108,13 @@ function CreateStudentForm({
     { value: 'MALE', label: t('male') },
     { value: 'FEMALE', label: t('female') },
   ]
+  // Aucune classe présélectionnée : elle se choisit explicitement (#464).
+  const [classPeriodId, setClassPeriodId] = useState<string | null>(null)
+  const enrolling = enroll && canEnroll
+  const missingClass = enrolling && classPeriodId === null
   const planItems = plans.map((p) => ({ value: p.id, label: p.name }))
-  const classItems = classes.map((c) => ({ value: c.id, label: c.name }))
 
-  const handleSubmit = onSubmit(
+  const submit = onSubmit(
     (formData) =>
       createStudentAction({
         familyId: formData.get('familyId') as string,
@@ -127,7 +132,7 @@ function CreateStudentForm({
           healthNotes: (formData.get('healthNotes') as string) || undefined,
           snackAuthorization: formData.get('snackAuthorization') === 'on',
         },
-        ...(enroll && canEnroll
+        ...(enrolling && classPeriodId
           ? {
               enrollment: {
                 // Hors drapeau les deux champs n'existent pas : les omettre laisse le use
@@ -138,19 +143,27 @@ function CreateStudentForm({
                       totalAmount,
                     }
                   : {}),
-                classPeriodId: formData.get('classPeriodId') as string,
+                classPeriodId,
                 canLeaveAlone: formData.get('canLeaveAlone') === 'on',
               },
             }
           : {}),
       }),
     {
-      successKey: enroll && canEnroll ? 'successEnrolled' : 'success',
+      successKey: enrolling ? 'successEnrolled' : 'success',
       onSuccess: () => {
         if (familyId) router.push(`/dashboard/families/${familyId}`)
       },
     }
   )
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    if (missingClass) {
+      event.preventDefault()
+      return
+    }
+    submit(event)
+  }
 
   return (
     <form onSubmit={handleSubmit}>
@@ -267,24 +280,13 @@ function CreateStudentForm({
                     )}
                     <div className="space-y-2">
                       <Label htmlFor="student-class">{t('selectClass')}</Label>
-                      <Select
-                        name="classPeriodId"
-                        items={classItems}
-                        required
+                      <ClassSelect
+                        id="student-class"
+                        classes={classes}
+                        value={classPeriodId}
+                        onValueChange={setClassPeriodId}
                         disabled={isPending}
-                        defaultValue={classItems[0]?.value}
-                      >
-                        <SelectTrigger id="student-class">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {classItems.map((item) => (
-                            <SelectItem key={item.value} value={item.value}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      />
                     </div>
                   </div>
                   {paymentsEnabled && (
@@ -314,7 +316,12 @@ function CreateStudentForm({
           </div>
         </div>
       </DialogBody>
-      <DialogFormActions t={t} isPending={isPending} onCancel={close} />
+      <DialogFormActions
+        t={t}
+        isPending={isPending}
+        onCancel={close}
+        submitDisabled={missingClass}
+      />
     </form>
   )
 }

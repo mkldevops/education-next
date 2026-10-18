@@ -875,7 +875,8 @@
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
           },
           "replaceExistingHintNoPayments": "L'inscription en cours est annulée puis recréée.",
-          "totalAmount": "Montant dû (€)"
+          "totalAmount": "Montant dû (€)",
+          "alreadyEnrolledHint": "Cet élève a déjà une inscription en cours sur la période : cochez « Remplacer l’inscription existante » pour la recréer."
         },
         "drawer": {
           "title": "Détail de l'inscription",
@@ -910,7 +911,20 @@
             "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif."
           }
         },
-        "description": "Inscriptions de la période, à suivre et régler."
+        "description": "Inscriptions de la période, à suivre et régler.",
+        "classPicker": {
+          "placeholder": "Choisir une classe",
+          "suggested": "Niveau suggéré",
+          "others": "Autres classes",
+          "seats": "{remaining}/{capacity} places libres",
+          "full": "Complète"
+        },
+        "studentPicker": {
+          "placeholder": "Rechercher un élève ou une famille",
+          "open": "Afficher les élèves",
+          "empty": "Aucun élève trouvé",
+          "alreadyEnrolled": "Déjà inscrit"
+        }
       },
       "promotion": {
         "title": "Promotion des élèves",
