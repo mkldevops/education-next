@@ -967,7 +967,10 @@
           "outstandingSubtitle": "Highest remaining first",
           "outOf": "of {amount}",
           "noCollection": "No payment collected in this scope",
-          "noOutstanding": "Every family is up to date"
+          "noOutstanding": "Every family is up to date",
+          "recordFor": "Record a payment for {family}",
+          "callFamily": "Call the {family} family",
+          "noPhone": "No phone number"
         },
         "summary": {
           "remaining": "Remaining balance",

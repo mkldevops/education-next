@@ -1604,6 +1604,10 @@ announced figures cannot drift from what a family is asked to pay.
   `findPayableByFamily` and the `/dashboard/families` list all resolve the same debtor, so a family
   never sees another family's debt on its own balance, and the follow-up total always reconciles
   with the sum of its rows.
+- **A family to follow up carries the phone to call**: the oldest active number of an active parent,
+  else of a tutor, else the family's emergency contact (`getPaymentStats`,
+  `src/use-cases/payments/payment-stats.ts`). Each row also opens the manual payment dialog already
+  set on that family. Nothing is sent to the family automatically.
 
 ### Refunds
 

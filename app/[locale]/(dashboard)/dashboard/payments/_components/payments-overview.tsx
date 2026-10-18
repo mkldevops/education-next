@@ -8,6 +8,7 @@ import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import type { PaymentStats } from '@/use-cases/payments/payment-stats'
+import { OutstandingFamilyActions } from './outstanding-family-actions'
 
 const KPI_TONES = {
   primary: { tile: 'bg-primary-light', icon: 'text-primary' },
@@ -163,6 +164,10 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
                   <div className="mt-2">
                     <ProgressBar value={family.collectionRate} />
                   </div>
+                  <OutstandingFamilyActions
+                    family={{ id: family.familyId, name: family.familyName }}
+                    phone={family.contactPhone}
+                  />
                 </li>
               ))}
             </ul>

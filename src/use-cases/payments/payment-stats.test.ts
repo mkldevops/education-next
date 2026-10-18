@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const dbMock = {
   enrollment: { findMany: vi.fn() },
+  family: { findMany: vi.fn() },
   payment: { groupBy: vi.fn(), aggregate: vi.fn(), findMany: vi.fn() },
 }
 
@@ -50,6 +51,48 @@ describe('getPaymentStats', () => {
     dbMock.payment.findMany.mockResolvedValue([
       { amount: 60, paidAt: new Date('2026-09-02T00:00:00.000Z') },
     ])
+    dbMock.family.findMany.mockResolvedValue([])
+  })
+
+  it('gives each listed family the phone of a parent, then a tutor, then its emergency contact', async () => {
+    dbMock.family.findMany.mockResolvedValue([
+      {
+        id: 'family-1',
+        emergencyContactPhone: '01 00 00 00 00',
+        persons: [
+          { relationType: 'TUTOR', person: { phoneNumbers: [{ phoneNumber: '07 22 22 22 22' }] } },
+          { relationType: 'PARENT', person: { phoneNumbers: [] } },
+          { relationType: 'PARENT', person: { phoneNumbers: [{ phoneNumber: '06 11 11 11 11' }] } },
+        ],
+      },
+    ])
+
+    const stats = await getPaymentStats('school-1', null, reference)
+
+    expect(stats.families[0]).toMatchObject({
+      familyId: 'family-1',
+      contactPhone: '06 11 11 11 11',
+    })
+    expect(dbMock.family.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { schoolId: 'school-1', id: { in: ['family-1'] } } })
+    )
+  })
+
+  it('falls back to the emergency contact, or to no phone at all', async () => {
+    dbMock.family.findMany.mockResolvedValue([
+      { id: 'family-1', emergencyContactPhone: '01 00 00 00 00', persons: [] },
+    ])
+    expect((await getPaymentStats('school-1', null, reference)).families[0].contactPhone).toBe(
+      '01 00 00 00 00'
+    )
+
+    dbMock.payment.aggregate
+      .mockResolvedValueOnce({ _sum: { amount: 60 }, _count: { _all: 1 } })
+      .mockResolvedValueOnce({ _max: { paidAt: null } })
+    dbMock.family.findMany.mockResolvedValue([
+      { id: 'family-1', emergencyContactPhone: null, persons: [] },
+    ])
+    expect((await getPaymentStats('school-1', null, reference)).families[0].contactPhone).toBeNull()
   })
 
   it('aggregates payments in the database, scoped to the school', async () => {
@@ -109,6 +152,7 @@ describe('getPaymentStats', () => {
     const stats = await getPaymentStats('school-1', null, reference)
 
     expect(stats.families).toEqual([])
+    expect(dbMock.family.findMany).not.toHaveBeenCalled()
   })
 
   it('attributes the debt to the parent family, not the arbitrary one', async () => {

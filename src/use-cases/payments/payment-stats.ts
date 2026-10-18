@@ -20,7 +20,55 @@ export type PaymentStats = {
   totals: PaymentTotals
   monthly: MonthlyCollection[]
   methods: MethodCollection[]
-  families: FamilyOutstanding[]
+  families: FamilyToFollowUp[]
+}
+
+/** Famille à relancer, avec le téléphone à composer pour la joindre. */
+type FamilyToFollowUp = FamilyOutstanding & { contactPhone: string | null }
+
+const CONTACT_RELATIONS = ['PARENT', 'TUTOR'] as const
+
+/**
+ * Téléphone du contact de chaque famille listée : celui d'un parent, sinon d'un tuteur, sinon
+ * le contact d'urgence de la fiche. Une seule requête, bornée aux familles affichées.
+ */
+async function contactPhones(schoolId: string, familyIds: string[]) {
+  if (familyIds.length === 0) return new Map<string, string>()
+
+  const families = await db.family.findMany({
+    where: { schoolId, id: { in: familyIds } },
+    select: {
+      id: true,
+      emergencyContactPhone: true,
+      persons: {
+        where: { relationType: { in: [...CONTACT_RELATIONS] }, person: { isActive: true } },
+        select: {
+          relationType: true,
+          person: {
+            select: {
+              phoneNumbers: {
+                where: { isActive: true },
+                select: { phoneNumber: true },
+                orderBy: { createdAt: 'asc' },
+                take: 1,
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const phones = new Map<string, string>()
+  for (const family of families) {
+    const member = CONTACT_RELATIONS.flatMap((relation) =>
+      family.persons.filter((person) => person.relationType === relation)
+    ).find((person) => person.person.phoneNumbers.length > 0)
+    const phone = member?.person.phoneNumbers[0].phoneNumber ?? family.emergencyContactPhone
+    if (phone) phones.set(family.id, phone)
+  }
+
+  return phones
 }
 
 /**
@@ -85,11 +133,6 @@ export async function getPaymentStats(
   ])
 
   const window = monthWindow(latest._max.paidAt, { months: MONTHS_CHARTED, reference })
-  const charted = await db.payment.findMany({
-    where: { ...paymentWhere, paidAt: { gte: window.from, lt: window.to } },
-    select: { amount: true, paidAt: true },
-  })
-
   const paid = new Map(paidByEnrollment.map((row) => [row.enrollmentId, row._sum.amount]))
   const enrollments = rows.map((row) => ({
     totalAmount: row.totalAmount,
@@ -102,6 +145,18 @@ export async function getPaymentStats(
     count: row._count._all,
   }))
 
+  const outstanding = familiesOutstanding(enrollments, FAMILIES_LISTED)
+  const [charted, phones] = await Promise.all([
+    db.payment.findMany({
+      where: { ...paymentWhere, paidAt: { gte: window.from, lt: window.to } },
+      select: { amount: true, paidAt: true },
+    }),
+    contactPhones(
+      schoolId,
+      outstanding.map((family) => family.familyId)
+    ),
+  ])
+
   return {
     totals: summarizePayments(enrollments, methods, {
       amount: uncashed._sum.amount,
@@ -109,6 +164,9 @@ export async function getPaymentStats(
     }),
     monthly: monthlyCollection(charted, window),
     methods: collectionByMethod(methods),
-    families: familiesOutstanding(enrollments, FAMILIES_LISTED),
+    families: outstanding.map((family) => ({
+      ...family,
+      contactPhone: phones.get(family.familyId) ?? null,
+    })),
   }
 }
