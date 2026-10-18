@@ -6,6 +6,7 @@ import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolScope } from '../../_lib/auth-helper'
+import { AddStudentButton } from './_components/add-student-button'
 import { StudentsDataTable } from './_components/students-data-table'
 import { getStudentDialogData } from './[id]/_lib/student-detail'
 
@@ -80,6 +81,20 @@ export default async function StudentsPage({ params }: Props) {
     isAdmin,
     selectedPeriod?.id ?? null
   )
+  const planOptions = plans.map((plan) => ({
+    id: plan.id,
+    name: plan.name,
+    amount: Number(plan.amount),
+  }))
+
+  // Le parent n'ajoute pas d'élève : seule l'administration charge la liste des familles.
+  const families = isAdmin
+    ? await db.family.findMany({
+        where: { schoolId: scope.schoolId, isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+    : []
 
   return (
     <div className="space-y-6">
@@ -90,16 +105,22 @@ export default async function StudentsPage({ params }: Props) {
         ]}
         title={t('title')}
         description={t('description')}
+        actions={
+          isAdmin && (
+            <AddStudentButton
+              families={families}
+              plans={planOptions}
+              classes={classes}
+              paymentsEnabled={paymentsEnabled}
+            />
+          )
+        }
       />
       <StudentsDataTable
         data={students}
         locale={locale}
         isAdmin={isAdmin}
-        plans={plans.map((plan) => ({
-          id: plan.id,
-          name: plan.name,
-          amount: Number(plan.amount),
-        }))}
+        plans={planOptions}
         classes={classes}
         paymentsEnabled={paymentsEnabled}
         today={new Date()}

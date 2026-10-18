@@ -2639,6 +2639,13 @@
       "publishedOn": "Publié le {date}",
       "emptyTitle": "Aucune nouveauté pour le moment",
       "empty": "Les prochaines fonctionnalités apparaîtront ici dès leur mise en ligne."
+    },
+    "familyPicker": {
+      "description": "Choisissez d'abord la famille concernée.",
+      "search": "Rechercher une famille",
+      "searchPlaceholder": "Nom de la famille",
+      "noResults": "Aucune famille ne correspond à cette recherche.",
+      "noFamilies": "Aucune famille active. Créez d'abord une famille."
     }
   },
   "schools": {

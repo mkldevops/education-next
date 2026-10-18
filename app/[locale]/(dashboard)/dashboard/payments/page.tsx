@@ -5,12 +5,14 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
+import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { listSchoolPayments } from '@/use-cases/payments/list-school-payments'
 import { getPaymentStats } from '@/use-cases/payments/payment-stats'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { PaymentsOverview } from './_components/payments-overview'
 import { PaymentsTable } from './_components/payments-table'
+import { RecordPaymentButton } from './_components/record-payment-button'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -43,9 +45,14 @@ export default async function PaymentsPage({ params }: Props) {
   const selectedPeriod = await getSelectedPeriod(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
-  const [payments, stats] = await Promise.all([
+  const [payments, stats, families] = await Promise.all([
     listSchoolPayments(scope.schoolId, selectedPeriodId),
     getPaymentStats(scope.schoolId, selectedPeriodId),
+    db.family.findMany({
+      where: { schoolId: scope.schoolId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
   ])
 
   const paymentRows = payments.map((payment) => ({
@@ -75,6 +82,7 @@ export default async function PaymentsPage({ params }: Props) {
         ]}
         title={t('title')}
         description={t('description')}
+        actions={<RecordPaymentButton families={families} />}
       />
       <PaymentsOverview stats={stats} locale={locale} periodName={selectedPeriod?.name ?? null} />
       <PaymentsTable

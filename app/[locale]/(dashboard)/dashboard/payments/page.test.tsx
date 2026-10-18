@@ -5,6 +5,7 @@ const isPaymentsEnabledMock = vi.fn()
 const getSelectedPeriodMock = vi.fn()
 const getPaymentStatsMock = vi.fn()
 const listSchoolPaymentsMock = vi.fn()
+const familyFindManyMock = vi.fn()
 
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next/navigation', () => ({
@@ -31,6 +32,7 @@ vi.mock('@/use-cases/payments/list-school-payments', () => ({
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
+vi.mock('@/lib/db', () => ({ db: { family: { findMany: familyFindManyMock } } }))
 vi.mock('../../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, sa factory est lazy.
@@ -57,12 +59,14 @@ describe('PaymentsPage', () => {
     expect(getSelectedPeriodMock).not.toHaveBeenCalled()
     expect(listSchoolPaymentsMock).not.toHaveBeenCalled()
     expect(getPaymentStatsMock).not.toHaveBeenCalled()
+    expect(familyFindManyMock).not.toHaveBeenCalled()
   })
 
   it('proceeds past the flag guard and reads business data when payments are enabled', async () => {
     isPaymentsEnabledMock.mockResolvedValue(true)
     getSelectedPeriodMock.mockResolvedValue({ id: 'period-1', name: '2026-2027' })
     listSchoolPaymentsMock.mockResolvedValue([])
+    familyFindManyMock.mockResolvedValue([])
     getPaymentStatsMock.mockResolvedValue({
       totals: { collected: 0, remaining: 0, collectionRate: 0 },
       monthly: [],
@@ -75,5 +79,10 @@ describe('PaymentsPage', () => {
     expect(getSelectedPeriodMock).toHaveBeenCalledWith('school-1')
     expect(listSchoolPaymentsMock).toHaveBeenCalledWith('school-1', 'period-1')
     expect(getPaymentStatsMock).toHaveBeenCalledWith('school-1', 'period-1')
+    // Le sélecteur du bouton « Enregistrer un règlement » ne liste que les familles actives
+    // de l'école courante.
+    expect(familyFindManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { schoolId: 'school-1', isActive: true } })
+    )
   })
 })
