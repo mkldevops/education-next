@@ -69,18 +69,31 @@ describe('RichDataTable', () => {
     expect(screen.getAllByRole('row')).toHaveLength(6)
   })
 
-  it('changes and remembers the page size picked in the rows-per-page select', async () => {
+  it('shows 25 rows per page by default', () => {
     window.localStorage.removeItem('peaklab.table.pageSize')
     render(<RichDataTable data={rows(30)} columns={columns} labels={labels} emptyMessage="empty" />)
+    expect(screen.getAllByRole('row')).toHaveLength(26)
+  })
+
+  it('restores the page size previously picked by the user', () => {
+    window.localStorage.setItem('peaklab.table.pageSize', '10')
+    render(<RichDataTable data={rows(30)} columns={columns} labels={labels} emptyMessage="empty" />)
     expect(screen.getAllByRole('row')).toHaveLength(11)
+    window.localStorage.removeItem('peaklab.table.pageSize')
+  })
+
+  it('changes and remembers the page size picked in the rows-per-page select', async () => {
+    window.localStorage.removeItem('peaklab.table.pageSize')
+    render(<RichDataTable data={rows(60)} columns={columns} labels={labels} emptyMessage="empty" />)
+    expect(screen.getAllByRole('row')).toHaveLength(26)
 
     fireEvent.click(screen.getByRole('combobox', { name: 'Rows per page' }))
-    const option = await screen.findByRole('option', { name: '25' })
+    const option = await screen.findByRole('option', { name: '50' })
     fireEvent.pointerDown(option)
     fireEvent.click(option)
 
-    expect(screen.getAllByRole('row')).toHaveLength(26)
-    expect(window.localStorage.getItem('peaklab.table.pageSize')).toBe('25')
+    expect(screen.getAllByRole('row')).toHaveLength(51)
+    expect(window.localStorage.getItem('peaklab.table.pageSize')).toBe('50')
   })
 
   it('keeps the "use no memo" directive ahead of every other statement', () => {

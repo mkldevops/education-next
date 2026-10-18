@@ -66,7 +66,7 @@ export function RichDataTable<T>({
   enableSearch = true,
   enableColumnVisibility = true,
   enablePagination = true,
-  initialPageSize = 10,
+  initialPageSize = 25,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
 }: RichDataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([])
