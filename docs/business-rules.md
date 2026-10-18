@@ -314,10 +314,11 @@ set a password from it after the flag is off, exactly as the confirmation names.
 ### Proposing a stronger method after a password sign-in
 
 A user who only holds a password is offered a stronger method once they reach the dashboard. The
-offer is a dialog mounted in the `(dashboard)` layout, decided server-side by `SignInUpgradeGate`
+offer is a non-blocking banner at the top of the `(dashboard)` layout — the page stays usable
+behind it — decided server-side by `SignInUpgradeGate`
 (`app/[locale]/(dashboard)/_components/sign-in-upgrade-gate.tsx`) from one `User` read (`google`
 `Account` rows, passkey count, `signInUpgradeDismissedAt`) and the two sign-in flags, and rendered by
-`SignInUpgradeDialog` (`src/features/auth/sign-in-upgrade-dialog.tsx`). The pure decision lives in
+`SignInUpgradeBanner` (`src/features/auth/sign-in-upgrade-banner.tsx`). The pure decision lives in
 `resolveSignInUpgradeOffer()` (`src/domain/sign-in-upgrade.ts`):
 
 - Nothing is offered once the user has dismissed the prompt, linked a Google account, or registered
@@ -329,19 +330,20 @@ offer is a dialog mounted in the `(dashboard)` layout, decided server-side by `S
   holds. Every other address is offered a passkey only.
 - A passkey is offered only while `isPasskeySignInEnabled()` holds **and** the browser exposes
   WebAuthn (`browserSupportsWebAuthn()`, read after hydration). Without WebAuthn a non-Gmail user
-  sees no dialog at all, and that silence records nothing.
+  sees no banner at all, and that silence records nothing.
 - Impersonation shows nothing: the gate returns before reading the account when
   `isImpersonating(session)` holds, because a passkey or Google link created in that state would
   belong to the target. The server action keeps the same guard.
 
 "Later" is durable: `dismissSignInUpgradeAction` (`src/actions/profile-actions.ts`) stamps
 `User.signInUpgradeDismissedAt` for the session user only, behind `guardCredentialOperation`.
-Escape and a click outside the dialog are the same refusal as the button — all three go through the
-dialog primitive's close — so a user is never asked twice after any of them. A failed or cancelled
-WebAuthn ceremony, a failed passkey verification, or a failed Google link keeps the dialog open with
-an inline error and records nothing. A successful passkey registration closes the dialog with a
+Only the "Later" button records a refusal: ignoring the banner and navigating records nothing, so it
+comes back on the next dashboard render until the user acts. A failed or cancelled WebAuthn
+ceremony, a failed passkey verification, or a failed Google link keeps the banner with an inline
+error and records nothing. The banner has no name field: the passkey is registered under the
+default `passkeyDefaultName`. A successful passkey registration hides the banner with a
 notification and refreshes the route; a successful Google link returns to
-`/dashboard?signInUpgrade=google`, where the dialog shows the notification only if a `google`
+`/dashboard?signInUpgrade=google`, where the banner shows the notification only if a `google`
 `Account` now exists, then strips the parameter. Either success leaves the timestamp untouched: the
 gate has nothing left to offer, so no refusal needs recording.
 

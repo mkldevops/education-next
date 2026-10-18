@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { resolveSignInUpgradeOffer } from '@/domain/sign-in-upgrade'
 import { isImpersonating } from '@/domain/user'
-import { SignInUpgradeDialog } from '@/features/auth'
+import { SignInUpgradeBanner } from '@/features/auth'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { isGoogleSignInAvailable } from '@/use-cases/platform-settings/is-google-sign-in-available'
@@ -44,5 +44,5 @@ export async function SignInUpgradeGate() {
     passkeyEnabled,
   })
 
-  return <SignInUpgradeDialog offer={offer} googleLinked={hasGoogleAccount} />
+  return <SignInUpgradeBanner offer={offer} googleLinked={hasGoogleAccount} />
 }

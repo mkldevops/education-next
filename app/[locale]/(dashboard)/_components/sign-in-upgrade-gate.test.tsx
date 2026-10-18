@@ -14,8 +14,8 @@ vi.mock('@/use-cases/platform-settings/is-google-sign-in-available', () => ({
 vi.mock('@/use-cases/platform-settings/is-passkey-sign-in-enabled', () => ({
   isPasskeySignInEnabled: () => isPasskeySignInEnabledMock(),
 }))
-// Le dialogue est un composant client : seul le contrat de props du gate est en jeu ici.
-vi.mock('@/features/auth', () => ({ SignInUpgradeDialog: () => null }))
+// Le bandeau est un composant client : seul le contrat de props du gate est en jeu ici.
+vi.mock('@/features/auth', () => ({ SignInUpgradeBanner: () => null }))
 
 const { SignInUpgradeGate } = await import('./sign-in-upgrade-gate')
 
@@ -90,7 +90,7 @@ describe('SignInUpgradeGate', () => {
     expect(await propsOf()).toEqual({ offer: null, googleLinked: false })
   })
 
-  it('offers nothing once Google is linked, and lets the dialog confirm the link', async () => {
+  it('offers nothing once Google is linked, and lets the banner confirm the link', async () => {
     dbMock.user.findUnique.mockResolvedValue(account({ accounts: [{ id: 'account-1' }] }))
 
     expect(await propsOf()).toEqual({ offer: null, googleLinked: true })

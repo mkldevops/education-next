@@ -1,22 +1,11 @@
 'use client'
 
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  useDialog,
-} from '@peaklab/ui'
+import { Button } from '@peaklab/ui'
 import { browserSupportsWebAuthn, startRegistration } from '@simplewebauthn/browser'
 import { KeyRound } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import {
   dismissSignInUpgradeAction,
   getPasskeyRegistrationOptions,
@@ -37,7 +26,7 @@ type Props = {
   googleLinked: boolean
 }
 
-type Pending = 'google' | 'passkey' | null
+type Pending = 'google' | 'passkey' | 'later' | null
 
 const subscribeNoop = () => () => {}
 
@@ -51,16 +40,18 @@ function useWebAuthnAvailable() {
 }
 
 /**
- * Proposée à l'arrivée sur le tableau de bord après une connexion par mot de passe. Le gate
- * (`app/[locale]/(dashboard)/_components/sign-in-upgrade-gate.tsx`) a déjà écarté l'emprunt
- * d'identité, le refus enregistré, un compte Google lié ou une passkey existante.
+ * Bandeau proposé en haut du tableau de bord après une connexion par mot de passe, sans bloquer
+ * la page. Le gate (`app/[locale]/(dashboard)/_components/sign-in-upgrade-gate.tsx`) a déjà
+ * écarté l'emprunt d'identité, le refus enregistré, un compte Google lié ou une passkey existante.
  */
-export function SignInUpgradeDialog({ offer, googleLinked }: Props) {
+export function SignInUpgradeBanner({ offer, googleLinked }: Props) {
   const t = useTranslations('dashboard.signInUpgrade')
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const webAuthnAvailable = useWebAuthnAvailable()
+  // Masqué localement après « Plus tard » ou un succès, sans attendre le rendu serveur suivant.
+  const [hidden, setHidden] = useState(false)
 
   const returned = searchParams.get(RETURN_PARAM)
   const linkedMessage = t('googleLinked')
@@ -73,7 +64,7 @@ export function SignInUpgradeDialog({ offer, googleLinked }: Props) {
     router.replace(pathname)
   }, [returned, googleLinked, linkedMessage, pathname, router])
 
-  if (!offer) return null
+  if (!offer || hidden) return null
 
   const showGoogle = offer.google
   // Sans WebAuthn la passkey disparaît ; hors Gmail il ne reste alors rien à proposer, et le
@@ -82,13 +73,12 @@ export function SignInUpgradeDialog({ offer, googleLinked }: Props) {
   if (!showGoogle && !showPasskey) return null
 
   return (
-    <Dialog initialOpen>
-      <SignInUpgradeDialogContent
-        showGoogle={showGoogle}
-        showPasskey={showPasskey}
-        initialError={returned === 'google-error' ? 'linkFailed' : null}
-      />
-    </Dialog>
+    <SignInUpgradeBannerContent
+      showGoogle={showGoogle}
+      showPasskey={showPasskey}
+      initialError={returned === 'google-error' ? 'linkFailed' : null}
+      onDone={() => setHidden(true)}
+    />
   )
 }
 
@@ -96,26 +86,26 @@ type ContentProps = {
   showGoogle: boolean
   showPasskey: boolean
   initialError: string | null
+  onDone: () => void
 }
 
-function SignInUpgradeDialogContent({ showGoogle, showPasskey, initialError }: ContentProps) {
+function SignInUpgradeBannerContent({
+  showGoogle,
+  showPasskey,
+  initialError,
+  onDone,
+}: ContentProps) {
   const t = useTranslations('dashboard.signInUpgrade')
   const locale = useLocale()
   const router = useRouter()
-  const { open, setOpen } = useDialog()
-  const nameId = useId()
   const [pending, setPending] = useState<Pending>(null)
   const [error, setError] = useState<string | null>(initialError)
-  const [passkeyName, setPasskeyName] = useState(() => t('passkeyDefaultName'))
-  // `true` après un succès : la fermeture qui suit n'est pas un « Plus tard ».
-  const succeeded = useRef(false)
 
-  // « Plus tard », Échap et clic sur le fond passent tous par `setOpen(false)` de la
-  // primitive : observer la fermeture couvre les trois sans dupliquer la gestion clavier.
-  useEffect(() => {
-    if (open || succeeded.current) return
-    void dismissSignInUpgradeAction()
-  }, [open])
+  const handleLater = async () => {
+    setPending('later')
+    await dismissSignInUpgradeAction()
+    onDone()
+  }
 
   const handleGoogle = async () => {
     setError(null)
@@ -131,14 +121,9 @@ function SignInUpgradeDialogContent({ showGoogle, showPasskey, initialError }: C
     }
   }
 
-  const handlePasskey = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const name = passkeyName.trim()
-    if (!name) {
-      setError('nameRequired')
-      return
-    }
-
+  const handlePasskey = async () => {
+    // Pas de champ de nom dans un bandeau : la clé prend le nom par défaut.
+    const name = t('passkeyDefaultName')
     setError(null)
     setPending('passkey')
 
@@ -153,7 +138,7 @@ function SignInUpgradeDialogContent({ showGoogle, showPasskey, initialError }: C
     try {
       response = await startRegistration({ optionsJSON: registration.options })
     } catch {
-      // Annulation ou refus de la cérémonie : le dialogue reste, rien n'est enregistré.
+      // Annulation ou refus de la cérémonie : le bandeau reste, rien n'est enregistré.
       setError('cancelled')
       setPending(null)
       return
@@ -166,9 +151,8 @@ function SignInUpgradeDialogContent({ showGoogle, showPasskey, initialError }: C
       return
     }
 
-    succeeded.current = true
     toast.success(t('passkeyRegistered'))
-    setOpen(false)
+    onDone()
     // Le gate relit le compte : avec une passkey il n'a plus rien à proposer.
     router.refresh()
   }
@@ -180,73 +164,60 @@ function SignInUpgradeDialogContent({ showGoogle, showPasskey, initialError }: C
     : null
 
   return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>{t('title')}</DialogTitle>
-      </DialogHeader>
-      <DialogBody>
-        <p className="text-sm text-graphite-600">
-          {showGoogle ? t('descriptionGoogle') : t('descriptionPasskey')}
-        </p>
-
-        {errorMessage && (
-          <p role="alert" className="rounded bg-red-50 p-3 text-sm text-red-600">
-            {errorMessage}
+    <section
+      aria-label={t('title')}
+      className="border-b border-primary/20 bg-primary-light px-4 py-2 text-sm text-graphite sm:px-6"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <KeyRound aria-hidden className="size-4 shrink-0 text-primary" />
+          <p className="min-w-0">
+            <span className="font-medium">{t('title')}</span>{' '}
+            <span className="text-graphite-600">
+              {showGoogle ? t('descriptionGoogle') : t('descriptionPasskey')}
+            </span>
           </p>
-        )}
-
-        {showGoogle && (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogle}
-            disabled={pending !== null}
-            aria-busy={pending === 'google'}
-          >
-            <GoogleIcon className="size-4" />
-            {pending === 'google' ? t('googlePending') : t('continueWithGoogle')}
-          </Button>
-        )}
-
-        {showGoogle && showPasskey && (
-          <p className="text-center text-xs uppercase tracking-wide text-graphite-600">{t('or')}</p>
-        )}
-
-        {showPasskey && (
-          <form onSubmit={handlePasskey} className="space-y-3">
-            <div>
-              <Label htmlFor={nameId}>{t('passkeyName')}</Label>
-              <Input
-                id={nameId}
-                value={passkeyName}
-                onChange={(event) => setPasskeyName(event.target.value)}
-                className="mt-1"
-                required
-              />
-            </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {showPasskey && (
             <Button
-              type="submit"
-              className="w-full"
+              size="sm"
+              onClick={handlePasskey}
               disabled={pending !== null}
               aria-busy={pending === 'passkey'}
             >
               <KeyRound aria-hidden className="size-4" />
               {pending === 'passkey' ? t('passkeyPending') : t('createPasskey')}
             </Button>
-          </form>
-        )}
-      </DialogBody>
-      <DialogFooter>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setOpen(false)}
-          disabled={pending !== null}
-        >
-          {t('later')}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
+          )}
+          {showGoogle && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleGoogle}
+              disabled={pending !== null}
+              aria-busy={pending === 'google'}
+            >
+              <GoogleIcon className="size-4" />
+              {pending === 'google' ? t('googlePending') : t('continueWithGoogle')}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleLater}
+            disabled={pending !== null}
+            aria-busy={pending === 'later'}
+          >
+            {t('later')}
+          </Button>
+        </div>
+      </div>
+      {errorMessage && (
+        <p role="alert" className="mt-2 text-sm text-red-600">
+          {errorMessage}
+        </p>
+      )}
+    </section>
   )
 }
