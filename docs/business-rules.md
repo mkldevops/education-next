@@ -1408,6 +1408,27 @@ behind without an enrollment. Untick the section (or have no plan or no class in
 period) and `createStudentAction` falls back to `create-student.ts`, which only attaches the
 child to the family.
 
+### Creating a whole family at once
+
+« Créer une famille » is a three-step flow — main guardian, children, summary — backed by
+`src/use-cases/families/create-full-family.ts`. It writes the family, the guardian (a `PARENT`
+link with his phone number), each child and each requested enrollment with its class assignment in
+**one** `db.$transaction`. Every expected refusal — `notFound` (plan or class), `classFull`,
+`totalAmountExceedsPlan`, `discountExceedsPlan`, `invalidCurrencyAmount` — is decided before the
+first write, so a refused step never leaves an orphan family behind.
+
+- **The family name and the emergency contact are prefilled from the guardian** (his last name; his
+  full name and phone) and stay editable; once edited they no longer follow the guardian. A child's
+  last name is prefilled the same way.
+- **Seats are reserved once per targeted class** (`reserveClassSeatsInOrder`): two siblings in the
+  same class take two seats, checked together under the class row lock.
+- **Enrollment is optional per child** and follows the same payment rules as « Ajouter un élève »:
+  a plan is required while payments are enabled, refused (`paymentsDisabled`) while they are off,
+  where the unpriced plan is used instead. Enrollments are `ACTIVE` at once.
+- **The guardian and the children are optional**: a family name alone still creates the family, as
+  the former single-field form did. Authorized pickup and languages at home are folded away.
+- The teacher flow (`createFamilyAsTeacherAction`) still uses `create-family.ts`.
+
 ### Changing class
 
 `src/use-cases/enrollments/reassign-class.ts` moves a `PENDING` or `ACTIVE` enrollment to another

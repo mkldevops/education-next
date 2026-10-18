@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
+import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -14,6 +15,7 @@ import {
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
 import { FamiliesDataTable, type FamilyRow } from './_components/families-data-table'
+import { getFamilyDialogData } from './[id]/_lib/family-detail'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -49,7 +51,12 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
 
   const isAdmin = scope.isAdmin
 
-  const [families, paidByEnrollment] = await Promise.all([
+  // Plans et classes de la période sélectionnée, pour inscrire les enfants dès la création.
+  const dialogData = getSelectedPeriodId(scope.schoolId).then((periodId) =>
+    getFamilyDialogData(scope.schoolId, isAdmin, periodId)
+  )
+
+  const [families, paidByEnrollment, { plans, classes }] = await Promise.all([
     db.family.findMany({
       where: { schoolId: scope.schoolId, isActive: true },
       select: {
@@ -103,6 +110,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
       where: { schoolId: scope.schoolId, isActive: true },
       _sum: { amount: true },
     }),
+    dialogData,
   ])
 
   const paid = new Map(paidByEnrollment.map((row) => [row.enrollmentId, row._sum.amount]))
@@ -151,7 +159,19 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
         ]}
         title={t('title')}
         description={t('description')}
-        actions={isAdmin && <CreateFamilyDialog defaultOpen={action === 'create'} />}
+        actions={
+          isAdmin && (
+            <CreateFamilyDialog
+              defaultOpen={action === 'create'}
+              plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
+              classes={classes.map((c) => ({
+                id: c.id,
+                name: `${c.name} (${c.level.name} — ${c.period.name})`,
+              }))}
+              paymentsEnabled={paymentsEnabled}
+            />
+          )
+        }
       />
       <FamiliesDataTable data={familyRows} paymentsEnabled={paymentsEnabled} />
     </div>
