@@ -13,6 +13,8 @@ interface DialogFormActionsProps {
   onCancel: () => void
   submitKey?: string
   submitVariant?: ButtonProps['variant']
+  /** Bloque la validation tant qu'un choix requis manque. */
+  submitDisabled?: boolean
   children?: ReactNode
   className?: string
 }
@@ -23,6 +25,7 @@ export function DialogFormActions({
   onCancel,
   submitKey = 'submit',
   submitVariant,
+  submitDisabled = false,
   children,
   className,
 }: DialogFormActionsProps) {
@@ -32,7 +35,7 @@ export function DialogFormActions({
       <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
         {t('cancel')}
       </Button>
-      <Button type="submit" variant={submitVariant} disabled={isPending}>
+      <Button type="submit" variant={submitVariant} disabled={isPending || submitDisabled}>
         {isPending ? '...' : t(submitKey)}
       </Button>
     </DialogFooter>

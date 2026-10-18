@@ -15,6 +15,7 @@ import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
+import { loadSuggestedLevels } from '../../enrollments/_lib/load-enrollment-options'
 import { DeactivateStudentButton } from '../_components/deactivate-student-button'
 import { EditStudentDialog } from '../_components/edit-student-dialog'
 import { EnrollmentList } from './_components/enrollment-list'
@@ -63,7 +64,12 @@ export default async function StudentDetailPage({ params }: Props) {
 
   const selectedPeriodId = isAdmin ? await getSelectedPeriodId(student.schoolId) : null
 
-  const { plans, classes } = await getStudentDialogData(student.schoolId, isAdmin, selectedPeriodId)
+  const [{ plans, classes }, suggestedLevels] = await Promise.all([
+    getStudentDialogData(student.schoolId, isAdmin, selectedPeriodId),
+    isAdmin
+      ? loadSuggestedLevels(student.schoolId, [student.id], selectedPeriodId)
+      : new Map<string, string>(),
+  ])
 
   const isEnrolledInSelectedPeriod =
     selectedPeriodId !== null &&
@@ -246,7 +252,13 @@ export default async function StudentDetailPage({ params }: Props) {
                 création n'ouvrirait qu'un formulaire refusé par `createEnrollment`. */}
             {isAdmin && !isEnrolledInSelectedPeriod && (
               <CreateEnrollmentDialog
-                students={[{ id: student.id, name: fullName }]}
+                students={[
+                  {
+                    id: student.id,
+                    name: fullName,
+                    suggestedLevelId: suggestedLevels.get(student.id) ?? null,
+                  },
+                ]}
                 plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
                 classes={classes}
                 paymentsEnabled={paymentsEnabled}

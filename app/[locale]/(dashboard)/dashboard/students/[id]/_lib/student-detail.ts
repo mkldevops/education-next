@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { adminOrLinkedTo, familyLinksVisibleTo, resolveDeepLink } from '../../../../_lib/deep-link'
+import { classOptionSelect, toClassOption } from '../../../enrollments/_lib/load-enrollment-options'
 
 /**
  * Résolveur unique de la page ET de `generateMetadata`.
@@ -99,17 +100,18 @@ export async function getStudentDialogData(
         isActive: true,
         ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
       },
-      include: { level: true, period: true },
+      select: {
+        ...classOptionSelect,
+        level: { select: { name: true } },
+        period: { select: { name: true } },
+      },
       orderBy: { name: 'asc' },
     }),
   ])
 
   return {
     plans,
-    classes: classes.map((c) => ({
-      id: c.id,
-      name: `${c.name} (${c.level.name} — ${c.period.name})`,
-    })),
+    classes: classes.map((c) => toClassOption(c, `${c.name} (${c.level.name} — ${c.period.name})`)),
   }
 }
 

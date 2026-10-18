@@ -36,6 +36,14 @@ describe('CreateStudentDialog', () => {
 
     expect(screen.getByLabelText('totalAmount')).toHaveValue(120)
 
+    // Aucune classe présélectionnée : la validation attend un choix explicite.
+    expect(screen.getByRole('button', { name: 'submit' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('combobox', { name: 'selectClass' }))
+    const ce1 = await screen.findByRole('option', { name: /CE1/ })
+    fireEvent.pointerDown(ce1)
+    fireEvent.click(ce1)
+    expect(screen.getByRole('button', { name: 'submit' })).toBeEnabled()
+
     fireEvent.submit(screen.getByLabelText('firstname').closest('form') as HTMLFormElement)
 
     await waitFor(() => {
@@ -44,6 +52,7 @@ describe('CreateStudentDialog', () => {
           enrollment: expect.objectContaining({
             planId: '550e8400-e29b-41d4-a716-446655440003',
             totalAmount: 120,
+            classPeriodId: '550e8400-e29b-41d4-a716-446655440004',
           }),
         })
       )

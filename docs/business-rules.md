@@ -1389,6 +1389,19 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
   « Nouvelle inscription », any active student of the school), the students list, and the family
   and student detail pages. On every one, the amount due is prefilled with the selected plan's
   price.
+- **Student and class are chosen explicitly, never preselected** — the dialog, and the enrollment
+  section of « Ajouter un élève », cannot be submitted until both are picked. The student picker
+  searches the student's and the family's names; a student already holding a `PENDING` or `ACTIVE`
+  enrollment in the period is flagged and can only be submitted with « Remplacer l'inscription
+  existante » ticked, the case `duplicateEnrollment` would otherwise refuse. The class picker lists
+  the **suggested level** first (`suggestLevelId` in
+  `app/[locale]/(dashboard)/dashboard/enrollments/_lib/enrollment-options.ts`): the level of the
+  student's latest non-cancelled assignment when it is in the target period, otherwise that level's
+  `nextLevelId` (the same level at the end of the chain); no history, no suggestion. The schema
+  holds no age-to-level mapping, so age is not used. Each class shows its remaining seats
+  (« 2/18 places libres », the shared occupancy predicate read without lock) and a full class is
+  flagged « Complète » but stays selectable — the locked re-count at commit remains the authority
+  (`classFull`).
 - **A new enrollment is `ACTIVE` at once** (`NEW_ENROLLMENT_STATUS` in
   `src/domain/enrollment.ts`): the admin who enrolls the child has already validated it, so the
   student is on the class roster and the attendance call without a second « Activer » step. `PENDING`

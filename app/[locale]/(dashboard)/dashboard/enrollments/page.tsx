@@ -3,12 +3,18 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
+import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
 import { EnrollmentsTable } from './_components/enrollments-table'
+import {
+  classOptionSelect,
+  loadSuggestedLevels,
+  toClassOption,
+} from './_lib/load-enrollment-options'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -51,17 +57,19 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
         },
       }
 
-  const availableClasses = isAdmin
+  const classRows = isAdmin
     ? await db.classPeriod.findMany({
         where: {
           schoolId: scope.schoolId,
           isActive: true,
           ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
         },
-        select: { id: true, name: true },
+        select: classOptionSelect,
         orderBy: { name: 'asc' },
       })
     : []
+  const availableClasses = classRows.map((row) => ({ id: row.id, name: row.name }))
+  const classOptions = classRows.map((row) => toClassOption(row))
 
   const availablePlans =
     isAdmin && paymentsEnabled
@@ -82,13 +90,38 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
   const availableStudents = isAdmin
     ? await db.student.findMany({
         where: { schoolId: scope.schoolId, isActive: true },
-        select: { id: true, person: { select: { name: true, lastname: true } } },
+        select: {
+          id: true,
+          person: {
+            select: {
+              name: true,
+              lastname: true,
+              families: { select: { family: { select: { name: true } } } },
+            },
+          },
+        },
         orderBy: [{ person: { lastname: 'asc' } }, { person: { name: 'asc' } }],
       })
     : []
+  const availableStudentIds = availableStudents.map((student) => student.id)
+  // Élèves déjà inscrits sur la période et niveau suggéré : le dialogue signale les premiers
+  // et propose d'abord les classes du second (#464).
+  const [enrolledInPeriod, suggestedLevels] = await Promise.all([
+    selectedPeriodId
+      ? enrollmentGateway.findStudentIdsEnrolledInPeriod(
+          scope.schoolId,
+          availableStudentIds,
+          selectedPeriodId
+        )
+      : new Set<string>(),
+    loadSuggestedLevels(scope.schoolId, availableStudentIds, selectedPeriodId),
+  ])
   const studentOptions = availableStudents.map((student) => ({
     id: student.id,
     name: `${student.person.name} ${student.person.lastname}`,
+    familyName: student.person.families.map(({ family }) => family.name).join(', '),
+    suggestedLevelId: suggestedLevels.get(student.id) ?? null,
+    enrolledInPeriod: enrolledInPeriod.has(student.id),
   }))
 
   const enrollments = await db.enrollment.findMany({
@@ -156,7 +189,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
             <CreateEnrollmentDialog
               students={studentOptions}
               plans={planOptions}
-              classes={availableClasses}
+              classes={classOptions}
               paymentsEnabled={paymentsEnabled}
               defaultOpen={action === 'create'}
             />
