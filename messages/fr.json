@@ -830,7 +830,9 @@
           }
         },
         "teachers": "Enseignants",
-        "noTeachers": "Aucun enseignant"
+        "noTeachers": "Aucun enseignant",
+        "filterLevel": "Filtrer par niveau",
+        "levelAll": "Tous les niveaux"
       },
       "enrollments": {
         "title": "Inscriptions",

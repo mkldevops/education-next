@@ -829,7 +829,9 @@
           }
         },
         "teachers": "Teachers",
-        "noTeachers": "No teacher"
+        "noTeachers": "No teacher",
+        "filterLevel": "Filter by level",
+        "levelAll": "All levels"
       },
       "enrollments": {
         "title": "Enrollments",

@@ -1,14 +1,13 @@
-import { Breadcrumbs, Card, type Column, DataTable } from '@peaklab/ui'
+import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
-import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { MAX_STUDENTS_PER_CLASS_CONFIG_KEY } from '@/lib/school-config-defaults'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
-import { ClassActionsMenu } from './_components/class-actions-menu'
+import { ClassesDataTable, type ClassRow } from './_components/classes-data-table'
 import { CreateClassDialog } from './_components/create-class-dialog'
 import { ROSTER_STATUSES } from './_lib/roster'
 
@@ -88,77 +87,29 @@ export default async function ClassesPage({ params }: Props) {
     name: `${teacher.lastName} ${teacher.firstName}`.trim(),
   }))
 
-  const columns: Column<(typeof classes)[0]>[] = [
-    {
-      key: 'name',
-      header: t('name'),
-      render: (item) => (
-        <Link
-          href={`/dashboard/classes/${item.id}`}
-          className="font-medium text-primary hover:underline"
-        >
-          {item.name}
-        </Link>
-      ),
-    },
-    {
-      key: 'level',
-      header: t('level'),
-      className: 'text-graphite',
-      render: (item) => item.level.name,
-    },
-    {
-      key: 'period',
-      header: t('period'),
-      className: 'text-graphite',
-      render: (item) => item.period.name,
-    },
-    {
-      key: 'teachers',
-      header: t('teachers'),
-      className: 'text-graphite',
-      render: (item) =>
-        item.teachers.length > 0
-          ? item.teachers
-              .map(({ teacher }) => `${teacher.lastName} ${teacher.firstName}`.trim())
-              .join(', ')
-          : t('noTeachers'),
-    },
-    {
-      key: 'capacity',
-      header: t('capacity'),
-      className: 'text-graphite',
-      render: (item) => `${item.classAssignments.length}/${item.capacity}`,
-    },
-    {
-      key: 'actions',
-      header: t('actions'),
-      headerClassName: 'text-right',
-      className: 'text-right',
-      render: (item) => (
-        <ClassActionsMenu
-          classItem={{
-            id: item.id,
-            name: item.name,
-            capacity: item.capacity,
-            levelId: item.levelId,
-            teacherIds: item.teachers.map(({ teacherId }) => teacherId),
-          }}
-          levels={levels.filter(
-            (level) =>
-              level.id === item.levelId ||
-              !classes.some(
-                (candidate) =>
-                  candidate.id !== item.id &&
-                  candidate.periodId === item.periodId &&
-                  candidate.levelId === level.id
-              )
-          )}
-          teachers={teacherOptions}
-        />
-      ),
-    },
-  ]
+  const rows: ClassRow[] = classes.map((item) => ({
+    id: item.id,
+    name: item.name,
+    levelId: item.levelId,
+    levelName: item.level.name,
+    periodName: item.period.name,
+    teacherNames: item.teachers.map(({ teacher }) =>
+      `${teacher.lastName} ${teacher.firstName}`.trim()
+    ),
+    teacherIds: item.teachers.map(({ teacherId }) => teacherId),
+    enrolledCount: item.classAssignments.length,
+    capacity: item.capacity,
+    editableLevels: levels.filter(
+      (level) =>
+        level.id === item.levelId ||
+        !classes.some(
+          (candidate) =>
+            candidate.id !== item.id &&
+            candidate.periodId === item.periodId &&
+            candidate.levelId === level.id
+        )
+    ),
+  }))
 
   return (
     <div className="space-y-6">
@@ -179,18 +130,14 @@ export default async function ClassesPage({ params }: Props) {
           />
         )}
       </div>
-      <Card className="rounded border border-alabaster-700">
-        <DataTable
-          data={classes}
-          columns={columns}
-          getRowKey={(item) => item.id}
-          emptyMessage={
-            selectedPeriod
-              ? t('noClassesInPeriod', { period: selectedPeriod.name })
-              : t('noClasses')
-          }
-        />
-      </Card>
+      <ClassesDataTable
+        classes={rows}
+        levels={levels}
+        teachers={teacherOptions}
+        emptyMessage={
+          selectedPeriod ? t('noClassesInPeriod', { period: selectedPeriod.name }) : t('noClasses')
+        }
+      />
     </div>
   )
 }
