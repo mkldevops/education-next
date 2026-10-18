@@ -21,7 +21,7 @@ import {
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
-import { DialogFormActions, useDialogForm } from '@/features/forms'
+import { DialogFormActions, RequiredMark, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
 import { createStudentAction } from '../../../_lib/student-actions'
 import { ClassSelect } from '../../enrollments/_components/class-select'
@@ -35,6 +35,8 @@ interface Option {
 
 interface CreateStudentDialogProps {
   familyId: string
+  /** Nom de la famille, proposé comme nom de l'élève (modifiable). */
+  familyName?: string
   /** Plans et classes de la période sélectionnée : vides, l'inscription n'est pas proposée. */
   plans?: Option[]
   classes?: ClassOption[]
@@ -47,6 +49,7 @@ interface CreateStudentDialogProps {
 
 export function CreateStudentDialog({
   familyId,
+  familyName,
   plans = [],
   classes = [],
   paymentsEnabled,
@@ -74,6 +77,7 @@ export function CreateStudentDialog({
         </DialogHeader>
         <CreateStudentForm
           familyId={familyId}
+          familyName={familyName}
           plans={plans}
           classes={classes}
           paymentsEnabled={paymentsEnabled}
@@ -85,11 +89,13 @@ export function CreateStudentDialog({
 
 function CreateStudentForm({
   familyId,
+  familyName,
   plans,
   classes,
   paymentsEnabled,
 }: {
   familyId: string
+  familyName?: string
   plans: Option[]
   classes: ClassOption[]
   paymentsEnabled: boolean
@@ -172,14 +178,21 @@ function CreateStudentForm({
           <input type="hidden" name="familyId" value={familyId} />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="student-name">{t('firstname')}</Label>
+              <Label htmlFor="student-name">
+                {t('firstname')}
+                <RequiredMark />
+              </Label>
               <Input id="student-name" name="name" required maxLength={250} disabled={isPending} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="student-lastname">{t('lastname')}</Label>
+              <Label htmlFor="student-lastname">
+                {t('lastname')}
+                <RequiredMark />
+              </Label>
               <Input
                 id="student-lastname"
                 name="lastname"
+                defaultValue={familyName}
                 required
                 maxLength={250}
                 disabled={isPending}
@@ -207,29 +220,33 @@ function CreateStudentForm({
               <Input id="student-birthday" name="birthday" type="date" disabled={isPending} />
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="student-birthplace">{t('birthplace')}</Label>
-              <Input
-                id="student-birthplace"
-                name="birthplace"
-                maxLength={250}
-                disabled={isPending}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="student-allergies">{t('allergies')}</Label>
-              <Input id="student-allergies" name="allergies" maxLength={250} disabled={isPending} />
-            </div>
-          </div>
           <div className="space-y-2">
-            <Label htmlFor="student-health">{t('healthNotes')}</Label>
-            <Textarea id="student-health" name="healthNotes" disabled={isPending} />
+            <Label htmlFor="student-birthplace">{t('birthplace')}</Label>
+            <Input id="student-birthplace" name="birthplace" maxLength={250} disabled={isPending} />
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="snackAuthorization" className="rounded" />
-            {t('snackAuthorization')}
-          </label>
+          {/* Repliée par défaut : un <details> fermé soumet quand même ses champs. */}
+          <details className="rounded border border-graphite-200 p-3">
+            <summary className="cursor-pointer font-medium text-sm">{t('healthSection')}</summary>
+            <div className="mt-3 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="student-allergies">{t('allergies')}</Label>
+                <Input
+                  id="student-allergies"
+                  name="allergies"
+                  maxLength={250}
+                  disabled={isPending}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="student-health">{t('healthNotes')}</Label>
+                <Textarea id="student-health" name="healthNotes" disabled={isPending} />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="snackAuthorization" className="rounded" />
+                {t('snackAuthorization')}
+              </label>
+            </div>
+          </details>
 
           <div className="space-y-3 border-graphite-200 border-t pt-4">
             <label className="flex items-center gap-2 font-medium text-sm">
@@ -251,7 +268,10 @@ function CreateStudentForm({
                         refuserait, et les proposer ferait croire à un choix. */}
                     {paymentsEnabled && (
                       <div className="space-y-2">
-                        <Label htmlFor="student-plan">{t('selectPlan')}</Label>
+                        <Label htmlFor="student-plan">
+                          {t('selectPlan')}
+                          <RequiredMark />
+                        </Label>
                         <Select
                           name="planId"
                           items={planItems}
@@ -279,7 +299,10 @@ function CreateStudentForm({
                       </div>
                     )}
                     <div className="space-y-2">
-                      <Label htmlFor="student-class">{t('selectClass')}</Label>
+                      <Label htmlFor="student-class">
+                        {t('selectClass')}
+                        <RequiredMark />
+                      </Label>
                       <ClassSelect
                         id="student-class"
                         classes={classes}
@@ -304,6 +327,8 @@ function CreateStudentForm({
                       />
                     </div>
                   )}
+                  {/* canLeaveAlone appartient à l'inscription (Enrollment), pas à l'élève :
+                      il reste ici, libellé comme valant pour cette inscription. */}
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="canLeaveAlone" className="rounded" />
                     {t('canLeaveAlone')}

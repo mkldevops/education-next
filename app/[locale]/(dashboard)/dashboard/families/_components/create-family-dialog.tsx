@@ -23,7 +23,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { type FormEvent, useEffect, useId, useState } from 'react'
 import { parseLanguagesAtHome } from '@/domain/family'
-import { useDialogForm } from '@/features/forms'
+import { RequiredMark, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { createFullFamilySchema } from '@/use-cases/families/create-full-family-schema'
@@ -58,15 +58,6 @@ interface ChildDraft {
 }
 
 const STEPS = ['guardian', 'children', 'summary'] as const
-
-function RequiredMark() {
-  return (
-    <span aria-hidden className="text-red-500">
-      {' '}
-      *
-    </span>
-  )
-}
 
 export function CreateFamilyDialog({
   defaultOpen = false,

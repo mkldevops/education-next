@@ -23,10 +23,11 @@ describe('AddStudentButton', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
-    expect(screen.queryByLabelText('firstname')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^firstname/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Durand' }))
 
-    expect(screen.getByLabelText('firstname')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^firstname/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^lastname/)).toHaveValue('Durand')
     const familyInput = document.body.querySelector<HTMLInputElement>('input[name="familyId"]')
     expect(familyInput?.value).toBe('family-2')
     // Le nettoyage d'URL reste sur la liste des élèves, pas sur la fiche famille.

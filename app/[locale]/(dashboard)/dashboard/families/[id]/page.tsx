@@ -176,6 +176,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             )}
             <CreateStudentDialog
               familyId={family.id}
+              familyName={family.name}
               plans={planOptions}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}

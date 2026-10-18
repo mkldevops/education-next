@@ -30,6 +30,7 @@ export function AddStudentButton({
       renderDialog={(family) => (
         <CreateStudentDialog
           familyId={family.id}
+          familyName={family.name}
           plans={plans}
           classes={classes}
           paymentsEnabled={paymentsEnabled}
