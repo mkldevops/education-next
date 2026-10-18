@@ -2638,6 +2638,13 @@
       "publishedOn": "Published on {date}",
       "emptyTitle": "No updates yet",
       "empty": "Upcoming features will show up here as soon as they ship."
+    },
+    "familyPicker": {
+      "description": "First choose the family concerned.",
+      "search": "Search a family",
+      "searchPlaceholder": "Family name",
+      "noResults": "No family matches this search.",
+      "noFamilies": "No active family. Create a family first."
     }
   },
   "schools": {
