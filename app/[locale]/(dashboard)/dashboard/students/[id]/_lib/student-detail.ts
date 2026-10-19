@@ -100,18 +100,14 @@ export async function getStudentDialogData(
         isActive: true,
         ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
       },
-      select: {
-        ...classOptionSelect,
-        level: { select: { name: true } },
-        period: { select: { name: true } },
-      },
+      select: classOptionSelect,
       orderBy: { name: 'asc' },
     }),
   ])
 
   return {
     plans,
-    classes: classes.map((c) => toClassOption(c, `${c.name} (${c.level.name} — ${c.period.name})`)),
+    classes: classes.map((c) => toClassOption(c)),
   }
 }
 

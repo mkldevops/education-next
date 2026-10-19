@@ -12,6 +12,7 @@ import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
+import { classLabel } from '../../../_lib/class-options'
 import { loadSuggestedLevels, toClassOption } from '../../../_lib/class-options-loader'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
@@ -123,9 +124,9 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     ]
   )
 
-  const classOptions = classes.map((c) =>
-    toClassOption(c, `${c.name} (${c.level.name} — ${c.period.name})`)
-  )
+  const classOptions = classes.map((c) => toClassOption(c))
+  // « Changer de classe » liste les classes sans titre de niveau : il garde le libellé complet.
+  const reassignClassOptions = classOptions.map((c) => ({ id: c.id, name: classLabel(c) }))
   const planOptions = plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))
   const familyHref = `/dashboard/families/${family.id}`
 
@@ -269,7 +270,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 locale={locale}
                 familyId={family.id}
                 isAdmin={isAdmin}
-                classes={classOptions}
+                classes={reassignClassOptions}
                 studentsEnrolledInSelectedPeriod={studentsEnrolledInSelectedPeriod}
                 paymentsEnabled={paymentsEnabled}
               />

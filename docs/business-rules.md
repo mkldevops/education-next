@@ -1405,7 +1405,10 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
   inscription », « Ajouter un élève » and « Créer une famille ». Each class shows its remaining seats
   (« 2/18 places libres », the shared occupancy predicate read without lock) and a full class is
   flagged « Complète » but stays selectable — the locked re-count at commit remains the authority
-  (`classFull`).
+  (`classFull`). Under a level header an option shows only the class name, otherwise its level too;
+  the period appears only when the offered classes span several periods (`classItemLabel`). The
+  trigger and the « Créer une famille » summary keep the full « CE1-A (CE1 — 2026-2027) » label
+  (`classLabel`), and the list widens to its content within the window.
 - **A new enrollment is `ACTIVE` at once** (`NEW_ENROLLMENT_STATUS` in
   `src/domain/enrollment.ts`): the admin who enrolls the child has already validated it, so the
   student is on the class roster and the attendance call without a second « Activer » step. `PENDING`
