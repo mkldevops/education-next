@@ -61,14 +61,18 @@ export function groupClassesByLevel(classes: ClassOption[]) {
 
 /**
  * Niveau suggéré pour la période cible à partir de la dernière affectation connue de l'élève :
- * sur la période cible elle-même, son niveau ; sur une période antérieure, le niveau suivant
- * de la progression (`nextLevelId`), ou le même niveau en fin de chaîne. Sans affectation : aucun.
+ * sur la période cible elle-même, son niveau ; sur une période antérieure, l'unique niveau
+ * suivant de la progression, ou le même niveau en fin de chaîne. Quand la progression se divise,
+ * aucun niveau n'est suggéré : le choix revient à l'administrateur. Sans affectation : aucun.
  */
 export function suggestLevelId(
-  lastAssignment: { levelId: string; nextLevelId: string | null; periodId: string } | null,
+  lastAssignment: { levelId: string; nextLevelIds: readonly string[]; periodId: string } | null,
   targetPeriodId: string | null
 ): string | null {
   if (!lastAssignment) return null
   if (lastAssignment.periodId === targetPeriodId) return lastAssignment.levelId
-  return lastAssignment.nextLevelId ?? lastAssignment.levelId
+
+  const { nextLevelIds } = lastAssignment
+  if (nextLevelIds.length > 1) return null
+  return nextLevelIds[0] ?? lastAssignment.levelId
 }

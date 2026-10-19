@@ -1,129 +1,60 @@
 import { describe, expect, it, vi } from 'vitest'
 import { checkCircularReference } from '../level'
 
+function graph(edges: Record<string, string[]>) {
+  return vi.fn((id: string) => edges[id] ?? [])
+}
+
 describe('level domain', () => {
   describe('checkCircularReference', () => {
-    it('should return circularReference when levelId equals nextLevelId', () => {
-      const getNextLevel = vi.fn()
+    it('refuses a level as its own next level', () => {
+      const getNextLevelIds = graph({})
 
-      const result = checkCircularReference('level1', 'level1', getNextLevel)
-
-      expect(result).toBe('circularReference')
-      expect(getNextLevel).not.toHaveBeenCalled()
+      expect(checkCircularReference('level1', ['level1'], getNextLevelIds)).toBe(
+        'circularReference'
+      )
+      expect(getNextLevelIds).not.toHaveBeenCalled()
     })
 
-    it('should return circularReference for circular chain', () => {
-      const getNextLevel = vi.fn((id: string) => {
-        const chain: Record<string, string | null> = {
-          level1: 'level2',
-          level2: 'level3',
-          level3: 'level1',
-        }
-        return chain[id] ?? null
-      })
+    it('refuses a link that closes a cycle through the chain', () => {
+      const getNextLevelIds = graph({ level2: ['level3'], level3: ['level1'] })
 
-      const result = checkCircularReference('level1', 'level2', getNextLevel)
-
-      expect(result).toBe('circularReference')
+      expect(checkCircularReference('level1', ['level2'], getNextLevelIds)).toBe(
+        'circularReference'
+      )
     })
 
-    it('should return OK when no circular reference exists', () => {
-      const getNextLevel = vi.fn((id: string) => {
-        const chain: Record<string, string | null> = {
-          level1: 'level2',
-          level2: 'level3',
-          level3: null,
-        }
-        return chain[id] ?? null
-      })
+    it('refuses a cycle reached through any of several branches', () => {
+      const getNextLevelIds = graph({ level3: ['level4', 'level5'], level5: ['level1'] })
 
-      const result = checkCircularReference('level1', 'level2', getNextLevel)
-
-      expect(result).toBe('OK')
+      expect(checkCircularReference('level1', ['level2', 'level3'], getNextLevelIds)).toBe(
+        'circularReference'
+      )
     })
 
-    it('should return OK for chain with visited detection preventing infinite loop', () => {
-      const getNextLevel = vi.fn((id: string) => {
-        const chain: Record<string, string | null> = {
-          level1: 'level2',
-          level2: 'level3',
-          level3: 'level2',
-        }
-        return chain[id] ?? null
-      })
+    it('accepts a split progression without cycle', () => {
+      const getNextLevelIds = graph({ level2: ['level4'], level3: ['level4'] })
 
-      const result = checkCircularReference('level1', 'level2', getNextLevel)
-
-      expect(result).toBe('OK')
+      expect(checkCircularReference('level1', ['level2', 'level3'], getNextLevelIds)).toBe('OK')
     })
 
-    it('should handle chain that terminates with null', () => {
-      const getNextLevel = vi.fn((id: string) => {
-        const chain: Record<string, string | null> = {
-          level2: 'level3',
-          level3: 'level4',
-          level4: null,
-        }
-        return chain[id] ?? null
-      })
+    it('visits a shared descendant once', () => {
+      const getNextLevelIds = graph({ level2: ['level4'], level3: ['level4'], level4: [] })
 
-      const result = checkCircularReference('level1', 'level2', getNextLevel)
+      checkCircularReference('level1', ['level2', 'level3'], getNextLevelIds)
 
-      expect(result).toBe('OK')
+      expect(getNextLevelIds).toHaveBeenCalledTimes(3)
     })
 
-    it('should return circularReference when nextLevel points back to levelId', () => {
-      const getNextLevel = vi.fn((id: string) => {
-        const chain: Record<string, string | null> = {
-          level1: 'level2',
-          level2: 'level1',
-        }
-        return chain[id] ?? null
-      })
+    it('terminates on an existing cycle that does not involve the level', () => {
+      const getNextLevelIds = graph({ level2: ['level3'], level3: ['level2'] })
 
-      const result = checkCircularReference('level1', 'level2', getNextLevel)
-
-      expect(result).toBe('circularReference')
+      expect(checkCircularReference('level1', ['level2'], getNextLevelIds)).toBe('OK')
+      expect(getNextLevelIds).toHaveBeenCalledTimes(2)
     })
 
-    it('should track visited levels to prevent infinite loops', () => {
-      const getNextLevel = vi.fn((id: string) => {
-        const chain: Record<string, string | null> = {
-          level2: 'level3',
-          level3: 'level2',
-        }
-        return chain[id] ?? null
-      })
-
-      const result = checkCircularReference('level1', 'level2', getNextLevel)
-
-      expect(result).toBe('OK')
-      expect(getNextLevel).toHaveBeenCalledTimes(2)
-    })
-
-    it('should return OK for single-level chain', () => {
-      const getNextLevel = vi.fn((_id: string) => null)
-
-      const result = checkCircularReference('level1', 'level2', getNextLevel)
-
-      expect(result).toBe('OK')
-    })
-
-    it('should return OK for long non-circular chain', () => {
-      const getNextLevel = vi.fn((id: string) => {
-        const chain: Record<string, string | null> = {
-          level2: 'level3',
-          level3: 'level4',
-          level4: 'level5',
-          level5: 'level6',
-          level6: null,
-        }
-        return chain[id] ?? null
-      })
-
-      const result = checkCircularReference('level1', 'level2', getNextLevel)
-
-      expect(result).toBe('OK')
+    it('accepts an empty list of next levels', () => {
+      expect(checkCircularReference('level1', [], graph({}))).toBe('OK')
     })
   })
 })

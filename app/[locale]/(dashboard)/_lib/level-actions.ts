@@ -9,13 +9,13 @@ import type {
   createLevelSchema,
   deactivateLevelSchema,
   renameLevelSchema,
-  setNextLevelSchema,
+  setNextLevelsSchema,
 } from '@/use-cases/levels/schemas'
-import { setNextLevel } from '@/use-cases/levels/set-next-level'
+import { setNextLevels } from '@/use-cases/levels/set-next-levels'
 import { requireSchoolAdmin } from './auth-helper'
 
 type CreateLevelInput = Omit<z.infer<typeof createLevelSchema>, 'schoolId'>
-type SetNextLevelInput = Omit<z.infer<typeof setNextLevelSchema>, 'schoolId'>
+type SetNextLevelsInput = Omit<z.infer<typeof setNextLevelsSchema>, 'schoolId'>
 type RenameLevelInput = Omit<z.infer<typeof renameLevelSchema>, 'schoolId'>
 type DeactivateLevelInput = Omit<z.infer<typeof deactivateLevelSchema>, 'schoolId'>
 
@@ -27,9 +27,9 @@ export async function createLevelAction(data: CreateLevelInput) {
   return result
 }
 
-export async function setNextLevelAction(data: SetNextLevelInput) {
+export async function setNextLevelsAction(data: SetNextLevelsInput) {
   const { schoolId } = await requireSchoolAdmin()
-  const result = await setNextLevel({ ...data, schoolId })
+  const result = await setNextLevels({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/levels')
   return 'OK' as const

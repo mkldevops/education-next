@@ -7,13 +7,14 @@ import { periodGateway } from '@/gateways/period-gateway'
 import { db } from '@/lib/db'
 import { promoteStudentsSchema } from './schemas'
 
-type Input = z.infer<typeof promoteStudentsSchema>
+type Input = z.input<typeof promoteStudentsSchema>
 
 export type SkipReason =
   | 'alreadyPromoted'
   | 'planArchived'
   | 'noClassAssignment'
   | 'noNextLevel'
+  | 'nextLevelNotChosen'
   | 'noTargetClass'
   | 'targetClassFull'
 
@@ -28,10 +29,19 @@ export interface PromotionResult {
   errors: PromotionError[]
 }
 
+/** Élève dont le niveau mène à plusieurs niveaux : l'administrateur choisit le sien. */
+export interface PromotionOrientation {
+  enrollmentId: string
+  studentName: string
+  levelName: string
+  nextLevels: Array<{ id: string; name: string }>
+}
+
 export interface PromotionPreview {
   promoted: number
   skipped: number
   skippedByReason: Record<SkipReason, number>
+  orientations: PromotionOrientation[]
 }
 
 interface TargetClassPeriod {
@@ -40,6 +50,7 @@ interface TargetClassPeriod {
 }
 
 interface EligibilityContext {
+  nextLevelChoices: Record<string, string>
   alreadyPromotedStudentIds: Set<string>
   activePlanIds: Set<string>
   targetClassPeriodByLevelId: Map<string, TargetClassPeriod>
@@ -54,10 +65,18 @@ type Eligibility =
 // student), and seeds an in-memory occupancy tally that both previewPromoteStudents and
 // promoteStudents mutate identically as they walk the same enrollment list, so their totals
 // cannot drift from each other.
+function activeNextLevels(enrollment: CompletedEnrollment) {
+  const level = enrollment.classAssignments[0]?.classPeriod.level
+  return (level?.nextLevels ?? [])
+    .map(({ nextLevel }) => nextLevel)
+    .filter((nextLevel) => nextLevel.isActive)
+}
+
 async function buildEligibilityContext(
   schoolId: string,
   enrollments: CompletedEnrollment[],
-  targetPeriodId: string
+  targetPeriodId: string,
+  nextLevelChoices: Record<string, string>
 ): Promise<EligibilityContext> {
   const studentIds = enrollments.map((enrollment) => enrollment.studentId)
   const alreadyPromotedStudentIds = await enrollmentGateway.findEnrolledStudentIds(
@@ -80,10 +99,7 @@ async function buildEligibilityContext(
 
   const nextLevelIds = [
     ...new Set(
-      enrollments.flatMap((enrollment) => {
-        const nextLevel = enrollment.classAssignments[0]?.classPeriod.level.nextLevel
-        return nextLevel?.isActive ? [nextLevel.id] : []
-      })
+      enrollments.flatMap((enrollment) => activeNextLevels(enrollment).map((level) => level.id))
     ),
   ]
 
@@ -127,6 +143,7 @@ async function buildEligibilityContext(
   )
 
   return {
+    nextLevelChoices,
     alreadyPromotedStudentIds,
     activePlanIds,
     targetClassPeriodByLevelId,
@@ -137,13 +154,18 @@ async function buildEligibilityContext(
 async function loadPromotion(input: Input) {
   const parsed = promoteStudentsSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
-  const { schoolId, sourcePeriodId, targetPeriodId } = parsed.data
+  const { schoolId, sourcePeriodId, targetPeriodId, nextLevelChoices } = parsed.data
 
   if (!(await periodGateway.findById(schoolId, sourcePeriodId))) return 'notFound' as const
   if (!(await periodGateway.findById(schoolId, targetPeriodId))) return 'notFound' as const
 
   const enrollments = await enrollmentGateway.findCompletedByPeriod(schoolId, sourcePeriodId)
-  const context = await buildEligibilityContext(schoolId, enrollments, targetPeriodId)
+  const context = await buildEligibilityContext(
+    schoolId,
+    enrollments,
+    targetPeriodId,
+    nextLevelChoices
+  )
   return { schoolId, targetPeriodId, enrollments, context }
 }
 
@@ -166,8 +188,9 @@ function resolveEligibility(
   const classAssignment = enrollment.classAssignments[0]
   if (!classAssignment) return { outcome: 'skipped', reason: 'noClassAssignment' }
 
-  const nextLevel = classAssignment.classPeriod.level.nextLevel
-  if (!nextLevel?.isActive) return { outcome: 'skipped', reason: 'noNextLevel' }
+  const nextLevel = resolveNextLevel(enrollment, context)
+  if (nextLevel === 'none') return { outcome: 'skipped', reason: 'noNextLevel' }
+  if (nextLevel === 'notChosen') return { outcome: 'skipped', reason: 'nextLevelNotChosen' }
 
   const targetClassPeriod = context.targetClassPeriodByLevelId.get(nextLevel.id)
   if (!targetClassPeriod) return { outcome: 'skipped', reason: 'noTargetClass' }
@@ -182,6 +205,38 @@ function resolveEligibility(
   return { outcome: 'eligible', targetClassPeriodId: targetClassPeriod.id }
 }
 
+/**
+ * Un seul niveau suivant actif : il s'impose. Plusieurs : seul le choix fait pour l'inscription
+ * compte, et il doit désigner l'un d'eux — un identifiant étranger vaut une absence de choix.
+ */
+function resolveNextLevel(
+  enrollment: CompletedEnrollment,
+  context: EligibilityContext
+): { id: string } | 'none' | 'notChosen' {
+  const nextLevels = activeNextLevels(enrollment)
+  if (nextLevels.length === 0) return 'none'
+  if (nextLevels.length === 1) return nextLevels[0]
+
+  const chosenId = context.nextLevelChoices[enrollment.id]
+  return nextLevels.find((level) => level.id === chosenId) ?? 'notChosen'
+}
+
+function toOrientation(enrollment: CompletedEnrollment): PromotionOrientation | null {
+  const nextLevels = activeNextLevels(enrollment)
+  const level = enrollment.classAssignments[0]?.classPeriod.level
+  if (!level || nextLevels.length < 2) return null
+
+  const { person } = enrollment.student
+  return {
+    enrollmentId: enrollment.id,
+    studentName: `${person.name} ${person.lastname}`,
+    levelName: level.name,
+    nextLevels: nextLevels
+      .map(({ id, name }) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  }
+}
+
 export async function previewPromoteStudents(input: Input) {
   const loaded = await loadPromotion(input)
   if (typeof loaded === 'string') return loaded
@@ -193,12 +248,20 @@ export async function previewPromoteStudents(input: Input) {
     planArchived: 0,
     noClassAssignment: 0,
     noNextLevel: 0,
+    nextLevelNotChosen: 0,
     noTargetClass: 0,
     targetClassFull: 0,
   }
 
+  const orientations: PromotionOrientation[] = []
   for (const enrollment of enrollments) {
     const eligibility = resolveEligibility(enrollment, context)
+    const isOrientable =
+      eligibility.outcome === 'eligible' ||
+      ['nextLevelNotChosen', 'noTargetClass', 'targetClassFull'].includes(eligibility.reason)
+    const orientation = isOrientable ? toOrientation(enrollment) : null
+    if (orientation) orientations.push(orientation)
+
     if (eligibility.outcome === 'eligible') {
       promoted++
     } else {
@@ -208,7 +271,9 @@ export async function previewPromoteStudents(input: Input) {
 
   const skipped = Object.values(skippedByReason).reduce((sum, count) => sum + count, 0)
 
-  return { promoted, skipped, skippedByReason } satisfies PromotionPreview
+  orientations.sort((a, b) => a.studentName.localeCompare(b.studentName))
+
+  return { promoted, skipped, skippedByReason, orientations } satisfies PromotionPreview
 }
 
 type PromotionOutcome = 'promoted' | SkipReason

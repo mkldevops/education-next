@@ -34,7 +34,10 @@ export default async function LevelsPage({ params }: Props) {
     db.level.findMany({
       where: { schoolId, isActive: true },
       include: {
-        nextLevel: true,
+        nextLevels: {
+          select: { nextLevel: { select: { id: true, name: true } } },
+          orderBy: { nextLevel: { name: 'asc' } },
+        },
         _count: { select: { classPeriods: true } },
         // Classes du niveau sur la période sélectionnée : leur absence déclenche le bouton
         // de génération. La liste est vide, jamais absente, quand aucune période n'est choisie.
@@ -57,17 +60,19 @@ export default async function LevelsPage({ params }: Props) {
 
   const allLevelsForSelect = levels.map((l) => ({ id: l.id, name: l.name }))
 
-  const takenNextLevelIds = levels
-    .map((l) => l.nextLevelId)
-    .filter((id): id is string => id !== null)
-
-  const chains = buildPromotionChains(levels)
+  const chains = buildPromotionChains(
+    levels.map((level) => ({
+      id: level.id,
+      name: level.name,
+      nextLevelIds: level.nextLevels.map(({ nextLevel }) => nextLevel.id),
+    }))
+  )
 
   const rows = levels.map((level) => ({
     id: level.id,
     name: level.name,
-    nextLevelId: level.nextLevelId,
-    nextLevelName: level.nextLevel?.name ?? null,
+    nextLevelIds: level.nextLevels.map(({ nextLevel }) => nextLevel.id),
+    nextLevelNames: level.nextLevels.map(({ nextLevel }) => nextLevel.name),
     classCount: level._count.classPeriods,
     currentClasses: level.classPeriods,
   }))
@@ -110,30 +115,32 @@ export default async function LevelsPage({ params }: Props) {
         }
         defaultCapacity={defaultCapacity}
         allLevels={allLevelsForSelect}
-        takenNextLevelIds={takenNextLevelIds}
       />
     </div>
   )
 }
 
+/**
+ * Un parcours par chemin de la progression, d'un niveau sans prédécesseur à un niveau sans
+ * suivant : une progression qui se divise donne un parcours par branche.
+ */
 function buildPromotionChains(
-  levels: { id: string; name: string; nextLevelId: string | null }[]
+  levels: { id: string; name: string; nextLevelIds: string[] }[]
 ): string[][] {
-  const childIds = new Set(levels.filter((l) => l.nextLevelId).map((l) => l.nextLevelId as string))
+  const childIds = new Set(levels.flatMap((l) => l.nextLevelIds))
   const roots = levels.filter((l) => !childIds.has(l.id))
   const byId = new Map(levels.map((l) => [l.id, l]))
 
   const chains: string[][] = []
-  for (const root of roots) {
-    const chain: string[] = [root.name]
-    let current = root
-    while (current.nextLevelId) {
-      const next = byId.get(current.nextLevelId)
-      if (!next) break
-      chain.push(next.name)
-      current = next
+  const walk = (level: (typeof levels)[number], path: string[]) => {
+    const chain = [...path, level.name]
+    const nextLevels = level.nextLevelIds.flatMap((id) => byId.get(id) ?? [])
+    if (nextLevels.length === 0) {
+      if (chain.length > 1) chains.push(chain)
+      return
     }
-    if (chain.length > 1) chains.push(chain)
+    for (const next of nextLevels) walk(next, chain)
   }
+  for (const root of roots) walk(root, [])
   return chains
 }

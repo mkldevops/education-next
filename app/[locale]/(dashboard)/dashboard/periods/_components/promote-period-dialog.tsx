@@ -44,6 +44,7 @@ const SKIP_REASONS: SkipReason[] = [
   'planArchived',
   'noClassAssignment',
   'noNextLevel',
+  'nextLevelNotChosen',
   'noTargetClass',
   'targetClassFull',
 ]
@@ -60,16 +61,17 @@ export function PromotePeriodDialogContent({
   const [step, setStep] = useState<Step>('form')
   const [targetPeriodId, setTargetPeriodId] = useState(targetOptions[0]?.id ?? '')
   const [preview, setPreview] = useState<PromotionPreview | null>(null)
+  const [nextLevelChoices, setNextLevelChoices] = useState<Record<string, string>>({})
   const [report, setReport] = useState<PromotionResult | null>(null)
   const targetItems = targetOptions.map((period) => ({ value: period.id, label: period.name }))
 
-  const handlePreview = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const loadPreview = (choices: Record<string, string>) => {
     startTransition(async () => {
       try {
         const result = await previewPromoteStudentsAction({
           sourcePeriodId: sourcePeriod.id,
           targetPeriodId,
+          nextLevelChoices: choices,
         })
         if (typeof result === 'string') {
           toastActionError(t, result)
@@ -83,12 +85,25 @@ export function PromotePeriodDialogContent({
     })
   }
 
+  const handlePreview = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    loadPreview(nextLevelChoices)
+  }
+
+  // La prévisualisation est recalculée à chaque choix : les totaux suivent l'orientation.
+  const handleChooseNextLevel = (enrollmentId: string, nextLevelId: string) => {
+    const choices = { ...nextLevelChoices, [enrollmentId]: nextLevelId }
+    setNextLevelChoices(choices)
+    loadPreview(choices)
+  }
+
   const handleConfirm = () => {
     startTransition(async () => {
       try {
         const result = await promoteStudentsAction({
           sourcePeriodId: sourcePeriod.id,
           targetPeriodId,
+          nextLevelChoices,
         })
         if (typeof result === 'string') {
           toastActionError(t, result)
@@ -164,6 +179,55 @@ export function PromotePeriodDialogContent({
                   )
                 )}
               </ul>
+            )}
+            {preview.orientations.length > 0 && (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-graphite">{t('orientation.title')}</p>
+                  <p className="text-sm text-graphite-600">{t('orientation.description')}</p>
+                </div>
+                <ul className="space-y-2">
+                  {preview.orientations.map((orientation) => {
+                    const selectId = `promote-next-level-${orientation.enrollmentId}`
+                    const items = orientation.nextLevels.map((level) => ({
+                      value: level.id,
+                      label: level.name,
+                    }))
+                    return (
+                      <li
+                        key={orientation.enrollmentId}
+                        className="flex items-center justify-between gap-3"
+                      >
+                        <Label htmlFor={selectId} className="text-sm font-normal">
+                          {t('orientation.student', {
+                            student: orientation.studentName,
+                            level: orientation.levelName,
+                          })}
+                        </Label>
+                        <Select
+                          items={items}
+                          disabled={isPending}
+                          value={nextLevelChoices[orientation.enrollmentId] ?? null}
+                          onValueChange={(value) => {
+                            if (value) handleChooseNextLevel(orientation.enrollmentId, value)
+                          }}
+                        >
+                          <SelectTrigger id={selectId} className="w-40">
+                            <SelectValue placeholder={t('orientation.placeholder')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {items.map((item) => (
+                              <SelectItem key={item.value} value={item.value}>
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
             )}
           </DialogBody>
           <DialogFooter>

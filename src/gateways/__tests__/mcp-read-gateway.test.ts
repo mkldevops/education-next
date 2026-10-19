@@ -34,14 +34,39 @@ describe('mcpReadGateway', () => {
     })
   })
 
-  it('publishes levels with their next level named, not the whole row', async () => {
-    await mcpReadGateway.listLevels(SCHOOL)
+  it('publishes levels with their next levels named, not the whole row', async () => {
+    dbMock.level.findMany.mockResolvedValueOnce([
+      {
+        id: 'cp',
+        name: 'CP',
+        nextLevels: [
+          { nextLevel: { id: 'ce1', name: 'CE1' } },
+          { nextLevel: { id: 'cea', name: 'CE-A' } },
+        ],
+      },
+    ])
+
+    const levels = await mcpReadGateway.listLevels(SCHOOL)
 
     expect(dbMock.level.findMany).toHaveBeenCalledWith({
       where: { schoolId: SCHOOL, isActive: true },
-      select: { id: true, name: true, nextLevel: { select: { id: true, name: true } } },
+      select: {
+        id: true,
+        name: true,
+        nextLevels: { select: { nextLevel: { select: { id: true, name: true } } } },
+      },
       orderBy: { name: 'asc' },
     })
+    expect(levels).toEqual([
+      {
+        id: 'cp',
+        name: 'CP',
+        nextLevels: [
+          { id: 'ce1', name: 'CE1' },
+          { id: 'cea', name: 'CE-A' },
+        ],
+      },
+    ])
   })
 
   it('publishes periods with their span, most recent first', async () => {

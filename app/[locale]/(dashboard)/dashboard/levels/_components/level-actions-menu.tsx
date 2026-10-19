@@ -6,9 +6,8 @@ import { useTranslations } from 'next-intl'
 import { EditLevelDialog } from './edit-level-dialog'
 
 type Props = {
-  level: { id: string; name: string; nextLevelId: string | null; classCount: number }
+  level: { id: string; name: string; nextLevelIds: string[]; classCount: number }
   allLevels: { id: string; name: string }[]
-  takenNextLevelIds: string[]
 }
 
 /**
@@ -22,7 +21,7 @@ type Props = {
  * bouton `⋯`, seul ancrage qui reste visible — pour quand il referme et que son propre
  * déclencheur n'est plus focalisable.
  */
-export function LevelActionsMenu({ level, allLevels, takenNextLevelIds }: Props) {
+export function LevelActionsMenu({ level, allLevels }: Props) {
   const t = useTranslations('dashboard.pages.levels')
   const { open, toggle, containerRef, triggerRef, menuRef } = useMenu()
 
@@ -49,9 +48,8 @@ export function LevelActionsMenu({ level, allLevels, takenNextLevelIds }: Props)
       >
         <EditLevelDialog
           level={{ id: level.id, name: level.name }}
-          currentNextLevelId={level.nextLevelId}
+          currentNextLevelIds={level.nextLevelIds}
           allLevels={allLevels}
-          takenNextLevelIds={takenNextLevelIds}
           classPeriodCount={level.classCount}
           triggerRole="menuitem"
           restoreFocusRef={triggerRef}

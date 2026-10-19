@@ -29,11 +29,13 @@ async function createSchool({ targetCapacity = 20 }: { targetCapacity?: number }
 
   const plan = await raw.plan.create({ data: { schoolId, name: 'Plein', amount: 100 } })
   const level3 = await raw.level.create({ data: { schoolId, name: 'CE2' } })
-  const level2 = await raw.level.create({
-    data: { schoolId, name: 'CE1', nextLevelId: level3.id },
-  })
-  const level1 = await raw.level.create({
-    data: { schoolId, name: 'CP', nextLevelId: level2.id },
+  const level2 = await raw.level.create({ data: { schoolId, name: 'CE1' } })
+  const level1 = await raw.level.create({ data: { schoolId, name: 'CP' } })
+  await raw.levelProgression.createMany({
+    data: [
+      { schoolId, levelId: level2.id, nextLevelId: level3.id },
+      { schoolId, levelId: level1.id, nextLevelId: level2.id },
+    ],
   })
   const [source, target] = await Promise.all([
     raw.period.create({
@@ -149,7 +151,7 @@ describe.skipIf(!databaseUrl)('intégrité des inscriptions sur base réelle', (
       await raw.enrollment.deleteMany({ where: { schoolId } })
       await raw.classPeriod.deleteMany({ where: { schoolId } })
       await raw.period.deleteMany({ where: { schoolId } })
-      await raw.level.updateMany({ where: { schoolId }, data: { nextLevelId: null } })
+      await raw.levelProgression.deleteMany({ where: { schoolId } })
       await raw.level.deleteMany({ where: { schoolId } })
       await raw.plan.deleteMany({ where: { schoolId } })
       await raw.student.deleteMany({ where: { schoolId } })

@@ -11,22 +11,28 @@ const PROMOTED_ENROLLMENT_STATUSES = [
   'COMPLETED',
 ] as const satisfies readonly EnrollmentStatus[]
 
+const completedEnrollmentInclude = {
+  student: { include: { person: { select: { name: true, lastname: true } } } },
+  classAssignments: {
+    include: {
+      classPeriod: {
+        include: {
+          level: {
+            include: {
+              nextLevels: {
+                select: { nextLevel: { select: { id: true, name: true, isActive: true } } },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.EnrollmentInclude
+
 /** Forme retournée par `findCompletedByPeriod`, consommée par `promote-students`. */
 export type CompletedEnrollment = Prisma.EnrollmentGetPayload<{
-  include: {
-    student: true
-    classAssignments: {
-      include: {
-        classPeriod: {
-          include: {
-            level: {
-              include: { nextLevel: true }
-            }
-          }
-        }
-      }
-    }
-  }
+  include: typeof completedEnrollmentInclude
 }>
 
 export const enrollmentGateway = {
@@ -360,24 +366,16 @@ export const enrollmentGateway = {
         },
       },
       include: {
-        student: true,
+        ...completedEnrollmentInclude,
         // L'affectation ouverte seulement : après un changement de classe en cours d'année,
         // l'ancienne affectation (close) désignerait le mauvais niveau de départ.
         classAssignments: {
+          ...completedEnrollmentInclude.classAssignments,
           where: {
             endAt: null,
             classPeriod: { periodId },
           },
           orderBy: { startAt: 'desc' },
-          include: {
-            classPeriod: {
-              include: {
-                level: {
-                  include: { nextLevel: true },
-                },
-              },
-            },
-          },
         },
       },
     })

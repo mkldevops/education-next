@@ -665,9 +665,16 @@
             "planArchived": "{count, plural, one {# avec une formule archivée} other {# avec une formule archivée}}",
             "noClassAssignment": "{count, plural, one {# sans affectation de classe} other {# sans affectation de classe}}",
             "noNextLevel": "{count, plural, one {# sans niveau suivant actif} other {# sans niveau suivant actif}}",
+            "nextLevelNotChosen": "{count, plural, one {# sans niveau suivant choisi} other {# sans niveau suivant choisi}}",
             "noTargetClass": "{count, plural, one {# sans classe cible dans la période d'arrivée} other {# sans classe cible dans la période d'arrivée}}",
             "targetClassFull": "{count, plural, one {# avec classe cible pleine} other {# avec classe cible pleine}}",
             "createFailed": "Échec de la promotion de l'élève {studentId}"
+          },
+          "orientation": {
+            "title": "Orientation",
+            "description": "Ces niveaux mènent à plusieurs niveaux : choisissez celui de chaque élève.",
+            "student": "{student} ({level})",
+            "placeholder": "À choisir"
           },
           "cancel": "Annuler",
           "back": "Retour",
@@ -725,7 +732,11 @@
           "title": "Modifier le niveau",
           "name": "Nom",
           "selectNextLevel": "Niveau suivant",
-          "nextLevelHint": "Un niveau ne peut être le suivant que d'un seul autre niveau.",
+          "nextLevelHint": "Plusieurs niveaux suivants possibles : le choix se fait élève par élève à la promotion.",
+          "nextLevelSearch": "Rechercher un niveau",
+          "nextLevelEmpty": "Aucun autre niveau",
+          "nextLevelNoResults": "Aucun niveau trouvé",
+          "nextLevelRemove": "Retirer",
           "noNext": "Aucun (fin de parcours)",
           "delete": "Supprimer",
           "cancel": "Annuler",
@@ -734,7 +745,6 @@
           "deleteSuccess": "Niveau supprimé",
           "error": "Erreur lors de la mise à jour",
           "errors": {
-            "alreadyLinked": "Ce niveau est déjà le suivant d'un autre niveau",
             "levelInUse": "Des classes utilisent ce niveau : supprimez-les d'abord",
             "circularReference": "Cette progression créerait une boucle",
             "notFound": "Niveau introuvable",

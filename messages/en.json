@@ -664,9 +664,16 @@
             "planArchived": "{count, plural, one {# with an archived plan} other {# with an archived plan}}",
             "noClassAssignment": "{count, plural, one {# with no class assignment} other {# with no class assignment}}",
             "noNextLevel": "{count, plural, one {# with no active next level} other {# with no active next level}}",
+            "nextLevelNotChosen": "{count, plural, one {# with no next level chosen} other {# with no next level chosen}}",
             "noTargetClass": "{count, plural, one {# with no target class in the destination period} other {# with no target class in the destination period}}",
             "targetClassFull": "{count, plural, one {# with a full target class} other {# with a full target class}}",
             "createFailed": "Failed to promote student {studentId}"
+          },
+          "orientation": {
+            "title": "Orientation",
+            "description": "These levels lead to several levels: choose one for each student.",
+            "student": "{student} ({level})",
+            "placeholder": "To choose"
           },
           "cancel": "Cancel",
           "back": "Back",
@@ -724,7 +731,11 @@
           "title": "Edit level",
           "name": "Name",
           "selectNextLevel": "Next level",
-          "nextLevelHint": "A level can only follow one other level.",
+          "nextLevelHint": "Several next levels allowed: each student's is chosen at promotion.",
+          "nextLevelSearch": "Search a level",
+          "nextLevelEmpty": "No other level",
+          "nextLevelNoResults": "No level found",
+          "nextLevelRemove": "Remove",
           "noNext": "None (end of track)",
           "delete": "Delete",
           "cancel": "Cancel",
@@ -733,7 +744,6 @@
           "deleteSuccess": "Level deleted",
           "error": "Error updating progression",
           "errors": {
-            "alreadyLinked": "This level already follows another level",
             "levelInUse": "Classes use this level: remove them first",
             "circularReference": "This progression would create a loop",
             "notFound": "Level not found",

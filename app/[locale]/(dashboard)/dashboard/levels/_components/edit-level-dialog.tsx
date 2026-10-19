@@ -11,11 +11,7 @@ import {
   DialogTrigger,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  MultiSelect,
   useDialog,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
@@ -24,7 +20,7 @@ import { toast, toastActionError } from '@/lib/toast'
 import {
   deactivateLevelAction,
   renameLevelAction,
-  setNextLevelAction,
+  setNextLevelsAction,
 } from '../../../_lib/level-actions'
 
 interface Level {
@@ -34,9 +30,8 @@ interface Level {
 
 interface EditLevelFormProps {
   level: Level
-  currentNextLevelId: string | null
+  currentNextLevelIds: string[]
   allLevels: Level[]
-  takenNextLevelIds: string[]
   classPeriodCount: number
 }
 
@@ -69,22 +64,15 @@ export function EditLevelDialog({ triggerRole, restoreFocusRef, ...props }: Edit
 
 function EditLevelForm({
   level,
-  currentNextLevelId,
+  currentNextLevelIds,
   allLevels,
-  takenNextLevelIds,
   classPeriodCount,
 }: EditLevelFormProps) {
   const t = useTranslations('dashboard.pages.levels.edit')
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
 
-  const selectableLevels = allLevels.filter(
-    (l) => l.id !== level.id && (l.id === currentNextLevelId || !takenNextLevelIds.includes(l.id))
-  )
-  const nextLevelItems = [
-    { value: null, label: t('noNext') },
-    ...selectableLevels.map((l) => ({ value: l.id, label: l.name })),
-  ]
+  const selectableLevels = allLevels.filter((l) => l.id !== level.id)
 
   const notify = (result: string) => {
     if (result === 'OK') return true
@@ -96,7 +84,10 @@ function EditLevelForm({
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     const name = (formData.get('name') as string).trim()
-    const nextLevelId = (formData.get('nextLevelId') as string) || null
+    const nextLevelIds = formData.getAll('nextLevelIds').map(String)
+    const nextLevelsChanged =
+      nextLevelIds.length !== currentNextLevelIds.length ||
+      nextLevelIds.some((id) => !currentNextLevelIds.includes(id))
 
     startTransition(async () => {
       if (name !== level.name) {
@@ -104,8 +95,8 @@ function EditLevelForm({
         if (!notify(renamed)) return
       }
 
-      if (nextLevelId !== currentNextLevelId) {
-        const linked = await setNextLevelAction({ id: level.id, nextLevelId })
+      if (nextLevelsChanged) {
+        const linked = await setNextLevelsAction({ id: level.id, nextLevelIds })
         if (!notify(linked)) return
       }
 
@@ -140,23 +131,18 @@ function EditLevelForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-next-level">{t('selectNextLevel')}</Label>
-            <Select
-              name="nextLevelId"
-              items={nextLevelItems}
-              defaultValue={currentNextLevelId}
+            <MultiSelect
+              id="edit-next-level"
+              name="nextLevelIds"
+              options={selectableLevels}
+              defaultValue={currentNextLevelIds}
               disabled={isPending}
-            >
-              <SelectTrigger id="edit-next-level">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {nextLevelItems.map((item) => (
-                  <SelectItem key={item.value ?? ''} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder={t('noNext')}
+              searchPlaceholder={t('nextLevelSearch')}
+              emptyMessage={t('nextLevelEmpty')}
+              noResultsMessage={t('nextLevelNoResults')}
+              removeLabel={t('nextLevelRemove')}
+            />
             <p className="text-xs text-graphite-600">{t('nextLevelHint')}</p>
           </div>
         </div>

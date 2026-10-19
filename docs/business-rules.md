@@ -17,7 +17,7 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 | Person | `Person` | A human. A parent, a tutor, or the person record behind a student. |
 | Student | `Student` | The `Person` who attends. One `Person` maps to at most one `Student`. |
 | Period | `Period` | A school year. Dated, and the scope of most dashboard reads. |
-| Level | `Level` | A grade (CP, CE1…). Levels chain through `nextLevelId`, within one school. |
+| Level | `Level` | A grade (CP, CE1…). Levels chain through `LevelProgression` edges, within one school. |
 | Class | `ClassPeriod` | One level taught during one period, with a capacity. |
 | Assignment | `ClassAssignment` | A student's seat in a class, `endAt: null` while it holds. |
 | Enrollment | `Enrollment` | A student registered on a plan. Carries the money. |
@@ -1218,19 +1218,23 @@ Owner: `src/domain/period.ts`, `src/use-cases/periods/`.
 
 Owner: `src/domain/level.ts`, `src/use-cases/levels/`.
 
-- `nextLevelId` chains levels into a progression. Its unique constraint is the composite
-  `(nextLevelId, schoolId)`: two levels of one school cannot share a successor, and the chain cannot
-  cross a school boundary.
-- **No cycles.** Walking the chain from the candidate successor must never return to the level being
-  edited, and a level cannot point at itself → `circularReference`. The walk also stops on a
-  repeated node, so a pre-existing cycle elsewhere cannot hang the check.
+- **The progression is a graph of `LevelProgression` edges** (`levelId` → `nextLevelId`). A level
+  may lead to **several** next levels (C4 → H/GG or H/GF, chosen per student at promotion) and
+  several levels may share one successor. Both foreign keys are composite with `schoolId`, so an
+  edge cannot cross a school boundary. `setNextLevels` replaces a level's edges in one transaction;
+  every target must be an active level of the school → `notFound`.
+- **Archiving a level removes its edges**, both directions, in `levelGateway.deactivate`.
+- **No cycles.** Walking every path from the candidate successors must never return to the level
+  being edited, and a level cannot point at itself → `circularReference`. The walk ignores the
+  edges being replaced and visits each level once, so a shared descendant is not walked twice and a
+  pre-existing cycle elsewhere cannot hang the check.
 - **A level holding classes cannot be archived** → `levelInUse`.
 - **Active level names are unique within a school** → `nameTaken`. `createLevel` and `renameLevel`
   look up an active homonym (`levelGateway.findActiveByName`) before writing; a rename keeps its own
   name. The partial unique index `Level(schoolId, name) WHERE isActive` settles concurrent writes,
   and its P2002 is mapped to the same `nameTaken`. An archived level's name can be reused.
 - **The cycle walk only sees one school's levels.** `checkCircularReference` is pure; its map is
-  built from `levelGateway.list(schoolId)` in `src/use-cases/levels/set-next-level.ts`.
+  built from `levelGateway.listProgression(schoolId)` in `src/use-cases/levels/set-next-levels.ts`.
 
 ## Classes
 
@@ -1399,7 +1403,8 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
   the **suggested level** first (`suggestLevelId` in
   `app/[locale]/(dashboard)/_lib/class-options.ts`): the level of the
   student's latest non-cancelled assignment when it is in the target period, otherwise that level's
-  `nextLevelId` (the same level at the end of the chain); no history, no suggestion, and the classes
+  single next level (the same level at the end of the chain); a level leading to several next levels
+  suggests none, since only the admin knows the orientation; no history, no suggestion, and the classes
   are then grouped by level. The schema holds no age-to-level mapping, so age is not used. The
   picker (`app/[locale]/(dashboard)/_components/class-select.tsx`) is shared by « Nouvelle
   inscription », « Ajouter un élève » and « Créer une famille ». Each class shows its remaining seats
@@ -1815,7 +1820,7 @@ not repair.
 
 ## Promotion
 
-Owner: `src/domain/promotion.ts`, `src/use-cases/enrollments/promote-students.ts`.
+Owner: `src/use-cases/enrollments/promote-students.ts`.
 
 Moves a finished period's students into the next one. Preview and execution walk the same list with
 the same eligibility function, so the announced numbers cannot drift from the applied ones.
@@ -1827,10 +1832,15 @@ A student is **skipped**, with the reason reported, when:
 | `alreadyPromoted` | Already enrolled in the target period. |
 | `planArchived` | The source plan is archived, so the `PENDING` copy would carry a plan it cannot select. |
 | `noClassAssignment` | No class in the source period, so no level to move from. |
-| `noNextLevel` | The level has no successor, or the successor is archived. |
+| `noNextLevel` | The level has no active successor. |
+| `nextLevelNotChosen` | The level has several active successors and none was chosen for the student. |
 | `noTargetClass` | No active class for that successor in the target period. |
 | `targetClassFull` | The target class is at capacity. |
 
+- **Orientation.** One active successor applies automatically. With several, the preview lists the
+  students concerned (`orientations`) and the dialog asks one choice each; the choices travel as
+  `nextLevelChoices` (enrollment id → level id) to preview and execution alike. A choice that is not
+  one of the level's active successors counts as no choice.
 - New enrollments are created `PENDING`, carrying the source plan, amount, discount and
   `canLeaveAlone`. They are not active until someone validates them.
 - **The source plan must still be active.** A `COMPLETED` enrollment may keep an archived plan

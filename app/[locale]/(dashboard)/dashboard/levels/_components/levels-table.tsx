@@ -10,8 +10,8 @@ import { LevelActionsMenu } from './level-actions-menu'
 export type LevelRow = {
   id: string
   name: string
-  nextLevelId: string | null
-  nextLevelName: string | null
+  nextLevelIds: string[]
+  nextLevelNames: string[]
   classCount: number
   /** Classes du niveau sur la période sélectionnée. */
   currentClasses: { id: string; name: string }[]
@@ -22,19 +22,12 @@ type Props = {
   selectedPeriod: { id: string; name: string } | null
   defaultCapacity: number
   allLevels: { id: string; name: string }[]
-  takenNextLevelIds: string[]
 }
 
 /** Préférence locale : la liste des niveaux garde le filtre d'une visite à l'autre. */
 const FILTER_STORAGE_KEY = 'peaklab.levels.openPeriodOnly'
 
-export function LevelsTable({
-  levels,
-  selectedPeriod,
-  defaultCapacity,
-  allLevels,
-  takenNextLevelIds,
-}: Props) {
+export function LevelsTable({ levels, selectedPeriod, defaultCapacity, allLevels }: Props) {
   const t = useTranslations('dashboard.pages.levels')
   // Décoché par défaut : le filtre masque justement les niveaux dépourvus de classe sur la
   // période, ceux qui portent le bouton de génération.
@@ -68,7 +61,12 @@ export function LevelsTable({
       key: 'nextLevel',
       header: t('nextLevel'),
       className: 'text-graphite',
-      render: (level) => level.nextLevelName ?? <span className="text-graphite-800">&mdash;</span>,
+      render: (level) =>
+        level.nextLevelNames.length > 0 ? (
+          level.nextLevelNames.join(', ')
+        ) : (
+          <span className="text-graphite-800">&mdash;</span>
+        ),
     },
     {
       key: 'classes',
@@ -105,13 +103,7 @@ export function LevelsTable({
       header: t('actions'),
       headerClassName: 'text-right',
       className: 'text-right',
-      render: (level) => (
-        <LevelActionsMenu
-          level={level}
-          allLevels={allLevels}
-          takenNextLevelIds={takenNextLevelIds}
-        />
-      ),
+      render: (level) => <LevelActionsMenu level={level} allLevels={allLevels} />,
     },
   ]
 

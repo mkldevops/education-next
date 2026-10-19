@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { groupClassesByLevel, rankClasses, remainingSeats, suggestLevelId } from './class-options'
 
 describe('suggestLevelId', () => {
-  const last = { levelId: 'ce1', nextLevelId: 'ce2', periodId: 'p-2025' }
+  const last = { levelId: 'ce1', nextLevelIds: ['ce2'], periodId: 'p-2025' }
 
   it('keeps the level of an assignment already on the target period', () => {
     expect(suggestLevelId(last, 'p-2025')).toBe('ce1')
@@ -13,7 +13,11 @@ describe('suggestLevelId', () => {
   })
 
   it('stays on the last level at the end of the progression', () => {
-    expect(suggestLevelId({ ...last, nextLevelId: null }, 'p-2026')).toBe('ce1')
+    expect(suggestLevelId({ ...last, nextLevelIds: [] }, 'p-2026')).toBe('ce1')
+  })
+
+  it('leaves the choice to the admin when the progression splits', () => {
+    expect(suggestLevelId({ ...last, nextLevelIds: ['ce2', 'ce2-bis'] }, 'p-2026')).toBeNull()
   })
 
   it('suggests nothing without history', () => {

@@ -46,6 +46,7 @@ async function purge() {
   await prisma.plan.deleteMany()
   await prisma.classPeriod.deleteMany()
   await prisma.teacher.deleteMany()
+  await prisma.levelProgression.deleteMany()
   await prisma.level.deleteMany()
   await prisma.period.deleteMany()
   await prisma.phoneNumber.deleteMany()
@@ -108,9 +109,8 @@ async function seedSchoolContent(fixture: SchoolFixture) {
   }
   // Chaîne de progression, intra-école : la FK composite l'impose désormais.
   for (let index = 0; index < levels.length - 1; index += 1) {
-    await prisma.level.update({
-      where: { id_schoolId: { id: levels[index].id, schoolId } },
-      data: { nextLevelId: levels[index + 1].id },
+    await prisma.levelProgression.create({
+      data: { schoolId, levelId: levels[index].id, nextLevelId: levels[index + 1].id },
     })
   }
 

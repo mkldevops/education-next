@@ -1,26 +1,22 @@
+/**
+ * Refuse un lien de progression qui fermerait un cycle : la progression est un graphe orienté
+ * sans cycle, où un niveau peut mener à plusieurs niveaux et suivre plusieurs niveaux.
+ */
 export function checkCircularReference(
   levelId: string,
-  nextLevelId: string,
-  getNextLevel: (id: string) => string | null
+  nextLevelIds: readonly string[],
+  getNextLevelIds: (id: string) => readonly string[]
 ): 'OK' | 'circularReference' {
-  if (levelId === nextLevelId) {
-    return 'circularReference'
-  }
-
-  let currentId: string | null = nextLevelId
+  const pending = [...nextLevelIds]
   const visited = new Set<string>()
 
-  while (currentId !== null) {
-    if (currentId === levelId) {
-      return 'circularReference'
-    }
-
-    if (visited.has(currentId)) {
-      break
-    }
+  while (pending.length > 0) {
+    const currentId = pending.pop() as string
+    if (currentId === levelId) return 'circularReference'
+    if (visited.has(currentId)) continue
 
     visited.add(currentId)
-    currentId = getNextLevel(currentId)
+    pending.push(...getNextLevelIds(currentId))
   }
 
   return 'OK'

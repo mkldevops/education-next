@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const findBySlugMock = vi.fn()
 const periodFindManyMock = vi.fn()
-const levelFindManyMock = vi.fn()
+const levelProgressionFindManyMock = vi.fn()
 const listPublicClassScheduleMock = vi.fn()
 const getBrandingConfigMock = vi.fn()
 const getThemeConfigsMock = vi.fn()
@@ -33,7 +33,10 @@ vi.mock('@/i18n/routing', () => ({
 }))
 vi.mock('@/gateways/school-gateway', () => ({ schoolGateway: { findBySlug: findBySlugMock } }))
 vi.mock('@/lib/db', () => ({
-  db: { period: { findMany: periodFindManyMock }, level: { findMany: levelFindManyMock } },
+  db: {
+    period: { findMany: periodFindManyMock },
+    levelProgression: { findMany: levelProgressionFindManyMock },
+  },
 }))
 vi.mock('@/use-cases/class-schedules/list-public-class-schedule', () => ({
   listPublicClassSchedule: listPublicClassScheduleMock,
@@ -64,7 +67,7 @@ describe('PublicSchedulePage', () => {
     vi.clearAllMocks()
     findBySlugMock.mockResolvedValue(school)
     periodFindManyMock.mockResolvedValue([period])
-    levelFindManyMock.mockResolvedValue([])
+    levelProgressionFindManyMock.mockResolvedValue([])
     listPublicClassScheduleMock.mockResolvedValue({
       school: { id: school.id, name: school.name, slug: school.slug },
       slots: [],

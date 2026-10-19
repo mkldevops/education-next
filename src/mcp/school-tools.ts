@@ -152,7 +152,9 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
     define({
       name: 'list_levels',
       title: 'Niveaux',
-      description: "Niveaux actifs de l'école, avec leur niveau suivant lorsqu'il est défini.",
+      description:
+        "Niveaux actifs de l'école, avec leurs niveaux suivants (aucun en fin de progression, " +
+        'plusieurs quand la progression se divise).',
       inputSchema: NO_ARGS,
       kind: 'read',
       run: () => mcpReadGateway.listLevels(schoolId),
