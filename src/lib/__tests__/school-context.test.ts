@@ -9,6 +9,7 @@ const authMock = { api: { getSession: vi.fn() } }
 const schoolGatewayMock = { findActiveById: vi.fn(), listActive: vi.fn() }
 const schoolMemberGatewayMock = { listAuthorizedSchools: vi.fn() }
 const isSchoolSwitchEnabledMock = vi.fn()
+const isTeacherStaffAccessEnabledMock = vi.fn()
 
 vi.mock('next/headers', () => ({
   cookies: async () => cookieStore,
@@ -23,6 +24,9 @@ vi.mock('@/gateways/school-member-gateway', () => ({
 vi.mock('@/use-cases/platform-settings/is-school-switch-enabled', () => ({
   isSchoolSwitchEnabled: isSchoolSwitchEnabledMock,
 }))
+vi.mock('@/use-cases/config/is-teacher-staff-access-enabled', () => ({
+  isTeacherStaffAccessEnabled: isTeacherStaffAccessEnabledMock,
+}))
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, sa factory est lazy.
 const { getAuthorizedSchools, getSchoolContext } = await import('../school-context')
@@ -35,7 +39,7 @@ const signedInAs = (userId: string, isSuperAdmin: boolean) => {
   dbMock.user.findUnique.mockResolvedValue({ isSuperAdmin })
 }
 
-const membership = (school: typeof AL_NOUR, role: 'ADMIN' | 'PARENT') => ({
+const membership = (school: typeof AL_NOUR, role: 'ADMIN' | 'PARENT' | 'TEACHER') => ({
   schoolId: school.id,
   role,
   createdAt: new Date('2026-01-01'),
@@ -183,8 +187,8 @@ describe('getAuthorizedSchools', () => {
     signedInAs('user-1', true)
 
     expect(await getAuthorizedSchools()).toEqual([
-      { ...AL_NOUR, isAdmin: true },
-      { ...HORIZON, isAdmin: true },
+      { ...AL_NOUR, isAdmin: true, isStaff: true },
+      { ...HORIZON, isAdmin: true, isStaff: true },
     ])
   })
 
@@ -196,8 +200,24 @@ describe('getAuthorizedSchools', () => {
     ])
 
     expect(await getAuthorizedSchools()).toEqual([
-      { ...AL_NOUR, isAdmin: true },
-      { ...HORIZON, isAdmin: false },
+      { ...AL_NOUR, isAdmin: true, isStaff: true },
+      { ...HORIZON, isAdmin: false, isStaff: false },
+    ])
+  })
+
+  it('makes a teacher staff only where the school opens extended access', async () => {
+    signedInAs('user-3', false)
+    schoolMemberGatewayMock.listAuthorizedSchools.mockResolvedValue([
+      membership(AL_NOUR, 'TEACHER'),
+      membership(HORIZON, 'TEACHER'),
+    ])
+    isTeacherStaffAccessEnabledMock.mockImplementation(
+      async (schoolId: string) => schoolId === AL_NOUR.id
+    )
+
+    expect(await getAuthorizedSchools()).toEqual([
+      { ...AL_NOUR, isAdmin: false, isStaff: true },
+      { ...HORIZON, isAdmin: false, isStaff: false },
     ])
   })
 

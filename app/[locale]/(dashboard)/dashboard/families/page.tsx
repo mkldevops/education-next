@@ -12,7 +12,7 @@ import {
   isPayableEnrollment,
   PAYABLE_ENROLLMENT_STATUSES,
 } from '@/use-cases/payments/family-balance'
-import { requireSchoolScope } from '../../_lib/auth-helper'
+import { requireSchoolRecordsScope } from '../../_lib/auth-helper'
 import { toClassOption } from '../../_lib/class-options-loader'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
 import { FamiliesDataTable, type FamilyRow } from './_components/families-data-table'
@@ -43,18 +43,19 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.families')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const scope = await requireSchoolScope()
-  const paymentsEnabled = await isPaymentsEnabled(scope.schoolId)
+  const scope = await requireSchoolRecordsScope()
 
-  if (!scope.isAdmin) {
-    redirect({ href: `/dashboard/families/${scope.familyId}`, locale })
+  if (!scope.isStaff) {
+    return redirect({ href: `/dashboard/families/${scope.familyId}`, locale })
   }
 
+  // Un enseignant à accès élargi voit les familles sans aucune donnée financière.
   const isAdmin = scope.isAdmin
+  const paymentsEnabled = isAdmin && (await isPaymentsEnabled(scope.schoolId))
 
   // Plans et classes de la période sélectionnée, pour inscrire les enfants dès la création.
   const dialogData = getSelectedPeriodId(scope.schoolId).then((periodId) =>
-    getFamilyDialogData(scope.schoolId, isAdmin, periodId)
+    getFamilyDialogData(scope.schoolId, true, periodId)
   )
 
   const [families, paidByEnrollment, { plans, classes }] = await Promise.all([
@@ -106,11 +107,13 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
       orderBy: { name: 'asc' },
     }),
     // `groupBy` n'est pas couvert par l'extension soft-delete : `isActive` est explicite.
-    db.payment.groupBy({
-      by: ['enrollmentId'],
-      where: { schoolId: scope.schoolId, isActive: true },
-      _sum: { amount: true },
-    }),
+    isAdmin
+      ? db.payment.groupBy({
+          by: ['enrollmentId'],
+          where: { schoolId: scope.schoolId, isActive: true },
+          _sum: { amount: true },
+        })
+      : [],
     dialogData,
   ])
 
@@ -123,6 +126,17 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
       const debtorFamilyId = resolveDebtorFamily(fp.person.families)?.familyId
       return debtorFamilyId === family.id ? studentEnrollments : []
     })
+    const row = {
+      id: family.id,
+      name: family.name,
+      emergencyContactName: family.emergencyContactName,
+      emergencyContactPhone: family.emergencyContactPhone,
+      studentCount: family.persons.filter((fp) => fp.person.student).length,
+      enrollmentCount: enrollments.filter((enrollment) => isPayableEnrollment(enrollment.status))
+        .length,
+    }
+    if (!isAdmin) return { ...row, due: 0, paid: 0, remaining: 0, payments: [], paymentCount: 0 }
+
     const balance = calculateFamilyBalance(
       enrollments.map((enrollment) => ({ ...enrollment, paid: paid.get(enrollment.id) ?? null }))
     )
@@ -131,13 +145,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
       .sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime())
 
     return {
-      id: family.id,
-      name: family.name,
-      emergencyContactName: family.emergencyContactName,
-      emergencyContactPhone: family.emergencyContactPhone,
-      studentCount: family.persons.filter((fp) => fp.person.student).length,
-      enrollmentCount: enrollments.filter((enrollment) => isPayableEnrollment(enrollment.status))
-        .length,
+      ...row,
       due: balance.totalAmount,
       paid: balance.totalPaid,
       remaining: balance.remainingBalance,
@@ -161,14 +169,16 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
         title={t('title')}
         description={t('description')}
         actions={
-          isAdmin && (
-            <CreateFamilyDialog
-              defaultOpen={action === 'create'}
-              plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
-              classes={classes.map((c) => toClassOption(c))}
-              paymentsEnabled={paymentsEnabled}
-            />
-          )
+          <CreateFamilyDialog
+            defaultOpen={action === 'create'}
+            plans={(paymentsEnabled ? plans : []).map((p) => ({
+              id: p.id,
+              name: p.name,
+              amount: Number(p.amount),
+            }))}
+            classes={classes.map((c) => toClassOption(c))}
+            paymentsEnabled={paymentsEnabled}
+          />
         }
       />
       <FamiliesDataTable data={familyRows} paymentsEnabled={paymentsEnabled} />

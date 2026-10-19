@@ -16,10 +16,12 @@ export type PaletteAction = {
  */
 export function resolvePaletteActions(scope: NavScope): PaletteAction[] {
   const visible = new Set(flattenNavItems(resolveNavItems(scope)).map((item) => item.key))
-  const canManage =
+  const isAdmin =
     scope.role !== 'PARENT' &&
     scope.role !== 'TEACHER' &&
     (scope.role === 'ADMIN' || scope.isSuperAdmin)
+  // Un enseignant à accès élargi crée familles et inscriptions, jamais de règlement.
+  const canManage = isAdmin || (scope.role === 'TEACHER' && scope.hasStaffAccess === true)
 
   const actions: PaletteAction[] = []
   if (canManage && visible.has('families')) {
@@ -35,7 +37,7 @@ export function resolvePaletteActions(scope: NavScope): PaletteAction[] {
   if (visible.has('attendance')) {
     actions.push({ key: 'takeAttendance', href: '/dashboard/attendance', icon: ClipboardCheck })
   }
-  if (canManage && visible.has('payments')) {
+  if (isAdmin && visible.has('payments')) {
     actions.push({ key: 'reviewBalances', href: '/dashboard/payments', icon: HandCoins })
   }
   return actions

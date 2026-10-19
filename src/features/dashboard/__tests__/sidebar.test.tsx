@@ -40,6 +40,7 @@ const school = (id: string, name: string): AuthorizedSchool => ({
   name,
   slug: name.toLowerCase(),
   isAdmin: true,
+  isStaff: true,
 })
 
 const ADMIN: SchoolRole = 'ADMIN'

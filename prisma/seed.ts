@@ -359,6 +359,12 @@ async function seedSchoolContent(fixture: SchoolFixture) {
         value: 'false',
         valueType: 'BOOLEAN',
       },
+      {
+        schoolId,
+        name: 'teacher_staff_access_enabled',
+        value: 'false',
+        valueType: 'BOOLEAN',
+      },
       { schoolId, name: 'events_enabled', value: 'true', valueType: 'BOOLEAN' },
       { schoolId, name: 'attendance_enabled', value: 'true', valueType: 'BOOLEAN' },
       { schoolId, name: 'class_schedule_enabled', value: 'true', valueType: 'BOOLEAN' },

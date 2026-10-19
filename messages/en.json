@@ -1096,6 +1096,10 @@
               "cancel": "Cancel"
             }
           },
+          "teacher_staff_access_enabled": {
+            "label": "Extended teacher access",
+            "description": "Teachers can open every class, family, student and enrollment of the school, and add families, students and enrollments. Payments, plans and settings stay with administrators."
+          },
           "attendance_enabled": {
             "label": "Attendance",
             "description": "Enables class attendance recording."

@@ -35,12 +35,14 @@ interface Props {
   classes: ClassRow[]
   levels: Option[]
   teachers: Option[]
+  /** Modification et suppression, réservées à l'administration. */
+  canManage: boolean
   emptyMessage: string
 }
 
 const ALL_LEVELS = 'ALL'
 
-export function ClassesDataTable({ classes, levels, teachers, emptyMessage }: Props) {
+export function ClassesDataTable({ classes, levels, teachers, canManage, emptyMessage }: Props) {
   const t = useTranslations('dashboard.pages.classes')
   const tTable = useTranslations('common.table')
   const labels = useTableLabels()
@@ -126,7 +128,7 @@ export function ClassesDataTable({ classes, levels, teachers, emptyMessage }: Pr
   return (
     <RichDataTable
       data={filtered}
-      columns={columns}
+      columns={canManage ? columns : columns.filter((column) => column.id !== 'actions')}
       labels={labels}
       emptyMessage={levelFilter === ALL_LEVELS ? emptyMessage : tTable('noResults')}
       toolbar={

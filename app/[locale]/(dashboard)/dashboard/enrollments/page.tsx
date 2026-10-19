@@ -7,7 +7,7 @@ import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
-import { requireSchoolScope } from '../../_lib/auth-helper'
+import { requireSchoolRecordsScope } from '../../_lib/auth-helper'
 import {
   classOptionSelect,
   loadSuggestedLevels,
@@ -38,16 +38,17 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.enrollments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const scope = await requireSchoolScope()
+  const scope = await requireSchoolRecordsScope()
 
   const selectedPeriod = await getSelectedPeriod(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
-  const paymentsEnabled = await isPaymentsEnabled(scope.schoolId)
+  // Un enseignant à accès élargi gère les inscriptions sans aucune donnée financière.
+  const paymentsEnabled = scope.isAdmin && (await isPaymentsEnabled(scope.schoolId))
 
-  const isAdmin = scope.isAdmin
+  const isStaff = scope.isStaff
 
-  const whereStudent = isAdmin
+  const whereStudent = scope.isStaff
     ? {}
     : {
         person: {
@@ -57,7 +58,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
         },
       }
 
-  const classRows = isAdmin
+  const classRows = isStaff
     ? await db.classPeriod.findMany({
         where: {
           schoolId: scope.schoolId,
@@ -71,14 +72,13 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
   const availableClasses = classRows.map((row) => ({ id: row.id, name: row.name }))
   const classOptions = classRows.map((row) => toClassOption(row))
 
-  const availablePlans =
-    isAdmin && paymentsEnabled
-      ? await db.plan.findMany({
-          where: { schoolId: scope.schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
-          select: { id: true, name: true, amount: true },
-          orderBy: { name: 'asc' },
-        })
-      : []
+  const availablePlans = paymentsEnabled
+    ? await db.plan.findMany({
+        where: { schoolId: scope.schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
+        select: { id: true, name: true, amount: true },
+        orderBy: { name: 'asc' },
+      })
+    : []
   // `amount` pré-remplit le montant dû du dialogue de création ; converti ici car un `Decimal`
   // ne traverse pas la frontière client.
   const planOptions = availablePlans.map((plan) => ({
@@ -87,7 +87,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
     amount: Number(plan.amount),
   }))
 
-  const availableStudents = isAdmin
+  const availableStudents = isStaff
     ? await db.student.findMany({
         where: { schoolId: scope.schoolId, isActive: true },
         select: {
@@ -164,16 +164,27 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
     orderBy: { registeredAt: 'desc' },
   })
 
-  const serializableEnrollments = enrollments.map((enrollment) => ({
-    ...enrollment,
-    totalAmount: Number(enrollment.totalAmount),
-    discount: Number(enrollment.discount),
-    plan: { ...enrollment.plan, amount: Number(enrollment.plan.amount) },
-    payments: enrollment.payments.map((payment) => ({
-      ...payment,
-      amount: Number(payment.amount),
-    })),
-  }))
+  // Rien de financier ne part vers le client d'un enseignant, même masqué par l'interface.
+  const serializableEnrollments = enrollments.map((enrollment) =>
+    scope.isAdmin
+      ? {
+          ...enrollment,
+          totalAmount: Number(enrollment.totalAmount),
+          discount: Number(enrollment.discount),
+          plan: { ...enrollment.plan, amount: Number(enrollment.plan.amount) },
+          payments: enrollment.payments.map((payment) => ({
+            ...payment,
+            amount: Number(payment.amount),
+          })),
+        }
+      : {
+          ...enrollment,
+          totalAmount: 0,
+          discount: 0,
+          plan: { ...enrollment.plan, amount: 0 },
+          payments: [],
+        }
+  )
 
   return (
     <div className="space-y-6">
@@ -185,7 +196,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
         title={t('title')}
         description={t('description')}
         actions={
-          isAdmin && (
+          isStaff && (
             <CreateEnrollmentDialog
               students={studentOptions}
               plans={planOptions}
@@ -198,7 +209,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
       />
       <EnrollmentsTable
         enrollments={serializableEnrollments}
-        isAdmin={isAdmin}
+        isAdmin={isStaff}
         availableClasses={availableClasses}
         availablePlans={planOptions}
         locale={locale}

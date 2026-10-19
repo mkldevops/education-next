@@ -8,7 +8,7 @@ import { Link } from '@/i18n/routing'
 import { getBrandingConfig } from '@/lib/branding'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
-import { requireSchoolAdmin } from '../../../../../(dashboard)/_lib/auth-helper'
+import { requireSchoolStaff } from '../../../../../(dashboard)/_lib/auth-helper'
 import { restrictedPageMetadata } from '../../../../../(dashboard)/_lib/page-metadata'
 import { ROSTER_STATUSES } from '../../../../../(dashboard)/dashboard/classes/_lib/roster'
 import { PrintButton } from '../../../../_components/print-button'
@@ -40,7 +40,7 @@ export default async function ClassRosterPrintPage({ params }: Props) {
   const { locale, id } = await params
   setRequestLocale(locale)
 
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
 
   const [classPeriod, branding] = await Promise.all([
     db.classPeriod.findFirst({

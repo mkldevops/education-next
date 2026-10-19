@@ -8,7 +8,7 @@ import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
-import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
@@ -59,14 +59,16 @@ export default async function StudentDetailPage({ params }: Props) {
 
   const student = resolution.resource
   const isAdmin = isActiveSchoolAdmin(context)
+  // Un enseignant à accès élargi gère l'élève sans en voir l'argent.
+  const isStaff = await hasActiveSchoolStaffAccess(context)
 
-  const paymentsEnabled = await isPaymentsEnabled(student.schoolId)
+  const paymentsEnabled = (isAdmin || !isStaff) && (await isPaymentsEnabled(student.schoolId))
 
-  const selectedPeriodId = isAdmin ? await getSelectedPeriodId(student.schoolId) : null
+  const selectedPeriodId = isStaff ? await getSelectedPeriodId(student.schoolId) : null
 
   const [{ plans, classes }, suggestedLevels] = await Promise.all([
-    getStudentDialogData(student.schoolId, isAdmin, selectedPeriodId),
-    isAdmin
+    getStudentDialogData(student.schoolId, isStaff, selectedPeriodId),
+    isStaff
       ? loadSuggestedLevels(student.schoolId, [student.id], selectedPeriodId)
       : new Map<string, string>(),
   ])
@@ -174,9 +176,9 @@ export default async function StudentDetailPage({ params }: Props) {
             )}
           </div>
         </div>
-        {isAdmin && (
+        {isStaff && (
           <div className="flex shrink-0 gap-2">
-            {family && payableRemaining > 0 && (
+            {isAdmin && family && payableRemaining > 0 && (
               <Link
                 href={`/dashboard/families/${family.id}?action=addPayment&tab=payments`}
                 className={buttonVariants({ size: 'sm' })}
@@ -250,7 +252,7 @@ export default async function StudentDetailPage({ params }: Props) {
             <h2 className="text-base font-semibold text-graphite">{t('enrollments')}</h2>
             {/* Une inscription en cours par élève et par période : proposer un second bouton de
                 création n'ouvrirait qu'un formulaire refusé par `createEnrollment`. */}
-            {isAdmin && !isEnrolledInSelectedPeriod && (
+            {isStaff && !isEnrolledInSelectedPeriod && (
               <CreateEnrollmentDialog
                 students={[
                   {
@@ -259,7 +261,11 @@ export default async function StudentDetailPage({ params }: Props) {
                     suggestedLevelId: suggestedLevels.get(student.id) ?? null,
                   },
                 ]}
-                plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
+                plans={(isAdmin ? plans : []).map((p) => ({
+                  id: p.id,
+                  name: p.name,
+                  amount: Number(p.amount),
+                }))}
                 classes={classes}
                 paymentsEnabled={paymentsEnabled}
                 defaultStudentId={student.id}

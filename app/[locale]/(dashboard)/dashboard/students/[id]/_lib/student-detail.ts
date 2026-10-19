@@ -7,7 +7,7 @@ import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { classOptionSelect, toClassOption } from '../../../../_lib/class-options-loader'
-import { adminOrLinkedTo, familyLinksVisibleTo, resolveDeepLink } from '../../../../_lib/deep-link'
+import { familyLinksVisibleTo, resolveDeepLink, staffOrLinkedTo } from '../../../../_lib/deep-link'
 
 /**
  * Résolveur unique de la page ET de `generateMetadata`.
@@ -21,13 +21,13 @@ import { adminOrLinkedTo, familyLinksVisibleTo, resolveDeepLink } from '../../..
  */
 export const resolveStudent = cache((id: string) =>
   resolveDeepLink({
-    requireAdmin: false,
+    requireStaff: false,
     find: (access) =>
       db.student.findFirst({
         where: {
           id,
           schoolId: { in: access.schoolIds },
-          ...adminOrLinkedTo(access, {
+          ...staffOrLinkedTo(access, {
             person: {
               families: { some: { family: { users: { some: { userId: access.userId } } } } },
             },
@@ -84,10 +84,10 @@ export type StudentDetail = Extract<
  */
 export async function getStudentDialogData(
   schoolId: string,
-  isAdmin: boolean,
+  canManage: boolean,
   selectedPeriodId: string | null
 ) {
-  if (!isAdmin) return { plans: [], classes: [] }
+  if (!canManage) return { plans: [], classes: [] }
 
   const [plans, classes] = await Promise.all([
     db.plan.findMany({

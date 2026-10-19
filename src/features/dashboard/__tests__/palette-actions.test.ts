@@ -28,6 +28,15 @@ describe('resolvePaletteActions', () => {
     ).toEqual(['newFamily', 'newEnrollment'])
   })
 
+  it('offers creations but no balance review to a teacher with extended access', () => {
+    expect(keys(scope({ role: 'TEACHER', hasStaffAccess: true }))).toEqual([
+      'newFamily',
+      'newEnrollment',
+      'takeAttendance',
+    ])
+    expect(keys(scope({ role: 'TEACHER' }))).not.toContain('newFamily')
+  })
+
   it('never offers management shortcuts to a parent', () => {
     expect(keys(scope({ role: 'PARENT', familyId: 'family-1' }))).not.toContain('newFamily')
     expect(keys(scope({ role: 'PARENT', familyId: 'family-1' }))).not.toContain('reviewBalances')

@@ -18,7 +18,7 @@ import type {
 import { phoneNumberSchema } from '@/use-cases/families/schemas'
 import { updateFamily } from '@/use-cases/families/update-family'
 import { updateFamilyPerson } from '@/use-cases/families/update-family-person'
-import { requireSchoolAdmin } from './auth-helper'
+import { requireSchoolAdmin, requireSchoolStaff } from './auth-helper'
 
 type CreateFamilyInput = z.input<typeof createFullFamilySchema>
 type UpdateFamilyInput = z.infer<typeof updateFamilySchema>
@@ -31,8 +31,13 @@ type UpdateFamilyPersonInput = z.infer<typeof updateFamilyPersonSchema>
  * Sans enfant ni responsable, c'est l'ancien formulaire « nom seul ».
  */
 export async function createFamilyAction(data: Omit<CreateFamilyInput, 'schoolId'>) {
-  const { schoolId, userId } = await requireSchoolAdmin()
-  const result = await createFullFamily({ ...data, schoolId, createdById: userId })
+  const { schoolId, userId, isAdmin } = await requireSchoolStaff()
+  const result = await createFullFamily({
+    ...data,
+    schoolId,
+    createdById: userId,
+    deferPricing: !isAdmin,
+  })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
   if (result.studentIds.length > 0) {
@@ -47,7 +52,7 @@ export async function updateFamilyAction(
   id: string,
   data: Omit<UpdateFamilyInput, 'schoolId' | 'id'>
 ) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await updateFamily({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
@@ -55,7 +60,7 @@ export async function updateFamilyAction(
 }
 
 export async function deactivateFamilyAction(id: string) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await deactivateFamily({ schoolId, id })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/families')
@@ -80,7 +85,7 @@ export async function deleteFamilyAction(id: string, confirmation: string) {
 }
 
 export async function addPersonToFamilyAction(data: Omit<AddPersonToFamilyInput, 'schoolId'>) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await addPersonToFamily({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
@@ -89,7 +94,7 @@ export async function addPersonToFamilyAction(data: Omit<AddPersonToFamilyInput,
 }
 
 export async function updateFamilyPersonAction(data: Omit<UpdateFamilyPersonInput, 'schoolId'>) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await updateFamilyPerson({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/families')
@@ -110,7 +115,7 @@ export async function addPhoneAction(
   personId: string,
   data: { phoneNumber: string; channels: string[] }
 ) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const parsed = phoneNumberSchema.safeParse(data)
   if (!parsed.success) return 'validationError' as const
   const phone = await personGateway.addPhone(schoolId, personId, {

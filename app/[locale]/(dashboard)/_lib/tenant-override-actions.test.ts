@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  * poster `schoolId` et `id` dans `data`. L'école et la cible doivent toujours venir de la
  * session et de l'argument dédié, jamais du corps de la requête.
  */
-vi.mock('./auth-helper', () => ({ requireSchoolAdmin: vi.fn() }))
+vi.mock('./auth-helper', () => ({ requireSchoolAdmin: vi.fn(), requireSchoolStaff: vi.fn() }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('@/gateways/person-gateway', () => ({ personGateway: {} }))
 vi.mock('@/use-cases/families/update-family', () => ({ updateFamily: vi.fn() }))
@@ -30,6 +30,11 @@ beforeEach(() => {
     schoolId: 'school-a',
     userId: 'u',
     isSuperAdmin: false,
+  })
+  vi.mocked(auth.requireSchoolStaff).mockResolvedValue({
+    schoolId: 'school-a',
+    userId: 'u',
+    isAdmin: true,
   })
 })
 

@@ -162,6 +162,7 @@ describe('schoolGateway.create', () => {
     expect(args.data.map((config: { name: string }) => config.name)).toEqual([
       'logo_url',
       'teacher_expenses_enabled',
+      'teacher_staff_access_enabled',
       'events_enabled',
       'attendance_enabled',
       'class_schedule_enabled',

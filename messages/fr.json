@@ -1097,6 +1097,10 @@
               "cancel": "Annuler"
             }
           },
+          "teacher_staff_access_enabled": {
+            "label": "Accès élargi des enseignants",
+            "description": "Les enseignants accèdent aux classes, familles, élèves et inscriptions de toute l'école, et peuvent ajouter familles, élèves et inscriptions. Paiements, formules et réglages restent réservés aux administrateurs."
+          },
           "attendance_enabled": {
             "label": "Appel",
             "description": "Active la saisie des appels de classe."

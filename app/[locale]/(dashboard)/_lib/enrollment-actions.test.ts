@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Prisma } from '@/generated/prisma/client'
 
-vi.mock('./auth-helper', () => ({ requireSchoolAdmin: vi.fn() }))
+vi.mock('./auth-helper', () => ({ requireSchoolAdmin: vi.fn(), requireSchoolStaff: vi.fn() }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('@/use-cases/enrollments/create-enrollment', () => ({ createEnrollment: vi.fn() }))
 
@@ -19,10 +19,10 @@ const input = {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(auth.requireSchoolAdmin).mockResolvedValue({
+  vi.mocked(auth.requireSchoolStaff).mockResolvedValue({
     schoolId: 's',
     userId: 'u',
-    isSuperAdmin: false,
+    isAdmin: true,
   })
 })
 
@@ -37,7 +37,7 @@ describe('createEnrollmentAction', () => {
     const result = await createEnrollmentAction(input)
 
     expect(result).toEqual({ id: 'e1' })
-    expect(createEnrollment).toHaveBeenCalledWith({ ...input, schoolId: 's' })
+    expect(createEnrollment).toHaveBeenCalledWith({ ...input, schoolId: 's', deferPricing: false })
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard/enrollments')
   })
 
@@ -48,8 +48,21 @@ describe('createEnrollmentAction', () => {
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
-  it('checks admin access before calling the use case', async () => {
-    vi.mocked(auth.requireSchoolAdmin).mockRejectedValue(new Error('forbidden'))
+  it('defers pricing when a teacher with extended access enrolls', async () => {
+    vi.mocked(auth.requireSchoolStaff).mockResolvedValue({
+      schoolId: 's',
+      userId: 'u',
+      isAdmin: false,
+    })
+    vi.mocked(createEnrollment).mockResolvedValue({ id: 'e1' } as never)
+
+    await createEnrollmentAction(input)
+
+    expect(createEnrollment).toHaveBeenCalledWith({ ...input, schoolId: 's', deferPricing: true })
+  })
+
+  it('checks staff access before calling the use case', async () => {
+    vi.mocked(auth.requireSchoolStaff).mockRejectedValue(new Error('forbidden'))
 
     await expect(createEnrollmentAction(input)).rejects.toThrow('forbidden')
     expect(createEnrollment).not.toHaveBeenCalled()

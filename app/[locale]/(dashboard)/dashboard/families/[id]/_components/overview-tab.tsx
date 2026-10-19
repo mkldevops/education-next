@@ -14,6 +14,7 @@ type Props = {
   locale: string
   familyId: string
   isAdmin: boolean
+  canInvite: boolean
   persons: PersonWithRelation[]
   students: FamilyDetailStudent[]
   linkedEmails: string[]
@@ -34,6 +35,7 @@ export async function OverviewTab({
   locale,
   familyId,
   isAdmin,
+  canInvite,
   persons,
   students,
   linkedEmails,
@@ -107,6 +109,7 @@ export async function OverviewTab({
             persons={persons}
             familyId={familyId}
             isAdmin={isAdmin}
+            canInvite={canInvite}
             linkedEmails={linkedEmails}
           />
         </Card>

@@ -42,7 +42,13 @@ const classes = [
 
 function renderTable() {
   render(
-    <ClassesDataTable classes={classes} levels={levels} teachers={[]} emptyMessage="noClasses" />
+    <ClassesDataTable
+      classes={classes}
+      levels={levels}
+      teachers={[]}
+      canManage
+      emptyMessage="noClasses"
+    />
   )
 }
 
@@ -86,7 +92,15 @@ describe('ClassesDataTable', () => {
   })
 
   it('shows the empty message when the period has no class', () => {
-    render(<ClassesDataTable classes={[]} levels={levels} teachers={[]} emptyMessage="noClasses" />)
+    render(
+      <ClassesDataTable
+        classes={[]}
+        levels={levels}
+        teachers={[]}
+        canManage
+        emptyMessage="noClasses"
+      />
+    )
 
     expect(screen.getByText('noClasses')).toBeInTheDocument()
   })

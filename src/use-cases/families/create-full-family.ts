@@ -9,7 +9,15 @@ import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { resolveEnrollmentPricing } from '@/use-cases/enrollments/pricing'
 import { createFullFamilySchema } from './create-full-family-schema'
 
-type Input = z.input<typeof createFullFamilySchema> & { createdById: string }
+/**
+ * `deferPricing` : l'inscription est posée sans tarif, comme pendant une coupure des
+ * paiements, quel que soit le drapeau de l'école. Un enseignant à accès élargi inscrit ainsi
+ * sans voir ni choisir de montant ; l'administration pose la formule ensuite (FR-020).
+ */
+type Input = z.input<typeof createFullFamilySchema> & {
+  createdById: string
+  deferPricing?: boolean
+}
 
 /**
  * Crée la famille, ses responsables, ses enfants et leurs inscriptions en un seul geste.
@@ -38,7 +46,8 @@ export async function createFullFamily(input: Input) {
   }
 
   const enrollments = students.flatMap(({ enrollment }) => (enrollment ? [enrollment] : []))
-  const paymentsEnabled = enrollments.length > 0 ? await isPaymentsEnabled(schoolId) : false
+  const paymentsEnabled =
+    enrollments.length > 0 && !input.deferPricing ? await isPaymentsEnabled(schoolId) : false
 
   // Mêmes gardes que `createEnrolledStudent` (FR-017) : formule obligatoire drapeau actif,
   // ni formule ni remise pendant une coupure des paiements.

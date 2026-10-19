@@ -16,7 +16,12 @@ import { getBrandingConfig } from '@/lib/branding'
 import { CLASS_SCHEDULE_ENABLED_CONFIG_KEY } from '@/lib/class-schedule-config'
 import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
-import { ACTIVE_SCHOOL_COOKIE, getAuthorizedSchools, getSchoolContext } from '@/lib/school-context'
+import {
+  ACTIVE_SCHOOL_COOKIE,
+  getAuthorizedSchools,
+  getSchoolContext,
+  hasActiveSchoolStaffAccess,
+} from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assistant-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
@@ -56,6 +61,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     teacher,
     attendanceEnabled,
     aiAssistantEnabled,
+    hasStaffAccess,
   ] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
@@ -71,6 +77,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     }),
     readConfigFlag(context.schoolId, ATTENDANCE_ENABLED_CONFIG_KEY),
     isAiAssistantEnabled(),
+    hasActiveSchoolStaffAccess(context),
   ])
   // La page de connexion n'a pas de session : elle s'habille de l'école désignée par ce cookie.
   const rememberSchool = cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId
@@ -86,6 +93,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
         paymentsEnabled={paymentsEnabled}
         familyId={context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined}
         hasTeacherCapability={teacher !== null}
+        hasStaffAccess={context.role === 'TEACHER' && hasStaffAccess}
         logoUrl={branding.logoUrl}
         schoolName={branding.schoolName}
         userName={userName}

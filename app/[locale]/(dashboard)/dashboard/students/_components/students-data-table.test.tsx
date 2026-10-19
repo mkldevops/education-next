@@ -80,7 +80,7 @@ describe('StudentsDataTable', () => {
       <StudentsDataTable
         data={[studentB, studentC, studentA]}
         locale="fr"
-        isAdmin={false}
+        isStaff={false}
         plans={[]}
         classes={[]}
         paymentsEnabled={true}
@@ -114,7 +114,7 @@ describe('StudentsDataTable', () => {
       <StudentsDataTable
         data={[studentA]}
         locale="fr"
-        isAdmin={false}
+        isStaff={false}
         plans={[]}
         classes={[]}
         paymentsEnabled={true}
