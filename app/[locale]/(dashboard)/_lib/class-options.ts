@@ -9,6 +9,8 @@ export interface ClassOption {
   levelId?: string
   /** Nom du niveau : sans niveau suggéré, les classes sont regroupées par niveau. */
   levelName?: string
+  /** Nom de la période : affiché dans une option seulement quand plusieurs périodes sont proposées. */
+  periodName?: string
   capacity?: number
   /** Places occupées, même prédicat que `reserveClassSeats` (lecture hors verrou). */
   enrolled?: number
@@ -22,6 +24,38 @@ export function remainingSeats(option: ClassOption): number | null {
 
 export function isClassFull(option: ClassOption): boolean {
   return remainingSeats(option) === 0
+}
+
+/**
+ * Libellé complet « CE1-A (CE1 — 2026-2027) » : bouton du sélecteur une fois la classe choisie et
+ * récapitulatifs, là où ni titre de niveau ni liste ne donnent le contexte.
+ */
+export function classLabel(option: ClassOption): string {
+  return withDetails(option.name, [option.levelName, option.periodName])
+}
+
+/**
+ * Libellé d'une option de la liste : le niveau seulement quand aucun titre de niveau ne le donne
+ * déjà, la période seulement quand plusieurs périodes sont proposées.
+ */
+export function classItemLabel(
+  option: ClassOption,
+  { showLevel, showPeriod }: { showLevel: boolean; showPeriod: boolean }
+): string {
+  return withDetails(option.name, [
+    showLevel ? option.levelName : undefined,
+    showPeriod ? option.periodName : undefined,
+  ])
+}
+
+/** Vrai quand les classes proposées couvrent plus d'une période connue. */
+export function spansSeveralPeriods(classes: ClassOption[]): boolean {
+  return new Set(classes.map((c) => c.periodName).filter(Boolean)).size > 1
+}
+
+function withDetails(name: string, details: (string | undefined)[]): string {
+  const known = details.filter(Boolean)
+  return known.length > 0 ? `${name} (${known.join(' — ')})` : name
 }
 
 const byFullness = (list: ClassOption[]) => [

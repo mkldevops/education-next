@@ -155,11 +155,7 @@ export async function getFamilyDialogData(
         isActive: true,
         ...(selectedPeriodId ? { periodId: selectedPeriodId } : {}),
       },
-      select: {
-        ...classOptionSelect,
-        level: { select: { name: true } },
-        period: { select: { name: true } },
-      },
+      select: classOptionSelect,
       orderBy: { name: 'asc' },
     }),
   ])

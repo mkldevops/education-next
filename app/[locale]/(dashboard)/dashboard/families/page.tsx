@@ -165,9 +165,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
             <CreateFamilyDialog
               defaultOpen={action === 'create'}
               plans={plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))}
-              classes={classes.map((c) =>
-                toClassOption(c, `${c.name} (${c.level.name} — ${c.period.name})`)
-              )}
+              classes={classes.map((c) => toClassOption(c))}
               paymentsEnabled={paymentsEnabled}
             />
           )

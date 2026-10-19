@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { suggestLevelId } from './class-options'
 
 /**
- * Projection Prisma d'une classe pour le sélecteur partagé : niveau, capacité et places
+ * Projection Prisma d'une classe pour le sélecteur partagé : niveau, période, capacité et places
  * occupées, au prédicat d'occupation commun (`seatHoldingAssignmentsWhere`).
  */
 export const classOptionSelect = {
@@ -13,6 +13,7 @@ export const classOptionSelect = {
   capacity: true,
   levelId: true,
   level: { select: { name: true } },
+  period: { select: { name: true } },
   _count: {
     select: {
       classAssignments: {
@@ -27,12 +28,13 @@ export const classOptionSelect = {
 
 type ClassOptionRow = Prisma.ClassPeriodGetPayload<{ select: typeof classOptionSelect }>
 
-export function toClassOption(row: ClassOptionRow, name: string = row.name) {
+export function toClassOption(row: ClassOptionRow) {
   return {
     id: row.id,
-    name,
+    name: row.name,
     levelId: row.levelId,
     levelName: row.level.name,
+    periodName: row.period.name,
     capacity: row.capacity,
     enrolled: row._count.classAssignments,
   }
