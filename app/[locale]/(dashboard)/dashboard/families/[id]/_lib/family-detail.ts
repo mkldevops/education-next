@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import type { DecimalLike } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { classOptionSelect } from '../../../../_lib/class-options-loader'
-import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
+import { resolveDeepLink, staffOrLinkedTo } from '../../../../_lib/deep-link'
 
 /**
  * Résolveur unique de la page ET de `generateMetadata`.
@@ -14,13 +14,13 @@ import { adminOrLinkedTo, resolveDeepLink } from '../../../../_lib/deep-link'
  */
 export const resolveFamily = cache((id: string) =>
   resolveDeepLink({
-    requireAdmin: false,
+    requireStaff: false,
     find: (access) =>
       db.family.findFirst({
         where: {
           id,
           schoolId: { in: access.schoolIds },
-          ...adminOrLinkedTo(access, { users: { some: { userId: access.userId } } }),
+          ...staffOrLinkedTo(access, { users: { some: { userId: access.userId } } }),
         },
         include: {
           persons: {
@@ -139,10 +139,10 @@ export type FamilyDetailPayment = ReturnType<typeof serializeFamilyPayments>[num
  */
 export async function getFamilyDialogData(
   schoolId: string,
-  isAdmin: boolean,
+  canManage: boolean,
   selectedPeriodId: string | null
 ) {
-  if (!isAdmin) return { plans: [], classes: [] }
+  if (!canManage) return { plans: [], classes: [] }
 
   const [plans, classes] = await Promise.all([
     db.plan.findMany({

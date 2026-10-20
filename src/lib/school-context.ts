@@ -5,6 +5,7 @@ import { schoolGateway } from '@/gateways/school-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { isTeacherStaffAccessEnabled } from '@/use-cases/config/is-teacher-staff-access-enabled'
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 
 export const ACTIVE_SCHOOL_COOKIE = 'active_school'
@@ -135,16 +136,20 @@ async function resolveAuthorizedSchools(): Promise<AuthorizedSchool[]> {
 
   if (context.isSuperAdmin) {
     const schools = await schoolGateway.listActive()
-    return schools.map((school) => ({ ...school, isAdmin: true }))
+    return schools.map((school) => ({ ...school, isAdmin: true, isStaff: true }))
   }
 
   const memberships = await listMemberships(context.userId)
-  return memberships.map(({ school, role }) => ({
-    id: school.id,
-    name: school.name,
-    slug: school.slug,
-    isAdmin: role === 'ADMIN',
-  }))
+  return Promise.all(
+    memberships.map(async ({ school, role }) => ({
+      id: school.id,
+      name: school.name,
+      slug: school.slug,
+      isAdmin: role === 'ADMIN',
+      isStaff:
+        role === 'ADMIN' || (role === 'TEACHER' && (await isTeacherStaffAccessEnabled(school.id))),
+    }))
+  )
 }
 
 /**
@@ -160,4 +165,15 @@ export const getAuthorizedSchools = cache(resolveAuthorizedSchools)
 /** Capacité d'administration sur l'école active du contexte. */
 export function isActiveSchoolAdmin(context: SchoolContext): boolean {
   return context.isSuperAdmin || context.role === 'ADMIN'
+}
+
+/**
+ * Capacité « staff » sur l'école active : l'administration, ou un enseignant quand l'école
+ * a ouvert l'accès élargi. Elle ouvre familles, élèves, inscriptions et classes, jamais les
+ * paiements ni les réglages, qui restent sous `isActiveSchoolAdmin`.
+ */
+export async function hasActiveSchoolStaffAccess(context: SchoolContext): Promise<boolean> {
+  if (isActiveSchoolAdmin(context)) return true
+
+  return context.role === 'TEACHER' && isTeacherStaffAccessEnabled(context.schoolId)
 }

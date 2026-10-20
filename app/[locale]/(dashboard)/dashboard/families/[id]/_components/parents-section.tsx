@@ -14,10 +14,18 @@ type Props = {
   persons: PersonWithRelation[]
   familyId: string
   isAdmin: boolean
+  /** Invitation au portail parent, réservée à l'administration. */
+  canInvite: boolean
   linkedEmails: string[]
 }
 
-export async function ParentsSection({ persons, familyId, isAdmin, linkedEmails }: Props) {
+export async function ParentsSection({
+  persons,
+  familyId,
+  isAdmin,
+  canInvite,
+  linkedEmails,
+}: Props) {
   const tCommon = await getTranslations('common')
   const t = await getTranslations('dashboard.pages.familyDetails')
 
@@ -93,7 +101,8 @@ export async function ParentsSection({ persons, familyId, isAdmin, linkedEmails 
                         phoneNumber: parent.person.phoneNumbers[0]?.phoneNumber ?? null,
                       }}
                     />
-                    {parent.person.email &&
+                    {canInvite &&
+                      parent.person.email &&
                       (linkedEmails.some(
                         (email) => email.toLowerCase() === parent.person.email?.toLowerCase()
                       ) ? (

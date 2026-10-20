@@ -62,12 +62,12 @@ describe('resolveDeepLink sous drapeau plateforme éteint', () => {
     cookieStore.get.mockReturnValue({ value: HORIZON.id })
 
     const find = vi.fn().mockResolvedValue({ id: 'class-1', schoolId: HORIZON.id })
-    const resolution = await resolveDeepLink({ requireAdmin: true, find })
+    const resolution = await resolveDeepLink({ requireStaff: true, find })
 
     // Le cookie est ignoré : l'école active redevient la première appartenance.
     expect(resolution).toEqual({
       status: 'otherSchool',
-      school: { ...HORIZON, isAdmin: true },
+      school: { ...HORIZON, isAdmin: true, isStaff: true },
     })
     // Les écoles interrogeables restent aveugles au drapeau — `getAuthorizedSchools()`
     // n'est pas altéré, sans quoi la ressource deviendrait introuvable.
@@ -82,7 +82,7 @@ describe('resolveDeepLink sous drapeau plateforme éteint', () => {
 
     const find = vi.fn().mockResolvedValue({ id: 'class-2', schoolId: AL_NOUR.id })
 
-    expect(await resolveDeepLink({ requireAdmin: true, find })).toEqual({
+    expect(await resolveDeepLink({ requireStaff: true, find })).toEqual({
       status: 'found',
       resource: { id: 'class-2', schoolId: AL_NOUR.id },
     })
@@ -97,7 +97,7 @@ describe('resolveDeepLink sous drapeau plateforme éteint', () => {
 
     const find = vi.fn().mockResolvedValue({ id: 'class-1', schoolId: HORIZON.id })
 
-    expect(await resolveDeepLink({ requireAdmin: true, find })).toMatchObject({ status: 'found' })
+    expect(await resolveDeepLink({ requireStaff: true, find })).toMatchObject({ status: 'found' })
     expect(await canSwitchSchool()).toBe(true)
   })
 })

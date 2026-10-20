@@ -374,6 +374,17 @@ unrepresentable in the database as well as in the types.
   any capability, and is what the detail pages use: their authorization is carried by the deep-link
   query itself, which must look past the active school. All four live in
   `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
+- **A teacher can be opened to the school's records.** The school setting
+  `teacher_staff_access_enabled` (off by default) makes every `TEACHER` member of that school
+  « staff »: the Classes, Families, Students and Enrollments pages, the school-wide search and the
+  creation of families, students and enrollments. `hasActiveSchoolStaffAccess()`
+  (`src/lib/school-context.ts`) decides it on every request; `requireSchoolStaff()` guards the
+  shared actions and `requireSchoolRecordsScope()` the list pages. Finance never reaches a staff
+  teacher: no Payments or Settings entry, balances, amounts and payments are neither queried nor
+  serialized, and an enrollment it creates is posed without a plan (`deferPricing`, as during a
+  payments cut) for an admin to price later. Family deletion, parent invitation or account link,
+  discount, plan change, promotion and class creation, edit or deletion stay `requireSchoolAdmin()`.
+  With the setting off, a teacher keeps `/dashboard/my-families` and its own classes only.
 - A super-admin holds **no** `SchoolMember`. Its context branch carries `role: null`, so the code
   never invents a school role for it.
 - **`/dashboard/users` lists memberships, not accounts.** Its root query is `SchoolMember` scoped to

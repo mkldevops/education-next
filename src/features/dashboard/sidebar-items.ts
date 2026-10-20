@@ -92,6 +92,12 @@ const schoolingItems: NavItemConfig[] = [
   { href: '/dashboard/teachers', icon: UserRoundCheck, key: 'teachers', requiredRoles: ['ADMIN'] },
 ]
 
+const STAFF_SCHOOLING_KEYS = new Set(['families', 'students', 'enrollments', 'classes'])
+
+const staffSchoolingItems: NavItemConfig[] = schoolingItems
+  .filter((item) => STAFF_SCHOOLING_KEYS.has(item.key))
+  .map(({ requiredRoles: _requiredRoles, ...item }) => item)
+
 const financeItems: NavItemConfig[] = [
   { href: '/dashboard/payments', icon: CreditCard, key: 'payments', feature: 'payments' },
   {
@@ -120,6 +126,8 @@ export type NavScope = {
   isSuperAdmin: boolean
   familyId?: string
   hasTeacherCapability?: boolean
+  /** Enseignant à qui l'école ouvre les pages de gestion (`teacher_staff_access_enabled`). */
+  hasStaffAccess?: boolean
   features: {
     classSchedule?: boolean
     events: boolean
@@ -147,6 +155,7 @@ export function resolveNavItems({
   isSuperAdmin,
   familyId,
   hasTeacherCapability = false,
+  hasStaffAccess = false,
   features,
 }: NavScope): VisibleNavItems {
   const canView = (item: NavItemConfig) => {
@@ -191,16 +200,20 @@ export function resolveNavItems({
 
   if (role === 'TEACHER') {
     return {
-      sections: section('teaching', [
-        MY_CLASSES,
-        ...(features.classSchedule
-          ? [{ href: '/dashboard/planning', icon: CalendarRange, key: 'planning' }]
-          : []),
-        ...(features.attendance
-          ? [{ href: '/dashboard/attendance', icon: ClipboardCheck, key: 'attendance' }]
-          : []),
-        MY_FAMILIES,
-      ]),
+      sections: [
+        ...section('teaching', [
+          MY_CLASSES,
+          ...(features.classSchedule
+            ? [{ href: '/dashboard/planning', icon: CalendarRange, key: 'planning' }]
+            : []),
+          ...(features.attendance
+            ? [{ href: '/dashboard/attendance', icon: ClipboardCheck, key: 'attendance' }]
+            : []),
+          MY_FAMILIES,
+        ]),
+        // Accès élargi : les pages de scolarité, jamais la finance ni les réglages.
+        ...(hasStaffAccess ? section('schooling', staffSchoolingItems) : []),
+      ],
       bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }],
     }
   }

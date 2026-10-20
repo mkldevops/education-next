@@ -11,7 +11,7 @@ import type {
   updateStudentSchema,
 } from '@/use-cases/students/schemas'
 import { updateStudent } from '@/use-cases/students/update-student'
-import { requireSchoolAdmin } from './auth-helper'
+import { requireSchoolStaff } from './auth-helper'
 
 type CreateStudentInput = z.infer<typeof createStudentSchema>
 type UpdateStudentInput = z.infer<typeof updateStudentSchema>
@@ -28,11 +28,16 @@ type NewStudentEnrollment = z.input<typeof createEnrolledStudentSchema>['enrollm
 export async function createStudentAction(
   data: Omit<CreateStudentInput, 'schoolId'> & { enrollment?: NewStudentEnrollment }
 ) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId, isAdmin } = await requireSchoolStaff()
   const { enrollment, ...student } = data
 
   if (enrollment) {
-    const result = await createEnrolledStudent({ ...student, enrollment, schoolId })
+    const result = await createEnrolledStudent({
+      ...student,
+      enrollment,
+      schoolId,
+      deferPricing: !isAdmin,
+    })
     if (typeof result === 'string') return result
     revalidatePath('/dashboard/students')
     revalidatePath(`/dashboard/families/${data.familyId}`)
@@ -52,7 +57,7 @@ export async function updateStudentAction(
   id: string,
   data: Omit<UpdateStudentInput, 'schoolId' | 'id'>
 ) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await updateStudent({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/students')
@@ -60,7 +65,7 @@ export async function updateStudentAction(
 }
 
 export async function deactivateStudentAction(id: string) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await deactivateStudent({ schoolId, id })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/students')

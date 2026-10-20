@@ -13,6 +13,7 @@ import {
   THEME_PRIMARY_CONFIG_KEY,
 } from './school-config-defaults'
 import { TEACHER_EXPENSES_CONFIG_KEY } from './teacher-expense-config'
+import { TEACHER_STAFF_ACCESS_CONFIG_KEY } from './teacher-staff-access-config'
 
 /**
  * Seuls réglages qu'une école peut poser. Un nom libre n'était lu par aucun code et laissait
@@ -27,6 +28,7 @@ export const SchoolConfigKey = {
   MaxStudentsPerClass: MAX_STUDENTS_PER_CLASS_CONFIG_KEY,
   PaymentsEnabled: PAYMENTS_ENABLED_CONFIG_KEY,
   TeacherExpensesEnabled: TEACHER_EXPENSES_CONFIG_KEY,
+  TeacherStaffAccessEnabled: TEACHER_STAFF_ACCESS_CONFIG_KEY,
   AutomaticPromotion: 'automatic_promotion',
   EventsEnabled: EVENTS_CONFIG_KEY,
   ClassScheduleEnabled: CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
@@ -46,6 +48,7 @@ export const SCHOOL_CONFIG_VALUE_TYPES: Record<SchoolConfigKey, ConfigValueType>
   [SchoolConfigKey.ThemeBackground]: 'COLOR',
   [SchoolConfigKey.MaxStudentsPerClass]: 'NUMBER',
   [SchoolConfigKey.TeacherExpensesEnabled]: 'BOOLEAN',
+  [SchoolConfigKey.TeacherStaffAccessEnabled]: 'BOOLEAN',
   [SchoolConfigKey.PaymentsEnabled]: 'BOOLEAN',
   [SchoolConfigKey.AutomaticPromotion]: 'BOOLEAN',
   [SchoolConfigKey.EventsEnabled]: 'BOOLEAN',

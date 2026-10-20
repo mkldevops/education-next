@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const dbMock = { classPeriod: { findFirst: vi.fn() } }
-const requireSchoolAdminMock = vi.fn()
+const requireSchoolStaffMock = vi.fn()
 
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next-intl/server', () => ({
@@ -20,7 +20,7 @@ vi.mock('@/lib/branding', () => ({
   getBrandingConfig: async () => ({ logoUrl: null, schoolName: 'Al-Nour' }),
 }))
 vi.mock('../../../../../(dashboard)/_lib/auth-helper', () => ({
-  requireSchoolAdmin: requireSchoolAdminMock,
+  requireSchoolStaff: requireSchoolStaffMock,
 }))
 
 const { default: ClassRosterPrintPage } = await import('./page')
@@ -47,10 +47,10 @@ const classPeriod = {
 describe('ClassRosterPrintPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    requireSchoolAdminMock.mockResolvedValue({ schoolId: 'school-a' })
+    requireSchoolStaffMock.mockResolvedValue({ schoolId: 'school-a' })
   })
 
-  it('scopes the class lookup to the admin school', async () => {
+  it('scopes the class lookup to the staff school', async () => {
     dbMock.classPeriod.findFirst.mockResolvedValue(classPeriod)
 
     await ClassRosterPrintPage({ params })

@@ -145,6 +145,24 @@ describe('resolveNavItems', () => {
     expect(keys(all(withoutSchedule))).toEqual(['myClasses', 'myFamilies'])
   })
 
+  it('opens the schooling pages, never finance, to a teacher with extended access', () => {
+    const items = resolveNavItems({
+      role: 'TEACHER',
+      isSuperAdmin: false,
+      hasStaffAccess: true,
+      features: { events: false, payments: true },
+    })
+
+    expect(keys(group(items, 'schooling'))).toEqual([
+      'families',
+      'students',
+      'enrollments',
+      'classes',
+    ])
+    expect(keys(all(items))).not.toContain('payments')
+    expect(keys(all(items))).not.toContain('config')
+  })
+
   it('keeps admin navigation and adds their linked teacher classes', () => {
     const items = resolveNavItems({
       role: 'ADMIN',

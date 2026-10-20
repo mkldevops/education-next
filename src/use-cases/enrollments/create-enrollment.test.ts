@@ -362,6 +362,26 @@ describe('createEnrollment', () => {
       })
     })
 
+    it('defers pricing for a staff teacher even when the school takes payments', async () => {
+      isPaymentsEnabledMock.mockResolvedValue(true)
+      const create = vi.fn().mockResolvedValue({ id: 'created' })
+      dbMock.$transaction = vi.fn(async (cb) =>
+        cb({
+          $queryRaw: vi.fn().mockResolvedValue([{ capacity: 10 }]),
+          classAssignment: { count: vi.fn().mockResolvedValue(0), create: vi.fn() },
+          enrollment: { create },
+        })
+      )
+
+      const result = await createEnrollment({ ...disabledInput, deferPricing: true })
+
+      expect(result).toEqual({ id: 'created' })
+      expect(isPaymentsEnabledMock).not.toHaveBeenCalled()
+      expect(create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ planId: reservedPlan.id, totalAmount: 0, discount: 0 }),
+      })
+    })
+
     it('refuses with paymentsDisabled when the caller supplies an explicit plan, without writing', async () => {
       const result = await createEnrollment({
         ...disabledInput,

@@ -3,7 +3,11 @@ import { getLocale } from 'next-intl/server'
 import { localizedHref } from '@/i18n/localized-href'
 import { db } from '@/lib/db'
 import type { SchoolContext } from '@/lib/school-context'
-import { getSchoolContext } from '@/lib/school-context'
+import {
+  getSchoolContext,
+  hasActiveSchoolStaffAccess,
+  isActiveSchoolAdmin,
+} from '@/lib/school-context'
 
 async function redirectToLogin(): Promise<never> {
   const locale = await getLocale()
@@ -24,6 +28,28 @@ export async function requireSchoolAdmin(): Promise<{
   if (!context.isSuperAdmin && context.role !== 'ADMIN') notFound()
 
   return { schoolId: context.schoolId, userId: context.userId, isSuperAdmin: context.isSuperAdmin }
+}
+
+/**
+ * Portée « staff » sur l'école active : l'administration, ou un enseignant quand l'école a
+ * ouvert `teacher_staff_access_enabled`. Elle couvre familles, élèves, inscriptions et la
+ * lecture des classes ; `isAdmin` reste le seul passage vers les paiements, les formules et
+ * les opérations réservées (suppression définitive, comptes, remises).
+ */
+export async function requireSchoolStaff(): Promise<{
+  schoolId: string
+  userId: string
+  isAdmin: boolean
+}> {
+  const context = await getSchoolContext()
+  if (!context) return redirectToLogin()
+  if (!(await hasActiveSchoolStaffAccess(context))) notFound()
+
+  return {
+    schoolId: context.schoolId,
+    userId: context.userId,
+    isAdmin: isActiveSchoolAdmin(context),
+  }
 }
 
 /**
@@ -72,6 +98,35 @@ export async function requireSchoolScope(): Promise<SchoolScope> {
     isAdmin: false,
     familyId: context.familyId,
   }
+}
+
+export type SchoolRecordsScope =
+  | { schoolId: string; userId: string; isStaff: true; isAdmin: boolean }
+  | { schoolId: string; userId: string; isStaff: false; isAdmin: false; familyId: string }
+
+/**
+ * Portée des listes familles, élèves et inscriptions : `requireSchoolScope()` élargi au
+ * staff. Un enseignant à accès élargi y lit toute l'école avec `isAdmin: false`, que ces
+ * pages traduisent en « sans finances ». Les autres pages gardent `requireSchoolScope()`,
+ * qui continue de refuser tout enseignant.
+ */
+export async function requireSchoolRecordsScope(): Promise<SchoolRecordsScope> {
+  const context = await getSchoolContext()
+  if (!context) return redirectToLogin()
+
+  if (await hasActiveSchoolStaffAccess(context)) {
+    return {
+      schoolId: context.schoolId,
+      userId: context.userId,
+      isStaff: true,
+      isAdmin: isActiveSchoolAdmin(context),
+    }
+  }
+
+  const scope = await requireSchoolScope()
+  if (scope.isAdmin) notFound()
+
+  return { ...scope, isStaff: false }
 }
 
 /**

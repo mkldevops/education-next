@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
-import { requireSchoolScope } from '../../_lib/auth-helper'
+import { requireSchoolRecordsScope } from '../../_lib/auth-helper'
 import { AddStudentButton } from './_components/add-student-button'
 import { StudentsDataTable } from './_components/students-data-table'
 import { getStudentDialogData } from './[id]/_lib/student-detail'
@@ -30,13 +30,15 @@ export default async function StudentsPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.students')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const scope = await requireSchoolScope()
+  const scope = await requireSchoolRecordsScope()
 
-  const isAdmin = scope.isAdmin
-  const whereFamilies = scope.isAdmin ? undefined : { some: { familyId: scope.familyId } }
+  const isStaff = scope.isStaff
+  const whereFamilies = scope.isStaff ? undefined : { some: { familyId: scope.familyId } }
   const selectedPeriod = await getSelectedPeriod(scope.schoolId)
 
-  const paymentsEnabled = await isPaymentsEnabled(scope.schoolId)
+  // Un enseignant à accès élargi voit l'école comme si les paiements étaient coupés : il
+  // inscrit sans formule et l'administration tarife ensuite.
+  const paymentsEnabled = scope.isAdmin && (await isPaymentsEnabled(scope.schoolId))
 
   const students = await db.student.findMany({
     where: {
@@ -78,17 +80,17 @@ export default async function StudentsPage({ params }: Props) {
   // sont donc chargés ici, pas par ligne.
   const { plans, classes } = await getStudentDialogData(
     scope.schoolId,
-    isAdmin,
+    isStaff,
     selectedPeriod?.id ?? null
   )
-  const planOptions = plans.map((plan) => ({
+  const planOptions = (paymentsEnabled ? plans : []).map((plan) => ({
     id: plan.id,
     name: plan.name,
     amount: Number(plan.amount),
   }))
 
-  // Le parent n'ajoute pas d'élève : seule l'administration charge la liste des familles.
-  const families = isAdmin
+  // Le parent n'ajoute pas d'élève : seul le staff charge la liste des familles.
+  const families = isStaff
     ? await db.family.findMany({
         where: { schoolId: scope.schoolId, isActive: true },
         select: { id: true, name: true },
@@ -106,7 +108,7 @@ export default async function StudentsPage({ params }: Props) {
         title={t('title')}
         description={t('description')}
         actions={
-          isAdmin && (
+          isStaff && (
             <AddStudentButton
               families={families}
               plans={planOptions}
@@ -119,7 +121,7 @@ export default async function StudentsPage({ params }: Props) {
       <StudentsDataTable
         data={students}
         locale={locale}
-        isAdmin={isAdmin}
+        isStaff={isStaff}
         plans={planOptions}
         classes={classes}
         paymentsEnabled={paymentsEnabled}
