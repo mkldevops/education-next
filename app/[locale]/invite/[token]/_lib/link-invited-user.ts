@@ -1,3 +1,4 @@
+import { grantMemberRole } from '@/gateways/school-member-gateway'
 import type { Invitation, Prisma } from '@/generated/prisma/client'
 
 export type LinkInvitedUserResult = 'OK' | 'alreadyMember' | 'alreadyUsed'
@@ -21,11 +22,14 @@ export async function linkInvitedUser(
 ): Promise<LinkInvitedUserResult> {
   const membership = await tx.schoolMember.findUnique({
     where: { userId_schoolId: { userId, schoolId: invitation.schoolId } },
-    select: { userId: true },
+    select: { roles: true },
   })
-  // Une invitation ciblant une fiche enseignant ajoute une capacité à un compte
-  // déjà ADMIN/PARENT, sans écraser son rôle ni créer une seconde appartenance.
-  if (membership && !invitation.teacherId) return 'alreadyMember'
+  // Les rôles se cumulent : l'invitation ajoute le sien à un membre qui ne l'a pas encore,
+  // sans créer de seconde appartenance. Une invitation ciblant une fiche enseignant lie
+  // toujours sa fiche.
+  if (membership?.roles.includes(invitation.role) && !invitation.teacherId) {
+    return 'alreadyMember'
+  }
 
   const closed = await tx.invitation.updateMany({
     where: { id: invitation.id, schoolId: invitation.schoolId, usedAt: null },
@@ -35,11 +39,7 @@ export async function linkInvitedUser(
 
   // Le `SchoolMember` doit exister avant le `UserFamily` : sa clé étrangère
   // composite `(userId, schoolId) -> SchoolMember` bloquerait sinon l'insertion.
-  if (!membership) {
-    await tx.schoolMember.create({
-      data: { userId, schoolId: invitation.schoolId, role: invitation.role },
-    })
-  }
+  await grantMemberRole(tx, userId, invitation.schoolId, invitation.role)
 
   if (invitation.teacherId) {
     // L'extension soft-delete ne couvre pas `updateMany` : sans `isActive: true`, une

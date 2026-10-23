@@ -55,7 +55,7 @@ beforeEach(() => {
   requireSchoolSessionMock.mockResolvedValue({
     schoolId: 'school-1',
     userId: 'admin-1',
-    role: 'ADMIN',
+    roles: ['ADMIN'],
     isSuperAdmin: false,
   })
   dbMock.config.findFirst.mockResolvedValue({ value: 'true' })
@@ -108,7 +108,7 @@ describe('AttendancePage', () => {
     requireSchoolSessionMock.mockResolvedValue({
       schoolId: 'school-1',
       userId: 'teacher-user',
-      role: 'TEACHER',
+      roles: ['TEACHER'],
       isSuperAdmin: false,
     })
     requireTeacherMock.mockResolvedValue({

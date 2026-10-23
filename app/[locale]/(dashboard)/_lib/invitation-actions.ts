@@ -95,9 +95,10 @@ export async function inviteUserAction(input: {
   const existing = await db.user.findUnique({ where: { email }, select: { id: true } })
   if (existing) {
     const membership = await schoolMemberGateway.findMembership(existing.id, schoolId)
-    // Une invitation TEACHER peut ajouter cette capacité à un ADMIN/PARENT déjà
-    // membre de l'école. Elle ne crée pas une seconde appartenance à l'acceptation.
-    if (membership && role !== 'TEACHER') return 'alreadyMember'
+    // Les rôles se cumulent : inviter un membre à un rôle qu'il n'a pas le lui ajoute à
+    // l'acceptation, sans seconde appartenance. Une invitation TEACHER lie une fiche
+    // enseignant et reste donc permise.
+    if (membership?.roles.includes(role) && role !== 'TEACHER') return 'alreadyMember'
   }
 
   const school = await schoolGateway.findActiveById(schoolId)

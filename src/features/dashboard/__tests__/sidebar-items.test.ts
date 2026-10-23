@@ -22,17 +22,17 @@ describe('resolveNavItems', () => {
 
   it('shows attendance only when enabled for an admin and teacher', () => {
     const admin = resolveNavItems({
-      role: 'ADMIN',
+      roles: ['ADMIN'],
       isSuperAdmin: false,
       features: { events: false, payments: true, attendance: true },
     })
     const teacher = resolveNavItems({
-      role: 'TEACHER',
+      roles: ['TEACHER'],
       isSuperAdmin: false,
       features: { events: false, payments: true, attendance: true },
     })
     const disabled = resolveNavItems({
-      role: 'TEACHER',
+      roles: ['TEACHER'],
       isSuperAdmin: false,
       features: { events: false, payments: true, attendance: false },
     })
@@ -42,7 +42,7 @@ describe('resolveNavItems', () => {
   })
   it('hides admin-only configuration from a caller without a school role', () => {
     const items = resolveNavItems({
-      role: null,
+      roles: [],
       isSuperAdmin: false,
       features: { events: false, payments: true },
     })
@@ -54,7 +54,7 @@ describe('resolveNavItems', () => {
 
   it('exposes configuration to an admin of the school, minus the platform pages', () => {
     const items = resolveNavItems({
-      role: 'ADMIN',
+      roles: ['ADMIN'],
       isSuperAdmin: false,
       features: { events: false, payments: true },
     })
@@ -75,7 +75,7 @@ describe('resolveNavItems', () => {
 
   it('exposes the platform pages to a super admin only', () => {
     const items = resolveNavItems({
-      role: null,
+      roles: [],
       isSuperAdmin: true,
       features: { events: false, payments: true },
     })
@@ -87,7 +87,7 @@ describe('resolveNavItems', () => {
 
   it('hides the platform pages from a parent who is not a super admin', () => {
     const items = resolveNavItems({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       familyId: 'family-1',
       features: { events: false, payments: true },
@@ -100,7 +100,7 @@ describe('resolveNavItems', () => {
 
   it('points a parent at their own family and drops the management pages', () => {
     const items = resolveNavItems({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       familyId: 'family-1',
       features: { events: false, payments: true },
@@ -114,7 +114,7 @@ describe('resolveNavItems', () => {
 
   it('keeps a parent role while exposing their linked teacher classes', () => {
     const items = resolveNavItems({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       familyId: 'family-1',
       hasTeacherCapability: true,
@@ -126,12 +126,12 @@ describe('resolveNavItems', () => {
 
   it('gives a teacher their planning and the families they registered', () => {
     const items = resolveNavItems({
-      role: 'TEACHER',
+      roles: ['TEACHER'],
       isSuperAdmin: false,
       features: { events: false, payments: true, classSchedule: true, attendance: true },
     })
     const withoutSchedule = resolveNavItems({
-      role: 'TEACHER',
+      roles: ['TEACHER'],
       isSuperAdmin: false,
       features: { events: false, payments: true },
     })
@@ -147,7 +147,7 @@ describe('resolveNavItems', () => {
 
   it('opens the schooling pages, never finance, to a teacher with extended access', () => {
     const items = resolveNavItems({
-      role: 'TEACHER',
+      roles: ['TEACHER'],
       isSuperAdmin: false,
       hasStaffAccess: true,
       features: { events: false, payments: true },
@@ -165,7 +165,7 @@ describe('resolveNavItems', () => {
 
   it('keeps admin navigation and adds their linked teacher classes', () => {
     const items = resolveNavItems({
-      role: 'ADMIN',
+      roles: ['ADMIN'],
       isSuperAdmin: false,
       hasTeacherCapability: true,
       features: { events: false, payments: true },
@@ -176,7 +176,7 @@ describe('resolveNavItems', () => {
 
   it('falls back to the families list when a parent has no linked family', () => {
     const items = resolveNavItems({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       features: { events: false, payments: true },
     })
@@ -186,12 +186,12 @@ describe('resolveNavItems', () => {
 
   it('shows the events entry to an admin only when the feature flag is enabled', () => {
     const enabled = resolveNavItems({
-      role: 'ADMIN',
+      roles: ['ADMIN'],
       isSuperAdmin: false,
       features: { events: true, payments: true },
     })
     const disabled = resolveNavItems({
-      role: 'ADMIN',
+      roles: ['ADMIN'],
       isSuperAdmin: false,
       features: { events: false, payments: true },
     })
@@ -202,7 +202,7 @@ describe('resolveNavItems', () => {
 
   it('hides the events entry from a super admin when the feature flag is disabled', () => {
     const items = resolveNavItems({
-      role: null,
+      roles: [],
       isSuperAdmin: true,
       features: { events: false, payments: true },
     })
@@ -212,7 +212,7 @@ describe('resolveNavItems', () => {
 
   it('hides the events entry from a parent even when the feature flag is enabled', () => {
     const items = resolveNavItems({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       familyId: 'family-1',
       features: { events: true, payments: true },
@@ -227,7 +227,7 @@ describe('resolveNavItems payments flag', () => {
 
   it('shows payments and plans to an admin when payments are enabled', () => {
     const items = resolveNavItems({
-      role: 'ADMIN',
+      roles: ['ADMIN'],
       isSuperAdmin: false,
       features: scope(true),
     })
@@ -238,7 +238,7 @@ describe('resolveNavItems payments flag', () => {
 
   it('hides payments and plans from an admin when payments are disabled', () => {
     const items = resolveNavItems({
-      role: 'ADMIN',
+      roles: ['ADMIN'],
       isSuperAdmin: false,
       features: scope(false),
     })
@@ -248,14 +248,14 @@ describe('resolveNavItems payments flag', () => {
   })
 
   it('shows payments and plans to a super admin when payments are enabled', () => {
-    const items = resolveNavItems({ role: null, isSuperAdmin: true, features: scope(true) })
+    const items = resolveNavItems({ roles: [], isSuperAdmin: true, features: scope(true) })
 
     expect(keys(all(items))).toContain('payments')
     expect(keys(all(items))).toContain('plans')
   })
 
   it('hides payments and plans from a super admin when payments are disabled', () => {
-    const items = resolveNavItems({ role: null, isSuperAdmin: true, features: scope(false) })
+    const items = resolveNavItems({ roles: [], isSuperAdmin: true, features: scope(false) })
 
     expect(keys(all(items))).not.toContain('payments')
     expect(keys(all(items))).not.toContain('plans')
@@ -263,13 +263,13 @@ describe('resolveNavItems payments flag', () => {
 
   it('never offers payments or plans to a parent, flag on or off', () => {
     const enabled = resolveNavItems({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       features: scope(true),
       familyId: 'family-1',
     })
     const disabled = resolveNavItems({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       features: scope(false),
       familyId: 'family-1',
@@ -285,7 +285,7 @@ describe('resolveNavItems payments flag', () => {
 describe('resolveNavItems icons', () => {
   it('gives every visible entry a distinct icon', () => {
     const items = resolveNavItems({
-      role: 'ADMIN',
+      roles: ['ADMIN'],
       isSuperAdmin: true,
       hasTeacherCapability: true,
       features: { events: true, payments: true, attendance: true, classSchedule: true },
@@ -321,17 +321,17 @@ describe('resolveNavItems aiAssistant flag', () => {
   })
 
   it('shows the assistant to an admin and a super admin only while enabled', () => {
-    const admin = resolveNavItems({ role: 'ADMIN', isSuperAdmin: false, features: scope(true) })
-    const superAdmin = resolveNavItems({ role: null, isSuperAdmin: true, features: scope(true) })
+    const admin = resolveNavItems({ roles: ['ADMIN'], isSuperAdmin: false, features: scope(true) })
+    const superAdmin = resolveNavItems({ roles: [], isSuperAdmin: true, features: scope(true) })
 
     expect(find(admin, 'enrollAssistant')?.href).toBe('/dashboard/enroll-assistant')
     expect(keys(group(superAdmin, 'schooling'))).toContain('enrollAssistant')
   })
 
   it('hides the assistant from everyone while disabled or unset', () => {
-    const admin = resolveNavItems({ role: 'ADMIN', isSuperAdmin: false, features: scope(false) })
+    const admin = resolveNavItems({ roles: ['ADMIN'], isSuperAdmin: false, features: scope(false) })
     const unset = resolveNavItems({
-      role: null,
+      roles: [],
       isSuperAdmin: true,
       features: { events: false, payments: true },
     })
@@ -342,14 +342,79 @@ describe('resolveNavItems aiAssistant flag', () => {
 
   it('never offers the assistant to a parent or a teacher, flag on or off', () => {
     const parent = resolveNavItems({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       features: scope(true),
       familyId: 'family-1',
     })
-    const teacher = resolveNavItems({ role: 'TEACHER', isSuperAdmin: false, features: scope(true) })
+    const teacher = resolveNavItems({
+      roles: ['TEACHER'],
+      isSuperAdmin: false,
+      features: scope(true),
+    })
 
     expect(keys(all(parent))).not.toContain('enrollAssistant')
     expect(keys(all(teacher))).not.toContain('enrollAssistant')
+  })
+})
+
+describe('resolveNavItems with cumulative roles', () => {
+  const features = { classSchedule: true, events: true, payments: true, attendance: true }
+
+  it('shows the family and the teaching sections side by side to a teacher-parent', () => {
+    const items = resolveNavItems({
+      roles: ['TEACHER', 'PARENT'],
+      isSuperAdmin: false,
+      familyId: 'family-1',
+      hasTeacherCapability: true,
+      features,
+    })
+
+    expect(keys(items.sections)).toEqual(['family', 'teaching'])
+    expect(keys(group(items, 'family'))).toEqual(['dashboard', 'myFamily', 'planning'])
+    expect(keys(group(items, 'teaching'))).toEqual(['myClasses', 'attendance', 'myFamilies'])
+    expect(find(items, 'myFamily')?.href).toBe('/dashboard/families/family-1')
+  })
+
+  it('lists planning once for a teacher-parent', () => {
+    const items = resolveNavItems({
+      roles: ['TEACHER', 'PARENT'],
+      isSuperAdmin: false,
+      familyId: 'family-1',
+      features,
+    })
+
+    expect(keys(all(items)).filter((key) => key === 'planning')).toHaveLength(1)
+    expect(keys(all(items)).filter((key) => key === 'myClasses')).toHaveLength(1)
+  })
+
+  it('adds the staff schooling pages to a teacher-parent only with staff access', () => {
+    const scope = {
+      roles: ['TEACHER', 'PARENT'] as const,
+      isSuperAdmin: false,
+      familyId: 'family-1',
+      features,
+    }
+
+    expect(keys(group(resolveNavItems({ ...scope, hasStaffAccess: true }), 'schooling'))).toEqual([
+      'families',
+      'students',
+      'enrollments',
+      'classes',
+    ])
+    expect(keys(resolveNavItems(scope).sections)).not.toContain('schooling')
+    expect(keys(all(resolveNavItems({ ...scope, hasStaffAccess: true })))).not.toContain('payments')
+  })
+
+  it('lets the administration win over every other role', () => {
+    const items = resolveNavItems({
+      roles: ['ADMIN', 'TEACHER', 'PARENT'],
+      isSuperAdmin: false,
+      familyId: 'family-1',
+      features,
+    })
+
+    expect(keys(items.sections)).toEqual(['today', 'schooling', 'finance', 'settings'])
+    expect(keys(group(items, 'settings'))).toContain('users')
   })
 })

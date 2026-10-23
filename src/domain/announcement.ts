@@ -19,7 +19,7 @@ export type Announcement = {
 }
 
 export type AnnouncementReader = {
-  role: SchoolRole | null
+  roles: readonly SchoolRole[]
   isSuperAdmin: boolean
   /** `User.announcementsSeenAt`, ou `createdAt` à défaut : un compte neuf ne doit pas hériter d'un arriéré. */
   seenAt: Date
@@ -27,11 +27,12 @@ export type AnnouncementReader = {
 
 /**
  * Un super-admin voit tout, quel que soit son rôle d'école : il doit pouvoir relire ce que chaque
- * public reçoit. Une audience vide ne vise personne.
+ * public reçoit. Une audience vide ne vise personne. Un membre à plusieurs rôles lit ce qui vise
+ * l'un d'eux.
  */
 export function isAnnouncementVisible(announcement: Announcement, reader: AnnouncementReader) {
   if (reader.isSuperAdmin) return true
-  return reader.role !== null && announcement.audience.includes(reader.role)
+  return reader.roles.some((role) => announcement.audience.includes(role))
 }
 
 export function visibleAnnouncements(announcements: Announcement[], reader: AnnouncementReader) {

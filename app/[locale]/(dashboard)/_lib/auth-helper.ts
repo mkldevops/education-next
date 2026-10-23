@@ -25,7 +25,7 @@ export async function requireSchoolAdmin(): Promise<{
 }> {
   const context = await getSchoolContext()
   if (!context) return redirectToLogin()
-  if (!context.isSuperAdmin && context.role !== 'ADMIN') notFound()
+  if (!isActiveSchoolAdmin(context)) notFound()
 
   return { schoolId: context.schoolId, userId: context.userId, isSuperAdmin: context.isSuperAdmin }
 }
@@ -74,6 +74,9 @@ export type SchoolScope =
 /**
  * Portée de lecture métier.
  *
+ * L'administration l'emporte : un admin-parent lit l'école entière, ce que son rôle `ADMIN`
+ * lui ouvre déjà ailleurs.
+ *
  * `familyId` est ici une chaîne, pas `string | null` : ses appelants l'injectent dans
  * des filtres Prisma sur une colonne non nullable. Un parent sans famille est donc
  * arrêté ici. Les surfaces qui doivent l'accueillir — l'écran « parent non rattaché »
@@ -83,14 +86,13 @@ export async function requireSchoolScope(): Promise<SchoolScope> {
   const context = await getSchoolContext()
   if (!context) return redirectToLogin()
 
-  if (context.isSuperAdmin) {
-    return { schoolId: context.schoolId, userId: context.userId, isAdmin: true }
-  }
-  if (context.role === 'ADMIN') {
+  if (isActiveSchoolAdmin(context)) {
     return { schoolId: context.schoolId, userId: context.userId, isAdmin: true }
   }
 
-  if (context.role !== 'PARENT' || !context.familyId) notFound()
+  // `familyId` n'existe que pour un membre `PARENT` : un enseignant-parent reçoit ici sa
+  // portée parent, un enseignant seul est refusé comme avant.
+  if (!context.familyId) notFound()
 
   return {
     schoolId: context.schoolId,

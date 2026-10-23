@@ -55,7 +55,7 @@ export async function createUserAction(data: { name: string; email: string; role
       name: parsed.data.name,
       email: parsed.data.email,
     })
-    await schoolMemberGateway.createMembership(created.id, schoolId, parsed.data.role)
+    await schoolMemberGateway.createMembership(created.id, schoolId, [parsed.data.role])
   } catch {
     return 'error' as const
   }
@@ -277,9 +277,9 @@ export async function removeSchoolMemberAction(userId: string) {
   }
 }
 
-const ChangeMemberRoleSchema = z.object({
+const ChangeMemberRolesSchema = z.object({
   userId: z.string().min(1),
-  role: z.enum(['ADMIN', 'PARENT']),
+  roles: z.array(z.enum(['ADMIN', 'PARENT'])),
 })
 
 /**
@@ -287,17 +287,17 @@ const ChangeMemberRoleSchema = z.object({
  * raison qu'au-dessus : une rétrogradation concurrente ne doit pas pouvoir vider
  * l'école de tout administrateur.
  */
-export async function changeSchoolMemberRoleAction(userId: string, role: SchoolRole) {
+export async function changeSchoolMemberRolesAction(userId: string, roles: SchoolRole[]) {
   const { schoolId } = await requireSchoolAdmin()
 
-  const parsed = ChangeMemberRoleSchema.safeParse({ userId, role })
+  const parsed = ChangeMemberRolesSchema.safeParse({ userId, roles })
   if (!parsed.success) return 'validation_error' as const
 
   try {
-    return await schoolMemberGateway.changeMembershipRole(
+    return await schoolMemberGateway.setAssignableRoles(
       parsed.data.userId,
       schoolId,
-      parsed.data.role
+      parsed.data.roles
     )
   } catch {
     return 'error' as const

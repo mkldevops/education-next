@@ -29,7 +29,13 @@ vi.mock('@/use-cases/config/is-teacher-staff-access-enabled', () => ({
 }))
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, sa factory est lazy.
-const { getAuthorizedSchools, getSchoolContext } = await import('../school-context')
+const {
+  getAuthorizedSchools,
+  getSchoolContext,
+  hasActiveSchoolStaffAccess,
+  hasSchoolRole,
+  isActiveSchoolAdmin,
+} = await import('../school-context')
 
 const AL_NOUR = { id: 'school-a', name: 'Al-Nour', slug: 'al-nour' }
 const HORIZON = { id: 'school-b', name: 'Horizon', slug: 'horizon' }
@@ -39,9 +45,11 @@ const signedInAs = (userId: string, isSuperAdmin: boolean) => {
   dbMock.user.findUnique.mockResolvedValue({ isSuperAdmin })
 }
 
-const membership = (school: typeof AL_NOUR, role: 'ADMIN' | 'PARENT' | 'TEACHER') => ({
+type Role = 'ADMIN' | 'PARENT' | 'TEACHER'
+
+const membership = (school: typeof AL_NOUR, role: Role | Role[]) => ({
   schoolId: school.id,
-  role,
+  roles: Array.isArray(role) ? role : [role],
   createdAt: new Date('2026-01-01'),
   school,
 })
@@ -65,7 +73,8 @@ describe('getSchoolContext', () => {
       userId: 'user-1',
       schoolId: AL_NOUR.id,
       isSuperAdmin: true,
-      role: null,
+      roles: [],
+      familyId: null,
     })
     expect(schoolMemberGatewayMock.listAuthorizedSchools).not.toHaveBeenCalled()
   })
@@ -98,7 +107,8 @@ describe('getSchoolContext', () => {
       userId: 'user-2',
       schoolId: AL_NOUR.id,
       isSuperAdmin: false,
-      role: 'ADMIN',
+      roles: ['ADMIN'],
+      familyId: null,
     })
   })
 
@@ -112,7 +122,7 @@ describe('getSchoolContext', () => {
       userId: 'user-3',
       schoolId: AL_NOUR.id,
       isSuperAdmin: false,
-      role: 'PARENT',
+      roles: ['PARENT'],
       familyId: null,
     })
   })
@@ -174,6 +184,32 @@ describe('getSchoolContext', () => {
     expect(isSchoolSwitchEnabledMock).not.toHaveBeenCalled()
   })
 
+  it('carries every role of a teacher who is also a parent, with the family', async () => {
+    signedInAs('user-5', false)
+    schoolMemberGatewayMock.listAuthorizedSchools.mockResolvedValue([
+      membership(AL_NOUR, ['TEACHER', 'PARENT']),
+    ])
+    dbMock.userFamily.findFirst.mockResolvedValue({ familyId: 'family-1' })
+
+    expect(await getSchoolContext()).toEqual({
+      userId: 'user-5',
+      schoolId: AL_NOUR.id,
+      isSuperAdmin: false,
+      roles: ['TEACHER', 'PARENT'],
+      familyId: 'family-1',
+    })
+  })
+
+  it('looks up no family for a member without the parent role', async () => {
+    signedInAs('user-6', false)
+    schoolMemberGatewayMock.listAuthorizedSchools.mockResolvedValue([
+      membership(AL_NOUR, ['ADMIN', 'TEACHER']),
+    ])
+
+    expect(await getSchoolContext()).toMatchObject({ familyId: null })
+    expect(dbMock.userFamily.findFirst).not.toHaveBeenCalled()
+  })
+
   it('rejects a signed-in account that no longer exists', async () => {
     authMock.api.getSession.mockResolvedValue({ user: { id: 'user-4' } })
     dbMock.user.findUnique.mockResolvedValue(null)
@@ -221,9 +257,62 @@ describe('getAuthorizedSchools', () => {
     ])
   })
 
+  it('makes a member staff from any of its roles', async () => {
+    signedInAs('user-5', false)
+    schoolMemberGatewayMock.listAuthorizedSchools.mockResolvedValue([
+      membership(AL_NOUR, ['ADMIN', 'PARENT']),
+      membership(HORIZON, ['TEACHER', 'PARENT']),
+    ])
+    isTeacherStaffAccessEnabledMock.mockResolvedValue(true)
+
+    expect(await getAuthorizedSchools()).toEqual([
+      { ...AL_NOUR, isAdmin: true, isStaff: true },
+      { ...HORIZON, isAdmin: false, isStaff: true },
+    ])
+  })
+
   it('offers nothing to an anonymous caller', async () => {
     authMock.api.getSession.mockResolvedValue(null)
 
     expect(await getAuthorizedSchools()).toEqual([])
+  })
+})
+
+describe('role helpers', () => {
+  const member = (roles: Role[]) => ({
+    userId: 'user-1',
+    schoolId: AL_NOUR.id,
+    isSuperAdmin: false as const,
+    roles,
+    familyId: null,
+  })
+  const superAdmin = {
+    userId: 'user-1',
+    schoolId: AL_NOUR.id,
+    isSuperAdmin: true as const,
+    roles: [] as const,
+    familyId: null,
+  }
+
+  it('reads each held role', () => {
+    const context = member(['TEACHER', 'PARENT'])
+    expect(hasSchoolRole(context, 'TEACHER')).toBe(true)
+    expect(hasSchoolRole(context, 'PARENT')).toBe(true)
+    expect(hasSchoolRole(context, 'ADMIN')).toBe(false)
+    expect(hasSchoolRole(superAdmin, 'ADMIN')).toBe(false)
+  })
+
+  it('treats an admin role or the super-admin flag as administration', () => {
+    expect(isActiveSchoolAdmin(member(['PARENT', 'ADMIN']))).toBe(true)
+    expect(isActiveSchoolAdmin(superAdmin)).toBe(true)
+    expect(isActiveSchoolAdmin(member(['TEACHER', 'PARENT']))).toBe(false)
+  })
+
+  it('opens staff access to a teacher-parent only where the school allows it', async () => {
+    isTeacherStaffAccessEnabledMock.mockResolvedValue(true)
+    expect(await hasActiveSchoolStaffAccess(member(['TEACHER', 'PARENT']))).toBe(true)
+    isTeacherStaffAccessEnabledMock.mockResolvedValue(false)
+    expect(await hasActiveSchoolStaffAccess(member(['TEACHER', 'PARENT']))).toBe(false)
+    expect(await hasActiveSchoolStaffAccess(member(['PARENT']))).toBe(false)
   })
 })

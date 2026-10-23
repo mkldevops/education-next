@@ -178,7 +178,7 @@ beforeEach(() => {
   )
   findPlatformLevel.mockResolvedValue({ id: 'user-1', isSuperAdmin: false })
   findActiveById.mockResolvedValue({ id: 'school-1', name: 'École A', slug: 'ecole-a' })
-  findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', role: 'ADMIN' })
+  findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', roles: ['ADMIN'] })
   describeSchool.mockResolvedValue({ id: 'school-1', name: 'École A' })
   previewEnrollFamily.mockResolvedValue({
     draftId: '9d1e2c3b-4a5f-4d6e-8b7c-0f1e2d3c4b5a',
@@ -274,7 +274,7 @@ describe('MCP transport through an OAuth access token', () => {
   })
 
   it('refuses a holder who is no longer an admin of the school', async () => {
-    findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', role: 'PARENT' })
+    findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', roles: ['PARENT'] })
 
     const response = await post(rpc('tools/list'), bearer(accessToken))
 

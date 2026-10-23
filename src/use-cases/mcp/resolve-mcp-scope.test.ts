@@ -36,7 +36,7 @@ beforeEach(() => {
   findByHash.mockResolvedValue(liveKey)
   findPlatformLevel.mockResolvedValue({ id: 'user-1', isSuperAdmin: false })
   findActiveById.mockResolvedValue({ id: 'school-1', name: 'École', slug: 'ecole' })
-  findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', role: 'ADMIN' })
+  findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', roles: ['ADMIN'] })
   checkPaymentsEnabled.mockResolvedValue(true)
 })
 
@@ -122,7 +122,7 @@ describe('resolveMcpScope', () => {
   })
 
   it('refuses a parent, and a member whose role was withdrawn', async () => {
-    findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', role: 'PARENT' })
+    findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', roles: ['PARENT'] })
     expect(await resolve(presented)).toEqual({ status: 'forbidden' })
 
     findMembership.mockResolvedValue(null)
@@ -154,7 +154,7 @@ describe('resolveMcpScope', () => {
 
   it('scopes the caller to the school recorded on the key, not to a requested one', async () => {
     findByHash.mockResolvedValue({ ...liveKey, schoolId: 'school-2' })
-    findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-2', role: 'ADMIN' })
+    findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-2', roles: ['ADMIN'] })
 
     expect(await resolve(presented)).toMatchObject({ scope: { schoolId: 'school-2' } })
     expect(findMembership).toHaveBeenCalledWith('user-1', 'school-2')

@@ -14,6 +14,7 @@ import { readsAsOptedIn } from '@/domain/feature-flags'
 import type { Prisma } from '@/generated/prisma/client'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
+import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { requireSchoolAdmin, requireSchoolSession, requireTeacher } from './auth-helper'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -45,7 +46,7 @@ const SESSION_WITH_ENTRIES = { entries: { orderBy: { studentName: 'asc' } } } as
 
 async function canOperateClass(classPeriodId: string) {
   const context = await requireSchoolSession()
-  if (context.isSuperAdmin || context.role === 'ADMIN') {
+  if (isActiveSchoolAdmin(context)) {
     const classPeriod = await db.classPeriod.findFirst({
       where: { id: classPeriodId, schoolId: context.schoolId },
       select: { id: true },

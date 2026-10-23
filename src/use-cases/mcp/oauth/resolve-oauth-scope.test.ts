@@ -52,7 +52,7 @@ beforeEach(() => {
   findTokenByHash.mockResolvedValue(liveToken)
   findPlatformLevel.mockResolvedValue({ id: 'user-1', isSuperAdmin: false })
   findActiveById.mockResolvedValue({ id: 'school-1', name: 'École A', slug: 'ecole-a' })
-  findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', role: 'ADMIN' })
+  findMembership.mockResolvedValue({ userId: 'user-1', schoolId: 'school-1', roles: ['ADMIN'] })
   checkPaymentsEnabled.mockResolvedValue(true)
 })
 
@@ -131,8 +131,8 @@ describe('resolveMcpOAuthScope', () => {
   })
 
   it.each([
-    ['a parent', { userId: 'user-1', schoolId: 'school-1', role: 'PARENT' }],
-    ['a teacher', { userId: 'user-1', schoolId: 'school-1', role: 'TEACHER' }],
+    ['a parent', { userId: 'user-1', schoolId: 'school-1', roles: ['PARENT'] }],
+    ['a teacher', { userId: 'user-1', schoolId: 'school-1', roles: ['TEACHER'] }],
     ['a user of another school', null],
   ])('forbids %s on every call, even with a valid token', async (_label, membership) => {
     findMembership.mockResolvedValue(membership)

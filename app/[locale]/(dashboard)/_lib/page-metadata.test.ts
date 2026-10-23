@@ -8,10 +8,10 @@ vi.mock('next-intl/server', () => ({
 }))
 vi.mock('@/lib/school-context', () => ({
   getSchoolContext: getSchoolContextMock,
-  isActiveSchoolAdmin: vi.fn(
-    (context: { isSuperAdmin: boolean; role: string | null }) =>
-      context.isSuperAdmin || context.role === 'ADMIN'
-  ),
+  hasSchoolRole: (context: { isSuperAdmin: boolean; roles: string[] }, role: string) =>
+    !context.isSuperAdmin && context.roles.includes(role),
+  isActiveSchoolAdmin: (context: { isSuperAdmin: boolean; roles: string[] }) =>
+    context.isSuperAdmin || context.roles.includes('ADMIN'),
 }))
 
 const { schoolScopedPageMetadata } = await import('./page-metadata')
@@ -26,19 +26,19 @@ describe('schoolScopedPageMetadata', () => {
       userId: 'super-admin-1',
       schoolId: 'school-1',
       isSuperAdmin: true,
-      role: null,
+      roles: [],
     },
     {
       userId: 'admin-1',
       schoolId: 'school-1',
       isSuperAdmin: false,
-      role: 'ADMIN',
+      roles: ['ADMIN'],
     },
     {
       userId: 'parent-1',
       schoolId: 'school-1',
       isSuperAdmin: false,
-      role: 'PARENT',
+      roles: ['PARENT'],
       familyId: 'family-1',
     },
   ])('exposes the page title to a context with a school scope', async (context) => {
@@ -55,14 +55,15 @@ describe('schoolScopedPageMetadata', () => {
       userId: 'parent-1',
       schoolId: 'school-1',
       isSuperAdmin: false,
-      role: 'PARENT',
+      roles: ['PARENT'],
       familyId: null,
     },
     {
       userId: 'teacher-1',
       schoolId: 'school-1',
       isSuperAdmin: false,
-      role: 'TEACHER',
+      roles: ['TEACHER'],
+      familyId: null,
     },
   ])('keeps the restricted title for contexts without a family scope', async (context) => {
     getSchoolContextMock.mockResolvedValue(context)

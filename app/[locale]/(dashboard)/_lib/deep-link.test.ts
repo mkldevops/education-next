@@ -33,7 +33,7 @@ const HORIZON = { id: 'school-b', name: 'Horizon', slug: 'horizon' }
 
 const membership = (school: typeof AL_NOUR) => ({
   schoolId: school.id,
-  role: 'ADMIN' as const,
+  roles: ['ADMIN'],
   createdAt: new Date('2026-01-01'),
   school,
 })

@@ -384,9 +384,9 @@ async function createDemo() {
   })
   await prisma.schoolMember.createMany({
     data: [
-      { userId: adminId, schoolId, role: 'ADMIN' },
-      { userId: teacherUserId, schoolId, role: 'TEACHER' },
-      { userId: parentUserId, schoolId, role: 'PARENT' },
+      { userId: adminId, schoolId, roles: ['ADMIN'] },
+      { userId: teacherUserId, schoolId, roles: ['TEACHER'] },
+      { userId: parentUserId, schoolId, roles: ['PARENT'] },
     ],
   })
 

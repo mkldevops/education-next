@@ -33,7 +33,14 @@ import { Sidebar } from '../sidebar'
 import { useSidebarStore } from '../sidebar-store'
 
 const renderSidebar = (role: SchoolRole | null, isSuperAdmin = false) =>
-  render(<Sidebar role={role} isSuperAdmin={isSuperAdmin} paymentsEnabled canSwitchSchool />)
+  render(
+    <Sidebar
+      roles={role ? [role] : []}
+      isSuperAdmin={isSuperAdmin}
+      paymentsEnabled
+      canSwitchSchool
+    />
+  )
 
 const school = (id: string, name: string): AuthorizedSchool => ({
   id,
@@ -48,7 +55,7 @@ const ADMIN: SchoolRole = 'ADMIN'
 const renderSwitcher = (schools: AuthorizedSchool[], canSwitchSchool = true) =>
   render(
     <Sidebar
-      role={ADMIN}
+      roles={[ADMIN]}
       isSuperAdmin={false}
       paymentsEnabled
       schoolName="Al-Nour"

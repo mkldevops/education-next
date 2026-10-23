@@ -133,8 +133,8 @@ async function seedSchool(label: string, suffix: string) {
 
   await raw.schoolMember.createMany({
     data: [
-      { userId: admin.id, schoolId: school.id, role: 'ADMIN' },
-      { userId: parent.id, schoolId: school.id, role: 'PARENT' },
+      { userId: admin.id, schoolId: school.id, roles: ['ADMIN'] },
+      { userId: parent.id, schoolId: school.id, roles: ['PARENT'] },
     ],
   })
 
@@ -169,7 +169,7 @@ async function seedSchool(label: string, suffix: string) {
     data: { email: `other-parent-${label}-${suffix}@render.test`, name: `other parent ${label}` },
   })
   await raw.schoolMember.create({
-    data: { userId: otherParent.id, schoolId: school.id, role: 'PARENT' },
+    data: { userId: otherParent.id, schoolId: school.id, roles: ['PARENT'] },
   })
   const otherFamily = await raw.family.create({
     data: { schoolId: school.id, name: `other fam ${label}`, createdById: admin.id },
@@ -405,7 +405,7 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
       signIn(a.parent, a.school.id)
 
       const context = await getSchoolContext()
-      expect(context?.role).toBe('PARENT')
+      expect(context?.roles).toEqual(['PARENT'])
 
       await resolveBrandingSchoolId()
       await getBrandingConfig(a.school.id)

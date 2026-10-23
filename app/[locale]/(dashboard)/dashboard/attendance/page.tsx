@@ -15,7 +15,7 @@ import type { AttendanceSessionStatus } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
-import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
+import { getSchoolContext, hasSchoolRole, isActiveSchoolAdmin } from '@/lib/school-context'
 import { requireSchoolSession, requireTeacher } from '../../_lib/auth-helper'
 import { AttendanceFilters } from './_components/attendance-filters'
 import { CancelAttendanceForm, CancelOccurrenceForm } from './_components/cancel-attendance-form'
@@ -99,7 +99,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params
   const [t, context] = await Promise.all([getTranslations({ locale }), getSchoolContext()])
-  const allowed = context !== null && (isActiveSchoolAdmin(context) || context.role === 'TEACHER')
+  const allowed =
+    context !== null && (isActiveSchoolAdmin(context) || hasSchoolRole(context, 'TEACHER'))
   return {
     title: allowed ? t('dashboard.pages.attendance.trackingTitle') : t('errorPages.404.title'),
   }
@@ -125,7 +126,7 @@ export default async function AttendanceTrackingPage({
   ])
   const query = await searchParams
   const context = await requireSchoolSession()
-  const admin = context.isSuperAdmin || context.role === 'ADMIN'
+  const admin = isActiveSchoolAdmin(context)
   const teacher = admin ? null : await requireTeacher()
   const schoolId = context.schoolId
   const config = await db.config.findFirst({

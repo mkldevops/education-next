@@ -373,8 +373,9 @@ linking policy itself is an authentication boundary outside this feature.
 
 ## Roles and scope
 
-Roles are **per school**. `SchoolRole` is `ADMIN` or `PARENT` (`src/types/enums.ts`), carried by a
-`SchoolMember` row. Platform level is a separate flag, `User.isSuperAdmin`. There is no longer a
+Roles are **per school**. `SchoolRole` is `ADMIN`, `TEACHER` or `PARENT` (`src/types/enums.ts`).
+A `SchoolMember` row carries a **set** of them, `roles`, never empty (database `CHECK`) and without
+duplicates (`normalizeRoles` in `src/gateways/school-member-gateway.ts`). Platform level is a separate flag, `User.isSuperAdmin`. There is no longer a
 global `User.role`, and `SUPER_ADMIN` is not expressible as a school role — the invalid state is
 unrepresentable in the database as well as in the types.
 
@@ -385,10 +386,15 @@ unrepresentable in the database as well as in the types.
 - The active school comes from the `active_school` cookie. **The cookie is untrusted input**: it is
   only honoured if the user holds a matching `SchoolMember`, or is a super-admin, and the school is
   active. Otherwise the context falls back deterministically to the oldest eligible school.
+- **Rights add up across the roles of a member** — a teacher who is also a parent sees its classes
+  and its family side by side; there is no active-role switch. `hasSchoolRole()`,
+  `isActiveSchoolAdmin()` and `hasActiveSchoolStaffAccess()` (`src/lib/school-context.ts`) are the
+  only role reads. `ADMIN` wins for data scope: an admin who is also a parent gets the admin scope,
+  home and sidebar. The context resolves `familyId` only when `PARENT` is held.
 - `requireSchoolAdmin()` admits a school `ADMIN` or any super-admin. `requirePlatformAdmin()` admits
   only a super-admin. `requireSchoolScope()` returns `{ isAdmin: true }` for staff, or
-  `{ isAdmin: false, familyId }` for a parent — **a parent with no linked family gets `notFound()`**
-  rather than an unscoped query. `requireSchoolSession()` establishes the session without demanding
+  `{ isAdmin: false, familyId }` for a parent, teacher-parents included — **a parent with no linked
+  family, or a teacher who is not a parent, gets `notFound()`** rather than an unscoped query. `requireSchoolSession()` establishes the session without demanding
   any capability, and is what the detail pages use: their authorization is carried by the deep-link
   query itself, which must look past the active school. All four live in
   `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
@@ -403,11 +409,18 @@ unrepresentable in the database as well as in the types.
   payments cut) for an admin to price later. Family deletion, parent invitation or account link,
   discount, plan change, promotion and class creation, edit or deletion stay `requireSchoolAdmin()`.
   With the setting off, a teacher keeps `/dashboard/my-families` and its own classes only.
-- A super-admin holds **no** `SchoolMember`. Its context branch carries `role: null`, so the code
+- A super-admin holds **no** `SchoolMember`. Its context branch carries `roles: []`, so the code
   never invents a school role for it.
+- **Losing a role withdraws what it carried**, in the same transaction (`applyMemberRoles`):
+  `PARENT` deletes the member's `UserFamily` rows of the school, `TEACHER` unlinks its teacher
+  profile, and an empty set deletes the membership. Re-granting the role later must not revive a
+  forgotten access. The admin edits `ADMIN` and `PARENT` only (`setAssignableRoles`): `TEACHER`
+  follows the teacher profile link (invitation, archive, access revocation) and is kept as is; an
+  empty selection answers `noRole`, removal being its own action.
 - **`/dashboard/users` lists memberships, not accounts.** Its root query is `SchoolMember` scoped to
   the active school; `User` has no `schoolId` and could not be filtered.
-- **Removing a member or demoting them cannot leave a school without an administrator.** The check
+- **Removing a member or withdrawing its `ADMIN` role cannot leave a school without an
+  administrator.** The check
   and the mutation share one `Serializable` transaction in
   `src/gateways/school-member-gateway.ts` → `lastAdmin`. Both operations, and the MCP key cap
   below, go through `inSerializableTransaction` (`src/lib/serializable-transaction.ts`), which
@@ -1078,8 +1091,8 @@ instance, so no school database stores them. `listAnnouncements()`
   policy enforces this server-side, so a draft or a scheduled item never reaches an instance.
 - Text resolves to the user's locale, then French, then the first available translation. An item
   without a translation or a publication date is dropped.
-- `audience` lists the school roles (`ADMIN`, `TEACHER`, `PARENT`) that see an item; an empty
-  audience reaches nobody. A super-admin sees every item regardless of audience.
+- `audience` lists the school roles (`ADMIN`, `TEACHER`, `PARENT`) that see an item; a member
+  holding any of them sees it, and an empty audience reaches nobody. A super-admin sees every item regardless of audience.
 - An item is unread when published after `User.announcementsSeenAt`, or after `User.createdAt`
   while that is `null`: a new account never inherits a backlog.
 - The header entry links to `/dashboard/news` and shows a dot while unread items remain.
@@ -2351,8 +2364,11 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   switching to an insensitive search — `findUnique` takes no `mode`, and an `ILIKE` would not use
   the unique index. Lowering the needle is required, not belt-and-braces: an invitation written
   before this rule can still carry a mixed case.
-- **An existing account can be invited into a second school.** Issuing refuses only when the invitee
-  already holds a `SchoolMember` of the target school → `alreadyMember`. `emailAlreadyUsed` survives
+- **An existing account can be invited into a second school, or to a new role in the same one.**
+  Issuing refuses only when the invitee already holds the invited role in the target school →
+  `alreadyMember`; a `TEACHER` invitation, which links a teacher profile, is always allowed.
+  Acceptance adds the role to the existing membership (`grantMemberRole`) instead of creating a
+  second one. `emailAlreadyUsed` survives
   on the account-creating path alone, where it still prevents a second account for one address.
 - **Acceptance by an existing account demands a session whose email matches the invitation.**
   `joinSchoolAction` (`app/[locale]/invite/[token]/_lib/join-school-action.ts`) answers
@@ -2364,7 +2380,7 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
 - **The token is consumed before the membership is written.** `linkInvitedUser()` closes the
   invitation with an `updateMany` guarded by `usedAt: null`; that single conditional write is the
   only serialization point, so a link replayed twice grants one membership and answers
-  `alreadyUsed`. A caller already a member of the target school is refused before it → `alreadyMember`.
+  `alreadyUsed`. A caller already holding the invited role is refused before it → `alreadyMember`.
 - **The invitation email names the school it grants**, since the same message now reaches accounts
   that already exist elsewhere on the platform.
 - **A family is never attached on its own.** A `PARENT` invitation carrying `familyId` must name a

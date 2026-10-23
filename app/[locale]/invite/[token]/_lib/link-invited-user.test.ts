@@ -15,6 +15,7 @@ function createTx(overrides: { membership?: unknown; closedCount?: number } = {}
     schoolMember: {
       findUnique: vi.fn().mockResolvedValue(overrides.membership ?? null),
       create: vi.fn(),
+      update: vi.fn(),
     },
     teacher: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     userFamily: { upsert: vi.fn() },
@@ -36,13 +37,28 @@ describe('linkInvitedUser', () => {
 
     expect(await linkInvitedUser(asTx(tx), INVITATION, 'user-1')).toBe('OK')
     expect(tx.schoolMember.create).toHaveBeenCalledWith({
-      data: { userId: 'user-1', schoolId: 'school-b', role: 'PARENT' },
+      data: { userId: 'user-1', schoolId: 'school-b', roles: ['PARENT'] },
     })
     expect(tx.userFamily.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: { userId: 'user-1', familyId: 'family-b', schoolId: 'school-b' },
       })
     )
+  })
+
+  it('relinks the teacher profile of a member already holding the teacher role', async () => {
+    const tx = createTx({ membership: { roles: ['TEACHER'] } })
+
+    expect(
+      await linkInvitedUser(
+        asTx(tx),
+        { ...INVITATION, role: 'TEACHER', familyId: null, teacherId: 'teacher-1' },
+        'user-1'
+      )
+    ).toBe('OK')
+
+    expect(tx.schoolMember.update).not.toHaveBeenCalled()
+    expect(tx.teacher.updateMany).toHaveBeenCalled()
   })
 
   it('closes the invitation only while it is still open', async () => {
@@ -64,16 +80,29 @@ describe('linkInvitedUser', () => {
     expect(tx.userFamily.upsert).not.toHaveBeenCalled()
   })
 
-  it('refuses a user who already belongs to the target school', async () => {
-    const tx = createTx({ membership: { userId: 'user-1' } })
+  it('refuses a user who already holds the invited role', async () => {
+    const tx = createTx({ membership: { roles: ['ADMIN', 'PARENT'] } })
 
     expect(await linkInvitedUser(asTx(tx), INVITATION, 'user-1')).toBe('alreadyMember')
     expect(tx.invitation.updateMany).not.toHaveBeenCalled()
     expect(tx.schoolMember.create).not.toHaveBeenCalled()
+    expect(tx.schoolMember.update).not.toHaveBeenCalled()
+  })
+
+  it('adds the invited role to a member who holds another one', async () => {
+    const tx = createTx({ membership: { roles: ['TEACHER'] } })
+
+    expect(await linkInvitedUser(asTx(tx), INVITATION, 'user-1')).toBe('OK')
+    expect(tx.schoolMember.create).not.toHaveBeenCalled()
+    expect(tx.schoolMember.update).toHaveBeenCalledWith({
+      where: { userId_schoolId: { userId: 'user-1', schoolId: 'school-b' } },
+      data: { roles: ['TEACHER', 'PARENT'] },
+    })
+    expect(tx.userFamily.upsert).toHaveBeenCalled()
   })
 
   it('adds a teacher capability to an existing admin or parent without replacing membership', async () => {
-    const tx = createTx({ membership: { userId: 'user-1' } })
+    const tx = createTx({ membership: { roles: ['PARENT', 'ADMIN'] } })
 
     expect(
       await linkInvitedUser(
@@ -84,6 +113,10 @@ describe('linkInvitedUser', () => {
     ).toBe('OK')
 
     expect(tx.schoolMember.create).not.toHaveBeenCalled()
+    expect(tx.schoolMember.update).toHaveBeenCalledWith({
+      where: { userId_schoolId: { userId: 'user-1', schoolId: 'school-b' } },
+      data: { roles: ['ADMIN', 'TEACHER', 'PARENT'] },
+    })
     expect(tx.teacher.updateMany).toHaveBeenCalledWith({
       where: { id: 'teacher-1', schoolId: 'school-b', userId: null, isActive: true },
       data: { userId: 'user-1' },

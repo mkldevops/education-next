@@ -7,6 +7,7 @@ import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
+import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { requireSchoolSession, requireTeacher } from '../../../../_lib/auth-helper'
 import { AttendancePanel } from './_components/attendance-panel'
 
@@ -22,7 +23,7 @@ export default async function AttendancePage({
   setRequestLocale(locale)
   const query = await searchParams
   const context = await requireSchoolSession()
-  const admin = context.isSuperAdmin || context.role === 'ADMIN'
+  const admin = isActiveSchoolAdmin(context)
   const teacher = admin ? null : await requireTeacher()
   const schoolId = context.schoolId
   const attendanceConfig = await db.config.findFirst({

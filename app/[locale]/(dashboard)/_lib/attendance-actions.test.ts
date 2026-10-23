@@ -33,7 +33,7 @@ beforeEach(() => {
     schoolId: 's',
     userId: 'u',
     isSuperAdmin: false,
-    role: 'ADMIN',
+    roles: ['ADMIN'],
   } as never)
   vi.mocked(auth.requireSchoolAdmin).mockResolvedValue({
     schoolId: 's',
@@ -221,7 +221,7 @@ describe('attendance actions', () => {
       schoolId: 's',
       userId: 'teacher-user',
       isSuperAdmin: false,
-      role: 'TEACHER',
+      roles: ['TEACHER'],
     } as never)
     vi.mocked(auth.requireTeacher).mockResolvedValue({
       schoolId: 's',

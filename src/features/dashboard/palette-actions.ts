@@ -16,12 +16,9 @@ export type PaletteAction = {
  */
 export function resolvePaletteActions(scope: NavScope): PaletteAction[] {
   const visible = new Set(flattenNavItems(resolveNavItems(scope)).map((item) => item.key))
-  const isAdmin =
-    scope.role !== 'PARENT' &&
-    scope.role !== 'TEACHER' &&
-    (scope.role === 'ADMIN' || scope.isSuperAdmin)
+  const isAdmin = scope.isSuperAdmin || scope.roles.includes('ADMIN')
   // Un enseignant à accès élargi crée familles et inscriptions, jamais de règlement.
-  const canManage = isAdmin || (scope.role === 'TEACHER' && scope.hasStaffAccess === true)
+  const canManage = isAdmin || (scope.roles.includes('TEACHER') && scope.hasStaffAccess === true)
 
   const actions: PaletteAction[] = []
   if (canManage && visible.has('families')) {

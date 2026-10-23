@@ -23,8 +23,10 @@ vi.mock('next/navigation', () => ({
 const getSchoolContextMock = vi.fn()
 vi.mock('@/lib/school-context', () => ({
   getSchoolContext: getSchoolContextMock,
-  isActiveSchoolAdmin: (context: { isSuperAdmin: boolean; role: string | null }) =>
-    context.isSuperAdmin || context.role === 'ADMIN',
+  hasSchoolRole: (context: { isSuperAdmin: boolean; roles: string[] }, role: string) =>
+    !context.isSuperAdmin && context.roles.includes(role),
+  isActiveSchoolAdmin: (context: { isSuperAdmin: boolean; roles: string[] }) =>
+    context.isSuperAdmin || context.roles.includes('ADMIN'),
 }))
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
@@ -109,7 +111,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   requireSchoolSessionMock.mockResolvedValue({
     schoolId: 'school-1',
-    role: 'ADMIN',
+    roles: ['ADMIN'],
     isSuperAdmin: false,
   })
   getSelectedPeriodMock.mockResolvedValue({ id: 'period-1', name: '2026–2027' })
@@ -212,7 +214,7 @@ describe('AttendanceTrackingPage', () => {
   it('uses the teacher assignment scope and never sends a teacher to the admin schedule page', async () => {
     requireSchoolSessionMock.mockResolvedValue({
       schoolId: 'school-1',
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
     })
     requireTeacherMock.mockResolvedValue({ schoolId: 'school-1', teacherId: 'teacher-1' })
@@ -291,9 +293,9 @@ describe('AttendanceTrackingPage metadata', () => {
   const metadataFor = () => generateMetadata({ params: Promise.resolve({ locale: 'fr' }) })
 
   it.each([
-    [{ isSuperAdmin: false, role: 'ADMIN' }],
-    [{ isSuperAdmin: false, role: 'TEACHER' }],
-    [{ isSuperAdmin: true, role: null }],
+    [{ isSuperAdmin: false, roles: ['ADMIN'] }],
+    [{ isSuperAdmin: false, roles: ['TEACHER'] }],
+    [{ isSuperAdmin: true, roles: [] }],
   ])('titles the page for a role that can open it (%o)', async (context) => {
     getSchoolContextMock.mockResolvedValue({ schoolId: 'school-1', userId: 'u', ...context })
     await expect(metadataFor()).resolves.toEqual({
@@ -302,7 +304,7 @@ describe('AttendanceTrackingPage metadata', () => {
   })
 
   it('does not reveal the page title to a parent or a visitor', async () => {
-    getSchoolContextMock.mockResolvedValue({ isSuperAdmin: false, role: 'PARENT' })
+    getSchoolContextMock.mockResolvedValue({ isSuperAdmin: false, roles: ['PARENT'] })
     await expect(metadataFor()).resolves.toEqual({ title: 'errorPages.404.title' })
     getSchoolContextMock.mockResolvedValue(null)
     await expect(metadataFor()).resolves.toEqual({ title: 'errorPages.404.title' })
