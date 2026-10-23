@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { oAuthProxy } from 'better-auth/plugins/oauth-proxy'
 import { impersonationLogGateway } from '@/gateways/impersonation-log-gateway'
 import { userGateway } from '@/gateways/user-gateway'
 import {
@@ -9,6 +10,19 @@ import {
 } from '@/lib/auth-emails'
 import { db } from '@/lib/db'
 import { impersonation } from '@/lib/impersonation'
+
+// Google n'accepte que des URI de redirection exactes, et aucune API ne permet d'en
+// ajouter : chaque instance fait donc transiter son retour Google par une instance
+// pivot, dont la seule URI est déclarée. Le profil revient chiffré par
+// `OAUTH_PROXY_SECRET`, partagé par toutes les instances, et la session naît dans la
+// base de l'instance d'origine. Sans les deux variables, chaque instance reçoit Google
+// directement (développement local).
+const oAuthProxyURL = process.env.OAUTH_PROXY_URL
+const oAuthProxySecret = process.env.OAUTH_PROXY_SECRET
+const oAuthProxyPlugins =
+  oAuthProxyURL && oAuthProxySecret
+    ? [oAuthProxy({ productionURL: oAuthProxyURL, secret: oAuthProxySecret })]
+    : []
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -94,6 +108,7 @@ export const auth = betterAuth({
       findUser: (id) => userGateway.findManaged(id),
       log: impersonationLogGateway,
     }),
+    ...oAuthProxyPlugins,
   ],
   trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'],
 })

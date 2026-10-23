@@ -268,6 +268,24 @@ boundaries:
   otherwise still land and issue a session, for the lifetime of the stored `state`. The path is
   matched against the handler base (`/api/auth`), never with a loose suffix test.
 
+**One Google redirect URI for every instance.** Google accepts exact redirect URIs only and offers
+no API to add one, so a new instance would otherwise wait for a manual edit in Google Cloud. When
+`OAUTH_PROXY_URL` and `OAUTH_PROXY_SECRET` are both set, `src/lib/auth.ts` registers Better Auth's
+`oAuthProxy`: `/sign-in/social` sends Google the pivot instance's callback (`OAUTH_PROXY_URL`), the
+pivot exchanges the code and redirects to the originating instance's `/oauth-proxy-callback` with
+the profile encrypted by `OAUTH_PROXY_SECRET` (valid 60 s, bound to the `state` stored on the
+originating instance). The session and any implicit link are written in the originating instance's
+database, under its own `disableSignUp` rules. Every instance, pivot included, carries the same two
+values; `scripts/provision-instance.sh` copies them. Without them each instance receives Google
+directly (local development).
+
+- `/oauth-proxy-callback` sits behind the same `google_sign_in_enabled` guard as `/callback/*`.
+- The pivot's own flag also gates the relayed flow: disabling Google on the pivot breaks Google
+  sign-in on every instance.
+- `/link-social` is not relayed by the plugin: linking a Google account with a **different** address
+  from `/dashboard/settings` still needs the instance's own redirect URI. Signing in with Google on an
+  existing, verified address links implicitly and works through the pivot.
+
 Disabling Google **does not unlink** an account that is already linked: the card stays visible in
 `/dashboard/settings` with its disconnect action, so nobody is left with a credential they can
 neither use nor remove.
