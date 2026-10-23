@@ -16,7 +16,7 @@ import { useSidebarStore } from './sidebar-store'
 import { UserMenu } from './sidebar-user-menu'
 
 type SidebarProps = {
-  role: SchoolRole | null
+  roles: readonly SchoolRole[]
   isSuperAdmin: boolean
   paymentsEnabled: boolean
   familyId?: string
@@ -35,7 +35,7 @@ type SidebarProps = {
 }
 
 export function Sidebar({
-  role,
+  roles,
   isSuperAdmin,
   paymentsEnabled,
   familyId,
@@ -63,7 +63,7 @@ export function Sidebar({
   // l'exploitant de la plateforme, pas une école affichée.
   const displayName = schoolName || platform('platformTitle')
   const navScope: NavScope = {
-    role,
+    roles,
     isSuperAdmin,
     familyId,
     hasTeacherCapability,

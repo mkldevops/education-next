@@ -53,7 +53,7 @@ beforeEach(() => {
   findById.mockResolvedValue(client)
   createWithCode.mockResolvedValue({ id: 'grant-1' })
   findActiveById.mockResolvedValue({ id: SCHOOL_ID, name: 'École A', slug: 'ecole-a' })
-  findMembership.mockResolvedValue({ userId: 'user-1', schoolId: SCHOOL_ID, role: 'ADMIN' })
+  findMembership.mockResolvedValue({ userId: 'user-1', schoolId: SCHOOL_ID, roles: ['ADMIN'] })
 })
 
 describe('grantOAuthConsent', () => {
@@ -95,8 +95,8 @@ describe('grantOAuthConsent', () => {
   })
 
   it.each([
-    ['a parent', { userId: 'user-1', schoolId: SCHOOL_ID, role: 'PARENT' }],
-    ['a teacher', { userId: 'user-1', schoolId: SCHOOL_ID, role: 'TEACHER' }],
+    ['a parent', { userId: 'user-1', schoolId: SCHOOL_ID, roles: ['PARENT'] }],
+    ['a teacher', { userId: 'user-1', schoolId: SCHOOL_ID, roles: ['TEACHER'] }],
     ['a stranger to the school', null],
   ])('forbids %s, whatever the form says', async (_label, membership) => {
     findMembership.mockResolvedValue(membership)

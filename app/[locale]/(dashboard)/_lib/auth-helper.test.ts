@@ -13,23 +13,22 @@ vi.mock('next-intl/server', () => ({ getLocale: vi.fn() }))
 vi.mock('@/lib/db', () => ({ db: { teacher: { findFirst: findFirstMock } } }))
 vi.mock('@/lib/school-context', () => ({
   getSchoolContext: getSchoolContextMock,
-  isActiveSchoolAdmin: (context: { role: string; isSuperAdmin: boolean }) =>
-    context.isSuperAdmin || context.role === 'ADMIN',
-  hasActiveSchoolStaffAccess: async (context: { role: string; staffTeacher?: boolean }) =>
-    context.role === 'ADMIN' || context.staffTeacher === true,
+  isActiveSchoolAdmin: (context: { roles: string[]; isSuperAdmin: boolean }) =>
+    context.isSuperAdmin || context.roles.includes('ADMIN'),
+  hasActiveSchoolStaffAccess: async (context: { roles: string[]; staffTeacher?: boolean }) =>
+    context.roles.includes('ADMIN') || context.staffTeacher === true,
 }))
 
-const { requireSchoolRecordsScope, requireSchoolStaff, requireTeacher } = await import(
-  './auth-helper'
-)
+const { requireSchoolRecordsScope, requireSchoolScope, requireSchoolStaff, requireTeacher } =
+  await import('./auth-helper')
 
 const context = (role: 'ADMIN' | 'PARENT' | 'TEACHER', staffTeacher = false) => ({
   userId: 'user-1',
   schoolId: 'school-1',
   isSuperAdmin: false,
-  role,
+  roles: [role],
   staffTeacher,
-  ...(role === 'PARENT' ? { familyId: 'family-1' } : {}),
+  familyId: role === 'PARENT' ? 'family-1' : null,
 })
 
 beforeEach(() => {
@@ -45,8 +44,8 @@ describe('requireTeacher', () => {
         userId: 'user-1',
         schoolId: 'school-1',
         isSuperAdmin: false,
-        role,
-        ...(role === 'PARENT' ? { familyId: 'family-1' } : {}),
+        roles: [role],
+        familyId: role === 'PARENT' ? 'family-1' : null,
       })
 
       await expect(requireTeacher()).resolves.toEqual({
@@ -97,5 +96,39 @@ describe('requireSchoolRecordsScope', () => {
       isStaff: true,
       isAdmin: false,
     })
+  })
+})
+
+describe('requireSchoolScope', () => {
+  const member = (roles: string[], familyId: string | null) => ({
+    userId: 'user-1',
+    schoolId: 'school-1',
+    isSuperAdmin: false,
+    roles,
+    familyId,
+  })
+
+  it('gives a teacher who is also a linked parent the parent scope', async () => {
+    getSchoolContextMock.mockResolvedValue(member(['TEACHER', 'PARENT'], 'family-1'))
+    await expect(requireSchoolScope()).resolves.toEqual({
+      schoolId: 'school-1',
+      userId: 'user-1',
+      isAdmin: false,
+      familyId: 'family-1',
+    })
+  })
+
+  it('lets the admin role win over the parent role', async () => {
+    getSchoolContextMock.mockResolvedValue(member(['ADMIN', 'PARENT'], 'family-1'))
+    await expect(requireSchoolScope()).resolves.toEqual({
+      schoolId: 'school-1',
+      userId: 'user-1',
+      isAdmin: true,
+    })
+  })
+
+  it('refuses a teacher without a linked family', async () => {
+    getSchoolContextMock.mockResolvedValue(member(['TEACHER'], null))
+    await expect(requireSchoolScope()).rejects.toThrow('NEXT_NOT_FOUND')
   })
 })

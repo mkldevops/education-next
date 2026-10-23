@@ -39,9 +39,9 @@ vi.mock('@/gateways/family-gateway', () => ({
   familyGateway: { countDeletionImpact: countDeletionImpactMock },
 }))
 vi.mock('@/lib/school-context', () => ({
-  isActiveSchoolAdmin: (context: { role: string }) => context.role === 'ADMIN',
-  hasActiveSchoolStaffAccess: async (context: { role: string; staffTeacher?: boolean }) =>
-    context.role === 'ADMIN' || context.staffTeacher === true,
+  isActiveSchoolAdmin: (context: { roles: string[] }) => context.roles.includes('ADMIN'),
+  hasActiveSchoolStaffAccess: async (context: { roles: string[]; staffTeacher?: boolean }) =>
+    context.roles.includes('ADMIN') || context.staffTeacher === true,
 }))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
@@ -135,7 +135,7 @@ const balanceFixture = {
 beforeEach(() => {
   vi.clearAllMocks()
   requireSchoolSessionMock.mockResolvedValue({
-    role: 'ADMIN',
+    roles: ['ADMIN'],
     isSuperAdmin: false,
     schoolId: 'school-1',
     userId: 'user-1',
@@ -227,7 +227,7 @@ describe('FamilyDetailPage, teacher with extended access', () => {
   beforeEach(() => {
     isPaymentsEnabledMock.mockResolvedValue(true)
     requireSchoolSessionMock.mockResolvedValue({
-      role: 'TEACHER',
+      roles: ['TEACHER'],
       staffTeacher: true,
       isSuperAdmin: false,
       schoolId: 'school-1',

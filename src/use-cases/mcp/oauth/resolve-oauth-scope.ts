@@ -80,7 +80,7 @@ export async function resolveMcpOAuthScope(
   }
 
   const membership = await members.findMembership(grant.userId, grant.schoolId)
-  if (membership?.role !== 'ADMIN') return { status: 'forbidden' }
+  if (!membership?.roles.includes('ADMIN')) return { status: 'forbidden' }
 
   return { status: 'OK', scope: { ...scope, isSuperAdmin: false, paymentsEnabled } }
 }

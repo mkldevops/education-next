@@ -30,7 +30,7 @@ export const getAnnouncementFeed = cache(
     return {
       announcements,
       reader: {
-        role: context.role,
+        roles: context.roles,
         isSuperAdmin: context.isSuperAdmin,
         seenAt: user.announcementsSeenAt ?? user.createdAt,
       },

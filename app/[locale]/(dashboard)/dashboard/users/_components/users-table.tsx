@@ -23,7 +23,7 @@ import { UserDrawer } from './user-drawer'
 
 export type MemberRow = {
   userId: string
-  role: SchoolRole
+  roles: SchoolRole[]
   createdAt: Date
   user: {
     id: string
@@ -84,7 +84,7 @@ export function UsersTable({
   const selectedMember = members.find((member) => member.userId === selectedId) ?? null
 
   const filtered = members.filter((member) => {
-    if (roleFilter !== 'ALL' && member.role !== roleFilter) return false
+    if (roleFilter !== 'ALL' && !member.roles.includes(roleFilter)) return false
     if (statusFilter === 'ACTIVE' && !member.user.isActive) return false
     if (statusFilter === 'ARCHIVED' && member.user.isActive) return false
     return true
@@ -109,9 +109,13 @@ export function UsersTable({
     {
       id: 'role',
       header: t('role'),
-      accessorFn: (row) => row.role,
+      accessorFn: (row) => row.roles.join(),
       cell: ({ row }) => (
-        <StatusBadge status={ROLE_COLORS[row.original.role]} label={tRoles(row.original.role)} />
+        <div className="flex flex-wrap gap-1">
+          {row.original.roles.map((role) => (
+            <StatusBadge key={role} status={ROLE_COLORS[role]} label={tRoles(role)} />
+          ))}
+        </div>
       ),
       enableSorting: true,
     },

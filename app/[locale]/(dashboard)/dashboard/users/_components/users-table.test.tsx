@@ -29,7 +29,7 @@ vi.mock('./user-drawer', () => ({
 
 const inactiveMember: MemberRow = {
   userId: 'user-1',
-  role: 'PARENT',
+  roles: ['PARENT'],
   createdAt: new Date('2026-01-01T00:00:00Z'),
   user: {
     id: 'user-1',

@@ -131,7 +131,7 @@ export async function resolveMcpScope(
   }
 
   const membership = await members.findMembership(key.userId, key.schoolId)
-  if (membership?.role !== 'ADMIN') return { status: 'forbidden' }
+  if (!membership?.roles.includes('ADMIN')) return { status: 'forbidden' }
 
   return { status: 'OK', scope: { ...scope, isSuperAdmin: false, paymentsEnabled } }
 }

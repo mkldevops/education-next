@@ -21,6 +21,7 @@ import {
   getAuthorizedSchools,
   getSchoolContext,
   hasActiveSchoolStaffAccess,
+  hasSchoolRole,
 } from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assistant-enabled'
@@ -88,12 +89,12 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     <>
       {rememberSchool && <RememberActiveSchool />}
       <Sidebar
-        role={context.role}
+        roles={context.roles}
         isSuperAdmin={context.isSuperAdmin}
         paymentsEnabled={paymentsEnabled}
-        familyId={context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined}
+        familyId={context.familyId ?? undefined}
         hasTeacherCapability={teacher !== null}
-        hasStaffAccess={context.role === 'TEACHER' && hasStaffAccess}
+        hasStaffAccess={hasSchoolRole(context, 'TEACHER') && hasStaffAccess}
         logoUrl={branding.logoUrl}
         schoolName={branding.schoolName}
         userName={userName}

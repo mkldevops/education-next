@@ -3,6 +3,7 @@ import { cache } from 'react'
 import type { AuthorizedSchool } from '@/domain/school-scope'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
+import type { SchoolRole } from '@/generated/prisma/client'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { isTeacherStaffAccessEnabled } from '@/use-cases/config/is-teacher-staff-access-enabled'
@@ -20,24 +21,26 @@ export const ACTIVE_SCHOOL_COOKIE_OPTIONS = {
 /**
  * École active de la requête, déjà validée.
  *
- * Un super-admin n'a aucune ligne `SchoolMember` : sa branche porte `role: null` et
- * lui inventer `'ADMIN'` créerait une seconde source de vérité pour les rôles. Les
- * gardes d'autorisation traitent `isSuperAdmin: true` comme couvrant l'administration.
+ * Un super-admin n'a aucune ligne `SchoolMember` : sa branche porte `roles: []` et lui
+ * inventer `'ADMIN'` créerait une seconde source de vérité pour les rôles. Les gardes
+ * d'autorisation traitent `isSuperAdmin: true` comme couvrant l'administration.
  *
- * `familyId` est nullable côté parent : une invitation `PARENT` peut ne porter aucune
- * famille, et le dépôt possède un parcours dédié pour ce cas.
+ * Un membre cumule les droits de tous ses `roles` : ils se lisent par `hasSchoolRole()`,
+ * jamais par égalité, sans quoi un enseignant-parent perdrait l'un des deux accès.
+ *
+ * `familyId` n'est renseigné que pour un membre `PARENT`, et reste nullable : une
+ * invitation `PARENT` peut ne porter aucune famille, et le dépôt possède un parcours
+ * dédié pour ce cas.
  */
 export type SchoolContext =
-  | { userId: string; schoolId: string; isSuperAdmin: true; role: null }
-  | { userId: string; schoolId: string; isSuperAdmin: false; role: 'ADMIN' }
+  | { userId: string; schoolId: string; isSuperAdmin: true; roles: readonly []; familyId: null }
   | {
       userId: string
       schoolId: string
       isSuperAdmin: false
-      role: 'PARENT'
+      roles: readonly SchoolRole[]
       familyId: string | null
     }
-  | { userId: string; schoolId: string; isSuperAdmin: false; role: 'TEACHER' }
 
 /**
  * Mémoïsé pour la durée d'un rendu : la résolution du contexte et celle des écoles
@@ -90,20 +93,21 @@ async function resolveSchoolContext(): Promise<SchoolContext | null> {
       : null
     const school = requested ?? (await schoolGateway.listActive())[0]
     if (!school) return null
-    return { userId, schoolId: school.id, isSuperAdmin: true, role: null }
+    return { userId, schoolId: school.id, isSuperAdmin: true, roles: [], familyId: null }
   }
 
   const memberships = await listMemberships(userId)
   if (memberships.length === 0) return null
 
   const membership = await selectMembership(memberships, requestedSchoolId)
-
-  if (membership.role === 'ADMIN') {
-    return { userId, schoolId: membership.schoolId, isSuperAdmin: false, role: 'ADMIN' }
-  }
-  if (membership.role === 'TEACHER') {
-    return { userId, schoolId: membership.schoolId, isSuperAdmin: false, role: 'TEACHER' }
-  }
+  const context = {
+    userId,
+    schoolId: membership.schoolId,
+    isSuperAdmin: false,
+    roles: membership.roles,
+    familyId: null,
+  } as const
+  if (!membership.roles.includes('PARENT')) return context
 
   const link = await db.userFamily.findFirst({
     where: { userId, schoolId: membership.schoolId },
@@ -113,13 +117,7 @@ async function resolveSchoolContext(): Promise<SchoolContext | null> {
     orderBy: { familyId: 'asc' },
   })
 
-  return {
-    userId,
-    schoolId: membership.schoolId,
-    isSuperAdmin: false,
-    role: 'PARENT',
-    familyId: link?.familyId ?? null,
-  }
+  return { ...context, familyId: link?.familyId ?? null }
 }
 
 /**
@@ -141,13 +139,14 @@ async function resolveAuthorizedSchools(): Promise<AuthorizedSchool[]> {
 
   const memberships = await listMemberships(context.userId)
   return Promise.all(
-    memberships.map(async ({ school, role }) => ({
+    memberships.map(async ({ school, roles }) => ({
       id: school.id,
       name: school.name,
       slug: school.slug,
-      isAdmin: role === 'ADMIN',
+      isAdmin: roles.includes('ADMIN'),
       isStaff:
-        role === 'ADMIN' || (role === 'TEACHER' && (await isTeacherStaffAccessEnabled(school.id))),
+        roles.includes('ADMIN') ||
+        (roles.includes('TEACHER') && (await isTeacherStaffAccessEnabled(school.id))),
     }))
   )
 }
@@ -162,9 +161,14 @@ async function resolveAuthorizedSchools(): Promise<AuthorizedSchool[]> {
  */
 export const getAuthorizedSchools = cache(resolveAuthorizedSchools)
 
+/** Le membre détient `role` dans l'école active. Toujours faux pour un super-admin. */
+export function hasSchoolRole(context: SchoolContext, role: SchoolRole): boolean {
+  return !context.isSuperAdmin && context.roles.includes(role)
+}
+
 /** Capacité d'administration sur l'école active du contexte. */
 export function isActiveSchoolAdmin(context: SchoolContext): boolean {
-  return context.isSuperAdmin || context.role === 'ADMIN'
+  return context.isSuperAdmin || hasSchoolRole(context, 'ADMIN')
 }
 
 /**
@@ -175,5 +179,5 @@ export function isActiveSchoolAdmin(context: SchoolContext): boolean {
 export async function hasActiveSchoolStaffAccess(context: SchoolContext): Promise<boolean> {
   if (isActiveSchoolAdmin(context)) return true
 
-  return context.role === 'TEACHER' && isTeacherStaffAccessEnabled(context.schoolId)
+  return hasSchoolRole(context, 'TEACHER') && isTeacherStaffAccessEnabled(context.schoolId)
 }

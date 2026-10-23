@@ -30,8 +30,8 @@ async function seed(suffix: string) {
   const parentUser = await raw.user.create({ data: { email: `parent-${suffix}@del.test` } })
   await raw.schoolMember.createMany({
     data: [
-      { userId: admin.id, schoolId, role: 'ADMIN' },
-      { userId: parentUser.id, schoolId, role: 'PARENT' },
+      { userId: admin.id, schoolId, roles: ['ADMIN'] },
+      { userId: parentUser.id, schoolId, roles: ['PARENT'] },
     ],
   })
 

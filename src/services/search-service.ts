@@ -34,7 +34,7 @@ export async function searchStudentsAndFamilies(
   const { schoolId } = context
   // L'équipe (administration, enseignant à accès élargi) cherche dans toute l'école.
   const isStaff = await hasActiveSchoolStaffAccess(context)
-  const familyId = context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined
+  const familyId = context.familyId ?? undefined
 
   if (!isStaff && !familyId) return []
 

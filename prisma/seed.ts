@@ -470,8 +470,8 @@ async function seed() {
   const adminId = await createUser('Admin Réseau', 'admin@school.test', 'admin123')
   await prisma.schoolMember.createMany({
     data: [
-      { userId: adminId, schoolId: alNour.id, role: 'ADMIN' },
-      { userId: adminId, schoolId: horizon.id, role: 'ADMIN' },
+      { userId: adminId, schoolId: alNour.id, roles: ['ADMIN'] },
+      { userId: adminId, schoolId: horizon.id, roles: ['ADMIN'] },
     ],
   })
 
@@ -510,7 +510,7 @@ async function seed() {
   // Parent d'une seule école : ne doit jamais voir l'autre.
   const parentAlNourId = await createUser('Marie Dupont', 'parent@school.test', 'parent123')
   await prisma.schoolMember.create({
-    data: { userId: parentAlNourId, schoolId: alNour.id, role: 'PARENT' },
+    data: { userId: parentAlNourId, schoolId: alNour.id, roles: ['PARENT'] },
   })
   await prisma.userFamily.create({
     data: { userId: parentAlNourId, schoolId: alNour.id, familyId: alNourContent.familyId },
@@ -522,7 +522,7 @@ async function seed() {
     'parent123'
   )
   await prisma.schoolMember.create({
-    data: { userId: parentHorizonId, schoolId: horizon.id, role: 'PARENT' },
+    data: { userId: parentHorizonId, schoolId: horizon.id, roles: ['PARENT'] },
   })
   await prisma.userFamily.create({
     data: { userId: parentHorizonId, schoolId: horizon.id, familyId: horizonContent.familyId },
@@ -536,7 +536,7 @@ async function seed() {
     [horizon.id, 'Benali', 'Yasmine', 'FEMALE', horizonContent],
   ] as const) {
     await prisma.schoolMember.create({
-      data: { userId: parentBothId, schoolId, role: 'PARENT' },
+      data: { userId: parentBothId, schoolId, roles: ['PARENT'] },
     })
 
     const family = await prisma.family.create({

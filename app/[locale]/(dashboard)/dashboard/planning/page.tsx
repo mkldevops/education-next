@@ -18,6 +18,7 @@ import {
   ClassScheduleVisibility,
 } from '@/lib/class-schedule-config'
 import { db } from '@/lib/db'
+import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-schedule-enabled'
 import { requireSchoolSession, requireTeacher } from '../../_lib/auth-helper'
 import { schoolScopedPageMetadata } from '../../_lib/page-metadata'
@@ -36,29 +37,57 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 type PlanningScope =
   | { kind: 'admin'; schoolId: string; isAdmin: true }
-  | { kind: 'parent'; schoolId: string; isAdmin: false; familyId: string }
+  | {
+      kind: 'parent'
+      schoolId: string
+      isAdmin: false
+      familyId: string
+      teacherId: string | null
+    }
   | { kind: 'teacher'; schoolId: string; isAdmin: false; teacherId: string }
 
 /**
- * Le personnel voit toute l'école, un parent les créneaux de ses enfants. Un compte sans
- * l'un ni l'autre n'entre qu'avec une fiche enseignant active, et ne voit alors que les
- * classes qui lui sont affectées ; sinon `requireTeacher()` répond `notFound()`.
+ * Le personnel voit toute l'école, un parent les créneaux de ses enfants, auxquels s'ajoutent
+ * ceux de ses classes s'il enseigne aussi. Un compte sans l'un ni l'autre n'entre qu'avec une
+ * fiche enseignant active, et ne voit alors que les classes qui lui sont affectées ; sinon
+ * `requireTeacher()` répond `notFound()`.
  */
 async function resolvePlanningScope(): Promise<PlanningScope> {
   const context = await requireSchoolSession()
-  if (context.isSuperAdmin || context.role === 'ADMIN') {
+  if (isActiveSchoolAdmin(context)) {
     return { kind: 'admin', schoolId: context.schoolId, isAdmin: true }
   }
-  if (context.role === 'PARENT' && context.familyId) {
+  if (context.familyId) {
+    const teacher = await db.teacher.findFirst({
+      where: { schoolId: context.schoolId, userId: context.userId, isActive: true },
+      select: { id: true },
+    })
     return {
       kind: 'parent',
       schoolId: context.schoolId,
       isAdmin: false,
       familyId: context.familyId,
+      teacherId: teacher?.id ?? null,
     }
   }
   const { schoolId, teacherId } = await requireTeacher()
   return { kind: 'teacher', schoolId, isAdmin: false, teacherId }
+}
+
+async function listMemberSlots(scope: Exclude<PlanningScope, { kind: 'admin' }>, periodId: string) {
+  if (scope.kind === 'teacher') {
+    return classScheduleGateway.listByTeacherAndPeriod(scope.schoolId, scope.teacherId, periodId)
+  }
+  const [familySlots, teacherSlots] = await Promise.all([
+    classScheduleGateway.listByFamilyAndPeriod(scope.schoolId, scope.familyId, periodId),
+    scope.teacherId
+      ? classScheduleGateway.listByTeacherAndPeriod(scope.schoolId, scope.teacherId, periodId)
+      : Promise.resolve([]),
+  ])
+  const familySlotIds = new Set(familySlots.map((slot) => slot.id))
+  return [...familySlots, ...teacherSlots.filter((slot) => !familySlotIds.has(slot.id))].sort(
+    (a, b) => a.weekday - b.weekday || a.startTime.localeCompare(b.startTime)
+  )
 }
 
 export default async function PlanningPage({ params }: Props) {
@@ -117,17 +146,7 @@ export default async function PlanningPage({ params }: Props) {
           },
           orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
         })
-      : scope.kind === 'parent'
-        ? classScheduleGateway.listByFamilyAndPeriod(
-            scope.schoolId,
-            scope.familyId,
-            selectedPeriod.id
-          )
-        : classScheduleGateway.listByTeacherAndPeriod(
-            scope.schoolId,
-            scope.teacherId,
-            selectedPeriod.id
-          ),
+      : listMemberSlots(scope, selectedPeriod.id),
     scope.isAdmin
       ? db.classPeriod.findMany({
           where: { schoolId: scope.schoolId, periodId: selectedPeriod.id, isActive: true },

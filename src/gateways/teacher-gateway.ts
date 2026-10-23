@@ -1,3 +1,4 @@
+import { withdrawTeacherRole } from '@/gateways/school-member-gateway'
 import { db } from '@/lib/db'
 import { inSerializableTransaction } from '@/lib/serializable-transaction'
 
@@ -105,18 +106,7 @@ export const teacherGateway = {
       })
       if (!teacher) return 'notFound' as const
 
-      if (teacher.userId) {
-        const member = await tx.schoolMember.findUnique({
-          where: { userId_schoolId: { userId: teacher.userId, schoolId } },
-          select: { role: true },
-        })
-        if (member?.role === 'TEACHER') {
-          await tx.userFamily.deleteMany({ where: { userId: teacher.userId, schoolId } })
-          await tx.schoolMember.delete({
-            where: { userId_schoolId: { userId: teacher.userId, schoolId } },
-          })
-        }
-      }
+      if (teacher.userId) await withdrawTeacherRole(tx, teacher.userId, schoolId)
 
       await tx.teacher.update({
         where: { id_schoolId: { id: teacherId, schoolId } },
@@ -161,8 +151,8 @@ export const teacherGateway = {
 
   /**
    * Retire uniquement la capacité enseignant d'une fiche de l'école demandée.
-   * Un ADMIN/PARENT conserve son `SchoolMember`; un TEACHER-only perd aussi cette
-   * appartenance pour ne pas garder un compte sans capacité dans l'école.
+   * Le membre perd son rôle `TEACHER` et garde les autres ; un TEACHER-only perd aussi
+   * son appartenance pour ne pas garder un compte sans capacité dans l'école.
    */
   revokeUserAccess: (schoolId: string, teacherId: string) =>
     inSerializableTransaction(async (tx) => {
@@ -173,22 +163,11 @@ export const teacherGateway = {
       if (!teacher) return 'notFound' as const
       if (!teacher.userId) return 'alreadyUnlinked' as const
 
-      const member = await tx.schoolMember.findUnique({
-        where: { userId_schoolId: { userId: teacher.userId, schoolId } },
-        select: { role: true },
-      })
-
       await tx.teacher.update({
         where: { id_schoolId: { id: teacherId, schoolId } },
         data: { userId: null },
       })
-
-      if (member?.role === 'TEACHER') {
-        await tx.userFamily.deleteMany({ where: { userId: teacher.userId, schoolId } })
-        await tx.schoolMember.delete({
-          where: { userId_schoolId: { userId: teacher.userId, schoolId } },
-        })
-      }
+      await withdrawTeacherRole(tx, teacher.userId, schoolId)
 
       return 'OK' as const
     }),

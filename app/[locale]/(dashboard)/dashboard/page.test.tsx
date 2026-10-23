@@ -34,7 +34,13 @@ vi.mock('@/i18n/routing', () => ({
 vi.mock('@/gateways/school-gateway', () => ({ schoolGateway: schoolGatewayMock }))
 vi.mock('@/gateways/config-gateway', () => ({ configGateway: configGatewayMock }))
 vi.mock('@/lib/auth', () => ({ auth: authMock }))
-vi.mock('@/lib/school-context', () => ({ getSchoolContext: getSchoolContextMock }))
+vi.mock('@/lib/school-context', () => ({
+  getSchoolContext: getSchoolContextMock,
+  hasSchoolRole: (context: { isSuperAdmin: boolean; roles: string[] }, role: string) =>
+    !context.isSuperAdmin && context.roles.includes(role),
+  isActiveSchoolAdmin: (context: { isSuperAdmin: boolean; roles: string[] }) =>
+    context.isSuperAdmin || context.roles.includes('ADMIN'),
+}))
 vi.mock('@/use-cases/payments/stripe-settings', () => ({
   isOnlinePaymentAvailable: isOnlinePaymentAvailableMock,
 }))
@@ -117,7 +123,7 @@ const overview = (paymentsEnabled: boolean, pendingEnrollmentCount = 0) => ({
 })
 
 const adminContext = {
-  role: 'ADMIN',
+  roles: ['ADMIN'],
   isSuperAdmin: false,
   schoolId: 'school-1',
   userId: 'user-1',
@@ -250,7 +256,7 @@ describe('DashboardPage, parent', () => {
 
   beforeEach(() => {
     getSchoolContextMock.mockResolvedValue({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       schoolId: 'school-1',
       userId: 'user-1',
@@ -314,7 +320,7 @@ describe('DashboardPage, parent', () => {
 
   it('denies an unlinked parent before any family or school read', async () => {
     getSchoolContextMock.mockResolvedValue({
-      role: 'PARENT',
+      roles: ['PARENT'],
       isSuperAdmin: false,
       schoolId: 'school-1',
       userId: 'user-1',
@@ -333,10 +339,11 @@ describe('DashboardPage, parent', () => {
 describe('DashboardPage, teacher-only membership', () => {
   beforeEach(() => {
     getSchoolContextMock.mockResolvedValue({
-      role: 'TEACHER',
+      roles: ['TEACHER'],
       isSuperAdmin: false,
       schoolId: 'school-1',
       userId: 'user-1',
+      familyId: null,
     })
   })
 
@@ -359,12 +366,13 @@ describe('DashboardPage, teacher-only membership', () => {
     expect(schoolGatewayMock.findActiveById).not.toHaveBeenCalled()
   })
 
-  it('keeps the administrative dashboard for a super-admin with a teacher membership', async () => {
+  it('keeps the administrative dashboard for a super-admin', async () => {
     getSchoolContextMock.mockResolvedValue({
-      role: 'TEACHER',
+      roles: [],
       isSuperAdmin: true,
       schoolId: 'school-1',
       userId: 'user-1',
+      familyId: null,
     })
     requireSchoolScopeMock.mockResolvedValue(adminScope)
     isPaymentsEnabledMock.mockResolvedValue(false)

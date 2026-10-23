@@ -12,7 +12,7 @@ async function hasSchoolScope(): Promise<boolean> {
   const context = await getSchoolContext()
   if (!context) return false
 
-  return isActiveSchoolAdmin(context) || (context.role === 'PARENT' && context.familyId !== null)
+  return isActiveSchoolAdmin(context) || context.familyId !== null
 }
 
 async function gatedTitle(

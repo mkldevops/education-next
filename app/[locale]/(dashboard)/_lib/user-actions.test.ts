@@ -74,7 +74,7 @@ describe('createUserAction', () => {
       name: INPUT.name,
       email: 'karim.benali@school.test',
     })
-    expect(createMembershipMock).toHaveBeenCalledWith('user-2', 'school-b', 'PARENT')
+    expect(createMembershipMock).toHaveBeenCalledWith('user-2', 'school-b', ['PARENT'])
     expect(requestPasswordResetMock).toHaveBeenCalledWith({
       body: { email: 'karim.benali@school.test', redirectTo: '/reset-password' },
     })

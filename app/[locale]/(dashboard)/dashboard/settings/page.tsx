@@ -4,7 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { getSchoolContext } from '@/lib/school-context'
+import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 import { listMcpApiKeys } from '@/use-cases/mcp/list-mcp-api-keys'
 import { listMcpOAuthGrants } from '@/use-cases/mcp/oauth/grants'
 import { isGoogleSignInAvailable } from '@/use-cases/platform-settings/is-google-sign-in-available'
@@ -100,7 +100,7 @@ export default async function SettingsPage({ params }: Props) {
 async function loadApiKeys() {
   const context = await getSchoolContext()
   if (!context) return null
-  if (!context.isSuperAdmin && context.role !== 'ADMIN') return null
+  if (!isActiveSchoolAdmin(context)) return null
   if (!(await isMcpEnabled())) return null
 
   const [keys, grants] = await Promise.all([

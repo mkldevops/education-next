@@ -158,11 +158,13 @@ model School {
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
 // par userId avant de connaître une école. Accès via school-member-gateway.
+// `roles` n'est jamais vide (CHECK en base) et sans doublon (normalisé par la passerelle) : un
+// compte cumule les droits de chacun de ses rôles dans l'école, enseignant et parent par exemple.
 model SchoolMember {
   userId    String
   schoolId  String
-  role      SchoolRole
-  createdAt DateTime   @default(now())
+  roles     SchoolRole[]
+  createdAt DateTime     @default(now())
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   school       School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -170,7 +172,7 @@ model SchoolMember {
 
   @@id([userId, schoolId])
   @@unique([userId, schoolId])
-  @@index([schoolId, role])
+  @@index([schoolId])
 }
 
 // ─── Better Auth Models ─────────────────────────────────────────────────────
