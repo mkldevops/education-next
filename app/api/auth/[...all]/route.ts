@@ -10,7 +10,8 @@ const BASE_PATH = '/api/auth'
 // Google est le seul fournisseur social déclaré : le chemin suffit à identifier la
 // demande, sans lire le corps de la requête. Le retour du fournisseur est gardé au
 // même titre que le départ, sinon un flux ouvert avant la coupure aboutit encore.
-const SOCIAL_PATHS = ['/sign-in/social', '/link-social']
+// `/oauth-proxy-callback` est ce retour quand il transite par l'instance pivot.
+const SOCIAL_PATHS = ['/sign-in/social', '/link-social', '/oauth-proxy-callback']
 const CALLBACK_PREFIX = '/callback/'
 
 function isSocialRequest(request: Request): boolean {
