@@ -3,6 +3,7 @@
 import {
   Button,
   RichDataTable,
+  type RichDataTableColumnDef,
   Select,
   SelectContent,
   SelectItem,
@@ -10,7 +11,6 @@ import {
   SelectValue,
   StatusBadge,
 } from '@peaklab/ui'
-import type { ColumnDef } from '@tanstack/react-table'
 import { Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
@@ -90,7 +90,7 @@ export function UsersTable({
     return true
   })
 
-  const columns: ColumnDef<MemberRow>[] = [
+  const columns: RichDataTableColumnDef<MemberRow>[] = [
     {
       id: 'name',
       header: t('name'),
