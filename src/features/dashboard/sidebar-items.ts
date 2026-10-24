@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  Banknote,
   BookMarked,
   BookOpen,
   Building2,
@@ -107,6 +108,13 @@ const financeItems: NavItemConfig[] = [
     key: 'plans',
     requiredRoles: ['ADMIN'],
     feature: 'payments',
+  },
+  {
+    href: '/dashboard/cashier',
+    icon: Banknote,
+    key: 'cashier',
+    requiredRoles: ['ADMIN'],
+    feature: 'meals',
   },
   {
     href: '/dashboard/meals',

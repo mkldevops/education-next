@@ -14,7 +14,8 @@ type Input = z.infer<typeof mcpCancelPaymentsSchema>
  * Tout ou rien, et une seule famille par appel, sous son verrou d'encaissement : un
  * brouillon calculé sur l'ancien solde devient `staleDraft` au lieu d'être engagé. Un
  * paiement en ligne n'est pas annulable ici — l'argent a réellement été prélevé, son
- * remboursement se fait chez le prestataire.
+ * remboursement se fait chez le prestataire. Un règlement de caisse non plus : il
+ * s'annule avec son reçu (`cancelReceipt`).
  */
 export async function cancelPaymentsFromMcp(scope: DraftScope, input: Input) {
   const parsed = mcpCancelPaymentsSchema.safeParse(input)
@@ -28,6 +29,10 @@ export async function cancelPaymentsFromMcp(scope: DraftScope, input: Input) {
     if (payments.length !== ids.length) return 'notFound' as const
     if (payments.some((payment) => payment.paymentTransactionId !== null)) {
       return 'onlinePayment' as const
+    }
+    // Un règlement de caisse appartient à un reçu numéroté : il s'annule avec lui.
+    if (payments.some((payment) => payment.receiptId !== null)) {
+      return 'receiptPayment' as const
     }
     const familyIds = new Set(payments.map((payment) => payment.familyId))
     if (familyIds.size !== 1) return 'mixedFamilies' as const

@@ -182,6 +182,30 @@ async function seedSchool(label: string, suffix: string) {
       recordedById: admin.id,
     },
   })
+  const receipt = await raw.receipt.create({
+    data: {
+      schoolId: school.id,
+      familyId: family.id,
+      number: 1,
+      total: 1500,
+      method: 'CASH',
+      paidAt: new Date(),
+      recordedById: admin.id,
+      idempotencyKey: `key-${label}`,
+      requestHash: `hash-${label}`,
+    },
+  })
+  const mealPayment = await raw.mealPayment.create({
+    data: {
+      schoolId: school.id,
+      receiptId: receipt.id,
+      accountId: mealAccount.id,
+      amount: 1500,
+      unitPrice: 750,
+      daysAdded: 2,
+      creditAtReceipt: 0,
+    },
+  })
 
   return {
     school,
@@ -209,6 +233,8 @@ async function seedSchool(label: string, suffix: string) {
     mealAccount,
     mealSchedule,
     mealAdjustment,
+    receipt,
+    mealPayment,
   }
 }
 
@@ -217,6 +243,8 @@ async function cleanup(fixture: Fixture) {
   await raw.payment.deleteMany({ where: { schoolId } })
   await raw.paymentTransaction.deleteMany({ where: { schoolId } })
   await raw.teacherExpense.deleteMany({ where: { schoolId } })
+  await raw.mealPayment.deleteMany({ where: { schoolId } })
+  await raw.receipt.deleteMany({ where: { schoolId } })
   await raw.mealAdjustment.deleteMany({ where: { schoolId } })
   await raw.mealSchedule.deleteMany({ where: { schoolId } })
   await raw.mealAccount.deleteMany({ where: { schoolId } })
@@ -655,6 +683,35 @@ describe.skipIf(!databaseUrl)('isolation inter-écoles sur base réelle', () => 
         where: { id: b.mealAdjustment.id, schoolId: a.school.id },
       })
       expect(count).toBe(0)
+    })
+  })
+
+  describe('Receipt', () => {
+    it('ne rend pas le reçu de B depuis A', async () => {
+      const found = await db.receipt.findFirst({
+        where: { id: b.receipt.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
+    })
+
+    it("n'annule pas le reçu de B depuis A", async () => {
+      const { count } = await db.receipt.updateMany({
+        where: { id: b.receipt.id, schoolId: a.school.id },
+        data: { cancelledAt: new Date(), cancelReason: 'intrusion' },
+      })
+      expect(count).toBe(0)
+
+      const intact = await raw.receipt.findUniqueOrThrow({ where: { id: b.receipt.id } })
+      expect(intact.cancelledAt).toBeNull()
+    })
+  })
+
+  describe('MealPayment', () => {
+    it('ne rend pas la ligne repas de B depuis A', async () => {
+      const found = await db.mealPayment.findFirst({
+        where: { id: b.mealPayment.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
     })
   })
 

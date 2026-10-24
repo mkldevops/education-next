@@ -29,6 +29,7 @@ const EXPLICITLY_DELETED = [
   'Payment',
   'PaymentTransaction',
   'Invitation',
+  'Receipt',
 ]
 
 type Relation = {
@@ -126,6 +127,7 @@ describe('suppression définitive de famille — relations bloquantes', () => {
       'FamilyPerson',
       'MealAccount',
       'MealAdjustment',
+      'MealPayment',
       'MealSchedule',
       'PhoneNumber',
       'UserFamily',

@@ -545,7 +545,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         description:
           "Annule des paiements saisis par erreur : ils sortent des soldes et de l'historique, " +
           'sans être effacés. Tous doivent appartenir à la même famille ; un paiement en ligne ' +
-          '(Stripe) est refusé, il se rembourse depuis Stripe.',
+          '(Stripe) est refusé, il se rembourse depuis Stripe ; un paiement de caisse aussi, ' +
+          "il s'annule avec son reçu depuis l'écran du reçu.",
         inputSchema: mcpCancelPaymentsSchema,
         annotations: DESTRUCTIVE_WRITE,
         kind: 'write',

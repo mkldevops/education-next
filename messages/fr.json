@@ -263,6 +263,7 @@
       "students": "Élèves",
       "enrollments": "Inscriptions",
       "payments": "Encaissements",
+      "cashier": "Caisse",
       "periods": "Périodes",
       "levels": "Niveaux",
       "classes": "Classes",
@@ -292,6 +293,7 @@
       "classes": "Classes",
       "enrollments": "Inscriptions",
       "payments": "Encaissements",
+      "cashier": "Caisse",
       "plans": "Plans tarifaires",
       "meals": "Cantine et goûter",
       "config": "Configuration",
@@ -1005,6 +1007,7 @@
             "CARD": "Carte bancaire",
             "TRANSFER": "Virement",
             "CHECK": "Chèque",
+            "MOBILE_MONEY": "Mobile money",
             "STRIPE": "Stripe"
           },
           "reference": "Référence",
@@ -1013,6 +1016,7 @@
             "CARD": "Référence de transaction",
             "TRANSFER": "Référence du virement",
             "CHECK": "Numéro de chèque",
+            "MOBILE_MONEY": "Référence de transaction",
             "STRIPE": "Référence Stripe"
           },
           "optional": "(facultatif)",
@@ -1133,6 +1137,89 @@
             "notFound": "Tarif introuvable",
             "alreadyEffective": "Ce tarif est déjà en vigueur et ne peut plus être retiré",
             "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
+          }
+        }
+      },
+      "cashier": {
+        "title": "Caisse",
+        "intro": "Encaissez la cantine, le goûter et l'écolage d'une famille en une fois, avec un reçu numéroté.",
+        "search": "Nom de la famille ou d’un enfant",
+        "searchSubmit": "Rechercher",
+        "noResult": "Aucune famille trouvée",
+        "noFamily": "Famille introuvable",
+        "viewFamily": "Voir la famille",
+        "noLines": "Aucun enfant de cette famille n'est inscrit à la cantine ou au goûter.",
+        "paidThrough": "Payé jusqu'au {date}",
+        "nothingPaid": "Rien de payé",
+        "due": "{days, plural, one {# jour dû} other {# jours dus}} ({amount})",
+        "unitPrice": "Tarif du jour : {amount}",
+        "quick": {
+          "week": "1 semaine",
+          "twoWeeks": "2 semaines",
+          "month": "1 mois",
+          "settle": "Solder"
+        },
+        "preview": "+{days, plural, one {# jour} other {# jours}} · payé jusqu'au {date}",
+        "remainder": "reste {amount} en avance",
+        "warnings": {
+          "notMultiple": "Le montant n'achète pas un nombre entier de jours : le reste est gardé pour le prochain encaissement.",
+          "lessThanWeek": "Moins d'une semaine de repas.",
+          "exceedsPeriod": "Le montant dépasse la fin de la période."
+        },
+        "tuition": "Écolage",
+        "tuitionDue": "Reste dû : {amount}",
+        "method": "Mode de paiement",
+        "reference": "Référence (facultatif)",
+        "total": "Total : {amount}",
+        "submit": "Encaisser",
+        "error": "Erreur lors de l'encaissement",
+        "errors": {
+          "validationError": "Vérifiez les montants saisis",
+          "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école",
+          "paymentsDisabled": "L'encaissement de l'écolage est désactivé pour cette école",
+          "idempotencyConflict": "Un reçu a déjà été émis pour un encaissement précédent : vérifiez-le avant de recommencer",
+          "notFound": "Famille introuvable",
+          "notInFamily": "Un enfant n'est plus rattaché à cette famille",
+          "notSubscribed": "Un enfant n'est plus inscrit à ce service",
+          "noPrice": "Aucun tarif en vigueur aujourd'hui pour ce service",
+          "staleState": "Un autre encaissement vient de passer : les montants ont été actualisés, vérifiez avant de valider",
+          "overpayment": "Le montant d'écolage dépasse le solde restant",
+          "noPayableEnrollments": "Aucune inscription n'attend de règlement d'écolage",
+          "refundExceedsPaid": "Le montant dépasse ce qui reste payé sur l'inscription"
+        },
+        "receipt": {
+          "title": "Reçu",
+          "heading": "Reçu {number}",
+          "back": "Retour à la caisse",
+          "print": "Imprimer",
+          "share": "Partager",
+          "family": "Famille",
+          "method": "Paiement",
+          "recordedBy": "Encaissé par",
+          "tuition": "Écolage",
+          "total": "Total",
+          "mealDetail": "+{days, plural, one {# jour} other {# jours}}, payé jusqu'au {date}",
+          "mealDays": "+{days, plural, one {# jour} other {# jours}}",
+          "cancelled": "Annulé",
+          "cancelledReason": "Annulé : {reason}",
+          "shareHeader": "{school} — reçu {number}",
+          "shareFamily": "Famille {family}, le {date}",
+          "shareTotal": "Total : {amount} ({method})",
+          "cancel": {
+            "trigger": "Annuler le reçu",
+            "title": "Annuler ce reçu ?",
+            "description": "Les jours de repas et l'écolage encaissés sont retirés. Le numéro reste attribué.",
+            "reason": "Motif de l'annulation",
+            "submit": "Annuler le reçu",
+            "cancel": "Retour",
+            "success": "Reçu annulé",
+            "error": "Erreur lors de l'annulation",
+            "errors": {
+              "notFound": "Reçu introuvable",
+              "alreadyCancelled": "Ce reçu est déjà annulé",
+              "refundExceedsPaid": "L'écolage de ce reçu a déjà été remboursé en partie : annulez d'abord ce remboursement",
+              "validationError": "Indiquez un motif"
+            }
           }
         }
       },
@@ -1535,6 +1622,7 @@
             "TRANSFER": "Virement",
             "CASH": "Espèces",
             "CHECK": "Chèque",
+            "MOBILE_MONEY": "Mobile money",
             "STRIPE": "Stripe"
           }
         },
@@ -3239,6 +3327,7 @@
     "CARD": "Carte",
     "TRANSFER": "Virement",
     "CHECK": "Chèque",
+    "MOBILE_MONEY": "Mobile money",
     "STRIPE": "Stripe"
   },
   "eventCategory": {

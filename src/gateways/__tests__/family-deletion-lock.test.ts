@@ -22,6 +22,7 @@ const tx = {
   classAssignment: { deleteMany: record('classAssignment.deleteMany', {}) },
   payment: { deleteMany: record('payment.deleteMany', {}) },
   paymentTransaction: { deleteMany: record('paymentTransaction.deleteMany', {}) },
+  receipt: { deleteMany: record('receipt.deleteMany', {}) },
   invitation: { deleteMany: record('invitation.deleteMany', {}) },
   person: { deleteMany: record('person.deleteMany', {}) },
   family: { delete: record('family.delete', {}) },

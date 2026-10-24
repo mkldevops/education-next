@@ -1,13 +1,12 @@
 import { Card } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
-import { summarizeMealAccount } from '@/domain/meal-account-summary'
-import { isSchoolClosed } from '@/domain/school-closure'
 import { schoolToday } from '@/domain/school-date'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
 import { MealService } from '@/generated/prisma/enums'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
+import { loadMealAccountSummaries } from '@/use-cases/meals/meal-account-summaries'
 import { MealDialog } from './meal-dialogs'
 
 type Props = {
@@ -25,30 +24,19 @@ export async function MealPanel({ schoolId, studentId, locale, selectedPeriodId 
   const tServices = await getTranslations('dashboard.pages.meals.services')
   const tWeekdays = await getTranslations('dashboard.pages.meals.weekdays')
 
-  const [{ currency, timeZone }, settings, prices, accounts, period] = await Promise.all([
+  const [{ currency, timeZone }, settings, accounts, period] = await Promise.all([
     getSchoolRegionalSettings(schoolId),
     db.mealServiceSetting.findMany({
       where: { schoolId },
       select: { service: true, isEnabled: true, allowedWeekdays: true },
     }),
-    db.mealPrice.findMany({
-      where: { schoolId },
-      select: { service: true, amount: true, effectiveFrom: true },
-    }),
-    mealAccountGateway.findStudentAccounts(schoolId, studentId),
+    mealAccountGateway.findStudentAccounts(schoolId, [studentId]),
     selectedPeriodId ? mealAccountGateway.findPeriod(schoolId, selectedPeriodId) : null,
   ])
   const today = schoolToday(timeZone)
-  const schedules = accounts.flatMap((account) => account.schedules)
-  const closures =
-    schedules.length > 0
-      ? await mealAccountGateway.findClosures(
-          schoolId,
-          schedules.reduce((first, s) => (s.startOn < first ? s.startOn : first), today),
-          schedules.reduce((last, s) => (s.periodEnd > last ? s.periodEnd : last), today)
-        )
-      : []
-  const isClosed = (day: string) => isSchoolClosed(closures, new Date(`${day}T00:00:00.000Z`))
+  const summaries = await mealAccountGateway.transaction((tx) =>
+    loadMealAccountSummaries(tx, { schoolId, accounts, today })
+  )
   // Les dates `@db.Date` sont à minuit UTC : formatées en UTC, elles gardent leur jour.
   const formatDay = (day: string) =>
     new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, { timeZone: 'UTC' })
@@ -56,20 +44,7 @@ export async function MealPanel({ schoolId, studentId, locale, selectedPeriodId 
   const rows = SERVICES.map((service) => {
     const setting = settings.find((s) => s.service === service)
     const account = accounts.find((a) => a.service === service)
-    const summary = account
-      ? summarizeMealAccount({
-          segments: account.schedules,
-          adjustments: account.adjustments,
-          prices: prices
-            .filter((price) => price.service === service)
-            .map((price) => ({
-              amount: Number(price.amount),
-              effectiveFrom: price.effectiveFrom.toISOString().slice(0, 10),
-            })),
-          isClosed,
-          today,
-        })
-      : null
+    const summary = account ? (summaries.get(account.id) ?? null) : null
     const upcoming =
       summary?.current && account
         ? (account.schedules.find((s) => s.startOn > (summary.current?.startOn ?? today)) ?? null)
