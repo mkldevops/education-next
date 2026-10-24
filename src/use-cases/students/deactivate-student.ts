@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { studentGateway } from '@/gateways/student-gateway'
+import { stopStudentMeals } from '@/use-cases/meals/stop-student-meals'
 
 const deactivateStudentSchema = z.object({
   schoolId: z.string().min(1),
@@ -8,7 +9,11 @@ const deactivateStudentSchema = z.object({
 
 type Input = z.infer<typeof deactivateStudentSchema>
 
-export async function deactivateStudent(input: Input, studentGw = studentGateway) {
+export async function deactivateStudent(
+  input: Input,
+  studentGw = studentGateway,
+  stopMeals = stopStudentMeals
+) {
   const parsed = deactivateStudentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
@@ -19,6 +24,7 @@ export async function deactivateStudent(input: Input, studentGw = studentGateway
   if (hasActive) return 'hasActiveEnrollments' as const
 
   await studentGw.deactivate(parsed.data.schoolId, parsed.data.id)
+  await stopMeals({ schoolId: parsed.data.schoolId, studentId: parsed.data.id })
 
   return 'OK' as const
 }

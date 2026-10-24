@@ -16,6 +16,10 @@ vi.mock('@/gateways/class-assignment-gateway', () => ({
   classAssignmentGateway: classAssignmentGatewayMock,
 }))
 
+const stopStudentMeals = vi.fn()
+
+vi.mock('@/use-cases/meals/stop-student-meals', () => ({ stopStudentMeals }))
+
 const { cancelEnrollment } = await import('./cancel-enrollment')
 
 const schoolId = '550e8400-e29b-41d4-a716-446655440099'
@@ -158,5 +162,22 @@ describe('cancelEnrollment', () => {
       '550e8400-e29b-41d4-a716-446655440000',
       'CANCELLED'
     )
+  })
+
+  it('stops the meals served in the periods of the cancelled enrollment', async () => {
+    enrollmentGatewayMock.findById.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      studentId: 'student-1',
+      status: 'ACTIVE',
+      payments: [],
+    })
+
+    await cancelEnrollment({ schoolId, id: '550e8400-e29b-41d4-a716-446655440000' })
+
+    expect(stopStudentMeals).toHaveBeenCalledWith({
+      schoolId,
+      studentId: 'student-1',
+      enrollmentId: '550e8400-e29b-41d4-a716-446655440000',
+    })
   })
 })

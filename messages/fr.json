@@ -1589,6 +1589,66 @@
           "class": "Classe",
           "total": "Total",
           "registered": "Date d'inscription"
+        },
+        "meals": {
+          "title": "Cantine et goûter",
+          "days": "Jours servis",
+          "since": "depuis le {start}",
+          "between": "du {start} au {end}",
+          "upcoming": "puis à partir du {start} : {days}",
+          "paidThrough": "Payé jusqu'au",
+          "nothingPaid": "Rien de payé",
+          "due": "{days, plural, one {# jour dû} other {# jours dus}} · {amount}",
+          "opening": "Reprise",
+          "openingDays": "{days, plural, =0 {aucun jour} one {# jour} other {# jours}}",
+          "notSubscribed": "Pas inscrit",
+          "selectPeriod": "Pas inscrit. Choisissez une période pour l'inscrire.",
+          "dialog": {
+            "weekdays": "Jours servis",
+            "cancel": "Annuler",
+            "submit": "Enregistrer",
+            "error": "Erreur lors de l'enregistrement",
+            "subscribe": {
+              "trigger": "Inscrire",
+              "title": "Inscrire à ce service",
+              "date": "À partir du",
+              "hint": "Toute date de la période, y compris passée.",
+              "success": "Inscription enregistrée"
+            },
+            "change": {
+              "trigger": "Changer les jours",
+              "title": "Changer les jours servis",
+              "date": "À partir du",
+              "hint": "Les jours déjà servis ne changent pas.",
+              "success": "Jours modifiés"
+            },
+            "stop": {
+              "trigger": "Arrêter",
+              "title": "Arrêter ce service",
+              "date": "Plus servi à partir du",
+              "hint": "Plus aucun jour servi à partir de cette date incluse.",
+              "success": "Service arrêté"
+            },
+            "opening": {
+              "trigger": "Reprise",
+              "title": "Reprise d'un paiement antérieur",
+              "date": "Déjà payé jusqu'au",
+              "hint": "Converti en jours servis. Une nouvelle reprise remplace la précédente.",
+              "reason": "Motif",
+              "success": "Reprise enregistrée"
+            },
+            "errors": {
+              "validationError": "Vérifiez les informations saisies",
+              "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école",
+              "serviceDisabled": "Ce service n'est pas proposé par l'école",
+              "invalidWeekdays": "Cochez au moins un jour proposé",
+              "notFound": "Élève ou période introuvable",
+              "outsidePeriod": "La date doit être comprise dans la période",
+              "alreadySubscribed": "L'élève est déjà inscrit à ce service à cette date",
+              "backdated": "La date ne peut pas être antérieure à aujourd'hui",
+              "notSubscribed": "L'élève n'est pas inscrit à ce service à cette date"
+            }
+          }
         }
       },
       "enrollmentDetails": {

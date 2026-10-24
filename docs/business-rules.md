@@ -1912,7 +1912,7 @@ next one; `priceOn()` (`src/domain/meal-price.ts`) picks it. `setMealPrice()`:
 `PUBLISHED` event of an included category overlapping the UTC day. Meals count `CLOSURE` and
 `HOLIDAY`; attendance keeps `CLOSURE` only, unchanged.
 
-**Ledger (domain only, wired in later lots).** `src/domain/meal-ledger.ts` is pure and tested:
+**Ledger.** `src/domain/meal-ledger.ts` is pure and tested:
 
 - money buys whole days at the price of the day it is received; the remainder stays as credit
   (`replayLedger`, computed in hundredths). A cancelled payment is skipped, adjustments add signed
@@ -1923,6 +1923,34 @@ next one; `priceOn()` (`src/domain/meal-price.ts`) picks it. `setMealPrice()`:
   (`days × today's price − credit`, never below zero), and the value of an unconsumed surplus;
 - `previewMealPayment()` warns on a remainder, on less than a week of days and on a purchase past
   the period's last served day.
+
+**Subscriptions.** A child has one `MealAccount` per service, created on first subscription. Its
+served days are `MealSchedule` segments: weekdays, `startOn`, `endOn` (`null`: to the end of the
+segment's period), inside one period. Two segments of an account never overlap, so a day has one
+rhythm. Every write locks the account row (`FOR NO KEY UPDATE`) in the transaction that reads and
+writes its segments. The student page shows a « Cantine et goûter » card to admins when
+`meals_enabled` is on; actions are `requireSchoolAdmin()` and live in `meal-actions.ts`.
+
+- `subscribeMeal()` opens a segment from any date of the selected period, past included, with
+  weekdays among the school's `allowedWeekdays`. It refuses a disabled service (`serviceDisabled`),
+  an archived student (`notFound`), a start outside the period (`outsidePeriod`) and an overlap with
+  a segment already there (`alreadySubscribed`).
+- `changeMealSchedule()` and `stopMeal()` take a date from **today in the school's time zone**
+  (`backdated` otherwise): days already served never change. A change closes the running segment
+  the day before and continues it with the new days to the same end; a segment not started yet is
+  replaced from its own start. A stop closes started segments the day before and deletes those that
+  have not started (`planStop()`, `src/domain/meal-schedule.ts`). Nothing served from that date:
+  `notSubscribed`.
+- **Automatic stop.** `deactivateStudent()` stops every service of the student from today;
+  `cancelEnrollment()` stops the segments in the periods of the cancelled enrollment's classes
+  (`stopStudentMeals()`). Neither checks `meals_enabled`: an open segment stops even after the
+  school opted out.
+
+**Opening balance.** `recordMealOpening()` takes « already paid through » and a required reason,
+and records an `OPENING` adjustment of the served days up to that date — segments and published
+closures as known at that moment. One per account: recording again replaces it. The migration
+checks the sign of `MealAdjustment.days`: `OPENING` and `GIFT` are ≥ 0, `REFUND` and `FORFEIT` < 0.
+Until payments arrive (lot 3) the card's « paid through » and days due come from adjustments only.
 
 ## Promotion
 
@@ -2023,8 +2051,8 @@ where financial history is destroyed rather than archived.
   and so are the next links — `Enrollment.student`, `AttendanceEntry.student`,
   `ClassAssignment.enrollment`, `Invitation.person`, `Payment.enrollment`,
   `Payment.paymentTransaction`. Each table is therefore emptied explicitly, leaf first. What is
-  `Cascade` — `UserFamily`, `FamilyPerson`, `PhoneNumber`, `Invitation.family` — goes with its
-  parent, and `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives, detached.
+  `Cascade` — `UserFamily`, `FamilyPerson`, `PhoneNumber`, `Invitation.family`, and a student's
+  `MealAccount` with its `MealSchedule` and `MealAdjustment` rows — goes with its parent, and `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives, detached.
 - **Every non-cascading foreign key into the deleted graph is listed** in
   `FAMILY_DELETION_CLEARED_RELATIONS` (`src/gateways/family-gateway.ts`).
   `src/gateways/__tests__/family-deletion-restrict-guard.test.ts` reads `prisma/schema.prisma` and
