@@ -42,6 +42,7 @@ type EditableEvent = Pick<
 
 type Props = {
   event: EditableEvent
+  mealsEnabled?: boolean
 }
 
 type EditEventDialogProps = Props & {
@@ -51,7 +52,12 @@ type EditEventDialogProps = Props & {
   restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
-export function EditEventDialog({ event, triggerRole, restoreFocusRef }: EditEventDialogProps) {
+export function EditEventDialog({
+  event,
+  mealsEnabled = false,
+  triggerRole,
+  restoreFocusRef,
+}: EditEventDialogProps) {
   const tEdit = useTranslations('dashboard.pages.events.edit')
 
   return (
@@ -66,13 +72,13 @@ export function EditEventDialog({ event, triggerRole, restoreFocusRef }: EditEve
         <DialogHeader>
           <DialogTitle>{tEdit('title')}</DialogTitle>
         </DialogHeader>
-        <EditEventForm event={event} />
+        <EditEventForm event={event} mealsEnabled={mealsEnabled} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function EditEventForm({ event }: Props) {
+function EditEventForm({ event, mealsEnabled }: Props) {
   const t = useTranslations('dashboard.pages.events')
   const tEdit = useTranslations('dashboard.pages.events.edit')
   const tStatus = useTranslations('eventStatus')
@@ -112,6 +118,7 @@ function EditEventForm({ event }: Props) {
           }}
           isPending={isPending}
           dates={dates}
+          mealImpact={mealsEnabled ? { eventId: event.id } : undefined}
           statusSlot={
             <div className="space-y-2">
               <Label htmlFor="edit-event-status">{t('fields.status')}</Label>

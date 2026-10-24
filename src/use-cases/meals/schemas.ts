@@ -61,3 +61,11 @@ export const toggleMealAbsenceSchema = z.object({
   absent: z.boolean(),
   recordedById: z.string().min(1),
 })
+
+export const mealImpactOfClosureSchema = z.object({
+  schoolId: z.string().min(1),
+  eventId: z.uuid().optional(),
+  startAt: z.date(),
+  endAt: z.date().nullable(),
+  today: z.iso.date(),
+})

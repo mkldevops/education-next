@@ -2496,6 +2496,7 @@
           "announceDaysHint": "Le bandeau paraît ce nombre de jours avant l'événement. Laissez vide pour ne pas l'annoncer.",
           "alt": "Texte alternatif"
         },
+        "mealImpact": "Repas, une fois publiée : {children, plural, =0 {aucun enfant ne mange ces jours-là} one {# enfant mange ces jours-là} other {# enfants mangent ces jours-là}}, {moved, plural, =0 {aucun « payé jusqu'au » ne bouge} one {# « payé jusqu'au » repoussé} other {# « payé jusqu'au » repoussés}}.",
         "columns": {
           "event": "Événement",
           "date": "Date",

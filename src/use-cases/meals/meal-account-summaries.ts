@@ -3,6 +3,14 @@ import { isSchoolClosed } from '@/domain/school-closure'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
 import type { MealService, Prisma } from '@/generated/prisma/client'
 
+export type MealClosure = {
+  id?: string
+  status: string
+  category: string
+  startAt: Date
+  endAt: Date | null
+}
+
 /**
  * Fiches de plusieurs comptes au jour `today`, lues par `tx`. La caisse les affiche puis
  * les relit sous verrou à l'encaissement : un même calcul des deux côtés, pour que l'aperçu
@@ -14,10 +22,12 @@ export async function loadMealAccountSummaries(
     schoolId: string
     accounts: ReadonlyArray<{ id: string; service: MealService }>
     today: string
+    /** Fermetures retouchées avant le calcul : l'aperçu d'un événement pas encore enregistré. */
+    adjustClosures?: (closures: MealClosure[]) => MealClosure[]
   },
   accountGw = mealAccountGateway
 ): Promise<Map<string, MealAccountSummary>> {
-  const { schoolId, accounts, today } = input
+  const { schoolId, accounts, today, adjustClosures = (closures) => closures } = input
   const summaries = new Map<string, MealAccountSummary>()
   if (accounts.length === 0) return summaries
 
@@ -26,7 +36,7 @@ export async function loadMealAccountSummaries(
   const { adjustments, payments } = await accountGw.listLedgers(tx, schoolId, ids)
   const prices = await accountGw.listPrices(tx, schoolId)
   const absences = await accountGw.listAbsences(tx, schoolId, ids)
-  const closures =
+  const closures = adjustClosures(
     segments.length > 0
       ? await accountGw.findClosures(
           schoolId,
@@ -34,6 +44,7 @@ export async function loadMealAccountSummaries(
           segments.reduce((last, s) => (s.periodEnd > last ? s.periodEnd : last), today)
         )
       : []
+  )
   const isClosed = (day: string) => isSchoolClosed(closures, new Date(`${day}T00:00:00.000Z`))
 
   for (const account of accounts) {

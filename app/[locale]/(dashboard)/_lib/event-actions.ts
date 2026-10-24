@@ -3,6 +3,8 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
+import { schoolToday } from '@/domain/school-date'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { addEventImage } from '@/use-cases/events/add-event-image'
 import { archiveEvent } from '@/use-cases/events/archive-event'
 import { createEvent } from '@/use-cases/events/create-event'
@@ -11,6 +13,7 @@ import { removeEventImage } from '@/use-cases/events/remove-event-image'
 import type { createEventSchema, updateEventSchema } from '@/use-cases/events/schemas'
 import { setEventCover } from '@/use-cases/events/set-event-cover'
 import { updateEvent } from '@/use-cases/events/update-event'
+import { mealImpactOfClosure } from '@/use-cases/meals/meal-impact-of-closure'
 import { uploadEventImage } from '@/use-cases/media/upload-event-image'
 import { requireSchoolAdmin } from './auth-helper'
 
@@ -50,6 +53,21 @@ export async function archiveEventAction(id: string) {
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/events')
   return result
+}
+
+/**
+ * Aperçu, dans le formulaire, des repas touchés par une fermeture saisie (R12). `null` quand
+ * l'école n'a pas ouvert les repas ou que les dates ne se lisent pas : rien à afficher.
+ */
+export async function previewClosureMealImpactAction(input: {
+  eventId?: string
+  startAt: Date
+  endAt: Date | null
+}) {
+  const { schoolId } = await requireSchoolAdmin()
+  const { timeZone } = await getSchoolRegionalSettings(schoolId)
+  const result = await mealImpactOfClosure({ ...input, schoolId, today: schoolToday(timeZone) })
+  return typeof result === 'string' ? null : result
 }
 
 /**

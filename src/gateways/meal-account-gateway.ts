@@ -265,7 +265,7 @@ export const mealAccountGateway = {
         startAt: { lt: new Date(Date.parse(`${to}T00:00:00.000Z`) + 86_400_000) },
         OR: [{ endAt: null }, { endAt: { gte: toDbDate(from) } }],
       },
-      select: { status: true, category: true, startAt: true, endAt: true },
+      select: { id: true, status: true, category: true, startAt: true, endAt: true },
     }),
 
   /** Périodes des classes d'une inscription : celles dont l'annulation arrête les repas. */
@@ -276,6 +276,13 @@ export const mealAccountGateway = {
     })
     return [...new Set(rows.map((row) => row.classPeriod.periodId))]
   },
+
+  /** Comptes des élèves actifs de l'école, pour l'impact d'une fermeture. */
+  findActiveStudentAccounts: (schoolId: string) =>
+    db.mealAccount.findMany({
+      where: { schoolId, student: { isActive: true } },
+      select: { id: true, studentId: true, service: true },
+    }),
 
   /** Comptes d'élèves et leurs segments, pour leur fiche ou la caisse. */
   findStudentAccounts: async (schoolId: string, studentIds: string[]) => {

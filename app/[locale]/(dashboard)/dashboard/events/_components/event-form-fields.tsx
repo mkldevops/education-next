@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl'
 import { type ReactNode, useState } from 'react'
 import type { EventCategory, EventVisibility } from '@/generated/prisma/client'
 import { parseEventInputValue, toEventInputValue } from '@/lib/date'
+import { ClosureMealImpact } from './closure-meal-impact'
 import { EVENT_CATEGORY_VALUES, EVENT_VISIBILITY_VALUES } from './event-enum-values'
 
 type EventDateValues = {
@@ -65,6 +66,8 @@ type EventFormFieldsProps = {
   isPending: boolean
   dates: EventDateFields
   statusSlot?: ReactNode
+  /** Présent quand l'école a ouvert les repas : affiche l'impact d'une fermeture. */
+  mealImpact?: { eventId?: string }
 }
 
 export function EventFormFields({
@@ -73,6 +76,7 @@ export function EventFormFields({
   isPending,
   dates,
   statusSlot,
+  mealImpact,
 }: EventFormFieldsProps) {
   const t = useTranslations('dashboard.pages.events')
   const tCategory = useTranslations('eventCategory')
@@ -81,6 +85,9 @@ export function EventFormFields({
     value: category,
     label: tCategory(category),
   }))
+  const [category, setCategory] = useState<string>(
+    defaults.category ?? categoryItems[0]?.value ?? ''
+  )
   const visibilityItems = EVENT_VISIBILITY_VALUES.map((visibility) => ({
     value: visibility,
     label: tVisibility(visibility),
@@ -106,6 +113,7 @@ export function EventFormFields({
             name="category"
             items={categoryItems}
             defaultValue={defaults.category ?? categoryItems[0]?.value}
+            onValueChange={(value) => value !== null && setCategory(value)}
             required
             disabled={isPending}
           >
@@ -178,6 +186,14 @@ export function EventFormFields({
           />
         </div>
       </div>
+      {mealImpact && (
+        <ClosureMealImpact
+          eventId={mealImpact.eventId}
+          category={category}
+          startAt={dates.startAt}
+          endAt={dates.endAt}
+        />
+      )}
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-location`}>{t('fields.location')}</Label>
         <Input
