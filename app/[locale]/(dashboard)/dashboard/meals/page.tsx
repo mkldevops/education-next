@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { priceOn } from '@/domain/meal-price'
 import { schoolToday } from '@/domain/school-date'
 import { MealService } from '@/generated/prisma/enums'
+import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
@@ -63,9 +64,14 @@ export default async function MealsPage({ params }: Props) {
           { label: tBreadcrumbs('meals') },
         ]}
       />
-      <div>
-        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        <p className="text-sm text-graphite-600">{t('intro')}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
+          <p className="text-sm text-graphite-600">{t('intro')}</p>
+        </div>
+        <Link href="/dashboard/cashier/debtors" className="text-sm text-primary hover:underline">
+          {t('debtorsLink')}
+        </Link>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         {SERVICES.map((service) => {

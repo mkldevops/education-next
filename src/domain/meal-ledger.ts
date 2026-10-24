@@ -27,11 +27,11 @@ const ISO_WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const
 const SCALE = 100
 const toHundredths = (value: number) => Math.round(value * SCALE)
 
-function nextDay(day: string): string {
+export function nextDay(day: string): string {
   return new Date(Date.parse(`${day}T00:00:00.000Z`) + DAY_MS).toISOString().slice(0, 10)
 }
 
-function weekdayOf(day: string): number {
+export function weekdayOf(day: string): number {
   return planningWeekday(new Date(`${day}T00:00:00.000Z`))
 }
 

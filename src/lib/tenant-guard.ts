@@ -58,6 +58,7 @@ const TENANT_SCOPED_MODELS: Record<string, true> = {
   MealAccount: true,
   MealSchedule: true,
   MealAdjustment: true,
+  MealAbsence: true,
   Receipt: true,
   ReceiptCounter: true,
   MealPayment: true,

@@ -182,6 +182,14 @@ async function seedSchool(label: string, suffix: string) {
       recordedById: admin.id,
     },
   })
+  const mealAbsence = await raw.mealAbsence.create({
+    data: {
+      schoolId: school.id,
+      accountId: mealAccount.id,
+      date: new Date('2026-09-07'),
+      recordedById: admin.id,
+    },
+  })
   const receipt = await raw.receipt.create({
     data: {
       schoolId: school.id,
@@ -233,6 +241,7 @@ async function seedSchool(label: string, suffix: string) {
     mealAccount,
     mealSchedule,
     mealAdjustment,
+    mealAbsence,
     receipt,
     mealPayment,
   }
@@ -246,6 +255,7 @@ async function cleanup(fixture: Fixture) {
   await raw.mealPayment.deleteMany({ where: { schoolId } })
   await raw.receipt.deleteMany({ where: { schoolId } })
   await raw.mealAdjustment.deleteMany({ where: { schoolId } })
+  await raw.mealAbsence.deleteMany({ where: { schoolId } })
   await raw.mealSchedule.deleteMany({ where: { schoolId } })
   await raw.mealAccount.deleteMany({ where: { schoolId } })
   await raw.mealPrice.deleteMany({ where: { schoolId } })
@@ -681,6 +691,22 @@ describe.skipIf(!databaseUrl)('isolation inter-écoles sur base réelle', () => 
     it("n'efface pas l'ajustement de B depuis A", async () => {
       const { count } = await db.mealAdjustment.deleteMany({
         where: { id: b.mealAdjustment.id, schoolId: a.school.id },
+      })
+      expect(count).toBe(0)
+    })
+  })
+
+  describe('MealAbsence', () => {
+    it("ne rend pas l'absence de B depuis A", async () => {
+      const found = await db.mealAbsence.findFirst({
+        where: { id: b.mealAbsence.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
+    })
+
+    it("n'efface pas l'absence de B depuis A", async () => {
+      const { count } = await db.mealAbsence.deleteMany({
+        where: { id: b.mealAbsence.id, schoolId: a.school.id },
       })
       expect(count).toBe(0)
     })

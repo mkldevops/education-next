@@ -1999,6 +1999,31 @@ balance. One `recordReceipt()` (`src/use-cases/receipts/record-receipt.ts`) writ
 - A user who took or cancelled a receipt cannot be deleted for good: receipts are counted in
   `countRowsBlockingUserDeletion`.
 
+**Meal sheet and absences.** Under each service, the student card shows a month calendar of the
+scheduled days (`mealCalendar()`, `src/domain/meal-calendar.ts`, returned by `summarizeMealAccount()`):
+`paid` for the first served days the ledger owns, `due` for a later served day up to today, `unpaid`
+after it, `absent`, and `closed` for a published closure or holiday. One tap on a day calls
+`toggleMealAbsence()` (`src/use-cases/meals/toggle-meal-absence.ts`), under the account lock:
+
+- an absence is a `MealAbsence` row (one per account and day, so a second tap on the same state is
+  idempotent). The day is no longer served, so coverage slides by one served day (R7);
+- **always credited**, with no notice period and no cap, past or future;
+- only on a scheduled, open day (`notServed` otherwise); without an account, `notSubscribed`;
+- tapping an absent day removes it. The absence survives its author (`recordedById` set null), and
+  goes with the account.
+
+**Unpaid and reminders.** `/dashboard/cashier/debtors` (`requireSchoolAdmin()`, `notFound()` when
+`meals_enabled` is off, linked from the cashier and the meals page) lists, for active students, each
+account with days due, or with served days still ahead of which at most `REMIND_WITHIN_DAYS` (2) are
+covered. Most owed first; each row links to the student and to the cashier of the debtor family.
+
+**Day's takings.** `/dashboard/cashier/day?day=YYYY-MM-DD` (same guards, today by default, no future
+day) sums, over the school's local day (`schoolDayBounds()`), the receipts **issued** that day and the
+receipts **cancelled** that day whatever their issue day; net = issued − cancelled
+(`summarizeCashDay()`, `src/domain/cash-day.ts`). A cancellation lands on the day it is made, so a
+past day's net never changes. Totals split by method and by item: canteen and snack from the
+receipt's `MealPayment` rows, tuition as the rest of the total.
+
 ## Promotion
 
 Owner: `src/use-cases/enrollments/promote-students.ts`.

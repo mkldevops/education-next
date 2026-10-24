@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { schoolToday } from './school-date'
+import { schoolDayBounds, schoolToday } from './school-date'
 
 describe('schoolToday', () => {
   it('switches day at local midnight in Indian/Comoro (UTC+3)', () => {
@@ -12,5 +12,21 @@ describe('schoolToday', () => {
     expect(schoolToday('Europe/Paris', new Date('2026-07-01T22:00:00.000Z'))).toBe('2026-07-02')
     expect(schoolToday('Europe/Paris', new Date('2026-12-31T22:59:59.000Z'))).toBe('2026-12-31')
     expect(schoolToday('Europe/Paris', new Date('2026-12-31T23:00:00.000Z'))).toBe('2027-01-01')
+  })
+})
+
+describe('schoolDayBounds', () => {
+  it('spans the local day in Indian/Comoro (UTC+3)', () => {
+    expect(schoolDayBounds('2026-10-24', 'Indian/Comoro')).toEqual({
+      start: new Date('2026-10-23T21:00:00.000Z'),
+      end: new Date('2026-10-24T21:00:00.000Z'),
+    })
+  })
+
+  it('has 23 hours on the spring-forward day in Europe/Paris', () => {
+    expect(schoolDayBounds('2027-03-28', 'Europe/Paris')).toEqual({
+      start: new Date('2027-03-27T23:00:00.000Z'),
+      end: new Date('2027-03-28T22:00:00.000Z'),
+    })
   })
 })

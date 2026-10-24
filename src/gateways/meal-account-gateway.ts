@@ -3,7 +3,7 @@ import type { MealService, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
 type Tx = Prisma.TransactionClient
-type Reader = Pick<Tx, 'mealAdjustment' | 'mealPayment' | 'mealPrice'>
+type Reader = Pick<Tx, 'mealAbsence' | 'mealAdjustment' | 'mealPayment' | 'mealPrice'>
 
 /** Les dates `@db.Date` sont lues et écrites à minuit UTC. */
 const toDbDate = (day: string) => new Date(`${day}T00:00:00.000Z`)
@@ -134,6 +134,34 @@ export const mealAccountGateway = {
       })),
     }
   },
+
+  /** Jours servis que l'enfant n'a pas mangés (R7), par compte. */
+  listAbsences: async (client: Reader, schoolId: string, accountIds: string[]) => {
+    const rows = await client.mealAbsence.findMany({
+      where: { schoolId, accountId: { in: accountIds } },
+      select: { accountId: true, date: true },
+    })
+    return rows.map((row) => ({ accountId: row.accountId, day: toDay(row.date) }))
+  },
+
+  /** Idempotent : marquer deux fois le même jour ne crée qu'une absence. */
+  addAbsence: (
+    tx: Tx,
+    schoolId: string,
+    data: { accountId: string; day: string; recordedById: string }
+  ) =>
+    tx.mealAbsence.createMany({
+      data: {
+        schoolId,
+        accountId: data.accountId,
+        date: toDbDate(data.day),
+        recordedById: data.recordedById,
+      },
+      skipDuplicates: true,
+    }),
+
+  removeAbsence: (tx: Tx, schoolId: string, accountId: string, day: string) =>
+    tx.mealAbsence.deleteMany({ where: { schoolId, accountId, date: toDbDate(day) } }),
 
   listPrices: async (client: Reader, schoolId: string) => {
     const rows = await client.mealPrice.findMany({

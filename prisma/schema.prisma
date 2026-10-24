@@ -179,6 +179,7 @@ model School {
   mealAccounts              MealAccount[]
   mealSchedules             MealSchedule[]
   mealAdjustments           MealAdjustment[]
+  mealAbsences              MealAbsence[]
   receipts                  Receipt[]
   receiptCounter            ReceiptCounter?
   mealPayments              MealPayment[]
@@ -239,6 +240,7 @@ model User {
   createdAttendanceSessions AttendanceSession[]  @relation("attendanceCreatedBy")
   updatedAttendanceSessions AttendanceSession[]  @relation("attendanceUpdatedBy")
   recordedMealAdjustments   MealAdjustment[]     @relation("mealAdjustmentRecordedBy")
+  recordedMealAbsences      MealAbsence[]        @relation("mealAbsenceRecordedBy")
   recordedReceipts          Receipt[]            @relation("receiptRecordedBy")
   cancelledReceipts         Receipt[]            @relation("receiptCancelledBy")
 }
@@ -1165,6 +1167,7 @@ model MealAccount {
   schedules   MealSchedule[]
   adjustments MealAdjustment[]
   payments    MealPayment[]
+  absences    MealAbsence[]
 
   @@unique([id, schoolId])
   @@unique([schoolId, studentId, service])
@@ -1207,6 +1210,25 @@ model MealAdjustment {
   recordedBy User        @relation("mealAdjustmentRecordedBy", fields: [recordedById], references: [id])
 
   @@unique([id, schoolId])
+  @@index([accountId])
+}
+
+/// Jour servi que l'enfant n'a pas mangé (R7) : il n'est pas consommé, la couverture glisse.
+/// L'auteur peut partir : l'absence reste, sans lui.
+model MealAbsence {
+  id           String   @id @default(uuid())
+  schoolId     String
+  accountId    String
+  date         DateTime @db.Date
+  recordedById String?
+  createdAt    DateTime @default(now())
+
+  school     School      @relation(fields: [schoolId], references: [id])
+  account    MealAccount @relation(fields: [accountId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  recordedBy User?       @relation("mealAbsenceRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, accountId, date])
   @@index([accountId])
 }
 

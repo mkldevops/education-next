@@ -1137,7 +1137,8 @@
             "alreadyEffective": "This price is already in effect and can no longer be removed",
             "mealsDisabled": "Canteen and snack are turned off for this school"
           }
-        }
+        },
+        "debtorsLink": "Unpaid and reminders"
       },
       "cashier": {
         "title": "Cashier",
@@ -1220,6 +1221,42 @@
               "validationError": "Give a reason"
             }
           }
+        },
+        "day": {
+          "title": "Day's takings",
+          "intro": "Receipts issued that day, minus cancellations made that day. A past day no longer changes.",
+          "previous": "← Previous day",
+          "next": "Next day →",
+          "issued": "Issued",
+          "cancelled": "Cancelled",
+          "net": "Net",
+          "counts": "{issued, plural, =0 {No receipt issued} one {# receipt issued} other {# receipts issued}} · {cancelled, plural, =0 {no cancellation} one {# cancellation} other {# cancellations}}",
+          "byMethod": "By payment method",
+          "byLine": "By item",
+          "lines": {
+            "CANTEEN": "Canteen",
+            "SNACK": "Snack",
+            "TUITION": "Tuition"
+          },
+          "issuedReceipts": "Receipts issued",
+          "cancelledReceipts": "Day's cancellations",
+          "none": "None",
+          "receipt": "No. {number} · {family}",
+          "cancelledBadge": "Cancelled"
+        },
+        "debtors": {
+          "title": "Unpaid and reminders",
+          "intro": "Children with days due, or with {days, plural, one {# covered day} other {# covered days}} or fewer left.",
+          "empty": "Nothing unpaid, nobody to remind.",
+          "total": "{count, plural, one {# account} other {# accounts}} · {amount} due",
+          "student": "Student",
+          "service": "Service",
+          "paidThrough": "Paid through",
+          "due": "Due",
+          "nothingPaid": "Nothing paid",
+          "coveredLeft": "{days, plural, =0 {no covered day left} one {# covered day left} other {# covered days left}}",
+          "dueDetail": "{days, plural, one {# day} other {# days}} · {amount}",
+          "collect": "Collect"
         }
       },
       "config": {
@@ -1734,6 +1771,25 @@
               "alreadySubscribed": "The student is already subscribed to this service on that date",
               "backdated": "The date cannot be earlier than today",
               "notSubscribed": "The student is not subscribed to this service on that date"
+            }
+          },
+          "calendar": {
+            "previous": "Previous month",
+            "next": "Next month",
+            "hint": "Tap a day to mark or clear an absence: the day is not used up.",
+            "status": {
+              "paid": "Paid",
+              "due": "Due",
+              "unpaid": "To pay",
+              "absent": "Absent",
+              "closed": "Closed"
+            },
+            "error": "Error while saving",
+            "errors": {
+              "validationError": "Invalid day",
+              "mealsDisabled": "Canteen and snack are disabled for this school",
+              "notSubscribed": "The student is not subscribed to this service",
+              "notServed": "This day is not served"
             }
           }
         }

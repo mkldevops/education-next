@@ -57,6 +57,7 @@ function setup(flags: Record<string, string> = {}) {
     lockAccounts: vi.fn().mockResolvedValue([{ id: 'account-1', studentId, service: 'CANTEEN' }]),
     listSegments: vi.fn().mockResolvedValue([segment]),
     listLedgers: vi.fn().mockResolvedValue({ adjustments: [], payments: [] }),
+    listAbsences: vi.fn().mockResolvedValue([]),
     listPrices: vi
       .fn()
       .mockResolvedValue([{ service: 'CANTEEN', amount: 500, effectiveFrom: '2026-09-01' }]),

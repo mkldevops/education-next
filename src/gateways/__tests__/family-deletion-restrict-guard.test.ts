@@ -125,6 +125,7 @@ describe('suppression définitive de famille — relations bloquantes', () => {
     // Tables emportées par la base : un ajout ici mérite une relecture de la règle métier.
     expect(cascaded).toEqual([
       'FamilyPerson',
+      'MealAbsence',
       'MealAccount',
       'MealAdjustment',
       'MealPayment',

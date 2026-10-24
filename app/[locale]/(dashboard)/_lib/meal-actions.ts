@@ -12,11 +12,13 @@ import type {
   setMealServiceSettingSchema,
   stopMealSchema,
   subscribeMealSchema,
+  toggleMealAbsenceSchema,
 } from '@/use-cases/meals/schemas'
 import { setMealPrice } from '@/use-cases/meals/set-meal-price'
 import { setMealServiceSetting } from '@/use-cases/meals/set-meal-service-setting'
 import { stopMeal } from '@/use-cases/meals/stop-meal'
 import { subscribeMeal } from '@/use-cases/meals/subscribe-meal'
+import { toggleMealAbsence } from '@/use-cases/meals/toggle-meal-absence'
 import { requireSchoolAdmin } from './auth-helper'
 
 type SetMealServiceSettingInput = z.infer<typeof setMealServiceSettingSchema>
@@ -25,6 +27,7 @@ type SubscribeMealInput = z.infer<typeof subscribeMealSchema>
 type ChangeMealScheduleInput = z.infer<typeof changeMealScheduleSchema>
 type StopMealInput = z.infer<typeof stopMealSchema>
 type RecordMealOpeningInput = z.infer<typeof recordMealOpeningSchema>
+type ToggleMealAbsenceInput = z.infer<typeof toggleMealAbsenceSchema>
 
 export async function setMealServiceSettingAction(
   data: Omit<SetMealServiceSettingInput, 'schoolId'>
@@ -83,6 +86,16 @@ export async function recordMealOpeningAction(
 ) {
   const { schoolId, userId } = await requireSchoolAdmin()
   const result = await recordMealOpening({ ...data, schoolId, recordedById: userId })
+  if (result !== 'OK') return result
+  revalidatePath(studentPath(data.studentId))
+  return 'OK' as const
+}
+
+export async function toggleMealAbsenceAction(
+  data: Omit<ToggleMealAbsenceInput, 'schoolId' | 'recordedById'>
+) {
+  const { schoolId, userId } = await requireSchoolAdmin()
+  const result = await toggleMealAbsence({ ...data, schoolId, recordedById: userId })
   if (result !== 'OK') return result
   revalidatePath(studentPath(data.studentId))
   return 'OK' as const

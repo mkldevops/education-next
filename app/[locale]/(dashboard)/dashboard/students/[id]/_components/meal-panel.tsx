@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { loadMealAccountSummaries } from '@/use-cases/meals/meal-account-summaries'
+import { MealCalendar } from './meal-calendar'
 import { MealDialog } from './meal-dialogs'
 
 type Props = {
@@ -59,7 +60,7 @@ export async function MealPanel({ schoolId, studentId, locale, selectedPeriodId 
       <h2 className="text-xs font-medium uppercase tracking-wide text-graphite-600">
         {t('title')}
       </h2>
-      <div className="mt-3 divide-y divide-graphite-100">
+      <div className="mt-3 divide-y divide-alabaster-700">
         {rows.map(({ service, setting, summary, upcoming }) => {
           const current = summary?.current ?? null
           const coverage = summary?.coverage
@@ -126,6 +127,15 @@ export async function MealPanel({ schoolId, studentId, locale, selectedPeriodId 
                 <p className="text-sm text-graphite-600">
                   {dialog.period ? t('notSubscribed') : t('selectPeriod')}
                 </p>
+              )}
+              {summary && summary.calendar.length > 0 && (
+                <MealCalendar
+                  studentId={studentId}
+                  service={service}
+                  days={summary.calendar}
+                  today={today}
+                  locale={locale}
+                />
               )}
               <div className="flex flex-wrap gap-2">
                 {!current && setting?.isEnabled && dialog.period && (
