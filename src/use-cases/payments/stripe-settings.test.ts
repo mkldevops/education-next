@@ -188,9 +188,10 @@ describe('getStripeSettings', () => {
 })
 
 describe('setStripeEnabled', () => {
-  it('refuses to enable Stripe without credentials', async () => {
-    expect(await setStripeEnabled({ schoolId, enabled: true }, gw)).toBe('notConfigured')
-    expect(gateway.set).not.toHaveBeenCalled()
+  it('stores the flag without credentials, leaving Stripe unavailable', async () => {
+    expect(await setStripeEnabled({ schoolId, enabled: true }, gw)).toBe('OK')
+    expect(rows.get(rowKey(schoolId, 'stripe_enabled'))?.value).toBe('true')
+    expect((await getStripeSettings(schoolId, gw)).available).toBe(false)
   })
 
   it('enables Stripe once configured', async () => {
