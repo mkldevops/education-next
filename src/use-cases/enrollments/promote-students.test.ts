@@ -37,25 +37,39 @@ const targetClassPeriodId = '550e8400-e29b-41d4-a716-446655440002'
 const nextLevelId = '550e8400-e29b-41d4-a716-446655440021'
 const defaultStudentId = '550e8400-e29b-41d4-a716-446655440011'
 const defaultPlanId = '550e8400-e29b-41d4-a716-446655440012'
+const otherNextLevelId = '550e8400-e29b-41d4-a716-446655440022'
+const otherClassPeriodId = '550e8400-e29b-41d4-a716-446655440003'
+const enrollmentId = '550e8400-e29b-41d4-a716-446655440010'
+
+function levelWith(nextLevels: Array<{ id: string; name?: string; isActive?: boolean }>) {
+  return {
+    classPeriod: {
+      level: {
+        id: 'level-1',
+        name: 'C4',
+        nextLevels: nextLevels.map(({ id, name = id, isActive = true }) => ({
+          nextLevel: { id, name, isActive },
+        })),
+      },
+    },
+  }
+}
+
+const splitLevel = levelWith([
+  { id: nextLevelId, name: 'H/GG' },
+  { id: otherNextLevelId, name: 'H/GF' },
+])
 
 function buildEnrollment(overrides: Partial<Record<string, unknown>> = {}) {
   return {
-    id: '550e8400-e29b-41d4-a716-446655440010',
+    id: enrollmentId,
     studentId: defaultStudentId,
+    student: { person: { name: 'Amina', lastname: 'Saïd' } },
     planId: defaultPlanId,
     totalAmount: 100,
     discount: 0,
     canLeaveAlone: false,
-    classAssignments: [
-      {
-        classPeriod: {
-          level: {
-            id: '550e8400-e29b-41d4-a716-446655440020',
-            nextLevel: { id: nextLevelId, isActive: true },
-          },
-        },
-      },
-    ],
+    classAssignments: [levelWith([{ id: nextLevelId }])],
     ...overrides,
   }
 }
@@ -191,7 +205,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
     it('should skip when there is no next level', async () => {
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
         buildEnrollment({
-          classAssignments: [{ classPeriod: { level: { id: 'level-1', nextLevel: null } } }],
+          classAssignments: [levelWith([])],
         }),
       ])
 
@@ -203,17 +217,61 @@ describe('promoteStudents / previewPromoteStudents', () => {
     it('should skip when the next level is inactive', async () => {
       enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
         buildEnrollment({
-          classAssignments: [
-            {
-              classPeriod: {
-                level: { id: 'level-1', nextLevel: { id: 'level-2', isActive: false } },
-              },
-            },
-          ],
+          classAssignments: [levelWith([{ id: 'level-2', isActive: false }])],
         }),
       ])
 
       const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+
+      expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
+    })
+
+    it('should skip a student whose level splits when no next level is chosen', async () => {
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
+        buildEnrollment({ classAssignments: [splitLevel] }),
+      ])
+
+      const result = await promoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+
+      expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
+      expect(dbMock.$transaction).not.toHaveBeenCalled()
+    })
+
+    it('should promote into the class of the chosen next level', async () => {
+      dbMock.classPeriod.findMany.mockResolvedValue([
+        { id: targetClassPeriodId, levelId: nextLevelId, capacity: 10 },
+        { id: otherClassPeriodId, levelId: otherNextLevelId, capacity: 10 },
+      ])
+      const tx = buildTx()
+      dbMock.$transaction = vi.fn(async (cb) => cb(tx))
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
+        buildEnrollment({ classAssignments: [splitLevel] }),
+      ])
+
+      const result = await promoteStudents({
+        schoolId,
+        sourcePeriodId,
+        targetPeriodId,
+        nextLevelChoices: { [enrollmentId]: otherNextLevelId },
+      })
+
+      expect(result).toEqual({ promoted: 1, skipped: 0, errors: [] })
+      expect(tx.classAssignment.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ classPeriodId: otherClassPeriodId }),
+      })
+    })
+
+    it('should ignore a choice that is not one of the next levels', async () => {
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
+        buildEnrollment({ classAssignments: [splitLevel] }),
+      ])
+
+      const result = await promoteStudents({
+        schoolId,
+        sourcePeriodId,
+        targetPeriodId,
+        nextLevelChoices: { [enrollmentId]: targetClassPeriodId },
+      })
 
       expect(result).toEqual({ promoted: 0, skipped: 1, errors: [] })
     })
@@ -413,9 +471,11 @@ describe('promoteStudents / previewPromoteStudents', () => {
           planArchived: 0,
           noClassAssignment: 0,
           noNextLevel: 0,
+          nextLevelNotChosen: 0,
           noTargetClass: 0,
           targetClassFull: 0,
         },
+        orientations: [],
       })
     })
 
@@ -425,7 +485,7 @@ describe('promoteStudents / previewPromoteStudents', () => {
         buildEnrollment({ studentId: 'student-1', classAssignments: [] }),
         buildEnrollment({
           studentId: 'student-2',
-          classAssignments: [{ classPeriod: { level: { id: 'level-1', nextLevel: null } } }],
+          classAssignments: [levelWith([])],
         }),
         buildEnrollment({ studentId: 'student-3' }),
         buildEnrollment({ studentId: 'student-4', planId: 'archived-plan' }),
@@ -441,9 +501,37 @@ describe('promoteStudents / previewPromoteStudents', () => {
           planArchived: 1,
           noClassAssignment: 1,
           noNextLevel: 1,
+          nextLevelNotChosen: 0,
           noTargetClass: 0,
           targetClassFull: 0,
         },
+        orientations: [],
+      })
+    })
+
+    it('should list the students to orient, with their next levels sorted by name', async () => {
+      enrollmentGatewayMock.findCompletedByPeriod.mockResolvedValue([
+        buildEnrollment({ classAssignments: [splitLevel] }),
+        buildEnrollment({ id: 'enrollment-2', studentId: 'student-2' }),
+      ])
+
+      const result = await previewPromoteStudents({ schoolId, sourcePeriodId, targetPeriodId })
+
+      expect(result).toMatchObject({
+        promoted: 1,
+        skipped: 1,
+        skippedByReason: { nextLevelNotChosen: 1 },
+        orientations: [
+          {
+            enrollmentId,
+            studentName: 'Amina Saïd',
+            levelName: 'C4',
+            nextLevels: [
+              { id: otherNextLevelId, name: 'H/GF' },
+              { id: nextLevelId, name: 'H/GG' },
+            ],
+          },
+        ],
       })
     })
 

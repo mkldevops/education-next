@@ -59,15 +59,19 @@ export const mcpReadGateway = {
       select: { id: true, name: true, slug: true },
     }),
 
-  listLevels: (schoolId: string) =>
-    db.level.findMany({
+  listLevels: async (schoolId: string) => {
+    const levels = await db.level.findMany({
       where: { schoolId, isActive: true },
-      // `nextLevel` ne porte pas de filtre `isActive` — Prisma n'en accepte pas sur le
-      // `select` d'une relation to-one. Désactiver un niveau vide d'abord les pointeurs
-      // qui le visent (`levelGateway.deactivate`), donc la cible publiée est toujours active.
-      select: { id: true, name: true, nextLevel: { select: namedRef } },
+      // Les arêtes ne portent pas de filtre `isActive` : désactiver un niveau retire celles
+      // qui le visent (`levelGateway.deactivate`), donc chaque cible publiée est active.
+      select: { id: true, name: true, nextLevels: { select: { nextLevel: { select: namedRef } } } },
       orderBy: { name: 'asc' },
-    }),
+    })
+    return levels.map(({ nextLevels, ...level }) => ({
+      ...level,
+      nextLevels: nextLevels.map(({ nextLevel }) => nextLevel),
+    }))
+  },
 
   listPeriods: (schoolId: string) =>
     db.period.findMany({

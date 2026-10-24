@@ -344,7 +344,7 @@ async function removeDemo() {
     await prisma.plan.deleteMany({ where })
     await prisma.classPeriod.deleteMany({ where })
     await prisma.teacher.deleteMany({ where })
-    await prisma.level.updateMany({ where, data: { nextLevelId: null } })
+    await prisma.levelProgression.deleteMany({ where })
     await prisma.level.deleteMany({ where })
     await prisma.period.deleteMany({ where })
     await prisma.phoneNumber.deleteMany({ where })
@@ -420,9 +420,8 @@ async function createDemo() {
     levels.push(await prisma.level.create({ data: { schoolId, name } }))
   }
   for (let index = 0; index < levels.length - 1; index += 1) {
-    await prisma.level.update({
-      where: { id_schoolId: { id: levels[index].id, schoolId } },
-      data: { nextLevelId: levels[index + 1].id },
+    await prisma.levelProgression.create({
+      data: { schoolId, levelId: levels[index].id, nextLevelId: levels[index + 1].id },
     })
   }
 

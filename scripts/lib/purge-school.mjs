@@ -28,6 +28,7 @@ export const SCHOOL_PURGE_TABLES = [
   'Enrollment',
   'Plan',
   'ClassPeriod',
+  'LevelProgression',
   'Level',
   'Period',
   'PhoneNumber',
@@ -60,10 +61,8 @@ export async function purgeSchool(client, schoolId) {
 
   await client.query(DELETE_PROVIDER_EVENTS, [schoolId])
 
-  // `Level.nextLevelId` is `ON DELETE RESTRICT` on `(nextLevelId, schoolId)`, yet the
-  // chain needs no unhooking: PostgreSQL checks referential integrity at the end of the
-  // statement, and the chain is intra-school since the composite includes `schoolId`, so
-  // one scoped `DELETE` removes both ends at once.
+  // `LevelProgression` cascades from `Level`, yet it is purged first like every other
+  // child table: its edges are intra-school since both foreign keys include `schoolId`.
   for (const table of SCHOOL_PURGE_TABLES) {
     await client.query(`DELETE FROM "${table}" WHERE "schoolId" = $1`, [schoolId])
   }

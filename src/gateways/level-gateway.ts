@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 
 export const levelGateway = {
-  create: (schoolId: string, data: { name: string; nextLevelId?: string }) =>
+  create: (schoolId: string, data: { name: string }) =>
     db.level.create({ data: { ...data, schoolId } }),
 
   update: (
@@ -19,8 +19,10 @@ export const levelGateway = {
   findById: (schoolId: string, id: string) =>
     db.level.findUnique({
       where: { id_schoolId: { id, schoolId } },
-      include: { nextLevel: true },
     }),
+
+  findActiveByIds: (schoolId: string, ids: string[]) =>
+    db.level.findMany({ where: { schoolId, id: { in: ids } }, select: { id: true } }),
 
   /** L'unicité du nom ne porte que sur les niveaux actifs (index partiel `isActive`). */
   findActiveByName: (schoolId: string, name: string) =>
@@ -30,41 +32,36 @@ export const levelGateway = {
     }),
 
   /**
-   * Graphe de progression, seule lecture d'ensemble du modèle : `setNextLevel` y cherche
-   * un cycle, et n'a besoin que des deux colonnes de l'arête.
+   * Graphe de progression : `setNextLevels` y cherche un cycle. La désactivation d'un niveau
+   * retire ses arêtes, le graphe ne relie donc que des niveaux actifs.
    */
-  list: (schoolId: string) =>
-    db.level.findMany({
-      where: { schoolId, isActive: true },
-      select: { id: true, nextLevelId: true },
+  listProgression: (schoolId: string) =>
+    db.levelProgression.findMany({
+      where: { schoolId },
+      select: { levelId: true, nextLevelId: true },
     }),
 
-  setNextLevel: (schoolId: string, id: string, nextLevelId: string | null) =>
-    db.level.update({
-      where: { id_schoolId: { id, schoolId } },
-      data: { nextLevelId },
-    }),
-
-  findByNextLevelId: (schoolId: string, nextLevelId: string) =>
-    db.level.findFirst({
-      where: { schoolId, nextLevelId },
-      select: { id: true, name: true },
-    }),
+  setNextLevels: (schoolId: string, id: string, nextLevelIds: string[]) =>
+    db.$transaction([
+      db.levelProgression.deleteMany({ where: { schoolId, levelId: id } }),
+      db.levelProgression.createMany({
+        data: nextLevelIds.map((nextLevelId) => ({ schoolId, levelId: id, nextLevelId })),
+      }),
+    ]),
 
   countClassPeriods: (schoolId: string, id: string) =>
     db.classPeriod.count({ where: { schoolId, levelId: id } }),
 
-  // `nextLevelId` porte une FK composite (nextLevelId, schoolId) en onDelete: Restrict :
-  // un SetNull automatique n'est plus possible, il faut vider les pointeurs explicitement.
+  // La désactivation est logique : la cascade des arêtes ne joue pas, elles sont retirées ici
+  // dans les deux sens pour qu'aucune progression ne mène à un niveau désactivé.
   deactivate: (schoolId: string, id: string) =>
     db.$transaction([
-      db.level.updateMany({
-        where: { schoolId, nextLevelId: id },
-        data: { nextLevelId: null },
+      db.levelProgression.deleteMany({
+        where: { schoolId, OR: [{ levelId: id }, { nextLevelId: id }] },
       }),
       db.level.update({
         where: { id_schoolId: { id, schoolId } },
-        data: { isActive: false, nextLevelId: null },
+        data: { isActive: false },
       }),
     ]),
 }

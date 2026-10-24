@@ -60,7 +60,11 @@ export async function loadSuggestedLevels(
     select: {
       enrollment: { select: { studentId: true } },
       classPeriod: {
-        select: { periodId: true, levelId: true, level: { select: { nextLevelId: true } } },
+        select: {
+          periodId: true,
+          levelId: true,
+          level: { select: { nextLevels: { select: { nextLevelId: true } } } },
+        },
       },
     },
     orderBy: { startAt: 'desc' },
@@ -71,7 +75,7 @@ export async function loadSuggestedLevels(
     const levelId = suggestLevelId(
       {
         levelId: classPeriod.levelId,
-        nextLevelId: classPeriod.level.nextLevelId,
+        nextLevelIds: classPeriod.level.nextLevels.map(({ nextLevelId }) => nextLevelId),
         periodId: classPeriod.periodId,
       },
       targetPeriodId

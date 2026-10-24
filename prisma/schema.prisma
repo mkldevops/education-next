@@ -133,6 +133,7 @@ model School {
   phoneNumbers              PhoneNumber[]
   configs                   Config[]
   levels                    Level[]
+  levelProgressions         LevelProgression[]
   periods                   Period[]
   classPeriods              ClassPeriod[]
   enrollments               Enrollment[]
@@ -440,22 +441,37 @@ model PlatformSetting {
 }
 
 model Level {
-  id          String   @id @default(uuid())
-  schoolId    String
-  name        String   @db.VarChar(250)
-  nextLevelId String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  schoolId  String
+  name      String   @db.VarChar(250)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  school        School        @relation(fields: [schoolId], references: [id])
-  nextLevel     Level?        @relation("levelProgression", fields: [nextLevelId, schoolId], references: [id, schoolId], onDelete: Restrict)
-  previousLevel Level?        @relation("levelProgression")
-  classPeriods  ClassPeriod[]
+  school         School             @relation(fields: [schoolId], references: [id])
+  nextLevels     LevelProgression[] @relation("levelProgressionFrom")
+  previousLevels LevelProgression[] @relation("levelProgressionTo")
+  classPeriods   ClassPeriod[]
 
   @@unique([id, schoolId])
-  @@unique([nextLevelId, schoolId])
   @@unique([schoolId, name], where: { isActive: true })
+  @@index([schoolId])
+}
+
+/// Arête de la progression : un niveau peut mener à plusieurs niveaux, et un niveau peut
+/// suivre plusieurs niveaux. Le graphe reste sans cycle (`setNextLevels`).
+model LevelProgression {
+  schoolId    String
+  levelId     String
+  nextLevelId String
+  createdAt   DateTime @default(now())
+
+  school    School @relation(fields: [schoolId], references: [id])
+  level     Level  @relation("levelProgressionFrom", fields: [levelId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  nextLevel Level  @relation("levelProgressionTo", fields: [nextLevelId, schoolId], references: [id, schoolId], onDelete: Cascade)
+
+  @@id([levelId, nextLevelId])
+  @@index([nextLevelId])
   @@index([schoolId])
 }
 
@@ -896,10 +912,10 @@ model McpOAuthGrant {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  school School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   // `Restrict`, comme `McpApiKey.user` : la trace d'une connexion survit à son compte.
-  user   User           @relation(fields: [userId], references: [id])
-  client McpOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User            @relation(fields: [userId], references: [id])
+  client McpOAuthClient  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   tokens McpOAuthToken[]
 
   @@unique([id, schoolId])

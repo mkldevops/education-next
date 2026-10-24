@@ -43,4 +43,6 @@ export const promoteStudentsSchema = z.object({
   schoolId: z.string().min(1),
   sourcePeriodId: z.string().uuid(),
   targetPeriodId: z.string().uuid(),
+  /** Niveau choisi par inscription source, pour les niveaux qui mènent à plusieurs niveaux. */
+  nextLevelChoices: z.record(z.uuid(), z.uuid()).default({}),
 })

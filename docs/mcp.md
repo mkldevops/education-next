@@ -272,7 +272,7 @@ Every one of them works in the key's school. Only the last three take arguments.
 | Tool | Publishes |
 |---|---|
 | `describe_school` | `id`, `name`, `slug` |
-| `list_levels` | `id`, `name`, `nextLevel { id, name }` |
+| `list_levels` | `id`, `name`, `nextLevels [{ id, name }]` |
 | `list_periods` | `id`, `name`, `startAt`, `endAt` |
 | `list_class_periods` | `id`, `name`, `capacity`, `level { id, name }`, `period { id, name }`, `teachers[].teacher { id, firstName, lastName }` |
 | `list_plans` | `id`, `name`, `amount` (decimal string, not cents) |

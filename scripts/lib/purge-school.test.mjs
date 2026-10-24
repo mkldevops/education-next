@@ -66,15 +66,15 @@ async function seedSchool(label, suffix) {
     data: { schoolId: school.id, name: `plan ${label}`, amount: 100 },
   })
 
-  // Two chained levels: `Level.nextLevelId` is `onDelete: Restrict`. A single scoped
-  // `DELETE` removes both ends — PostgreSQL checks referential integrity at the end of
-  // the statement — but splitting the purge later would break the chain, which is what
-  // this pair locks down.
+  // Two chained levels, so the purge has a `LevelProgression` edge to remove.
   const nextLevel = await raw.level.create({
     data: { schoolId: school.id, name: `level ${label} 2` },
   })
   const level = await raw.level.create({
-    data: { schoolId: school.id, name: `level ${label} 1`, nextLevelId: nextLevel.id },
+    data: { schoolId: school.id, name: `level ${label} 1` },
+  })
+  await raw.levelProgression.create({
+    data: { schoolId: school.id, levelId: level.id, nextLevelId: nextLevel.id },
   })
 
   const period = await raw.period.create({

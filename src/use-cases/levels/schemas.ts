@@ -5,10 +5,10 @@ export const createLevelSchema = z.object({
   name: z.string().min(1).max(250),
 })
 
-export const setNextLevelSchema = z.object({
+export const setNextLevelsSchema = z.object({
   schoolId: z.string().min(1),
   id: z.uuid(),
-  nextLevelId: z.uuid().nullable(),
+  nextLevelIds: z.array(z.uuid()).max(50),
 })
 
 export const renameLevelSchema = z.object({

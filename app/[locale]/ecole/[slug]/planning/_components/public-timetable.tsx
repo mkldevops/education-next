@@ -48,22 +48,30 @@ export type PublicTimetableLabels = {
 
 const LEVEL_TONES = ['#0e7490', '#b45309', '#be123c', '#4d7c0f', '#6d28d9', '#1d4ed8', '#c2410c']
 
+/**
+ * Niveaux du planning, rangés par profondeur dans la progression : un niveau vient après tous
+ * ceux qui y mènent, et les branches d'une progression qui se divise se rangent par nom.
+ */
 export function collectLevels(
   slots: PublicSlot[],
-  progression: Array<{ id: string; nextLevelId: string | null }>
+  progression: Array<{ levelId: string; nextLevelId: string }>
 ): PublicLevel[] {
   const levels = new Map<string, string>()
   for (const slot of slots) levels.set(slot.classPeriod.level.id, slot.classPeriod.level.name)
 
-  const nextById = new Map(progression.map((level) => [level.id, level.nextLevelId]))
-  const targets = new Set(progression.map((level) => level.nextLevelId))
+  const nextIdsById = new Map<string, string[]>()
+  for (const { levelId, nextLevelId } of progression) {
+    nextIdsById.set(levelId, [...(nextIdsById.get(levelId) ?? []), nextLevelId])
+  }
+  const targets = new Set(progression.map((edge) => edge.nextLevelId))
   const rank = new Map<string, number>()
-  for (const root of progression.filter((level) => !targets.has(level.id))) {
-    let current: string | null | undefined = root.id
-    while (current && !rank.has(current)) {
-      rank.set(current, rank.size)
-      current = nextById.get(current)
-    }
+  const visit = (id: string, depth: number) => {
+    if ((rank.get(id) ?? -1) >= depth) return
+    rank.set(id, depth)
+    for (const nextId of nextIdsById.get(id) ?? []) visit(nextId, depth + 1)
+  }
+  for (const id of new Set([...nextIdsById.keys(), ...levels.keys()])) {
+    if (!targets.has(id)) visit(id, 0)
   }
 
   return [...levels.entries()]

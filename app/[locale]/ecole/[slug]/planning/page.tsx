@@ -54,9 +54,9 @@ const resolvePublicSchedule = cache(async (slug: string) => {
 
   const schedule = await listPublicClassSchedule(slug, period.id)
   if (schedule === 'notFound') return null
-  const levelProgression = await db.level.findMany({
+  const levelProgression = await db.levelProgression.findMany({
     where: { schoolId: school.id },
-    select: { id: true, nextLevelId: true },
+    select: { levelId: true, nextLevelId: true },
   })
   const { logoUrl } = await getBrandingConfig(school.id)
   return { school: schedule.school, logoUrl, period, slots: schedule.slots, levelProgression }
