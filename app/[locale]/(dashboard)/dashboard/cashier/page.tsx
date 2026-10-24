@@ -61,9 +61,19 @@ export default async function CashierPage({ params, searchParams }: Props) {
           { label: tBreadcrumbs('cashier') },
         ]}
       />
-      <div>
-        <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        <p className="text-sm text-graphite-600">{t('intro')}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
+          <p className="text-sm text-graphite-600">{t('intro')}</p>
+        </div>
+        <nav className="flex gap-4 text-sm">
+          <Link href="/dashboard/cashier/day" className="text-primary hover:underline">
+            {t('day.title')}
+          </Link>
+          <Link href="/dashboard/cashier/debtors" className="text-primary hover:underline">
+            {t('debtors.title')}
+          </Link>
+        </nav>
       </div>
 
       <search>

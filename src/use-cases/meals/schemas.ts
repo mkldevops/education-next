@@ -54,3 +54,10 @@ export const recordMealOpeningSchema = z.object({
   reason: z.string().trim().min(1).max(250),
   recordedById: z.string().min(1),
 })
+
+export const toggleMealAbsenceSchema = z.object({
+  ...studentService,
+  day: z.iso.date(),
+  absent: z.boolean(),
+  recordedById: z.string().min(1),
+})

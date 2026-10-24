@@ -1,3 +1,4 @@
+import { type MealDayStatus, mealCalendar } from './meal-calendar'
 import {
   computeCoverage,
   type MealCoverage,
@@ -24,6 +25,7 @@ export type MealAccountSummary = {
   unitPrice: number | null
   served: string[]
   ledger: MealLedger
+  calendar: Array<{ day: string; status: MealDayStatus }>
 }
 
 /**
@@ -39,9 +41,11 @@ export function summarizeMealAccount(input: {
   payments: ReadonlyArray<{ amount: number; unitPrice: number }>
   prices: readonly MealPriceEntry[]
   isClosed: (day: string) => boolean
+  absences?: readonly string[]
   today: string
 }): MealAccountSummary {
   const { segments, adjustments, today } = input
+  const absences = new Set(input.absences)
   const served = servedDays({
     segments: segments.map((segment) => ({
       ...segment,
@@ -52,6 +56,7 @@ export function summarizeMealAccount(input: {
       ''
     ),
     isClosed: input.isClosed,
+    absences,
   })
   const unitPrice = priceOn(input.prices, today)
   const opening = adjustments.find((adjustment) => adjustment.kind === 'OPENING')
@@ -76,5 +81,13 @@ export function summarizeMealAccount(input: {
     unitPrice,
     served,
     ledger,
+    calendar: mealCalendar({
+      segments,
+      isClosed: input.isClosed,
+      absences,
+      served,
+      ownedDays: ledger.days,
+      today,
+    }),
   }
 }

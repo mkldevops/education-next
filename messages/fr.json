@@ -1138,7 +1138,8 @@
             "alreadyEffective": "Ce tarif est déjà en vigueur et ne peut plus être retiré",
             "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
           }
-        }
+        },
+        "debtorsLink": "Impayés et relances"
       },
       "cashier": {
         "title": "Caisse",
@@ -1221,6 +1222,42 @@
               "validationError": "Indiquez un motif"
             }
           }
+        },
+        "day": {
+          "title": "Caisse du jour",
+          "intro": "Reçus émis ce jour, moins les annulations faites ce jour. Un jour passé ne change plus.",
+          "previous": "← Jour précédent",
+          "next": "Jour suivant →",
+          "issued": "Émis",
+          "cancelled": "Annulés",
+          "net": "Net",
+          "counts": "{issued, plural, =0 {Aucun reçu émis} one {# reçu émis} other {# reçus émis}} · {cancelled, plural, =0 {aucune annulation} one {# annulation} other {# annulations}}",
+          "byMethod": "Par mode de paiement",
+          "byLine": "Par poste",
+          "lines": {
+            "CANTEEN": "Cantine",
+            "SNACK": "Goûter",
+            "TUITION": "Écolage"
+          },
+          "issuedReceipts": "Reçus émis",
+          "cancelledReceipts": "Annulations du jour",
+          "none": "Aucun",
+          "receipt": "N° {number} · {family}",
+          "cancelledBadge": "Annulé"
+        },
+        "debtors": {
+          "title": "Impayés et relances",
+          "intro": "Enfants avec des jours dus, ou dont il ne reste que {days, plural, one {# jour couvert} other {# jours couverts}} ou moins.",
+          "empty": "Aucun impayé ni relance.",
+          "total": "{count, plural, one {# compte} other {# comptes}} · {amount} dus",
+          "student": "Élève",
+          "service": "Service",
+          "paidThrough": "Payé jusqu'au",
+          "due": "Dû",
+          "nothingPaid": "Rien de payé",
+          "coveredLeft": "{days, plural, =0 {plus aucun jour couvert} one {encore # jour couvert} other {encore # jours couverts}}",
+          "dueDetail": "{days, plural, one {# jour} other {# jours}} · {amount}",
+          "collect": "Encaisser"
         }
       },
       "config": {
@@ -1735,6 +1772,25 @@
               "alreadySubscribed": "L'élève est déjà inscrit à ce service à cette date",
               "backdated": "La date ne peut pas être antérieure à aujourd'hui",
               "notSubscribed": "L'élève n'est pas inscrit à ce service à cette date"
+            }
+          },
+          "calendar": {
+            "previous": "Mois précédent",
+            "next": "Mois suivant",
+            "hint": "Touchez un jour pour marquer ou retirer une absence : le jour n'est pas consommé.",
+            "status": {
+              "paid": "Payé",
+              "due": "Dû",
+              "unpaid": "À payer",
+              "absent": "Absent",
+              "closed": "Fermé"
+            },
+            "error": "Erreur lors de l'enregistrement",
+            "errors": {
+              "validationError": "Jour invalide",
+              "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école",
+              "notSubscribed": "L'élève n'est pas inscrit à ce service",
+              "notServed": "Ce jour n'est pas servi"
             }
           }
         }

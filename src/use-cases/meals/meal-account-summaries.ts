@@ -25,6 +25,7 @@ export async function loadMealAccountSummaries(
   const segments = await accountGw.listSegments(tx, schoolId, ids)
   const { adjustments, payments } = await accountGw.listLedgers(tx, schoolId, ids)
   const prices = await accountGw.listPrices(tx, schoolId)
+  const absences = await accountGw.listAbsences(tx, schoolId, ids)
   const closures =
     segments.length > 0
       ? await accountGw.findClosures(
@@ -44,6 +45,9 @@ export async function loadMealAccountSummaries(
         payments: payments.filter((payment) => payment.accountId === account.id),
         prices: prices.filter((price) => price.service === account.service),
         isClosed,
+        absences: absences
+          .filter((absence) => absence.accountId === account.id)
+          .map((absence) => absence.day),
         today,
       })
     )
