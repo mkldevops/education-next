@@ -567,8 +567,8 @@
           "enrollUnavailable": "No plan or no class in the selected period: the student will be created without an enrollment.",
           "selectPlan": "Pricing plan",
           "selectClass": "Class",
-          "discount": "Discount (€)",
-          "totalAmount": "Amount due (€)",
+          "discount": "Discount ({currency})",
+          "totalAmount": "Amount due ({currency})",
           "canLeaveAlone": "Allowed to leave alone after class (for this enrollment)",
           "submit": "Create",
           "cancel": "Cancel",
@@ -868,7 +868,7 @@
           "selectPlan": "Pricing Plan",
           "selectClass": "Class",
           "noClassInPeriod": "No class in the selected period. Create a class or switch period.",
-          "discount": "Discount (€)",
+          "discount": "Discount ({currency})",
           "canLeaveAlone": "Can leave alone",
           "replaceExisting": "Replace the existing enrollment for this period",
           "replaceExistingHint": "The current enrollment is cancelled, then recreated. Not possible once it has received a payment.",
@@ -888,7 +888,7 @@
             "paymentsDisabled": "Payment management is turned off for this school"
           },
           "replaceExistingHintNoPayments": "The current enrollment is cancelled, then recreated.",
-          "totalAmount": "Amount due (€)",
+          "totalAmount": "Amount due ({currency})",
           "alreadyEnrolledHint": "This student already has a current enrollment for this period: tick “Replace the existing enrollment” to recreate it."
         },
         "drawer": {
@@ -1042,7 +1042,7 @@
         "create": {
           "title": "New Plan",
           "name": "Name",
-          "amount": "Amount (€)",
+          "amount": "Amount ({currency})",
           "cancel": "Cancel",
           "submit": "Create",
           "success": "Plan created",
@@ -1580,7 +1580,7 @@
         },
         "applyDiscount": {
           "title": "Apply Discount",
-          "amount": "Discount amount (€)",
+          "amount": "Discount amount ({currency})",
           "cancel": "Cancel",
           "submit": "Apply",
           "success": "Discount applied",
@@ -1594,7 +1594,7 @@
             "totalBelowPaid": "The amount due would fall below what has already been paid on this enrollment",
             "paymentsDisabled": "Payment management is turned off for this school"
           },
-          "totalAmount": "Final amount due (€)"
+          "totalAmount": "Final amount due ({currency})"
         }
       },
       "users": {

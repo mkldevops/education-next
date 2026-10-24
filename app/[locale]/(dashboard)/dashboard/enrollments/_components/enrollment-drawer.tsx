@@ -72,6 +72,7 @@ interface Props {
   availablePlans: Array<{ id: string; name: string }>
   paymentsEnabled: boolean
   locale: string
+  currency: string
 }
 
 export function EnrollmentDrawer({
@@ -83,6 +84,7 @@ export function EnrollmentDrawer({
   availablePlans,
   paymentsEnabled,
   locale,
+  currency,
 }: Props) {
   const t = useTranslations('dashboard.pages.enrollments.drawer')
   const tEnrollments = useTranslations('dashboard.pages.enrollments')
@@ -131,7 +133,9 @@ export function EnrollmentDrawer({
                   <EnrollmentStatusBadge status={enrollment.status} />
                   {paymentsEnabled && remaining > 0 && (
                     <BalanceBadge
-                      label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
+                      label={t('balanceBadge', {
+                        amount: formatCurrency(remaining, locale, currency),
+                      })}
                     />
                   )}
                 </div>
@@ -156,6 +160,7 @@ export function EnrollmentDrawer({
                 currentClassId={currentClassId}
                 availableClasses={availableClasses}
                 currentTotalAmount={totalAmountNum}
+                currency={currency}
                 paymentsEnabled={paymentsEnabled}
                 planName={enrollment.plan.name}
                 availablePlans={availablePlans}
@@ -171,25 +176,25 @@ export function EnrollmentDrawer({
                 <div className="flex justify-between text-sm">
                   <span className="text-graphite-600">{t('totalAmount')}</span>
                   <span className="font-medium text-graphite">
-                    {formatCurrency(totalAmountNum, locale)}
+                    {formatCurrency(totalAmountNum, locale, currency)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-graphite-600">{t('discount')}</span>
                   <span className="font-medium text-graphite">
-                    {formatCurrency(-discountNum, locale)}
+                    {formatCurrency(-discountNum, locale, currency)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-graphite-600">{t('totalPaid')}</span>
                   <span className="font-medium text-graphite">
-                    {formatCurrency(totalPaid, locale)}
+                    {formatCurrency(totalPaid, locale, currency)}
                   </span>
                 </div>
                 <div className="flex justify-between border-t pt-2 text-sm font-semibold">
                   <span className="text-graphite">{t('remaining')}</span>
                   <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
-                    {formatCurrency(remaining, locale)}
+                    {formatCurrency(remaining, locale, currency)}
                   </span>
                 </div>
               </div>
@@ -252,7 +257,7 @@ export function EnrollmentDrawer({
                     {enrollment.payments.map((p) => (
                       <tr key={p.id} className="text-sm">
                         <td className="px-3 py-2 font-medium">
-                          {formatCurrency(p.amount, locale)}
+                          {formatCurrency(p.amount, locale, currency)}
                         </td>
                         <td className="px-3 py-2 text-graphite-600">
                           <PaymentMethodLabel method={p.method} />

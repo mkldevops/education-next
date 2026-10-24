@@ -34,6 +34,7 @@ type Props = {
   plans: Option[]
   classes: Option[]
   paymentsEnabled: boolean
+  currency: string
   /** Date de référence de l'âge, fixée par le serveur pour que le rendu client lui soit identique. */
   today: Date
 }
@@ -92,6 +93,7 @@ export function StudentsDataTable({
   plans,
   classes,
   paymentsEnabled,
+  currency,
   today,
 }: Props) {
   const t = useTranslations('dashboard.pages.students')
@@ -204,6 +206,7 @@ export function StudentsDataTable({
           plans={plans}
           classes={classes}
           paymentsEnabled={paymentsEnabled}
+          currency={currency}
           defaultStudentId={enrollStudent.id}
           defaultOpen
           showTrigger={false}

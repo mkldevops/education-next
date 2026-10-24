@@ -12,6 +12,7 @@ import { ParentsSection, type PersonWithRelation } from './parents-section'
 
 type Props = {
   locale: string
+  currency: string
   familyId: string
   isAdmin: boolean
   canInvite: boolean
@@ -33,6 +34,7 @@ type Props = {
 
 export async function OverviewTab({
   locale,
+  currency,
   familyId,
   isAdmin,
   canInvite,
@@ -80,13 +82,13 @@ export async function OverviewTab({
           <>
             <KPICard
               label={t('kpis.totalPaid')}
-              value={formatCurrency(totalPaid, locale)}
+              value={formatCurrency(totalPaid, locale, currency)}
               icon={CircleCheck}
               color="green"
             />
             <KPICard
               label={t('kpis.remainingBalance')}
-              value={formatCurrency(remainingBalance, locale)}
+              value={formatCurrency(remainingBalance, locale, currency)}
               icon={remainingBalance > 0 ? TriangleAlert : CircleCheck}
               color={remainingBalance > 0 ? 'amber' : 'green'}
             />
@@ -96,7 +98,12 @@ export async function OverviewTab({
       {/* « Ajouter un élève » ne vit que dans l'en-tête : le répéter ici doublait l'action. */}
       <Card className="p-6">
         <h2 className="mb-4 text-lg font-semibold text-graphite">{t('sections.childrenTitle')}</h2>
-        <ChildrenSummary students={students} locale={locale} paymentsEnabled={paymentsEnabled} />
+        <ChildrenSummary
+          students={students}
+          locale={locale}
+          currency={currency}
+          paymentsEnabled={paymentsEnabled}
+        />
       </Card>
       <div
         className={
@@ -126,6 +133,7 @@ export async function OverviewTab({
               totalPaid={totalPaid}
               totalDiscount={totalDiscount}
               remainingBalance={remainingBalance}
+              currency={currency}
             />
             {!isAdmin && (
               <div className="mt-5 border-t border-alabaster-700 pt-5">
@@ -133,6 +141,7 @@ export async function OverviewTab({
                   amount={remainingBalance}
                   configured={onlinePaymentAvailable}
                   locale={locale}
+                  currency={currency}
                 />
               </div>
             )}

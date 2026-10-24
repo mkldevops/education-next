@@ -15,11 +15,13 @@ export function AddStudentButton({
   plans,
   classes,
   paymentsEnabled,
+  currency,
 }: {
   families: FamilyOption[]
   plans: Option[]
   classes: Option[]
   paymentsEnabled: boolean
+  currency: string
 }) {
   const t = useTranslations('dashboard.pages.students.create')
 
@@ -34,6 +36,7 @@ export function AddStudentButton({
           plans={plans}
           classes={classes}
           paymentsEnabled={paymentsEnabled}
+          currency={currency}
           defaultOpen
           showTrigger={false}
           redirectTo="/dashboard/students"

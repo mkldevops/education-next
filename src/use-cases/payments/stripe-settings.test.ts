@@ -1,6 +1,12 @@
 import { randomBytes } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { encryptSecret } from '@/lib/secret-crypto'
+
+const regionalSettingsMock = vi.hoisted(() => vi.fn())
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: regionalSettingsMock,
+}))
+
 import {
   deleteStripeSecret,
   getStripeSettings,
@@ -55,6 +61,7 @@ function setFlag(value: 'true' | 'false') {
 beforeEach(() => {
   rows.clear()
   vi.clearAllMocks()
+  regionalSettingsMock.mockResolvedValue({ currency: 'EUR', timeZone: 'Europe/Paris' })
   vi.stubEnv('SETTINGS_ENCRYPTION_KEY', randomBytes(32).toString('hex'))
   vi.stubEnv('STRIPE_SECRET_KEY', '')
   vi.stubEnv('STRIPE_WEBHOOK_SECRET', '')
@@ -129,6 +136,13 @@ describe('resolveCheckoutCredentials', () => {
 
     expect(await resolveCheckoutCredentials(schoolId, gw)).toEqual({ secretKey, webhookSecret })
     expect(await isOnlinePaymentAvailable(schoolId, gw)).toBe(true)
+  })
+
+  it('is unavailable for a school outside the euro even when configured', async () => {
+    storeSchoolSecrets()
+    regionalSettingsMock.mockResolvedValue({ currency: 'KMF', timeZone: 'Indian/Comoro' })
+
+    expect(await isOnlinePaymentAvailable(schoolId, gw)).toBe(false)
   })
 
   it('is unavailable when enabled but not configured', async () => {

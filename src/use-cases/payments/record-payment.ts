@@ -3,6 +3,8 @@ import { distributePayment } from '@/domain/payment'
 import { configGateway } from '@/gateways/config-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { db } from '@/lib/db'
+import { fitsCurrencyPrecision } from '@/lib/decimal'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { readLockedFamilyBalances } from './locked-family-balance'
 import { recordPaymentSchema } from './schemas'
@@ -14,6 +16,8 @@ export async function recordPayment(input: Input, configGw = configGateway) {
   if (!parsed.success) return 'validationError' as const
   const { schoolId, familyId } = parsed.data
   if (!(await isPaymentsEnabled(schoolId, configGw))) return 'paymentsDisabled' as const
+  const { currency } = await getSchoolRegionalSettings(schoolId)
+  if (!fitsCurrencyPrecision(parsed.data.amount, currency)) return 'validationError' as const
 
   // Lecture du solde, répartition et écriture dans une seule transaction, sous le verrou
   // de la famille : deux saisies simultanées ne répartissent jamais le même solde.

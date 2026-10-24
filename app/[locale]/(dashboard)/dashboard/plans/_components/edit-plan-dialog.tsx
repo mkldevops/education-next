@@ -11,8 +11,9 @@ import {
   Input,
   Label,
 } from '@peaklab/ui'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
+import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { deactivatePlanAction, updatePlanAction } from '../../../_lib/plan-actions'
 
 interface EditPlanDialogProps {
@@ -22,6 +23,7 @@ interface EditPlanDialogProps {
     amount: number
   }
   openEnrollments: number
+  currency: string
 }
 
 export function EditPlanDialog(props: EditPlanDialogProps) {
@@ -44,9 +46,11 @@ export function EditPlanDialog(props: EditPlanDialogProps) {
   )
 }
 
-function EditPlanForm({ plan, openEnrollments }: EditPlanDialogProps) {
+function EditPlanForm({ plan, openEnrollments, currency }: EditPlanDialogProps) {
   const t = useTranslations('dashboard.pages.plans.edit')
   const tCreate = useTranslations('dashboard.pages.plans.create')
+  const locale = useLocale()
+  const step = currencyStep(currency)
   const { isPending, close, run, onSubmit } = useDialogForm(t)
 
   const handleSubmit = onSubmit((formData) =>
@@ -75,13 +79,15 @@ function EditPlanForm({ plan, openEnrollments }: EditPlanDialogProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-plan-amount">{tCreate('amount')}</Label>
+            <Label htmlFor="edit-plan-amount">
+              {tCreate('amount', { currency: currencySymbol(locale, currency) })}
+            </Label>
             <Input
               id="edit-plan-amount"
               name="amount"
               type="number"
-              step="0.01"
-              min="0.01"
+              step={step}
+              min={step}
               defaultValue={plan.amount}
               required
               disabled={isPending}

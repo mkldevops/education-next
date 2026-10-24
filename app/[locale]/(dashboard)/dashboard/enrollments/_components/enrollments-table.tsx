@@ -30,6 +30,7 @@ interface Props {
   availablePlans: Array<{ id: string; name: string }>
   paymentsEnabled: boolean
   locale: string
+  currency: string
   periodName: string | null
 }
 
@@ -42,6 +43,7 @@ export function EnrollmentsTable({
   availablePlans,
   paymentsEnabled,
   locale,
+  currency,
   periodName,
 }: Props) {
   const t = useTranslations('dashboard.pages.enrollments')
@@ -115,10 +117,12 @@ export function EnrollmentsTable({
       )
       return (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-graphite">{formatCurrency(row.original.totalAmount, locale)}</span>
+          <span className="text-graphite">
+            {formatCurrency(row.original.totalAmount, locale, currency)}
+          </span>
           {remaining > 0 && (
             <BalanceBadge
-              label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
+              label={t('balanceBadge', { amount: formatCurrency(remaining, locale, currency) })}
             />
           )}
         </div>
@@ -183,6 +187,7 @@ export function EnrollmentsTable({
         availablePlans={availablePlans}
         paymentsEnabled={paymentsEnabled}
         locale={locale}
+        currency={currency}
       />
     </>
   )

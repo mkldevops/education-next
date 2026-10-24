@@ -8,7 +8,10 @@ const { createStudentAction } = vi.hoisted(() => ({
     .mockResolvedValue({ studentId: 'student-1', enrollmentId: 'enrollment-1' }),
 }))
 
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
+vi.mock('next-intl', () => ({
+  useLocale: () => 'fr',
+  useTranslations: () => (key: string) => key,
+}))
 vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 vi.mock('../../../_lib/student-actions', () => ({ createStudentAction }))
 
@@ -23,6 +26,7 @@ describe('CreateStudentDialog', () => {
         ]}
         classes={[{ id: '550e8400-e29b-41d4-a716-446655440004', name: 'CE1' }]}
         paymentsEnabled={true}
+        currency="EUR"
       />
     )
 
@@ -66,6 +70,7 @@ describe('CreateStudentDialog', () => {
         familyName="Martin"
         classes={[{ id: '550e8400-e29b-41d4-a716-446655440004', name: 'CE1' }]}
         paymentsEnabled={false}
+        currency="EUR"
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
@@ -88,6 +93,7 @@ describe('CreateStudentDialog', () => {
         familyId="550e8400-e29b-41d4-a716-446655440001"
         familyName="Martin"
         paymentsEnabled={false}
+        currency="EUR"
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'title' }))

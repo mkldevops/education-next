@@ -11,19 +11,22 @@ import {
   Input,
   Label,
 } from '@peaklab/ui'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
+import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { applyDiscountAction } from '../../../_lib/enrollment-actions'
 
 interface ApplyDiscountDialogProps {
   enrollmentId: string
   currentTotalAmount: number
+  currency: string
 }
 
 export function ApplyDiscountDialog({
   enrollmentId,
   currentTotalAmount,
+  currency,
 }: ApplyDiscountDialogProps) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.applyDiscount')
 
@@ -38,14 +41,19 @@ export function ApplyDiscountDialog({
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <DiscountForm enrollmentId={enrollmentId} currentTotalAmount={currentTotalAmount} />
+        <DiscountForm
+          enrollmentId={enrollmentId}
+          currentTotalAmount={currentTotalAmount}
+          currency={currency}
+        />
       </DialogContent>
     </Dialog>
   )
 }
 
-function DiscountForm({ enrollmentId, currentTotalAmount }: ApplyDiscountDialogProps) {
+function DiscountForm({ enrollmentId, currentTotalAmount, currency }: ApplyDiscountDialogProps) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.applyDiscount')
+  const locale = useLocale()
   const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
 
@@ -63,12 +71,14 @@ function DiscountForm({ enrollmentId, currentTotalAmount }: ApplyDiscountDialogP
       <DialogBody>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="discount-amount">{t('totalAmount')}</Label>
+            <Label htmlFor="discount-amount">
+              {t('totalAmount', { currency: currencySymbol(locale, currency) })}
+            </Label>
             <Input
               id="discount-amount"
               name="totalAmount"
               type="number"
-              step="0.01"
+              step={currencyStep(currency)}
               min="0"
               defaultValue={currentTotalAmount}
               required

@@ -7,6 +7,7 @@ import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-context'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
@@ -84,12 +85,13 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   // `countDeletionImpact` n'est pas dérivable de `family` : la page lit par `db`, filtrée
   // sur `isActive`, alors que la suppression emporte aussi les lignes archivées.
   // Le bouton de paiement en ligne n'est rendu que pour un parent.
-  const [selectedPeriodId, familyBalance, deletionImpact, onlinePaymentAvailable] =
+  const [selectedPeriodId, familyBalance, deletionImpact, onlinePaymentAvailable, { currency }] =
     await Promise.all([
       getSelectedPeriodId(family.schoolId),
       seesFinances ? getFamilyBalance(family.schoolId, family.id) : null,
       isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
       isStaff ? false : isOnlinePaymentAvailable(family.schoolId),
+      getSchoolRegionalSettings(family.schoolId),
     ])
 
   const {
@@ -174,6 +176,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               plans={planOptions}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}
+              currency={currency}
               defaultOpen={openAction === 'addEnrollment'}
               defaultStudentId={scopedStudentId}
               redirectTo={familyHref}
@@ -183,6 +186,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               <RecordPaymentDialog
                 families={[{ id: family.id, name: family.name }]}
                 remainingAmount={remainingBalance}
+                currency={currency}
                 defaultOpen={openAction === 'addPayment'}
                 redirectTo={familyHref}
                 showTrigger={false}
@@ -194,6 +198,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               plans={planOptions}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}
+              currency={currency}
               defaultOpen={openAction === 'addStudent'}
               showTrigger={false}
             />
@@ -249,6 +254,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             content: (
               <OverviewTab
                 locale={locale}
+                currency={currency}
                 familyId={family.id}
                 isAdmin={isStaff}
                 canInvite={isAdmin}
@@ -282,6 +288,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 students={students}
                 pendingCount={pendingCount}
                 locale={locale}
+                currency={currency}
                 familyId={family.id}
                 isAdmin={isStaff}
                 classes={reassignClassOptions}
@@ -294,7 +301,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             ? [
                 {
                   label: t('tabs.payments'),
-                  content: <PaymentsTab payments={payments} locale={locale} />,
+                  content: <PaymentsTab payments={payments} locale={locale} currency={currency} />,
                 },
               ]
             : []),
@@ -305,6 +312,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 enrollments={allEnrollments}
                 payments={payments}
                 locale={locale}
+                currency={currency}
                 paymentsEnabled={paymentsEnabled}
               />
             ),

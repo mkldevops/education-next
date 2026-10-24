@@ -149,6 +149,26 @@ deactivations would otherwise each see the other school still active and leave t
 none. The counts are taken under that same lock, so nothing can appear between the check and the
 write. Reactivation carries no such condition.
 
+### Currency and time zone
+
+Each school carries `currency` (ISO 4217, default `EUR`) and `timeZone` (IANA, default
+`Europe/Paris`), read through `getSchoolRegionalSettings()` (`src/lib/school-regional-settings.ts`,
+memoized per render). Existing schools keep the defaults and render exactly as before; EIC uses
+`KMF` / `Indian/Comoro`. No form edits them yet: they are set in the database.
+
+- **Amounts follow the school's currency.** `formatCurrency(value, locale, currency)` and
+  `currencySymbol()` (`src/lib/decimal.ts`) take the precision from `Intl`: two decimals for `EUR`,
+  none for `KMF`. Amount inputs use `currencyStep()` as step and minimum, and their labels show the
+  school's symbol instead of a hard-coded « € ».
+- **A payment must fit the currency's precision.** `recordPayment()` and the MCP payment preview
+  reject `1500.5 KMF` (`validationError` / blocker `invalidPrecision`) through
+  `fitsCurrencyPrecision()`. Plan, enrollment and discount schemas still only check two decimals
+  (`isCurrencyAmount`); for a zero-decimal currency the input step is the only guard there.
+- **« Today » is the school's day.** `schoolToday(timeZone)` (`src/domain/school-date.ts`) gives the
+  local calendar date; `@db.Date` columns stay read in UTC. The dashboard header and the teacher's
+  classes page use it. Event calendar exports (`src/domain/event-ics.ts`) still assume
+  `Europe/Paris`.
+
 ### The school switcher
 
 `src/features/dashboard/school-switcher.tsx` occupies the head of the sidebar, where the school name
@@ -1575,7 +1595,7 @@ across that family's `PENDING` and `ACTIVE` enrollments**, proportionally to eac
 
 - **No enrollment left to pay** → `noPayableEnrollments`.
 - **More than the family owes** → `overpayment`. The sum of remaining balances is the ceiling.
-- **Every part is a whole euro.** Each proportional share is floored, then the euros left over go
+- **Every part is a whole currency unit.** Each proportional share is floored, then the units left over go
   one by one to the first enrollments with room left: 100 € over three equal balances is
   34 + 33 + 33, never 33.33 or 33 + 33 + 34. No part exceeds its remaining balance, only the cents
   of a non-whole amount stay fractional, and the parts always sum to exactly the amount received.
@@ -1668,7 +1688,7 @@ announced figures cannot drift from what a family is asked to pay.
 ### Refunds
 
 A negative amount distributes proportionally to what was **actually paid** on each enrollment.
-The same whole-euro split applies.
+The same whole-unit split applies.
 Refunding more than the family ever paid → `refundExceedsPaid`.
 
 ### Methods
@@ -1683,7 +1703,8 @@ the checkout flow, not by the form.
 
 `create-checkout-session.ts` / `complete-checkout-session.ts`.
 
-- No usable credentials, or Stripe switched off by the school → `notConfigured`. The feature
+- No usable credentials, Stripe switched off by the school, or a school whose currency is not `EUR`
+  (`isStripeCurrency`, v1 charges euros only) → `notConfigured`. The feature
   degrades, it does not crash. The session metadata carries `transactionId`, `familyId` and
   `schoolId`.
 - Nothing owed → `noBalance`. The session is always opened for the **full `remainingBalance`**,

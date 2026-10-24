@@ -49,6 +49,7 @@ const student = (planName: string) =>
 
 const baseProps = {
   locale: 'fr',
+  currency: 'EUR',
   familyId: 'family-1',
   isAdmin: false,
   classes: [],
@@ -134,6 +135,7 @@ describe('ActivityFeed', () => {
           },
         ] as unknown as Parameters<typeof ActivityFeed>[0]['payments'],
         locale: 'fr',
+        currency: 'EUR',
         paymentsEnabled: false,
       })
     )

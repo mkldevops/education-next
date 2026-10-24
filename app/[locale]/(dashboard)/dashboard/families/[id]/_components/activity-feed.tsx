@@ -10,6 +10,7 @@ type Props = {
   enrollments: FamilyDetailEnrollment[]
   payments: FamilyDetailPayment[]
   locale: string
+  currency: string
   /** Faux quand l'école a désactivé les paiements : ni versement, ni formule dans le fil. */
   paymentsEnabled: boolean
 }
@@ -24,7 +25,13 @@ type Activity = {
   color: string
 }
 
-export async function ActivityFeed({ enrollments, payments, locale, paymentsEnabled }: Props) {
+export async function ActivityFeed({
+  enrollments,
+  payments,
+  locale,
+  currency,
+  paymentsEnabled,
+}: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   const activities: Activity[] = []
@@ -35,7 +42,7 @@ export async function ActivityFeed({ enrollments, payments, locale, paymentsEnab
       date: payment.paidAt,
       type: 'payment',
       title: t('activity.payment'),
-      description: formatCurrency(payment.amount, locale),
+      description: formatCurrency(payment.amount, locale, currency),
       student: payment.lines
         .map(
           (line) =>

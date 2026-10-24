@@ -8,9 +8,16 @@ type Props = {
   totalPaid: number
   totalDiscount: number
   remainingBalance: number
+  currency: string
 }
 
-export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remainingBalance }: Props) {
+export function FinancialSummary({
+  totalDue,
+  totalPaid,
+  totalDiscount,
+  remainingBalance,
+  currency,
+}: Props) {
   const t = useTranslations('dashboard.pages.familyDetails')
   const locale = useLocale()
 
@@ -59,7 +66,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
           <div>
             <p className="text-xs text-graphite-600">{t('financial.paid')}</p>
             <p className="text-sm font-semibold text-green-900">
-              {formatCurrency(totalPaid, locale)}
+              {formatCurrency(totalPaid, locale, currency)}
             </p>
           </div>
           <div className="w-3 h-3 rounded-full bg-green-500" />
@@ -69,7 +76,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
           <div>
             <p className="text-xs text-graphite-600">{t('financial.remaining')}</p>
             <p className="text-sm font-semibold text-amber-900">
-              {formatCurrency(remainingBalance, locale)}
+              {formatCurrency(remainingBalance, locale, currency)}
             </p>
           </div>
           <div className="w-3 h-3 rounded-full bg-amber-500" />
@@ -79,7 +86,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
           <div>
             <p className="text-xs text-graphite-600">{t('financial.total')}</p>
             <p className="text-sm font-semibold text-blue-900">
-              {formatCurrency(totalDue, locale)}
+              {formatCurrency(totalDue, locale, currency)}
             </p>
           </div>
           <div className="w-3 h-3 rounded-full bg-blue-500" />
@@ -90,7 +97,7 @@ export function FinancialSummary({ totalDue, totalPaid, totalDiscount, remaining
         <div className="pt-2 border-t border-alabaster-700">
           <p className="text-xs text-graphite-600">{t('financial.discount')}</p>
           <p className="text-sm font-semibold text-graphite">
-            {formatCurrency(totalDiscount, locale)}
+            {formatCurrency(totalDiscount, locale, currency)}
           </p>
         </div>
       )}

@@ -6,6 +6,7 @@ const findFamiliesByStudent = vi.fn()
 const findPayableByFamily = vi.fn()
 const findByReference = vi.fn()
 const createDraft = vi.fn()
+const getRegionalSettings = vi.fn()
 
 vi.mock('@/gateways/family-gateway', () => ({
   familyGateway: {
@@ -17,6 +18,9 @@ vi.mock('@/gateways/family-gateway', () => ({
 vi.mock('@/gateways/enrollment-gateway', () => ({ enrollmentGateway: { findPayableByFamily } }))
 vi.mock('@/gateways/payment-gateway', () => ({ paymentGateway: { findByReference } }))
 vi.mock('@/gateways/mcp-draft-gateway', () => ({ mcpDraftGateway: { create: createDraft } }))
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: getRegionalSettings,
+}))
 
 const { previewRecordPayment } = await import('./preview-record-payment')
 
@@ -55,6 +59,7 @@ beforeEach(() => {
   findPayableByFamily.mockResolvedValue([enrollment('enr-1', 100, 0), enrollment('enr-2', 100, 0)])
   findByReference.mockResolvedValue([])
   createDraft.mockResolvedValue({ id: 'draft-2' })
+  getRegionalSettings.mockResolvedValue({ currency: 'EUR', timeZone: 'Europe/Paris' })
 })
 
 // Un `return` silencieux ferait passer le test sans rien vérifier le jour où le preview
@@ -74,6 +79,18 @@ describe('previewRecordPayment', () => {
       { enrollmentId: 'enr-2', amount: 90 },
     ])
     expect(result.draftId).toBe('draft-2')
+  })
+
+  it('blocks an amount finer than the school currency allows', async () => {
+    getRegionalSettings.mockResolvedValue({ currency: 'KMF', timeZone: 'Indian/Comoro' })
+
+    const result = await previewRecordPayment(scope, { ...input, amount: 150.5 })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'amount', value: '150.5', reason: 'invalidPrecision' },
+    ])
+    expect(createDraft).not.toHaveBeenCalled()
   })
 
   it('accepts the family by identifier without searching by name', async () => {

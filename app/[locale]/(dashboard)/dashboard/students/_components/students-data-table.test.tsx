@@ -84,6 +84,7 @@ describe('StudentsDataTable', () => {
         plans={[]}
         classes={[]}
         paymentsEnabled={true}
+        currency="EUR"
         today={new Date('2026-06-01T00:00:00Z')}
       />
     )
@@ -118,6 +119,7 @@ describe('StudentsDataTable', () => {
         plans={[]}
         classes={[]}
         paymentsEnabled={true}
+        currency="EUR"
         today={new Date('2026-06-01T00:00:00Z')}
       />
     )

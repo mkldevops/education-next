@@ -16,6 +16,9 @@ const getParentHomeMock = vi.fn()
 const isOnlinePaymentAvailableMock = vi.fn()
 const redirectMock = vi.fn()
 
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: async () => ({ currency: 'EUR', timeZone: 'Europe/Paris' }),
+}))
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
 vi.mock('next-intl/server', () => ({

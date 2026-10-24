@@ -10,6 +10,7 @@ const paymentGatewayMock = {
 const configGatewayMock = {
   get: vi.fn(),
 }
+const regionalSettingsMock = vi.fn()
 const tx = { marker: 'tx' }
 const transaction = vi.fn()
 
@@ -27,6 +28,10 @@ vi.mock('@/gateways/config-gateway', () => ({
   configGateway: configGatewayMock,
 }))
 
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: regionalSettingsMock,
+}))
+
 const { recordPayment } = await import('./record-payment')
 
 const schoolId = '550e8400-e29b-41d4-a716-446655440099'
@@ -39,6 +44,7 @@ describe('recordPayment', () => {
     paymentGatewayMock.createForFamily = vi.fn().mockResolvedValue(['payment-1'])
     transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
     configGatewayMock.get = vi.fn().mockResolvedValue({ value: 'true' })
+    regionalSettingsMock.mockResolvedValue({ currency: 'EUR', timeZone: 'Europe/Paris' })
   })
 
   it('should fail validation with invalid input', async () => {
@@ -63,6 +69,21 @@ describe('recordPayment', () => {
     })
 
     expect(result).toBe('validationError')
+  })
+
+  it('rejects cents for a currency without minor unit', async () => {
+    regionalSettingsMock.mockResolvedValue({ currency: 'KMF', timeZone: 'Indian/Comoro' })
+
+    const result = await recordPayment({
+      schoolId,
+      familyId: '550e8400-e29b-41d4-a716-446655440000',
+      amount: 1500.5,
+      method: 'CASH',
+      paidAt: new Date(),
+    })
+
+    expect(result).toBe('validationError')
+    expect(transaction).not.toHaveBeenCalled()
   })
 
   it('should fail validation with a cash date on a non-check payment', async () => {

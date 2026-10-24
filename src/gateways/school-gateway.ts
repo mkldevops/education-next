@@ -51,6 +51,9 @@ export const schoolGateway = {
       orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
     }),
 
+  findRegionalSettings: (id: string) =>
+    db.school.findUnique({ where: { id }, select: { currency: true, timeZone: true } }),
+
   /** Administration — sans filtre `isActive`, pour la même raison que `listAll`. */
   findById: (id: string) =>
     db.school.findUnique({

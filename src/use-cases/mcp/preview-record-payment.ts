@@ -4,7 +4,8 @@ import { distributePayment, enrollmentBalances } from '@/domain/payment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
-import { roundHalfUp } from '@/lib/decimal'
+import { fitsCurrencyPrecision, roundHalfUp } from '@/lib/decimal'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { blockedPreview, saveDraftPreview } from './draft-response'
 import type { DraftScope } from './draft-scope'
 import { previewRecordPaymentSchema } from './schemas'
@@ -62,6 +63,7 @@ export async function previewRecordPayment(
 
   const family = candidates[0]
   const enrollments = await enrollmentGateway.findPayableByFamily(schoolId, family.id)
+  const { currency } = await getSchoolRegionalSettings(schoolId)
   const balances = enrollmentBalances(enrollments)
 
   // Sans montant, la famille solde ce qu'elle doit : c'est le cas courant au guichet.
@@ -71,6 +73,8 @@ export async function previewRecordPayment(
   let allocation: Array<{ enrollmentId: string; amount: number }> = []
   if (amount === 0) {
     blockers.push({ field: 'amount', value: '0', reason: 'nothingDue' })
+  } else if (!fitsCurrencyPrecision(amount, currency)) {
+    blockers.push({ field: 'amount', value: String(amount), reason: 'invalidPrecision' })
   } else {
     const distribution = distributePayment(amount, balances)
     if (distribution.result === 'OK') {
@@ -103,6 +107,7 @@ export async function previewRecordPayment(
     paidAt: (data.paidAt ? new Date(data.paidAt) : now()).toISOString(),
     cashedAt: data.cashedAt ? new Date(data.cashedAt).toISOString() : undefined,
     amount,
+    currency,
     // La répartition résolue est ce que l'action serveur actuelle ne montre jamais :
     // l'humain valide un encaissement ventilé, pas un montant global. Le commit la
     // recalcule sur les soldes frais et refuse si elle a bougé.

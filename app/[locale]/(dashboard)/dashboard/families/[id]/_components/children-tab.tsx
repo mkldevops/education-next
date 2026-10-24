@@ -6,6 +6,7 @@ type Props = {
   students: FamilyDetailStudent[]
   pendingCount: number
   locale: string
+  currency: string
   familyId: string
   isAdmin: boolean
   classes: ClassOption[]
@@ -17,6 +18,7 @@ export async function ChildrenTab({
   students,
   pendingCount,
   locale,
+  currency,
   familyId,
   isAdmin,
   classes,
@@ -44,6 +46,7 @@ export async function ChildrenTab({
               key={student.person.id}
               student={student}
               locale={locale}
+              currency={currency}
               familyId={familyId}
               isAdmin={isAdmin}
               classes={classes}

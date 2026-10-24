@@ -8,6 +8,9 @@ const dbMock = {
 const requireSchoolRecordsScopeMock = vi.fn()
 const isPaymentsEnabledMock = vi.fn()
 
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: async () => ({ currency: 'EUR', timeZone: 'Europe/Paris' }),
+}))
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,

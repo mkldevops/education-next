@@ -19,10 +19,11 @@ const KPI_TONES = {
 interface Props {
   stats: PaymentStats
   locale: string
+  currency: string
   periodName: string | null
 }
 
-export async function PaymentsOverview({ stats, locale, periodName }: Props) {
+export async function PaymentsOverview({ stats, locale, currency, periodName }: Props) {
   const t = await getTranslations('dashboard.pages.payments.stats')
   const tScope = await getTranslations('dashboard.stats')
   const tMethod = await getTranslations('paymentMethod')
@@ -33,7 +34,7 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
   const monthCaption = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
   const compact = new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: 'EUR',
+    currency,
     notation: 'compact',
     maximumFractionDigits: 1,
   })
@@ -44,7 +45,7 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
     return {
       label: monthLabel.format(date),
       value: point.amount,
-      caption: `${monthCaption.format(date)} · ${formatCurrency(point.amount, locale)} · ${t('paymentsCount', { count: point.count })}`,
+      caption: `${monthCaption.format(date)} · ${formatCurrency(point.amount, locale, currency)} · ${t('paymentsCount', { count: point.count })}`,
     }
   })
 
@@ -53,14 +54,14 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label={t('due')}
-          value={formatCurrency(totals.due, locale)}
+          value={formatCurrency(totals.due, locale, currency)}
           caption={scope}
           icon={Landmark}
           tone="primary"
         />
         <KpiCard
           label={t('collected')}
-          value={formatCurrency(totals.collected, locale)}
+          value={formatCurrency(totals.collected, locale, currency)}
           caption={t('paymentsCount', { count: totals.paymentCount })}
           icon={HandCoins}
           tone="primary"
@@ -72,7 +73,7 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
         </KpiCard>
         <KpiCard
           label={t('remaining')}
-          value={formatCurrency(totals.remaining, locale)}
+          value={formatCurrency(totals.remaining, locale, currency)}
           caption={t('outstandingEnrollments', {
             outstanding: totals.outstandingCount,
             total: totals.enrollmentCount,
@@ -83,7 +84,7 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
         />
         <KpiCard
           label={t('uncashed')}
-          value={formatCurrency(totals.uncashedAmount, locale)}
+          value={formatCurrency(totals.uncashedAmount, locale, currency)}
           caption={t('uncashedCount', { count: totals.uncashedCount })}
           icon={Banknote}
           tone="blue"
@@ -121,7 +122,7 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
                       {tMethod(method.method as PaymentMethod)}
                     </span>
                     <span className="text-sm text-graphite">
-                      {formatCurrency(method.amount, locale)}
+                      {formatCurrency(method.amount, locale, currency)}
                       <span className="ml-2 text-xs text-graphite-600">
                         {t('paymentsCount', { count: method.count })}
                       </span>
@@ -155,9 +156,9 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
                       {family.familyName}
                     </Link>
                     <span className="text-sm font-medium text-graphite">
-                      {formatCurrency(family.remaining, locale)}
+                      {formatCurrency(family.remaining, locale, currency)}
                       <span className="ml-2 text-xs text-graphite-600">
-                        {t('outOf', { amount: formatCurrency(family.due, locale) })}
+                        {t('outOf', { amount: formatCurrency(family.due, locale, currency) })}
                       </span>
                     </span>
                   </div>
@@ -167,6 +168,7 @@ export async function PaymentsOverview({ stats, locale, periodName }: Props) {
                   <OutstandingFamilyActions
                     family={{ id: family.familyId, name: family.familyName }}
                     phone={family.contactPhone}
+                    currency={currency}
                   />
                 </li>
               ))}

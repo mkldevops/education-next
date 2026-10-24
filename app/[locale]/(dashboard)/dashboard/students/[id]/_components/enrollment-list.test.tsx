@@ -40,6 +40,7 @@ describe('EnrollmentList with payments enabled', () => {
       await EnrollmentList({
         enrollments: [enrollment('__unpriced__')],
         locale: 'fr',
+        currency: 'EUR',
         paymentsEnabled: true,
       })
     )
@@ -53,6 +54,7 @@ describe('EnrollmentList with payments enabled', () => {
       await EnrollmentList({
         enrollments: [enrollment('Tarif annuel')],
         locale: 'fr',
+        currency: 'EUR',
         paymentsEnabled: true,
       })
     )
@@ -67,6 +69,7 @@ describe('EnrollmentList with payments disabled', () => {
       await EnrollmentList({
         enrollments: [enrollment('Tarif annuel')],
         locale: 'fr',
+        currency: 'EUR',
         paymentsEnabled: false,
       })
     )

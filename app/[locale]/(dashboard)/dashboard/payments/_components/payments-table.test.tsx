@@ -84,13 +84,17 @@ const expectChronologicalToggle = (columnId: 'paidAt' | 'cashedAt') => {
 
 describe('PaymentsTable', () => {
   it('sorts the paidAt column chronologically, not lexicographically', () => {
-    render(<PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" periodName={null} />)
+    render(
+      <PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" currency="EUR" periodName={null} />
+    )
 
     expectChronologicalToggle('paidAt')
   })
 
   it('sorts the cashedAt column chronologically, not lexicographically', () => {
-    render(<PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" periodName={null} />)
+    render(
+      <PaymentsTable payments={[rowB, rowC, rowA]} locale="fr" currency="EUR" periodName={null} />
+    )
 
     expectChronologicalToggle('cashedAt')
   })
@@ -109,7 +113,7 @@ describe('period share', () => {
       cashedAt: null,
     }
 
-    render(<PaymentsTable payments={[split]} locale="fr" periodName="Trimestre 1" />)
+    render(<PaymentsTable payments={[split]} locale="fr" currency="EUR" periodName="Trimestre 1" />)
 
     const amountCell = within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2]
     expect(amountCell.textContent).toContain('periodShare')
@@ -125,7 +129,7 @@ describe('period share', () => {
       cashedAt: null,
     }
 
-    render(<PaymentsTable payments={[whole]} locale="fr" periodName="Trimestre 1" />)
+    render(<PaymentsTable payments={[whole]} locale="fr" currency="EUR" periodName="Trimestre 1" />)
 
     const amountCell = within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2]
     expect(amountCell.textContent).not.toContain('periodShare')
@@ -141,7 +145,7 @@ describe('period share', () => {
       cashedAt: null,
     }
 
-    render(<PaymentsTable payments={[split]} locale="fr" periodName={null} />)
+    render(<PaymentsTable payments={[split]} locale="fr" currency="EUR" periodName={null} />)
 
     const amountCell = within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2]
     expect(amountCell.textContent).not.toContain('periodShare')

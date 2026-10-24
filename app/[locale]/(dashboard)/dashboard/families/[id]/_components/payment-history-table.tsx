@@ -11,6 +11,7 @@ import type { FamilyDetailPayment } from '../_lib/family-detail'
 type Props = {
   payments: FamilyDetailPayment[]
   locale: string
+  currency: string
 }
 
 const METHOD_STYLES: Record<PaymentMethod, string> = {
@@ -24,9 +25,11 @@ const METHOD_STYLES: Record<PaymentMethod, string> = {
 function Allocation({
   payment,
   locale,
+  currency,
 }: {
   payment: FamilyPayment<FamilyDetailPayment>
   locale: string
+  currency: string
 }) {
   return (
     <ul className="space-y-0.5">
@@ -36,7 +39,7 @@ function Allocation({
             {line.enrollment.student.person.name} {line.enrollment.student.person.lastname}
           </span>
           <span className="shrink-0 text-xs tabular-nums text-graphite-600">
-            {formatCurrency(line.amount, locale)}
+            {formatCurrency(line.amount, locale, currency)}
           </span>
         </li>
       ))}
@@ -57,7 +60,7 @@ function MethodBadge({ method, label }: { method: PaymentMethod; label: string }
   )
 }
 
-export async function PaymentHistoryTable({ payments, locale }: Props) {
+export async function PaymentHistoryTable({ payments, locale, currency }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails.paymentHistory')
 
   if (payments.length === 0) {
@@ -75,14 +78,15 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
         <div>
           <h2 className="text-base font-semibold text-graphite">{t('title')}</h2>
           <p className="mt-0.5 text-sm text-graphite-600">
-            {t('count', { count: familyPayments.length })} · {formatCurrency(total, locale)}
+            {t('count', { count: familyPayments.length })} ·{' '}
+            {formatCurrency(total, locale, currency)}
           </p>
         </div>
         {pending.length > 0 && (
           <p className="rounded bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20">
             {t('pendingSummary', {
               count: pending.length,
-              amount: formatCurrency(pendingTotal, locale),
+              amount: formatCurrency(pendingTotal, locale, currency),
             })}
           </p>
         )}
@@ -116,10 +120,10 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
             {familyPayments.map((payment) => (
               <tr key={payment.id} className="transition-colors hover:bg-alabaster-900/70">
                 <td className="px-4 py-3">
-                  <Allocation payment={payment} locale={locale} />
+                  <Allocation payment={payment} locale={locale} currency={currency} />
                 </td>
                 <td className="px-4 py-3 text-right font-semibold tabular-nums text-graphite">
-                  {formatCurrency(payment.amount, locale)}
+                  {formatCurrency(payment.amount, locale, currency)}
                 </td>
                 <td className="px-4 py-3">
                   <MethodBadge method={payment.method} label={t(`methods.${payment.method}`)} />
@@ -156,7 +160,7 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
                 {t('total')}
               </td>
               <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-graphite">
-                {formatCurrency(total, locale)}
+                {formatCurrency(total, locale, currency)}
               </td>
               <td colSpan={4} />
             </tr>
@@ -172,13 +176,13 @@ export async function PaymentHistoryTable({ payments, locale }: Props) {
           >
             <div className="flex items-start justify-between gap-3">
               <p className="font-semibold tabular-nums text-graphite">
-                {formatCurrency(payment.amount, locale)}
+                {formatCurrency(payment.amount, locale, currency)}
               </p>
               <MethodBadge method={payment.method} label={t(`methods.${payment.method}`)} />
             </div>
 
             <div className="text-sm">
-              <Allocation payment={payment} locale={locale} />
+              <Allocation payment={payment} locale={locale} currency={currency} />
             </div>
 
             {payment.reference && (
