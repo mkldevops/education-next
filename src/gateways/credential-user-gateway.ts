@@ -1,4 +1,3 @@
-import { createLocalAccountIssuer } from 'better-auth/db'
 import { auth } from '@/lib/auth'
 
 type CredentialUserInput = {
@@ -69,7 +68,6 @@ export const credentialUserGateway = {
       await context.internalAdapter.linkAccount({
         userId: user.id,
         providerId: 'credential',
-        issuer: createLocalAccountIssuer('credential'),
         accountId: user.id,
         password: hash,
       })

@@ -1,7 +1,6 @@
 'use client'
 
-import { RichDataTable } from '@peaklab/ui'
-import type { ColumnDef } from '@tanstack/react-table'
+import { RichDataTable, type RichDataTableColumnDef } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { PaymentMethodLabel } from '@/features/enums'
 import { useTableLabels } from '@/features/tables'
@@ -33,7 +32,7 @@ interface Props {
 export function PaymentsTable({ payments, locale, currency, periodName }: Props) {
   const t = useTranslations('dashboard.pages.payments')
 
-  const familyColumn: ColumnDef<PaymentRow> = {
+  const familyColumn: RichDataTableColumnDef<PaymentRow> = {
     id: 'family',
     header: t('family'),
     accessorFn: (row) => row.familyName,
@@ -48,7 +47,7 @@ export function PaymentsTable({ payments, locale, currency, periodName }: Props)
     enableSorting: true,
   }
 
-  const columns: ColumnDef<PaymentRow>[] = [
+  const columns: RichDataTableColumnDef<PaymentRow>[] = [
     familyColumn,
     {
       id: 'students',
