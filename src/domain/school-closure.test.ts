@@ -26,6 +26,12 @@ describe('isSchoolClosed', () => {
     expect(isSchoolClosed(closure, new Date('2026-11-03T00:00:00.000Z'))).toBe(false)
   })
 
+  it('covers only its start day without an end', () => {
+    const closure = [event('CLOSURE', '2026-11-04T08:00:00.000Z')]
+    expect(isSchoolClosed(closure, day)).toBe(true)
+    expect(isSchoolClosed(closure, new Date('2026-11-05T00:00:00.000Z'))).toBe(false)
+  })
+
   it('keeps attendance on closures only when asked', () => {
     expect(isSchoolClosed([event('HOLIDAY', '2026-11-04T00:00:00.000Z')], day, ['CLOSURE'])).toBe(
       false

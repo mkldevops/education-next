@@ -11,6 +11,7 @@ import { schoolGateway } from '@/gateways/school-gateway'
 import { formatEventDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
+import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CreateEventDialog } from './_components/create-event-dialog'
@@ -44,7 +45,10 @@ export default async function EventsPage({ params, searchParams }: Props) {
   // écran qui n'annonce que son indisponibilité (cf. teachers/page.tsx).
   if (eventsConfig?.value !== 'true') notFound()
 
-  const school = await schoolGateway.findActiveById(schoolId)
+  const [school, mealsEnabled] = await Promise.all([
+    schoolGateway.findActiveById(schoolId),
+    isMealsEnabled(schoolId),
+  ])
   if (!school) notFound()
 
   const t = await getTranslations('dashboard.pages.events')
@@ -146,6 +150,7 @@ export default async function EventsPage({ params, searchParams }: Props) {
         <EventActionsMenu
           event={event}
           schoolSlug={school.slug}
+          mealsEnabled={mealsEnabled}
           nextStartLabel={formatEventDate(
             { allDay: event.allDay, ...shiftEventToNextYear(event) },
             locale
@@ -168,7 +173,7 @@ export default async function EventsPage({ params, searchParams }: Props) {
           <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
           <p className="text-sm text-graphite-600">{t('description')}</p>
         </div>
-        <CreateEventDialog />
+        <CreateEventDialog mealsEnabled={mealsEnabled} />
       </div>
 
       <EventsFilters />

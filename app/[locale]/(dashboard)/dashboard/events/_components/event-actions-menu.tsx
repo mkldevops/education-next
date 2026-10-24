@@ -19,6 +19,7 @@ type Props = {
   }
   schoolSlug: string
   nextStartLabel: string
+  mealsEnabled?: boolean
 }
 
 const MENU_WIDTH = 224
@@ -36,7 +37,12 @@ const linkItemClass = `${buttonVariants({ variant: 'ghost', size: 'sm' })} w-ful
  * Comme `PeriodRowActions`, le panneau est `fixed` d'après le rectangle du déclencheur :
  * l'`overflow-x-auto` de `DataTable` rogne aussi la verticale et couperait un menu absolu.
  */
-export function EventActionsMenu({ event, schoolSlug, nextStartLabel }: Props) {
+export function EventActionsMenu({
+  event,
+  schoolSlug,
+  nextStartLabel,
+  mealsEnabled = false,
+}: Props) {
   const t = useTranslations('dashboard.pages.events')
   const locale = useLocale()
   const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
@@ -108,7 +114,12 @@ export function EventActionsMenu({ event, schoolSlug, nextStartLabel }: Props) {
           open ? '' : 'hidden'
         }`}
       >
-        <EditEventDialog event={event} triggerRole="menuitem" restoreFocusRef={triggerRef} />
+        <EditEventDialog
+          event={event}
+          mealsEnabled={mealsEnabled}
+          triggerRole="menuitem"
+          restoreFocusRef={triggerRef}
+        />
         <EventImagesDialog
           eventId={event.id}
           eventTitle={event.title}

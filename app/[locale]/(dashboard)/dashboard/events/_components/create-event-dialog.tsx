@@ -15,7 +15,7 @@ import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { createEventAction } from '../../../_lib/event-actions'
 import { EventFormFields, readEventFormPayload, useEventDateFields } from './event-form-fields'
 
-export function CreateEventDialog() {
+export function CreateEventDialog({ mealsEnabled = false }: { mealsEnabled?: boolean }) {
   const tCreate = useTranslations('dashboard.pages.events.create')
 
   return (
@@ -30,13 +30,13 @@ export function CreateEventDialog() {
         <DialogHeader>
           <DialogTitle>{tCreate('title')}</DialogTitle>
         </DialogHeader>
-        <CreateEventForm />
+        <CreateEventForm mealsEnabled={mealsEnabled} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function CreateEventForm() {
+function CreateEventForm({ mealsEnabled }: { mealsEnabled: boolean }) {
   const t = useTranslations('dashboard.pages.events')
   const tCreate = useTranslations('dashboard.pages.events.create')
   const { isPending, close, onSubmit } = useDialogForm(t)
@@ -55,6 +55,7 @@ function CreateEventForm() {
           defaults={{ visibility: 'MEMBERS' }}
           isPending={isPending}
           dates={dates}
+          mealImpact={mealsEnabled ? {} : undefined}
         />
       </DialogBody>
       <DialogFormActions t={tCreate} isPending={isPending} onCancel={close} />

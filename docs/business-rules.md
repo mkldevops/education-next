@@ -1911,7 +1911,14 @@ next one; `priceOn()` (`src/domain/meal-price.ts`) picks it. `setMealPrice()`:
 
 **Closures.** `isSchoolClosed()` (`src/domain/school-closure.ts`) is the shared predicate: a
 `PUBLISHED` event of an included category overlapping the UTC day. Meals count `CLOSURE` and
-`HOLIDAY`; attendance keeps `CLOSURE` only, unchanged.
+`HOLIDAY`; attendance keeps `CLOSURE` only. An event without an end covers its start day only:
+before, an open end closed every later day, for meals and attendance alike.
+
+**Meal impact of a closure.** While a school with meals open edits a `CLOSURE` or `HOLIDAY` event,
+the form shows how many children eat on its days and how many « paid through » dates move.
+`mealImpactOfClosure()` replays every active student's accounts twice, without the edited event
+and with its typed dates taken as published (`previewClosureMealImpactAction`, admin only). It
+writes nothing; publishing the event is what moves the dates.
 
 **Ledger.** `src/domain/meal-ledger.ts` is pure and tested:
 

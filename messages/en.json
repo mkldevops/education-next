@@ -2495,6 +2495,7 @@
           "announceDaysHint": "The banner appears this many days before the event. Leave empty for no announcement.",
           "alt": "Alt text"
         },
+        "mealImpact": "Meals, once published: {children, plural, =0 {no child eats on these days} one {# child eats on these days} other {# children eat on these days}}, {moved, plural, =0 {no « paid through » moves} one {# « paid through » pushed back} other {# « paid through » pushed back}}.",
         "columns": {
           "event": "Event",
           "date": "Date",
