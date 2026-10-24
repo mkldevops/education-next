@@ -3,6 +3,7 @@
 import {
   BalanceBadge,
   RichDataTable,
+  type RichDataTableColumnDef,
   Select,
   SelectContent,
   SelectItem,
@@ -10,7 +11,6 @@ import {
   SelectValue,
   StatusBadge,
 } from '@peaklab/ui'
-import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
@@ -63,7 +63,7 @@ export function EnrollmentsTable({
       ? enrollments
       : enrollments.filter((enrollment) => enrollment.status === statusFilter)
 
-  const studentColumn: ColumnDef<EnrollmentDrawerData> = {
+  const studentColumn: RichDataTableColumnDef<EnrollmentDrawerData> = {
     id: 'student',
     header: t('student'),
     accessorFn: (row) => `${row.student.person.name} ${row.student.person.lastname}`,
@@ -75,7 +75,7 @@ export function EnrollmentsTable({
     enableSorting: true,
   }
 
-  const planColumn: ColumnDef<EnrollmentDrawerData> = {
+  const planColumn: RichDataTableColumnDef<EnrollmentDrawerData> = {
     id: 'plan',
     header: t('plan'),
     accessorFn: (row) => row.plan.name,
@@ -88,7 +88,7 @@ export function EnrollmentsTable({
     enableSorting: true,
   }
 
-  const statusColumn: ColumnDef<EnrollmentDrawerData> = {
+  const statusColumn: RichDataTableColumnDef<EnrollmentDrawerData> = {
     id: 'status',
     header: t('status'),
     accessorFn: (row) => row.status,
@@ -96,7 +96,7 @@ export function EnrollmentsTable({
     enableSorting: true,
   }
 
-  const classColumn: ColumnDef<EnrollmentDrawerData> = {
+  const classColumn: RichDataTableColumnDef<EnrollmentDrawerData> = {
     id: 'class',
     header: t('class'),
     accessorFn: (row) => row.classAssignments.find((a) => !a.endAt)?.classPeriod.level.name ?? '-',
@@ -104,7 +104,7 @@ export function EnrollmentsTable({
     enableSorting: true,
   }
 
-  const totalAmountColumn: ColumnDef<EnrollmentDrawerData> = {
+  const totalAmountColumn: RichDataTableColumnDef<EnrollmentDrawerData> = {
     id: 'totalAmount',
     header: t('totalAmount'),
     accessorFn: (row) => toNumber(row.totalAmount),
@@ -133,7 +133,7 @@ export function EnrollmentsTable({
 
   // Formule, statut, classe : administratif, toujours affiché. Formule et montant total
   // disparaissent drapeau coupé (FR-015) — rien à tarifer n'a rien à montrer.
-  const columns: ColumnDef<EnrollmentDrawerData>[] = [
+  const columns: RichDataTableColumnDef<EnrollmentDrawerData>[] = [
     studentColumn,
     ...(paymentsEnabled ? [planColumn] : []),
     statusColumn,

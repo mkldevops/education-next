@@ -1,7 +1,6 @@
 'use client'
 
-import { RichDataTable, useMenu } from '@peaklab/ui'
-import type { ColumnDef } from '@tanstack/react-table'
+import { RichDataTable, type RichDataTableColumnDef, useMenu } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { useTableLabels } from '@/features/tables'
@@ -106,7 +105,7 @@ export function StudentsDataTable({
   )
   const enrollStudent = enrollRequest?.student ?? null
 
-  const familyColumn: ColumnDef<StudentRow> = {
+  const familyColumn: RichDataTableColumnDef<StudentRow> = {
     id: 'family',
     header: t('family'),
     accessorFn: (row) =>
@@ -126,7 +125,7 @@ export function StudentsDataTable({
     enableSorting: true,
   }
 
-  const actionsColumn: ColumnDef<StudentRow> = {
+  const actionsColumn: RichDataTableColumnDef<StudentRow> = {
     id: 'actions',
     header: t('actions'),
     cell: ({ row }) => (
@@ -143,7 +142,7 @@ export function StudentsDataTable({
     ),
   }
 
-  const columns: ColumnDef<StudentRow>[] = [
+  const columns: RichDataTableColumnDef<StudentRow>[] = [
     {
       id: 'name',
       header: t('name'),
