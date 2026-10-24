@@ -6,10 +6,17 @@ type Props = {
   enrollments: FamilyDetailEnrollment[]
   payments: FamilyDetailPayment[]
   locale: string
+  currency: string
   paymentsEnabled: boolean
 }
 
-export async function ActivityTab({ enrollments, payments, locale, paymentsEnabled }: Props) {
+export async function ActivityTab({
+  enrollments,
+  payments,
+  locale,
+  currency,
+  paymentsEnabled,
+}: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   return (
@@ -19,6 +26,7 @@ export async function ActivityTab({ enrollments, payments, locale, paymentsEnabl
           enrollments={enrollments}
           payments={payments}
           locale={locale}
+          currency={currency}
           paymentsEnabled={paymentsEnabled}
         />
       ) : (

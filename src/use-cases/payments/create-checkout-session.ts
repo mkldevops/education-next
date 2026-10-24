@@ -7,7 +7,7 @@ import { db } from '@/lib/db'
 import { getStripeClient } from '@/lib/stripe'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from './family-balance'
-import { resolveCheckoutCredentials } from './stripe-settings'
+import { isStripeCurrency, resolveCheckoutCredentials, STRIPE_CURRENCY } from './stripe-settings'
 
 type Input = {
   schoolId: string
@@ -31,6 +31,8 @@ function toStripeCheckoutLocale(locale: string): Stripe.Checkout.SessionCreatePa
 
 export async function createCheckoutSession(input: Input, configGw = configGateway) {
   if (!(await isPaymentsEnabled(input.schoolId, configGw))) return 'paymentsDisabled' as const
+  // Une école hors euro n'a pas de paiement en ligne en v1 : même verdict qu'un Stripe coupé.
+  if (!(await isStripeCurrency(input.schoolId))) return 'notConfigured' as const
 
   // Stripe coupé par l'école ou sans identifiants lisibles : même verdict, le bouton parent
   // ne distingue pas les deux.
@@ -87,7 +89,7 @@ async function openCheckoutSession(
       familyId: input.familyId,
       initiatedById: input.initiatedById,
       amount: balance.remainingBalance,
-      currency: 'EUR',
+      currency: STRIPE_CURRENCY,
       provider: 'STRIPE',
     },
   })
@@ -112,7 +114,7 @@ async function openCheckoutSession(
           {
             quantity: 1,
             price_data: {
-              currency: 'eur',
+              currency: STRIPE_CURRENCY.toLowerCase(),
               unit_amount: balance.remainingAmountInCents,
               product_data: {
                 name: input.productName,

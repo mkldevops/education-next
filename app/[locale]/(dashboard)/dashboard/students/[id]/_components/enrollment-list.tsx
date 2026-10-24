@@ -29,10 +29,11 @@ type EnrollmentWithRelation = Enrollment & {
 type Props = {
   enrollments: EnrollmentWithRelation[]
   locale: string
+  currency: string
   paymentsEnabled: boolean
 }
 
-export async function EnrollmentList({ enrollments, locale, paymentsEnabled }: Props) {
+export async function EnrollmentList({ enrollments, locale, currency, paymentsEnabled }: Props) {
   const t = await getTranslations('dashboard.pages.studentDetails')
   const tEnrollments = await getTranslations('dashboard.pages.enrollments')
 
@@ -96,12 +97,13 @@ export async function EnrollmentList({ enrollments, locale, paymentsEnabled }: P
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                     <span className="tabular-nums text-graphite-600">
-                      {formatCurrency(paid, locale)} / {formatCurrency(total, locale)}
+                      {formatCurrency(paid, locale, currency)} /{' '}
+                      {formatCurrency(total, locale, currency)}
                     </span>
                     {remaining > 0 ? (
                       <span className="font-medium tabular-nums text-amber-600">
                         {t('enrollmentList.remaining', {
-                          amount: formatCurrency(remaining, locale),
+                          amount: formatCurrency(remaining, locale, currency),
                         })}
                       </span>
                     ) : (

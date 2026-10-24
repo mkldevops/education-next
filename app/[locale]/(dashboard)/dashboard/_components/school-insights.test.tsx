@@ -40,7 +40,7 @@ const baseInsights: SchoolInsights = {
 
 describe('SchoolInsightsSection', () => {
   it('renders the collection card when payment stats are present', async () => {
-    render(await SchoolInsightsSection({ insights: baseInsights, locale: 'fr' }))
+    render(await SchoolInsightsSection({ insights: baseInsights, locale: 'fr', currency: 'EUR' }))
 
     expect(screen.getByText('collectionTitle')).toBeInTheDocument()
     expect(screen.getByText('classFillTitle')).toBeInTheDocument()
@@ -51,6 +51,7 @@ describe('SchoolInsightsSection', () => {
       await SchoolInsightsSection({
         insights: { ...baseInsights, payments: null },
         locale: 'fr',
+        currency: 'EUR',
       })
     )
 

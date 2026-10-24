@@ -26,10 +26,11 @@ export interface PaymentRow {
 interface Props {
   payments: PaymentRow[]
   locale: string
+  currency: string
   periodName: string | null
 }
 
-export function PaymentsTable({ payments, locale, periodName }: Props) {
+export function PaymentsTable({ payments, locale, currency, periodName }: Props) {
   const t = useTranslations('dashboard.pages.payments')
 
   const familyColumn: ColumnDef<PaymentRow> = {
@@ -66,11 +67,13 @@ export function PaymentsTable({ payments, locale, periodName }: Props) {
 
         return (
           <div className="flex flex-col">
-            <span className="font-medium text-graphite">{formatCurrency(amount, locale)}</span>
+            <span className="font-medium text-graphite">
+              {formatCurrency(amount, locale, currency)}
+            </span>
             {showPeriodShare && (
               <span className="text-xs text-muted-foreground">
                 {t('periodShare', {
-                  amount: formatCurrency(periodAmount, locale),
+                  amount: formatCurrency(periodAmount, locale, currency),
                   period: periodName,
                 })}
               </span>

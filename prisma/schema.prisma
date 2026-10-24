@@ -120,6 +120,10 @@ model School {
   address   String?  @db.VarChar(250)
   postCode  String?  @db.VarChar(10)
   city      String?  @db.VarChar(250)
+  /// Code ISO 4217 des montants de l'école ; une devise sans décimales (KMF) impose des entiers.
+  currency  String   @default("EUR") @db.VarChar(3)
+  /// Fuseau IANA de l'école : « aujourd'hui », dates d'effet et caisse du jour s'y lisent.
+  timeZone  String   @default("Europe/Paris") @db.VarChar(64)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

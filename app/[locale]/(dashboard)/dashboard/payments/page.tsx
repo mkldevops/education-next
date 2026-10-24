@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { listSchoolPayments } from '@/use-cases/payments/list-school-payments'
 import { getPaymentStats } from '@/use-cases/payments/payment-stats'
@@ -43,6 +44,7 @@ export default async function PaymentsPage({ params }: Props) {
   }
 
   const selectedPeriod = await getSelectedPeriod(scope.schoolId)
+  const { currency } = await getSchoolRegionalSettings(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
   const [payments, stats, families] = await Promise.all([
@@ -82,10 +84,16 @@ export default async function PaymentsPage({ params }: Props) {
         ]}
         title={t('title')}
         description={t('description')}
-        actions={<RecordPaymentButton families={families} />}
+        actions={<RecordPaymentButton families={families} currency={currency} />}
       />
-      <PaymentsOverview stats={stats} locale={locale} periodName={selectedPeriod?.name ?? null} />
+      <PaymentsOverview
+        stats={stats}
+        locale={locale}
+        currency={currency}
+        periodName={selectedPeriod?.name ?? null}
+      />
       <PaymentsTable
+        currency={currency}
         payments={paymentRows}
         locale={locale}
         periodName={selectedPeriod?.name ?? null}

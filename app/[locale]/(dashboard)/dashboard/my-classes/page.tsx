@@ -3,9 +3,11 @@ import { ArrowRight, CalendarDays, ClipboardCheck, GraduationCap, Users } from '
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { readsAsOptedIn } from '@/domain/feature-flags'
+import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { requireTeacher } from '../../_lib/auth-helper'
 
 export default async function MyClassesPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -15,7 +17,7 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
   const t = await getTranslations('dashboard.pages.myClasses')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
   const { schoolId, teacherId } = await requireTeacher()
-  const [classes, attendanceConfig] = await Promise.all([
+  const [classes, attendanceConfig, { timeZone }] = await Promise.all([
     db.classPeriod.findMany({
       where: { schoolId, isActive: true, teachers: { some: { teacherId } } },
       select: {
@@ -30,9 +32,10 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
       where: { schoolId, name: ATTENDANCE_ENABLED_CONFIG_KEY },
       select: { value: true },
     }),
+    getSchoolRegionalSettings(schoolId),
   ])
   const attendanceEnabled = readsAsOptedIn(attendanceConfig?.value)
-  const today = new Date().toISOString().slice(0, 10)
+  const today = schoolToday(timeZone)
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8">

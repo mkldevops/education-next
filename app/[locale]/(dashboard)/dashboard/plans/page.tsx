@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
@@ -31,6 +32,8 @@ export default async function PlansPage({ params }: Props) {
   const { schoolId } = await requireSchoolAdmin()
 
   if (!(await isPaymentsEnabled(schoolId))) notFound()
+
+  const { currency } = await getSchoolRegionalSettings(schoolId)
 
   const plans = await db.plan.findMany({
     where: { schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
@@ -58,7 +61,7 @@ export default async function PlansPage({ params }: Props) {
       key: 'amount',
       header: t('amount'),
       className: 'font-medium text-graphite',
-      render: (plan) => formatCurrency(plan.amount, locale),
+      render: (plan) => formatCurrency(plan.amount, locale, currency),
     },
     {
       key: 'enrollments',
@@ -75,6 +78,7 @@ export default async function PlansPage({ params }: Props) {
         <EditPlanDialog
           plan={{ id: plan.id, name: plan.name, amount: Number(plan.amount) }}
           openEnrollments={openByPlan.get(plan.id) ?? 0}
+          currency={currency}
         />
       ),
     },
@@ -90,7 +94,7 @@ export default async function PlansPage({ params }: Props) {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        <CreatePlanDialog />
+        <CreatePlanDialog currency={currency} />
       </div>
       <Card className="rounded border border-alabaster-700">
         <DataTable

@@ -7,11 +7,12 @@ import { classFillRate, type SchoolInsights } from '../_lib/school-insights'
 interface Props {
   insights: SchoolInsights
   locale: string
+  currency: string
 }
 
 const CLASSES_LISTED = 6
 
-export async function SchoolInsightsSection({ insights, locale }: Props) {
+export async function SchoolInsightsSection({ insights, locale, currency }: Props) {
   const t = await getTranslations('dashboard.insights')
   const { payments, classes, levels } = insights
   const maxLevel = Math.max(...levels.map((level) => level.enrolled), 0)
@@ -20,7 +21,7 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
   const monthCaption = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
   const compact = new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: 'EUR',
+    currency,
     notation: 'compact',
     maximumFractionDigits: 1,
   })
@@ -32,7 +33,7 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
       return {
         label: monthLabel.format(date),
         value: point.amount,
-        caption: `${monthCaption.format(date)} · ${formatCurrency(point.amount, locale)}`,
+        caption: `${monthCaption.format(date)} · ${formatCurrency(point.amount, locale, currency)}`,
       }
     }) ?? []
 
@@ -53,13 +54,13 @@ export async function SchoolInsightsSection({ insights, locale }: Props) {
             <div>
               <dt className="text-xs text-muted-foreground">{t('collected')}</dt>
               <dd className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                {formatCurrency(payments.totals.collected, locale)}
+                {formatCurrency(payments.totals.collected, locale, currency)}
               </dd>
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">{t('remaining')}</dt>
               <dd className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                {formatCurrency(payments.totals.remaining, locale)}
+                {formatCurrency(payments.totals.remaining, locale, currency)}
               </dd>
             </div>
             <div>

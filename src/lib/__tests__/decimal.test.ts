@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { formatAmount, formatCurrency, roundHalfUp, toNumber } from '../decimal'
+import {
+  currencyFractionDigits,
+  currencySymbol,
+  fitsCurrencyPrecision,
+  formatAmount,
+  formatCurrency,
+  roundHalfUp,
+  toNumber,
+} from '../decimal'
 
 describe('decimal utilities', () => {
   describe('roundHalfUp', () => {
@@ -169,24 +177,45 @@ describe('decimal utilities', () => {
       new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(value)
 
     it('should format euros for the fr locale', () => {
-      expect(formatCurrency(400, 'fr')).toBe(expected(400, 'fr'))
+      expect(formatCurrency(400, 'fr', 'EUR')).toBe(expected(400, 'fr'))
     })
 
     it('should format euros for the en locale', () => {
-      expect(formatCurrency(400, 'en')).toBe(expected(400, 'en'))
+      expect(formatCurrency(400, 'en', 'EUR')).toBe(expected(400, 'en'))
     })
 
     it('should round half up before formatting', () => {
-      expect(formatCurrency(99.995, 'en')).toBe(expected(100, 'en'))
+      expect(formatCurrency(99.995, 'en', 'EUR')).toBe(expected(100, 'en'))
     })
 
     it('should format a Decimal-like object', () => {
       const decimalObj = { toNumber: () => 123.45, toString: () => '123.45' }
-      expect(formatCurrency(decimalObj, 'fr')).toBe(expected(123.45, 'fr'))
+      expect(formatCurrency(decimalObj, 'fr', 'EUR')).toBe(expected(123.45, 'fr'))
     })
 
     it('should format negative amounts', () => {
-      expect(formatCurrency(-400, 'fr')).toBe(expected(-400, 'fr'))
+      expect(formatCurrency(-400, 'fr', 'EUR')).toBe(expected(-400, 'fr'))
+    })
+
+    it('should format a currency without decimals in whole units', () => {
+      const kmf = (value: number) =>
+        new Intl.NumberFormat('fr', { style: 'currency', currency: 'KMF' }).format(value)
+      expect(formatCurrency(15750, 'fr', 'KMF')).toBe(kmf(15750))
+      expect(formatCurrency(749.5, 'fr', 'KMF')).toBe(kmf(750))
+    })
+  })
+
+  describe('currencyFractionDigits', () => {
+    it('follows ISO 4217', () => {
+      expect(currencyFractionDigits('EUR')).toBe(2)
+      expect(currencyFractionDigits('KMF')).toBe(0)
+    })
+  })
+
+  describe('currencySymbol', () => {
+    it('returns the symbol used by the locale', () => {
+      expect(currencySymbol('fr', 'EUR')).toBe('€')
+      expect(currencySymbol('fr', 'KMF')).toBe('KMF')
     })
   })
 })
@@ -202,5 +231,18 @@ describe('toNumber', () => {
 
   it('falls back to the string form when toNumber() is absent', () => {
     expect(toNumber({ toString: () => '19.99' })).toBe(19.99)
+  })
+})
+
+describe('fitsCurrencyPrecision', () => {
+  it('accepts cents in euros', () => {
+    expect(fitsCurrencyPrecision(12.34, 'EUR')).toBe(true)
+    expect(fitsCurrencyPrecision(0.1 + 0.2, 'EUR')).toBe(true)
+    expect(fitsCurrencyPrecision(12.345, 'EUR')).toBe(false)
+  })
+
+  it('requires whole Comorian francs', () => {
+    expect(fitsCurrencyPrecision(1500, 'KMF')).toBe(true)
+    expect(fitsCurrencyPrecision(1500.5, 'KMF')).toBe(false)
   })
 })

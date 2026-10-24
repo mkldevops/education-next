@@ -36,6 +36,7 @@ export type FamilyRow = {
 type Props = {
   data: FamilyRow[]
   paymentsEnabled: boolean
+  currency: string
 }
 
 function EmergencyContactCell({ family }: { family: FamilyRow }) {
@@ -73,7 +74,7 @@ function EmergencyContactCell({ family }: { family: FamilyRow }) {
  * Le panneau s'ouvre au clic — pas au survol : la ligne entière est déjà un lien vers la fiche
  * famille, et un survol déclencherait le panneau à chaque passage de souris.
  */
-function RemainingCell({ family }: { family: FamilyRow }) {
+function RemainingCell({ family, currency }: { family: FamilyRow; currency: string }) {
   const t = useTranslations('dashboard.pages.families')
   const locale = useLocale()
   const { open, toggle, containerRef, triggerRef, menuRef } = useMenu()
@@ -99,12 +100,12 @@ function RemainingCell({ family }: { family: FamilyRow }) {
         <CircleProgress value={rate} tone={family.due > 0 ? tone : 'primary'} />
         <span className="flex flex-col">
           <span className="font-medium text-graphite">
-            {formatCurrency(family.remaining, locale)}
+            {formatCurrency(family.remaining, locale, currency)}
           </span>
           <span className="text-xs text-graphite-600">
             {t('paymentsSummary', {
-              paid: formatCurrency(family.paid, locale),
-              due: formatCurrency(family.due, locale),
+              paid: formatCurrency(family.paid, locale, currency),
+              due: formatCurrency(family.due, locale, currency),
             })}
           </span>
         </span>
@@ -133,7 +134,7 @@ function RemainingCell({ family }: { family: FamilyRow }) {
                       </span>
                     </span>
                     <span className="font-medium text-graphite">
-                      {formatCurrency(payment.amount, locale)}
+                      {formatCurrency(payment.amount, locale, currency)}
                       {payment.method === 'CHECK' && payment.cashedAt === null && (
                         <span className="ml-1 text-xs text-amber-700">{t('notCashed')}</span>
                       )}
@@ -160,7 +161,7 @@ function RemainingCell({ family }: { family: FamilyRow }) {
   )
 }
 
-export function FamiliesDataTable({ data, paymentsEnabled }: Props) {
+export function FamiliesDataTable({ data, paymentsEnabled, currency }: Props) {
   const t = useTranslations('dashboard.pages.families')
 
   const columns: ColumnDef<FamilyRow>[] = [
@@ -192,7 +193,7 @@ export function FamiliesDataTable({ data, paymentsEnabled }: Props) {
             id: 'remaining',
             header: t('remaining'),
             accessorFn: (row) => row.remaining,
-            cell: ({ row }) => <RemainingCell family={row.original} />,
+            cell: ({ row }) => <RemainingCell family={row.original} currency={currency} />,
             enableSorting: true,
           } satisfies ColumnDef<FamilyRow>,
         ]

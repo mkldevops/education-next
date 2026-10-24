@@ -10,7 +10,13 @@ vi.mock('next-intl', () => ({
 describe('FinancialSummary', () => {
   it('renders the progress arc with the success token instead of a hardcoded hex color', () => {
     const { container } = render(
-      <FinancialSummary totalDue={100} totalPaid={50} totalDiscount={0} remainingBalance={50} />
+      <FinancialSummary
+        totalDue={100}
+        totalPaid={50}
+        totalDiscount={0}
+        remainingBalance={50}
+        currency="EUR"
+      />
     )
 
     const circles = container.querySelectorAll('circle')

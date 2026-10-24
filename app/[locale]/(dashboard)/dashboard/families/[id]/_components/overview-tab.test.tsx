@@ -36,6 +36,7 @@ const { OverviewTab } = await import('./overview-tab')
 
 const baseProps = {
   locale: 'fr',
+  currency: 'EUR',
   familyId: 'family-1',
   isAdmin: false,
   canInvite: false,

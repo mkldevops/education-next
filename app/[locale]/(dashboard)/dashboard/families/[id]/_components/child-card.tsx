@@ -19,6 +19,7 @@ export type ClassOption = {
 type Props = {
   student: FamilyDetailStudent
   locale: string
+  currency: string
   familyId: string
   isAdmin: boolean
   classes: ClassOption[]
@@ -35,6 +36,7 @@ type Props = {
 export async function ChildCard({
   student,
   locale,
+  currency,
   familyId,
   isAdmin,
   classes,
@@ -170,11 +172,14 @@ export async function ChildCard({
 
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-graphite-600">
-                        {formatCurrency(totalPaid, locale)} / {formatCurrency(totalAmount, locale)}
+                        {formatCurrency(totalPaid, locale, currency)} /{' '}
+                        {formatCurrency(totalAmount, locale, currency)}
                       </span>
                       {remaining > 0 && (
                         <span className="text-xs font-medium text-amber-600">
-                          {t('childCard.remaining', { amount: formatCurrency(remaining, locale) })}
+                          {t('childCard.remaining', {
+                            amount: formatCurrency(remaining, locale, currency),
+                          })}
                         </span>
                       )}
                     </div>

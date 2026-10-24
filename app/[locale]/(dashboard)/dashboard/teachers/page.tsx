@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isTeacherExpensesEnabled } from '@/use-cases/config/is-teacher-expenses-enabled'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
@@ -37,6 +38,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.teachers')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
+  const { currency } = await getSchoolRegionalSettings(schoolId)
   const [teachers, expenses, expensesEnabled, pendingInvitations] = await Promise.all([
     db.teacher.findMany({
       where: { schoolId, isActive: true },
@@ -167,7 +169,7 @@ export default async function TeachersPage({ params, searchParams }: Props) {
       key: 'amount',
       header: t('expenses.amount'),
       className: 'text-graphite font-medium',
-      render: (expense) => formatCurrency(expense.amount, locale),
+      render: (expense) => formatCurrency(expense.amount, locale, currency),
     },
     {
       key: 'category',

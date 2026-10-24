@@ -4,7 +4,10 @@ import { AddStudentButton } from './add-student-button'
 
 const { replace } = vi.hoisted(() => ({ replace: vi.fn() }))
 
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
+vi.mock('next-intl', () => ({
+  useLocale: () => 'fr',
+  useTranslations: () => (key: string) => key,
+}))
 vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ push: vi.fn(), replace }) }))
 vi.mock('../../../_lib/student-actions', () => ({ createStudentAction: vi.fn() }))
 
@@ -19,6 +22,7 @@ describe('AddStudentButton', () => {
         plans={[]}
         classes={[]}
         paymentsEnabled={false}
+        currency="EUR"
       />
     )
 

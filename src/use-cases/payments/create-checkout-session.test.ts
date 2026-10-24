@@ -18,6 +18,7 @@ const sessionsExpireMock = vi.fn()
 const getStripeClientMock = vi.fn()
 const getFamilyBalanceMock = vi.fn()
 const resolveCheckoutCredentialsMock = vi.fn()
+const isStripeCurrencyMock = vi.fn()
 const configGatewayMock = {
   get: vi.fn(),
 }
@@ -27,6 +28,8 @@ vi.mock('@/lib/stripe', () => ({ getStripeClient: getStripeClientMock }))
 vi.mock('./family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
 vi.mock('./stripe-settings', () => ({
   resolveCheckoutCredentials: resolveCheckoutCredentialsMock,
+  isStripeCurrency: isStripeCurrencyMock,
+  STRIPE_CURRENCY: 'EUR',
 }))
 vi.mock('@/gateways/config-gateway', () => ({ configGateway: configGatewayMock }))
 vi.mock('@/gateways/payment-gateway', () => ({
@@ -49,6 +52,7 @@ const input = {
 describe('createCheckoutSession', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    isStripeCurrencyMock.mockResolvedValue(true)
     resolveCheckoutCredentialsMock.mockResolvedValue({
       secretKey: 'sk_test_school',
       webhookSecret: 'whsec_school',
@@ -86,6 +90,14 @@ describe('createCheckoutSession', () => {
     configGatewayMock.get.mockResolvedValue({ value: 'false' })
 
     expect(await createCheckoutSession(input)).toBe('paymentsDisabled')
+    expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
+  })
+
+  it('refuses a school whose currency Checkout does not handle before opening anything', async () => {
+    isStripeCurrencyMock.mockResolvedValue(false)
+
+    expect(await createCheckoutSession(input)).toBe('notConfigured')
+    expect(getStripeClientMock).not.toHaveBeenCalled()
     expect(dbMock.paymentTransaction.create).not.toHaveBeenCalled()
   })
 

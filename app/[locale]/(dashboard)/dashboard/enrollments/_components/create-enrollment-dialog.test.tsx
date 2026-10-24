@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { CreateEnrollmentDialog } from './create-enrollment-dialog'
 
 const replace = vi.hoisted(() => vi.fn())
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
+vi.mock('next-intl', () => ({
+  useLocale: () => 'fr',
+  useTranslations: () => (key: string) => key,
+}))
 vi.mock('@/i18n/routing', () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn(), replace }),
 }))
@@ -29,6 +32,7 @@ describe('CreateEnrollmentDialog with payments enabled', () => {
         plans={plans}
         classes={classes}
         paymentsEnabled={true}
+        currency="EUR"
       />
     )
     openDialog()
@@ -47,6 +51,7 @@ describe('CreateEnrollmentDialog with payments disabled', () => {
         plans={plans}
         classes={classes}
         paymentsEnabled={false}
+        currency="EUR"
       />
     )
     openDialog()
@@ -66,6 +71,7 @@ describe('CreateEnrollmentDialog opened from a deep link', () => {
         plans={plans}
         classes={classes}
         paymentsEnabled={true}
+        currency="EUR"
         defaultOpen
         redirectTo="/dashboard/students"
       />
@@ -84,6 +90,7 @@ describe('CreateEnrollmentDialog opened from a deep link', () => {
         plans={plans}
         classes={classes}
         paymentsEnabled={true}
+        currency="EUR"
         defaultOpen
       />
     )
@@ -115,6 +122,7 @@ describe('CreateEnrollmentDialog guided selectors', () => {
         plans={plans}
         classes={guidedClasses}
         paymentsEnabled={false}
+        currency="EUR"
       />
     )
     openDialog()

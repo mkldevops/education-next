@@ -61,6 +61,7 @@ describe('EnrollmentsTable with payments enabled', () => {
         availablePlans={[]}
         paymentsEnabled={true}
         locale="fr"
+        currency="EUR"
         periodName={null}
       />
     )
@@ -84,6 +85,7 @@ describe('EnrollmentsTable with payments enabled', () => {
         availablePlans={[]}
         paymentsEnabled={true}
         locale="fr"
+        currency="EUR"
         periodName={null}
       />
     )
@@ -100,6 +102,7 @@ describe('EnrollmentsTable with payments enabled', () => {
         availablePlans={[]}
         paymentsEnabled={true}
         locale="fr"
+        currency="EUR"
         periodName={null}
       />
     )
@@ -116,6 +119,7 @@ describe('EnrollmentsTable with payments enabled', () => {
         availablePlans={[]}
         paymentsEnabled={true}
         locale="fr"
+        currency="EUR"
         periodName={null}
       />
     )
@@ -134,6 +138,7 @@ describe('EnrollmentsTable with payments disabled', () => {
         availablePlans={[]}
         paymentsEnabled={false}
         locale="fr"
+        currency="EUR"
         periodName={null}
       />
     )

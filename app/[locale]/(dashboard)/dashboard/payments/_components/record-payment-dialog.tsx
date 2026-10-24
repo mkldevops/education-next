@@ -20,10 +20,11 @@ import {
 } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
 import { ArrowLeftRight, Banknote, CreditCard, FileCheck, Plus } from 'lucide-react'
-import { useFormatter, useTranslations } from 'next-intl'
+import { useFormatter, useLocale, useTranslations } from 'next-intl'
 import { type ReactNode, useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
+import { currencyFractionDigits, currencyStep, currencySymbol } from '@/lib/decimal'
 import type { ManualPaymentMethod } from '@/use-cases/payments/schemas'
 import { recordPaymentAction } from '../../../_lib/payment-actions'
 
@@ -45,9 +46,11 @@ export function RecordPaymentDialog({
   redirectTo = '/dashboard/payments',
   showTrigger = true,
   remainingAmount,
+  currency,
   trigger,
 }: {
   families: Option[]
+  currency: string
   defaultOpen?: boolean
   redirectTo?: string
   showTrigger?: boolean
@@ -75,7 +78,11 @@ export function RecordPaymentDialog({
           <DialogTitle>{t('title')}</DialogTitle>
           {families.length === 1 && <p className="text-sm text-graphite-600">{families[0].name}</p>}
         </DialogHeader>
-        <RecordPaymentForm families={families} remainingAmount={remainingAmount} />
+        <RecordPaymentForm
+          families={families}
+          remainingAmount={remainingAmount}
+          currency={currency}
+        />
       </DialogContent>
     </Dialog>
   )
@@ -84,12 +91,16 @@ export function RecordPaymentDialog({
 function RecordPaymentForm({
   families,
   remainingAmount,
+  currency,
 }: {
   families: Option[]
+  currency: string
   remainingAmount?: number
 }) {
   const t = useTranslations('dashboard.pages.payments.record')
+  const locale = useLocale()
   const format = useFormatter()
+  const smallestUnit = currencyStep(currency)
   const { isPending, close, onSubmit } = useDialogForm(t)
   const [method, setMethod] = useState<ManualPaymentMethod>('CASH')
   const [amount, setAmount] = useState('')
@@ -149,10 +160,12 @@ function RecordPaymentForm({
                 id="payment-amount"
                 name="amount"
                 type="number"
-                step="0.01"
-                min="0.01"
-                inputMode="decimal"
-                placeholder="0,00"
+                step={smallestUnit}
+                min={smallestUnit}
+                inputMode={smallestUnit < 1 ? 'decimal' : 'numeric'}
+                placeholder={format.number(0, {
+                  minimumFractionDigits: currencyFractionDigits(currency),
+                })}
                 required
                 disabled={isPending}
                 value={amount}
@@ -160,7 +173,7 @@ function RecordPaymentForm({
                 className="h-12 pr-10 text-lg font-semibold tabular-nums"
               />
               <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-graphite-700">
-                €
+                {currencySymbol(locale, currency)}
               </span>
             </div>
             {remainingAmount !== undefined && remainingAmount > 0 && (
@@ -169,7 +182,7 @@ function RecordPaymentForm({
                   {t('remainingLabel', {
                     amount: format.number(remainingAmount, {
                       style: 'currency',
-                      currency: 'EUR',
+                      currency,
                     }),
                   })}
                 </span>

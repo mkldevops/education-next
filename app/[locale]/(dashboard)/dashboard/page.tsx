@@ -37,6 +37,7 @@ import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { getSchoolContext, hasSchoolRole, isActiveSchoolAdmin } from '@/lib/school-context'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-schedule-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
@@ -106,21 +107,31 @@ export default async function DashboardPage({ params }: Props) {
   }
 
   const scope = await requireSchoolScope()
-  const [paymentsEnabled, eventsEnabled, scheduleEnabled, attendanceEnabled, activeSchool] =
-    await Promise.all([
-      isPaymentsEnabled(scope.schoolId),
-      isEventsEnabled(scope.schoolId),
-      isClassScheduleEnabled(scope.schoolId),
-      isAttendanceEnabled(scope.schoolId),
-      schoolGateway.findActiveById(scope.schoolId),
-    ])
+  const [
+    paymentsEnabled,
+    eventsEnabled,
+    scheduleEnabled,
+    attendanceEnabled,
+    activeSchool,
+    { currency, timeZone },
+  ] = await Promise.all([
+    isPaymentsEnabled(scope.schoolId),
+    isEventsEnabled(scope.schoolId),
+    isClassScheduleEnabled(scope.schoolId),
+    isAttendanceEnabled(scope.schoolId),
+    schoolGateway.findActiveById(scope.schoolId),
+    getSchoolRegionalSettings(scope.schoolId),
+  ])
   const schoolName = activeSchool?.name ?? ''
   const userName = session?.user.name?.trim()
   const greeting = userName ? t('greeting', { name: userName }) : t('greetingNoName')
   const today = capitalize(
-    new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(
-      new Date()
-    )
+    new Intl.DateTimeFormat(locale, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      timeZone,
+    }).format(new Date())
   )
   const subtitle = schoolName ? `${today} · ${schoolName}` : today
 
@@ -240,7 +251,7 @@ export default async function DashboardPage({ params }: Props) {
                   <Wallet size={16} aria-hidden="true" className="text-muted-foreground" />
                 </div>
                 <p className="mt-3 text-right text-2xl font-semibold tracking-tight text-foreground tabular-nums">
-                  {formatCurrency(home.remainingBalance, locale)}
+                  {formatCurrency(home.remainingBalance, locale, currency)}
                 </p>
                 <p className="mt-1 text-right text-xs text-muted-foreground">
                   {t('stats.scopeAll')}
@@ -250,6 +261,7 @@ export default async function DashboardPage({ params }: Props) {
                     amount={home.remainingBalance}
                     configured={onlinePaymentAvailable}
                     locale={locale}
+                    currency={currency}
                   />
                 </div>
               </section>
@@ -312,7 +324,7 @@ export default async function DashboardPage({ params }: Props) {
           tone: 'neutral' as const,
           title: t('home.todo.uncashed', { count: totals.uncashedCount }),
           hint: t('home.todo.uncashedHint', {
-            amount: formatCurrency(totals.uncashedAmount, locale),
+            amount: formatCurrency(totals.uncashedAmount, locale, currency),
           }),
         }
       : null,
@@ -324,7 +336,7 @@ export default async function DashboardPage({ params }: Props) {
           tone: 'danger' as const,
           title: t('home.todo.outstanding', { count: totals.outstandingCount }),
           hint: t('home.todo.outstandingHint', {
-            amount: formatCurrency(totals.remaining, locale),
+            amount: formatCurrency(totals.remaining, locale, currency),
           }),
         }
       : null,
@@ -454,7 +466,7 @@ export default async function DashboardPage({ params }: Props) {
             <KpiCard
               href="/dashboard/payments"
               label={t('insights.remaining')}
-              value={formatCurrency(totals.remaining, locale)}
+              value={formatCurrency(totals.remaining, locale, currency)}
               hint={t('home.kpi.collectionRate', { rate: Math.round(totals.collectionRate) })}
               icon={Wallet}
             />
@@ -565,7 +577,7 @@ export default async function DashboardPage({ params }: Props) {
         )}
       </div>
 
-      <SchoolInsightsSection insights={insights} locale={locale} />
+      <SchoolInsightsSection insights={insights} locale={locale} currency={currency} />
 
       {eventsCard}
 

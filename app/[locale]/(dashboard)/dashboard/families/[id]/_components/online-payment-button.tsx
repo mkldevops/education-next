@@ -12,9 +12,10 @@ type Props = {
   amount: number
   configured: boolean
   locale: string
+  currency: string
 }
 
-export function OnlinePaymentButton({ amount, configured, locale }: Props) {
+export function OnlinePaymentButton({ amount, configured, locale, currency }: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.onlinePayment')
   const [isPending, startTransition] = useTransition()
 
@@ -43,7 +44,9 @@ export function OnlinePaymentButton({ amount, configured, locale }: Props) {
         onClick={startPayment}
       >
         <CreditCard size={18} />
-        {isPending ? t('pending') : t('action', { amount: formatCurrency(amount, locale) })}
+        {isPending
+          ? t('pending')
+          : t('action', { amount: formatCurrency(amount, locale, currency) })}
       </Button>
       {!configured && <p className="text-xs text-amber-700">{t('unavailable')}</p>}
       <p className="text-xs text-graphite-600">{t('secure')}</p>

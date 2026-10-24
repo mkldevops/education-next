@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { readsAsEnabled } from '@/domain/feature-flags'
 import { configGateway } from '@/gateways/config-gateway'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { decryptSecret, encryptSecret } from '@/lib/secret-crypto'
 import { readEnvStripeCredentials, type StripeCredentials } from '@/lib/stripe'
 import {
@@ -124,10 +125,18 @@ export async function getStripeSettings(
   }
 }
 
+/** Seule devise des sessions Checkout en v1 : une école en KMF encaisse au guichet. */
+export const STRIPE_CURRENCY = 'EUR'
+
+export async function isStripeCurrency(schoolId: string): Promise<boolean> {
+  return (await getSchoolRegionalSettings(schoolId)).currency === STRIPE_CURRENCY
+}
+
 export async function isOnlinePaymentAvailable(
   schoolId: string,
   configGw: ConfigGateway = configGateway
 ): Promise<boolean> {
+  if (!(await isStripeCurrency(schoolId))) return false
   return (await resolveCheckoutCredentials(schoolId, configGw)) !== null
 }
 

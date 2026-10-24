@@ -6,6 +6,7 @@ import { getSelectedPeriod } from '@/features/dashboard/period'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolRecordsScope } from '../../_lib/auth-helper'
 import {
@@ -41,6 +42,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
   const scope = await requireSchoolRecordsScope()
 
   const selectedPeriod = await getSelectedPeriod(scope.schoolId)
+  const { currency } = await getSchoolRegionalSettings(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
   // Un enseignant à accès élargi gère les inscriptions sans aucune donnée financière.
@@ -202,12 +204,14 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
               plans={planOptions}
               classes={classOptions}
               paymentsEnabled={paymentsEnabled}
+              currency={currency}
               defaultOpen={action === 'create'}
             />
           )
         }
       />
       <EnrollmentsTable
+        currency={currency}
         enrollments={serializableEnrollments}
         isAdmin={isStaff}
         availableClasses={availableClasses}

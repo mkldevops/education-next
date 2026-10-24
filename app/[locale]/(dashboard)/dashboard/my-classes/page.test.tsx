@@ -3,6 +3,9 @@ import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ classes: vi.fn(), config: vi.fn(), teacher: vi.fn() }))
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: async () => ({ currency: 'EUR', timeZone: 'Europe/Paris' }),
+}))
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next-intl/server', () => ({
   setRequestLocale: () => {},

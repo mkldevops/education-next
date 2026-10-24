@@ -6,6 +6,7 @@ import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import {
   calculateFamilyBalance,
@@ -52,6 +53,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
   // Un enseignant à accès élargi voit les familles sans aucune donnée financière.
   const isAdmin = scope.isAdmin
   const paymentsEnabled = isAdmin && (await isPaymentsEnabled(scope.schoolId))
+  const { currency } = await getSchoolRegionalSettings(scope.schoolId)
 
   // Plans et classes de la période sélectionnée, pour inscrire les enfants dès la création.
   const dialogData = getSelectedPeriodId(scope.schoolId).then((periodId) =>
@@ -181,7 +183,7 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
           />
         }
       />
-      <FamiliesDataTable data={familyRows} paymentsEnabled={paymentsEnabled} />
+      <FamiliesDataTable data={familyRows} paymentsEnabled={paymentsEnabled} currency={currency} />
     </div>
   )
 }

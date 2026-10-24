@@ -21,9 +21,10 @@ import {
   useDialog,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { useRouter } from '@/i18n/routing'
+import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { toast, toastActionError } from '@/lib/toast'
 import { ClassSelect } from '../../../_components/class-select'
 import type { ClassOption } from '../../../_lib/class-options'
@@ -42,6 +43,7 @@ interface CreateEnrollmentDialogProps {
   plans: PlanOption[]
   classes: ClassOption[]
   paymentsEnabled: boolean
+  currency: string
   defaultOpen?: boolean
   defaultStudentId?: string
   redirectTo?: string
@@ -54,6 +56,7 @@ export function CreateEnrollmentDialog({
   plans,
   classes,
   paymentsEnabled,
+  currency,
   defaultOpen = false,
   defaultStudentId,
   redirectTo,
@@ -82,6 +85,7 @@ export function CreateEnrollmentDialog({
           plans={plans}
           classes={classes}
           paymentsEnabled={paymentsEnabled}
+          currency={currency}
           defaultStudentId={defaultStudentId}
           redirectTo={redirectTo}
         />
@@ -92,7 +96,13 @@ export function CreateEnrollmentDialog({
 
 type CreateEnrollmentFormProps = Pick<
   CreateEnrollmentDialogProps,
-  'students' | 'plans' | 'classes' | 'paymentsEnabled' | 'defaultStudentId' | 'redirectTo'
+  | 'students'
+  | 'plans'
+  | 'classes'
+  | 'paymentsEnabled'
+  | 'currency'
+  | 'defaultStudentId'
+  | 'redirectTo'
 >
 
 function CreateEnrollmentForm({
@@ -100,10 +110,12 @@ function CreateEnrollmentForm({
   plans,
   classes,
   paymentsEnabled,
+  currency,
   defaultStudentId,
   redirectTo,
 }: CreateEnrollmentFormProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
+  const locale = useLocale()
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const [planId, setPlanId] = useState(plans[0]?.id ?? '')
@@ -215,12 +227,14 @@ function CreateEnrollmentForm({
           )}
           {paymentsEnabled && (
             <div className="space-y-2">
-              <Label htmlFor="enroll-total-amount">{t('totalAmount')}</Label>
+              <Label htmlFor="enroll-total-amount">
+                {t('totalAmount', { currency: currencySymbol(locale, currency) })}
+              </Label>
               <Input
                 id="enroll-total-amount"
                 name="totalAmount"
                 type="number"
-                step="0.01"
+                step={currencyStep(currency)}
                 min="0"
                 value={totalAmount}
                 onChange={(event) => setTotalAmount(Number(event.target.value))}

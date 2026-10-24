@@ -12,6 +12,9 @@ const heroBannerMock = vi.fn()
 const overviewTabMock = vi.fn()
 const recordPaymentActionMock = vi.fn()
 
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: async () => ({ currency: 'EUR', timeZone: 'Europe/Paris' }),
+}))
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next/navigation', () => ({
   notFound: () => {
@@ -23,6 +26,7 @@ vi.mock('next-intl/server', () => ({
   setRequestLocale: () => {},
 }))
 vi.mock('next-intl', () => ({
+  useLocale: () => 'fr',
   useTranslations: () => (key: string) => key,
   useFormatter: () => ({ number: (value: number) => String(value) }),
 }))

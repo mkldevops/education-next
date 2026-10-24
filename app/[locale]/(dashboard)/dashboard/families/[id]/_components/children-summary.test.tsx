@@ -63,7 +63,9 @@ const students = [
 
 describe('ChildrenSummary', () => {
   it('lists each child with a link, class, latest enrollment status and balance', async () => {
-    render(await ChildrenSummary({ students, locale: 'fr', paymentsEnabled: true }))
+    render(
+      await ChildrenSummary({ students, locale: 'fr', currency: 'EUR', paymentsEnabled: true })
+    )
 
     const [yasmine, adam] = screen.getAllByRole('listitem')
 
@@ -86,14 +88,18 @@ describe('ChildrenSummary', () => {
   })
 
   it('hides balances when payments are disabled', async () => {
-    render(await ChildrenSummary({ students, locale: 'fr', paymentsEnabled: false }))
+    render(
+      await ChildrenSummary({ students, locale: 'fr', currency: 'EUR', paymentsEnabled: false })
+    )
 
     expect(screen.queryByText(/childCard\.remaining/)).not.toBeInTheDocument()
     expect(screen.queryByText('childCard.settled')).not.toBeInTheDocument()
   })
 
   it('shows the empty state without children', async () => {
-    render(await ChildrenSummary({ students: [], locale: 'fr', paymentsEnabled: true }))
+    render(
+      await ChildrenSummary({ students: [], locale: 'fr', currency: 'EUR', paymentsEnabled: true })
+    )
 
     expect(screen.getByText('sections.noChildren')).toBeInTheDocument()
   })

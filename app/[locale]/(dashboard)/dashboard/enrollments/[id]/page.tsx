@@ -14,6 +14,7 @@ import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-context'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
@@ -109,6 +110,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   // Un enseignant à accès élargi gère l'inscription sans en voir l'argent.
   const isStaff = await hasActiveSchoolStaffAccess(context)
   const paymentsEnabled = (isAdmin || !isStaff) && (await isPaymentsEnabled(enrollment.schoolId))
+  const { currency } = await getSchoolRegionalSettings(enrollment.schoolId)
 
   // Le changement de classe reste dans la période de l'inscription (`periodMismatch` sinon).
   const enrollmentPeriodId = (
@@ -183,6 +185,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           currentClassId={currentClassId}
           availableClasses={availableClasses}
           currentTotalAmount={paymentsEnabled ? totalAmount : 0}
+          currency={currency}
           paymentsEnabled={paymentsEnabled}
           planName={enrollment.plan.name}
           availablePlans={availablePlans}
@@ -210,7 +213,9 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 <EnrollmentStatusBadge status={enrollment.status} />
                 {paymentsEnabled && remaining > 0 && (
                   <BalanceBadge
-                    label={t('balanceBadge', { amount: formatCurrency(remaining, locale) })}
+                    label={t('balanceBadge', {
+                      amount: formatCurrency(remaining, locale, currency),
+                    })}
                   />
                 )}
               </div>
@@ -235,25 +240,25 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               <div className="flex justify-between text-sm">
                 <span className="text-graphite-600">{t('totalAmount')}</span>
                 <span className="font-medium text-graphite">
-                  {formatCurrency(totalAmount, locale)}
+                  {formatCurrency(totalAmount, locale, currency)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-graphite-600">{t('discount')}</span>
                 <span className="font-medium text-graphite">
-                  {formatCurrency(-discount, locale)}
+                  {formatCurrency(-discount, locale, currency)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-graphite-600">{t('totalPaid')}</span>
                 <span className="font-medium text-graphite">
-                  {formatCurrency(totalPaid, locale)}
+                  {formatCurrency(totalPaid, locale, currency)}
                 </span>
               </div>
               <div className="flex justify-between border-t pt-2 text-sm font-semibold">
                 <span className="text-graphite">{t('remaining')}</span>
                 <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
-                  {formatCurrency(remaining, locale)}
+                  {formatCurrency(remaining, locale, currency)}
                 </span>
               </div>
             </div>
@@ -324,7 +329,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                   {enrollment.payments.map((p) => (
                     <tr key={p.id} className="text-sm">
                       <td className="py-3 pr-4 font-medium text-graphite">
-                        {formatCurrency(p.amount, locale)}
+                        {formatCurrency(p.amount, locale, currency)}
                       </td>
                       <td className="py-3 pr-4 text-graphite-600">
                         <PaymentMethodLabel method={p.method} />

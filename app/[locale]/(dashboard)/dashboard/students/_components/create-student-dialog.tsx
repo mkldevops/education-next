@@ -19,10 +19,11 @@ import {
   Textarea,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { DialogFormActions, RequiredMark, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
+import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { ClassSelect } from '../../../_components/class-select'
 import type { ClassOption } from '../../../_lib/class-options'
 import { createStudentAction } from '../../../_lib/student-actions'
@@ -42,6 +43,7 @@ interface CreateStudentDialogProps {
   classes?: ClassOption[]
   /** Faux, l'inscription immédiate se fait sans formule ni remise. */
   paymentsEnabled: boolean
+  currency: string
   defaultOpen?: boolean
   redirectTo?: string
   showTrigger?: boolean
@@ -53,6 +55,7 @@ export function CreateStudentDialog({
   plans = [],
   classes = [],
   paymentsEnabled,
+  currency,
   defaultOpen = false,
   redirectTo,
   showTrigger = true,
@@ -81,6 +84,7 @@ export function CreateStudentDialog({
           plans={plans}
           classes={classes}
           paymentsEnabled={paymentsEnabled}
+          currency={currency}
         />
       </DialogContent>
     </Dialog>
@@ -93,14 +97,17 @@ function CreateStudentForm({
   plans,
   classes,
   paymentsEnabled,
+  currency,
 }: {
   familyId: string
   familyName?: string
   plans: Option[]
   classes: ClassOption[]
   paymentsEnabled: boolean
+  currency: string
 }) {
   const t = useTranslations('dashboard.pages.students.create')
+  const locale = useLocale()
   const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
   // Sans formule à choisir, l'inscription reste possible hors drapeau : seule la classe
@@ -314,12 +321,14 @@ function CreateStudentForm({
                   </div>
                   {paymentsEnabled && (
                     <div className="space-y-2">
-                      <Label htmlFor="student-total-amount">{t('totalAmount')}</Label>
+                      <Label htmlFor="student-total-amount">
+                        {t('totalAmount', { currency: currencySymbol(locale, currency) })}
+                      </Label>
                       <Input
                         id="student-total-amount"
                         name="totalAmount"
                         type="number"
-                        step="0.01"
+                        step={currencyStep(currency)}
                         min="0"
                         value={totalAmount}
                         onChange={(event) => setTotalAmount(Number(event.target.value))}

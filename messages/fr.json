@@ -568,8 +568,8 @@
           "enrollUnavailable": "Aucun plan ou aucune classe sur la période sélectionnée : l'élève sera créé sans inscription.",
           "selectPlan": "Plan tarifaire",
           "selectClass": "Classe",
-          "discount": "Réduction (€)",
-          "totalAmount": "Montant dû (€)",
+          "discount": "Réduction ({currency})",
+          "totalAmount": "Montant dû ({currency})",
           "canLeaveAlone": "Autorisé à partir seul après le cours (pour cette inscription)",
           "submit": "Créer",
           "cancel": "Annuler",
@@ -859,7 +859,7 @@
           "selectPlan": "Plan tarifaire",
           "selectClass": "Classe",
           "noClassInPeriod": "Aucune classe sur la période sélectionnée. Créez une classe ou changez de période.",
-          "discount": "Réduction (€)",
+          "discount": "Réduction ({currency})",
           "canLeaveAlone": "Autorisé à partir seul",
           "replaceExisting": "Remplacer l'inscription existante de la période",
           "replaceExistingHint": "L'inscription en cours est annulée puis recréée. Impossible si elle a déjà reçu un paiement.",
@@ -879,7 +879,7 @@
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
           },
           "replaceExistingHintNoPayments": "L'inscription en cours est annulée puis recréée.",
-          "totalAmount": "Montant dû (€)",
+          "totalAmount": "Montant dû ({currency})",
           "alreadyEnrolledHint": "Cet élève a déjà une inscription en cours sur la période : cochez « Remplacer l’inscription existante » pour la recréer."
         },
         "drawer": {
@@ -1033,7 +1033,7 @@
         "create": {
           "title": "Nouveau plan",
           "name": "Nom",
-          "amount": "Montant (€)",
+          "amount": "Montant ({currency})",
           "cancel": "Annuler",
           "submit": "Créer",
           "success": "Plan créé",
@@ -1571,7 +1571,7 @@
         },
         "applyDiscount": {
           "title": "Appliquer une réduction",
-          "amount": "Montant de la réduction (€)",
+          "amount": "Montant de la réduction ({currency})",
           "cancel": "Annuler",
           "submit": "Appliquer",
           "success": "Réduction appliquée",
@@ -1585,7 +1585,7 @@
             "totalBelowPaid": "Le montant dû serait inférieur à ce qui a déjà été payé sur cette inscription",
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
           },
-          "totalAmount": "Montant final dû (€)"
+          "totalAmount": "Montant final dû ({currency})"
         }
       },
       "users": {

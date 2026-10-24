@@ -5,6 +5,7 @@ import { RecordPaymentButton } from './record-payment-button'
 const { replace } = vi.hoisted(() => ({ replace: vi.fn() }))
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'fr',
   useTranslations: () => (key: string) => key,
   useFormatter: () => ({ number: (value: number) => String(value) }),
 }))
@@ -19,6 +20,7 @@ describe('RecordPaymentButton', () => {
           { id: 'family-1', name: 'Benali' },
           { id: 'family-2', name: 'Durand' },
         ]}
+        currency="EUR"
       />
     )
 

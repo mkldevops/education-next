@@ -12,11 +12,12 @@ import {
   Label,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
+import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { createPlanAction } from '../../../_lib/plan-actions'
 
-export function CreatePlanDialog() {
+export function CreatePlanDialog({ currency }: { currency: string }) {
   const t = useTranslations('dashboard.pages.plans.create')
 
   return (
@@ -31,14 +32,16 @@ export function CreatePlanDialog() {
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <CreatePlanForm />
+        <CreatePlanForm currency={currency} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function CreatePlanForm() {
+function CreatePlanForm({ currency }: { currency: string }) {
   const t = useTranslations('dashboard.pages.plans.create')
+  const locale = useLocale()
+  const step = currencyStep(currency)
   const { isPending, close, onSubmit } = useDialogForm(t)
 
   const handleSubmit = onSubmit((formData) =>
@@ -57,13 +60,15 @@ function CreatePlanForm() {
             <Input id="plan-name" name="name" required maxLength={50} disabled={isPending} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="plan-amount">{t('amount')}</Label>
+            <Label htmlFor="plan-amount">
+              {t('amount', { currency: currencySymbol(locale, currency) })}
+            </Label>
             <Input
               id="plan-amount"
               name="amount"
               type="number"
-              step="0.01"
-              min="0.01"
+              step={step}
+              min={step}
               required
               disabled={isPending}
             />

@@ -9,6 +9,7 @@ import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-context'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
@@ -63,6 +64,7 @@ export default async function StudentDetailPage({ params }: Props) {
   const isStaff = await hasActiveSchoolStaffAccess(context)
 
   const paymentsEnabled = (isAdmin || !isStaff) && (await isPaymentsEnabled(student.schoolId))
+  const { currency } = await getSchoolRegionalSettings(student.schoolId)
 
   const selectedPeriodId = isStaff ? await getSelectedPeriodId(student.schoolId) : null
 
@@ -114,15 +116,15 @@ export default async function StudentDetailPage({ params }: Props) {
     { label: t('kpis.activeEnrollments'), value: String(activeEnrollments.length) },
     ...(paymentsEnabled
       ? [
-          { label: t('kpis.totalDue'), value: formatCurrency(totalDue, locale) },
+          { label: t('kpis.totalDue'), value: formatCurrency(totalDue, locale, currency) },
           {
             label: t('kpis.totalPaid'),
-            value: formatCurrency(totalPaid, locale),
+            value: formatCurrency(totalPaid, locale, currency),
             tone: totalPaid > 0 ? 'emerald' : undefined,
           },
           {
             label: t('kpis.remaining'),
-            value: formatCurrency(remaining, locale),
+            value: formatCurrency(remaining, locale, currency),
             tone: remaining > 0 ? 'amber' : undefined,
           },
         ]
@@ -268,6 +270,7 @@ export default async function StudentDetailPage({ params }: Props) {
                 }))}
                 classes={classes}
                 paymentsEnabled={paymentsEnabled}
+                currency={currency}
                 defaultStudentId={student.id}
                 redirectTo={`/dashboard/students/${student.id}`}
                 triggerSize="sm"
@@ -276,6 +279,7 @@ export default async function StudentDetailPage({ params }: Props) {
           </div>
           <EnrollmentList
             enrollments={student.enrollments}
+            currency={currency}
             locale={locale}
             paymentsEnabled={paymentsEnabled}
           />

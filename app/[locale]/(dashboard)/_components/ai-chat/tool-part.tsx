@@ -4,6 +4,7 @@ import { Button } from '@peaklab/ui'
 import { type DynamicToolUIPart, getToolName, type ToolUIPart } from 'ai'
 import { Ban, Check, CircleAlert, Loader2, ShieldQuestion, Wrench, X } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
+import { DEFAULT_CURRENCY } from '@/lib/decimal'
 import type { DraftPlan } from './draft-plans'
 
 export type ApprovalResponse = { id: string; approved: boolean }
@@ -28,9 +29,10 @@ function PaymentSummary({ plan }: { plan: DraftPlan }) {
   const format = useFormatter()
   const family = plan.family as { name?: string } | undefined
   const method = String(plan.method)
+  const currency = typeof plan.currency === 'string' ? plan.currency : DEFAULT_CURRENCY
   const rows: Array<[string, string]> = [
     [t('family'), family?.name ?? ''],
-    [t('amount'), format.number(Number(plan.amount), { style: 'currency', currency: 'EUR' })],
+    [t('amount'), format.number(Number(plan.amount), { style: 'currency', currency })],
     [t('method'), tMethod.has(method) ? tMethod(method) : method],
     [t('paidAt'), format.dateTime(new Date(String(plan.paidAt)), { dateStyle: 'short' })],
   ]

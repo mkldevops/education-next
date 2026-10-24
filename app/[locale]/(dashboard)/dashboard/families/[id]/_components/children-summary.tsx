@@ -8,6 +8,7 @@ import type { FamilyDetailStudent } from '../_lib/family-detail'
 type Props = {
   students: FamilyDetailStudent[]
   locale: string
+  currency: string
   /** Faux quand l'école a désactivé les paiements : aucun solde n'est affiché. */
   paymentsEnabled: boolean
 }
@@ -17,7 +18,7 @@ type Props = {
  * (les inscriptions arrivent triées par `registeredAt` décroissant) ; le solde reprend la règle
  * de `calculateFamilyBalance` restreinte aux inscriptions de l'enfant.
  */
-export async function ChildrenSummary({ students, locale, paymentsEnabled }: Props) {
+export async function ChildrenSummary({ students, locale, currency, paymentsEnabled }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
 
   if (students.length === 0) {
@@ -59,7 +60,7 @@ export async function ChildrenSummary({ students, locale, paymentsEnabled }: Pro
                 }
               >
                 {balance > 0
-                  ? t('childCard.remaining', { amount: formatCurrency(balance, locale) })
+                  ? t('childCard.remaining', { amount: formatCurrency(balance, locale, currency) })
                   : t('childCard.settled')}
               </span>
             )}
