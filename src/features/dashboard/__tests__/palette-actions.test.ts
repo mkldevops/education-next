@@ -4,7 +4,7 @@ import { isApplePlatform } from '../shortcut'
 import type { NavScope } from '../sidebar-items'
 
 const scope = (overrides: Partial<NavScope> = {}): NavScope => ({
-  role: 'ADMIN',
+  roles: ['ADMIN'],
   isSuperAdmin: false,
   features: { events: false, payments: true, attendance: true },
   ...overrides,
@@ -28,9 +28,38 @@ describe('resolvePaletteActions', () => {
     ).toEqual(['newFamily', 'newEnrollment'])
   })
 
+  it('offers creations but no balance review to a teacher with extended access', () => {
+    expect(keys(scope({ roles: ['TEACHER'], hasStaffAccess: true }))).toEqual([
+      'newFamily',
+      'newEnrollment',
+      'takeAttendance',
+    ])
+    expect(keys(scope({ roles: ['TEACHER'] }))).not.toContain('newFamily')
+  })
+
   it('never offers management shortcuts to a parent', () => {
-    expect(keys(scope({ role: 'PARENT', familyId: 'family-1' }))).not.toContain('newFamily')
-    expect(keys(scope({ role: 'PARENT', familyId: 'family-1' }))).not.toContain('reviewBalances')
+    expect(keys(scope({ roles: ['PARENT'], familyId: 'family-1' }))).not.toContain('newFamily')
+    expect(keys(scope({ roles: ['PARENT'], familyId: 'family-1' }))).not.toContain('reviewBalances')
+  })
+
+  it('cumulates the shortcuts of a teacher-parent with extended access', () => {
+    const teacherParent = { roles: ['TEACHER', 'PARENT'] as const, familyId: 'family-1' }
+
+    expect(keys(scope({ ...teacherParent, hasStaffAccess: true }))).toEqual([
+      'newFamily',
+      'newEnrollment',
+      'takeAttendance',
+    ])
+    expect(keys(scope(teacherParent))).toEqual(['takeAttendance'])
+  })
+
+  it('offers every shortcut to an admin who is also a parent', () => {
+    expect(keys(scope({ roles: ['ADMIN', 'PARENT'], familyId: 'family-1' }))).toEqual([
+      'newFamily',
+      'newEnrollment',
+      'takeAttendance',
+      'reviewBalances',
+    ])
   })
 })
 

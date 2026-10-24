@@ -88,7 +88,9 @@ export function UserDrawer({
           {error && <div className="rounded bg-red-50 p-3 text-sm text-red-600">{t('error')}</div>}
 
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={ROLE_COLORS[member.role]} label={tRoles(member.role)} />
+            {member.roles.map((role) => (
+              <StatusBadge key={role} status={ROLE_COLORS[role]} label={tRoles(role)} />
+            ))}
             {user.isSuperAdmin && <StatusBadge status="red" label={t('superAdmin')} />}
             <StatusBadge
               status={user.isActive ? 'green' : 'gray'}
@@ -105,7 +107,7 @@ export function UserDrawer({
 
           <Section title={t('sections.schoolActions')}>
             <div className="flex flex-wrap gap-2">
-              <ChangeSchoolMemberRoleDialog userId={member.userId} role={member.role} />
+              <ChangeSchoolMemberRoleDialog userId={member.userId} roles={member.roles} />
               <RemoveSchoolMemberDialog userId={member.userId} onRemoved={close} />
             </div>
           </Section>

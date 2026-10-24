@@ -1106,6 +1106,10 @@
               "cancel": "Cancel"
             }
           },
+          "teacher_staff_access_enabled": {
+            "label": "Extended teacher access",
+            "description": "Teachers can open every class, family, student and enrollment of the school, and add families, students and enrollments. Payments, plans and settings stay with administrators."
+          },
           "attendance_enabled": {
             "label": "Attendance",
             "description": "Enables class attendance recording."
@@ -1607,8 +1611,9 @@
         "actions": "Actions",
         "active": "Active",
         "inactive": "Inactive",
-        "changeRole": "Change Role",
-        "newRole": "New Role",
+        "changeRole": "Change Roles",
+        "newRole": "Roles in the school",
+        "rolesHint": "Rights add up. The teacher role follows the teacher record; removing the parent role unlinks the families.",
         "deactivate": "Deactivate",
         "confirm": "Confirm",
         "cancel": "Cancel",
@@ -1688,6 +1693,7 @@
           "confirmationMismatch": "The confirmation email does not match",
           "emailError": "The email could not be sent",
           "lastAdmin": "Cannot do this: this member is the school’s last administrator",
+          "noRole": "Keep at least one role, or remove the member from the school",
           "selfDeactivation": "You cannot deactivate your own account",
           "notSuperAdmin": "Only a super admin can impersonate an account",
           "alreadyImpersonating": "Return to your own account before impersonating another one",

@@ -30,7 +30,7 @@ type Option = {
 type Props = {
   data: StudentRow[]
   locale: string
-  isAdmin: boolean
+  isStaff: boolean
   plans: Option[]
   classes: Option[]
   paymentsEnabled: boolean
@@ -88,7 +88,7 @@ function AgeCell({
 export function StudentsDataTable({
   data,
   locale,
-  isAdmin,
+  isStaff,
   plans,
   classes,
   paymentsEnabled,
@@ -164,7 +164,7 @@ export function StudentsDataTable({
       cell: ({ row }) => <AgeCell birthday={row.original.birthday} locale={locale} today={today} />,
       enableSorting: true,
     },
-    ...(isAdmin ? [familyColumn] : []),
+    ...(isStaff ? [familyColumn] : []),
     {
       id: 'class',
       header: t('class'),
@@ -175,7 +175,7 @@ export function StudentsDataTable({
       cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
       enableSorting: true,
     },
-    ...(isAdmin ? [actionsColumn] : []),
+    ...(isStaff ? [actionsColumn] : []),
   ]
 
   const labels = useTableLabels()
@@ -187,9 +187,9 @@ export function StudentsDataTable({
         columns={columns}
         labels={labels}
         emptyMessage={t('noStudents')}
-        enableSearch={isAdmin}
-        enableColumnVisibility={isAdmin}
-        enablePagination={isAdmin}
+        enableSearch={isStaff}
+        enableColumnVisibility={isStaff}
+        enablePagination={isStaff}
       />
 
       {enrollStudent && (

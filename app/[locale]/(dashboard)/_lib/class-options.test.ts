@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { groupClassesByLevel, rankClasses, remainingSeats, suggestLevelId } from './class-options'
+import {
+  classItemLabel,
+  classLabel,
+  groupClassesByLevel,
+  rankClasses,
+  remainingSeats,
+  spansSeveralPeriods,
+  suggestLevelId,
+} from './class-options'
 
 describe('suggestLevelId', () => {
   const last = { levelId: 'ce1', nextLevelIds: ['ce2'], periodId: 'p-2025' }
@@ -76,5 +84,25 @@ describe('groupClassesByLevel', () => {
         { id: 'b', name: 'B' },
       ])
     ).toEqual([])
+  })
+})
+
+describe('class labels', () => {
+  const ce1 = { id: 'a', name: 'CE1-A', levelName: 'CE1', periodName: '2026-2027' }
+
+  it('gives the full label for the trigger and the summaries', () => {
+    expect(classLabel(ce1)).toBe('CE1-A (CE1 — 2026-2027)')
+    expect(classLabel({ id: 'b', name: 'CP' })).toBe('CP')
+  })
+
+  it('drops the level under a level header and the period of a single period', () => {
+    expect(classItemLabel(ce1, { showLevel: false, showPeriod: false })).toBe('CE1-A')
+    expect(classItemLabel(ce1, { showLevel: true, showPeriod: false })).toBe('CE1-A (CE1)')
+    expect(classItemLabel(ce1, { showLevel: false, showPeriod: true })).toBe('CE1-A (2026-2027)')
+  })
+
+  it('detects several periods among the offered classes', () => {
+    expect(spansSeveralPeriods([ce1, { ...ce1, id: 'b' }])).toBe(false)
+    expect(spansSeveralPeriods([ce1, { ...ce1, id: 'b', periodName: '2027-2028' }])).toBe(true)
   })
 })

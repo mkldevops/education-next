@@ -28,7 +28,7 @@ import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { createFullFamilySchema } from '@/use-cases/families/create-full-family-schema'
 import { ClassSelect } from '../../../_components/class-select'
-import type { ClassOption } from '../../../_lib/class-options'
+import { type ClassOption, classLabel } from '../../../_lib/class-options'
 import { createFamilyAction } from '../../../_lib/family-actions'
 
 interface PlanOption {
@@ -236,7 +236,10 @@ function CreateFamilyWizard({
   }
 
   const planName = (id: string) => plans.find((p) => p.id === id)?.name ?? ''
-  const className = (id: string | null) => classes.find((c) => c.id === id)?.name ?? ''
+  const className = (id: string | null) => {
+    const option = classes.find((c) => c.id === id)
+    return option ? classLabel(option) : ''
+  }
   const planItems = plans.map((p) => ({ value: p.id, label: p.name }))
   const sexItems = [
     { value: null, label: t('unspecified') },

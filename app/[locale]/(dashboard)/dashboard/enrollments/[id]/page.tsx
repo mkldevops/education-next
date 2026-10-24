@@ -13,11 +13,11 @@ import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
-import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
-import { adminOrLinkedTo, familyLinksVisibleTo, resolveDeepLink } from '../../../_lib/deep-link'
+import { familyLinksVisibleTo, resolveDeepLink, staffOrLinkedTo } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { EnrollmentActions } from '../_components/enrollment-actions'
@@ -29,14 +29,14 @@ type Props = {
 /** Résolveur unique de la page ET de `generateMetadata`. */
 const resolveEnrollment = cache((id: string) =>
   resolveDeepLink({
-    requireAdmin: false,
+    requireStaff: false,
     find: (access) =>
       db.enrollment.findFirst({
         where: {
           id,
           isActive: true,
           schoolId: { in: access.schoolIds },
-          ...adminOrLinkedTo(access, {
+          ...staffOrLinkedTo(access, {
             student: {
               person: {
                 families: { some: { family: { users: { some: { userId: access.userId } } } } },
@@ -106,13 +106,15 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
   const enrollment = resolution.resource
   const isAdmin = isActiveSchoolAdmin(context)
-  const paymentsEnabled = await isPaymentsEnabled(enrollment.schoolId)
+  // Un enseignant à accès élargi gère l'inscription sans en voir l'argent.
+  const isStaff = await hasActiveSchoolStaffAccess(context)
+  const paymentsEnabled = (isAdmin || !isStaff) && (await isPaymentsEnabled(enrollment.schoolId))
 
   // Le changement de classe reste dans la période de l'inscription (`periodMismatch` sinon).
   const enrollmentPeriodId = (
     enrollment.classAssignments.find((a) => !a.endAt) ?? enrollment.classAssignments.at(-1)
   )?.classPeriod.periodId
-  const availableClasses = isAdmin
+  const availableClasses = isStaff
     ? await db.classPeriod.findMany({
         where: {
           schoolId: enrollment.schoolId,
@@ -177,10 +179,10 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         <EnrollmentActions
           enrollmentId={enrollment.id}
           status={enrollment.status}
-          isAdmin={isAdmin}
+          isAdmin={isStaff}
           currentClassId={currentClassId}
           availableClasses={availableClasses}
-          currentTotalAmount={totalAmount}
+          currentTotalAmount={paymentsEnabled ? totalAmount : 0}
           paymentsEnabled={paymentsEnabled}
           planName={enrollment.plan.name}
           availablePlans={availablePlans}
@@ -278,7 +280,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 {enrollment.classAssignments.map((a) => (
                   <tr key={a.id} className="text-sm">
                     <td className="py-3 pr-4 font-medium">
-                      {isAdmin ? (
+                      {isStaff ? (
                         <Link
                           href={`/dashboard/classes/${a.classPeriod.id}`}
                           className="text-primary hover:underline"
@@ -286,7 +288,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                           {a.classPeriod.name}
                         </Link>
                       ) : (
-                        // La page classe est réservée aux admins : un parent n'y aurait qu'un 404.
+                        // La page classe est réservée à l'équipe : un parent n'y aurait qu'un 404.
                         a.classPeriod.name
                       )}
                     </td>

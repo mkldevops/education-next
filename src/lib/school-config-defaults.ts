@@ -4,6 +4,7 @@ import { CLASS_SCHEDULE_CONFIG_DEFAULTS } from './class-schedule-config'
 import { EVENTS_CONFIG_DEFAULT } from './events-config'
 import { PAYMENTS_ENABLED_CONFIG_DEFAULT } from './payment-config'
 import { TEACHER_EXPENSES_CONFIG_DEFAULT } from './teacher-expense-config'
+import { TEACHER_STAFF_ACCESS_CONFIG_DEFAULT } from './teacher-staff-access-config'
 
 export const MAX_STUDENTS_PER_CLASS_CONFIG_KEY = 'max_students_per_class'
 export const THEME_PRIMARY_CONFIG_KEY = 'theme_primary'
@@ -19,6 +20,7 @@ export const THEME_PRIMARY_CONFIG_KEY = 'theme_primary'
 export const SCHOOL_CONFIG_DEFAULTS = [
   ...BRANDING_CONFIG_DEFAULTS,
   TEACHER_EXPENSES_CONFIG_DEFAULT,
+  TEACHER_STAFF_ACCESS_CONFIG_DEFAULT,
   EVENTS_CONFIG_DEFAULT,
   ATTENDANCE_ENABLED_CONFIG_DEFAULT,
   ...CLASS_SCHEDULE_CONFIG_DEFAULTS,

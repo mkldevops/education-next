@@ -3,6 +3,11 @@ export type AuthorizedSchool = {
   name: string
   slug: string
   isAdmin: boolean
+  /**
+   * Lecture et saisie de tous les dossiers de l'école : un administrateur, ou un enseignant
+   * quand l'école a ouvert `teacher_staff_access_enabled`. `isAdmin` implique `isStaff`.
+   */
+  isStaff: boolean
 }
 
 export type DeepLinkResolution<T> =
@@ -13,15 +18,15 @@ export type DeepLinkResolution<T> =
 /**
  * Écoles interrogeables par une résolution de lien profond.
  *
- * `requireAdmin` n'est pas décoratif : un utilisateur peut être `ADMIN` d'une école et
+ * `requireStaff` n'est pas décoratif : un utilisateur peut être `ADMIN` d'une école et
  * `PARENT` d'une autre. Sans ce filtre, un lien profond vers une page d'administration
  * de la seconde école deviendrait une élévation de privilège.
  */
 export function reachableSchools(
   schools: AuthorizedSchool[],
-  requireAdmin: boolean
+  requireStaff: boolean
 ): AuthorizedSchool[] {
-  return schools.filter((school) => !requireAdmin || school.isAdmin)
+  return schools.filter((school) => !requireStaff || school.isStaff)
 }
 
 /**

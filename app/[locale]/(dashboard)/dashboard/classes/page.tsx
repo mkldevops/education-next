@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { MAX_STUDENTS_PER_CLASS_CONFIG_KEY } from '@/lib/school-config-defaults'
-import { requireSchoolAdmin } from '../../_lib/auth-helper'
+import { requireSchoolStaff } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { ClassesDataTable, type ClassRow } from './_components/classes-data-table'
 import { CreateClassDialog } from './_components/create-class-dialog'
@@ -27,7 +27,8 @@ export default async function ClassesPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.classes')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { schoolId } = await requireSchoolAdmin()
+  // Un enseignant à accès élargi consulte toutes les classes sans les créer ni les modifier.
+  const { schoolId, isAdmin } = await requireSchoolStaff()
 
   const selectedPeriod = await getSelectedPeriod(schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
@@ -121,7 +122,7 @@ export default async function ClassesPage({ params }: Props) {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        {levels.length > 0 && periods.length > 0 && (
+        {isAdmin && levels.length > 0 && periods.length > 0 && (
           <CreateClassDialog
             levels={levels}
             periods={periods}
@@ -134,6 +135,7 @@ export default async function ClassesPage({ params }: Props) {
         classes={rows}
         levels={levels}
         teachers={teacherOptions}
+        canManage={isAdmin}
         emptyMessage={
           selectedPeriod ? t('noClassesInPeriod', { period: selectedPeriod.name }) : t('noClasses')
         }

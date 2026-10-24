@@ -39,7 +39,9 @@ vi.mock('@/gateways/family-gateway', () => ({
   familyGateway: { countDeletionImpact: countDeletionImpactMock },
 }))
 vi.mock('@/lib/school-context', () => ({
-  isActiveSchoolAdmin: (context: { role: string }) => context.role === 'ADMIN',
+  isActiveSchoolAdmin: (context: { roles: string[] }) => context.roles.includes('ADMIN'),
+  hasActiveSchoolStaffAccess: async (context: { roles: string[]; staffTeacher?: boolean }) =>
+    context.roles.includes('ADMIN') || context.staffTeacher === true,
 }))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
@@ -133,7 +135,7 @@ const balanceFixture = {
 beforeEach(() => {
   vi.clearAllMocks()
   requireSchoolSessionMock.mockResolvedValue({
-    role: 'ADMIN',
+    roles: ['ADMIN'],
     isSuperAdmin: false,
     schoolId: 'school-1',
     userId: 'user-1',
@@ -218,5 +220,43 @@ describe('FamilyDetailPage, payments disabled', () => {
 
     expect(document.querySelector('input[name="amount"]')).toBeNull()
     expect(recordPaymentActionMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('FamilyDetailPage, teacher with extended access', () => {
+  beforeEach(() => {
+    isPaymentsEnabledMock.mockResolvedValue(true)
+    requireSchoolSessionMock.mockResolvedValue({
+      roles: ['TEACHER'],
+      staffTeacher: true,
+      isSuperAdmin: false,
+      schoolId: 'school-1',
+      userId: 'user-1',
+      familyId: null,
+    })
+  })
+
+  it('manages the family without payments, deletion or parent invitation', async () => {
+    render(
+      await FamilyDetailPage({
+        params: Promise.resolve({ locale: 'fr', id: 'family-1' }),
+        searchParams: Promise.resolve({ action: 'addPayment' }),
+      })
+    )
+
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'tabs.overview',
+      'tabs.children',
+      'tabs.activity',
+    ])
+    expect(getFamilyBalanceMock).not.toHaveBeenCalled()
+    expect(countDeletionImpactMock).not.toHaveBeenCalled()
+    expect(document.querySelector('input[name="amount"]')).toBeNull()
+    expect(heroBannerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ showActions: true, canDelete: false, paymentsEnabled: false })
+    )
+    expect(overviewTabMock).toHaveBeenCalledWith(
+      expect.objectContaining({ isAdmin: true, canInvite: false, onlinePaymentAvailable: false })
+    )
   })
 })

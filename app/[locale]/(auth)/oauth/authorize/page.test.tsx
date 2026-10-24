@@ -91,8 +91,8 @@ beforeEach(() => {
     resource: 'https://ecole-a.example/api/mcp',
   })
   listAuthorizedSchoolsMock.mockResolvedValue([
-    { role: 'ADMIN', school: { id: 'school-1', name: 'École A' } },
-    { role: 'PARENT', school: { id: 'school-2', name: 'École B' } },
+    { roles: ['ADMIN'], school: { id: 'school-1', name: 'École A' } },
+    { roles: ['PARENT'], school: { id: 'school-2', name: 'École B' } },
   ])
 })
 

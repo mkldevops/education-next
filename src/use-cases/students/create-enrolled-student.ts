@@ -12,7 +12,12 @@ import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { createEnrolledStudentSchema } from './schemas'
 
-type Input = z.input<typeof createEnrolledStudentSchema>
+/**
+ * `deferPricing` : l'inscription est posée sans tarif, comme pendant une coupure des
+ * paiements, quel que soit le drapeau de l'école. Un enseignant à accès élargi inscrit ainsi
+ * sans voir ni choisir de montant ; l'administration pose la formule ensuite (FR-020).
+ */
+type Input = z.input<typeof createEnrolledStudentSchema> & { deferPricing?: boolean }
 
 /**
  * Crée l'élève et son inscription en un seul geste, pour que l'ajout d'un enfant dans une
@@ -28,7 +33,7 @@ export async function createEnrolledStudent(input: Input) {
   if (!parsed.success) return 'validationError' as const
   const { schoolId, familyId, person, student, enrollment } = parsed.data
 
-  const paymentsEnabled = await isPaymentsEnabled(schoolId)
+  const paymentsEnabled = input.deferPricing ? false : await isPaymentsEnabled(schoolId)
 
   // Mêmes deux contrôles que `createEnrollment`, pour la même raison : le schéma laisse
   // `planId` facultatif pour la coupure, donc l'obligation est restaurée ici drapeau actif,

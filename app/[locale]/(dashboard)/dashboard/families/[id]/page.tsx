@@ -6,12 +6,13 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
-import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
+import { classLabel } from '../../../_lib/class-options'
 import { loadSuggestedLevels, toClassOption } from '../../../_lib/class-options-loader'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
@@ -72,7 +73,10 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
 
   const family = resolution.resource
   const isAdmin = isActiveSchoolAdmin(context)
-  const paymentsEnabled = await isPaymentsEnabled(family.schoolId)
+  // Un enseignant à accès élargi gère la famille sans en voir l'argent.
+  const isStaff = await hasActiveSchoolStaffAccess(context)
+  const seesFinances = isAdmin || !isStaff
+  const paymentsEnabled = seesFinances && (await isPaymentsEnabled(family.schoolId))
   const tabKeys: TabKey[] = paymentsEnabled
     ? ['overview', 'children', 'payments', 'activity']
     : ['overview', 'children', 'activity']
@@ -83,9 +87,9 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   const [selectedPeriodId, familyBalance, deletionImpact, onlinePaymentAvailable] =
     await Promise.all([
       getSelectedPeriodId(family.schoolId),
-      getFamilyBalance(family.schoolId, family.id),
+      seesFinances ? getFamilyBalance(family.schoolId, family.id) : null,
       isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
-      isAdmin ? false : isOnlinePaymentAvailable(family.schoolId),
+      isStaff ? false : isOnlinePaymentAvailable(family.schoolId),
     ])
 
   const {
@@ -96,8 +100,13 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     pendingCount,
     scopedStudentId,
   } = deriveFamilyDetail(family, studentId)
-  const { totalAmount, totalDiscount, totalPaid, remainingBalance } = familyBalance
-  const payments = serializeFamilyPayments(family.payments)
+  const { totalAmount, totalDiscount, totalPaid, remainingBalance } = familyBalance ?? {
+    totalAmount: 0,
+    totalDiscount: 0,
+    totalPaid: 0,
+    remainingBalance: 0,
+  }
+  const payments = seesFinances ? serializeFamilyPayments(family.payments) : []
 
   /* Le bouton « Inscrire » de la carte enfant se juge sur les mêmes données que
      `createEnrollment`, jamais sur les affectations affichées : celles-ci sont filtrées sur
@@ -109,24 +118,28 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   const studentIds = students.map((s) => s.person.student.id)
   const [{ plans, classes }, studentsEnrolledInSelectedPeriod, suggestedLevels] = await Promise.all(
     [
-      getFamilyDialogData(family.schoolId, isAdmin, selectedPeriodId),
-      isAdmin && selectedPeriodId !== null
+      getFamilyDialogData(family.schoolId, isStaff, selectedPeriodId),
+      isStaff && selectedPeriodId !== null
         ? enrollmentGateway.findStudentIdsEnrolledInPeriod(
             family.schoolId,
             studentIds,
             selectedPeriodId
           )
         : new Set<string>(),
-      isAdmin
+      isStaff
         ? loadSuggestedLevels(family.schoolId, studentIds, selectedPeriodId)
         : new Map<string, string>(),
     ]
   )
 
-  const classOptions = classes.map((c) =>
-    toClassOption(c, `${c.name} (${c.level.name} — ${c.period.name})`)
-  )
-  const planOptions = plans.map((p) => ({ id: p.id, name: p.name, amount: Number(p.amount) }))
+  const classOptions = classes.map((c) => toClassOption(c))
+  // « Changer de classe » liste les classes sans titre de niveau : il garde le libellé complet.
+  const reassignClassOptions = classOptions.map((c) => ({ id: c.id, name: classLabel(c) }))
+  const planOptions = (isAdmin ? plans : []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    amount: Number(p.amount),
+  }))
   const familyHref = `/dashboard/families/${family.id}`
 
   return (
@@ -146,9 +159,10 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         enrollmentsCount={allEnrollments.length}
         paymentsEnabled={paymentsEnabled}
         remainingBalance={remainingBalance}
-        showActions={isAdmin}
+        showActions={isStaff}
+        canDelete={isAdmin}
       >
-        {isAdmin && (
+        {isStaff && (
           <>
             <CreateEnrollmentDialog
               students={students.map((s) => ({
@@ -236,7 +250,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               <OverviewTab
                 locale={locale}
                 familyId={family.id}
-                isAdmin={isAdmin}
+                isAdmin={isStaff}
+                canInvite={isAdmin}
                 onlinePaymentAvailable={onlinePaymentAvailable}
                 persons={family.persons}
                 students={students}
@@ -245,7 +260,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 totalEnrollments={allEnrollments.length}
                 activeEnrollments={activeEnrollments}
                 canAddEnrollment={
-                  isAdmin &&
+                  isStaff &&
                   classOptions.length > 0 &&
                   (!paymentsEnabled || plans.length > 0) &&
                   students.some(
@@ -268,8 +283,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 pendingCount={pendingCount}
                 locale={locale}
                 familyId={family.id}
-                isAdmin={isAdmin}
-                classes={classOptions}
+                isAdmin={isStaff}
+                classes={reassignClassOptions}
                 studentsEnrolledInSelectedPeriod={studentsEnrolledInSelectedPeriod}
                 paymentsEnabled={paymentsEnabled}
               />

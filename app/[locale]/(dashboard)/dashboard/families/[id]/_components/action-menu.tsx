@@ -13,6 +13,8 @@ type Props = {
   familyId: string
   paymentsEnabled: boolean
   canRecordPayment: boolean
+  /** Suppression définitive, réservée à l'administration. */
+  canDelete: boolean
 }
 
 type FamilyActionItem = {
@@ -25,7 +27,7 @@ type FamilyActionItem = {
   title?: string
 }
 
-export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment }: Props) {
+export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment, canDelete }: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.actions')
   const router = useRouter()
 
@@ -73,13 +75,17 @@ export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment }: Prop
       icon: Archive,
       action: 'archiveFamily',
     },
-    {
-      key: 'delete',
-      label: t('delete'),
-      icon: Trash2,
-      action: 'deleteFamily',
-      danger: true,
-    },
+    ...(canDelete
+      ? [
+          {
+            key: 'delete',
+            label: t('delete'),
+            icon: Trash2,
+            action: 'deleteFamily' as const,
+            danger: true,
+          },
+        ]
+      : []),
   ]
 
   const mobileActions = [...primaryActions, ...managementActions]

@@ -18,7 +18,7 @@ import type {
   setEnrollmentPlanSchema,
 } from '@/use-cases/enrollments/schemas'
 import { setEnrollmentPlan } from '@/use-cases/enrollments/set-enrollment-plan'
-import { requireSchoolAdmin } from './auth-helper'
+import { requireSchoolAdmin, requireSchoolStaff } from './auth-helper'
 
 type CreateEnrollmentInput = Omit<z.input<typeof createEnrollmentSchema>, 'schoolId'>
 type ActivateEnrollmentInput = Omit<z.infer<typeof enrollmentIdSchema>, 'schoolId'>
@@ -29,8 +29,8 @@ type PromoteStudentsInput = Omit<z.input<typeof promoteStudentsSchema>, 'schoolI
 type SetEnrollmentPlanInput = Omit<z.infer<typeof setEnrollmentPlanSchema>, 'schoolId'>
 
 export async function createEnrollmentAction(data: CreateEnrollmentInput) {
-  const { schoolId } = await requireSchoolAdmin()
-  const result = await createEnrollment({ ...data, schoolId })
+  const { schoolId, isAdmin } = await requireSchoolStaff()
+  const result = await createEnrollment({ ...data, schoolId, deferPricing: !isAdmin })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/enrollments')
   revalidatePath('/dashboard/families', 'layout')
@@ -41,7 +41,7 @@ export async function createEnrollmentAction(data: CreateEnrollmentInput) {
 }
 
 export async function activateEnrollmentAction(data: ActivateEnrollmentInput) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await activateEnrollment({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
@@ -50,7 +50,7 @@ export async function activateEnrollmentAction(data: ActivateEnrollmentInput) {
 }
 
 export async function completeEnrollmentAction(data: CompleteEnrollmentInput) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await completeEnrollment({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
@@ -58,7 +58,7 @@ export async function completeEnrollmentAction(data: CompleteEnrollmentInput) {
 }
 
 export async function cancelEnrollmentAction(enrollmentId: string) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await cancelEnrollment({ schoolId, id: enrollmentId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')
@@ -66,7 +66,7 @@ export async function cancelEnrollmentAction(enrollmentId: string) {
 }
 
 export async function reassignClassAction(data: ReassignClassInput) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolStaff()
   const result = await reassignClass({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/enrollments')

@@ -1,6 +1,106 @@
-import type { SchoolRole } from '@/generated/prisma/client'
+import type { Prisma, SchoolRole } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { inSerializableTransaction } from '@/lib/serializable-transaction'
+
+/** Ordre d'affichage et de stockage : stable, sans doublon. */
+const ROLE_ORDER: readonly SchoolRole[] = ['ADMIN', 'TEACHER', 'PARENT']
+
+function normalizeRoles(roles: readonly SchoolRole[]): SchoolRole[] {
+  return ROLE_ORDER.filter((role) => roles.includes(role))
+}
+
+/**
+ * Applique un nouvel ensemble de rôles dans une transaction déjà `Serializable`.
+ *
+ * Perdre un rôle retire ce qu'il portait : `PARENT` ses liens famille, `TEACHER` le lien de sa
+ * fiche enseignant. Sans cela, réattribuer le rôle plus tard ressusciterait un accès oublié.
+ * Un ensemble vide retire l'appartenance : un membre sans rôle n'aurait aucun droit.
+ * Retirer `ADMIN` au dernier administrateur est refusé.
+ */
+async function applyMemberRoles(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  schoolId: string,
+  roles: readonly SchoolRole[]
+) {
+  const member = await tx.schoolMember.findUnique({
+    where: { userId_schoolId: { userId, schoolId } },
+    select: { roles: true },
+  })
+  if (!member) return 'notFound' as const
+
+  const next = normalizeRoles(roles)
+  const lost = member.roles.filter((role) => !next.includes(role))
+  if (lost.length === 0 && next.length === member.roles.length) return 'OK' as const
+
+  if (lost.includes('ADMIN')) {
+    const admins = await tx.schoolMember.count({ where: { schoolId, roles: { has: 'ADMIN' } } })
+    if (admins <= 1) return 'lastAdmin' as const
+  }
+
+  if (next.length === 0 || lost.includes('TEACHER')) {
+    await tx.teacher.updateMany({ where: { schoolId, userId }, data: { userId: null } })
+  }
+  if (next.length === 0 || lost.includes('PARENT')) {
+    await tx.userFamily.deleteMany({ where: { userId, schoolId } })
+  }
+
+  if (next.length === 0) {
+    await tx.schoolMember.delete({ where: { userId_schoolId: { userId, schoolId } } })
+  } else {
+    await tx.schoolMember.update({
+      where: { userId_schoolId: { userId, schoolId } },
+      data: { roles: next },
+    })
+  }
+  return 'OK' as const
+}
+
+/** Retire `TEACHER` à un membre qui le détient, en lui laissant ses autres rôles. */
+export async function withdrawTeacherRole(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  schoolId: string
+) {
+  const member = await tx.schoolMember.findUnique({
+    where: { userId_schoolId: { userId, schoolId } },
+    select: { roles: true },
+  })
+  if (!member?.roles.includes('TEACHER')) return
+
+  await applyMemberRoles(
+    tx,
+    userId,
+    schoolId,
+    member.roles.filter((role) => role !== 'TEACHER')
+  )
+}
+
+/**
+ * Accorde `role` dans une transaction : crée l'appartenance, ou ajoute le rôle à celle qui
+ * existe. Inviter comme parent un enseignant de l'école lui ajoute l'accès parent.
+ */
+export async function grantMemberRole(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  schoolId: string,
+  role: SchoolRole
+) {
+  const member = await tx.schoolMember.findUnique({
+    where: { userId_schoolId: { userId, schoolId } },
+    select: { roles: true },
+  })
+  if (!member) {
+    await tx.schoolMember.create({ data: { userId, schoolId, roles: [role] } })
+    return
+  }
+  if (member.roles.includes(role)) return
+
+  await tx.schoolMember.update({
+    where: { userId_schoolId: { userId, schoolId } },
+    data: { roles: normalizeRoles([...member.roles, role]) },
+  })
+}
 
 /**
  * Seule frontière de lecture ET de mutation de `SchoolMember`.
@@ -20,7 +120,7 @@ export const schoolMemberGateway = {
       where: { userId, school: { isActive: true } },
       select: {
         schoolId: true,
-        role: true,
+        roles: true,
         createdAt: true,
         school: { select: { id: true, name: true, slug: true } },
       },
@@ -32,7 +132,7 @@ export const schoolMemberGateway = {
   findMembership: (userId: string, schoolId: string) =>
     db.schoolMember.findUnique({
       where: { userId_schoolId: { userId, schoolId } },
-      select: { userId: true, schoolId: true, role: true },
+      select: { userId: true, schoolId: true, roles: true },
     }),
 
   listSchoolMembers: (schoolId: string) =>
@@ -40,7 +140,7 @@ export const schoolMemberGateway = {
       where: { schoolId },
       select: {
         userId: true,
-        role: true,
+        roles: true,
         createdAt: true,
         user: {
           select: {
@@ -56,38 +156,38 @@ export const schoolMemberGateway = {
           },
         },
       },
-      orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ createdAt: 'asc' }, { userId: 'asc' }],
     }),
 
-  createMembership: (userId: string, schoolId: string, role: SchoolRole) =>
-    db.schoolMember.create({ data: { userId, schoolId, role } }),
+  createMembership: (userId: string, schoolId: string, roles: readonly SchoolRole[]) =>
+    db.schoolMember.create({ data: { userId, schoolId, roles: normalizeRoles(roles) } }),
 
   /**
-   * Rétrograde un membre, en refusant de retirer le dernier `ADMIN` de l'école.
+   * Remplace les rôles qu'un administrateur attribue à la main (voir `applyMemberRoles`).
+   * `TEACHER` suit le lien de la fiche enseignant : il est conservé tel quel. Un ensemble
+   * vide est refusé, retirer un membre passe par `removeMembership`.
    *
-   * Le comptage et la mutation partagent une transaction `Serializable` : vérifier
-   * puis muter en deux appels séparés laisserait deux rétrogradations concurrentes
+   * Le comptage des administrateurs et la mutation partagent une transaction `Serializable` :
+   * vérifier puis muter en deux appels séparés laisserait deux rétrogradations concurrentes
    * vider l'école de tout administrateur.
    */
-  changeMembershipRole: (userId: string, schoolId: string, role: SchoolRole) =>
+  setAssignableRoles: (
+    userId: string,
+    schoolId: string,
+    roles: readonly Exclude<SchoolRole, 'TEACHER'>[]
+  ) =>
     inSerializableTransaction(async (tx) => {
       const member = await tx.schoolMember.findUnique({
         where: { userId_schoolId: { userId, schoolId } },
-        select: { role: true },
+        select: { roles: true },
       })
       if (!member) return 'notFound' as const
-      if (member.role === role) return 'OK' as const
 
-      if (member.role === 'ADMIN') {
-        const admins = await tx.schoolMember.count({ where: { schoolId, role: 'ADMIN' } })
-        if (admins <= 1) return 'lastAdmin' as const
-      }
-
-      await tx.schoolMember.update({
-        where: { userId_schoolId: { userId, schoolId } },
-        data: { role },
-      })
-      return 'OK' as const
+      const next: SchoolRole[] = member.roles.includes('TEACHER')
+        ? [...roles, 'TEACHER']
+        : [...roles]
+      if (next.length === 0) return 'noRole' as const
+      return applyMemberRoles(tx, userId, schoolId, next)
     }),
 
   /**
@@ -95,30 +195,9 @@ export const schoolMemberGateway = {
    *
    * Les `UserFamily` de cette école partent dans la même transaction : la clé
    * étrangère composite `UserFamily -> SchoolMember` bloquerait autrement la
-   * suppression. Isolation `Serializable` pour la même raison que ci-dessus.
+   * suppression. La fiche enseignant est libérée : le contexte refuse alors la session dès
+   * la requête suivante, et une future invitation peut rattacher un remplaçant.
    */
   removeMembership: (userId: string, schoolId: string) =>
-    inSerializableTransaction(async (tx) => {
-      const member = await tx.schoolMember.findUnique({
-        where: { userId_schoolId: { userId, schoolId } },
-        select: { role: true },
-      })
-      if (!member) return 'notFound' as const
-
-      if (member.role === 'ADMIN') {
-        const admins = await tx.schoolMember.count({ where: { schoolId, role: 'ADMIN' } })
-        if (admins <= 1) return 'lastAdmin' as const
-      }
-
-      // Un retrait de membre enseignant doit aussi libérer la fiche dans cette école : le
-      // contexte refuse alors la session dès la requête suivante, et une future invitation
-      // peut rattacher un remplaçant sans conserver un accès fantôme.
-      await tx.teacher.updateMany({
-        where: { schoolId, userId },
-        data: { userId: null },
-      })
-      await tx.userFamily.deleteMany({ where: { userId, schoolId } })
-      await tx.schoolMember.delete({ where: { userId_schoolId: { userId, schoolId } } })
-      return 'OK' as const
-    }),
+    inSerializableTransaction((tx) => applyMemberRoles(tx, userId, schoolId, [])),
 }

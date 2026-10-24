@@ -16,11 +16,12 @@ import { useSidebarStore } from './sidebar-store'
 import { UserMenu } from './sidebar-user-menu'
 
 type SidebarProps = {
-  role: SchoolRole | null
+  roles: readonly SchoolRole[]
   isSuperAdmin: boolean
   paymentsEnabled: boolean
   familyId?: string
   hasTeacherCapability?: boolean
+  hasStaffAccess?: boolean
   logoUrl?: string
   schoolName?: string
   userName?: string
@@ -34,11 +35,12 @@ type SidebarProps = {
 }
 
 export function Sidebar({
-  role,
+  roles,
   isSuperAdmin,
   paymentsEnabled,
   familyId,
   hasTeacherCapability = false,
+  hasStaffAccess = false,
   logoUrl,
   schoolName,
   userName,
@@ -61,10 +63,11 @@ export function Sidebar({
   // l'exploitant de la plateforme, pas une école affichée.
   const displayName = schoolName || platform('platformTitle')
   const navScope: NavScope = {
-    role,
+    roles,
     isSuperAdmin,
     familyId,
     hasTeacherCapability,
+    hasStaffAccess,
     features: {
       classSchedule: classScheduleEnabled,
       events: eventsEnabled,

@@ -11,6 +11,7 @@ type Props = {
   paymentsEnabled: boolean
   remainingBalance: number
   showActions?: boolean
+  canDelete?: boolean
   children?: React.ReactNode
 }
 
@@ -22,6 +23,7 @@ export async function HeroBanner({
   paymentsEnabled,
   remainingBalance,
   showActions,
+  canDelete = false,
   children,
 }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
@@ -51,6 +53,7 @@ export async function HeroBanner({
               familyId={family.id}
               paymentsEnabled={paymentsEnabled}
               canRecordPayment={remainingBalance > 0}
+              canDelete={canDelete}
             />
           )}
           {children}

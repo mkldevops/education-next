@@ -268,6 +268,24 @@ boundaries:
   otherwise still land and issue a session, for the lifetime of the stored `state`. The path is
   matched against the handler base (`/api/auth`), never with a loose suffix test.
 
+**One Google redirect URI for every instance.** Google accepts exact redirect URIs only and offers
+no API to add one, so a new instance would otherwise wait for a manual edit in Google Cloud. When
+`OAUTH_PROXY_URL` and `OAUTH_PROXY_SECRET` are both set, `src/lib/auth.ts` registers Better Auth's
+`oAuthProxy`: `/sign-in/social` sends Google the pivot instance's callback (`OAUTH_PROXY_URL`), the
+pivot exchanges the code and redirects to the originating instance's `/oauth-proxy-callback` with
+the profile encrypted by `OAUTH_PROXY_SECRET` (valid 60 s, bound to the `state` stored on the
+originating instance). The session and any implicit link are written in the originating instance's
+database, under its own `disableSignUp` rules. Every instance, pivot included, carries the same two
+values; `scripts/provision-instance.sh` copies them. Without them each instance receives Google
+directly (local development).
+
+- `/oauth-proxy-callback` sits behind the same `google_sign_in_enabled` guard as `/callback/*`.
+- The pivot's own flag also gates the relayed flow: disabling Google on the pivot breaks Google
+  sign-in on every instance.
+- `/link-social` is not relayed by the plugin: linking a Google account with a **different** address
+  from `/dashboard/settings` still needs the instance's own redirect URI. Signing in with Google on an
+  existing, verified address links implicitly and works through the pivot.
+
 Disabling Google **does not unlink** an account that is already linked: the card stays visible in
 `/dashboard/settings` with its disconnect action, so nobody is left with a credential they can
 neither use nor remove.
@@ -355,8 +373,9 @@ linking policy itself is an authentication boundary outside this feature.
 
 ## Roles and scope
 
-Roles are **per school**. `SchoolRole` is `ADMIN` or `PARENT` (`src/types/enums.ts`), carried by a
-`SchoolMember` row. Platform level is a separate flag, `User.isSuperAdmin`. There is no longer a
+Roles are **per school**. `SchoolRole` is `ADMIN`, `TEACHER` or `PARENT` (`src/types/enums.ts`).
+A `SchoolMember` row carries a **set** of them, `roles`, never empty (database `CHECK`) and without
+duplicates (`normalizeRoles` in `src/gateways/school-member-gateway.ts`). Platform level is a separate flag, `User.isSuperAdmin`. There is no longer a
 global `User.role`, and `SUPER_ADMIN` is not expressible as a school role — the invalid state is
 unrepresentable in the database as well as in the types.
 
@@ -367,18 +386,41 @@ unrepresentable in the database as well as in the types.
 - The active school comes from the `active_school` cookie. **The cookie is untrusted input**: it is
   only honoured if the user holds a matching `SchoolMember`, or is a super-admin, and the school is
   active. Otherwise the context falls back deterministically to the oldest eligible school.
+- **Rights add up across the roles of a member** — a teacher who is also a parent sees its classes
+  and its family side by side; there is no active-role switch. `hasSchoolRole()`,
+  `isActiveSchoolAdmin()` and `hasActiveSchoolStaffAccess()` (`src/lib/school-context.ts`) are the
+  only role reads. `ADMIN` wins for data scope: an admin who is also a parent gets the admin scope,
+  home and sidebar. The context resolves `familyId` only when `PARENT` is held.
 - `requireSchoolAdmin()` admits a school `ADMIN` or any super-admin. `requirePlatformAdmin()` admits
   only a super-admin. `requireSchoolScope()` returns `{ isAdmin: true }` for staff, or
-  `{ isAdmin: false, familyId }` for a parent — **a parent with no linked family gets `notFound()`**
-  rather than an unscoped query. `requireSchoolSession()` establishes the session without demanding
+  `{ isAdmin: false, familyId }` for a parent, teacher-parents included — **a parent with no linked
+  family, or a teacher who is not a parent, gets `notFound()`** rather than an unscoped query. `requireSchoolSession()` establishes the session without demanding
   any capability, and is what the detail pages use: their authorization is carried by the deep-link
   query itself, which must look past the active school. All four live in
   `app/[locale]/(dashboard)/_lib/auth-helper.ts`.
-- A super-admin holds **no** `SchoolMember`. Its context branch carries `role: null`, so the code
+- **A teacher can be opened to the school's records.** The school setting
+  `teacher_staff_access_enabled` (off by default) makes every `TEACHER` member of that school
+  « staff »: the Classes, Families, Students and Enrollments pages, the school-wide search and the
+  creation of families, students and enrollments. `hasActiveSchoolStaffAccess()`
+  (`src/lib/school-context.ts`) decides it on every request; `requireSchoolStaff()` guards the
+  shared actions and `requireSchoolRecordsScope()` the list pages. Finance never reaches a staff
+  teacher: no Payments or Settings entry, balances, amounts and payments are neither queried nor
+  serialized, and an enrollment it creates is posed without a plan (`deferPricing`, as during a
+  payments cut) for an admin to price later. Family deletion, parent invitation or account link,
+  discount, plan change, promotion and class creation, edit or deletion stay `requireSchoolAdmin()`.
+  With the setting off, a teacher keeps `/dashboard/my-families` and its own classes only.
+- A super-admin holds **no** `SchoolMember`. Its context branch carries `roles: []`, so the code
   never invents a school role for it.
+- **Losing a role withdraws what it carried**, in the same transaction (`applyMemberRoles`):
+  `PARENT` deletes the member's `UserFamily` rows of the school, `TEACHER` unlinks its teacher
+  profile, and an empty set deletes the membership. Re-granting the role later must not revive a
+  forgotten access. The admin edits `ADMIN` and `PARENT` only (`setAssignableRoles`): `TEACHER`
+  follows the teacher profile link (invitation, archive, access revocation) and is kept as is; an
+  empty selection answers `noRole`, removal being its own action.
 - **`/dashboard/users` lists memberships, not accounts.** Its root query is `SchoolMember` scoped to
   the active school; `User` has no `schoolId` and could not be filtered.
-- **Removing a member or demoting them cannot leave a school without an administrator.** The check
+- **Removing a member or withdrawing its `ADMIN` role cannot leave a school without an
+  administrator.** The check
   and the mutation share one `Serializable` transaction in
   `src/gateways/school-member-gateway.ts` → `lastAdmin`. Both operations, and the MCP key cap
   below, go through `inSerializableTransaction` (`src/lib/serializable-transaction.ts`), which
@@ -1049,8 +1091,8 @@ instance, so no school database stores them. `listAnnouncements()`
   policy enforces this server-side, so a draft or a scheduled item never reaches an instance.
 - Text resolves to the user's locale, then French, then the first available translation. An item
   without a translation or a publication date is dropped.
-- `audience` lists the school roles (`ADMIN`, `TEACHER`, `PARENT`) that see an item; an empty
-  audience reaches nobody. A super-admin sees every item regardless of audience.
+- `audience` lists the school roles (`ADMIN`, `TEACHER`, `PARENT`) that see an item; a member
+  holding any of them sees it, and an empty audience reaches nobody. A super-admin sees every item regardless of audience.
 - An item is unread when published after `User.announcementsSeenAt`, or after `User.createdAt`
   while that is `null`: a new account never inherits a backlog.
 - The header entry links to `/dashboard/news` and shows a dot while unread items remain.
@@ -1410,7 +1452,10 @@ class assignment (`src/use-cases/enrollments/create-enrollment.ts`).
   inscription », « Ajouter un élève » and « Créer une famille ». Each class shows its remaining seats
   (« 2/18 places libres », the shared occupancy predicate read without lock) and a full class is
   flagged « Complète » but stays selectable — the locked re-count at commit remains the authority
-  (`classFull`).
+  (`classFull`). Under a level header an option shows only the class name, otherwise its level too;
+  the period appears only when the offered classes span several periods (`classItemLabel`). The
+  trigger and the « Créer une famille » summary keep the full « CE1-A (CE1 — 2026-2027) » label
+  (`classLabel`), and the list widens to its content within the window.
 - **A new enrollment is `ACTIVE` at once** (`NEW_ENROLLMENT_STATUS` in
   `src/domain/enrollment.ts`): the admin who enrolls the child has already validated it, so the
   student is on the class roster and the attendance call without a second « Activer » step. `PENDING`
@@ -1709,8 +1754,9 @@ the checkout flow, not by the form.
   sign for one account and verify for another. An unreadable school secret counts as absent.
 - **Absence of `stripe_enabled` reads as enabled** (`readsAsEnabled`), so a school already paid
   through the instance keys keeps its button. It is effective only when configured: `available` =
-  enabled **and** a readable pair exists. The toggle is disabled with an explicit message while no
-  pair is readable, and enabling without one → `notConfigured`. Disabling is always allowed.
+  enabled **and** a readable pair exists. The toggle shows the stored flag and can be switched on
+  without a pair: that is what unfolds the secret inputs, and an explicit message says the parent
+  button still waits for a complete pair. Switched off, it folds the secrets and the webhook URL.
 - The parent « Payer en ligne » button (dashboard and family page) reads `isOnlinePaymentAvailable`;
   `createCheckoutSession` reads `resolveCheckoutCredentials`, which returns `null` when the school
   switched Stripe off → `notConfigured`. `payments_enabled` is checked first and still wins.
@@ -1746,7 +1792,7 @@ The write surface is the first row of the **Paiements** section of `/dashboard/c
 (`stripe-settings-section.tsx`), open to a school `ADMIN`; the **School settings** panel skips the
 key. It still writes through `setConfigAction` over the closed key list (`SCHOOL_CONFIG_KEYS`), so no
 dedicated action exists: a second screen for one value, accepting any string, is the mistake
-`school_name` already taught. The Stripe rows below it collapse while payments are off, mirroring
+`school_name` already taught. The Stripe rows nested under it fold while payments are off, mirroring
 the server, where `payments_enabled` wins over `stripe_enabled`.
 
 **Two flags confirm before cutting**, because they make already-recorded state invisible:
@@ -2329,8 +2375,11 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   switching to an insensitive search — `findUnique` takes no `mode`, and an `ILIKE` would not use
   the unique index. Lowering the needle is required, not belt-and-braces: an invitation written
   before this rule can still carry a mixed case.
-- **An existing account can be invited into a second school.** Issuing refuses only when the invitee
-  already holds a `SchoolMember` of the target school → `alreadyMember`. `emailAlreadyUsed` survives
+- **An existing account can be invited into a second school, or to a new role in the same one.**
+  Issuing refuses only when the invitee already holds the invited role in the target school →
+  `alreadyMember`; a `TEACHER` invitation, which links a teacher profile, is always allowed.
+  Acceptance adds the role to the existing membership (`grantMemberRole`) instead of creating a
+  second one. `emailAlreadyUsed` survives
   on the account-creating path alone, where it still prevents a second account for one address.
 - **Acceptance by an existing account demands a session whose email matches the invitation.**
   `joinSchoolAction` (`app/[locale]/invite/[token]/_lib/join-school-action.ts`) answers
@@ -2342,7 +2391,7 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
 - **The token is consumed before the membership is written.** `linkInvitedUser()` closes the
   invitation with an `updateMany` guarded by `usedAt: null`; that single conditional write is the
   only serialization point, so a link replayed twice grants one membership and answers
-  `alreadyUsed`. A caller already a member of the target school is refused before it → `alreadyMember`.
+  `alreadyUsed`. A caller already holding the invited role is refused before it → `alreadyMember`.
 - **The invitation email names the school it grants**, since the same message now reaches accounts
   that already exist elsewhere on the platform.
 - **A family is never attached on its own.** A `PARENT` invitation carrying `familyId` must name a

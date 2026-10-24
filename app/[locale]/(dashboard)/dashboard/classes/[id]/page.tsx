@@ -11,6 +11,7 @@ import { Link } from '@/i18n/routing'
 import { calculateAge, formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
+import { isActiveSchoolAdmin } from '@/lib/school-context'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
@@ -29,12 +30,12 @@ type Props = {
 /**
  * Résolveur unique de la page ET de `generateMetadata`.
  *
- * `requireAdmin` restreint la recherche aux écoles réellement administrées : un parent
+ * `requireStaff` restreint la recherche aux écoles où le lecteur voit tout : un parent
  * d'une autre école ne doit pas se voir proposer la bascule vers une classe.
  */
 const resolveClass = cache((id: string) =>
   resolveDeepLink({
-    requireAdmin: true,
+    requireStaff: true,
     find: (access) =>
       db.classPeriod.findFirst({
         where: { id, schoolId: { in: access.schoolIds } },
@@ -76,7 +77,7 @@ export default async function ClassDetailPage({ params }: Props) {
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
   const tEnrollments = await getTranslations('dashboard.pages.enrollments')
 
-  await requireSchoolSession()
+  const context = await requireSchoolSession()
   const resolution = await resolveClass(id)
 
   if (resolution.status === 'notFound') notFound()
@@ -90,6 +91,8 @@ export default async function ClassDetailPage({ params }: Props) {
     )
 
   const classPeriod = resolution.resource
+  // Un enseignant à accès élargi lit la classe ; la modifier reste à l'administration.
+  const isAdmin = isActiveSchoolAdmin(context)
   const [teachers, levels, inactiveTeacherAssignments, paymentsEnabled] = await Promise.all([
     db.teacher.findMany({
       where: { schoolId: classPeriod.schoolId, isActive: true },
@@ -113,7 +116,7 @@ export default async function ClassDetailPage({ params }: Props) {
       orderBy: { name: 'asc' },
     }),
     classPeriodGateway.listInactiveTeacherAssignments(classPeriod.schoolId, classPeriod.id),
-    isPaymentsEnabled(classPeriod.schoolId),
+    isAdmin && isPaymentsEnabled(classPeriod.schoolId),
   ])
   const teacherOptions = teachers.map((teacher) => ({
     id: teacher.id,
@@ -182,18 +185,22 @@ export default async function ClassDetailPage({ params }: Props) {
             <Printer className="h-4 w-4" />
             {t('printList.trigger')}
           </Link>
-          <EditClassDialog
-            classItem={{
-              id: classPeriod.id,
-              name: classPeriod.name,
-              capacity: classPeriod.capacity,
-              levelId: classPeriod.levelId,
-              teacherIds: classPeriod.teachers.map(({ teacherId }) => teacherId),
-            }}
-            levels={levels}
-            teachers={teacherOptions}
-          />
-          <DeleteClassDialog classPeriodId={classPeriod.id} className={classPeriod.name} />
+          {isAdmin && (
+            <>
+              <EditClassDialog
+                classItem={{
+                  id: classPeriod.id,
+                  name: classPeriod.name,
+                  capacity: classPeriod.capacity,
+                  levelId: classPeriod.levelId,
+                  teacherIds: classPeriod.teachers.map(({ teacherId }) => teacherId),
+                }}
+                levels={levels}
+                teachers={teacherOptions}
+              />
+              <DeleteClassDialog classPeriodId={classPeriod.id} className={classPeriod.name} />
+            </>
+          )}
         </div>
       </div>
 
@@ -233,11 +240,13 @@ export default async function ClassDetailPage({ params }: Props) {
                       {t('inactiveBadge')}
                     </span>
                   </span>
-                  <UnassignTeacherDialog
-                    classPeriodId={classPeriod.id}
-                    teacherId={assignment.teacherId}
-                    teacherName={assignment.name}
-                  />
+                  {isAdmin && (
+                    <UnassignTeacherDialog
+                      classPeriodId={classPeriod.id}
+                      teacherId={assignment.teacherId}
+                      teacherName={assignment.name}
+                    />
+                  )}
                 </li>
               ))}
             </ul>

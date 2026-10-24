@@ -1107,6 +1107,10 @@
               "cancel": "Annuler"
             }
           },
+          "teacher_staff_access_enabled": {
+            "label": "Accès élargi des enseignants",
+            "description": "Les enseignants accèdent aux classes, familles, élèves et inscriptions de toute l'école, et peuvent ajouter familles, élèves et inscriptions. Paiements, formules et réglages restent réservés aux administrateurs."
+          },
           "attendance_enabled": {
             "label": "Appel",
             "description": "Active la saisie des appels de classe."
@@ -1608,8 +1612,9 @@
         "actions": "Actions",
         "active": "Actif",
         "inactive": "Inactif",
-        "changeRole": "Changer le rôle",
-        "newRole": "Nouveau rôle",
+        "changeRole": "Changer les rôles",
+        "newRole": "Rôles dans l’école",
+        "rolesHint": "Les droits se cumulent. Le rôle enseignant suit la fiche enseignant ; retirer le rôle parent détache les familles liées.",
         "deactivate": "Désactiver",
         "confirm": "Confirmer",
         "cancel": "Annuler",
@@ -1689,6 +1694,7 @@
           "confirmationMismatch": "L'email de confirmation ne correspond pas",
           "emailError": "L'e-mail n'a pas pu être envoyé",
           "lastAdmin": "Impossible : ce membre est le dernier administrateur de l’école",
+          "noRole": "Gardez au moins un rôle, ou retirez le membre de l’école",
           "selfDeactivation": "Vous ne pouvez pas désactiver votre propre compte",
           "notSuperAdmin": "Seul un super-administrateur peut emprunter l'identité d'un compte",
           "alreadyImpersonating": "Revenez d'abord à votre compte avant d'emprunter une autre identité",

@@ -36,7 +36,7 @@ import { auth } from '@/lib/auth'
 import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
-import { getSchoolContext } from '@/lib/school-context'
+import { getSchoolContext, hasSchoolRole, isActiveSchoolAdmin } from '@/lib/school-context'
 import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-schedule-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
@@ -92,11 +92,13 @@ export default async function DashboardPage({ params }: Props) {
   const session = await auth.api.getSession({ headers: await headers() })
 
   const context = await getSchoolContext()
-  if (!context?.isSuperAdmin && context?.role === 'TEACHER') {
+  // Un enseignant qui est aussi parent d'une famille liée garde l'accueil parent.
+  const homeless = context !== null && !isActiveSchoolAdmin(context) && !context.familyId
+  if (homeless && hasSchoolRole(context, 'TEACHER')) {
     redirect({ href: '/dashboard/my-classes', locale })
   }
   // Refus avant toute lecture de données familiales : sans famille liée, rien à borner.
-  if (context?.role === 'PARENT' && !context.familyId) {
+  if (homeless && hasSchoolRole(context, 'PARENT')) {
     const school = await schoolGateway.findActiveById(context.schoolId)
     return (
       <UnlinkedParentNotice userName={session?.user.name ?? null} schoolName={school?.name ?? ''} />

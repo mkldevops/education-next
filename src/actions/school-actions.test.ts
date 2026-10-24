@@ -45,7 +45,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   isSchoolSwitchEnabledMock.mockResolvedValue(true)
   findActiveByIdMock.mockResolvedValue({ id: SCHOOL_ID, name: 'Horizon' })
-  findMembershipMock.mockResolvedValue({ role: 'ADMIN' })
+  findMembershipMock.mockResolvedValue({ roles: ['ADMIN'] })
 })
 
 describe('switchSchoolAction, flag enabled', () => {

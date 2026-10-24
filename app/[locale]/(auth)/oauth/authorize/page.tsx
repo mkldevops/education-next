@@ -89,7 +89,7 @@ export default async function OAuthAuthorizePage({ params, searchParams }: Props
     : user.isSuperAdmin
       ? await schoolGateway.listActive()
       : (await schoolMemberGateway.listAuthorizedSchools(session.user.id))
-          .filter((membership) => membership.role === 'ADMIN')
+          .filter((membership) => membership.roles.includes('ADMIN'))
           .map((membership) => membership.school)
 
   const { client, request } = validation

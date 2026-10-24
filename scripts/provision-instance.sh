@@ -123,8 +123,8 @@ src = {e['key']: e['value'] for e in api('GET', f'/applications/{source_app}/env
 db = up.urlparse(src['DATABASE_URL'])
 
 copied = ['ADMIN_EMAIL', 'EMAIL_FROM', 'EMAIL_PROVIDER', 'GOOGLE_CLIENT_ID',
-          'GOOGLE_CLIENT_SECRET', 'RESEND_API_KEY', 'S3_ACCESS_KEY',
-          'S3_SECRET_KEY', 'S3_ENDPOINT', 'S3_REGION']
+          'GOOGLE_CLIENT_SECRET', 'OAUTH_PROXY_SECRET', 'OAUTH_PROXY_URL',
+          'RESEND_API_KEY', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_ENDPOINT', 'S3_REGION']
 
 envs = {k: src[k] for k in copied if k in src}
 envs.update({

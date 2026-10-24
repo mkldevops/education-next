@@ -38,8 +38,8 @@ async function seedSchool(label, suffix) {
 
   await raw.schoolMember.createMany({
     data: [
-      { userId: admin.id, schoolId: school.id, role: 'ADMIN' },
-      { userId: parent.id, schoolId: school.id, role: 'PARENT' },
+      { userId: admin.id, schoolId: school.id, roles: ['ADMIN'] },
+      { userId: parent.id, schoolId: school.id, roles: ['PARENT'] },
     ],
   })
 

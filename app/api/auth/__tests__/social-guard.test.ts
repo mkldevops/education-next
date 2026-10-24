@@ -44,6 +44,15 @@ describe('social sign-in guard', () => {
     expect(handlerGetMock).not.toHaveBeenCalled()
   })
 
+  it('refuses the callback relayed by the OAuth proxy instance', async () => {
+    isGoogleSignInEnabledMock.mockResolvedValue(false)
+
+    const response = await GET(request('/api/auth/oauth-proxy-callback?callbackURL=%2Fdashboard'))
+
+    expect(response.status).toBe(403)
+    expect(handlerGetMock).not.toHaveBeenCalled()
+  })
+
   it('ignores a path that merely ends with a social segment', async () => {
     isGoogleSignInEnabledMock.mockResolvedValue(false)
 

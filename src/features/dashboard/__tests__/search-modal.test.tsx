@@ -31,7 +31,7 @@ beforeAll(() => {
 })
 
 const adminScope: NavScope = {
-  role: 'ADMIN',
+  roles: ['ADMIN'],
   isSuperAdmin: false,
   features: { events: false, payments: true, attendance: true },
 }

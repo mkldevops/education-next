@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
+import { getSchoolContext, hasActiveSchoolStaffAccess } from '@/lib/school-context'
 
 const searchSchema = z.object({
   query: z.string().min(1).max(250),
@@ -32,10 +32,11 @@ export async function searchStudentsAndFamilies(
   if (!context) return 'unauthorized' as const
 
   const { schoolId } = context
-  const isAdmin = isActiveSchoolAdmin(context)
-  const familyId = context.role === 'PARENT' ? (context.familyId ?? undefined) : undefined
+  // L'équipe (administration, enseignant à accès élargi) cherche dans toute l'école.
+  const isStaff = await hasActiveSchoolStaffAccess(context)
+  const familyId = context.familyId ?? undefined
 
-  if (!isAdmin && !familyId) return []
+  if (!isStaff && !familyId) return []
 
   const searchQuery = parsed.data.query
 
@@ -49,7 +50,7 @@ export async function searchStudentsAndFamilies(
             { name: { contains: searchQuery, mode: 'insensitive' } },
             { lastname: { contains: searchQuery, mode: 'insensitive' } },
           ],
-          ...(isAdmin ? {} : { families: { some: { familyId } } }),
+          ...(isStaff ? {} : { families: { some: { familyId } } }),
         },
       },
       include: {
@@ -73,7 +74,7 @@ export async function searchStudentsAndFamilies(
         schoolId,
         isActive: true,
         name: { contains: searchQuery, mode: 'insensitive' },
-        ...(isAdmin ? {} : { id: familyId }),
+        ...(isStaff ? {} : { id: familyId }),
       },
       select: {
         id: true,

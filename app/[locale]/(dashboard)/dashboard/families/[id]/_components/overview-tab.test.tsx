@@ -38,6 +38,7 @@ const baseProps = {
   locale: 'fr',
   familyId: 'family-1',
   isAdmin: false,
+  canInvite: false,
   persons: [],
   students: [],
   linkedEmails: [],

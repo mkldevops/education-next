@@ -92,6 +92,12 @@ const schoolingItems: NavItemConfig[] = [
   { href: '/dashboard/teachers', icon: UserRoundCheck, key: 'teachers', requiredRoles: ['ADMIN'] },
 ]
 
+const STAFF_SCHOOLING_KEYS = new Set(['families', 'students', 'enrollments', 'classes'])
+
+const staffSchoolingItems: NavItemConfig[] = schoolingItems
+  .filter((item) => STAFF_SCHOOLING_KEYS.has(item.key))
+  .map(({ requiredRoles: _requiredRoles, ...item }) => item)
+
 const financeItems: NavItemConfig[] = [
   { href: '/dashboard/payments', icon: CreditCard, key: 'payments', feature: 'payments' },
   {
@@ -116,10 +122,13 @@ const platformItems: NavItemConfig[] = [
 ]
 
 export type NavScope = {
-  role: SchoolRole | null
+  /** Rôles cumulés dans l'école ; vide pour un super-admin non membre. */
+  roles: readonly SchoolRole[]
   isSuperAdmin: boolean
   familyId?: string
   hasTeacherCapability?: boolean
+  /** Enseignant à qui l'école ouvre les pages de gestion (`teacher_staff_access_enabled`). */
+  hasStaffAccess?: boolean
   features: {
     classSchedule?: boolean
     events: boolean
@@ -143,10 +152,11 @@ export function flattenNavItems({ sections }: VisibleNavItems): NavItemConfig[] 
 }
 
 export function resolveNavItems({
-  role,
+  roles,
   isSuperAdmin,
   familyId,
   hasTeacherCapability = false,
+  hasStaffAccess = false,
   features,
 }: NavScope): VisibleNavItems {
   const canView = (item: NavItemConfig) => {
@@ -158,7 +168,7 @@ export function resolveNavItems({
     if (item.platformOnly) return isSuperAdmin
     if (!item.requiredRoles) return true
     if (isSuperAdmin) return true
-    return role !== null && item.requiredRoles.includes(role)
+    return roles.some((role) => item.requiredRoles?.includes(role))
   }
 
   // Réglages et plateforme restent filtrés par `canView` quel que soit le rôle d'école :
@@ -168,39 +178,42 @@ export function resolveNavItems({
     ...section('platform', platformItems.filter(canView)),
   ]
 
-  if (role === 'PARENT') {
+  // Les droits se cumulent : l'administration l'emporte, sinon un parent qui enseigne voit
+  // côte à côte sa famille et ses classes.
+  const isParent = roles.includes('PARENT')
+  const isTeacher = roles.includes('TEACHER')
+  if (!isSuperAdmin && !roles.includes('ADMIN') && (isParent || isTeacher)) {
+    const planning: NavItemConfig[] = features.classSchedule
+      ? [{ href: '/dashboard/planning', icon: CalendarRange, key: 'planning' }]
+      : []
     return {
       sections: [
-        ...section('family', [
-          { href: '/dashboard', icon: House, key: 'dashboard' },
-          {
-            href: familyId ? `/dashboard/families/${familyId}` : '/dashboard/families',
-            icon: Users,
-            key: 'myFamily',
-          },
-          ...(features.classSchedule
-            ? [{ href: '/dashboard/planning', icon: CalendarRange, key: 'planning' }]
-            : []),
-          ...(hasTeacherCapability ? [MY_CLASSES, MY_FAMILIES] : []),
-        ]),
+        ...(isParent
+          ? section('family', [
+              { href: '/dashboard', icon: House, key: 'dashboard' },
+              {
+                href: familyId ? `/dashboard/families/${familyId}` : '/dashboard/families',
+                icon: Users,
+                key: 'myFamily',
+              },
+              ...planning,
+              ...(hasTeacherCapability && !isTeacher ? [MY_CLASSES, MY_FAMILIES] : []),
+            ])
+          : []),
+        ...(isTeacher
+          ? section('teaching', [
+              MY_CLASSES,
+              ...(isParent ? [] : planning),
+              ...(features.attendance
+                ? [{ href: '/dashboard/attendance', icon: ClipboardCheck, key: 'attendance' }]
+                : []),
+              MY_FAMILIES,
+            ])
+          : []),
+        // Accès élargi : les pages de scolarité, jamais la finance ni les réglages.
+        ...(isTeacher && hasStaffAccess ? section('schooling', staffSchoolingItems) : []),
         ...administration,
       ],
-      bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }],
-    }
-  }
-
-  if (role === 'TEACHER') {
-    return {
-      sections: section('teaching', [
-        MY_CLASSES,
-        ...(features.classSchedule
-          ? [{ href: '/dashboard/planning', icon: CalendarRange, key: 'planning' }]
-          : []),
-        ...(features.attendance
-          ? [{ href: '/dashboard/attendance', icon: ClipboardCheck, key: 'attendance' }]
-          : []),
-        MY_FAMILIES,
-      ]),
       bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }],
     }
   }

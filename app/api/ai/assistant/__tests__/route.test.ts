@@ -52,15 +52,15 @@ vi.mock('@/use-cases/ai-assistant/selected-family', () => ({
 
 const { GET, POST } = await import('../route')
 
-const admin = { userId: 'user-1', schoolId: 'school-1', isSuperAdmin: false, role: 'ADMIN' }
+const admin = { userId: 'user-1', schoolId: 'school-1', isSuperAdmin: false, roles: ['ADMIN'] }
 const parent = {
   userId: 'user-3',
   schoolId: 'school-1',
   isSuperAdmin: false,
-  role: 'PARENT',
+  roles: ['PARENT'],
   familyId: 'family-1',
 }
-const teacher = { userId: 'user-4', schoolId: 'school-1', isSuperAdmin: false, role: 'TEACHER' }
+const teacher = { userId: 'user-4', schoolId: 'school-1', isSuperAdmin: false, roles: ['TEACHER'] }
 
 const catalog = [
   {

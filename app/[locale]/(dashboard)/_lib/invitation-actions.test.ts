@@ -191,17 +191,37 @@ describe('inviteUserAction', () => {
     expect(dbMock.invitation.create).toHaveBeenCalled()
   })
 
-  it('refuses an account already member of the target school', async () => {
+  it('refuses an account already holding the invited role', async () => {
     dbMock.user.findUnique.mockResolvedValue({ id: 'user-1' })
-    findMembershipMock.mockResolvedValue({ userId: 'user-1', schoolId: 'school-b' })
+    findMembershipMock.mockResolvedValue({
+      userId: 'user-1',
+      schoolId: 'school-b',
+      roles: ['ADMIN', 'PARENT'],
+    })
 
     expect(await inviteUserAction(INPUT)).toBe('alreadyMember')
     expect(dbMock.invitation.create).not.toHaveBeenCalled()
   })
 
+  it('invites an existing member to a role it does not hold yet', async () => {
+    dbMock.user.findUnique.mockResolvedValue({ id: 'user-1' })
+    findMembershipMock.mockResolvedValue({
+      userId: 'user-1',
+      schoolId: 'school-b',
+      roles: ['TEACHER'],
+    })
+
+    expect(await inviteUserAction(INPUT)).toBe('OK')
+    expect(dbMock.invitation.create).toHaveBeenCalled()
+  })
+
   it('allows a teacher invitation to add a capability to an existing member', async () => {
     dbMock.user.findUnique.mockResolvedValue({ id: 'user-1' })
-    findMembershipMock.mockResolvedValue({ userId: 'user-1', schoolId: 'school-b', role: 'ADMIN' })
+    findMembershipMock.mockResolvedValue({
+      userId: 'user-1',
+      schoolId: 'school-b',
+      roles: ['ADMIN', 'TEACHER'],
+    })
 
     expect(
       await inviteUserAction({
@@ -234,7 +254,11 @@ describe('inviteUserAction', () => {
     dbMock.user.findUnique.mockImplementation(async ({ where }: { where: { email: string } }) =>
       where.email === 'parent@school.test' ? { id: 'user-1' } : null
     )
-    findMembershipMock.mockResolvedValue({ userId: 'user-1', schoolId: 'school-b' })
+    findMembershipMock.mockResolvedValue({
+      userId: 'user-1',
+      schoolId: 'school-b',
+      roles: ['PARENT'],
+    })
 
     expect(await inviteUserAction({ email: 'Parent@School.TEST', role: 'PARENT' })).toBe(
       'alreadyMember'

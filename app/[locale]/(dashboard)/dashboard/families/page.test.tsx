@@ -5,7 +5,7 @@ const dbMock = {
   family: { findMany: vi.fn() },
   payment: { groupBy: vi.fn() },
 }
-const requireSchoolScopeMock = vi.fn()
+const requireSchoolRecordsScopeMock = vi.fn()
 const isPaymentsEnabledMock = vi.fn()
 
 vi.mock('next/server', () => ({ connection: async () => {} }))
@@ -31,7 +31,9 @@ vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
-vi.mock('../../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
+vi.mock('../../_lib/auth-helper', () => ({
+  requireSchoolRecordsScope: requireSchoolRecordsScopeMock,
+}))
 vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriodId: async () => 'period-1' }))
 vi.mock('./[id]/_lib/family-detail', () => ({
   getFamilyDialogData: async () => ({ plans: [], classes: [] }),
@@ -75,9 +77,10 @@ const family = (id: string, name: string) => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  requireSchoolScopeMock.mockResolvedValue({
+  requireSchoolRecordsScopeMock.mockResolvedValue({
     schoolId: 'school-1',
     userId: 'user-1',
+    isStaff: true,
     isAdmin: true,
   })
   dbMock.family.findMany.mockResolvedValue([family('family-1', 'Dupont')])
@@ -113,6 +116,28 @@ describe('FamiliesPage', () => {
 
     expect(screen.queryByText('remaining')).not.toBeInTheDocument()
     expect(screen.getByText('Dupont')).toBeInTheDocument()
+  })
+
+  it('shows a staff teacher the families without any payment data', async () => {
+    requireSchoolRecordsScopeMock.mockResolvedValue({
+      schoolId: 'school-1',
+      userId: 'user-1',
+      isStaff: true,
+      isAdmin: false,
+    })
+    isPaymentsEnabledMock.mockResolvedValue(true)
+
+    render(
+      await FamiliesPage({
+        params: Promise.resolve({ locale: 'fr' }),
+        searchParams: Promise.resolve({}),
+      })
+    )
+
+    expect(screen.queryByText('remaining')).not.toBeInTheDocument()
+    expect(screen.getByText('Dupont')).toBeInTheDocument()
+    expect(dbMock.payment.groupBy).not.toHaveBeenCalled()
+    expect(isPaymentsEnabledMock).not.toHaveBeenCalled()
   })
 
   it("attributes a shared-custody student's debt to the parent family only", async () => {

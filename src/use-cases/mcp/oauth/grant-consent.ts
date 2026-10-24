@@ -61,7 +61,7 @@ export async function grantOAuthConsent(
 
   if (!input.user.isSuperAdmin) {
     const membership = await members.findMembership(input.user.id, school.id)
-    if (membership?.role !== 'ADMIN') return { status: 'forbidden' }
+    if (!membership?.roles.includes('ADMIN')) return { status: 'forbidden' }
   }
 
   const now = new Date()

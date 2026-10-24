@@ -132,8 +132,8 @@ export async function isOnlinePaymentAvailable(
 }
 
 /**
- * Activer sans identifiants lisibles est refusé : l'interrupteur afficherait un paiement
- * que le bouton parent ne peut pas ouvrir. Couper reste toujours possible.
+ * Activer sans identifiants lisibles est permis : c'est ce qui ouvre leur saisie. Le bouton
+ * parent ne suit que `available`, activé **et** configuré.
  */
 export async function setStripeEnabled(
   input: { schoolId: string; enabled: unknown },
@@ -141,10 +141,6 @@ export async function setStripeEnabled(
 ) {
   const parsed = z.boolean().safeParse(input.enabled)
   if (!parsed.success) return 'validationError' as const
-
-  if (parsed.data && !(await resolveStripeCredentials(input.schoolId, configGw))) {
-    return 'notConfigured' as const
-  }
 
   await configGw.set(input.schoolId, {
     name: STRIPE_ENABLED_CONFIG_KEY,

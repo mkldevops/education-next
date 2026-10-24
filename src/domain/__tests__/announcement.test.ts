@@ -26,7 +26,7 @@ function announcement(overrides: Partial<Announcement> = {}): Announcement {
 }
 
 const parent: AnnouncementReader = {
-  role: 'PARENT',
+  roles: ['PARENT'],
   isSuperAdmin: false,
   seenAt: new Date('2026-10-01T00:00:00Z'),
 }
@@ -41,11 +41,11 @@ describe('isAnnouncementVisible', () => {
   })
 
   it('hides every announcement from a reader without a school role', () => {
-    expect(isAnnouncementVisible(announcement(), { ...parent, role: null })).toBe(false)
+    expect(isAnnouncementVisible(announcement(), { ...parent, roles: [] })).toBe(false)
   })
 
   it('shows every announcement to a super-admin, empty audience included', () => {
-    const superAdmin = { ...parent, role: null, isSuperAdmin: true }
+    const superAdmin = { ...parent, roles: [], isSuperAdmin: true }
     expect(isAnnouncementVisible(announcement({ audience: [] }), superAdmin)).toBe(true)
   })
 })
