@@ -393,7 +393,8 @@ linking policy itself is an authentication boundary outside this feature.
 
 ## Roles and scope
 
-Roles are **per school**. `SchoolRole` is `ADMIN`, `TEACHER` or `PARENT` (`src/types/enums.ts`).
+Roles are **per school**. `SchoolRole` is `ADMIN`, `TEACHER`, `PARENT` or `CASHIER`
+(`src/types/enums.ts`; `CASHIER` is described under « Cashier role » in Canteen and snack).
 A `SchoolMember` row carries a **set** of them, `roles`, never empty (database `CHECK`) and without
 duplicates (`normalizeRoles` in `src/gateways/school-member-gateway.ts`). Platform level is a separate flag, `User.isSuperAdmin`. There is no longer a
 global `User.role`, and `SUPER_ADMIN` is not expressible as a school role — the invalid state is
@@ -434,7 +435,7 @@ unrepresentable in the database as well as in the types.
 - **Losing a role withdraws what it carried**, in the same transaction (`applyMemberRoles`):
   `PARENT` deletes the member's `UserFamily` rows of the school, `TEACHER` unlinks its teacher
   profile, and an empty set deletes the membership. Re-granting the role later must not revive a
-  forgotten access. The admin edits `ADMIN` and `PARENT` only (`setAssignableRoles`): `TEACHER`
+  forgotten access. The admin edits `ADMIN`, `PARENT` and `CASHIER` only (`setAssignableRoles`): `TEACHER`
   follows the teacher profile link (invitation, archive, access revocation) and is kept as is; an
   empty selection answers `noRole`, removal being its own action.
 - **`/dashboard/users` lists memberships, not accounts.** Its root query is `SchoolMember` scoped to
@@ -1929,7 +1930,9 @@ served days are `MealSchedule` segments: weekdays, `startOn`, `endOn` (`null`: t
 segment's period), inside one period. Two segments of an account never overlap, so a day has one
 rhythm. Every write locks the account row (`FOR NO KEY UPDATE`) in the transaction that reads and
 writes its segments. The student page shows a « Cantine et goûter » card to admins when
-`meals_enabled` is on; actions are `requireSchoolAdmin()` and live in `meal-actions.ts`.
+`meals_enabled` is on; the cashier's meal sheet shows the same card. Subscribe, change, stop and
+absence actions are `requireSchoolCashier()`; prices, settings and the opening balance stay
+`requireSchoolAdmin()`. They live in `meal-actions.ts`.
 
 - `subscribeMeal()` opens a segment from any date of the selected period, past included, with
   weekdays among the school's `allowedWeekdays`. It refuses a disabled service (`serviceDisabled`),
@@ -1954,7 +1957,7 @@ The card's « paid through » and days due replay adjustments and the payments o
 cancelled (`loadMealAccountSummaries()`, `src/use-cases/meals/meal-account-summaries.ts`, shared with
 the cashier).
 
-**Cashier and receipts.** `/dashboard/cashier` (`requireSchoolAdmin()`, `notFound()` when
+**Cashier and receipts.** `/dashboard/cashier` (`requireSchoolCashier()`, `notFound()` when
 `meals_enabled` is off, sidebar entry under the same flag) finds a family by its name or a member's,
 then lists one line per child and service for the children it is the **debtor family** of
 (`resolveDebtorFamily()`), with today's price, « paid through », days due and quick amounts
@@ -2012,10 +2015,10 @@ after it, `absent`, and `closed` for a published closure or holiday. One tap on 
 - tapping an absent day removes it. The absence survives its author (`recordedById` set null), and
   goes with the account.
 
-**Unpaid and reminders.** `/dashboard/cashier/debtors` (`requireSchoolAdmin()`, `notFound()` when
+**Unpaid and reminders.** `/dashboard/cashier/debtors` (`requireSchoolCashier()`, `notFound()` when
 `meals_enabled` is off, linked from the cashier and the meals page) lists, for active students, each
 account with days due, or with served days still ahead of which at most `REMIND_WITHIN_DAYS` (2) are
-covered. Most owed first; each row links to the student and to the cashier of the debtor family.
+covered. Most owed first; each row links to the student's meal sheet and to the cashier of the debtor family.
 
 **Day's takings.** `/dashboard/cashier/day?day=YYYY-MM-DD` (same guards, today by default, no future
 day) sums, over the school's local day (`schoolDayBounds()`), the receipts **issued** that day and the
@@ -2023,6 +2026,27 @@ receipts **cancelled** that day whatever their issue day; net = issued − cance
 (`summarizeCashDay()`, `src/domain/cash-day.ts`). A cancellation lands on the day it is made, so a
 past day's net never changes. Totals split by method and by item: canteen and snack from the
 receipt's `MealPayment` rows, tuition as the rest of the total.
+
+**Cashier role.** `CASHIER` is the school role of the person at the till (migration
+`20261029090000_cashier_role`; granted to nobody on deploy). `requireSchoolCashier()`
+(`app/[locale]/(dashboard)/_lib/auth-helper.ts`) admits a school `ADMIN`, a super-admin or a
+`CASHIER`, and answers `notFound()` to everyone when `meals_enabled` is off — a cashier of a school
+without meals has no page at all. It returns `isAdmin`, which keeps admin-only controls off the page.
+
+- **A cashier may**: open the cashier, take a receipt (canteen, snack, tuition), print it, read the
+  unpaid list and the day's takings, and on `/dashboard/cashier/students/[id]` subscribe a child,
+  change its days, stop it and mark or clear an absence.
+- **A cashier may not** (acceptance criterion 14): cancel a receipt, record an opening balance or an
+  adjustment, set prices or meal settings, nor read or change a student, a family, a class, an
+  enrollment or a payment outside the cashier. Those stay behind `requireSchoolAdmin()`,
+  `requireSchoolStaff()` and `requireSchoolScope()`, which `CASHIER` does not open, alone or with
+  another role. The cashier page links to the family only for an admin.
+- Rights add up: a cashier-parent keeps its family home with a Finance section holding the cashier; a
+  cashier-teacher keeps its classes beside it. A cashier with neither role lands on the cashier from
+  `/dashboard`.
+- `CASHIER` is invited, granted or kept only while `meals_enabled` is on (`inviteUserAction`,
+  `changeSchoolMemberRolesAction`, `invalidInput` / `validation_error` otherwise); a member who
+  already holds it can still lose it after meals are switched off.
 
 ## Promotion
 

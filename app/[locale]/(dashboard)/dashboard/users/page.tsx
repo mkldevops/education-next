@@ -4,6 +4,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { db } from '@/lib/db'
+import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { InviteUserDialog } from './_components/invite-user-dialog'
@@ -30,7 +31,7 @@ export default async function UsersPage({ params }: Props) {
 
   const { schoolId, userId: viewerId, isSuperAdmin: canManagePlatform } = await requireSchoolAdmin()
 
-  const [families, invitations, members, familyLinks, teachers] = await Promise.all([
+  const [families, invitations, members, familyLinks, teachers, mealsEnabled] = await Promise.all([
     db.family.findMany({
       where: { schoolId, isActive: true },
       select: { id: true, name: true },
@@ -51,6 +52,7 @@ export default async function UsersPage({ params }: Props) {
       select: { id: true, firstName: true, lastName: true, email: true },
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     }),
+    isMealsEnabled(schoolId),
   ])
 
   const familyByUserId: Partial<Record<string, { id: string; name: string }>> = {}
@@ -92,7 +94,13 @@ export default async function UsersPage({ params }: Props) {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
-        {rows.length > 0 && <InviteUserDialog families={families} teachers={teacherOptions} />}
+        {rows.length > 0 && (
+          <InviteUserDialog
+            families={families}
+            teachers={teacherOptions}
+            mealsEnabled={mealsEnabled}
+          />
+        )}
       </div>
       <UsersTable
         members={rows}
@@ -101,6 +109,7 @@ export default async function UsersPage({ params }: Props) {
         families={families}
         teachers={teacherOptions}
         locale={locale}
+        mealsEnabled={mealsEnabled}
       />
 
       <div className="space-y-3">
@@ -115,6 +124,7 @@ export default async function UsersPage({ params }: Props) {
             ADMIN: tRoles('ADMIN'),
             PARENT: tRoles('PARENT'),
             TEACHER: tRoles('TEACHER'),
+            CASHIER: tRoles('CASHIER'),
           }}
           labels={{
             email: tInvitations('email'),

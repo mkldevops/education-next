@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getSchoolContextMock = vi.fn()
 const findFirstMock = vi.fn()
+const isMealsEnabledMock = vi.fn()
 
 vi.mock('next/navigation', () => ({
   notFound: vi.fn(() => {
@@ -15,12 +16,21 @@ vi.mock('@/lib/school-context', () => ({
   getSchoolContext: getSchoolContextMock,
   isActiveSchoolAdmin: (context: { roles: string[]; isSuperAdmin: boolean }) =>
     context.isSuperAdmin || context.roles.includes('ADMIN'),
+  hasSchoolRole: (context: { roles: string[]; isSuperAdmin: boolean }, role: string) =>
+    !context.isSuperAdmin && context.roles.includes(role),
   hasActiveSchoolStaffAccess: async (context: { roles: string[]; staffTeacher?: boolean }) =>
     context.roles.includes('ADMIN') || context.staffTeacher === true,
 }))
+vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
 
-const { requireSchoolRecordsScope, requireSchoolScope, requireSchoolStaff, requireTeacher } =
-  await import('./auth-helper')
+const {
+  requireSchoolAdmin,
+  requireSchoolCashier,
+  requireSchoolRecordsScope,
+  requireSchoolScope,
+  requireSchoolStaff,
+  requireTeacher,
+} = await import('./auth-helper')
 
 const context = (role: 'ADMIN' | 'PARENT' | 'TEACHER', staffTeacher = false) => ({
   userId: 'user-1',
@@ -34,6 +44,7 @@ const context = (role: 'ADMIN' | 'PARENT' | 'TEACHER', staffTeacher = false) => 
 beforeEach(() => {
   vi.clearAllMocks()
   findFirstMock.mockResolvedValue({ id: 'teacher-1' })
+  isMealsEnabledMock.mockResolvedValue(true)
 })
 
 describe('requireTeacher', () => {
@@ -130,5 +141,78 @@ describe('requireSchoolScope', () => {
   it('refuses a teacher without a linked family', async () => {
     getSchoolContextMock.mockResolvedValue(member(['TEACHER'], null))
     await expect(requireSchoolScope()).rejects.toThrow('NEXT_NOT_FOUND')
+  })
+})
+
+describe('cashier role', () => {
+  const member = (roles: string[], familyId: string | null = null) => ({
+    userId: 'user-1',
+    schoolId: 'school-1',
+    isSuperAdmin: false,
+    roles,
+    familyId,
+  })
+
+  it.each([
+    ['a cashier', member(['CASHIER'])],
+    ['a cashier-parent', member(['CASHIER', 'PARENT'], 'family-1')],
+    ['a cashier-teacher', member(['CASHIER', 'TEACHER'])],
+  ])('opens the cashier to %s, without the admin-only operations', async (_label, value) => {
+    getSchoolContextMock.mockResolvedValue(value)
+    await expect(requireSchoolCashier()).resolves.toEqual({
+      schoolId: 'school-1',
+      userId: 'user-1',
+      isAdmin: false,
+    })
+  })
+
+  it('keeps the cashier open to an admin, as admin', async () => {
+    getSchoolContextMock.mockResolvedValue(member(['ADMIN']))
+    await expect(requireSchoolCashier()).resolves.toMatchObject({ isAdmin: true })
+  })
+
+  it.each([
+    ['a parent', member(['PARENT'], 'family-1')],
+    ['a teacher', member(['TEACHER'])],
+  ])('refuses the cashier to %s', async (_label, value) => {
+    getSchoolContextMock.mockResolvedValue(value)
+    await expect(requireSchoolCashier()).rejects.toThrow('NEXT_NOT_FOUND')
+  })
+
+  it.each([
+    ['a cashier', member(['CASHIER'])],
+    ['an admin', member(['ADMIN'])],
+  ])('answers 404 to %s of a school without meals', async (_label, value) => {
+    getSchoolContextMock.mockResolvedValue(value)
+    isMealsEnabledMock.mockResolvedValue(false)
+    await expect(requireSchoolCashier()).rejects.toThrow('NEXT_NOT_FOUND')
+  })
+
+  // Critère 14 : élèves, familles, classes, annulations et ajustements restent derrière ces
+  // gardes, que le rôle caisse n'ouvre pas, seul ou cumulé.
+  it.each([
+    ['a cashier', member(['CASHIER'])],
+    ['a cashier-parent', member(['CASHIER', 'PARENT'], 'family-1')],
+    ['a cashier-teacher', member(['CASHIER', 'TEACHER'])],
+  ])('refuses the administration and the staff scope to %s', async (_label, value) => {
+    getSchoolContextMock.mockResolvedValue(value)
+    await expect(requireSchoolAdmin()).rejects.toThrow('NEXT_NOT_FOUND')
+    await expect(requireSchoolStaff()).rejects.toThrow('NEXT_NOT_FOUND')
+  })
+
+  it('gives a cashier-parent no more than the parent scope on school records', async () => {
+    getSchoolContextMock.mockResolvedValue(member(['CASHIER', 'PARENT'], 'family-1'))
+    await expect(requireSchoolScope()).resolves.toEqual({
+      schoolId: 'school-1',
+      userId: 'user-1',
+      isAdmin: false,
+      familyId: 'family-1',
+    })
+  })
+
+  it('refuses the school records to a cashier without a family', async () => {
+    getSchoolContextMock.mockResolvedValue(member(['CASHIER']))
+    await expect(requireSchoolScope()).rejects.toThrow('NEXT_NOT_FOUND')
+    await expect(requireSchoolRecordsScope()).rejects.toThrow('NEXT_NOT_FOUND')
   })
 })

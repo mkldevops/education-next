@@ -1,15 +1,13 @@
 import { Breadcrumbs, Button, Card, Input } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
-import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
-import { requireSchoolAdmin } from '../../_lib/auth-helper'
+import { requireSchoolCashier } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { CashierForm } from './_components/cashier-form'
 import { loadCashierFamily, searchCashierFamilies } from './_lib/cashier-data'
@@ -34,9 +32,7 @@ export default async function CashierPage({ params, searchParams }: Props) {
   const t = await getTranslations('dashboard.pages.cashier')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { schoolId } = await requireSchoolAdmin()
-
-  if (!(await isMealsEnabled(schoolId))) notFound()
+  const { schoolId, isAdmin } = await requireSchoolCashier()
 
   const query = q?.trim() ?? ''
   const selectedId = familyId && UUID.test(familyId) ? familyId : null
@@ -119,13 +115,29 @@ export default async function CashierPage({ params, searchParams }: Props) {
         <Card className="max-w-3xl p-4">
           <div className="mb-4 flex items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold text-graphite">{family.name}</h2>
-            <Link
-              href={`/dashboard/families/${family.id}`}
-              className="text-sm text-primary hover:underline"
-            >
-              {t('viewFamily')}
-            </Link>
+            {isAdmin && (
+              <Link
+                href={`/dashboard/families/${family.id}`}
+                className="text-sm text-primary hover:underline"
+              >
+                {t('viewFamily')}
+              </Link>
+            )}
           </div>
+          {family.students.length > 0 && (
+            <p className="mb-4 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+              <span className="text-graphite-600">{t('mealSheets')}</span>
+              {family.students.map((student) => (
+                <Link
+                  key={student.id}
+                  href={`/dashboard/cashier/students/${student.id}`}
+                  className="text-primary hover:underline"
+                >
+                  {student.name}
+                </Link>
+              ))}
+            </p>
+          )}
           <CashierForm
             key={family.id}
             familyId={family.id}

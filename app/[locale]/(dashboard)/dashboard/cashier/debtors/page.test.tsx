@@ -1,8 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const requireSchoolAdminMock = vi.fn()
-const isMealsEnabledMock = vi.fn()
+const requireSchoolCashierMock = vi.fn()
 const loadMealDebtorsMock = vi.fn()
 
 vi.mock('@/lib/school-regional-settings', () => ({
@@ -26,8 +25,7 @@ vi.mock('@/i18n/routing', () => ({
     </a>
   ),
 }))
-vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
-vi.mock('../../../_lib/auth-helper', () => ({ requireSchoolAdmin: requireSchoolAdminMock }))
+vi.mock('../../../_lib/auth-helper', () => ({ requireSchoolCashier: requireSchoolCashierMock }))
 vi.mock('../_lib/debtors-data', () => ({
   loadMealDebtors: loadMealDebtorsMock,
   REMIND_WITHIN_DAYS: 2,
@@ -39,14 +37,17 @@ const render = () => MealDebtorsPage({ params: Promise.resolve({ locale: 'fr' })
 
 beforeEach(() => {
   vi.clearAllMocks()
-  requireSchoolAdminMock.mockResolvedValue({ schoolId: 'school-1', userId: 'user-1' })
-  isMealsEnabledMock.mockResolvedValue(true)
+  requireSchoolCashierMock.mockResolvedValue({
+    schoolId: 'school-1',
+    userId: 'user-1',
+    isAdmin: true,
+  })
   loadMealDebtorsMock.mockResolvedValue([])
 })
 
 describe('MealDebtorsPage', () => {
-  it('answers notFound for a school that has not opted in, before any read', async () => {
-    isMealsEnabledMock.mockResolvedValue(false)
+  it('answers notFound when the cashier guard refuses, before any read', async () => {
+    requireSchoolCashierMock.mockRejectedValue(new Error('notFound'))
 
     await expect(render()).rejects.toThrow('notFound')
     expect(loadMealDebtorsMock).not.toHaveBeenCalled()
@@ -69,7 +70,7 @@ describe('MealDebtorsPage', () => {
     const html = renderToStaticMarkup(await render())
 
     expect(loadMealDebtorsMock).toHaveBeenCalledWith('school-1', '2026-10-24')
-    expect(html).toContain('href="/dashboard/students/student-1"')
+    expect(html).toContain('href="/dashboard/cashier/students/student-1"')
     expect(html).toContain('href="/dashboard/cashier?familyId=family-1"')
   })
 })

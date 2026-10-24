@@ -1,14 +1,12 @@
 import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
-import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
-import { requireSchoolAdmin } from '../../../_lib/auth-helper'
+import { requireSchoolCashier } from '../../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../../_lib/page-metadata'
 import { loadMealDebtors, REMIND_WITHIN_DAYS } from '../_lib/debtors-data'
 
@@ -30,8 +28,7 @@ export default async function MealDebtorsPage({ params }: Props) {
   const tServices = await getTranslations('dashboard.pages.meals.services')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { schoolId } = await requireSchoolAdmin()
-  if (!(await isMealsEnabled(schoolId))) notFound()
+  const { schoolId } = await requireSchoolCashier()
 
   const { currency, timeZone } = await getSchoolRegionalSettings(schoolId)
   const rows = await loadMealDebtors(schoolId, schoolToday(timeZone))
@@ -76,7 +73,7 @@ export default async function MealDebtorsPage({ params }: Props) {
                   <tr key={`${row.studentId}-${row.service}`} className="text-sm">
                     <td className="py-2 pr-4">
                       <Link
-                        href={`/dashboard/students/${row.studentId}`}
+                        href={`/dashboard/cashier/students/${row.studentId}`}
                         className="font-medium text-primary hover:underline"
                       >
                         {row.name}

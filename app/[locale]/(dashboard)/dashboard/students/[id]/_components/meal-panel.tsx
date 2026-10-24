@@ -15,12 +15,20 @@ type Props = {
   studentId: string
   locale: string
   selectedPeriodId: string | null
+  /** La reprise d'un solde corrige l'historique : réservée à l'administration. */
+  canRecordOpening?: boolean
 }
 
 const SERVICES = Object.values(MealService)
 
 /** Abonnements cantine et goûter d'un élève : jours servis, payé jusqu'au, reprise. */
-export async function MealPanel({ schoolId, studentId, locale, selectedPeriodId }: Props) {
+export async function MealPanel({
+  schoolId,
+  studentId,
+  locale,
+  selectedPeriodId,
+  canRecordOpening = true,
+}: Props) {
   const t = await getTranslations('dashboard.pages.studentDetails.meals')
   const tServices = await getTranslations('dashboard.pages.meals.services')
   const tWeekdays = await getTranslations('dashboard.pages.meals.weekdays')
@@ -143,7 +151,7 @@ export async function MealPanel({ schoolId, studentId, locale, selectedPeriodId 
                 )}
                 {current && setting?.isEnabled && <MealDialog kind="change" {...dialog} />}
                 {current && <MealDialog kind="stop" {...dialog} />}
-                {current && <MealDialog kind="opening" {...dialog} />}
+                {current && canRecordOpening && <MealDialog kind="opening" {...dialog} />}
               </div>
             </section>
           )

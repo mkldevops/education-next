@@ -93,5 +93,5 @@ export async function loadCashierFamily(schoolId: string, familyId: string, toda
   })
   lines.sort((a, b) => a.name.localeCompare(b.name) || a.service.localeCompare(b.service))
 
-  return { id: family.id, name: family.name, lines }
+  return { id: family.id, name: family.name, students, lines }
 }

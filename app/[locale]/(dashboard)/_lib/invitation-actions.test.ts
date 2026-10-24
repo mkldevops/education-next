@@ -4,6 +4,7 @@ const requireSchoolAdminMock = vi.fn()
 const findMembershipMock = vi.fn()
 const findActiveByIdMock = vi.fn()
 const sendInvitationEmailMock = vi.fn()
+const isMealsEnabledMock = vi.fn()
 
 const dbMock = {
   user: { findUnique: vi.fn() },
@@ -27,6 +28,7 @@ vi.mock('@/gateways/school-gateway', () => ({
 vi.mock('@/gateways/school-member-gateway', () => ({
   schoolMemberGateway: { findMembership: findMembershipMock },
 }))
+vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
 vi.mock('./auth-helper', () => ({ requireSchoolAdmin: requireSchoolAdminMock }))
 vi.mock('./invitation-email', () => ({
   resolveInvitationLocale: (value: string) => value,
@@ -49,6 +51,7 @@ beforeEach(() => {
   dbMock.familyPerson.findFirst.mockResolvedValue({ personId: PERSON_ID })
   findMembershipMock.mockResolvedValue(null)
   sendInvitationEmailMock.mockResolvedValue('OK')
+  isMealsEnabledMock.mockResolvedValue(true)
   dbMock.invitation.findFirst.mockResolvedValue(null)
   dbMock.teacher.findUnique.mockResolvedValue({
     id: TEACHER_ID,
@@ -180,6 +183,28 @@ describe('inviteUserAction', () => {
           teacherId: TEACHER_ID,
         })
       ).toBe('invalidInput')
+    })
+  })
+
+  describe('cashier role', () => {
+    const CASHIER = { email: 'caisse@school.test', role: 'CASHIER' }
+
+    it('invites a cashier in a school that opened meals', async () => {
+      expect(await inviteUserAction(CASHIER)).toBe('OK')
+      expect(isMealsEnabledMock).toHaveBeenCalledWith('school-b')
+      expect(dbMock.invitation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ role: 'CASHIER' }) })
+      )
+    })
+
+    it('refuses a cashier in a school without meals', async () => {
+      isMealsEnabledMock.mockResolvedValue(false)
+      expect(await inviteUserAction(CASHIER)).toBe('invalidInput')
+      expect(dbMock.invitation.create).not.toHaveBeenCalled()
+    })
+
+    it('refuses a family on a cashier invitation', async () => {
+      expect(await inviteUserAction({ ...CASHIER, familyId: FAMILY_ID })).toBe('invalidInput')
     })
   })
 

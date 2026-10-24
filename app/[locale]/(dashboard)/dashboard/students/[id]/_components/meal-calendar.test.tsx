@@ -61,7 +61,9 @@ describe('MealCalendar', () => {
       })
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '2026-10-08 · status.absent' }))
+    const absentDay = screen.getByRole('button', { name: '2026-10-08 · status.absent' })
+    await waitFor(() => expect(absentDay).toBeEnabled())
+    fireEvent.click(absentDay)
     await waitFor(() =>
       expect(toggleMock).toHaveBeenLastCalledWith(expect.objectContaining({ absent: false }))
     )

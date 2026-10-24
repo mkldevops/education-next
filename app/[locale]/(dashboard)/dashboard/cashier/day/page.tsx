@@ -1,6 +1,5 @@
 import { Breadcrumbs, Card } from '@peaklab/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { CashLine, CashTotals } from '@/domain/cash-day'
@@ -8,8 +7,7 @@ import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
-import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
-import { requireSchoolAdmin } from '../../../_lib/auth-helper'
+import { requireSchoolCashier } from '../../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../../_lib/page-metadata'
 import { loadCashDay } from '../_lib/cash-day-data'
 
@@ -39,8 +37,7 @@ export default async function CashDayPage({ params, searchParams }: Props) {
   const tMethod = await getTranslations('paymentMethod')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
-  const { schoolId } = await requireSchoolAdmin()
-  if (!(await isMealsEnabled(schoolId))) notFound()
+  const { schoolId } = await requireSchoolCashier()
 
   const { currency, timeZone } = await getSchoolRegionalSettings(schoolId)
   const today = schoolToday(timeZone)

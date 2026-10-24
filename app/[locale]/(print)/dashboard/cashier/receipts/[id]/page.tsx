@@ -10,7 +10,7 @@ import { Link } from '@/i18n/routing'
 import { getBrandingConfig } from '@/lib/branding'
 import { formatCurrency, roundHalfUp } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
-import { requireSchoolAdmin } from '../../../../../(dashboard)/_lib/auth-helper'
+import { requireSchoolCashier } from '../../../../../(dashboard)/_lib/auth-helper'
 import { restrictedPageMetadata } from '../../../../../(dashboard)/_lib/page-metadata'
 import { PrintButton } from '../../../../_components/print-button'
 import { CancelReceiptDialog, ShareReceiptButton } from './_components/receipt-actions'
@@ -42,7 +42,7 @@ export default async function ReceiptPage({ params }: Props) {
   const tServices = await getTranslations('dashboard.pages.meals.services')
   const tMethods = await getTranslations('dashboard.pages.payments.record.methods')
 
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId, isAdmin } = await requireSchoolCashier()
   if (!UUID.test(id)) notFound()
 
   const [receipt, { logoUrl, schoolName }, { currency, timeZone }] = await Promise.all([
@@ -95,7 +95,7 @@ export default async function ReceiptPage({ params }: Props) {
             {t('back')}
           </Link>
           <div className="flex flex-wrap gap-2">
-            {!isCancelled && <CancelReceiptDialog receiptId={receipt.id} />}
+            {isAdmin && !isCancelled && <CancelReceiptDialog receiptId={receipt.id} />}
             <ShareReceiptButton label={t('share')} text={shareText} />
             <PrintButton label={t('print')} />
           </div>

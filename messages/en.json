@@ -155,8 +155,8 @@
       "metaTitle": "Invitation",
       "eyebrow": "Invitation",
       "title": "Join {schoolName}",
-      "invitedBy": "{inviterName} invites you to join {schoolName} as {role, select, ADMIN {an administrator} PARENT {a parent} other {a member}}.",
-      "invitedBySchool": "{schoolName} invites you to join its space as {role, select, ADMIN {an administrator} PARENT {a parent} other {a member}}.",
+      "invitedBy": "{inviterName} invites you to join {schoolName} as {role, select, ADMIN {an administrator} PARENT {a parent} CASHIER {a cashier} other {a member}}.",
+      "invitedBySchool": "{schoolName} invites you to join its space as {role, select, ADMIN {an administrator} PARENT {a parent} CASHIER {a cashier} other {a member}}.",
       "theSchool": "the school",
       "help": "Need a new link? Ask {schoolName} to send you another invitation.",
       "used": {
@@ -1142,6 +1142,11 @@
       },
       "cashier": {
         "title": "Cashier",
+        "mealSheets": "Meal sheets:",
+        "studentSheet": {
+          "title": "Meal sheet",
+          "collect": "Collect for the family"
+        },
         "intro": "Take a family's canteen, snack and tuition payment at once, with a numbered receipt.",
         "search": "Family or child's name",
         "searchSubmit": "Search",
@@ -3447,7 +3452,8 @@
     "SUPER_ADMIN": "Super Admin",
     "ADMIN": "Admin",
     "PARENT": "Parent",
-    "TEACHER": "Teacher"
+    "TEACHER": "Teacher",
+    "CASHIER": "Cashier"
   },
   "emails": {
     "invitation": {

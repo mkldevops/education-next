@@ -7,6 +7,7 @@ import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { userGateway } from '@/gateways/user-gateway'
 import { auth } from '@/lib/auth'
 import type { SchoolRole } from '@/types/enums'
+import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { changePlatformLevel } from '@/use-cases/users/change-platform-level'
 import { deleteUser } from '@/use-cases/users/delete-user'
 import { linkUserFamily, unlinkUserFamily } from '@/use-cases/users/link-user-family'
@@ -279,7 +280,7 @@ export async function removeSchoolMemberAction(userId: string) {
 
 const ChangeMemberRolesSchema = z.object({
   userId: z.string().min(1),
-  roles: z.array(z.enum(['ADMIN', 'PARENT'])),
+  roles: z.array(z.enum(['ADMIN', 'PARENT', 'CASHIER'])),
 })
 
 /**
@@ -292,6 +293,12 @@ export async function changeSchoolMemberRolesAction(userId: string, roles: Schoo
 
   const parsed = ChangeMemberRolesSchema.safeParse({ userId, roles })
   if (!parsed.success) return 'validation_error' as const
+  // `CASHIER` ne s'ajoute que si l'école a ouvert les repas ; un membre qui le détient déjà
+  // peut le garder ou le perdre.
+  if (parsed.data.roles.includes('CASHIER') && !(await isMealsEnabled(schoolId))) {
+    const member = await schoolMemberGateway.findMembership(parsed.data.userId, schoolId)
+    if (!member?.roles.includes('CASHIER')) return 'validation_error' as const
+  }
 
   try {
     return await schoolMemberGateway.setAssignableRoles(

@@ -19,9 +19,11 @@ import { changeSchoolMemberRolesAction, removeSchoolMemberAction } from '../../.
 export function ChangeSchoolMemberRoleDialog({
   userId,
   roles,
+  mealsEnabled = false,
 }: {
   userId: string
   roles: readonly SchoolRole[]
+  mealsEnabled?: boolean
 }) {
   const t = useTranslations('dashboard.pages.users')
 
@@ -36,27 +38,43 @@ export function ChangeSchoolMemberRoleDialog({
         <DialogHeader>
           <DialogTitle>{t('changeRole')}</DialogTitle>
         </DialogHeader>
-        <ChangeSchoolMemberRoleForm key={roles.join()} userId={userId} roles={roles} />
+        <ChangeSchoolMemberRoleForm
+          key={roles.join()}
+          userId={userId}
+          roles={roles}
+          mealsEnabled={mealsEnabled}
+        />
       </DialogContent>
     </Dialog>
   )
 }
 
-const ASSIGNABLE_ROLES: SchoolRole[] = ['ADMIN', 'PARENT']
+/**
+ * `CASHIER` ne s'ajoute que dans une école qui a ouvert les repas ; un membre qui le détient
+ * déjà le voit toujours, pour pouvoir le lui retirer.
+ */
+function assignableRoles(roles: readonly SchoolRole[], mealsEnabled: boolean): SchoolRole[] {
+  return mealsEnabled || roles.includes('CASHIER')
+    ? ['ADMIN', 'PARENT', 'CASHIER']
+    : ['ADMIN', 'PARENT']
+}
 
 function ChangeSchoolMemberRoleForm({
   userId,
   roles,
+  mealsEnabled,
 }: {
   userId: string
   roles: readonly SchoolRole[]
+  mealsEnabled: boolean
 }) {
+  const assignable = assignableRoles(roles, mealsEnabled)
   const t = useTranslations('dashboard.pages.users')
   const tRoles = useTranslations('roles')
   const router = useRouter()
   const { isPending, close, onSubmit } = useDialogForm(t)
   const [selectedRoles, setSelectedRoles] = useState<SchoolRole[]>(
-    ASSIGNABLE_ROLES.filter((role) => roles.includes(role))
+    assignable.filter((role) => roles.includes(role))
   )
   const toggleRole = (role: SchoolRole, checked: boolean) =>
     setSelectedRoles((current) =>
@@ -73,7 +91,7 @@ function ChangeSchoolMemberRoleForm({
       <DialogBody>
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium text-graphite">{t('newRole')}</legend>
-          {ASSIGNABLE_ROLES.map((role) => (
+          {assignable.map((role) => (
             <label key={role} className="flex items-center gap-2 text-sm text-graphite">
               <input
                 type="checkbox"

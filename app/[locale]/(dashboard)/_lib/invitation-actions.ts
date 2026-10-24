@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { db } from '@/lib/db'
+import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { requireSchoolAdmin } from './auth-helper'
 import { resolveInvitationLocale, sendInvitationEmail } from './invitation-email'
 
@@ -14,7 +15,7 @@ const inviteSchema = z.object({
   // écriture d'`Invitation.email`, évite qu'une casse saisie par l'admin rende le
   // compte invisible à toutes les lectures en aval.
   email: z.email().toLowerCase(),
-  role: z.enum(['ADMIN', 'PARENT', 'TEACHER']),
+  role: z.enum(['ADMIN', 'PARENT', 'TEACHER', 'CASHIER']),
   familyId: z.uuid().optional(),
   personId: z.uuid().optional(),
   teacherId: z.uuid().optional(),
@@ -57,6 +58,8 @@ export async function inviteUserAction(input: {
   if (parsed.data.personId && !familyId) return 'invalidInput'
   if (teacherId && role !== 'TEACHER') return 'invalidInput'
   if (role === 'TEACHER' && !teacherId) return 'invalidInput'
+  // La caisse n'existe que dans une école qui a ouvert les repas.
+  if (role === 'CASHIER' && !(await isMealsEnabled(schoolId))) return 'invalidInput'
 
   // Une famille ne se rattache jamais seule : l'invitation doit nommer le parent de
   // cette famille dont l'adresse est celle invitée. Le formulaire des utilisateurs ne

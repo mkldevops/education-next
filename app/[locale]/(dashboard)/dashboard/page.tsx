@@ -98,6 +98,10 @@ export default async function DashboardPage({ params }: Props) {
   if (homeless && hasSchoolRole(context, 'TEACHER')) {
     redirect({ href: '/dashboard/my-classes', locale })
   }
+  // La caisse est l'accueil d'un caissier sans famille liée ; sa garde refuse une école sans repas.
+  if (homeless && hasSchoolRole(context, 'CASHIER')) {
+    redirect({ href: '/dashboard/cashier', locale })
+  }
   // Refus avant toute lecture de données familiales : sans famille liée, rien à borner.
   if (homeless && hasSchoolRole(context, 'PARENT')) {
     const school = await schoolGateway.findActiveById(context.schoolId)
