@@ -120,6 +120,26 @@ links, its outstanding invitations and its payment transactions, permanently. On
 `SchoolMember`, `User` and `Config` survive untouched. Run it against a school whose business data
 is expendable.
 
+### Importing a class roster
+
+`pnpm db:import-roster <slug> <file.csv> --plan <plan> --period <period> [--apply]`
+(`prisma/import-roster.ts`, rules in `src/domain/roster-import.ts`) loads a school's class lists at the
+start of the year from a normalized `nom;prenom;classe` file.
+
+- **Dry run by default.** Without `--apply` nothing is written. The script prints the students it would
+  create, the ignored duplicates and the shared last names.
+- **Replayable.** A student already enrolled in the same class of the period is ignored, and so is a
+  repeated line. The key is (last name, first name, class), compared without case, accents or extra
+  spaces.
+- **All or nothing.** These problems block `--apply`: an incomplete line, a class unknown in the
+  period, or a class the import would fill beyond its capacity. Students are created in one
+  transaction.
+- **Each created student** gets a `Person`, a `Student`, an `ACTIVE` enrollment on the named plan at
+  its full amount, and a class assignment.
+- **Families are never inferred.** Two children with the same last name may or may not be siblings.
+  The script only lists them so the school can decide. Families and phone numbers are added afterwards
+  in the application.
+
 ### Administering schools
 
 `/dashboard/schools` is a **platform** surface. The page and the four actions
