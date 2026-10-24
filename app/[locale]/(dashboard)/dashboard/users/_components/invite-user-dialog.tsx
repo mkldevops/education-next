@@ -28,9 +28,11 @@ import type { FamilyOption, TeacherOption } from './users-table'
 export function InviteUserDialog({
   families,
   teachers,
+  mealsEnabled = false,
 }: {
   families: FamilyOption[]
   teachers: TeacherOption[]
+  mealsEnabled?: boolean
 }) {
   const t = useTranslations('dashboard.pages.users.invite')
 
@@ -43,7 +45,7 @@ export function InviteUserDialog({
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
-        <InviteForm families={families} teachers={teachers} />
+        <InviteForm families={families} teachers={teachers} mealsEnabled={mealsEnabled} />
       </DialogContent>
     </Dialog>
   )
@@ -52,9 +54,11 @@ export function InviteUserDialog({
 function InviteForm({
   families,
   teachers,
+  mealsEnabled,
 }: {
   families: FamilyOption[]
   teachers: TeacherOption[]
+  mealsEnabled: boolean
 }) {
   const t = useTranslations('dashboard.pages.users.invite')
   const tRoles = useTranslations('roles')
@@ -68,6 +72,7 @@ function InviteForm({
     { value: 'PARENT', label: tRoles('PARENT') },
     { value: 'ADMIN', label: tRoles('ADMIN') },
     { value: 'TEACHER', label: tRoles('TEACHER') },
+    ...(mealsEnabled ? [{ value: 'CASHIER', label: tRoles('CASHIER') }] : []),
   ]
   const familyItems: Array<{ value: string | null; label: string }> = [
     { value: null, label: t('noFamily') },

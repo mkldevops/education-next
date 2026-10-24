@@ -66,6 +66,14 @@ const MY_FAMILIES: NavItemConfig = {
   key: 'myFamilies',
 }
 
+const CASHIER: NavItemConfig = {
+  href: '/dashboard/cashier',
+  icon: Banknote,
+  key: 'cashier',
+  requiredRoles: ['ADMIN', 'CASHIER'],
+  feature: 'meals',
+}
+
 const todayItems: NavItemConfig[] = [
   { href: '/dashboard', icon: House, key: 'dashboard' },
   { href: '/dashboard/attendance', icon: ClipboardCheck, key: 'attendance', feature: 'attendance' },
@@ -109,13 +117,7 @@ const financeItems: NavItemConfig[] = [
     requiredRoles: ['ADMIN'],
     feature: 'payments',
   },
-  {
-    href: '/dashboard/cashier',
-    icon: Banknote,
-    key: 'cashier',
-    requiredRoles: ['ADMIN'],
-    feature: 'meals',
-  },
+  CASHIER,
   {
     href: '/dashboard/meals',
     icon: UtensilsCrossed,
@@ -196,10 +198,11 @@ export function resolveNavItems({
   ]
 
   // Les droits se cumulent : l'administration l'emporte, sinon un parent qui enseigne voit
-  // côte à côte sa famille et ses classes.
+  // côte à côte sa famille et ses classes, et la caisse s'y ajoute.
   const isParent = roles.includes('PARENT')
   const isTeacher = roles.includes('TEACHER')
-  if (!isSuperAdmin && !roles.includes('ADMIN') && (isParent || isTeacher)) {
+  const isCashier = roles.includes('CASHIER')
+  if (!isSuperAdmin && !roles.includes('ADMIN') && (isParent || isTeacher || isCashier)) {
     const planning: NavItemConfig[] = features.classSchedule
       ? [{ href: '/dashboard/planning', icon: CalendarRange, key: 'planning' }]
       : []
@@ -229,6 +232,8 @@ export function resolveNavItems({
           : []),
         // Accès élargi : les pages de scolarité, jamais la finance ni les réglages.
         ...(isTeacher && hasStaffAccess ? section('schooling', staffSchoolingItems) : []),
+        // La caisse seule : ni tarifs, ni réglages des repas, ni paiements d'écolage hors caisse.
+        ...(isCashier ? section('finance', [CASHIER].filter(canView)) : []),
         ...administration,
       ],
       bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'profile' }],

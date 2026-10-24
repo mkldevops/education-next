@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { inSerializableTransaction } from '@/lib/serializable-transaction'
 
 /** Ordre d'affichage et de stockage : stable, sans doublon. */
-const ROLE_ORDER: readonly SchoolRole[] = ['ADMIN', 'TEACHER', 'PARENT']
+const ROLE_ORDER: readonly SchoolRole[] = ['ADMIN', 'TEACHER', 'CASHIER', 'PARENT']
 
 function normalizeRoles(roles: readonly SchoolRole[]): SchoolRole[] {
   return ROLE_ORDER.filter((role) => roles.includes(role))

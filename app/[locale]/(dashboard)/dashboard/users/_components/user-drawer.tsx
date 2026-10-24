@@ -35,6 +35,7 @@ interface Props {
   isSelf: boolean
   families: FamilyOption[]
   locale: string
+  mealsEnabled?: boolean
 }
 
 export function UserDrawer({
@@ -45,6 +46,7 @@ export function UserDrawer({
   isSelf,
   families,
   locale,
+  mealsEnabled = false,
 }: Props) {
   const t = useTranslations('dashboard.pages.users')
   const tRoles = useTranslations('roles')
@@ -107,7 +109,11 @@ export function UserDrawer({
 
           <Section title={t('sections.schoolActions')}>
             <div className="flex flex-wrap gap-2">
-              <ChangeSchoolMemberRoleDialog userId={member.userId} roles={member.roles} />
+              <ChangeSchoolMemberRoleDialog
+                userId={member.userId}
+                roles={member.roles}
+                mealsEnabled={mealsEnabled}
+              />
               <RemoveSchoolMemberDialog userId={member.userId} onRemoved={close} />
             </div>
           </Section>

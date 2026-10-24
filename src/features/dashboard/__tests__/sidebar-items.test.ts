@@ -447,3 +447,47 @@ describe('resolveNavItems with cumulative roles', () => {
     expect(keys(group(items, 'settings'))).toContain('users')
   })
 })
+
+describe('resolveNavItems with the cashier role', () => {
+  const meals = { events: true, payments: true, meals: true, classSchedule: true }
+
+  it('gives a cashier the cashier only, never prices, settings or payments', () => {
+    const items = resolveNavItems({ roles: ['CASHIER'], isSuperAdmin: false, features: meals })
+
+    expect(keys(items.sections)).toEqual(['finance'])
+    expect(keys(all(items))).toEqual(['cashier'])
+  })
+
+  it('hides the cashier from a cashier of a school without meals', () => {
+    const items = resolveNavItems({
+      roles: ['CASHIER'],
+      isSuperAdmin: false,
+      features: { ...meals, meals: false },
+    })
+
+    expect(all(items)).toEqual([])
+  })
+
+  it('adds the cashier beside the family of a cashier-parent', () => {
+    const items = resolveNavItems({
+      roles: ['CASHIER', 'PARENT'],
+      isSuperAdmin: false,
+      familyId: 'family-1',
+      features: meals,
+    })
+
+    expect(keys(items.sections)).toEqual(['family', 'finance'])
+    expect(keys(group(items, 'finance'))).toEqual(['cashier'])
+  })
+
+  it('adds the cashier beside the classes of a cashier-teacher', () => {
+    const items = resolveNavItems({
+      roles: ['CASHIER', 'TEACHER'],
+      isSuperAdmin: false,
+      features: meals,
+    })
+
+    expect(keys(items.sections)).toEqual(['teaching', 'finance'])
+    expect(keys(all(items))).not.toContain('meals')
+  })
+})

@@ -155,8 +155,8 @@
       "metaTitle": "Invitation",
       "eyebrow": "Invitation",
       "title": "Rejoignez {schoolName}",
-      "invitedBy": "{inviterName} vous invite à rejoindre {schoolName} en tant que {role, select, ADMIN {administrateur} PARENT {parent} other {membre}}.",
-      "invitedBySchool": "{schoolName} vous invite à rejoindre son espace en tant que {role, select, ADMIN {administrateur} PARENT {parent} other {membre}}.",
+      "invitedBy": "{inviterName} vous invite à rejoindre {schoolName} en tant que {role, select, ADMIN {administrateur} PARENT {parent} CASHIER {caissier ou caissière} other {membre}}.",
+      "invitedBySchool": "{schoolName} vous invite à rejoindre son espace en tant que {role, select, ADMIN {administrateur} PARENT {parent} CASHIER {caissier ou caissière} other {membre}}.",
       "theSchool": "l'école",
       "help": "Besoin d'un nouveau lien ? Demandez à {schoolName} de vous renvoyer une invitation.",
       "used": {
@@ -1143,6 +1143,11 @@
       },
       "cashier": {
         "title": "Caisse",
+        "mealSheets": "Fiches repas :",
+        "studentSheet": {
+          "title": "Fiche repas",
+          "collect": "Encaisser pour la famille"
+        },
         "intro": "Encaissez la cantine, le goûter et l'écolage d'une famille en une fois, avec un reçu numéroté.",
         "search": "Nom de la famille ou d’un enfant",
         "searchSubmit": "Rechercher",
@@ -3448,7 +3453,8 @@
     "SUPER_ADMIN": "Super Administrateur",
     "ADMIN": "Administrateur",
     "PARENT": "Parent",
-    "TEACHER": "Enseignant"
+    "TEACHER": "Enseignant",
+    "CASHIER": "Caisse"
   },
   "emails": {
     "invitation": {

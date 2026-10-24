@@ -19,7 +19,7 @@ import { setMealServiceSetting } from '@/use-cases/meals/set-meal-service-settin
 import { stopMeal } from '@/use-cases/meals/stop-meal'
 import { subscribeMeal } from '@/use-cases/meals/subscribe-meal'
 import { toggleMealAbsence } from '@/use-cases/meals/toggle-meal-absence'
-import { requireSchoolAdmin } from './auth-helper'
+import { requireSchoolAdmin, requireSchoolCashier } from './auth-helper'
 
 type SetMealServiceSettingInput = z.infer<typeof setMealServiceSettingSchema>
 type SetMealPriceInput = z.infer<typeof setMealPriceSchema>
@@ -55,29 +55,33 @@ export async function removeMealPriceAction(id: string) {
   return 'OK' as const
 }
 
-const studentPath = (studentId: string) => `/dashboard/students/${studentId}`
+/** La fiche élève et la fiche repas de la caisse affichent le même compte. */
+function revalidateStudentMeals(studentId: string) {
+  revalidatePath(`/dashboard/students/${studentId}`)
+  revalidatePath(`/dashboard/cashier/students/${studentId}`)
+}
 
 export async function subscribeMealAction(data: Omit<SubscribeMealInput, 'schoolId'>) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolCashier()
   const result = await subscribeMeal({ ...data, schoolId })
   if (result !== 'OK') return result
-  revalidatePath(studentPath(data.studentId))
+  revalidateStudentMeals(data.studentId)
   return 'OK' as const
 }
 
 export async function changeMealScheduleAction(data: Omit<ChangeMealScheduleInput, 'schoolId'>) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolCashier()
   const result = await changeMealSchedule({ ...data, schoolId })
   if (result !== 'OK') return result
-  revalidatePath(studentPath(data.studentId))
+  revalidateStudentMeals(data.studentId)
   return 'OK' as const
 }
 
 export async function stopMealAction(data: Omit<StopMealInput, 'schoolId'>) {
-  const { schoolId } = await requireSchoolAdmin()
+  const { schoolId } = await requireSchoolCashier()
   const result = await stopMeal({ ...data, schoolId })
   if (result !== 'OK') return result
-  revalidatePath(studentPath(data.studentId))
+  revalidateStudentMeals(data.studentId)
   return 'OK' as const
 }
 
@@ -87,16 +91,16 @@ export async function recordMealOpeningAction(
   const { schoolId, userId } = await requireSchoolAdmin()
   const result = await recordMealOpening({ ...data, schoolId, recordedById: userId })
   if (result !== 'OK') return result
-  revalidatePath(studentPath(data.studentId))
+  revalidateStudentMeals(data.studentId)
   return 'OK' as const
 }
 
 export async function toggleMealAbsenceAction(
   data: Omit<ToggleMealAbsenceInput, 'schoolId' | 'recordedById'>
 ) {
-  const { schoolId, userId } = await requireSchoolAdmin()
+  const { schoolId, userId } = await requireSchoolCashier()
   const result = await toggleMealAbsence({ ...data, schoolId, recordedById: userId })
   if (result !== 'OK') return result
-  revalidatePath(studentPath(data.studentId))
+  revalidateStudentMeals(data.studentId)
   return 'OK' as const
 }

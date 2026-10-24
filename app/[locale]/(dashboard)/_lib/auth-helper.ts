@@ -6,8 +6,10 @@ import type { SchoolContext } from '@/lib/school-context'
 import {
   getSchoolContext,
   hasActiveSchoolStaffAccess,
+  hasSchoolRole,
   isActiveSchoolAdmin,
 } from '@/lib/school-context'
+import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 
 async function redirectToLogin(): Promise<never> {
   const locale = await getLocale()
@@ -28,6 +30,25 @@ export async function requireSchoolAdmin(): Promise<{
   if (!isActiveSchoolAdmin(context)) notFound()
 
   return { schoolId: context.schoolId, userId: context.userId, isSuperAdmin: context.isSuperAdmin }
+}
+
+/**
+ * Portée caisse sur l'école active : l'administration, ou un membre `CASHIER`, et seulement
+ * si l'école a ouvert les repas. `isAdmin` garde l'annulation, les ajustements, les tarifs et
+ * les fermetures à l'administration.
+ */
+export async function requireSchoolCashier(): Promise<{
+  schoolId: string
+  userId: string
+  isAdmin: boolean
+}> {
+  const context = await getSchoolContext()
+  if (!context) return redirectToLogin()
+  const isAdmin = isActiveSchoolAdmin(context)
+  if (!isAdmin && !hasSchoolRole(context, 'CASHIER')) notFound()
+  if (!(await isMealsEnabled(context.schoolId))) notFound()
+
+  return { schoolId: context.schoolId, userId: context.userId, isAdmin }
 }
 
 /**

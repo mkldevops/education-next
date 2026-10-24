@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const requireSchoolAdminMock = vi.fn()
-const isMealsEnabledMock = vi.fn()
+const requireSchoolCashierMock = vi.fn()
 const isPaymentsEnabledMock = vi.fn()
 const searchMock = vi.fn()
 const loadFamilyMock = vi.fn()
@@ -29,12 +28,11 @@ vi.mock('@/i18n/routing', () => ({
     </a>
   ),
 }))
-vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
 vi.mock('@/use-cases/payments/family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
-vi.mock('../../_lib/auth-helper', () => ({ requireSchoolAdmin: requireSchoolAdminMock }))
+vi.mock('../../_lib/auth-helper', () => ({ requireSchoolCashier: requireSchoolCashierMock }))
 vi.mock('./_lib/cashier-data', () => ({
   searchCashierFamilies: searchMock,
   loadCashierFamily: loadFamilyMock,
@@ -52,17 +50,20 @@ const render = (searchParams: { q?: string; familyId?: string }) =>
 
 beforeEach(() => {
   vi.clearAllMocks()
-  requireSchoolAdminMock.mockResolvedValue({ schoolId: 'school-1', userId: 'user-1' })
-  isMealsEnabledMock.mockResolvedValue(true)
+  requireSchoolCashierMock.mockResolvedValue({
+    schoolId: 'school-1',
+    userId: 'user-1',
+    isAdmin: true,
+  })
   isPaymentsEnabledMock.mockResolvedValue(true)
   searchMock.mockResolvedValue([])
-  loadFamilyMock.mockResolvedValue({ id: FAMILY_ID, name: 'Saïd', lines: [] })
+  loadFamilyMock.mockResolvedValue({ id: FAMILY_ID, name: 'Saïd', students: [], lines: [] })
   getFamilyBalanceMock.mockResolvedValue({ remainingBalance: 1500 })
 })
 
 describe('CashierPage', () => {
-  it('opens on notFound for a school that has not opted in, before any read', async () => {
-    isMealsEnabledMock.mockResolvedValue(false)
+  it('answers notFound when the cashier guard refuses, before any read', async () => {
+    requireSchoolCashierMock.mockRejectedValue(new Error('notFound'))
 
     await expect(render({ q: 'Saïd' })).rejects.toThrow('notFound')
 

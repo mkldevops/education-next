@@ -387,3 +387,31 @@ describe('DashboardPage, teacher-only membership', () => {
     expect(requireSchoolScopeMock).toHaveBeenCalledOnce()
   })
 })
+
+describe('DashboardPage, cashier membership', () => {
+  it.each([
+    [['CASHIER'], '/dashboard/cashier'],
+    [['CASHIER', 'PARENT'], '/dashboard/cashier'],
+    [['CASHIER', 'TEACHER'], '/dashboard/my-classes'],
+  ])('sends %j without a linked family to %s before dashboard reads', async (roles, href) => {
+    getSchoolContextMock.mockResolvedValue({
+      roles,
+      isSuperAdmin: false,
+      schoolId: 'school-1',
+      userId: 'user-1',
+      familyId: null,
+    })
+    const redirectSignal = new Error('cashier dashboard redirect')
+    redirectMock.mockImplementationOnce(() => {
+      throw redirectSignal
+    })
+
+    await expect(DashboardPage({ params: Promise.resolve({ locale: 'fr' }) })).rejects.toBe(
+      redirectSignal
+    )
+
+    expect(redirectMock).toHaveBeenCalledWith({ href, locale: 'fr' })
+    expect(requireSchoolScopeMock).not.toHaveBeenCalled()
+    expect(getDashboardOverviewMock).not.toHaveBeenCalled()
+  })
+})

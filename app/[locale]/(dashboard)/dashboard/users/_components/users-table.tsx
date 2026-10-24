@@ -50,9 +50,11 @@ interface Props {
   families: FamilyOption[]
   teachers?: TeacherOption[]
   locale: string
+  /** Le rôle caisse ne s'attribue que dans une école qui a ouvert les repas. */
+  mealsEnabled?: boolean
 }
 
-const ROLE_VALUES: SchoolRole[] = ['ADMIN', 'PARENT', 'TEACHER']
+const ROLE_VALUES: SchoolRole[] = ['ADMIN', 'PARENT', 'TEACHER', 'CASHIER']
 
 type StatusFilter = 'ALL' | 'ACTIVE' | 'ARCHIVED'
 
@@ -63,6 +65,7 @@ export function UsersTable({
   families,
   teachers = [],
   locale,
+  mealsEnabled = false,
 }: Props) {
   const t = useTranslations('dashboard.pages.users')
   const tRoles = useTranslations('roles')
@@ -170,7 +173,7 @@ export function UsersTable({
           <p className="font-semibold text-graphite">{t('empty.title')}</p>
           <p className="text-sm text-graphite-600">{t('empty.description')}</p>
         </div>
-        <InviteUserDialog families={families} teachers={teachers} />
+        <InviteUserDialog families={families} teachers={teachers} mealsEnabled={mealsEnabled} />
       </div>
     ) : hasActiveFilters ? (
       <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-2">
@@ -252,6 +255,7 @@ export function UsersTable({
         isSelf={selectedMember?.userId === currentUserId}
         families={families}
         locale={locale}
+        mealsEnabled={mealsEnabled}
       />
     </>
   )

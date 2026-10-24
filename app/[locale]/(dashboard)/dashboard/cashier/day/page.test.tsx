@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const requireSchoolAdminMock = vi.fn()
-const isMealsEnabledMock = vi.fn()
+const requireSchoolCashierMock = vi.fn()
 const loadCashDayMock = vi.fn()
 
 vi.mock('@/lib/school-regional-settings', () => ({
@@ -27,8 +26,7 @@ vi.mock('@/i18n/routing', () => ({
     </a>
   ),
 }))
-vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
-vi.mock('../../../_lib/auth-helper', () => ({ requireSchoolAdmin: requireSchoolAdminMock }))
+vi.mock('../../../_lib/auth-helper', () => ({ requireSchoolCashier: requireSchoolCashierMock }))
 vi.mock('../_lib/cash-day-data', () => ({ loadCashDay: loadCashDayMock }))
 
 const { default: CashDayPage } = await import('./page')
@@ -48,8 +46,11 @@ const totals = {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  requireSchoolAdminMock.mockResolvedValue({ schoolId: 'school-1', userId: 'user-1' })
-  isMealsEnabledMock.mockResolvedValue(true)
+  requireSchoolCashierMock.mockResolvedValue({
+    schoolId: 'school-1',
+    userId: 'user-1',
+    isAdmin: true,
+  })
   loadCashDayMock.mockResolvedValue({
     issued: totals,
     cancelled: totals,
@@ -60,8 +61,8 @@ beforeEach(() => {
 })
 
 describe('CashDayPage', () => {
-  it('answers notFound for a school that has not opted in, before any read', async () => {
-    isMealsEnabledMock.mockResolvedValue(false)
+  it('answers notFound when the cashier guard refuses, before any read', async () => {
+    requireSchoolCashierMock.mockRejectedValue(new Error('notFound'))
 
     await expect(render()).rejects.toThrow('notFound')
     expect(loadCashDayMock).not.toHaveBeenCalled()

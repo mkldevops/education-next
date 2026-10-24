@@ -91,6 +91,7 @@ enum SchoolRole {
   ADMIN
   PARENT
   TEACHER
+  CASHIER
 }
 
 // Nature de l'événement : purement présentationnelle (icône, couleur, filtre).
