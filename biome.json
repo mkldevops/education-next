@@ -64,7 +64,7 @@
   },
   "overrides": [
     {
-      "includes": ["prisma/seed.ts", "scripts/**"],
+      "includes": ["prisma/seed.ts", "prisma/import-roster.ts", "scripts/**"],
       "linter": {
         "rules": {
           "suspicious": {

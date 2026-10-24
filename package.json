@@ -26,6 +26,7 @@
     "db:studio": "prisma studio",
     "db:seed": "dotenv -- tsx prisma/seed.ts",
     "db:seed:demo": "dotenv -- tsx prisma/seed-demo.ts",
+    "db:import-roster": "dotenv -- tsx prisma/import-roster.ts",
     "postinstall": "prisma generate",
     "lint:tw": "tailwind-canonical --check",
     "lint:tw:fix": "tailwind-canonical"
