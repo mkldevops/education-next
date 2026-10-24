@@ -2,13 +2,13 @@
 
 import {
   RichDataTable,
+  type RichDataTableColumnDef,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@peaklab/ui'
-import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { useTableLabels } from '@/features/tables'
@@ -57,7 +57,7 @@ export function ClassesDataTable({ classes, levels, teachers, canManage, emptyMe
     levelFilter === ALL_LEVELS ? classes : classes.filter((row) => row.levelId === levelFilter)
 
   // La recherche porte sur le nom et les enseignants : niveau et période ont leur propre filtre.
-  const columns: ColumnDef<ClassRow>[] = [
+  const columns: RichDataTableColumnDef<ClassRow>[] = [
     {
       id: 'name',
       header: t('name'),

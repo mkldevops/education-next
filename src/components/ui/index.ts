@@ -105,6 +105,7 @@ export { PageHeader, type PageHeaderProps } from './page-header'
 // Rich Data Table
 export {
   RichDataTable,
+  type RichDataTableColumnDef,
   type RichDataTableLabels,
   type RichDataTableProps,
 } from './rich-data-table'

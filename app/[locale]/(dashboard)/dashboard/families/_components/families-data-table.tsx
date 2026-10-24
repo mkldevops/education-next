@@ -1,7 +1,6 @@
 'use client'
 
-import { CircleProgress, RichDataTable, useMenu } from '@peaklab/ui'
-import type { ColumnDef } from '@tanstack/react-table'
+import { CircleProgress, RichDataTable, type RichDataTableColumnDef, useMenu } from '@peaklab/ui'
 import { Phone } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { PaymentMethodLabel } from '@/features/enums'
@@ -164,7 +163,7 @@ function RemainingCell({ family, currency }: { family: FamilyRow; currency: stri
 export function FamiliesDataTable({ data, paymentsEnabled, currency }: Props) {
   const t = useTranslations('dashboard.pages.families')
 
-  const columns: ColumnDef<FamilyRow>[] = [
+  const columns: RichDataTableColumnDef<FamilyRow>[] = [
     {
       id: 'name',
       header: t('name'),
@@ -195,7 +194,7 @@ export function FamiliesDataTable({ data, paymentsEnabled, currency }: Props) {
             accessorFn: (row) => row.remaining,
             cell: ({ row }) => <RemainingCell family={row.original} currency={currency} />,
             enableSorting: true,
-          } satisfies ColumnDef<FamilyRow>,
+          } satisfies RichDataTableColumnDef<FamilyRow>,
         ]
       : []),
     {

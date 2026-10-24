@@ -1,19 +1,28 @@
-// React Compiler auto-memoization breaks useReactTable's imperative table.setOptions()
+// React Compiler auto-memoization breaks useTable's imperative table.setOptions()
 // call, silently freezing rendered rows against the data prop. Keep this directive first.
 'use no memo'
 'use client'
 
 import {
   type ColumnDef,
+  type ColumnVisibilityState,
+  columnFilteringFeature,
+  columnVisibilityFeature,
+  createFilteredRowModel,
+  createPaginatedRowModel,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
+  globalFilteringFeature,
   type PaginationState,
+  type RowData,
+  rowPaginationFeature,
+  rowSortingFeature,
   type SortingState,
-  useReactTable,
-  type VisibilityState,
+  sortFn_alphanumeric,
+  sortFn_datetime,
+  sortFn_text,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
 import { ChevronDown, ChevronsUpDown, ChevronUp } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -33,9 +42,28 @@ export interface RichDataTableLabels {
   page: (current: number, total: number) => string
 }
 
-export interface RichDataTableProps<T> {
+/**
+ * Fonctionnalités TanStack Table utilisées par toutes les tables : tri, recherche globale,
+ * pagination et visibilité des colonnes. Les fonctions de tri enregistrées sont celles que le
+ * tri `auto` peut choisir ; les colonnes numériques retombent sur le comparateur de base.
+ */
+const features = tableFeatures({
+  columnFilteringFeature,
+  globalFilteringFeature,
+  rowSortingFeature,
+  rowPaginationFeature,
+  columnVisibilityFeature,
+  filteredRowModel: createFilteredRowModel(),
+  sortedRowModel: createSortedRowModel(),
+  paginatedRowModel: createPaginatedRowModel(),
+  sortFns: { alphanumeric: sortFn_alphanumeric, datetime: sortFn_datetime, text: sortFn_text },
+})
+
+export type RichDataTableColumnDef<T extends RowData> = ColumnDef<typeof features, T>
+
+export interface RichDataTableProps<T extends RowData> {
   data: T[]
-  columns: ColumnDef<T>[]
+  columns: RichDataTableColumnDef<T>[]
   labels: RichDataTableLabels
   emptyMessage: ReactNode
   toolbar?: ReactNode
@@ -56,7 +84,7 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50]
  */
 const PAGE_SIZE_STORAGE_KEY = 'peaklab.table.pageSize'
 
-export function RichDataTable<T>({
+export function RichDataTable<T extends RowData>({
   data,
   columns,
   labels,
@@ -71,7 +99,7 @@ export function RichDataTable<T>({
 }: RichDataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>({})
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: initialPageSize,
@@ -91,7 +119,8 @@ export function RichDataTable<T>({
     ? pagination
     : { pageIndex: 0, pageSize: Math.max(data.length, 1) }
 
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data,
     columns,
     state: { sorting, globalFilter, columnVisibility, pagination: effectivePagination },
@@ -99,10 +128,6 @@ export function RichDataTable<T>({
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     autoResetPageIndex: true,
   })
 
