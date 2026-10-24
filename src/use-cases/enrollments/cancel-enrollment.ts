@@ -2,6 +2,7 @@ import type { z } from 'zod'
 import { validateTransition } from '@/domain/enrollment'
 import { classAssignmentGateway } from '@/gateways/class-assignment-gateway'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
+import { stopStudentMeals } from '@/use-cases/meals/stop-student-meals'
 import { enrollmentIdSchema } from './schemas'
 
 type Input = z.infer<typeof enrollmentIdSchema>
@@ -23,5 +24,10 @@ export async function cancelEnrollment(input: Input) {
 
   await classAssignmentGateway.closeCurrent(schoolId, parsed.data.id)
   await enrollmentGateway.updateStatus(schoolId, parsed.data.id, 'CANCELLED')
+  await stopStudentMeals({
+    schoolId,
+    studentId: enrollment.studentId,
+    enrollmentId: parsed.data.id,
+  })
   return 'OK' as const
 }

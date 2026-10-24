@@ -160,6 +160,29 @@ async function seedSchool(label: string, suffix: string) {
     },
   })
 
+  const mealAccount = await raw.mealAccount.create({
+    data: { schoolId: school.id, studentId: student.id, service: 'CANTEEN' },
+  })
+  const mealSchedule = await raw.mealSchedule.create({
+    data: {
+      schoolId: school.id,
+      accountId: mealAccount.id,
+      periodId: period.id,
+      weekdays: [1, 2],
+      startOn: new Date('2026-09-01'),
+    },
+  })
+  const mealAdjustment = await raw.mealAdjustment.create({
+    data: {
+      schoolId: school.id,
+      accountId: mealAccount.id,
+      kind: 'OPENING',
+      days: 5,
+      reason: `reprise ${label}`,
+      recordedById: admin.id,
+    },
+  })
+
   return {
     school,
     admin,
@@ -183,6 +206,9 @@ async function seedSchool(label: string, suffix: string) {
     teacherExpense,
     mealServiceSetting,
     mealPrice,
+    mealAccount,
+    mealSchedule,
+    mealAdjustment,
   }
 }
 
@@ -191,6 +217,9 @@ async function cleanup(fixture: Fixture) {
   await raw.payment.deleteMany({ where: { schoolId } })
   await raw.paymentTransaction.deleteMany({ where: { schoolId } })
   await raw.teacherExpense.deleteMany({ where: { schoolId } })
+  await raw.mealAdjustment.deleteMany({ where: { schoolId } })
+  await raw.mealSchedule.deleteMany({ where: { schoolId } })
+  await raw.mealAccount.deleteMany({ where: { schoolId } })
   await raw.mealPrice.deleteMany({ where: { schoolId } })
   await raw.mealServiceSetting.deleteMany({ where: { schoolId } })
   await raw.classPeriodTeacher.deleteMany({ where: { schoolId } })
@@ -581,6 +610,51 @@ describe.skipIf(!databaseUrl)('isolation inter-écoles sur base réelle', () => 
 
       const intact = await raw.mealPrice.findUniqueOrThrow({ where: { id: b.mealPrice.id } })
       expect(intact.amount.toNumber()).toBe(750)
+    })
+  })
+
+  describe('MealAccount', () => {
+    it('ne rend pas le compte repas de B depuis A', async () => {
+      const found = await db.mealAccount.findFirst({
+        where: { id: b.mealAccount.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
+    })
+  })
+
+  describe('MealSchedule', () => {
+    it('ne rend pas le segment de B depuis A', async () => {
+      const found = await db.mealSchedule.findFirst({
+        where: { id: b.mealSchedule.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
+    })
+
+    it("n'écrit pas le segment de B depuis A", async () => {
+      const { count } = await db.mealSchedule.updateMany({
+        where: { id: b.mealSchedule.id, schoolId: a.school.id },
+        data: { weekdays: [3] },
+      })
+      expect(count).toBe(0)
+
+      const intact = await raw.mealSchedule.findUniqueOrThrow({ where: { id: b.mealSchedule.id } })
+      expect(intact.weekdays).toEqual([1, 2])
+    })
+  })
+
+  describe('MealAdjustment', () => {
+    it("ne rend pas l'ajustement de B depuis A", async () => {
+      const found = await db.mealAdjustment.findFirst({
+        where: { id: b.mealAdjustment.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
+    })
+
+    it("n'efface pas l'ajustement de B depuis A", async () => {
+      const { count } = await db.mealAdjustment.deleteMany({
+        where: { id: b.mealAdjustment.id, schoolId: a.school.id },
+      })
+      expect(count).toBe(0)
     })
   })
 

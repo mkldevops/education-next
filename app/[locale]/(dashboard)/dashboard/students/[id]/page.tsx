@@ -10,6 +10,7 @@ import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-context'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
+import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
@@ -21,6 +22,7 @@ import { DeactivateStudentButton } from '../_components/deactivate-student-butto
 import { EditStudentDialog } from '../_components/edit-student-dialog'
 import { EnrollmentList } from './_components/enrollment-list'
 import { FamilyPanel } from './_components/family-panel'
+import { MealPanel } from './_components/meal-panel'
 import { deriveStudentDetail, getStudentDialogData, resolveStudent } from './_lib/student-detail'
 
 type Props = {
@@ -65,6 +67,7 @@ export default async function StudentDetailPage({ params }: Props) {
 
   const paymentsEnabled = (isAdmin || !isStaff) && (await isPaymentsEnabled(student.schoolId))
   const { currency } = await getSchoolRegionalSettings(student.schoolId)
+  const mealsEnabled = isAdmin && (await isMealsEnabled(student.schoolId))
 
   const selectedPeriodId = isStaff ? await getSelectedPeriodId(student.schoolId) : null
 
@@ -287,6 +290,15 @@ export default async function StudentDetailPage({ params }: Props) {
 
         <div className="space-y-4">
           <FamilyPanel family={family} />
+
+          {mealsEnabled && (
+            <MealPanel
+              schoolId={student.schoolId}
+              studentId={student.id}
+              locale={locale}
+              selectedPeriodId={selectedPeriodId}
+            />
+          )}
 
           {infoRows.length > 0 && (
             <Card className="p-4">
