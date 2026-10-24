@@ -1770,8 +1770,9 @@ the checkout flow, not by the form.
   sign for one account and verify for another. An unreadable school secret counts as absent.
 - **Absence of `stripe_enabled` reads as enabled** (`readsAsEnabled`), so a school already paid
   through the instance keys keeps its button. It is effective only when configured: `available` =
-  enabled **and** a readable pair exists. The toggle is disabled with an explicit message while no
-  pair is readable, and enabling without one → `notConfigured`. Disabling is always allowed.
+  enabled **and** a readable pair exists. The toggle shows the stored flag and can be switched on
+  without a pair: that is what unfolds the secret inputs, and an explicit message says the parent
+  button still waits for a complete pair. Switched off, it folds the secrets and the webhook URL.
 - The parent « Payer en ligne » button (dashboard and family page) reads `isOnlinePaymentAvailable`;
   `createCheckoutSession` reads `resolveCheckoutCredentials`, which returns `null` when the school
   switched Stripe off → `notConfigured`. `payments_enabled` is checked first and still wins.
@@ -1807,7 +1808,7 @@ The write surface is the first row of the **Paiements** section of `/dashboard/c
 (`stripe-settings-section.tsx`), open to a school `ADMIN`; the **School settings** panel skips the
 key. It still writes through `setConfigAction` over the closed key list (`SCHOOL_CONFIG_KEYS`), so no
 dedicated action exists: a second screen for one value, accepting any string, is the mistake
-`school_name` already taught. The Stripe rows below it collapse while payments are off, mirroring
+`school_name` already taught. The Stripe rows nested under it fold while payments are off, mirroring
 the server, where `payments_enabled` wins over `stripe_enabled`.
 
 **Two flags confirm before cutting**, because they make already-recorded state invisible:

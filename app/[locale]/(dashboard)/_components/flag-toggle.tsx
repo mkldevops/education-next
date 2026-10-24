@@ -37,8 +37,6 @@ type Props = {
    * le comportement reste le bascule à un clic d'origine, dans les deux sens.
    */
   confirmDisable?: ConfirmDisable
-  /** Interrupteur figé, par exemple tant que la configuration dont il dépend est incomplète. */
-  disabled?: boolean
   /** Réglages dépendants, repliés tant que l'interrupteur est coupé. */
   children?: ReactNode
 }
@@ -56,7 +54,6 @@ export function FlagToggle({
   enabled,
   onSave,
   confirmDisable,
-  disabled = false,
   children,
 }: Props) {
   const t = useTranslations('dashboard.platformFlag')
@@ -157,7 +154,7 @@ export function FlagToggle({
             id={inputId}
             type="checkbox"
             checked={checked}
-            disabled={pending || disabled}
+            disabled={pending}
             onChange={(event) => onToggle(event.target.checked)}
             aria-labelledby={`${titleId} ${inputId}-state`}
             aria-describedby={hint ? `${descriptionId} ${hintId}` : descriptionId}

@@ -18,6 +18,7 @@ vi.mock('../../../_lib/stripe-settings-actions', () => ({
 
 import type { StripeSettings } from '@/use-cases/payments/stripe-settings'
 import { setConfigAction } from '../../../_lib/config-actions'
+import { setStripeEnabledAction } from '../../../_lib/stripe-settings-actions'
 import { StripeSettingsSection } from './stripe-settings-section'
 
 const configured: StripeSettings = {
@@ -74,12 +75,13 @@ describe('StripeSettingsSection', () => {
     vi.unstubAllGlobals()
   })
 
-  it('locks the toggle and explains why while the configuration is incomplete', () => {
+  it('keeps the stored flag and explains what is missing while the configuration is incomplete', () => {
     renderSection(incomplete)
 
-    expect(screen.getByLabelText('stripe.toggle.label')).toBeDisabled()
-    expect(screen.getByLabelText('stripe.toggle.label')).not.toBeChecked()
+    expect(screen.getByLabelText('stripe.toggle.label')).toBeEnabled()
+    expect(screen.getByLabelText('stripe.toggle.label')).toBeChecked()
     expect(screen.getByText('stripe.toggle.incomplete')).toBeInTheDocument()
+    expect(screen.getByText(webhookUrl)).toBeInTheDocument()
   })
 
   it('shows Stripe enabled once configured', () => {
@@ -129,24 +131,28 @@ describe('StripeSettingsSection', () => {
     expect(toastSuccessMock).toHaveBeenCalledWith('stripe.webhookUrl.copied')
   })
 
-  it('collapses the Stripe settings while payment management is off', () => {
-    const { rerender } = renderSection(configured, { paymentsEnabled: false })
+  it('folds Stripe while payment management is off', () => {
+    renderSection(configured, { paymentsEnabled: false })
 
-    const toggle = screen.getByLabelText('stripe.toggle.label')
     expect(screen.getByLabelText(paymentsLabel)).not.toBeChecked()
-    expect(toggle.closest('[aria-hidden]')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.queryByLabelText('stripe.toggle.label')).not.toBeInTheDocument()
+  })
 
-    rerender(
-      <StripeSettingsSection
-        paymentsEnabled={true}
-        paymentFootprint={{ payments: 0, pendingTransactions: 0 }}
-        settings={configured}
-        webhookUrl={webhookUrl}
-        secretStorageConfigured={true}
-      />
-    )
+  it('folds the Stripe credentials while Stripe is off', () => {
+    renderSection({ ...configured, enabled: false, available: false })
 
-    expect(toggle.closest('[aria-hidden]')).toHaveAttribute('aria-hidden', 'false')
+    expect(screen.getByLabelText('stripe.toggle.label')).not.toBeChecked()
+    expect(screen.queryByText(webhookUrl)).not.toBeInTheDocument()
+  })
+
+  it('unfolds the Stripe credentials as soon as Stripe is switched on', async () => {
+    vi.mocked(setStripeEnabledAction).mockResolvedValue('OK')
+    renderSection({ ...incomplete, enabled: false })
+
+    fireEvent.click(screen.getByLabelText('stripe.toggle.label'))
+
+    expect(screen.getByText(webhookUrl)).toBeInTheDocument()
+    await waitFor(() => expect(setStripeEnabledAction).toHaveBeenCalledWith(true))
   })
 
   it('asks before cutting payments off a school that already holds one', async () => {
