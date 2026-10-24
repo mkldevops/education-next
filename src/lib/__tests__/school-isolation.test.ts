@@ -147,6 +147,19 @@ async function seedSchool(label: string, suffix: string) {
     },
   })
 
+  const mealServiceSetting = await raw.mealServiceSetting.create({
+    data: { schoolId: school.id, service: 'CANTEEN', allowedWeekdays: [1, 2, 3, 4] },
+  })
+
+  const mealPrice = await raw.mealPrice.create({
+    data: {
+      schoolId: school.id,
+      service: 'CANTEEN',
+      amount: 750,
+      effectiveFrom: new Date('2026-09-01'),
+    },
+  })
+
   return {
     school,
     admin,
@@ -168,6 +181,8 @@ async function seedSchool(label: string, suffix: string) {
     paymentTransaction,
     payment,
     teacherExpense,
+    mealServiceSetting,
+    mealPrice,
   }
 }
 
@@ -176,6 +191,8 @@ async function cleanup(fixture: Fixture) {
   await raw.payment.deleteMany({ where: { schoolId } })
   await raw.paymentTransaction.deleteMany({ where: { schoolId } })
   await raw.teacherExpense.deleteMany({ where: { schoolId } })
+  await raw.mealPrice.deleteMany({ where: { schoolId } })
+  await raw.mealServiceSetting.deleteMany({ where: { schoolId } })
   await raw.classPeriodTeacher.deleteMany({ where: { schoolId } })
   await raw.classAssignment.deleteMany({ where: { schoolId } })
   await raw.enrollment.deleteMany({ where: { schoolId } })
@@ -522,6 +539,48 @@ describe.skipIf(!databaseUrl)('isolation inter-écoles sur base réelle', () => 
         where: { id: b.teacherExpense.id },
       })
       expect(intact.description).toBe(b.teacherExpense.description)
+    })
+  })
+
+  describe('MealServiceSetting', () => {
+    it('ne rend pas le réglage de B depuis A', async () => {
+      const found = await db.mealServiceSetting.findFirst({
+        where: { id: b.mealServiceSetting.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
+    })
+
+    it("n'écrit pas le réglage de B depuis A", async () => {
+      const { count } = await db.mealServiceSetting.updateMany({
+        where: { id: b.mealServiceSetting.id, schoolId: a.school.id },
+        data: { isEnabled: true },
+      })
+      expect(count).toBe(0)
+
+      const intact = await raw.mealServiceSetting.findUniqueOrThrow({
+        where: { id: b.mealServiceSetting.id },
+      })
+      expect(intact.isEnabled).toBe(false)
+    })
+  })
+
+  describe('MealPrice', () => {
+    it('ne rend pas le tarif de B depuis A', async () => {
+      const found = await db.mealPrice.findFirst({
+        where: { id: b.mealPrice.id, schoolId: a.school.id },
+      })
+      expect(found).toBeNull()
+    })
+
+    it("n'écrit pas le tarif de B depuis A", async () => {
+      const { count } = await db.mealPrice.updateMany({
+        where: { id: b.mealPrice.id, schoolId: a.school.id },
+        data: { amount: 1 },
+      })
+      expect(count).toBe(0)
+
+      const intact = await raw.mealPrice.findUniqueOrThrow({ where: { id: b.mealPrice.id } })
+      expect(intact.amount.toNumber()).toBe(750)
     })
   })
 

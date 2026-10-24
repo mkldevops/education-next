@@ -19,6 +19,7 @@ import {
   UserCog,
   UserRoundCheck,
   Users,
+  UtensilsCrossed,
   Wallet,
 } from 'lucide-react'
 import type { SchoolRole } from '@/types/enums'
@@ -34,7 +35,7 @@ export type NavItemConfig = {
    * Surface pilotée par un réglage ; `canView` la ferme quand il est éteint. `aiAssistant`
    * est un réglage plateforme, les autres des réglages d'école.
    */
-  feature?: 'classSchedule' | 'events' | 'payments' | 'attendance' | 'aiAssistant'
+  feature?: 'classSchedule' | 'events' | 'payments' | 'attendance' | 'aiAssistant' | 'meals'
 }
 
 /** Clé de traduction du libellé de groupe, sous `dashboard.sidebar.sections`. */
@@ -107,6 +108,13 @@ const financeItems: NavItemConfig[] = [
     requiredRoles: ['ADMIN'],
     feature: 'payments',
   },
+  {
+    href: '/dashboard/meals',
+    icon: UtensilsCrossed,
+    key: 'meals',
+    requiredRoles: ['ADMIN'],
+    feature: 'meals',
+  },
 ]
 
 const settingsItems: NavItemConfig[] = [
@@ -135,6 +143,7 @@ export type NavScope = {
     payments: boolean
     attendance?: boolean
     aiAssistant?: boolean
+    meals?: boolean
   }
 }
 

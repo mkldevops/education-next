@@ -267,6 +267,7 @@
       "levels": "Levels",
       "classes": "Classes",
       "plans": "Pricing Plans",
+      "meals": "Canteen and snack",
       "config": "Configuration",
       "users": "Users",
       "schools": "Schools",
@@ -291,6 +292,7 @@
       "enrollments": "Enrollments",
       "payments": "Collections",
       "plans": "Pricing plans",
+      "meals": "Canteen and snack",
       "config": "Configuration",
       "users": "Users",
       "profile": "Profile",
@@ -1067,6 +1069,72 @@
           }
         }
       },
+      "meals": {
+        "title": "Canteen and snack",
+        "intro": "Days each service is offered and its daily price. A price applies from its date until the next one.",
+        "services": {
+          "CANTEEN": "Canteen",
+          "SNACK": "Snack"
+        },
+        "weekdays": {
+          "1": "Monday",
+          "2": "Tuesday",
+          "3": "Wednesday",
+          "4": "Thursday",
+          "5": "Friday",
+          "6": "Saturday",
+          "7": "Sunday"
+        },
+        "settings": {
+          "isEnabled": "Service offered",
+          "isEnabledHint": "Unchecked, no child can be signed up.",
+          "weekdays": "Days offered",
+          "submit": "Save",
+          "success": "Settings saved",
+          "error": "Error while saving",
+          "errors": {
+            "validationError": "Check the information entered",
+            "invalidWeekdays": "Tick at least one day",
+            "mealsDisabled": "Canteen and snack are turned off for this school"
+          }
+        },
+        "prices": {
+          "none": "No price",
+          "current": "Today's price: {amount}",
+          "from": "from {date}",
+          "upcoming": "Upcoming"
+        },
+        "addPrice": {
+          "title": "New price",
+          "amount": "Price per day ({currency})",
+          "effectiveFrom": "Starting on",
+          "effectiveFromHint": "Today or later: past payments keep their price.",
+          "firstPriceHint": "First price: it can start at the beginning of the year.",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Price saved",
+          "error": "Error while saving",
+          "errors": {
+            "validationError": "Check the amount and the date",
+            "backdated": "A price cannot start before today",
+            "mealsDisabled": "Canteen and snack are turned off for this school"
+          }
+        },
+        "removePrice": {
+          "trigger": "Remove",
+          "title": "Remove this price?",
+          "description": "It is not in effect yet: the current price keeps applying.",
+          "confirm": "Remove",
+          "cancel": "Cancel",
+          "success": "Price removed",
+          "error": "Error while removing",
+          "errors": {
+            "notFound": "Price not found",
+            "alreadyEffective": "This price is already in effect and can no longer be removed",
+            "mealsDisabled": "Canteen and snack are turned off for this school"
+          }
+        }
+      },
       "config": {
         "title": "Configuration",
         "description": "Settings for the active school and, for a super-admin, for the instance.",
@@ -1113,6 +1181,10 @@
           "attendance_enabled": {
             "label": "Attendance",
             "description": "Enables class attendance recording."
+          },
+          "meals_enabled": {
+            "label": "Canteen and snack",
+            "description": "Enables the canteen and snack: service days and dated prices."
           },
           "automatic_promotion": {
             "label": "Automatic promotion",

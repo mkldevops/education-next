@@ -51,6 +51,11 @@ enum PaymentMethod {
   STRIPE
 }
 
+enum MealService {
+  CANTEEN
+  SNACK
+}
+
 enum PaymentProvider {
   STRIPE
 }
@@ -159,6 +164,8 @@ model School {
   eventImages               EventImage[]
   attendanceSessions        AttendanceSession[]
   attendanceEntries         AttendanceEntry[]
+  mealServiceSettings       MealServiceSetting[]
+  mealPrices                MealPrice[]
 }
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
@@ -800,6 +807,40 @@ model Plan {
   @@unique([id, schoolId])
   @@unique([schoolId, name], where: { isActive: true })
   @@index([schoolId])
+}
+
+/// Réglage d'un service repas pour une école. Les jours autorisés (ISO, lundi = 1) ne
+/// valident que la saisie des jours d'un enfant : les changer ne recalcule aucun passé.
+model MealServiceSetting {
+  id              String      @id @default(uuid())
+  schoolId        String
+  service         MealService
+  allowedWeekdays Int[]
+  isEnabled       Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, service])
+}
+
+/// Prix d'une journée de service, en vigueur à partir de `effectiveFrom` (jour de l'école).
+/// Historisé : un nouveau tarif ne réécrit jamais le précédent.
+model MealPrice {
+  id            String      @id @default(uuid())
+  schoolId      String
+  service       MealService
+  amount        Decimal     @db.Decimal(10, 2)
+  effectiveFrom DateTime    @db.Date
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, service, effectiveFrom])
 }
 
 model Invitation {
