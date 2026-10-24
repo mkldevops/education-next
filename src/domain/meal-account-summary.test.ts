@@ -16,6 +16,7 @@ describe('summarizeMealAccount', () => {
     const summary = summarizeMealAccount({
       segments: [segment],
       adjustments: [{ kind: 'OPENING', days: 4, reason: 'Cahier' }],
+      payments: [],
       prices: [{ amount: 500, effectiveFrom: '2026-09-01' }],
       isClosed: () => false,
       today: '2026-09-14',
@@ -32,6 +33,7 @@ describe('summarizeMealAccount', () => {
     const summary = summarizeMealAccount({
       segments: [segment],
       adjustments: [],
+      payments: [],
       prices: [],
       isClosed: () => false,
       today: '2026-09-07',
@@ -46,11 +48,30 @@ describe('summarizeMealAccount', () => {
     const summary = summarizeMealAccount({
       segments: [{ ...segment, endOn: '2026-09-11' }],
       adjustments: [],
+      payments: [],
       prices: [],
       isClosed: () => false,
       today: '2026-09-14',
     })
 
     expect(summary.current).toBeNull()
+  })
+
+  it('adds payments after the opening and carries the remainder to the next one', () => {
+    const summary = summarizeMealAccount({
+      segments: [segment],
+      adjustments: [{ kind: 'OPENING', days: 4, reason: 'Cahier' }],
+      payments: [
+        { amount: 750, unitPrice: 500 },
+        { amount: 250, unitPrice: 500 },
+      ],
+      prices: [{ amount: 500, effectiveFrom: '2026-09-01' }],
+      isClosed: () => false,
+      today: '2026-09-14',
+    })
+
+    expect(summary.ledger).toEqual({ days: 6, credit: 0, lastUnitPrice: 500 })
+    expect(summary.coverage.paidThrough).toBe('2026-09-15')
+    expect(summary.coverage.dueDays).toBe(0)
   })
 })

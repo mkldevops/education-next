@@ -15,6 +15,8 @@ export const FAMILY_DELETION_CLEARED_RELATIONS = [
   'Payment.family',
   'Payment.enrollment',
   'Payment.paymentTransaction',
+  'Payment.receipt',
+  'Receipt.family',
   'PaymentTransaction.family',
   'Invitation.person',
   'Enrollment.student',
@@ -191,7 +193,8 @@ export const familyGateway = {
    * autant sur les maillons suivants (liste tenue dans `FAMILY_DELETION_CLEARED_RELATIONS`).
    * D'où l'effacement explicite, de la feuille vers la racine. Ce qui est en
    * `Cascade` — `UserFamily`, `FamilyPerson`, `PhoneNumber`, `Invitation.family` — part
-   * avec son parent, et `PaymentProviderEvent` est détaché en `SET NULL`.
+   * avec son parent, et `PaymentProviderEvent` est détaché en `SET NULL`. Les reçus de
+   * caisse (`Receipt.family`) sont effacés eux aussi, leurs `MealPayment` en cascade.
    *
    * Une personne rattachée à une autre famille survit : seul son lien à celle-ci
    * disparaît. Son élève et ses inscriptions appartiennent à cet autre dossier.
@@ -244,6 +247,9 @@ export const familyGateway = {
       // par ailleurs. Inévitable de toute façon : `Payment.enrollment` est `Restrict`.
       await tx.payment.deleteMany({ where: paymentWhere })
       await tx.paymentTransaction.deleteMany({ where: { schoolId, familyId: id } })
+      // Après les règlements, que `Payment.receipt` retient en `Restrict`. Les lignes
+      // repas du reçu partent avec lui en cascade.
+      await tx.receipt.deleteMany({ where: { schoolId, familyId: id } })
       // `ownPersonIds` et non `personIds` : les invitations d'une personne partagée
       // appartiennent à son autre famille. Seule sa disparition, qu'`Invitation.person`
       // interdit en `Restrict`, force la suppression des siennes.

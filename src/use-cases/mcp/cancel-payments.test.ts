@@ -37,6 +37,7 @@ const payment = (
   enrollmentId,
   amount,
   paymentTransactionId: online ? 'tx-1' : null,
+  receiptId: null as string | null,
 })
 
 beforeEach(() => {
@@ -137,6 +138,15 @@ describe('cancelPaymentsFromMcp', () => {
     findActiveByIds.mockResolvedValue([payment(idA, 90, 'family-1', true)])
 
     expect(await cancelPaymentsFromMcp(scope as never, { paymentIds: [idA] })).toBe('onlinePayment')
+    expect(lockFamilyForPayment).not.toHaveBeenCalled()
+  })
+
+  it('refuses a cashier payment, cancelled with its receipt instead', async () => {
+    findActiveByIds.mockResolvedValue([{ ...payment(idA, 90), receiptId: 'receipt-1' }])
+
+    expect(await cancelPaymentsFromMcp(scope as never, { paymentIds: [idA] })).toBe(
+      'receiptPayment'
+    )
     expect(lockFamilyForPayment).not.toHaveBeenCalled()
   })
 

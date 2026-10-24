@@ -74,6 +74,7 @@ export async function countRowsBlockingUserDeletion(userId: string): Promise<num
     db.paymentTransaction.count({ where: { initiatedById: userId } }),
     db.mcpOAuthGrant.count({ where: { userId } }),
     db.mealAdjustment.count({ where: { recordedById: userId } }),
+    db.receipt.count({ where: { OR: [{ recordedById: userId }, { cancelledById: userId }] } }),
   ])
   return counts.reduce((sum, count) => sum + count, 0)
 }

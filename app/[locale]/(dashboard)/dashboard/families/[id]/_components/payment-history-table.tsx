@@ -19,6 +19,7 @@ const METHOD_STYLES: Record<PaymentMethod, string> = {
   TRANSFER: 'bg-violet-50 text-violet-700 ring-violet-600/20',
   CASH: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   CHECK: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+  MOBILE_MONEY: 'bg-orange-50 text-orange-700 ring-orange-600/20',
   STRIPE: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
 }
 

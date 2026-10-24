@@ -263,6 +263,7 @@
       "students": "Students",
       "enrollments": "Enrollments",
       "payments": "Collections",
+      "cashier": "Cashier",
       "periods": "Periods",
       "levels": "Levels",
       "classes": "Classes",
@@ -291,6 +292,7 @@
       "classes": "Classes",
       "enrollments": "Enrollments",
       "payments": "Collections",
+      "cashier": "Cashier",
       "plans": "Pricing plans",
       "meals": "Canteen and snack",
       "config": "Configuration",
@@ -1004,6 +1006,7 @@
             "CARD": "Card",
             "TRANSFER": "Transfer",
             "CHECK": "Check",
+            "MOBILE_MONEY": "Mobile money",
             "STRIPE": "Stripe"
           },
           "reference": "Reference",
@@ -1012,6 +1015,7 @@
             "CARD": "Transaction reference",
             "TRANSFER": "Transfer reference",
             "CHECK": "Check number",
+            "MOBILE_MONEY": "Transaction reference",
             "STRIPE": "Stripe reference"
           },
           "optional": "(optional)",
@@ -1132,6 +1136,89 @@
             "notFound": "Price not found",
             "alreadyEffective": "This price is already in effect and can no longer be removed",
             "mealsDisabled": "Canteen and snack are turned off for this school"
+          }
+        }
+      },
+      "cashier": {
+        "title": "Cashier",
+        "intro": "Take a family's canteen, snack and tuition payment at once, with a numbered receipt.",
+        "search": "Family or child's name",
+        "searchSubmit": "Search",
+        "noResult": "No family found",
+        "noFamily": "Family not found",
+        "viewFamily": "View family",
+        "noLines": "No child in this family is subscribed to canteen or snack.",
+        "paidThrough": "Paid through {date}",
+        "nothingPaid": "Nothing paid",
+        "due": "{days, plural, one {# day due} other {# days due}} ({amount})",
+        "unitPrice": "Today's price: {amount}",
+        "quick": {
+          "week": "1 week",
+          "twoWeeks": "2 weeks",
+          "month": "1 month",
+          "settle": "Settle"
+        },
+        "preview": "+{days, plural, one {# day} other {# days}} · paid through {date}",
+        "remainder": "{amount} kept in advance",
+        "warnings": {
+          "notMultiple": "The amount does not buy a whole number of days: the rest is kept for the next payment.",
+          "lessThanWeek": "Less than a week of meals.",
+          "exceedsPeriod": "The amount goes past the end of the period."
+        },
+        "tuition": "Tuition",
+        "tuitionDue": "Remaining: {amount}",
+        "method": "Payment method",
+        "reference": "Reference (optional)",
+        "total": "Total: {amount}",
+        "submit": "Take payment",
+        "error": "Error while taking the payment",
+        "errors": {
+          "validationError": "Check the amounts entered",
+          "mealsDisabled": "Canteen and snack are turned off for this school",
+          "paymentsDisabled": "Tuition payments are turned off for this school",
+          "idempotencyConflict": "A receipt was already issued for an earlier payment: check it before trying again",
+          "notFound": "Family not found",
+          "notInFamily": "A child is no longer linked to this family",
+          "notSubscribed": "A child is no longer subscribed to this service",
+          "noPrice": "No price applies today for this service",
+          "staleState": "Another payment just went through: amounts were refreshed, check them before confirming",
+          "overpayment": "The tuition amount exceeds the remaining balance",
+          "noPayableEnrollments": "No enrollment is awaiting tuition payment",
+          "refundExceedsPaid": "The amount exceeds what remains paid on the enrollment"
+        },
+        "receipt": {
+          "title": "Receipt",
+          "heading": "Receipt {number}",
+          "back": "Back to cashier",
+          "print": "Print",
+          "share": "Share",
+          "family": "Family",
+          "method": "Payment",
+          "recordedBy": "Taken by",
+          "tuition": "Tuition",
+          "total": "Total",
+          "mealDetail": "+{days, plural, one {# day} other {# days}}, paid through {date}",
+          "mealDays": "+{days, plural, one {# day} other {# days}}",
+          "cancelled": "Cancelled",
+          "cancelledReason": "Cancelled: {reason}",
+          "shareHeader": "{school} — receipt {number}",
+          "shareFamily": "Family {family}, {date}",
+          "shareTotal": "Total: {amount} ({method})",
+          "cancel": {
+            "trigger": "Cancel receipt",
+            "title": "Cancel this receipt?",
+            "description": "The meal days and tuition it paid are withdrawn. Its number stays used.",
+            "reason": "Reason for cancelling",
+            "submit": "Cancel receipt",
+            "cancel": "Back",
+            "success": "Receipt cancelled",
+            "error": "Error while cancelling",
+            "errors": {
+              "notFound": "Receipt not found",
+              "alreadyCancelled": "This receipt is already cancelled",
+              "refundExceedsPaid": "Part of this receipt's tuition was already refunded: cancel that refund first",
+              "validationError": "Give a reason"
+            }
           }
         }
       },
@@ -1534,6 +1621,7 @@
             "TRANSFER": "Transfer",
             "CASH": "Cash",
             "CHECK": "Check",
+            "MOBILE_MONEY": "Mobile money",
             "STRIPE": "Stripe"
           }
         },
@@ -3238,6 +3326,7 @@
     "CARD": "Card",
     "TRANSFER": "Transfer",
     "CHECK": "Check",
+    "MOBILE_MONEY": "Mobile money",
     "STRIPE": "Stripe"
   },
   "eventCategory": {

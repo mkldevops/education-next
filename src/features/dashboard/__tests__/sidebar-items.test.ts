@@ -40,7 +40,7 @@ describe('resolveNavItems', () => {
     expect(keys(group(teacher, 'teaching'))).toContain('attendance')
     expect(keys(all(disabled))).not.toContain('attendance')
   })
-  it('shows canteen and snack to an admin only once the school opts in', () => {
+  it('shows canteen, snack and cashier to an admin only once the school opts in', () => {
     const optedIn = resolveNavItems({
       roles: ['ADMIN'],
       isSuperAdmin: false,
@@ -58,11 +58,15 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true, meals: true },
     })
 
-    expect(keys(group(optedIn, 'finance'))).toEqual(['payments', 'plans', 'meals'])
+    expect(keys(group(optedIn, 'finance'))).toEqual(['payments', 'plans', 'cashier', 'meals'])
     expect(keys(all(optedOut))).not.toContain('meals')
+    expect(keys(all(optedOut))).not.toContain('cashier')
     expect(keys(all(teacher))).not.toContain('meals')
+    expect(keys(all(teacher))).not.toContain('cashier')
     expect(fr.dashboard.sidebar.meals).toBe('Cantine et goûter')
     expect(en.dashboard.sidebar.meals).toBe('Canteen and snack')
+    expect(fr.dashboard.sidebar.cashier).toBe('Caisse')
+    expect(en.dashboard.sidebar.cashier).toBe('Cashier')
   })
 
   it('hides admin-only configuration from a caller without a school role', () => {

@@ -10,6 +10,7 @@ type PaymentData = {
   reference?: string
   paidAt: Date
   cashedAt?: Date
+  receiptId?: string
 }
 
 export const paymentGateway = {
@@ -78,6 +79,7 @@ export const paymentGateway = {
         enrollmentId: true,
         amount: true,
         paymentTransactionId: true,
+        receiptId: true,
       },
     }),
 

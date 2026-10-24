@@ -3,6 +3,7 @@ import type { MealService, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
 type Tx = Prisma.TransactionClient
+type Reader = Pick<Tx, 'mealAdjustment' | 'mealPayment' | 'mealPrice'>
 
 /** Les dates `@db.Date` sont lues et écrites à minuit UTC. */
 const toDbDate = (day: string) => new Date(`${day}T00:00:00.000Z`)
@@ -85,6 +86,65 @@ export const mealAccountGateway = {
       ORDER BY "id"
       FOR NO KEY UPDATE`
     return rows.map((row) => row.id)
+  },
+
+  /**
+   * Comptes d'un encaissement, tenus jusqu'à la fin de `tx` dans l'ordre des ids : deux
+   * caisses qui rechargent les mêmes enfants s'attendent sans s'interbloquer. Tous les
+   * comptes des élèves visés sont tenus, seuls ceux demandés sont rendus.
+   */
+  lockAccounts: async (
+    tx: Tx,
+    schoolId: string,
+    keys: ReadonlyArray<{ studentId: string; service: MealService }>
+  ) => {
+    if (keys.length === 0) return []
+    const studentIds = [...new Set(keys.map((key) => key.studentId))]
+    const rows = await tx.$queryRaw<Array<{ id: string; studentId: string; service: MealService }>>`
+      SELECT "id", "studentId", "service" FROM "MealAccount"
+      WHERE "schoolId" = ${schoolId} AND "studentId" = ANY(${studentIds})
+      ORDER BY "id"
+      FOR NO KEY UPDATE`
+    return rows.filter((row) =>
+      keys.some((key) => key.studentId === row.studentId && key.service === row.service)
+    )
+  },
+
+  /**
+   * Grand livre de comptes : ajustements, puis lignes de reçus non annulés dans l'ordre
+   * d'écriture (`summarizeMealAccount`).
+   */
+  listLedgers: async (client: Reader, schoolId: string, accountIds: string[]) => {
+    const adjustments = await client.mealAdjustment.findMany({
+      where: { schoolId, accountId: { in: accountIds } },
+      select: { accountId: true, kind: true, days: true, reason: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const payments = await client.mealPayment.findMany({
+      where: { schoolId, accountId: { in: accountIds }, receipt: { cancelledAt: null } },
+      select: { accountId: true, amount: true, unitPrice: true },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    })
+    return {
+      adjustments,
+      payments: payments.map((payment) => ({
+        accountId: payment.accountId,
+        amount: Number(payment.amount),
+        unitPrice: Number(payment.unitPrice),
+      })),
+    }
+  },
+
+  listPrices: async (client: Reader, schoolId: string) => {
+    const rows = await client.mealPrice.findMany({
+      where: { schoolId },
+      select: { service: true, amount: true, effectiveFrom: true },
+    })
+    return rows.map((row) => ({
+      service: row.service,
+      amount: Number(row.amount),
+      effectiveFrom: toDay(row.effectiveFrom),
+    }))
   },
 
   listSegments: async (
@@ -189,18 +249,15 @@ export const mealAccountGateway = {
     return [...new Set(rows.map((row) => row.classPeriod.periodId))]
   },
 
-  /** Comptes, segments et ajustements d'un élève, pour sa fiche. */
-  findStudentAccounts: async (schoolId: string, studentId: string) => {
+  /** Comptes d'élèves et leurs segments, pour leur fiche ou la caisse. */
+  findStudentAccounts: async (schoolId: string, studentIds: string[]) => {
     const accounts = await db.mealAccount.findMany({
-      where: { schoolId, studentId },
+      where: { schoolId, studentId: { in: studentIds } },
       select: {
         id: true,
+        studentId: true,
         service: true,
         schedules: { select: scheduleSelect, orderBy: { startOn: 'asc' } },
-        adjustments: {
-          select: { kind: true, days: true, reason: true, createdAt: true },
-          orderBy: { createdAt: 'asc' },
-        },
       },
     })
     return accounts.map((account) => ({

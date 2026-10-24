@@ -1950,7 +1950,54 @@ writes its segments. The student page shows a « Cantine et goûter » card to a
 and records an `OPENING` adjustment of the served days up to that date — segments and published
 closures as known at that moment. One per account: recording again replaces it. The migration
 checks the sign of `MealAdjustment.days`: `OPENING` and `GIFT` are ≥ 0, `REFUND` and `FORFEIT` < 0.
-Until payments arrive (lot 3) the card's « paid through » and days due come from adjustments only.
+The card's « paid through » and days due replay adjustments and the payments of receipts not
+cancelled (`loadMealAccountSummaries()`, `src/use-cases/meals/meal-account-summaries.ts`, shared with
+the cashier).
+
+**Cashier and receipts.** `/dashboard/cashier` (`requireSchoolAdmin()`, `notFound()` when
+`meals_enabled` is off, sidebar entry under the same flag) finds a family by its name or a member's,
+then lists one line per child and service for the children it is the **debtor family** of
+(`resolveDebtorFamily()`), with today's price, « paid through », days due and quick amounts
+(`amountForDays()`: one week, two weeks, four weeks of the current rhythm, credit deducted; « settle »
+pays `dueAmount`). With `payments_enabled` on, a tuition line takes up to the family's remaining
+balance. One `recordReceipt()` (`src/use-cases/receipts/record-receipt.ts`) writes it all:
+
+- **One receipt, numbered per school.** `Receipt` carries the family, total, method, reference, who
+  took it and when. `ReceiptCounter` hands out the number with an `INSERT … ON CONFLICT DO UPDATE`
+  inside the same transaction: gapless while nothing rolls back, and a number is never reused —
+  a cancelled receipt keeps its own. Displayed as `R-000123` (`formatReceiptNumber()`).
+- **Methods.** Cash, mobile money, transfer, cheque. `MOBILE_MONEY` is offered by the cashier only;
+  the payments dialog keeps its own list.
+- **Idempotent.** The client sends a UUID `idempotencyKey`, kept in the tab's `sessionStorage` per
+  family until a receipt comes back. The use case stores the SHA-256 of the canonical request
+  (`canonicalReceiptRequest()`, lines sorted, amounts in hundredths): the same key and content return
+  the receipt already issued — a double click or a dropped connection prints one receipt —, the same
+  key with other content is refused (`idempotencyConflict`). A unique-key race replays the same way.
+- **Under locks, in a fixed order:** the family (`FOR NO KEY UPDATE`), then its meal accounts sorted
+  by id, then the counter. Cancellation takes the family then the receipt; family deletion takes the
+  family. The order rules out a deadlock between them.
+- **Stale state.** Each meal line carries the « paid through » the cashier saw. Re-read under lock, a
+  different value means another payment went through in between: `staleState`, nothing written, the
+  page refreshes its amounts.
+- **Price of the day.** A meal line buys whole days at the price in effect **today in the school's
+  time zone**, recorded on the `MealPayment` (`unitPrice`, `daysAdded`, `paidThroughAtReceipt`,
+  `creditAtReceipt`); the remainder is carried to the account's next payment. It refuses a child
+  outside the family (`notInFamily`), an account without served days (`notSubscribed`) and a service
+  without a price (`noPrice`).
+- **Tuition** splits through `distributePayment()` exactly like a manual payment
+  (`overpayment`, `noPayableEnrollments`), into `Payment` rows that carry `receiptId`; it needs
+  `payments_enabled` (`paymentsDisabled`).
+- **Receipt page** `/dashboard/cashier/receipts/[id]`, in the `(print)` group: A5 print, share through
+  the phone's share sheet or a WhatsApp link, and cancel.
+- **Cancellation** (`cancelReceipt()`) requires a reason, sets `cancelledAt`/`cancelledById`/
+  `cancelReason` and deactivates the receipt's tuition payments; its meal payments stop counting
+  because the ledger skips cancelled receipts. `alreadyCancelled` on a second try, `refundExceedsPaid`
+  when a refund already consumed that tuition.
+- **A receipt payment is cancelled with its receipt only.** The MCP `cancel_payments` tool refuses a
+  payment that has a `receiptId` (`receiptPayment`): cancelling one line would leave a printed
+  receipt wrong.
+- A user who took or cancelled a receipt cannot be deleted for good: receipts are counted in
+  `countRowsBlockingUserDeletion`.
 
 ## Promotion
 
@@ -2050,9 +2097,12 @@ where financial history is destroyed rather than archived.
   by the database along that path: `Payment.family` and `PaymentTransaction.family` are `Restrict`,
   and so are the next links — `Enrollment.student`, `AttendanceEntry.student`,
   `ClassAssignment.enrollment`, `Invitation.person`, `Payment.enrollment`,
-  `Payment.paymentTransaction`. Each table is therefore emptied explicitly, leaf first. What is
-  `Cascade` — `UserFamily`, `FamilyPerson`, `PhoneNumber`, `Invitation.family`, and a student's
-  `MealAccount` with its `MealSchedule` and `MealAdjustment` rows — goes with its parent, and `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives, detached.
+  `Payment.paymentTransaction`, `Payment.receipt`, `Receipt.family`. Each table is therefore emptied
+  explicitly, leaf first; the family's cashier receipts go after its payments. What is `Cascade` —
+  `UserFamily`, `FamilyPerson`, `PhoneNumber`, `Invitation.family`, a student's `MealAccount` with
+  its `MealSchedule`, `MealAdjustment` and `MealPayment` rows, and a receipt's `MealPayment` lines —
+  goes with its parent, and `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives,
+  detached.
 - **Every non-cascading foreign key into the deleted graph is listed** in
   `FAMILY_DELETION_CLEARED_RELATIONS` (`src/gateways/family-gateway.ts`).
   `src/gateways/__tests__/family-deletion-restrict-guard.test.ts` reads `prisma/schema.prisma` and
@@ -2539,7 +2589,7 @@ That exception does not cover every blocker. `McpApiKey` is counted through its 
 `isActive`: the ordinary `db` connection already sees all of its rows, so dropping the guard would
 buy nothing. `McpOAuthGrant` is the opposite case: it is inside the guard, and counting it by
 `userId` alone — across schools — is exactly the platform question the exception exists for, so it
-is counted there with the families, invitations and transactions. `countUserDeletionBlockers` in
+is counted there with the families, invitations, transactions and cashier receipts. `countUserDeletionBlockers` in
 `src/use-cases/users/count-deletion-blockers.ts` sums both counts, and both deletion paths ask it
 rather than counting for themselves.
 

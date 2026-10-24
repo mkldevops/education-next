@@ -49,6 +49,7 @@ enum PaymentMethod {
   TRANSFER
   CHECK
   STRIPE
+  MOBILE_MONEY
 }
 
 enum MealService {
@@ -178,6 +179,9 @@ model School {
   mealAccounts              MealAccount[]
   mealSchedules             MealSchedule[]
   mealAdjustments           MealAdjustment[]
+  receipts                  Receipt[]
+  receiptCounter            ReceiptCounter?
+  mealPayments              MealPayment[]
 }
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
@@ -235,6 +239,8 @@ model User {
   createdAttendanceSessions AttendanceSession[]  @relation("attendanceCreatedBy")
   updatedAttendanceSessions AttendanceSession[]  @relation("attendanceUpdatedBy")
   recordedMealAdjustments   MealAdjustment[]     @relation("mealAdjustmentRecordedBy")
+  recordedReceipts          Receipt[]            @relation("receiptRecordedBy")
+  cancelledReceipts         Receipt[]            @relation("receiptCancelledBy")
 }
 
 model Session {
@@ -331,6 +337,7 @@ model Family {
   payments            Payment[]
   paymentTransactions PaymentTransaction[]
   invitations         Invitation[]
+  receipts            Receipt[]
 
   @@unique([id, schoolId])
   @@index([createdById])
@@ -744,6 +751,7 @@ model Payment {
   familyId             String
   enrollmentId         String
   paymentTransactionId String?
+  receiptId            String?
   amount               Decimal       @db.Decimal(10, 2)
   method               PaymentMethod
   reference            String?       @db.VarChar(250)
@@ -757,10 +765,12 @@ model Payment {
   family             Family              @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
   enrollment         Enrollment          @relation(fields: [enrollmentId, schoolId], references: [id, schoolId], onDelete: Restrict)
   paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  receipt            Receipt?            @relation(fields: [receiptId, schoolId], references: [id, schoolId], onDelete: Restrict)
 
   @@index([familyId])
   @@index([enrollmentId])
   @@index([paymentTransactionId])
+  @@index([receiptId])
   @@index([schoolId])
 }
 
@@ -1154,6 +1164,7 @@ model MealAccount {
   student     Student          @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
   schedules   MealSchedule[]
   adjustments MealAdjustment[]
+  payments    MealPayment[]
 
   @@unique([id, schoolId])
   @@unique([schoolId, studentId, service])
@@ -1196,5 +1207,68 @@ model MealAdjustment {
   recordedBy User        @relation("mealAdjustmentRecordedBy", fields: [recordedById], references: [id])
 
   @@unique([id, schoolId])
+  @@index([accountId])
+}
+
+/// Un versement au guichet : un numéro, un mode, un total, N lignes repas et écolage d'une même
+/// famille (§14). La clé d'idempotence rend un double envoi inoffensif.
+model Receipt {
+  id             String        @id @default(uuid())
+  schoolId       String
+  familyId       String
+  number         Int
+  total          Decimal       @db.Decimal(10, 2)
+  method         PaymentMethod
+  reference      String?       @db.VarChar(250)
+  paidAt         DateTime
+  recordedById   String
+  idempotencyKey String        @db.VarChar(64)
+  requestHash    String        @db.VarChar(64)
+  cancelledAt    DateTime?
+  cancelledById  String?
+  cancelReason   String?       @db.VarChar(250)
+  createdAt      DateTime      @default(now())
+
+  school       School        @relation(fields: [schoolId], references: [id])
+  family       Family        @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  recordedBy   User          @relation("receiptRecordedBy", fields: [recordedById], references: [id])
+  cancelledBy  User?         @relation("receiptCancelledBy", fields: [cancelledById], references: [id])
+  mealPayments MealPayment[]
+  payments     Payment[]
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, number])
+  @@unique([schoolId, idempotencyKey])
+  @@index([familyId])
+}
+
+/// Prochain numéro de reçu de l'école, jamais remis à zéro.
+model ReceiptCounter {
+  schoolId String @id
+  next     Int    @default(1)
+
+  school School @relation(fields: [schoolId], references: [id])
+}
+
+/// Ligne repas d'un reçu (R1) : le tarif est figé, la couverture au moment du reçu n'est qu'une
+/// copie d'affichage, jamais relue en calcul.
+model MealPayment {
+  id                   String    @id @default(uuid())
+  schoolId             String
+  receiptId            String
+  accountId            String
+  amount               Decimal   @db.Decimal(10, 2)
+  unitPrice            Decimal   @db.Decimal(10, 2)
+  daysAdded            Int
+  paidThroughAtReceipt DateTime? @db.Date
+  creditAtReceipt      Decimal   @db.Decimal(10, 2)
+  createdAt            DateTime  @default(now())
+
+  school  School      @relation(fields: [schoolId], references: [id])
+  receipt Receipt     @relation(fields: [receiptId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  account MealAccount @relation(fields: [accountId, schoolId], references: [id, schoolId], onDelete: Cascade)
+
+  @@unique([id, schoolId])
+  @@index([receiptId])
   @@index([accountId])
 }
