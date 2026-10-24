@@ -1588,6 +1588,66 @@
           "class": "Class",
           "total": "Total",
           "registered": "Registered"
+        },
+        "meals": {
+          "title": "Canteen and snack",
+          "days": "Days served",
+          "since": "since {start}",
+          "between": "from {start} to {end}",
+          "upcoming": "then from {start}: {days}",
+          "paidThrough": "Paid through",
+          "nothingPaid": "Nothing paid",
+          "due": "{days, plural, one {# day due} other {# days due}} · {amount}",
+          "opening": "Opening balance",
+          "openingDays": "{days, plural, =0 {no days} one {# day} other {# days}}",
+          "notSubscribed": "Not subscribed",
+          "selectPeriod": "Not subscribed. Select a period to subscribe.",
+          "dialog": {
+            "weekdays": "Days served",
+            "cancel": "Cancel",
+            "submit": "Save",
+            "error": "Error while saving",
+            "subscribe": {
+              "trigger": "Subscribe",
+              "title": "Subscribe to this service",
+              "date": "Starting on",
+              "hint": "Any date in the period, past ones included.",
+              "success": "Subscription saved"
+            },
+            "change": {
+              "trigger": "Change days",
+              "title": "Change the days served",
+              "date": "Starting on",
+              "hint": "Days already served stay as they are.",
+              "success": "Days changed"
+            },
+            "stop": {
+              "trigger": "Stop",
+              "title": "Stop this service",
+              "date": "No meal served from",
+              "hint": "No day is served from this date onwards.",
+              "success": "Service stopped"
+            },
+            "opening": {
+              "trigger": "Opening balance",
+              "title": "Record an earlier payment",
+              "date": "Already paid through",
+              "hint": "Converted into served days. A new opening balance replaces the previous one.",
+              "reason": "Reason",
+              "success": "Opening balance saved"
+            },
+            "errors": {
+              "validationError": "Check the information entered",
+              "mealsDisabled": "Canteen and snack are turned off for this school",
+              "serviceDisabled": "The school does not offer this service",
+              "invalidWeekdays": "Tick at least one offered day",
+              "notFound": "Student or period not found",
+              "outsidePeriod": "The date must fall within the period",
+              "alreadySubscribed": "The student is already subscribed to this service on that date",
+              "backdated": "The date cannot be earlier than today",
+              "notSubscribed": "The student is not subscribed to this service on that date"
+            }
+          }
         }
       },
       "enrollmentDetails": {

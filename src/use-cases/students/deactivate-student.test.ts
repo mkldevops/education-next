@@ -1,5 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { stopStudentMeals } from '@/use-cases/meals/stop-student-meals'
 import { deactivateStudent } from './deactivate-student'
+
+vi.mock('@/use-cases/meals/stop-student-meals', () => ({ stopStudentMeals: vi.fn() }))
 
 type Gateway = Parameters<typeof deactivateStudent>[1]
 
@@ -115,5 +118,13 @@ describe('deactivateStudent', () => {
 
     // THEN
     expect(gateway.hasActiveEnrollmentsReturn === false)
+  })
+
+  it('stops the student meals once archived', async () => {
+    const input = { schoolId: 'school-1', id: '123e4567-e89b-12d3-a456-426614174000' }
+
+    await deactivateStudent(input, gateway as unknown as Gateway)
+
+    expect(stopStudentMeals).toHaveBeenCalledWith({ schoolId: input.schoolId, studentId: input.id })
   })
 })
