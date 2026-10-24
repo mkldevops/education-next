@@ -165,6 +165,7 @@ describe('schoolGateway.create', () => {
       'teacher_staff_access_enabled',
       'events_enabled',
       'attendance_enabled',
+      'meals_enabled',
       'class_schedule_enabled',
       'class_schedule_teacher_overlap_allowed',
       'class_schedule_visibility',

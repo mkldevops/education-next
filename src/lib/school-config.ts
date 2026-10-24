@@ -7,6 +7,7 @@ import {
   CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
 } from './class-schedule-config'
 import { EVENTS_CONFIG_KEY } from './events-config'
+import { MEALS_ENABLED_CONFIG_KEY } from './meals-config'
 import { PAYMENTS_ENABLED_CONFIG_KEY } from './payment-config'
 import {
   MAX_STUDENTS_PER_CLASS_CONFIG_KEY,
@@ -35,6 +36,7 @@ export const SchoolConfigKey = {
   ClassScheduleTeacherOverlapAllowed: CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY,
   ClassScheduleVisibility: CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
   AttendanceEnabled: ATTENDANCE_ENABLED_CONFIG_KEY,
+  MealsEnabled: MEALS_ENABLED_CONFIG_KEY,
 } as const
 
 export type SchoolConfigKey = (typeof SchoolConfigKey)[keyof typeof SchoolConfigKey]
@@ -56,6 +58,7 @@ export const SCHOOL_CONFIG_VALUE_TYPES: Record<SchoolConfigKey, ConfigValueType>
   [SchoolConfigKey.ClassScheduleTeacherOverlapAllowed]: 'BOOLEAN',
   [SchoolConfigKey.ClassScheduleVisibility]: 'TEXT',
   [SchoolConfigKey.AttendanceEnabled]: 'BOOLEAN',
+  [SchoolConfigKey.MealsEnabled]: 'BOOLEAN',
 }
 
 export const SCHOOL_CONFIG_KEYS = Object.values(SchoolConfigKey)

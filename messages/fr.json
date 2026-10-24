@@ -267,6 +267,7 @@
       "levels": "Niveaux",
       "classes": "Classes",
       "plans": "Plans tarifaires",
+      "meals": "Cantine et goûter",
       "config": "Configuration",
       "users": "Utilisateurs",
       "schools": "Écoles",
@@ -292,6 +293,7 @@
       "enrollments": "Inscriptions",
       "payments": "Encaissements",
       "plans": "Plans tarifaires",
+      "meals": "Cantine et goûter",
       "config": "Configuration",
       "users": "Utilisateurs",
       "profile": "Profil",
@@ -1068,6 +1070,72 @@
           }
         }
       },
+      "meals": {
+        "title": "Cantine et goûter",
+        "intro": "Jours où chaque service est proposé et tarif journalier. Un tarif s'applique à partir de sa date, jusqu'au suivant.",
+        "services": {
+          "CANTEEN": "Cantine",
+          "SNACK": "Goûter"
+        },
+        "weekdays": {
+          "1": "Lundi",
+          "2": "Mardi",
+          "3": "Mercredi",
+          "4": "Jeudi",
+          "5": "Vendredi",
+          "6": "Samedi",
+          "7": "Dimanche"
+        },
+        "settings": {
+          "isEnabled": "Service proposé",
+          "isEnabledHint": "Décoché, aucun enfant ne peut y être inscrit.",
+          "weekdays": "Jours proposés",
+          "submit": "Enregistrer",
+          "success": "Réglages enregistrés",
+          "error": "Erreur lors de l'enregistrement",
+          "errors": {
+            "validationError": "Vérifiez les informations saisies",
+            "invalidWeekdays": "Cochez au moins un jour",
+            "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
+          }
+        },
+        "prices": {
+          "none": "Aucun tarif",
+          "current": "Tarif du jour : {amount}",
+          "from": "à partir du {date}",
+          "upcoming": "À venir"
+        },
+        "addPrice": {
+          "title": "Nouveau tarif",
+          "amount": "Prix par jour ({currency})",
+          "effectiveFrom": "À partir du",
+          "effectiveFromHint": "Aujourd'hui ou plus tard : les encaissements passés gardent leur tarif.",
+          "firstPriceHint": "Premier tarif : il peut partir du début de l'année.",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Tarif enregistré",
+          "error": "Erreur lors de l'enregistrement",
+          "errors": {
+            "validationError": "Vérifiez le montant et la date",
+            "backdated": "Un tarif ne peut pas commencer avant aujourd'hui",
+            "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
+          }
+        },
+        "removePrice": {
+          "trigger": "Retirer",
+          "title": "Retirer ce tarif ?",
+          "description": "Il n'est pas encore en vigueur : le tarif actuel continuera de s'appliquer.",
+          "confirm": "Retirer",
+          "cancel": "Annuler",
+          "success": "Tarif retiré",
+          "error": "Erreur lors du retrait",
+          "errors": {
+            "notFound": "Tarif introuvable",
+            "alreadyEffective": "Ce tarif est déjà en vigueur et ne peut plus être retiré",
+            "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
+          }
+        }
+      },
       "config": {
         "title": "Configuration",
         "description": "Réglages de l'école active et, pour un super-admin, de l'instance.",
@@ -1114,6 +1182,10 @@
           "attendance_enabled": {
             "label": "Appel",
             "description": "Active la saisie des appels de classe."
+          },
+          "meals_enabled": {
+            "label": "Cantine et goûter",
+            "description": "Active la cantine et le goûter : jours de service et tarifs datés."
           },
           "automatic_promotion": {
             "label": "Promotion automatique",

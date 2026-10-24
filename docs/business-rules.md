@@ -1885,6 +1885,45 @@ MCP `update_enrollment` path — decided under the family lock, like `applyDisco
 **Lowering a total takes the same lock**). Without it the flag would create a state the UI could
 not repair.
 
+## Canteen and snack
+
+Opt-in per school: `meals_enabled` (`src/lib/meals-config.ts`, read by `isMealsEnabled()` with
+`readsAsOptedIn`) — a missing row means off, unlike `payments_enabled`. Off, `/dashboard/meals`
+answers `notFound()`, the sidebar entry disappears, and every meal use case refuses with
+`mealsDisabled`. The page and its actions are `requireSchoolAdmin()`.
+
+**Two services, `CANTEEN` and `SNACK`.** `MealServiceSetting` holds, per school and service,
+`isEnabled` and `allowedWeekdays` (ISO, Monday = 1). `setMealServiceSetting()` refuses an empty,
+duplicated or out-of-range list (`invalidWeekdays`, `validateMealWeekdays()` in
+`src/domain/meal-ledger.ts`); the migration repeats non-empty and ⊂ 1..7 as a `CHECK`.
+
+**Dated prices.** `MealPrice` is a daily price valid from `effectiveFrom` (`@db.Date`) until the
+next one; `priceOn()` (`src/domain/meal-price.ts`) picks it. `setMealPrice()`:
+
+- requires a positive amount that fits the currency (`fitsCurrencyPrecision`, so whole `KMF`);
+- refuses a date before **today in the school's time zone** (`backdated`) once the service has a
+  price — past payments froze theirs. The first price may start in the past to pick up a year begun
+  outside the application;
+- upserts on `(schoolId, service, effectiveFrom)`: the same date corrects the amount.
+
+`removeMealPrice()` only removes a price not yet in effect (`alreadyEffective` otherwise).
+
+**Closures.** `isSchoolClosed()` (`src/domain/school-closure.ts`) is the shared predicate: a
+`PUBLISHED` event of an included category overlapping the UTC day. Meals count `CLOSURE` and
+`HOLIDAY`; attendance keeps `CLOSURE` only, unchanged.
+
+**Ledger (domain only, wired in later lots).** `src/domain/meal-ledger.ts` is pure and tested:
+
+- money buys whole days at the price of the day it is received; the remainder stays as credit
+  (`replayLedger`, computed in hundredths). A cancelled payment is skipped, adjustments add signed
+  days;
+- `servedDays()` lists the child's days per segment up to the period end, minus closures and
+  absences: a closure or an absence on a covered day pushes « paid through » later;
+- `computeCoverage()` gives paid through, covered days left, days due and the amount due
+  (`days × today's price − credit`, never below zero), and the value of an unconsumed surplus;
+- `previewMealPayment()` warns on a remainder, on less than a week of days and on a purchase past
+  the period's last served day.
+
 ## Promotion
 
 Owner: `src/use-cases/enrollments/promote-students.ts`.
