@@ -13,7 +13,7 @@ only carries what those rules and the code itself do not.
 
 Use `pnpm` for every workflow; the repository pins `pnpm@11.1.2`.
 
-No `engines` field exists. Docker and CI pin Node.js 22, so a runtime upgrade must update `Dockerfile`,
+No `engines` field exists. Docker and CI pin Node.js 26, so a runtime upgrade must update `Dockerfile`,
 CI, and developer setup together rather than changing only docs.
 
 ## Business rules
