@@ -11,7 +11,7 @@ import { getBrandingConfig } from '@/lib/branding'
 import { formatCurrency, roundHalfUp } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { requireSchoolCashier } from '../../../../../(dashboard)/_lib/auth-helper'
-import { restrictedPageMetadata } from '../../../../../(dashboard)/_lib/page-metadata'
+import { cashierPageMetadata } from '../../../../../(dashboard)/_lib/page-metadata'
 import { PrintButton } from '../../../../_components/print-button'
 import { CancelReceiptDialog, ShareReceiptButton } from './_components/receipt-actions'
 
@@ -31,7 +31,7 @@ const RECEIPT_PRINT_CSS = `
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.cashier.receipt.title')
+  return cashierPageMetadata(locale, 'dashboard.pages.cashier.receipt.title')
 }
 
 export default async function ReceiptPage({ params }: Props) {

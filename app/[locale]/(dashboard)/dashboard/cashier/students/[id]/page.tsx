@@ -8,7 +8,7 @@ import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { requireSchoolCashier } from '../../../../_lib/auth-helper'
-import { restrictedPageMetadata } from '../../../../_lib/page-metadata'
+import { cashierPageMetadata } from '../../../../_lib/page-metadata'
 import { MealPanel } from '../../../students/[id]/_components/meal-panel'
 
 type Props = {
@@ -19,7 +19,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.cashier.studentSheet.title')
+  return cashierPageMetadata(locale, 'dashboard.pages.cashier.studentSheet.title')
 }
 
 /**

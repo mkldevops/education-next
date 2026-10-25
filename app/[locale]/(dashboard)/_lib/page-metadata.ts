@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import type { DeepLinkResolution } from '@/domain/school-scope'
-import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
+import { getSchoolContext, hasSchoolRole, isActiveSchoolAdmin } from '@/lib/school-context'
 
 async function isSchoolAdmin(): Promise<boolean> {
   const context = await getSchoolContext()
@@ -37,6 +37,18 @@ export async function schoolScopedPageMetadata(
   titleKey: string
 ): Promise<Metadata> {
   return gatedTitle(locale, titleKey, hasSchoolScope())
+}
+
+/** Pages de la caisse : le titre suit `requireSchoolCashier()`, admin ou caissier. */
+export async function cashierPageMetadata(locale: string, titleKey: string): Promise<Metadata> {
+  return gatedTitle(
+    locale,
+    titleKey,
+    getSchoolContext().then(
+      (context) =>
+        context !== null && (isActiveSchoolAdmin(context) || hasSchoolRole(context, 'CASHIER'))
+    )
+  )
 }
 
 /** Pendant plateforme : le titre ne fuite que pour un `isSuperAdmin`. */
