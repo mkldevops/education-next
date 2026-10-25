@@ -14,7 +14,7 @@ vi.mock('@/lib/school-context', () => ({
     context.isSuperAdmin || context.roles.includes('ADMIN'),
 }))
 
-const { schoolScopedPageMetadata } = await import('./page-metadata')
+const { cashierPageMetadata, schoolScopedPageMetadata } = await import('./page-metadata')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -72,4 +72,38 @@ describe('schoolScopedPageMetadata', () => {
       { title: 'errorPages.404.title' }
     )
   })
+})
+
+describe('cashierPageMetadata', () => {
+  const member = (roles: string[], isSuperAdmin = false) => ({
+    userId: 'user-1',
+    schoolId: 'school-1',
+    isSuperAdmin,
+    roles,
+    familyId: null,
+  })
+
+  it.each([
+    member(['CASHIER']),
+    member(['TEACHER', 'CASHIER']),
+    member(['ADMIN']),
+    member([], true),
+  ])('exposes the page title to the cashier or the administration', async (context) => {
+    getSchoolContextMock.mockResolvedValue(context)
+
+    await expect(cashierPageMetadata('fr', 'dashboard.pages.cashier.title')).resolves.toEqual({
+      title: 'dashboard.pages.cashier.title',
+    })
+  })
+
+  it.each([null, member(['TEACHER']), member(['PARENT'])])(
+    'keeps the restricted title for anyone else',
+    async (context) => {
+      getSchoolContextMock.mockResolvedValue(context)
+
+      await expect(cashierPageMetadata('fr', 'dashboard.pages.cashier.title')).resolves.toEqual({
+        title: 'errorPages.404.title',
+      })
+    }
+  )
 })

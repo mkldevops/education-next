@@ -8,7 +8,7 @@ import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { requireSchoolCashier } from '../../../_lib/auth-helper'
-import { restrictedPageMetadata } from '../../../_lib/page-metadata'
+import { cashierPageMetadata } from '../../../_lib/page-metadata'
 import { loadCashDay } from '../_lib/cash-day-data'
 
 type Props = {
@@ -24,7 +24,7 @@ const shiftDay = (day: string, delta: number) =>
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.cashier.day.title')
+  return cashierPageMetadata(locale, 'dashboard.pages.cashier.day.title')
 }
 
 /** Caisse d'un jour : reçus émis, annulations du jour, net par mode et par poste. */

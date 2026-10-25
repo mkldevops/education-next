@@ -8,7 +8,7 @@ import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { requireSchoolCashier } from '../../_lib/auth-helper'
-import { restrictedPageMetadata } from '../../_lib/page-metadata'
+import { cashierPageMetadata } from '../../_lib/page-metadata'
 import { CashierForm } from './_components/cashier-form'
 import { loadCashierFamily, searchCashierFamilies } from './_lib/cashier-data'
 
@@ -21,7 +21,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.cashier.title')
+  return cashierPageMetadata(locale, 'dashboard.pages.cashier.title')
 }
 
 export default async function CashierPage({ params, searchParams }: Props) {

@@ -7,7 +7,7 @@ import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { requireSchoolCashier } from '../../../_lib/auth-helper'
-import { restrictedPageMetadata } from '../../../_lib/page-metadata'
+import { cashierPageMetadata } from '../../../_lib/page-metadata'
 import { loadMealDebtors, REMIND_WITHIN_DAYS } from '../_lib/debtors-data'
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  return restrictedPageMetadata(locale, 'dashboard.pages.cashier.debtors.title')
+  return cashierPageMetadata(locale, 'dashboard.pages.cashier.debtors.title')
 }
 
 /** Impayés et comptes à relancer, avec un lien vers la caisse de la famille redevable. */
