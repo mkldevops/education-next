@@ -1246,7 +1246,7 @@
           "issuedReceipts": "Receipts issued",
           "cancelledReceipts": "Day's cancellations",
           "none": "None",
-          "receipt": "No. {number} · {family}",
+          "receipt": "{number} · {family}",
           "cancelledBadge": "Cancelled"
         },
         "debtors": {

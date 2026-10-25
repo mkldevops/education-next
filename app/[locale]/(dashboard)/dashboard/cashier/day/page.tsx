@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { CashLine, CashTotals } from '@/domain/cash-day'
+import { formatReceiptNumber } from '@/domain/receipt'
 import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
@@ -104,7 +105,7 @@ export default async function CashDayPage({ params, searchParams }: Props) {
                 href={`/dashboard/cashier/receipts/${row.id}`}
                 className="text-primary hover:underline"
               >
-                {t('receipt', { number: row.number, family: row.family })}
+                {t('receipt', { number: formatReceiptNumber(row.number), family: row.family })}
               </Link>
               <span className="tabular-nums text-graphite">
                 {money(row.total)} · {tMethod(row.method)}
