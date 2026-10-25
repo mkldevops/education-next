@@ -1247,7 +1247,7 @@
           "issuedReceipts": "Reçus émis",
           "cancelledReceipts": "Annulations du jour",
           "none": "Aucun",
-          "receipt": "N° {number} · {family}",
+          "receipt": "{number} · {family}",
           "cancelledBadge": "Annulé"
         },
         "debtors": {
