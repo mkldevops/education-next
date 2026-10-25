@@ -24,7 +24,7 @@ SaaS starter built with Next.js 16, TypeScript, and Clean Architecture.
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 26+
 - pnpm 10+
 - Docker
 
