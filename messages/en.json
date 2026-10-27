@@ -1417,6 +1417,19 @@
             "notConfigured": "Image storage is not configured on this server"
           }
         },
+        "currency": {
+          "label": "Currency",
+          "description": "Currency of the school's amounts: plans, payments, receipts and meals.",
+          "stripeHint": "Online payment with Stripe is only offered in euros (EUR).",
+          "locked": "Payments are already recorded: the currency can no longer change, as amounts are not converted.",
+          "saved": "Currency saved.",
+          "error": "The currency could not be saved.",
+          "options": {
+            "EUR": "Euro (EUR)",
+            "KMF": "Comorian franc (KMF)",
+            "GBP": "Pound sterling (GBP)"
+          }
+        },
         "stripe": {
           "title": "Payments",
           "description": "Payment tracking for the active school and online payment with Stripe.",

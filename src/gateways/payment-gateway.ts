@@ -168,4 +168,18 @@ export const paymentGateway = {
 
     return { payments, pendingTransactions }
   },
+
+  /**
+   * Montants encore comptés dans la devise de l'école : paiements actifs et reçus non annulés.
+   * Un reçu porte aussi des lignes repas sans `Payment` ; son annulation désactive ses
+   * paiements de scolarité, d'où les deux conditions.
+   */
+  hasRecordedAmounts: async (schoolId: string) => {
+    const [payment, receipt] = await Promise.all([
+      db.payment.findFirst({ where: { schoolId, isActive: true }, select: { id: true } }),
+      db.receipt.findFirst({ where: { schoolId, cancelledAt: null }, select: { id: true } }),
+    ])
+
+    return payment !== null || receipt !== null
+  },
 }
