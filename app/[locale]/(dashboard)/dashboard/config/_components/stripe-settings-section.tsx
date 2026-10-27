@@ -7,9 +7,11 @@ import { PAYMENTS_ENABLED_CONFIG_KEY } from '@/lib/payment-config'
 import { StripeSecretKind } from '@/lib/stripe-config'
 import { toast } from '@/lib/toast'
 import type { StripeSettings } from '@/use-cases/payments/stripe-settings'
+import type { SchoolCurrencySettings } from '@/use-cases/schools/school-currency'
 import { FlagToggle } from '../../../_components/flag-toggle'
 import { setConfigAction } from '../../../_lib/config-actions'
 import { setStripeEnabledAction } from '../../../_lib/stripe-settings-actions'
+import { SchoolCurrencyField } from './school-currency-field'
 import { SettingsSection } from './settings-section'
 import { StripeSecretForm } from './stripe-secret-form'
 
@@ -18,6 +20,7 @@ type Props = {
   /** Ce que couper les paiements va masquer : paiements enregistrés et transactions en attente. */
   paymentFootprint: { payments: number; pendingTransactions: number }
   settings: StripeSettings
+  currency: SchoolCurrencySettings
   webhookUrl: string
   secretStorageConfigured: boolean
 }
@@ -44,6 +47,7 @@ export function StripeSettingsSection({
   paymentsEnabled,
   paymentFootprint,
   settings,
+  currency,
   webhookUrl,
   secretStorageConfigured,
 }: Props) {
@@ -81,6 +85,7 @@ export function StripeSettingsSection({
 
   return (
     <SettingsSection title={t('title')} description={t('description')}>
+      <SchoolCurrencyField settings={currency} />
       <FlagToggle
         title={tConfig(`${paymentsKey}.label`)}
         description={tConfig(`${paymentsKey}.description`)}

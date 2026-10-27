@@ -10,6 +10,7 @@ vi.mock('next-intl', () => ({
 vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 vi.mock('@/lib/toast', () => ({ toast: { success: toastSuccessMock, error: vi.fn() } }))
 vi.mock('../../../_lib/config-actions', () => ({ setConfigAction: vi.fn() }))
+vi.mock('../../../_lib/school-currency-actions', () => ({ setSchoolCurrencyAction: vi.fn() }))
 vi.mock('../../../_lib/stripe-settings-actions', () => ({
   setStripeEnabledAction: vi.fn(),
   setStripeSecretAction: vi.fn(),
@@ -56,6 +57,7 @@ function renderSection(
       paymentsEnabled={paymentsEnabled}
       paymentFootprint={paymentFootprint}
       settings={settings}
+      currency={{ currency: 'EUR', locked: false }}
       webhookUrl={webhookUrl}
       secretStorageConfigured={true}
     />

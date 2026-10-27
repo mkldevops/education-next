@@ -174,7 +174,19 @@ write. Reactivation carries no such condition.
 Each school carries `currency` (ISO 4217, default `EUR`) and `timeZone` (IANA, default
 `Europe/Paris`), read through `getSchoolRegionalSettings()` (`src/lib/school-regional-settings.ts`,
 memoized per render). Existing schools keep the defaults and render exactly as before; EIC uses
-`KMF` / `Indian/Comoro`. No form edits them yet: they are set in the database.
+`KMF` / `Indian/Comoro`. The time zone is set in the database; the currency is chosen by a school
+admin in the Payments section of `/dashboard/config`.
+
+- **The currency is one of `SCHOOL_CURRENCIES`** (`src/domain/school-currency.ts`: `EUR`, `KMF`,
+  `GBP`). `setSchoolCurrency()` (`src/use-cases/schools/school-currency.ts`) rejects any other code
+  with `validationError`; picking the current currency is a no-op.
+- **The currency is locked once an amount counts.** Amounts are stored without a currency and never
+  converted, and precisions differ (`KMF` has no decimals), so `setSchoolCurrency()` returns
+  `currencyLocked` when the school has an active `Payment` (`isActive`) or a receipt that is not
+  cancelled (`cancelledAt` null: meal lines have no `Payment` row). Cancelling every receipt and
+  payment unlocks it. The settings page shows the reason and disables the select.
+- **Online payment needs `EUR`.** A school in another currency loses the Stripe button (see Online
+  payment); the currency field says so.
 
 - **Amounts follow the school's currency.** `formatCurrency(value, locale, currency)` and
   `currencySymbol()` (`src/lib/decimal.ts`) take the precision from `Intl`: two decimals for `EUR`,

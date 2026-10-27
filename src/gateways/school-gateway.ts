@@ -94,6 +94,9 @@ export const schoolGateway = {
 
   update: (id: string, data: SchoolIdentity) => db.school.update({ where: { id }, data }),
 
+  updateCurrency: (id: string, currency: string) =>
+    db.school.update({ where: { id }, data: { currency }, select: { id: true } }),
+
   reactivate: (id: string) => db.school.update({ where: { id }, data: { isActive: true } }),
 
   /**

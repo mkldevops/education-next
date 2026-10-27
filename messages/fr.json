@@ -1418,6 +1418,19 @@
             "notConfigured": "Le stockage d'images n'est pas configuré sur ce serveur"
           }
         },
+        "currency": {
+          "label": "Devise",
+          "description": "Devise des montants de l'école : tarifs, paiements, reçus et cantine.",
+          "stripeHint": "Le paiement en ligne par Stripe n'est proposé qu'en euros (EUR).",
+          "locked": "Des paiements sont déjà enregistrés : la devise ne peut plus changer, car les montants ne sont pas convertis.",
+          "saved": "Devise enregistrée.",
+          "error": "La devise n'a pas pu être enregistrée.",
+          "options": {
+            "EUR": "Euro (EUR)",
+            "KMF": "Franc comorien (KMF)",
+            "GBP": "Livre sterling (GBP)"
+          }
+        },
         "stripe": {
           "title": "Paiements",
           "description": "Suivi des paiements de l'école active et paiement en ligne par Stripe.",
