@@ -24,6 +24,10 @@ vi.mock('./auth-helper', () => ({
   requireSchoolAdmin: vi.fn(),
 }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+const syncMeals = vi.fn()
+vi.mock('@/use-cases/meals/sync-meal-absences-from-attendance', () => ({
+  syncMealAbsencesFromAttendance: syncMeals,
+}))
 const auth = await import('./auth-helper')
 const actions = await import('./attendance-actions')
 const id = '00000000-0000-4000-8000-000000000001'
@@ -90,6 +94,7 @@ describe('attendance actions', () => {
       actions.setAttendanceCancellationAction({ sessionId: id, cancelled: true })
     ).resolves.toBe('OK')
     expect(db.attendanceSession.updateMany.mock.calls[0][0].where.schoolId).toBe('s')
+    expect(syncMeals).toHaveBeenCalledWith({ schoolId: 's', sessionId: id, recordedById: 'u' })
     await expect(
       actions.setAttendanceCancellationAction({ sessionId: id, cancelled: 'yes' } as never)
     ).resolves.toBe('validationError')
@@ -389,6 +394,7 @@ describe('attendance actions', () => {
     db.attendanceSession.updateMany.mockResolvedValue({ count: 1 })
     expect(await actions.validateAttendanceAction({ sessionId: id })).toBe('OK')
     expect(db.attendanceSession.updateMany.mock.calls[0][0].data.updatedById).toBe('u')
+    expect(syncMeals).toHaveBeenCalledWith({ schoolId: 's', sessionId: id, recordedById: 'u' })
     expect(db.attendanceSession.updateMany.mock.calls[0][0].where).toEqual({
       id,
       schoolId: 's',
@@ -406,6 +412,7 @@ describe('attendance actions', () => {
     await expect(actions.validateAttendanceAction({ sessionId: id })).resolves.toBe(
       'invalidTransition'
     )
+    expect(syncMeals).not.toHaveBeenCalled()
   })
 
   it('includes a student assigned to the class during the occurrence day', async () => {

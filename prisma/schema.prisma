@@ -1217,12 +1217,14 @@ model MealAdjustment {
 /// Jour servi que l'enfant n'a pas mangé (R7) : il n'est pas consommé, la couverture glisse.
 /// L'auteur peut partir : l'absence reste, sans lui.
 model MealAbsence {
-  id           String   @id @default(uuid())
-  schoolId     String
-  accountId    String
-  date         DateTime @db.Date
-  recordedById String?
-  createdAt    DateTime @default(now())
+  id             String   @id @default(uuid())
+  schoolId       String
+  accountId      String
+  date           DateTime @db.Date
+  recordedById   String?
+  /// Posée par les appels validés du jour, qui la retirent ; jamais une absence saisie à la main.
+  fromAttendance Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   school     School      @relation(fields: [schoolId], references: [id])
   account    MealAccount @relation(fields: [accountId, schoolId], references: [id, schoolId], onDelete: Cascade)

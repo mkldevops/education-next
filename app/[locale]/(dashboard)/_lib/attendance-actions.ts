@@ -15,6 +15,7 @@ import type { Prisma } from '@/generated/prisma/client'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { syncMealAbsencesFromAttendance } from '@/use-cases/meals/sync-meal-absences-from-attendance'
 import { requireSchoolAdmin, requireSchoolSession, requireTeacher } from './auth-helper'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -289,6 +290,11 @@ export async function validateAttendanceAction(input: unknown) {
     data: { status: 'VALIDATED', validatedAt: new Date(), updatedById: actor.userId },
   })
   if (updated.count !== 1) return 'invalidTransition' as const
+  await syncMealAbsencesFromAttendance({
+    schoolId: actor.schoolId,
+    sessionId: parsed.data.sessionId,
+    recordedById: actor.userId,
+  })
   revalidateAttendance()
   return 'OK' as const
 }
@@ -411,6 +417,11 @@ export async function setAttendanceCancellationAction(input: {
             },
           })
   if (result.count !== 1) return 'invalidTransition' as const
+  await syncMealAbsencesFromAttendance({
+    schoolId: admin.schoolId,
+    sessionId,
+    recordedById: admin.userId,
+  })
   revalidatePath('/dashboard/attendance')
   return 'OK' as const
 }
@@ -452,7 +463,13 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
         updatedById: admin.userId,
       },
     })
-    return updated.count === 1 ? ('OK' as const) : ('invalidTransition' as const)
+    if (updated.count !== 1) return 'invalidTransition' as const
+    await syncMealAbsencesFromAttendance({
+      schoolId: admin.schoolId,
+      sessionId: existing.id,
+      recordedById: admin.userId,
+    })
+    return 'OK' as const
   }
   const loadExisting = () =>
     db.attendanceSession.findUnique({ where: occurrenceWhere, select: { id: true, status: true } })
