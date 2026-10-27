@@ -1426,6 +1426,7 @@ Owner: `src/domain/attendance-session.ts` (roster window, transitions),
 - A logical occurrence is unique by school, class, date and a non-null occurrence key (`adhoc` or the schedule-slot id). Opening is an atomic upsert; its roster snapshots the active class assignments of that **UTC calendar day**: an assignment counts when it starts before the next UTC midnight and has not ended before that day's midnight (`attendanceRosterWindow`). A student assigned during the day, even after midnight, is therefore on that day's call.
 - **A DRAFT session can take students assigned since its opening** (`refreshAttendanceRosterAction`, "Refresh student list" in the attendance panel). It only adds entries (`PRESENT`) for roster students without one and never removes or rewrites an existing entry. The refresh row-locks the session with a write conditional on `DRAFT`; a VALIDATED or concurrently validated session → `invalidTransition`, a cancelled one → `sessionCancelled`.
 - **Validation is a conditional write** (`validateAttendanceAction`). It applies only while the session is still `DRAFT` or `VALIDATED` (re-validating after a correction); a session cancelled between the read and the write is left untouched → `invalidTransition`, rather than silently revived as VALIDATED.
+- **A validated call feeds the meals.** Validating, cancelling or restoring a call recomputes that day's canteen and snack absences for its students (see « Absences from attendance » under Meals).
 - **Cancel and restore are conditional transitions** (`planCancellationTransition`). Cancelling an active session records its status in `statusBeforeCancellation` and only applies while the session still has the status that was read; cancelling an already cancelled session is a no-op. Restoring applies only to a session that is still `CANCELLED` (with the same saved status) and returns the saved status, or DRAFT (clearing `validatedAt`) when none was saved; an empty cancelled placeholder is deleted instead. Restoring a DRAFT or VALIDATED session, or losing a race with another change (stale tab, double click), writes nothing → `invalidTransition`.
 - The attendance route identifies a planned occurrence explicitly with its UTC calendar `date` and `slotId`; an exceptional occurrence uses `date` and `occurrence=adhoc`. Loading either identity only reads an existing session: creating a planned or exceptional session remains an explicit mutation. A slot must belong to the class and school **and** match the selected date's planning weekday (Monday 1 through Sunday 7).
 - **Students start present.** Opening a session and refreshing its roster create `PRESENT` entries
@@ -2053,6 +2054,24 @@ after it, `absent`, and `closed` for a published closure or holiday. One tap on 
 - only on a scheduled, open day (`notServed` otherwise); without an account, `notSubscribed`;
 - tapping an absent day removes it. The absence survives its author (`recordedById` set null), and
   goes with the account.
+
+**Absences from attendance.** When a school runs both meals and attendance, validating, cancelling or
+restoring a call recomputes that day's meals for the call's students
+(`syncMealAbsencesFromAttendance()`, `src/use-cases/meals/sync-meal-absences-from-attendance.ts`,
+called from `attendance-actions.ts`):
+
+- **a child absent from every validated call of the day did not eat** (`absentFromAllCalls()`,
+  `src/domain/meal-absence-from-attendance.ts`): present or late at one call, the child counts as
+  served; a `NOT_RECORDED` entry decides nothing; a draft or cancelled call does not count;
+- every service of that child gets a `MealAbsence` with `fromAttendance = true`, on a scheduled open
+  day only, under the account locks, and the day is credited like a tapped one (R7);
+- a later recompute where the child is no longer absent from every call removes only the
+  `fromAttendance` absences. **A hand-marked absence is never touched**, and tapping a day the calls
+  already marked makes it a hand-marked one (`fromAttendance = false`);
+- removing an attendance absence by hand on the meal sheet holds until the next validation, cancel or
+  restore of a call that day;
+- with `meals_enabled` off nothing is written (`mealsDisabled`). Column added by migration
+  `20261030090000_meal_absence_from_attendance`.
 
 **Unpaid and reminders.** `/dashboard/cashier/debtors` (`requireSchoolCashier()`, `notFound()` when
 `meals_enabled` is off, linked from the cashier and the meals page) lists, for active students, each

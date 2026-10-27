@@ -144,8 +144,37 @@ export const mealAccountGateway = {
     return rows.map((row) => ({ accountId: row.accountId, day: toDay(row.date) }))
   },
 
-  /** Idempotent : marquer deux fois le même jour ne crée qu'une absence. */
-  addAbsence: (
+  /**
+   * Idempotent : marquer deux fois le même jour ne crée qu'une absence. Saisie à la main, elle
+   * reprend une absence posée par les appels, qu'un appel corrigé ne retire alors plus.
+   */
+  addAbsence: async (
+    tx: Tx,
+    schoolId: string,
+    data: { accountId: string; day: string; recordedById: string }
+  ) => {
+    await tx.mealAbsence.createMany({
+      data: {
+        schoolId,
+        accountId: data.accountId,
+        date: toDbDate(data.day),
+        recordedById: data.recordedById,
+      },
+      skipDuplicates: true,
+    })
+    await tx.mealAbsence.updateMany({
+      where: {
+        schoolId,
+        accountId: data.accountId,
+        date: toDbDate(data.day),
+        fromAttendance: true,
+      },
+      data: { fromAttendance: false, recordedById: data.recordedById },
+    })
+  },
+
+  /** Une absence déjà saisie à la main reste la sienne. */
+  addAttendanceAbsence: (
     tx: Tx,
     schoolId: string,
     data: { accountId: string; day: string; recordedById: string }
@@ -156,8 +185,38 @@ export const mealAccountGateway = {
         accountId: data.accountId,
         date: toDbDate(data.day),
         recordedById: data.recordedById,
+        fromAttendance: true,
       },
       skipDuplicates: true,
+    }),
+
+  removeAttendanceAbsence: (tx: Tx, schoolId: string, accountId: string, day: string) =>
+    tx.mealAbsence.deleteMany({
+      where: { schoolId, accountId, date: toDbDate(day), fromAttendance: true },
+    }),
+
+  /** Jour d'un appel et ses élèves, ou `null` pour un appel inconnu de l'école. */
+  findSessionDay: async (schoolId: string, sessionId: string) => {
+    const session = await db.attendanceSession.findUnique({
+      where: { id_schoolId: { id: sessionId, schoolId } },
+      select: { occurredOn: true, entries: { select: { studentId: true } } },
+    })
+    if (!session) return null
+    return {
+      day: toDay(session.occurredOn),
+      studentIds: session.entries.map((entry) => entry.studentId),
+    }
+  },
+
+  /** Pointages des appels validés d'un jour, lus sous le verrou des comptes. */
+  listValidatedEntries: (tx: Tx, schoolId: string, day: string, studentIds: string[]) =>
+    tx.attendanceEntry.findMany({
+      where: {
+        schoolId,
+        studentId: { in: studentIds },
+        attendanceSession: { occurredOn: toDbDate(day), status: 'VALIDATED' },
+      },
+      select: { studentId: true, status: true },
     }),
 
   removeAbsence: (tx: Tx, schoolId: string, accountId: string, day: string) =>
