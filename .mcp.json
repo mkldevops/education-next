@@ -6,6 +6,13 @@
       "headers": {
         "Authorization": "Bearer ${EDUCATION_MCP_TOKEN}"
       }
+    },
+    "eic": {
+      "type": "http",
+      "url": "https://eic.msadawaheri.fr/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${EDUCATION_EIC_MCP_TOKEN}"
+      }
     }
   }
 }
