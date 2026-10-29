@@ -774,6 +774,22 @@ column added to the model later would have followed it into the model provider's
 single MCP review. The published surface is therefore written where the MCP reads, not where a
 screen is built; `docs/mcp.md` lists the columns.
 
+### Creating school levels and classes through MCP
+
+`create_level` and `create_class_period` reuse the dashboard creation use cases through
+`src/use-cases/mcp/create-level.ts` and `create-class-period.ts`. The connected school is injected
+from the authenticated scope, never accepted as a tool argument. Both are non-destructive,
+non-idempotent immediate writes in the shared school tool catalogue, also available to the
+dashboard assistant and when payments are disabled.
+
+Names are trimmed and must remain non-empty. An active level of the same name returns
+`nameTaken`. A class requires an explicitly supplied positive integer capacity and existing
+school-scoped level and period; optional teachers must also belong to the school. The existing
+one-class-per-level-and-period rule returns `levelAlreadyAssigned`. Invalid or foreign references
+retain the dashboard's `levelNotFound`, `periodNotFound` and `teacherNotFound` refusals. These
+operations create no enrollments, plans, payments or level-progression links. Read the corresponding
+lists before creating and after an uncertain network result, rather than blindly retrying.
+
 ### Write drafts
 
 A write is never one call. **`preview_*` resolves and persists a plan, `commit_*` engages it**, and

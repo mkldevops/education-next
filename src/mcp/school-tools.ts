@@ -13,7 +13,9 @@ import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
 import { commitRecordTeacherExpense } from '@/use-cases/mcp/commit-record-teacher-expense'
 import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
+import { createClassPeriodFromMcp } from '@/use-cases/mcp/create-class-period'
 import { createEventFromMcp } from '@/use-cases/mcp/create-event'
+import { createLevelFromMcp } from '@/use-cases/mcp/create-level'
 import { createTeacherFromMcp } from '@/use-cases/mcp/create-teacher'
 import type { DraftScope } from '@/use-cases/mcp/draft-scope'
 import { duplicateEventFromMcp } from '@/use-cases/mcp/duplicate-event'
@@ -36,8 +38,10 @@ import {
   MCP_STUDENT_SEARCH_MAX,
   mcpAssignTeacherSchema,
   mcpCancelPaymentsSchema,
+  mcpCreateClassPeriodSchema,
   mcpCreateClassScheduleSlotSchema,
   mcpCreateEventSchema,
+  mcpCreateLevelSchema,
   mcpCreateTeacherSchema,
   mcpDeleteClassScheduleSlotSchema,
   mcpDuplicateEventSchema,
@@ -160,6 +164,19 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       run: () => mcpReadGateway.listLevels(schoolId),
     }),
     define({
+      name: 'create_level',
+      title: 'Créer un niveau',
+      description:
+        "Crée un niveau dans l'école courante, sans classe ni progression. " +
+        'Prendre son identifiant dans le résultat pour créer ensuite une classe. ' +
+        'Refus : `nameTaken` (niveau actif de même nom), `validationError`. ' +
+        'Consulter `list_levels` avant de créer pour éviter les doublons.',
+      inputSchema: mcpCreateLevelSchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+      kind: 'write',
+      run: (args) => createLevelFromMcp(scope, args),
+    }),
+    define({
       name: 'list_periods',
       title: 'Périodes',
       description: 'Années ou périodes scolaires actives, de la plus récente à la plus ancienne.',
@@ -176,6 +193,21 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       inputSchema: NO_ARGS,
       kind: 'read',
       run: () => mcpReadGateway.listClassPeriods(schoolId),
+    }),
+    define({
+      name: 'create_class_period',
+      title: 'Créer une classe',
+      description:
+        "Crée une classe dans l'école courante, avec son nom et une capacité entière positive. " +
+        'Prendre `levelId` dans `list_levels` et `periodId` dans `list_periods`. ' +
+        '`teacherIds` est facultatif et contient des identifiants de `list_teachers`. ' +
+        'Un niveau ne peut avoir qu’une classe par période. Refus : `levelNotFound`, ' +
+        '`periodNotFound`, `levelAlreadyAssigned`, `teacherNotFound`, `validationError`. ' +
+        'Consulter `list_class_periods` avant de créer pour éviter les doublons.',
+      inputSchema: mcpCreateClassPeriodSchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+      kind: 'write',
+      run: (args) => createClassPeriodFromMcp(scope, args),
     }),
     define({
       name: 'list_class_schedule_slots',

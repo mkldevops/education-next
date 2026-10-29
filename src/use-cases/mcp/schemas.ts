@@ -2,12 +2,22 @@ import { z } from 'zod'
 import { isCurrencyAmount } from '@/domain/enrollment'
 import { MCP_DRAFT_CHECKSUM_LENGTH } from '@/domain/mcp-draft'
 import { MCP_KEY_LIFETIMES_DAYS } from '@/domain/mcp-key'
+import { createClassPeriodSchema } from '@/use-cases/class-periods/schemas'
 import {
   createClassScheduleSlotSchema,
   deleteClassScheduleSlotSchema,
   updateClassScheduleSlotSchema,
 } from '@/use-cases/class-schedules/schemas'
 import { EVENT_CATEGORIES, EVENT_STATUSES, EVENT_VISIBILITIES } from '@/use-cases/events/schemas'
+import { createLevelSchema } from '@/use-cases/levels/schemas'
+
+export const mcpCreateLevelSchema = createLevelSchema.omit({ schoolId: true }).extend({
+  name: createLevelSchema.shape.name.trim().min(1),
+})
+
+export const mcpCreateClassPeriodSchema = createClassPeriodSchema.omit({ schoolId: true }).extend({
+  name: createClassPeriodSchema.shape.name.trim().min(1),
+})
 
 export const createMcpApiKeySchema = z.object({
   name: z.string().trim().min(1).max(80),
