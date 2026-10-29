@@ -306,6 +306,36 @@ shared with the dashboard assistant. Neither tool accepts a school identifier. T
 students, enrollments, payment plans or payments. Re-read the lists after a network error before
 retrying a creation.
 
+## Deleting a family and archiving resources
+
+`get_family_deletion_impact { id }` is read-only. It returns the scoped family (`id`, `name`),
+including archived families, and the counts of exclusive members, students, enrollments,
+payments and attendance entries that deletion would remove. It creates no draft. The counts
+are an observation of the current state, not a reservation or a complete audit of every table.
+
+After presenting that impact and obtaining explicit approval, `delete_family { id, confirmation }`
+permanently deletes the family using the dashboard deletion use case. `confirmation` must match
+the family name (trimmed and case-insensitive). The transaction also removes its exclusive members,
+students, enrollments, payments, receipts and transactions. People linked to another family survive.
+No archive prerequisite. Success is `{ id, deleted: true }`; expected refusals are `notFound`,
+`confirmationMismatch`, `deletionBlocked`, `deletionConflict` and `validationError`. After an uncertain
+network result, re-read the family instead of deleting a replacement or retrying by name.
+
+The following tools take `{ id }` and return `{ id, archived: true }`. They archive rather than
+permanently deleting records, reusing the dashboard protections:
+
+| Tool | Refuses |
+|---|---|
+| `archive_student` | An active or pending enrollment (`hasActiveEnrollments`); stops meal services on success |
+| `archive_class_period` | Any student/teacher assignment, schedule slot or attendance session (`classInUse`) |
+| `archive_level` | Any active class (`levelInUse`); removes progression links on success |
+| `archive_plan` | An open enrollment (`planInUse`), the reserved unpriced plan (`unpricedPlan`), or disabled payments (`paymentsDisabled`) |
+
+Missing or foreign resources return `notFound`; malformed input returns `validationError`.
+All deletion and archive tools are immediate destructive writes in the shared catalogue, so the
+dashboard assistant also requires its normal human approval. They never accept `schoolId`.
+Archival does not modify enrollment amounts or record payments.
+
 ## Weekly class planning
 
 The MCP can read and maintain the same recurring class slots as `/dashboard/planning`. It never

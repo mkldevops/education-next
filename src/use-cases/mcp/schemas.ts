@@ -19,6 +19,12 @@ export const mcpCreateClassPeriodSchema = createClassPeriodSchema.omit({ schoolI
   name: createClassPeriodSchema.shape.name.trim().min(1),
 })
 
+export const mcpResourceIdSchema = z.object({ id: z.uuid() })
+
+export const mcpDeleteFamilySchema = mcpResourceIdSchema.extend({
+  confirmation: z.string().trim().min(1).max(50),
+})
+
 export const createMcpApiKeySchema = z.object({
   name: z.string().trim().min(1).max(80),
   lifetimeDays: z.literal(MCP_KEY_LIFETIMES_DAYS),

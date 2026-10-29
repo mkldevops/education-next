@@ -44,6 +44,12 @@ const updateClassScheduleSlotFromMcp = vi.fn()
 const deleteClassScheduleSlotFromMcp = vi.fn()
 const createLevelFromMcp = vi.fn()
 const createClassPeriodFromMcp = vi.fn()
+const getFamilyDeletionImpactFromMcp = vi.fn()
+const deleteFamilyFromMcp = vi.fn()
+const archiveStudentFromMcp = vi.fn()
+const archiveClassPeriodFromMcp = vi.fn()
+const archiveLevelFromMcp = vi.fn()
+const archivePlanFromMcp = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ McpServer: FakeMcpServer }))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
@@ -61,6 +67,14 @@ vi.mock('@/use-cases/mcp/update-event', () => ({ updateEventFromMcp }))
 vi.mock('@/use-cases/mcp/duplicate-event', () => ({ duplicateEventFromMcp }))
 vi.mock('@/use-cases/mcp/create-level', () => ({ createLevelFromMcp }))
 vi.mock('@/use-cases/mcp/create-class-period', () => ({ createClassPeriodFromMcp }))
+vi.mock('@/use-cases/mcp/delete-resources', () => ({
+  getFamilyDeletionImpactFromMcp,
+  deleteFamilyFromMcp,
+  archiveStudentFromMcp,
+  archiveClassPeriodFromMcp,
+  archiveLevelFromMcp,
+  archivePlanFromMcp,
+}))
 vi.mock('@/use-cases/mcp/preview-class-schedule', () => ({ previewClassSchedule }))
 vi.mock('@/use-cases/mcp/commit-class-schedule', () => ({ commitClassSchedule }))
 vi.mock('@/use-cases/mcp/class-schedule', () => ({
@@ -123,6 +137,12 @@ describe('buildMcpServer', () => {
       'preview_record_teacher_expense',
       'commit_record_teacher_expense',
       'find_students',
+      'get_family_deletion_impact',
+      'delete_family',
+      'archive_student',
+      'archive_class_period',
+      'archive_level',
+      'archive_plan',
       'preview_enroll_family',
       'commit_enroll_family',
       'create_event',
@@ -160,6 +180,12 @@ describe('buildMcpServer', () => {
       'preview_record_teacher_expense',
       'commit_record_teacher_expense',
       'find_students',
+      'get_family_deletion_impact',
+      'delete_family',
+      'archive_student',
+      'archive_class_period',
+      'archive_level',
+      'archive_plan',
       'preview_enroll_family',
       'commit_enroll_family',
       'create_event',
@@ -260,6 +286,37 @@ describe('buildMcpServer', () => {
       expect(convert, name).not.toThrow()
       expect(convert().type ?? 'object', name).toBe('object')
     }
+  })
+
+  it('marks deletion and archival as destructive and forwards only the authenticated scope', async () => {
+    const tools = build()
+    const id = '00000000-0000-4000-8000-000000000001'
+    const handlers = [
+      ['delete_family', deleteFamilyFromMcp, { id, confirmation: 'Démo' }],
+      ['archive_student', archiveStudentFromMcp, { id }],
+      ['archive_class_period', archiveClassPeriodFromMcp, { id }],
+      ['archive_level', archiveLevelFromMcp, { id }],
+      ['archive_plan', archivePlanFromMcp, { id }],
+    ] as const
+    for (const [name, handler, args] of handlers) {
+      handler.mockResolvedValue({ id, archived: true })
+      expect(tools.get(name)?.config.annotations).toMatchObject({
+        readOnlyHint: false,
+        destructiveHint: true,
+        openWorldHint: false,
+      })
+      const result = await tools.get(name)!.handler(args)
+      expect(result.isError).not.toBe(true)
+      expect(handler).toHaveBeenCalledWith(scope, args)
+    }
+    getFamilyDeletionImpactFromMcp.mockResolvedValue('notFound')
+    expect(tools.get('get_family_deletion_impact')?.config.annotations).toMatchObject({
+      readOnlyHint: true,
+    })
+    const result = await tools.get('get_family_deletion_impact')!.handler({ id })
+    expect(result.isError).toBe(true)
+    expect(payload(result)).toEqual({ error: 'notFound' })
+    expect(getFamilyDeletionImpactFromMcp).toHaveBeenCalledWith(scope, { id })
   })
 
   it('returns the use-case payload as JSON content on success', async () => {
