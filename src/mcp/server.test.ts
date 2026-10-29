@@ -42,6 +42,8 @@ const listClassScheduleSlotsFromMcp = vi.fn()
 const createClassScheduleSlotFromMcp = vi.fn()
 const updateClassScheduleSlotFromMcp = vi.fn()
 const deleteClassScheduleSlotFromMcp = vi.fn()
+const createLevelFromMcp = vi.fn()
+const createClassPeriodFromMcp = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ McpServer: FakeMcpServer }))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
@@ -57,6 +59,8 @@ vi.mock('@/use-cases/mcp/list-attendance-calls', () => ({ listAttendanceCallsFro
 vi.mock('@/use-cases/mcp/get-event', () => ({ getEventFromMcp }))
 vi.mock('@/use-cases/mcp/update-event', () => ({ updateEventFromMcp }))
 vi.mock('@/use-cases/mcp/duplicate-event', () => ({ duplicateEventFromMcp }))
+vi.mock('@/use-cases/mcp/create-level', () => ({ createLevelFromMcp }))
+vi.mock('@/use-cases/mcp/create-class-period', () => ({ createClassPeriodFromMcp }))
 vi.mock('@/use-cases/mcp/preview-class-schedule', () => ({ previewClassSchedule }))
 vi.mock('@/use-cases/mcp/commit-class-schedule', () => ({ commitClassSchedule }))
 vi.mock('@/use-cases/mcp/class-schedule', () => ({
@@ -101,8 +105,10 @@ describe('buildMcpServer', () => {
     expect([...build().keys()]).toEqual([
       'describe_school',
       'list_levels',
+      'create_level',
       'list_periods',
       'list_class_periods',
+      'create_class_period',
       'list_class_schedule_slots',
       'create_class_schedule_slot',
       'update_class_schedule_slot',
@@ -137,8 +143,10 @@ describe('buildMcpServer', () => {
     expect([...build({ paymentsEnabled: false }).keys()]).toEqual([
       'describe_school',
       'list_levels',
+      'create_level',
       'list_periods',
       'list_class_periods',
+      'create_class_period',
       'list_class_schedule_slots',
       'create_class_schedule_slot',
       'update_class_schedule_slot',
@@ -203,6 +211,41 @@ describe('buildMcpServer', () => {
     await tools.get('preview_enroll_family')?.handler({ schoolId: 'other-school' })
 
     expect(previewEnrollFamily).toHaveBeenCalledWith(scope, { schoolId: 'other-school' })
+  })
+
+  it('exposes school setup tools as non-destructive writes, even without payments', async () => {
+    const tools = build({ paymentsEnabled: false })
+    const level = { name: 'CP' }
+    const classPeriod = {
+      name: 'CP',
+      capacity: 30,
+      levelId: '00000000-0000-4000-8000-000000000001',
+      periodId: '00000000-0000-4000-8000-000000000002',
+    }
+    createLevelFromMcp.mockResolvedValue({ id: 'level-1', name: 'CP' })
+    createClassPeriodFromMcp.mockResolvedValue('levelNotFound')
+
+    expect(payload(await tools.get('create_level')!.handler(level))).toEqual({
+      id: 'level-1',
+      name: 'CP',
+    })
+    const refused = await tools.get('create_class_period')!.handler(classPeriod)
+    expect(refused.isError).toBe(true)
+    expect(payload(refused)).toEqual({ error: 'levelNotFound' })
+    expect(createLevelFromMcp).toHaveBeenCalledWith({ ...scope, paymentsEnabled: false }, level)
+    expect(createClassPeriodFromMcp).toHaveBeenCalledWith(
+      { ...scope, paymentsEnabled: false },
+      classPeriod
+    )
+
+    for (const name of ['create_level', 'create_class_period']) {
+      expect(tools.get(name)?.config.annotations).toMatchObject({
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      })
+    }
   })
 
   // `tools/list` convertit chaque `inputSchema` en JSON Schema, côté entrée, et exige un

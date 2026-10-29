@@ -287,6 +287,25 @@ resolving a paper form needs an identity, not a way to contact anyone. Every col
 `src/gateways/mcp-read-gateway.ts`, so widening the surface is an edit to that file, not a
 side effect of a schema change.
 
+## Creating levels and classes
+
+`create_level { name }` creates an active level in the connected school and returns its `id`
+and `name`. An active level of the same name is refused with `nameTaken`; read `list_levels`
+before creating or retrying.
+
+`create_class_period { name, capacity, levelId, periodId, teacherIds? }` creates a class and
+returns `id`, `name`, `capacity`, `levelId` and `periodId`. Resolve identifiers from `list_levels`,
+`list_periods` and, for optional teachers, `list_teachers`. Capacity must be a positive integer
+confirmed by the school, not a value inferred from the number of students in an imported file.
+The dashboard rules apply: one class per level and period (`levelAlreadyAssigned`), and every
+level, period and teacher must belong to the connected school (`levelNotFound`, `periodNotFound`,
+`teacherNotFound`). Both tools trim names and return `validationError` for invalid input.
+
+These are immediate, non-destructive writes, available even when payments are disabled, and
+shared with the dashboard assistant. Neither tool accepts a school identifier. They create no
+students, enrollments, payment plans or payments. Re-read the lists after a network error before
+retrying a creation.
+
 ## Weekly class planning
 
 The MCP can read and maintain the same recurring class slots as `/dashboard/planning`. It never
