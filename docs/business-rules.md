@@ -2207,6 +2207,20 @@ A student is **skipped**, with the reason reported, when:
 
 ### Deleting a family for good
 
+The MCP and dashboard assistant expose the same deletion through `delete_family` with an `id`
+and the family-name `confirmation`. Before requesting approval, the client reads
+`get_family_deletion_impact`, which returns the family name and the dashboard's deletion counts,
+including archived records. This is an observation, not a persisted draft or a lock. Both reads
+and writes inject the authenticated school from scope; neither accepts a school argument.
+`delete_family` is marked destructive and returns `{ id, deleted: true }` only after the existing
+transaction succeeds. It preserves the same confirmation and dependency refusals as the dashboard.
+
+`archive_student`, `archive_class_period`, `archive_level` and `archive_plan` also reuse the existing
+use cases and are marked destructive. They return `{ id, archived: true }` on success, retaining
+all protections: open-enrollment refusal for students and plans, reserved-plan/payment flags,
+class dependencies and active classes on a level. Their names deliberately distinguish archival
+from the family's permanent deletion. A missing or foreign resource remains `notFound`.
+
 Archiving hides a family; `src/use-cases/families/delete-family.ts` erases it. The action is open to
 a school `ADMIN` and to a super admin (`requireSchoolAdmin`), and is the only place in the product
 where financial history is destroyed rather than archived.

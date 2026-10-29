@@ -17,6 +17,14 @@ import { createClassPeriodFromMcp } from '@/use-cases/mcp/create-class-period'
 import { createEventFromMcp } from '@/use-cases/mcp/create-event'
 import { createLevelFromMcp } from '@/use-cases/mcp/create-level'
 import { createTeacherFromMcp } from '@/use-cases/mcp/create-teacher'
+import {
+  archiveClassPeriodFromMcp,
+  archiveLevelFromMcp,
+  archivePlanFromMcp,
+  archiveStudentFromMcp,
+  deleteFamilyFromMcp,
+  getFamilyDeletionImpactFromMcp,
+} from '@/use-cases/mcp/delete-resources'
 import type { DraftScope } from '@/use-cases/mcp/draft-scope'
 import { duplicateEventFromMcp } from '@/use-cases/mcp/duplicate-event'
 import { familyPaymentsFromMcp } from '@/use-cases/mcp/family-payments'
@@ -44,6 +52,7 @@ import {
   mcpCreateLevelSchema,
   mcpCreateTeacherSchema,
   mcpDeleteClassScheduleSlotSchema,
+  mcpDeleteFamilySchema,
   mcpDuplicateEventSchema,
   mcpEventIdSchema,
   mcpFamilyPaymentsSchema,
@@ -51,6 +60,7 @@ import {
   mcpListAttendanceCallsSchema,
   mcpListClassScheduleSlotsSchema,
   mcpListEventsSchema,
+  mcpResourceIdSchema,
   mcpUpdateClassScheduleSlotSchema,
   mcpUpdateEventSchema,
   previewClassScheduleSchema,
@@ -406,6 +416,86 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       annotations: { readOnlyHint: true, openWorldHint: false },
       kind: 'read',
       run: (args) => findStudentsFromMcp(scope, args),
+    }),
+    define({
+      name: 'get_family_deletion_impact',
+      title: 'Voir ce que la suppression d’une famille effacera',
+      description:
+        'Lit une famille par son `id`, archives comprises, et compte les membres, élèves, ' +
+        'inscriptions, paiements et présences qui seraient effacés. Les personnes liées ' +
+        'à une autre famille sont préservées. Lecture seule, aucun brouillon créé. ' +
+        'Présenter cet aperçu avant toute suppression et obtenir l’accord explicite. ' +
+        'Refus : `notFound`, `validationError`.',
+      inputSchema: mcpResourceIdSchema,
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      kind: 'read',
+      run: (args) => getFamilyDeletionImpactFromMcp(scope, args),
+    }),
+    define({
+      name: 'delete_family',
+      title: 'Supprimer définitivement une famille',
+      description:
+        'Efface définitivement une famille et son dossier : membres exclusifs, élèves, ' +
+        'inscriptions, présences, règlements, reçus et transactions. Irréversible. ' +
+        'Appeler `get_family_deletion_impact`, présenter son résultat et obtenir un accord ' +
+        'explicite avant cet appel. `confirmation` doit reprendre le nom de la famille. ' +
+        'Une personne liée à une autre famille est conservée. Aucun archivage préalable requis. ' +
+        'Refus : `confirmationMismatch`, `notFound`, `deletionBlocked`, `deletionConflict`, ' +
+        '`validationError`. Une réponse positive rend `{ id, deleted: true }`.',
+      inputSchema: mcpDeleteFamilySchema,
+      annotations: DESTRUCTIVE_WRITE,
+      kind: 'write',
+      run: (args) => deleteFamilyFromMcp(scope, args),
+    }),
+    define({
+      name: 'archive_student',
+      title: 'Archiver un élève',
+      description:
+        'Masque un élève de l’école sans effacer son dossier. Refuse une inscription ' +
+        'PENDING ou ACTIVE : `hasActiveEnrollments`. Arrête aussi ses prestations de repas. ' +
+        'Refus : `notFound`, `validationError`. Rend `{ id, archived: true }`.',
+      inputSchema: mcpResourceIdSchema,
+      annotations: DESTRUCTIVE_WRITE,
+      kind: 'write',
+      run: (args) => archiveStudentFromMcp(scope, args),
+    }),
+    define({
+      name: 'archive_class_period',
+      title: 'Archiver une classe',
+      description:
+        'Archive une classe vide de l’école. Refuse toute affectation d’élève ou ' +
+        'd’enseignant, tout créneau ou appel existant : `classInUse`. Refus : `notFound`, ' +
+        '`validationError`. Rend `{ id, archived: true }`.',
+      inputSchema: mcpResourceIdSchema,
+      annotations: DESTRUCTIVE_WRITE,
+      kind: 'write',
+      run: (args) => archiveClassPeriodFromMcp(scope, args),
+    }),
+    define({
+      name: 'archive_level',
+      title: 'Archiver un niveau',
+      description:
+        'Masque un niveau de l’école, uniquement lorsqu’aucune classe active ne l’utilise ' +
+        '(`levelInUse` sinon). Retire ses liens de progression. Refus : `notFound`, ' +
+        '`validationError`. Rend `{ id, archived: true }`.',
+      inputSchema: mcpResourceIdSchema,
+      annotations: DESTRUCTIVE_WRITE,
+      kind: 'write',
+      run: (args) => archiveLevelFromMcp(scope, args),
+    }),
+    define({
+      name: 'archive_plan',
+      title: 'Archiver un forfait',
+      description:
+        'Masque un forfait de l’école sans modifier les inscriptions ni les montants. ' +
+        'Refuse un forfait utilisé par une inscription PENDING ou ACTIVE (`planInUse`), ' +
+        'la formule réservée sans tarif (`unpricedPlan`) et les paiements désactivés ' +
+        '(`paymentsDisabled`). Autres refus : `notFound`, `validationError`. ' +
+        'Rend `{ id, archived: true }`.',
+      inputSchema: mcpResourceIdSchema,
+      annotations: DESTRUCTIVE_WRITE,
+      kind: 'write',
+      run: (args) => archivePlanFromMcp(scope, args),
     }),
     define({
       name: 'preview_enroll_family',
