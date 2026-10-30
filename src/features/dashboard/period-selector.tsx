@@ -36,7 +36,7 @@ export function PeriodSelector({ periods, selectedPeriodId }: PeriodSelectorProp
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2">
       <Select
         items={periodItems}
         value={selectedPeriodId}
@@ -45,7 +45,7 @@ export function PeriodSelector({ periods, selectedPeriodId }: PeriodSelectorProp
       >
         <SelectTrigger
           aria-label={t('selectAriaLabel')}
-          className="h-9 w-auto max-w-44 rounded-md border-border bg-surface pl-2.5 font-medium text-foreground shadow-xs transition-colors hover:border-input/60 sm:max-w-none"
+          className="h-11 min-w-0 w-auto max-w-full sm:max-w-44 md:h-9 rounded-md border-border bg-surface pl-2.5 font-medium text-foreground shadow-xs transition-colors hover:border-input/60 lg:max-w-none"
         >
           <SelectValue />
         </SelectTrigger>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#3c6e71" />
+    <title>Hors connexion · Offline</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); background: #f5f7f7; color: #243434; font: 16px/1.6 system-ui, sans-serif; }
+      main { width: 100%; max-width: 440px; }
+      .mark { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 24px; border-radius: 16px; background: #e4efef; color: #3c6e71; }
+      h1 { margin: 0 0 12px; font-size: 28px; line-height: 1.25; }
+      p { margin: 0 0 16px; }
+      .hint { color: #566868; font-size: 14px; }
+      button { min-height: 44px; margin-top: 8px; padding: 10px 24px; border: 0; border-radius: 8px; background: #3c6e71; color: white; font: inherit; font-weight: 600; cursor: pointer; }
+      button:focus-visible { outline: 3px solid #243434; outline-offset: 4px; }
+      [lang="en"] .fr, [lang="fr"] .en { display: none; }
+    </style>
+    <script>
+      document.documentElement.lang = /^\/en(?:\/|$)/.test(location.pathname) ? 'en' : 'fr'
+    </script>
+  </head>
+  <body>
+    <main>
+      <div class="mark" aria-hidden="true">
+        <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m3 3 18 18M8.5 8.5a12 12 0 0 1 12 2M3.5 10.5a12 12 0 0 1 2-1.4M7 14a7 7 0 0 1 7-1M10 17.5a3 3 0 0 1 4 0"/><circle cx="12" cy="21" r=".7"/></svg>
+      </div>
+      <h1 class="fr">Vous êtes hors connexion</h1>
+      <h1 class="en">You’re offline</h1>
+      <p class="fr">Une connexion Internet est nécessaire pour accéder aux informations de l’école et enregistrer des modifications.</p>
+      <p class="en">An Internet connection is required to access school information and save changes.</p>
+      <p class="hint fr">Vérifiez votre connexion, puis réessayez. Cette page n’affiche aucune donnée enregistrée hors connexion.</p>
+      <p class="hint en">Check your connection, then try again. This page does not display any offline school data.</p>
+      <button type="button" onclick="location.reload()"><span class="fr">Réessayer</span><span class="en">Try again</span></button>
+    </main>
+  </body>
+</html>

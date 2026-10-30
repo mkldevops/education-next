@@ -2378,7 +2378,8 @@ one school**.
 plain string in `Config`, so an external URL keeps working.
 
 - **There is one image setting, not two.** `app/icon.tsx` generates the favicon from the logo, fitted
-  into its square without distortion, and `app/manifest.ts` lists the logo as the app icon. Without a
+  into its square without distortion. `src/lib/manifest.ts` uses school-specific 192/512 PNG icons
+  (regular and maskable) for uploaded WebP logos, including the dashboard shortcut. Without a
   logo the favicon is the platform default.
 - **The favicon inlines the logo** (`src/lib/branding-icon.ts`). `next/og` refuses a relative source,
   and an uploaded logo is a relative `/api/media/…` path: it is resolved against
@@ -2408,6 +2409,17 @@ plain string in `Config`, so an external URL keeps working.
   after `proxy.ts` is silently truncated.
 - The object is stored under `branding/<schoolId>/<uuid>.webp`; the caller never chooses the key,
   so an upload cannot overwrite another one, and one school cannot reach another's assets.
+- **Uploads also generate five PNG assets** alongside the WebP: 192 and 512 px regular icons,
+  192 and 512 px maskable icons, and a 180 px Apple touch icon linked from page metadata.
+  Artwork is centered without distortion on white; maskable artwork has 22% padding per side
+  to fit inside the central safe circle. Variants use `<uuid>-icon-<size>[-maskable|-apple].png`.
+  All conversions finish before storage begins; success requires all six objects to be stored.
+  Failed storage may leave unreferenced objects, as with abandoned uploads.
+- Existing uploaded WebP logos use the same icon URLs: a missing variant is generated on request
+  from the stored WebP without modifying the bucket. External URLs and older non-WebP logos retain
+  their existing manifest behavior. `/manifest.webmanifest` is served by an explicit route with
+  `private, no-store` and `Vary: Cookie`; its HTML link uses `crossorigin="use-credentials"` so
+  the browser sends the session and active-school cookies. The service worker does not cache it.
 - Configuration is `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, optionally
   `S3_REGION` and `S3_FORCE_PATH_STYLE`. Path style is the default, which is what MinIO expects.
   Without those variables the feature answers `notConfigured` rather than crashing — the rest of the
@@ -2419,6 +2431,50 @@ plain string in `Config`, so an external URL keeps working.
   bucket. The route accepts only a `branding/<school>/<object>` shape and refuses any key containing
   `..`, so the bucket needs no public policy and no CORS.
 
+### Installing and identifying the web app
+
+- `InstallApp` is available on the login page and in the dashboard header. A native install action
+  is shown only after `beforeinstallprompt`; the event is consumed only on a deliberate click and
+  discarded after use, including a dismissal or failure. A later event can offer another attempt.
+- iPhone/iPad users (including desktop-style iPad user agents) can deliberately open a bilingual
+  guide to adding the app to the home screen. No installation popup opens automatically. The
+  affordance disappears in standalone mode, after `appinstalled`, or after an accepted prompt.
+- `src/lib/pwa-branding.ts` supplies the active school's name, logo, primary and background colors
+  to the manifest, application/Apple metadata and browser theme color. Only validated theme hex
+  values are accepted; colors with alpha are composited to opaque window colors. Missing or
+  invalid branding retains platform defaults. Reads are memoized per request, not across schools.
+- The manifest has a stable `/dashboard` id, matching the existing start URL, so a school switch
+  does not create a second installed application. Installed names and icons remain subject to the
+  browser's own update policy; the app does not silently install an additional school shortcut.
+- The viewport keeps pinch zoom enabled, fits device width, reserves safe areas, and requests
+  content resizing for software keyboards where supported. Dashboard height excludes safe-area
+  insets; modal panels can scroll within that space. Text inputs use at least 16px on coarse-pointer
+  devices. Header menu/search/install controls have mobile touch targets of at least 44px.
+- The search dialog code loads only when search opens. Lab performance and mobile browser checks
+  are run against a production build; they are not field Core Web Vitals or physical-device tests.
+
+### Installed web app, network loss and updates
+
+- The service worker (`public/sw.js`) is registered only in production. It precaches only
+  `/offline.html` and the two public platform icons, never the root page, school pages, API
+  responses, RSC payloads or form submissions. Document navigations go to the network; a network
+  exception returns the cached offline screen. Server HTTP errors remain server errors.
+- The offline screen is self-contained (inline styling and retry action), contains no school data,
+  and uses English for `/en/…`, French otherwise. Its bilingual copy intentionally lives in the
+  static document so it needs neither application JavaScript nor a translation request.
+  This is a network-required application: there is no offline editing queue or background replay.
+- An open page displays a persistent network-loss indicator and a reconnection notification
+  (`src/features/pwa/service-worker-register.tsx`, `messages/{fr,en}.json`). Browser connectivity
+  events are a signal; they do not certify that the server is reachable or that a save succeeded.
+- New workers wait instead of calling `skipWaiting` at installation. A persistent update notice
+  asks users to finish editing before reloading. The reload action is disabled offline. Only an
+  explicit acceptance activates the worker and reloads that tab; other tabs are offered a manual
+  reload. Initial installation never reloads the page. Updates are also checked on reconnection
+  and when returning to a visible tab; this creates no scheduled or background monitoring task.
+- Activation deletes only obsolete `education-app-` caches, including the old root-page cache.
+  Development cleanup targets only this application's worker and caches. Registration and update
+  failures do not prevent ordinary online use.
+
 ### Which school's branding is rendered
 
 `resolveBrandingSchoolId()` (`src/lib/branding.ts`) is the single answer, and **the session context
@@ -2428,7 +2484,7 @@ cookie-only resolution would paint school A's dashboard with the default theme. 
 school actually on screen.
 
 The cookie remains the fallback, for surfaces that may be requested without a session — `app/icon.tsx`,
-`app/manifest.ts` and `/login`. With neither signal, the platform default applies.
+`src/lib/manifest.ts` and `/login`. With neither signal, the platform default applies.
 
 **The login page is dressed as the last school displayed.** The dashboard layout compares the cookie
 with the school on screen and, when they differ, mounts `RememberActiveSchool`, which calls
@@ -2649,9 +2705,12 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
   `ImpersonationBanner`, visible to every connected member — `STAFF` viewer scope
   (`visibleEventVisibilities`) for an admin/super-admin, `MEMBER` scope for a parent — because
   `/dashboard/events` stays admin-only; these two surfaces are what let a parent see events at all
-  without it. Dismissal is client-side and keyed `event-dismissed:<id>:<updatedAt>` in
-  `localStorage`: editing the event changes `updatedAt`, so the key changes and the banner
-  reappears — an id alone would leave a stale dismissal covering an edited announcement.
+  without it. Dismissal is stored in a versioned, 30-day SameSite=Lax preference cookie
+  (`src/lib/event-announcement-cookie.ts`), read on the server before the banner is rendered.
+  It is also written to the legacy `event-dismissed:<id>:<updatedAt>` localStorage key; existing
+  local choices migrate to the cookie on the next visit. Editing the event changes the version,
+  so the banner reappears. The server banner is not streamed into a zero-height fallback after
+  the page content, which avoids shifting the whole dashboard after the first paint.
 - **The banner and the card read through two different, purpose-scoped queries, not one shared
   fetch.** An earlier revision had both call `listUpcomingEvents` with a shared `take` limit so the
   two would deduplicate into a single request within a render; that broke the banner silently on any

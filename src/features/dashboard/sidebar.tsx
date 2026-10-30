@@ -141,7 +141,7 @@ export function Sidebar({
       <aside
         aria-label={t('navigation')}
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-surface',
+          'fixed top-(--safe-area-top) bottom-(--safe-area-bottom) left-(--safe-area-left) z-50 flex flex-col border-r border-border bg-surface',
           'transition-[width,translate] duration-(--duration-base) ease-out',
           'md:sticky md:top-0 md:z-30 md:bg-background',
           expanded ? 'w-72 md:w-60' : 'w-72 md:w-[68px]',
@@ -165,7 +165,7 @@ export function Sidebar({
             type="button"
             onClick={() => setMobileOpen(false)}
             aria-label={t('closeMenu')}
-            className="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring md:hidden"
+            className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring md:hidden"
           >
             <X size={20} aria-hidden="true" />
           </button>

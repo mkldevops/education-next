@@ -2,26 +2,42 @@
 
 import { CalendarClock, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { eventAnnouncementCookieName } from '@/lib/event-announcement-cookie'
 
 type Props = {
   id: string
   updatedAt: string
   message: string
   dismissLabel: string
+  initialDismissed?: boolean
 }
 
-/**
- * `dismissed` démarre à `true` : sans ça, un visiteur qui a déjà masqué le bandeau le
- * verrait clignoter à l'affichage avant que l'effet ne relise `localStorage`. La clé
- * inclut `updatedAt` (issue #326) : modifier l'événement change la clé, donc le bandeau
- * masqué réapparaît — un identifiant seul ne le permettrait pas.
- */
-export function EventAnnouncementBannerClient({ id, updatedAt, message, dismissLabel }: Props) {
-  const [dismissed, setDismissed] = useState(true)
+function persistDismissal(cookieName: string) {
+  // biome-ignore lint/suspicious/noDocumentCookie: synchronous preference, including older iOS browsers without Cookie Store API.
+  document.cookie = `${cookieName}=1; Path=/; Max-Age=2592000; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`
+}
+
+/** The server knows the cookie preference before paint; old localStorage choices migrate once. */
+export function EventAnnouncementBannerClient({
+  id,
+  updatedAt,
+  message,
+  dismissLabel,
+  initialDismissed = false,
+}: Props) {
+  const [dismissed, setDismissed] = useState(initialDismissed)
+  const cookieName = eventAnnouncementCookieName(id, updatedAt)
 
   useEffect(() => {
-    setDismissed(window.localStorage.getItem(`event-dismissed:${id}:${updatedAt}`) === '1')
-  }, [id, updatedAt])
+    let legacyDismissed = false
+    try {
+      legacyDismissed = window.localStorage.getItem(`event-dismissed:${id}:${updatedAt}`) === '1'
+    } catch {}
+    setDismissed(initialDismissed || legacyDismissed)
+    if (legacyDismissed) {
+      persistDismissal(cookieName)
+    }
+  }, [id, updatedAt, initialDismissed, cookieName])
 
   if (dismissed) return null
 
@@ -35,8 +51,11 @@ export function EventAnnouncementBannerClient({ id, updatedAt, message, dismissL
         <button
           type="button"
           onClick={() => {
-            window.localStorage.setItem(`event-dismissed:${id}:${updatedAt}`, '1')
             setDismissed(true)
+            persistDismissal(cookieName)
+            try {
+              window.localStorage.setItem(`event-dismissed:${id}:${updatedAt}`, '1')
+            } catch {}
           }}
           aria-label={dismissLabel}
           className="shrink-0 rounded p-1 text-graphite-600 hover:bg-white/60"

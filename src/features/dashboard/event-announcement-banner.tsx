@@ -1,6 +1,8 @@
+import { cookies } from 'next/headers'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { selectAnnouncedEvent } from '@/domain/event'
 import { formatEventDate } from '@/lib/date'
+import { eventAnnouncementCookieName } from '@/lib/event-announcement-cookie'
 import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
 import { listAnnounceableEvents } from '@/use-cases/events/list-announceable-events'
@@ -29,10 +31,16 @@ export async function EventAnnouncementBanner() {
   const locale = await getLocale()
   const t = await getTranslations('dashboard.eventAnnouncement')
 
+  const updatedAt = announced.updatedAt.toISOString()
+  const cookieName = eventAnnouncementCookieName(announced.id, updatedAt)
+  const initialDismissed = (await cookies()).get(cookieName)?.value === '1'
+
   return (
     <EventAnnouncementBannerClient
+      key={cookieName}
+      initialDismissed={initialDismissed}
       id={announced.id}
-      updatedAt={announced.updatedAt.toISOString()}
+      updatedAt={updatedAt}
       message={t('message', { title: announced.title, date: formatEventDate(announced, locale) })}
       dismissLabel={t('dismiss')}
     />

@@ -9,12 +9,18 @@ const storage = {
 
 const WEBP = new Uint8Array([9, 9, 9])
 const optimize = vi.fn()
+const renderIcon = vi.fn()
 
 const ID = '11111111-2222-3333-4444-555555555555'
 const SCHOOL_ID = 'school-1'
 
 const upload = (contentType: string, bytes: Uint8Array) =>
-  uploadBrandingImage({ schoolId: SCHOOL_ID, contentType, bytes, id: ID }, storage, optimize)
+  uploadBrandingImage(
+    { schoolId: SCHOOL_ID, contentType, bytes, id: ID },
+    storage,
+    optimize,
+    renderIcon
+  )
 
 describe('uploadBrandingImage', () => {
   beforeEach(() => {
@@ -22,6 +28,7 @@ describe('uploadBrandingImage', () => {
     storage.put = vi.fn().mockResolvedValue('OK')
     storage.get = vi.fn()
     optimize.mockResolvedValue({ result: 'OK', bytes: WEBP })
+    renderIcon.mockResolvedValue(new Uint8Array([1, 2, 3]))
   })
 
   it('stores the WebP conversion under the branding prefix and returns its served URL', async () => {
@@ -36,6 +43,30 @@ describe('uploadBrandingImage', () => {
       body: WEBP,
       contentType: 'image/webp',
     })
+  })
+
+  it('stores all five PNG variants alongside the WebP logo', async () => {
+    await upload('image/png', new Uint8Array([1]))
+    expect(storage.put.mock.calls.map(([input]) => input.key)).toEqual([
+      `branding/${SCHOOL_ID}/${ID}.webp`,
+      ...['192', '512', '192-maskable', '512-maskable', '180-apple'].map(
+        (suffix) => `branding/${SCHOOL_ID}/${ID}-icon-${suffix}.png`
+      ),
+    ])
+    expect(
+      storage.put.mock.calls.slice(1).every(([input]) => input.contentType === 'image/png')
+    ).toBe(true)
+  })
+
+  it('stores nothing when icon generation fails', async () => {
+    renderIcon.mockRejectedValueOnce(new Error('invalid image'))
+    expect(await upload('image/png', new Uint8Array([1]))).toEqual({ result: 'invalidImage' })
+    expect(storage.put).not.toHaveBeenCalled()
+  })
+
+  it('does not report success when a variant cannot be stored', async () => {
+    storage.put.mockResolvedValueOnce('OK').mockResolvedValueOnce('notConfigured')
+    expect(await upload('image/png', new Uint8Array([1]))).toEqual({ result: 'notConfigured' })
   })
 
   it.each(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'])(

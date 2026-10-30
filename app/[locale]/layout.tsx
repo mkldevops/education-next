@@ -9,7 +9,9 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { UmamiScript } from '@/components/umami-script'
 import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
-import { getBrandingConfig, resolveBrandingSchoolId } from '@/lib/branding'
+import { resolveBrandingSchoolId } from '@/lib/branding'
+import { getBrandingAssets } from '@/lib/branding-assets'
+import { getPwaBranding } from '@/lib/pwa-branding'
 import { getThemeConfigs } from '@/lib/theme-configs'
 import '@/styles/globals.css'
 
@@ -33,9 +35,15 @@ type Props = {
   params: Promise<{ locale: string }>
 }
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
+export async function generateViewport(): Promise<Viewport> {
+  const { themeColor } = await getPwaBranding()
+  return {
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover',
+    interactiveWidget: 'resizes-content',
+    themeColor,
+  }
 }
 
 export function generateStaticParams() {
@@ -50,12 +58,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Le titre par défaut suit l'école affichée. Il ne retombe jamais sur `company`,
   // qui décrit l'exploitant de la plateforme et non un locataire.
   const t = await getTranslations({ locale, namespace: 'metadata' })
-  const schoolId = await resolveBrandingSchoolId()
-  const schoolName = schoolId ? (await getBrandingConfig(schoolId)).schoolName : undefined
+  const { schoolName, logoUrl } = await getPwaBranding()
+  const appleIcon = getBrandingAssets(logoUrl)?.find((asset) => asset.purpose === 'apple')
 
   return {
     title: schoolName ? t('title', { schoolName }) : t('platformTitle'),
     description: t('description'),
+    applicationName: schoolName || t('platformTitle'),
+    appleWebApp: {
+      capable: true,
+      title: schoolName || t('platformTitle'),
+      statusBarStyle: 'default',
+    },
     metadataBase: new URL(baseUrl),
     alternates: {
       canonical: `/${locale}`,
@@ -64,7 +78,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: '/en',
       },
     },
-    manifest: '/manifest.webmanifest',
+    ...(appleIcon
+      ? { icons: { apple: [{ url: appleIcon.src, sizes: '180x180', type: 'image/png' }] } }
+      : {}),
   }
 }
 
@@ -91,7 +107,11 @@ export default async function LocaleLayout({ children, params }: Props) {
       data-scroll-behavior="smooth"
       className={`${inter.variable} ${geistMono.variable}`}
     >
-      <body className="flex min-h-screen flex-col">
+      <head>
+        {/* The school's manifest depends on the session and active-school cookies. */}
+        <link rel="manifest" href="/manifest.webmanifest" crossOrigin="use-credentials" />
+      </head>
+      <body className="flex min-h-dvh flex-col">
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider configs={themeConfigs} />
           <ServiceWorkerRegister />

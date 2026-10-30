@@ -1316,7 +1316,7 @@
         "settings": {
           "logo_url": {
             "label": "Logo",
-            "description": "Shown in the sidebar and on the sign-in page. The favicon is generated from this logo."
+            "description": "Shown in the sidebar and on the sign-in page. Uploaded files are converted to WebP; the favicon and web app icons are generated automatically."
           },
           "max_students_per_class": {
             "label": "Maximum students per class",
@@ -3580,5 +3580,23 @@
     "date": "Date",
     "location": "Location",
     "gallery": "Photos"
+  },
+  "pwa": {
+    "statusLabel": "Application status",
+    "offline": "Connection lost. An Internet connection is required to save your changes.",
+    "reconnected": "Connection restored.",
+    "updateReady": "A new version is available",
+    "updateDescription": "Finish your edits before reloading the application.",
+    "reload": "Reload",
+    "updating": "Updating…",
+    "install": {
+      "button": "Install app",
+      "iosButton": "Add to Home Screen",
+      "title": "Add to Home Screen",
+      "stepSafari": "Open this page in Safari.",
+      "stepShare": "Tap the Share button.",
+      "stepAdd": "Choose “Add to Home Screen”, then tap Add.",
+      "close": "Close"
+    }
   }
 }
