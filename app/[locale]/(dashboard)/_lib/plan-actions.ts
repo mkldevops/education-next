@@ -16,6 +16,8 @@ export async function createPlanAction(data: Omit<CreatePlanInput, 'schoolId'>) 
   const result = await createPlan({ ...data, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/plans')
+  revalidatePath('/dashboard/payments')
+  revalidatePath('/dashboard/families', 'layout')
   return result
 }
 
@@ -24,6 +26,8 @@ export async function updatePlanAction(id: string, data: Omit<UpdatePlanInput, '
   const result = await updatePlan({ ...data, id, schoolId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/plans')
+  revalidatePath('/dashboard/payments')
+  revalidatePath('/dashboard/families', 'layout')
   return result
 }
 

@@ -27,7 +27,7 @@ export async function PaymentsOverview({ stats, locale, currency, periodName }: 
   const t = await getTranslations('dashboard.pages.payments.stats')
   const tScope = await getTranslations('dashboard.stats')
   const tMethod = await getTranslations('paymentMethod')
-  const { totals, monthly, methods, families } = stats
+  const { totals, monthly, methods, overdueFamilies: families, tracking } = stats
 
   const scope = periodName ? tScope('scopePeriod', { period: periodName }) : tScope('scopeAll')
   const monthLabel = new Intl.DateTimeFormat(locale, { month: 'short' })
@@ -88,6 +88,23 @@ export async function PaymentsOverview({ stats, locale, currency, periodName }: 
           caption={t('uncashedCount', { count: totals.uncashedCount })}
           icon={Banknote}
           tone="blue"
+        />
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <KpiCard
+          label={t('expectedToDate')}
+          value={formatCurrency(tracking.expectedToDate, locale, currency)}
+          caption={tracking.tracked ? t('overdueSubtitle') : t('trackingDisabled')}
+          icon={Landmark}
+          tone="primary"
+        />
+        <KpiCard
+          label={t('overdueAmount')}
+          value={formatCurrency(tracking.overdueAmount, locale, currency)}
+          caption={tracking.tracked ? t('overdueSubtitle') : t('trackingDisabled')}
+          icon={Wallet}
+          tone="amber"
         />
       </div>
 
@@ -156,14 +173,22 @@ export async function PaymentsOverview({ stats, locale, currency, periodName }: 
                       {family.familyName}
                     </Link>
                     <span className="text-sm font-medium text-graphite">
-                      {formatCurrency(family.remaining, locale, currency)}
+                      {formatCurrency(family.overdueAmount, locale, currency)}
                       <span className="ml-2 text-xs text-graphite-600">
-                        {t('outOf', { amount: formatCurrency(family.due, locale, currency) })}
+                        {t('outOf', {
+                          amount: formatCurrency(family.expectedToDate, locale, currency),
+                        })}
                       </span>
                     </span>
                   </div>
                   <div className="mt-2">
-                    <ProgressBar value={family.collectionRate} />
+                    <ProgressBar
+                      value={
+                        family.expectedToDate > 0
+                          ? Math.max(0, 100 * (1 - family.overdueAmount / family.expectedToDate))
+                          : 0
+                      }
+                    />
                   </div>
                   <OutstandingFamilyActions
                     family={{ id: family.familyId, name: family.familyName }}

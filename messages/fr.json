@@ -982,14 +982,21 @@
           "monthlyTitle": "Évolution des encaissements",
           "monthlySubtitle": "{months} derniers mois",
           "methodsTitle": "Répartition par mode de paiement",
-          "outstandingTitle": "Familles à relancer",
-          "outstandingSubtitle": "Restant dû décroissant",
+          "outstandingTitle": "Familles en retard",
+          "outstandingSubtitle": "Retard décroissant selon les échéances",
           "outOf": "sur {amount}",
           "noCollection": "Aucun encaissement sur ce périmètre",
-          "noOutstanding": "Toutes les familles sont à jour",
+          "noOutstanding": "Aucune famille en retard sur les forfaits suivis",
           "recordFor": "Enregistrer un règlement pour {family}",
           "callFamily": "Appeler la famille {family}",
-          "noPhone": "Aucun téléphone"
+          "noPhone": "Aucun téléphone",
+          "expectedToDate": "Attendu à ce jour",
+          "overdueAmount": "Montant en retard",
+          "overdueSubtitle": "Sur les forfaits suivis, après leur jour limite de paiement",
+          "annualRemaining": "Solde annuel restant",
+          "upToDate": "À jour",
+          "trackingDisabled": "Suivi des échéances désactivé",
+          "paidToDate": "Versé à ce jour"
         },
         "summary": {
           "remaining": "Solde restant",
@@ -1072,6 +1079,38 @@
             "notFound": "Plan introuvable",
             "planInUse": "Des inscriptions en cours utilisent ce plan : changez-les de plan d'abord"
           }
+        },
+        "configuration": {
+          "priceTitle": "Prix du forfait",
+          "priceBasis": "Définir le prix à partir de",
+          "annual": "Prix annuel",
+          "monthlyPrice": "Mensualité × nombre de mois",
+          "annualAmount": "Prix annuel ({currency})",
+          "monthlyAmount": "Mensualité ({currency})",
+          "priceMonths": "Nombre de mois facturés",
+          "annualTotal": "Total annuel : {amount}",
+          "monthlySummary": "{amount} × {months} mois",
+          "trackingTitle": "Suivi des paiements",
+          "trackingMode": "Échéancier",
+          "modes": {
+            "NONE": "Aucun suivi des échéances",
+            "INSTALLMENTS": "En plusieurs fois (5 maximum)",
+            "MONTHLY": "Mensuel",
+            "QUARTERLY": "Trimestriel"
+          },
+          "noneHelp": "Le solde reste visible, sans calcul de retard.",
+          "trackingHelp": "Une famille est en retard si ses versements ne couvrent pas les échéances passées. Ce réglage s’applique aux inscriptions utilisant ce forfait.",
+          "firstMonth": "Premier mois",
+          "paymentCount": "Nombre de versements",
+          "dueDay": "Jour limite de paiement",
+          "installmentMonth": "Versement {number} : mois",
+          "installmentDay": "Versement {number} : jour",
+          "removeInstallment": "Supprimer le versement {number}",
+          "remove": "Supprimer",
+          "addInstallment": "Ajouter un versement",
+          "schedulePreview": "{count} versement(s) d’environ {amount}, avant remise.",
+          "dateHelp": "Les mois sont rattachés à la période scolaire de chaque inscription. Si le jour choisi n’existe pas, le dernier jour du mois est retenu. Le retard commence le lendemain.",
+          "roundingHelp": "Le dernier versement absorbe les écarts d’arrondi. Le total annuel ne change pas."
         }
       },
       "meals": {

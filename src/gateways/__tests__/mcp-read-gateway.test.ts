@@ -106,7 +106,7 @@ describe('mcpReadGateway', () => {
 
     expect(dbMock.plan.findMany).toHaveBeenCalledWith({
       where: { schoolId: SCHOOL, isActive: true, name: { not: '__unpriced__' } },
-      select: { id: true, name: true, amount: true },
+      select: { id: true, name: true, amount: true, pricing: true, paymentSchedule: true },
       orderBy: { name: 'asc' },
     })
   })

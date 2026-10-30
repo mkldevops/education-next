@@ -821,13 +821,15 @@ model PaymentProviderEvent {
 }
 
 model Plan {
-  id        String   @id @default(uuid())
-  schoolId  String
-  name      String   @db.VarChar(50)
-  amount    Decimal  @db.Decimal(10, 2)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  schoolId        String
+  name            String   @db.VarChar(50)
+  amount          Decimal  @db.Decimal(10, 2)
+  pricing         Json?
+  paymentSchedule Json?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   school      School       @relation(fields: [schoolId], references: [id])
   enrollments Enrollment[]

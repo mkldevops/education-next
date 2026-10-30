@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const findById = vi.fn()
 const findPayableByFamily = vi.fn()
 const listFamilyPayments = vi.fn()
+const getFamilyPaymentTracking = vi.fn()
 
+vi.mock('@/use-cases/payments/payment-tracking', () => ({ getFamilyPaymentTracking }))
 vi.mock('@/gateways/family-gateway', () => ({ familyGateway: { findById } }))
 vi.mock('@/gateways/enrollment-gateway', () => ({ enrollmentGateway: { findPayableByFamily } }))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway: { listFamilyPayments } }))
@@ -20,6 +22,12 @@ const familyId = '22222222-2222-4222-8222-222222222222'
 
 beforeEach(() => {
   vi.clearAllMocks()
+  getFamilyPaymentTracking.mockResolvedValue({
+    expectedToDate: 50,
+    overdueAmount: 10,
+    tracked: true,
+    paidToDate: 40,
+  })
   findById.mockResolvedValue({ id: familyId, name: 'Madi' })
   findPayableByFamily.mockResolvedValue([
     { id: 'enr-1', totalAmount: 100, discount: 0, payments: [{ amount: 40 }] },
@@ -45,6 +53,8 @@ describe('familyPaymentsFromMcp', () => {
     expect(result).toMatchObject({
       family: { id: familyId, name: 'Madi' },
       remainingBalance: 60,
+      paidAmount: 40,
+      tracking: { expectedToDate: 50, overdueAmount: 10, tracked: true, paidToDate: 40 },
       payments: [
         {
           id: 'pay-1',
@@ -56,6 +66,7 @@ describe('familyPaymentsFromMcp', () => {
       ],
     })
     expect(listFamilyPayments).toHaveBeenCalledWith('school-1', familyId, 20)
+    expect(getFamilyPaymentTracking).toHaveBeenCalledWith('school-1', familyId)
   })
 
   it('answers notFound for a family outside the school', async () => {
@@ -63,6 +74,7 @@ describe('familyPaymentsFromMcp', () => {
 
     expect(await familyPaymentsFromMcp(scope as never, { familyId })).toBe('notFound')
     expect(listFamilyPayments).not.toHaveBeenCalled()
+    expect(getFamilyPaymentTracking).not.toHaveBeenCalled()
   })
 
   it('refuses when payments are disabled', async () => {

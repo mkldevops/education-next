@@ -10,6 +10,7 @@ import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-co
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
+import { getFamilyPaymentTracking } from '@/use-cases/payments/payment-tracking'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { requireSchoolSession } from '../../../_lib/auth-helper'
@@ -85,14 +86,21 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   // `countDeletionImpact` n'est pas dérivable de `family` : la page lit par `db`, filtrée
   // sur `isActive`, alors que la suppression emporte aussi les lignes archivées.
   // Le bouton de paiement en ligne n'est rendu que pour un parent.
-  const [selectedPeriodId, familyBalance, deletionImpact, onlinePaymentAvailable, { currency }] =
-    await Promise.all([
-      getSelectedPeriodId(family.schoolId),
-      seesFinances ? getFamilyBalance(family.schoolId, family.id) : null,
-      isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
-      isStaff ? false : isOnlinePaymentAvailable(family.schoolId),
-      getSchoolRegionalSettings(family.schoolId),
-    ])
+  const [
+    selectedPeriodId,
+    familyBalance,
+    deletionImpact,
+    onlinePaymentAvailable,
+    { currency },
+    paymentTracking,
+  ] = await Promise.all([
+    getSelectedPeriodId(family.schoolId),
+    seesFinances ? getFamilyBalance(family.schoolId, family.id) : null,
+    isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
+    isStaff ? false : isOnlinePaymentAvailable(family.schoolId),
+    getSchoolRegionalSettings(family.schoolId),
+    paymentsEnabled ? getFamilyPaymentTracking(family.schoolId, family.id) : null,
+  ])
 
   const {
     students,
@@ -301,7 +309,14 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             ? [
                 {
                   label: t('tabs.payments'),
-                  content: <PaymentsTab payments={payments} locale={locale} currency={currency} />,
+                  content: (
+                    <PaymentsTab
+                      payments={payments}
+                      locale={locale}
+                      currency={currency}
+                      tracking={paymentTracking}
+                    />
+                  ),
                 },
               ]
             : []),

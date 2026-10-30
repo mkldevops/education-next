@@ -7,6 +7,8 @@ const dbMock = {
 }
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
+const trackingMock = vi.fn()
+vi.mock('./payment-tracking', () => ({ getPaymentTrackingByFamily: trackingMock }))
 
 const { getPaymentStats } = await import('./payment-stats')
 
@@ -27,6 +29,7 @@ function row(overrides: {
 describe('getPaymentStats', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    trackingMock.mockResolvedValue([])
     dbMock.enrollment.findMany.mockResolvedValue([
       row({
         families: [
@@ -128,6 +131,41 @@ describe('getPaymentStats', () => {
         }),
       })
     )
+  })
+
+  it('keeps annual balances separate from arrears and never offsets debt between families', async () => {
+    trackingMock.mockResolvedValue([
+      {
+        familyId: 'family-1',
+        familyName: 'Diallo',
+        expectedToDate: 100,
+        paidToDate: 60,
+        overdueAmount: 40,
+        tracked: true,
+      },
+      {
+        familyId: 'family-2',
+        familyName: 'Ahead',
+        expectedToDate: 50,
+        paidToDate: 100,
+        overdueAmount: 0,
+        tracked: true,
+      },
+    ])
+
+    const stats = await getPaymentStats('school-1', 'period-1', reference)
+
+    expect(stats.totals.remaining).toBe(120)
+    expect(stats.tracking).toEqual({
+      expectedToDate: 150,
+      paidToDate: 160,
+      overdueAmount: 40,
+      tracked: true,
+    })
+    expect(stats.overdueFamilies).toEqual([
+      expect.objectContaining({ familyId: 'family-1', overdueAmount: 40 }),
+    ])
+    expect(trackingMock).toHaveBeenCalledWith('school-1', { periodId: 'period-1', reference })
   })
 
   it('reads only the rows of the charted window', async () => {

@@ -10,6 +10,7 @@ import {
 } from '@/use-cases/class-schedules/schemas'
 import { EVENT_CATEGORIES, EVENT_STATUSES, EVENT_VISIBILITIES } from '@/use-cases/events/schemas'
 import { createLevelSchema } from '@/use-cases/levels/schemas'
+import { createPlanSchema, updatePlanSchema } from '@/use-cases/plans/schemas'
 
 export const mcpCreateLevelSchema = createLevelSchema.omit({ schoolId: true }).extend({
   name: createLevelSchema.shape.name.trim().min(1),
@@ -17,6 +18,23 @@ export const mcpCreateLevelSchema = createLevelSchema.omit({ schoolId: true }).e
 
 export const mcpCreateClassPeriodSchema = createClassPeriodSchema.omit({ schoolId: true }).extend({
   name: createClassPeriodSchema.shape.name.trim().min(1),
+})
+
+// Le catalogue MCP exige un objet JSON à la racine. Les champs viennent du schéma
+// partagé ; le use case de formule applique aussi ses validations croisées.
+export const mcpCreatePlanSchema = z.object({
+  name: createPlanSchema.shape.name.trim().min(1),
+  amount: createPlanSchema.shape.amount,
+  pricing: createPlanSchema.shape.pricing,
+  paymentSchedule: createPlanSchema.shape.paymentSchedule,
+})
+
+export const mcpUpdatePlanSchema = z.object({
+  id: updatePlanSchema.shape.id,
+  name: updatePlanSchema.shape.name,
+  amount: updatePlanSchema.shape.amount,
+  pricing: updatePlanSchema.shape.pricing,
+  paymentSchedule: updatePlanSchema.shape.paymentSchedule,
 })
 
 export const mcpResourceIdSchema = z.object({ id: z.uuid() })

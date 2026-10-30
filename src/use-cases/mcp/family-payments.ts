@@ -3,7 +3,8 @@ import { enrollmentBalances } from '@/domain/payment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
-import { roundHalfUp } from '@/lib/decimal'
+import { roundHalfUp, toNumber } from '@/lib/decimal'
+import { getFamilyPaymentTracking } from '@/use-cases/payments/payment-tracking'
 import type { DraftScope } from './draft-scope'
 import { mcpFamilyPaymentsSchema } from './schemas'
 
@@ -24,15 +25,24 @@ export async function familyPaymentsFromMcp(scope: DraftScope, input: Input) {
   const family = await familyGateway.findById(schoolId, parsed.data.familyId)
   if (!family) return 'notFound' as const
 
-  const [enrollments, payments] = await Promise.all([
+  const [enrollments, payments, tracking] = await Promise.all([
     enrollmentGateway.findPayableByFamily(schoolId, family.id),
     mcpReadGateway.listFamilyPayments(schoolId, family.id, RECENT_PAYMENTS),
+    getFamilyPaymentTracking(schoolId, family.id),
   ])
   const balances = enrollmentBalances(enrollments)
 
   return {
     family: { id: family.id, name: family.name },
     remainingBalance: roundHalfUp(balances.reduce((sum, row) => sum + row.remainingBalance, 0)),
+    paidAmount: roundHalfUp(
+      enrollments.reduce(
+        (sum, enrollment) =>
+          sum + enrollment.payments.reduce((paid, payment) => paid + toNumber(payment.amount), 0),
+        0
+      )
+    ),
+    tracking,
     enrollments: balances,
     payments: payments.map((payment) => ({
       id: payment.id,

@@ -108,7 +108,7 @@ export const mcpReadGateway = {
   listPlans: (schoolId: string) =>
     db.plan.findMany({
       where: { schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
-      select: { id: true, name: true, amount: true },
+      select: { id: true, name: true, amount: true, pricing: true, paymentSchedule: true },
       orderBy: { name: 'asc' },
     }),
 

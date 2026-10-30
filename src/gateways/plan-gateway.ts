@@ -1,11 +1,14 @@
 import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
+import type { PaymentSchedule, PlanPricing } from '@/domain/payment-schedule'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 
 export const planGateway = {
-  create: (schoolId: string, data: { name: string; amount: number }) =>
-    db.plan.create({ data: { ...data, schoolId } }),
+  create: (
+    schoolId: string,
+    data: { name: string; amount: number; pricing?: PlanPricing; paymentSchedule?: PaymentSchedule }
+  ) => db.plan.create({ data: { ...data, schoolId } }),
 
   update: (
     schoolId: string,
@@ -13,6 +16,8 @@ export const planGateway = {
     data: {
       name?: string
       amount?: number
+      pricing?: PlanPricing
+      paymentSchedule?: PaymentSchedule
     }
   ) =>
     db.plan.update({

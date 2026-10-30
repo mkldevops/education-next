@@ -12,10 +12,11 @@ import {
   Label,
 } from '@peaklab/ui'
 import { Plus } from 'lucide-react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
+import { useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
-import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { createPlanAction } from '../../../_lib/plan-actions'
+import { type PlanConfiguration, PlanConfigurationFields } from './plan-configuration-fields'
 
 export function CreatePlanDialog({ currency }: { currency: string }) {
   const t = useTranslations('dashboard.pages.plans.create')
@@ -40,14 +41,16 @@ export function CreatePlanDialog({ currency }: { currency: string }) {
 
 function CreatePlanForm({ currency }: { currency: string }) {
   const t = useTranslations('dashboard.pages.plans.create')
-  const locale = useLocale()
-  const step = currencyStep(currency)
+  const [configuration, setConfiguration] = useState<PlanConfiguration>({
+    pricing: { mode: 'ANNUAL', amount: 0 },
+    paymentSchedule: { mode: 'NONE' },
+  })
   const { isPending, close, onSubmit } = useDialogForm(t)
 
   const handleSubmit = onSubmit((formData) =>
     createPlanAction({
       name: formData.get('name') as string,
-      amount: Number(formData.get('amount')),
+      ...configuration,
     })
   )
 
@@ -59,20 +62,12 @@ function CreatePlanForm({ currency }: { currency: string }) {
             <Label htmlFor="plan-name">{t('name')}</Label>
             <Input id="plan-name" name="name" required maxLength={50} disabled={isPending} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="plan-amount">
-              {t('amount', { currency: currencySymbol(locale, currency) })}
-            </Label>
-            <Input
-              id="plan-amount"
-              name="amount"
-              type="number"
-              step={step}
-              min={step}
-              required
-              disabled={isPending}
-            />
-          </div>
+          <PlanConfigurationFields
+            value={configuration}
+            onChange={setConfiguration}
+            currency={currency}
+            disabled={isPending}
+          />
         </div>
       </DialogBody>
       <DialogFormActions t={t} isPending={isPending} onCancel={close} />

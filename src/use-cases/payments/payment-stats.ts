@@ -12,6 +12,12 @@ import {
   summarizePayments,
 } from '@/domain/payment-stats'
 import { db } from '@/lib/db'
+import { roundHalfUp } from '@/lib/decimal'
+import {
+  type FamilyPaymentTracking,
+  getPaymentTrackingByFamily,
+  type TrackedFamily,
+} from './payment-tracking'
 
 const MONTHS_CHARTED = 12
 const FAMILIES_LISTED = 6
@@ -21,6 +27,8 @@ export type PaymentStats = {
   monthly: MonthlyCollection[]
   methods: MethodCollection[]
   families: FamilyToFollowUp[]
+  tracking: FamilyPaymentTracking
+  overdueFamilies: Array<TrackedFamily & { contactPhone: string | null }>
 }
 
 /** Famille à relancer, avec le téléphone à composer pour la joindre. */
@@ -91,7 +99,7 @@ export async function getPaymentStats(
   }
   const paymentWhere = { schoolId, isActive: true, enrollment: enrollmentWhere }
 
-  const [rows, paidByEnrollment, byMethod, uncashed, latest] = await Promise.all([
+  const [rows, paidByEnrollment, byMethod, uncashed, latest, tracking] = await Promise.all([
     db.enrollment.findMany({
       where: enrollmentWhere,
       select: {
@@ -130,6 +138,7 @@ export async function getPaymentStats(
       where: { ...paymentWhere, paidAt: { lt: nextMonthStart(reference) } },
       _max: { paidAt: true },
     }),
+    getPaymentTrackingByFamily(schoolId, { periodId, reference }),
   ])
 
   const window = monthWindow(latest._max.paidAt, { months: MONTHS_CHARTED, reference })
@@ -146,15 +155,17 @@ export async function getPaymentStats(
   }))
 
   const outstanding = familiesOutstanding(enrollments, FAMILIES_LISTED)
+  const overdueFamilies = tracking
+    .filter((family) => family.overdueAmount > 0)
+    .slice(0, FAMILIES_LISTED)
   const [charted, phones] = await Promise.all([
     db.payment.findMany({
       where: { ...paymentWhere, paidAt: { gte: window.from, lt: window.to } },
       select: { amount: true, paidAt: true },
     }),
-    contactPhones(
-      schoolId,
-      outstanding.map((family) => family.familyId)
-    ),
+    contactPhones(schoolId, [
+      ...new Set([...outstanding, ...overdueFamilies].map((family) => family.familyId)),
+    ]),
   ])
 
   return {
@@ -165,6 +176,16 @@ export async function getPaymentStats(
     monthly: monthlyCollection(charted, window),
     methods: collectionByMethod(methods),
     families: outstanding.map((family) => ({
+      ...family,
+      contactPhone: phones.get(family.familyId) ?? null,
+    })),
+    tracking: {
+      expectedToDate: roundHalfUp(tracking.reduce((sum, family) => sum + family.expectedToDate, 0)),
+      overdueAmount: roundHalfUp(tracking.reduce((sum, family) => sum + family.overdueAmount, 0)),
+      paidToDate: roundHalfUp(tracking.reduce((sum, family) => sum + family.paidToDate, 0)),
+      tracked: tracking.some((family) => family.tracked),
+    },
+    overdueFamilies: overdueFamilies.map((family) => ({
       ...family,
       contactPhone: phones.get(family.familyId) ?? null,
     })),

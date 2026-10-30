@@ -33,6 +33,8 @@ const baseInsights: SchoolInsights = {
     monthly: [{ month: '2026-01', amount: 600, count: 8 }],
     methods: [{ method: 'CASH', amount: 600, count: 8, share: 100 }],
     families: [],
+    tracking: { expectedToDate: 0, overdueAmount: 0, paidToDate: 0, tracked: false },
+    overdueFamilies: [],
   },
   classes: [{ id: 'class-1', name: 'CP-A', level: 'CP', enrolled: 18, capacity: 20 }],
   levels: [{ level: 'CP', enrolled: 18 }],

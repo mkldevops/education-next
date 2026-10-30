@@ -32,6 +32,7 @@ import { findStudentsFromMcp } from '@/use-cases/mcp/find-students'
 import { getEventFromMcp } from '@/use-cases/mcp/get-event'
 import { listAttendanceCallsFromMcp } from '@/use-cases/mcp/list-attendance-calls'
 import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
+import { createPlanFromMcp, updatePlanFromMcp } from '@/use-cases/mcp/plan-configuration'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
 import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
@@ -50,6 +51,7 @@ import {
   mcpCreateClassScheduleSlotSchema,
   mcpCreateEventSchema,
   mcpCreateLevelSchema,
+  mcpCreatePlanSchema,
   mcpCreateTeacherSchema,
   mcpDeleteClassScheduleSlotSchema,
   mcpDeleteFamilySchema,
@@ -63,6 +65,7 @@ import {
   mcpResourceIdSchema,
   mcpUpdateClassScheduleSlotSchema,
   mcpUpdateEventSchema,
+  mcpUpdatePlanSchema,
   previewClassScheduleSchema,
   previewEnrollFamilySchema,
   previewRecordPaymentSchema,
@@ -327,11 +330,44 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'list_plans',
         title: 'Formules tarifaires',
         description:
-          'Formules actives et leur montant. Le montant est une valeur décimale rendue en ' +
-          "chaîne, dans la devise de l'école — jamais des centimes.",
+          'Formules actives : montant annuel, base de prix `pricing` (annuelle ou mensualité × mois) ' +
+          'et suivi `paymentSchedule` (NONE, MONTHLY, QUARTERLY ou INSTALLMENTS). ' +
+          "`amount` est une chaîne décimale, dans la devise de l'école — jamais des centimes.",
         inputSchema: NO_ARGS,
         kind: 'read',
         run: () => mcpReadGateway.listPlans(schoolId),
+      }),
+      define({
+        name: 'create_plan',
+        title: 'Créer une formule tarifaire',
+        description:
+          'Crée une formule dans l’école courante. Fournir `pricing` : ANNUAL avec son montant, ' +
+          'ou MONTHLY avec le montant mensuel et `months` ; le total annuel est calculé. ' +
+          '`amount` accepte aussi directement un total annuel. `paymentSchedule` choisit NONE ' +
+          '(aucun retard calculé), MONTHLY (1–12 échéances), QUARTERLY (1–4 échéances), ' +
+          'ou INSTALLMENTS (1–5 dates mois/jour). Pour les modes récurrents : `firstMonth` ' +
+          '(1–12), `count` et `dueDay` (1–31). Les dates sont relatives à la période scolaire. ' +
+          'Le prix et le suivi sont indépendants ; ce suivi ne limite pas le nombre de paiements ' +
+          'enregistrables. Consulter `list_plans` avant de créer. Refus : `validationError`, ' +
+          '`paymentsDisabled`, `unpricedPlan`.',
+        inputSchema: mcpCreatePlanSchema,
+        annotations: NON_IDEMPOTENT_WRITE,
+        kind: 'write',
+        run: (args) => createPlanFromMcp(scope, args),
+      }),
+      define({
+        name: 'update_plan',
+        title: 'Modifier le prix ou le suivi d’une formule',
+        description:
+          'Modifie les champs fournis d’une formule de `list_plans`. Même saisie du prix et du ' +
+          'suivi que `create_plan`. Un changement de prix ne modifie pas les totaux des inscriptions ' +
+          'existantes ; un changement de suivi s’applique à leurs prochains calculs de retard. ' +
+          'Pour désactiver le suivi : `paymentSchedule: {mode: "NONE"}`. ' +
+          'Refus : `notFound`, `validationError`, `paymentsDisabled`, `unpricedPlan`.',
+        inputSchema: mcpUpdatePlanSchema,
+        annotations: IDEMPOTENT_OVERWRITE,
+        kind: 'write',
+        run: (args) => updatePlanFromMcp(scope, args),
       })
     )
   }
@@ -655,7 +691,9 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         title: "Paiements d'une famille",
         description:
           "Reste à payer d'une famille, par inscription, et ses 20 derniers paiements actifs " +
-          "avec leur identifiant. Sert à retrouver un paiement avant de l'annuler.",
+          'avec leur identifiant. `tracking` distingue montant attendu à ce jour, retard et suivi actif ; ' +
+          '`paidAmount` donne le montant reçu sur les inscriptions ouvertes. Sans suivi, le solde ' +
+          'annuel restant n’est pas un retard. Sert aussi à retrouver un paiement avant de l’annuler.',
         inputSchema: mcpFamilyPaymentsSchema,
         annotations: { readOnlyHint: true, openWorldHint: false },
         kind: 'read',
