@@ -280,7 +280,7 @@ export function PlanConfigurationFields({
         )}
         {schedule.mode !== 'NONE' && (
           <div
-            className="space-y-2 rounded bg-alabaster-100 p-3 text-sm text-graphite-600"
+            className="space-y-2 rounded bg-surface-2 p-3 text-sm text-muted-foreground"
             aria-live="polite"
           >
             <p>
