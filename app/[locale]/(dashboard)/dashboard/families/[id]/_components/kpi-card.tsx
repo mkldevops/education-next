@@ -15,8 +15,8 @@ const KPI_COLOR_STYLES: Record<
     border: 'border-alabaster-700',
     text: 'text-graphite',
     subText: 'text-graphite-600',
-    iconBg: 'bg-primary-light',
-    iconText: 'text-primary',
+    iconBg: 'bg-primary-subtle',
+    iconText: 'text-foreground',
   },
   green: {
     bg: 'bg-green-50',
@@ -67,7 +67,7 @@ export function KPICard({ label, value, subValue, icon: Icon, color = 'gray', ac
         {action && (
           <Link
             href={action.href}
-            className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded border border-primary px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded border border-primary px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-primary-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <Plus aria-hidden className="size-4" />
             {action.label}

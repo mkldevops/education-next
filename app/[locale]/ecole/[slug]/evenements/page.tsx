@@ -110,7 +110,7 @@ export default async function PublicEventsPage({ params }: Props) {
       <ThemeProvider configs={themeConfigs} />
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <header className="mb-8">
-          <p className="text-sm font-medium text-primary">{school.name}</p>
+          <p className="text-sm font-medium text-foreground">{school.name}</p>
           <h1 className="mt-1 text-3xl font-bold text-graphite">{t('title')}</h1>
           <p className="mt-2 text-graphite-600">{t('subtitle', { schoolName: school.name })}</p>
           <a

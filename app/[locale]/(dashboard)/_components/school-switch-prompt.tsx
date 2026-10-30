@@ -49,7 +49,7 @@ export function SchoolSwitchPrompt({ schoolId, schoolName, canSwitch }: Props) {
   return (
     <Card className="mx-auto max-w-xl p-8 text-center">
       <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-        <Building2 className="h-6 w-6 text-primary" />
+        <Building2 className="h-6 w-6 text-foreground" />
       </span>
       <h1 className="mt-4 text-xl font-semibold text-graphite">{t('title')}</h1>
       <p className="mt-2 text-sm text-graphite-600">{t('description', { schoolName })}</p>

@@ -103,7 +103,7 @@ export default async function CashDayPage({ params, searchParams }: Props) {
             <li key={row.id} className="flex items-center justify-between gap-2 py-2 text-sm">
               <Link
                 href={`/dashboard/cashier/receipts/${row.id}`}
-                className="text-primary hover:underline"
+                className="text-foreground hover:underline"
               >
                 {t('receipt', { number: formatReceiptNumber(row.number), family: row.family })}
               </Link>
@@ -135,7 +135,7 @@ export default async function CashDayPage({ params, searchParams }: Props) {
       <nav className="flex items-center gap-4 text-sm" aria-label={t('title')}>
         <Link
           href={`/dashboard/cashier/day?day=${shiftDay(day, -1)}`}
-          className="text-primary hover:underline"
+          className="text-foreground hover:underline"
         >
           {t('previous')}
         </Link>
@@ -143,7 +143,7 @@ export default async function CashDayPage({ params, searchParams }: Props) {
         {day < today && (
           <Link
             href={`/dashboard/cashier/day?day=${shiftDay(day, 1)}`}
-            className="text-primary hover:underline"
+            className="text-foreground hover:underline"
           >
             {t('next')}
           </Link>

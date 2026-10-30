@@ -34,7 +34,7 @@ function BrandMark({ schoolName, logoUrl, fallbackName }: Branding & { fallbackN
           // biome-ignore lint/performance/noImgElement: school logos are arbitrary remote URLs
           <img src={logoUrl} alt="" className="size-full object-contain p-1" />
         ) : (
-          <GraduationCap aria-hidden className="size-5 text-primary" />
+          <GraduationCap aria-hidden className="size-5 text-foreground" />
         )}
       </span>
       <span className="truncate text-[0.9375rem] font-semibold tracking-tight">{name}</span>

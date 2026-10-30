@@ -84,7 +84,7 @@ export async function EnrollmentList({ enrollments, locale, currency, paymentsEn
                     </p>
                   )}
                 </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-graphite-800 transition-colors group-hover:text-primary" />
+                <ChevronRight className="h-5 w-5 shrink-0 text-graphite-800 transition-colors group-hover:text-foreground" />
               </div>
 
               {paymentsEnabled && (

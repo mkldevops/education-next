@@ -22,7 +22,7 @@ export function OutstandingFamilyActions({ family, phone, currency }: Props) {
         <a
           href={`tel:${phone.replace(/[^+\d]/g, '')}`}
           aria-label={t('callFamily', { family: family.name })}
-          className="flex w-fit items-center gap-1 text-xs text-primary hover:text-primary-hover hover:underline"
+          className="flex w-fit items-center gap-1 text-xs text-foreground hover:underline"
         >
           <Phone className="h-3 w-3 shrink-0" />
           {phone}

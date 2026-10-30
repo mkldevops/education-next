@@ -162,7 +162,7 @@ export function FlagToggle({
             aria-expanded={children ? checked : undefined}
             className="peer sr-only"
           />
-          <span className="h-6 w-11 rounded-full bg-alabaster-700 ring-offset-2 transition-colors peer-checked:bg-emerald-600 peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-disabled:opacity-50" />
+          <span className="h-6 w-11 rounded-full bg-alabaster-700 ring-offset-2 transition-colors peer-checked:bg-emerald-600 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-disabled:opacity-50" />
           <span className="pointer-events-none absolute left-0.5 size-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
         </label>
         {confirming && confirmDisable && (

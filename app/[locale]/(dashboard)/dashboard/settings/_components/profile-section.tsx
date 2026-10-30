@@ -104,7 +104,7 @@ export function ProfileSection({ user }: Props) {
               className={cn(
                 'h-auto px-4 py-3',
                 locale === loc.value
-                  ? 'border-primary bg-primary/5 text-primary'
+                  ? 'border-primary bg-primary/5 text-foreground'
                   : 'text-graphite-600 hover:border-alabaster'
               )}
             >

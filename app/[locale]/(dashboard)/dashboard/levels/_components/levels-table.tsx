@@ -81,7 +81,7 @@ export function LevelsTable({ levels, selectedPeriod, defaultCapacity, allLevels
             <Link
               key={classPeriod.id}
               href={`/dashboard/classes/${classPeriod.id}`}
-              className="rounded bg-alabaster-800 px-2 py-0.5 text-xs font-medium text-primary hover:text-primary-hover hover:underline"
+              className="rounded bg-alabaster-800 px-2 py-0.5 text-xs font-medium text-foreground hover:underline"
             >
               {classPeriod.name}
             </Link>
@@ -115,7 +115,7 @@ export function LevelsTable({ levels, selectedPeriod, defaultCapacity, allLevels
             type="checkbox"
             checked={openPeriodOnly}
             onChange={(event) => toggleOpenPeriodOnly(event.target.checked)}
-            className="h-4 w-4 rounded border-alabaster-700 text-primary"
+            className="h-4 w-4 rounded border-alabaster-700 text-foreground"
           />
           {t('openPeriodOnly', { period: selectedPeriod.name })}
           {openPeriodOnly && hiddenCount > 0 && (

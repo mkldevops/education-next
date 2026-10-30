@@ -134,7 +134,7 @@ function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Prop
           <span className="pointer-events-none absolute right-3 flex size-4 items-center justify-center" />
         }
       >
-        <Check className="size-4 text-primary" aria-hidden="true" />
+        <Check className="size-4 text-foreground" aria-hidden="true" />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   )

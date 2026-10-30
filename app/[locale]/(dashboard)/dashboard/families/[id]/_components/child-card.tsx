@@ -55,7 +55,7 @@ export async function ChildCard({
   return (
     <Card className="flex h-full flex-col p-4 rounded border overflow-hidden hover:shadow-md transition-all duration-200">
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-12 h-12 rounded-full bg-primary-light text-primary flex items-center justify-center text-lg flex-shrink-0">
+        <div className="w-12 h-12 rounded-full bg-primary-subtle text-foreground flex items-center justify-center text-lg flex-shrink-0">
           {person.name.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
@@ -135,7 +135,7 @@ export async function ChildCard({
                     // parenthèses n'ajoutait rien et noyait le lien.
                     <Link
                       href={`/dashboard/classes/${currentAssignment.classPeriod.id}`}
-                      className="text-xs font-medium text-primary hover:text-primary-hover hover:underline"
+                      className="text-xs font-medium text-foreground hover:underline"
                     >
                       {currentAssignment.classPeriod.name}
                     </Link>

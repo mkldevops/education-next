@@ -69,7 +69,7 @@ export default async function CashierStudentPage({ params }: Props) {
         {familyId && (
           <Link
             href={`/dashboard/cashier?familyId=${familyId}`}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-foreground hover:underline"
           >
             {t('studentSheet.collect')}
           </Link>

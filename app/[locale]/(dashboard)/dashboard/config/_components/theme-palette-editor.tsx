@@ -214,7 +214,7 @@ export function ThemePaletteEditor({ colors }: Props) {
                 prefixed
                 color={draft[openKey] ?? derivedHex(openKey, primary)}
                 onChange={(value) => isHexColor(value) && setColor(openKey, value)}
-                className="h-9 min-w-0 flex-1 rounded border border-alabaster-500 px-2 font-mono text-sm uppercase text-graphite focus:border-primary focus:outline-none"
+                className="h-9 min-w-0 flex-1 rounded border border-alabaster-500 px-2 font-mono text-sm uppercase text-graphite focus:border-foreground focus:outline-none"
               />
               {supportsEyeDropper && (
                 <Button
@@ -239,7 +239,7 @@ export function ThemePaletteEditor({ colors }: Props) {
           aria-expanded={presetsOpen}
           aria-controls={presetsId}
           onClick={() => setPresetsOpen((open) => !open)}
-          className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+          className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
           <span className="text-xs font-semibold uppercase tracking-wide text-graphite-600">
             {t('presets')}
@@ -282,7 +282,7 @@ export function ThemePaletteEditor({ colors }: Props) {
                     setOpenKey(null)
                   }}
                   className={cn(
-                    'group rounded-lg border p-1.5 text-left transition-colors hover:border-graphite-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    'group rounded-lg border p-1.5 text-left transition-colors hover:border-graphite-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     active ? 'border-graphite' : 'border-alabaster-700'
                   )}
                 >

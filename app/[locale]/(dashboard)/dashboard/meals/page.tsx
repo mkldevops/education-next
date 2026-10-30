@@ -69,7 +69,7 @@ export default async function MealsPage({ params }: Props) {
           <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
           <p className="text-sm text-graphite-600">{t('intro')}</p>
         </div>
-        <Link href="/dashboard/cashier/debtors" className="text-sm text-primary hover:underline">
+        <Link href="/dashboard/cashier/debtors" className="text-sm text-foreground hover:underline">
           {t('debtorsLink')}
         </Link>
       </div>
