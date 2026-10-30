@@ -173,7 +173,7 @@ export default async function DashboardPage({ params }: Props) {
           }
         />
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <section aria-labelledby="children-heading" className="space-y-3 lg:col-span-2">
             <h2 id="children-heading" className="text-sm font-semibold text-foreground">
               {t('home.children.title')}
@@ -190,7 +190,7 @@ export default async function DashboardPage({ params }: Props) {
                 }
               />
             ) : (
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {home.children.map((child) => (
                   <li
                     key={child.id}
@@ -486,7 +486,7 @@ export default async function DashboardPage({ params }: Props) {
         </div>
       </section>
 
-      <div className={agenda ? 'grid gap-6 lg:grid-cols-5' : 'grid gap-6'}>
+      <div className={agenda ? 'grid grid-cols-1 gap-6 lg:grid-cols-5' : 'grid grid-cols-1 gap-6'}>
         <Panel
           id="todo-heading"
           title={t('home.todo.title')}

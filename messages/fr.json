@@ -1278,7 +1278,7 @@
         "settings": {
           "logo_url": {
             "label": "Logo",
-            "description": "Affiché dans la barre latérale et sur la page de connexion. Le favicon est généré à partir de ce logo."
+            "description": "Affiché dans la barre latérale et sur la page de connexion. Les fichiers téléversés sont convertis en WebP ; le favicon et les icônes de la webapp sont générés automatiquement."
           },
           "max_students_per_class": {
             "label": "Élèves maximum par classe",
@@ -3542,5 +3542,23 @@
     "date": "Date",
     "location": "Lieu",
     "gallery": "Photos"
+  },
+  "pwa": {
+    "statusLabel": "État de l’application",
+    "offline": "Connexion interrompue. Une connexion Internet est nécessaire pour enregistrer vos modifications.",
+    "reconnected": "Connexion rétablie.",
+    "updateReady": "Une nouvelle version est disponible",
+    "updateDescription": "Terminez vos saisies avant de recharger l’application.",
+    "reload": "Recharger",
+    "updating": "Mise à jour…",
+    "install": {
+      "button": "Installer l’application",
+      "iosButton": "Ajouter à l’écran d’accueil",
+      "title": "Ajouter à l’écran d’accueil",
+      "stepSafari": "Ouvrez cette page dans Safari.",
+      "stepShare": "Touchez le bouton Partager.",
+      "stepAdd": "Choisissez « Sur l’écran d’accueil », puis touchez Ajouter.",
+      "close": "Fermer"
+    }
   }
 }

@@ -1,7 +1,6 @@
 import type { MetadataRoute } from 'next'
-import { getBrandingConfig, resolveBrandingSchoolId } from '@/lib/branding'
-
-export const dynamic = 'force-dynamic'
+import { getBrandingAssets } from '@/lib/branding-assets'
+import { getPwaBranding } from '@/lib/pwa-branding'
 
 function getIconType(src: string) {
   const path = src.split('?')[0]?.toLowerCase() || ''
@@ -16,8 +15,7 @@ function getIconType(src: string) {
 }
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  const schoolId = await resolveBrandingSchoolId()
-  const { logoUrl } = schoolId ? await getBrandingConfig(schoolId) : { logoUrl: undefined }
+  const { logoUrl, schoolName, themeColor, backgroundColor } = await getPwaBranding()
   const logoType = logoUrl ? getIconType(logoUrl) : undefined
   const schoolLogo: NonNullable<MetadataRoute.Manifest['icons']> = logoUrl
     ? [
@@ -29,44 +27,55 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         },
       ]
     : []
-  const icons: NonNullable<MetadataRoute.Manifest['icons']> = [
-    ...schoolLogo,
-    {
-      src: '/icon-192x192.png',
-      sizes: '192x192',
-      type: 'image/png',
-      purpose: 'any',
-    },
-    {
-      src: '/icon-512x512.png',
-      sizes: '512x512',
-      type: 'image/png',
-      purpose: 'any',
-    },
-    {
-      src: '/icon-192x192-maskable.png',
-      sizes: '192x192',
-      type: 'image/png',
-      purpose: 'maskable',
-    },
-    {
-      src: '/icon-512x512-maskable.png',
-      sizes: '512x512',
-      type: 'image/png',
-      purpose: 'maskable',
-    },
-  ]
+  const assets = getBrandingAssets(logoUrl)
+  const icons: NonNullable<MetadataRoute.Manifest['icons']> = assets
+    ? assets
+        .filter((asset) => asset.purpose !== 'apple')
+        .map((asset) => ({
+          src: asset.src,
+          sizes: `${asset.size}x${asset.size}`,
+          type: 'image/png',
+          purpose: asset.purpose,
+        }))
+    : [
+        ...schoolLogo,
+        {
+          src: '/icon-192x192.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'any',
+        },
+        {
+          src: '/icon-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any',
+        },
+        {
+          src: '/icon-192x192-maskable.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'maskable',
+        },
+        {
+          src: '/icon-512x512-maskable.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
+        },
+      ]
 
   return {
-    name: 'Education App',
-    short_name: 'Education',
+    id: '/dashboard',
+    name: schoolName || 'Education App',
+    short_name: schoolName || 'Education',
     description: 'Application de gestion scolaire',
     start_url: '/dashboard',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait-primary',
-    background_color: '#ffffff',
-    theme_color: '#3c6e71',
+    background_color: backgroundColor,
+    theme_color: themeColor,
     icons,
     screenshots: [
       {
@@ -89,7 +98,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         short_name: 'Dashboard',
         description: 'Go to dashboard',
         url: '/dashboard',
-        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
+        icons: icons.filter((icon) => icon.sizes === '192x192' && icon.purpose === 'any'),
       },
     ],
   }

@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { LoginForm } from '@/features/auth'
 import { AuthHeading } from '@/features/auth/auth-heading'
 import { safeRedirectPath } from '@/features/auth/safe-redirect'
+import { InstallApp } from '@/features/pwa/install-app'
 import { redirect } from '@/i18n/routing'
 import { getBrandingConfig, resolveBrandingSchoolId } from '@/lib/branding'
 import { getSchoolContext } from '@/lib/school-context'
@@ -62,6 +63,8 @@ export default async function LoginPage({ params, searchParams }: Props) {
         passkeyEnabled={passkeyEnabled}
         redirectTo={redirectTo}
       />
+
+      <InstallApp />
 
       <p className="border-t border-border pt-6 text-sm leading-6 text-muted-foreground">
         <span className="font-medium text-foreground">{t('noAccount')}</span> {t('contactAdmin')}

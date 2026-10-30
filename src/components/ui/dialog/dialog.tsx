@@ -186,7 +186,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
   if (!open || !isClient) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 text-left">
+    <div className="dialog-viewport fixed inset-0 z-50 flex items-center justify-center p-4 text-left">
       <button
         type="button"
         tabIndex={-1}
@@ -201,7 +201,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full max-w-lg rounded-xl bg-white text-graphite shadow-2xl ring-1 ring-graphite/5',
+          'relative z-10 max-h-[calc(var(--app-available-height,100dvh)-2rem)] w-full max-w-lg overflow-y-auto rounded-xl bg-white text-graphite shadow-2xl ring-1 ring-graphite/5',
           className
         )}
       >

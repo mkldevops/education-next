@@ -109,7 +109,7 @@ export function Panel({
     <section
       aria-labelledby={id}
       className={cn(
-        'flex flex-col rounded-lg border border-border bg-surface shadow-xs',
+        'flex min-w-0 flex-col rounded-lg border border-border bg-surface shadow-xs',
         className
       )}
     >
