@@ -265,6 +265,34 @@ Expected refusals: `503 mcpDisabled` (flag off), `401 unauthorized` (missing, ma
 revoked or expired key), `403 forbidden` (deactivated account or school, or a membership that is not
 `ADMIN`), `429 tooManyRequests`, `405 methodNotAllowed` on anything but `POST`.
 
+## Configuring plan prices and payment tracking
+
+When payments are enabled, `create_plan` and `update_plan` use the same validation and tenant-scoped
+operations as the dashboard. Their arguments cannot select a school: the authenticated administrative
+scope supplies it. The built-in assistant shares these tools and requires its normal confirmation
+before a write.
+
+- `create_plan` takes `name`, optionally an annual `amount`, and/or `pricing`. Use
+  `{ "mode": "ANNUAL", "amount": 1000 }` or
+  `{ "mode": "MONTHLY", "amount": 100, "months": 10 }`. The latter computes an annual total of 1000.
+  Prices are in the school's currency units, never cents.
+- `update_plan` takes an `id` from `list_plans` and the fields to change. A price change preserves
+  existing enrollment totals. A payment-schedule change applies to their next tracking calculation.
+- `paymentSchedule` is independent from the price basis. Choose `{ "mode": "NONE" }` to disable
+  overdue tracking; legacy plans with a null schedule also have no tracking. For monthly tracking use
+  `{ "mode": "MONTHLY", "firstMonth": 9, "count": 10, "dueDay": 5 }`; for quarterly tracking use
+  `QUARTERLY` with at most four installments. Monthly tracking accepts at most twelve installments.
+  Custom tracking accepts one to five dates, for example
+  `{ "mode": "INSTALLMENTS", "dates": [{ "month": 9, "day": 5 }, { "month": 12, "day": 5 }] }`.
+  Months are relative to the enrollment's school period; short months clamp the due day to month end.
+  The deadline day remains available to pay: arrears start the following school-local day.
+
+These schedules define expected payments, not a limit on the number of payment records. A family may
+pay early or in several partial payments. `get_family_payments` distinguishes the full remaining
+balance from `tracking.overdueAmount`, the unpaid portion of elapsed installments. A plan without
+tracking never labels an annual balance as overdue. Typed refusals include `validationError`,
+`paymentsDisabled`, `unpricedPlan`, and `notFound` when updating an unknown or inaccessible plan.
+
 ## Read tools
 
 Every one of them works in the key's school. Only the last three take arguments.
@@ -275,10 +303,10 @@ Every one of them works in the key's school. Only the last three take arguments.
 | `list_levels` | `id`, `name`, `nextLevels [{ id, name }]` |
 | `list_periods` | `id`, `name`, `startAt`, `endAt` |
 | `list_class_periods` | `id`, `name`, `capacity`, `level { id, name }`, `period { id, name }`, `teachers[].teacher { id, firstName, lastName }` |
-| `list_plans` | `id`, `name`, `amount` (decimal string, not cents) |
+| `list_plans` | `id`, `name`, `amount` (annual total, decimal string, not cents), `pricing`, `paymentSchedule` |
 | `list_teachers` | `id`, `firstName`, `lastName` |
 | `find_students` (`query`, `limit?`) | `id`, `name`, `lastname`, `families[] { id, name }`, open `enrollments[]` with `plan` and `classes` |
-| `get_family_payments` (`familyId`) | `family`, `remainingBalance`, per-enrollment balances, and the 20 latest active payments with `id`, `amount`, `method`, `paidAt`, `online` (money tools only) |
+| `get_family_payments` (`familyId`) | `family`, `remainingBalance`, `paidAmount`, `tracking` (`expectedToDate`, `overdueAmount`, `paidToDate`, `tracked`), per-enrollment balances, and the 20 latest active payments with `id`, `amount`, `method`, `paidAt`, `online` (money tools only) |
 
 They are the resolution layer: a label read on paper — "CE1 / 2026-2027", the name of a plan —
 becomes an identifier through these lists, before any write is attempted. That is also why the

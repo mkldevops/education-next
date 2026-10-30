@@ -195,7 +195,8 @@ admin in the Payments section of `/dashboard/config`.
 - **A payment must fit the currency's precision.** `recordPayment()` and the MCP payment preview
   reject `1500.5 KMF` (`validationError` / blocker `invalidPrecision`) through
   `fitsCurrencyPrecision()`. Plan, enrollment and discount schemas still only check two decimals
-  (`isCurrencyAmount`); for a zero-decimal currency the input step is the only guard there.
+  (`isCurrencyAmount`); for a zero-decimal currency the input step is the only guard on enrollment
+  and discount inputs. Plan create/update prices also validate the school's currency precision.
 - **« Today » is the school's day.** `schoolToday(timeZone)` (`src/domain/school-date.ts`) gives the
   local calendar date; `@db.Date` columns stay read in UTC. The dashboard header and the teacher's
   classes page use it. Event calendar exports (`src/domain/event-ics.ts`) still assume
@@ -1615,6 +1616,22 @@ Owner: `src/use-cases/plans/`.
   student (`planArchived`, see **Promotion**) rather than copying a plan it could not select.
 - Archiving is a soft delete (`isActive: false`). Plan names are unique among active plans only, so
   an archived duplicate frees its name.
+- **Prices can be entered annually or monthly** (`src/domain/payment-schedule.ts`, shared
+  `src/use-cases/plans/schemas.ts`). Annual pricing stores the entered amount; monthly pricing
+  multiplies the unit price by 1–12 months. `Plan.amount` always stores the resulting annual total,
+  half-up rounded to two decimals. Prices must be positive, fit the school's currency precision
+  and `Decimal(10,2)` (both the monthly unit price and the resulting total are validated);
+  an explicit annual `amount` conflicting with `pricing` is rejected. The optional JSON `pricing`
+  preserves the input basis. Legacy plans read as annual. An amount-only update resets the basis
+  to annual; a name-only or schedule-only update preserves it. Existing enrollment totals remain
+  unchanged when a plan's price is edited.
+- **The payment schedule belongs to the plan**, independently of its price basis. The nullable JSON
+  `paymentSchedule` supports `NONE`, `MONTHLY` (1–12 installments), `QUARTERLY` (1–4 installments),
+  or `INSTALLMENTS` (1–5 distinct month/day deadlines). Monthly and quarterly modes carry a first
+  calendar month, count and due day. Custom deadlines share the total equally. An annual single
+  deadline is one custom installment. A missing schedule means `NONE`, including every legacy plan.
+  The interface and MCP `create_plan`/`update_plan` call the same validated use cases, with the
+  existing school-admin, tenant and payments-enabled guards.
 
 ## Payments
 
@@ -1637,6 +1654,37 @@ it over, not when an admin gets to the enrollment. `CANCELLED` and `COMPLETED` e
 owe anything and never receive an allocation. **Money received stays received**, though: their
 active payments still count in `totalPaid` (the family's « Total payé »), so cancelling an
 enrollment never makes a recorded payment disappear from the family totals.
+
+### Payment deadlines and arrears
+
+Owner: `src/domain/payment-schedule.ts`, `src/use-cases/payments/payment-tracking.ts`.
+
+- Each enrollment uses its plan's current schedule and its stored `totalAmount`, already net of
+  discount. Editing a schedule changes tracking for existing enrollments too; it does not reprice
+  their debt. A late enrollment follows the same deadlines as the other subscribers, without
+  automatic proration.
+- Month/day settings are anchored to the enrollment's school period, from its latest class
+  assignment. A month before the period start month falls in the following calendar year. They
+  never restart on the current year. Short months clamp a due day of 29–31 to their last day.
+- Equal installments use the school's minor currency unit; the final one carries the remainder.
+  Fractional legacy KMF totals are preserved exactly in the final installment, rather than rounded
+  up into extra debt.
+- A deadline remains payable throughout its day in the school's time zone. Only deadlines strictly
+  before `schoolToday` contribute to `expectedToDate`. Future-dated payments do not settle today's
+  deadlines; the SQL sum stops at the end of the school's current local day.
+- **A family is overdue when its cumulative expected amount exceeds its received payments** on
+  payable enrollments within the same scope. Payments allocated to an enrollment ahead of schedule,
+  or one with `NONE`, also count: the normal allocator spreads a family payment proportionally,
+  independently of deadlines. Received credit is capped at each enrollment's full stored total,
+  preserving the existing isolation of an actual overpayment. Refunds reduce the credit. Another
+  family's advance never offsets arrears. `paidToDate` reports the raw received sum.
+- `NONE` and legacy null schedules contribute no expected amount and never mark a family overdue.
+  An enrollment without a period also contributes no expected amount. `CANCELLED`, `COMPLETED`
+  and archived enrollments are excluded, as are cancelled payments. Shared-custody debt uses the
+  same `resolveDebtorFamily` as the annual balance.
+- The payments dashboard keeps full annual totals separate from expected-to-date and arrears. Its
+  follow-up list includes only overdue families, ordered by arrears. The family payments tab and MCP
+  `get_family_payments` expose the same calculation; no automatic notification or debit is created.
 
 ### Recording a payment
 

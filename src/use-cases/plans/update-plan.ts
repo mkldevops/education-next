@@ -1,13 +1,21 @@
 import type { z } from 'zod'
+import { annualPlanAmount } from '@/domain/payment-schedule'
 import { configGateway } from '@/gateways/config-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
+import { fitsCurrencyPrecision } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { updatePlanSchema } from './schemas'
 
 type Input = z.infer<typeof updatePlanSchema>
 
-export async function updatePlan(input: Input, planGw = planGateway, configGw = configGateway) {
+export async function updatePlan(
+  input: Input,
+  planGw = planGateway,
+  configGw = configGateway,
+  regionalSettings = getSchoolRegionalSettings
+) {
   const parsed = updatePlanSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
@@ -23,6 +31,21 @@ export async function updatePlan(input: Input, planGw = planGateway, configGw = 
   if (!existing) return 'notFound' as const
   if (existing.name === UNPRICED_PLAN_NAME) return 'unpricedPlan' as const
 
-  const plan = await planGw.update(schoolId, id, data)
+  const pricing =
+    data.pricing ??
+    (data.amount === undefined ? undefined : { mode: 'ANNUAL' as const, amount: data.amount })
+  if (pricing) {
+    const { currency } = await regionalSettings(schoolId)
+    if (
+      !fitsCurrencyPrecision(pricing.amount, currency) ||
+      !fitsCurrencyPrecision(annualPlanAmount(pricing), currency)
+    ) {
+      return 'validationError' as const
+    }
+  }
+  const plan = await planGw.update(schoolId, id, {
+    ...data,
+    ...(pricing ? { pricing, amount: annualPlanAmount(pricing) } : {}),
+  })
   return plan
 }

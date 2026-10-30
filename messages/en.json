@@ -981,14 +981,21 @@
           "monthlyTitle": "Collection trend",
           "monthlySubtitle": "Last {months} months",
           "methodsTitle": "Breakdown by payment method",
-          "outstandingTitle": "Families to follow up",
-          "outstandingSubtitle": "Highest remaining first",
+          "outstandingTitle": "Overdue families",
+          "outstandingSubtitle": "Largest overdue amount first",
           "outOf": "of {amount}",
           "noCollection": "No payment collected in this scope",
-          "noOutstanding": "Every family is up to date",
+          "noOutstanding": "No overdue families on tracked plans",
           "recordFor": "Record a payment for {family}",
           "callFamily": "Call the {family} family",
-          "noPhone": "No phone number"
+          "noPhone": "No phone number",
+          "expectedToDate": "Expected to date",
+          "overdueAmount": "Overdue amount",
+          "overdueSubtitle": "Tracked plans only, after their payment deadline",
+          "annualRemaining": "Remaining annual balance",
+          "upToDate": "Up to date",
+          "trackingDisabled": "Due-date tracking disabled",
+          "paidToDate": "Paid to date"
         },
         "summary": {
           "remaining": "Remaining balance",
@@ -1071,6 +1078,38 @@
             "notFound": "Plan not found",
             "planInUse": "Open enrollments use this plan: move them to another plan first"
           }
+        },
+        "configuration": {
+          "priceTitle": "Plan price",
+          "priceBasis": "Set the price using",
+          "annual": "Annual price",
+          "monthlyPrice": "Monthly amount × number of months",
+          "annualAmount": "Annual price ({currency})",
+          "monthlyAmount": "Monthly amount ({currency})",
+          "priceMonths": "Number of billed months",
+          "annualTotal": "Annual total: {amount}",
+          "monthlySummary": "{amount} × {months} months",
+          "trackingTitle": "Payment tracking",
+          "trackingMode": "Payment schedule",
+          "modes": {
+            "NONE": "No due-date tracking",
+            "INSTALLMENTS": "Installments (up to 5)",
+            "MONTHLY": "Monthly",
+            "QUARTERLY": "Quarterly"
+          },
+          "noneHelp": "The balance remains visible, without calculating overdue amounts.",
+          "trackingHelp": "A family is overdue when its payments do not cover past deadlines. This setting applies to enrollments using this plan.",
+          "firstMonth": "First month",
+          "paymentCount": "Number of payments",
+          "dueDay": "Payment deadline day",
+          "installmentMonth": "Payment {number}: month",
+          "installmentDay": "Payment {number}: day",
+          "removeInstallment": "Remove payment {number}",
+          "remove": "Remove",
+          "addInstallment": "Add a payment",
+          "schedulePreview": "{count} payment(s) of approximately {amount}, before discounts.",
+          "dateHelp": "Months are attached to each enrollment’s school period. If the chosen day does not exist, the last day of the month is used. Payments become overdue the next day.",
+          "roundingHelp": "The final payment absorbs rounding differences. The annual total stays the same."
         }
       },
       "meals": {

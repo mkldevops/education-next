@@ -11,16 +11,20 @@ import {
   Input,
   Label,
 } from '@peaklab/ui'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
+import { useState } from 'react'
+import { readPaymentSchedule, readPlanPricing } from '@/domain/payment-schedule'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
-import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { deactivatePlanAction, updatePlanAction } from '../../../_lib/plan-actions'
+import { type PlanConfiguration, PlanConfigurationFields } from './plan-configuration-fields'
 
 interface EditPlanDialogProps {
   plan: {
     id: string
     name: string
     amount: number
+    pricing?: unknown
+    paymentSchedule?: unknown
   }
   openEnrollments: number
   currency: string
@@ -49,14 +53,16 @@ export function EditPlanDialog(props: EditPlanDialogProps) {
 function EditPlanForm({ plan, openEnrollments, currency }: EditPlanDialogProps) {
   const t = useTranslations('dashboard.pages.plans.edit')
   const tCreate = useTranslations('dashboard.pages.plans.create')
-  const locale = useLocale()
-  const step = currencyStep(currency)
+  const [configuration, setConfiguration] = useState<PlanConfiguration>({
+    pricing: readPlanPricing(plan.pricing, plan.amount),
+    paymentSchedule: readPaymentSchedule(plan.paymentSchedule),
+  })
   const { isPending, close, run, onSubmit } = useDialogForm(t)
 
   const handleSubmit = onSubmit((formData) =>
     updatePlanAction(plan.id, {
       name: formData.get('name') as string,
-      amount: Number(formData.get('amount')),
+      ...configuration,
     })
   )
 
@@ -78,21 +84,12 @@ function EditPlanForm({ plan, openEnrollments, currency }: EditPlanDialogProps) 
               disabled={isPending}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-plan-amount">
-              {tCreate('amount', { currency: currencySymbol(locale, currency) })}
-            </Label>
-            <Input
-              id="edit-plan-amount"
-              name="amount"
-              type="number"
-              step={step}
-              min={step}
-              defaultValue={plan.amount}
-              required
-              disabled={isPending}
-            />
-          </div>
+          <PlanConfigurationFields
+            value={configuration}
+            onChange={setConfiguration}
+            currency={currency}
+            disabled={isPending}
+          />
         </div>
       </DialogBody>
       <DialogFormActions t={t} isPending={isPending} onCancel={close}>

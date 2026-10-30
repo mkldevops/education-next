@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { readPaymentSchedule, readPlanPricing } from '@/domain/payment-schedule'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
@@ -59,9 +60,29 @@ export default async function PlansPage({ params }: Props) {
     },
     {
       key: 'amount',
-      header: t('amount'),
+      header: t('configuration.annual'),
       className: 'font-medium text-graphite',
-      render: (plan) => formatCurrency(plan.amount, locale, currency),
+      render: (plan) => {
+        const pricing = readPlanPricing(plan.pricing, Number(plan.amount))
+        return (
+          <div>
+            <p>{formatCurrency(plan.amount, locale, currency)}</p>
+            {pricing.mode === 'MONTHLY' && (
+              <p className="text-xs text-graphite-600">
+                {t('configuration.monthlySummary', {
+                  amount: formatCurrency(pricing.amount, locale, currency),
+                  months: pricing.months,
+                })}
+              </p>
+            )}
+          </div>
+        )
+      },
+    },
+    {
+      key: 'paymentSchedule',
+      header: t('configuration.trackingTitle'),
+      render: (plan) => t(`configuration.modes.${readPaymentSchedule(plan.paymentSchedule).mode}`),
     },
     {
       key: 'enrollments',
@@ -76,7 +97,13 @@ export default async function PlansPage({ params }: Props) {
       className: 'text-right',
       render: (plan) => (
         <EditPlanDialog
-          plan={{ id: plan.id, name: plan.name, amount: Number(plan.amount) }}
+          plan={{
+            id: plan.id,
+            name: plan.name,
+            amount: Number(plan.amount),
+            pricing: plan.pricing,
+            paymentSchedule: plan.paymentSchedule,
+          }}
           openEnrollments={openByPlan.get(plan.id) ?? 0}
           currency={currency}
         />

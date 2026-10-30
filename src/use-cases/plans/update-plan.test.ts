@@ -1,5 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { updatePlan } from './update-plan'
+
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: vi
+    .fn()
+    .mockResolvedValue({ currency: 'EUR', timeZone: 'Europe/Paris' }),
+}))
 
 type PlanGw = Parameters<typeof updatePlan>[1]
 type ConfigGw = Parameters<typeof updatePlan>[2]
@@ -23,7 +29,13 @@ class PlanGatewaySpy {
     return {} as never
   }
 
-  planToFind: { id: string; name: string } = {
+  planToFind: {
+    id: string
+    name: string
+    amount?: number
+    pricing?: unknown
+    paymentSchedule?: unknown
+  } = {
     id: '123e4567-e89b-12d3-a456-426614174000',
     name: 'Tarif annuel',
   }
@@ -232,5 +244,172 @@ describe('updatePlan', () => {
 
     expect(result).toBe('unpricedPlan')
     expect(gateway.updatedData).toBeNull()
+  })
+
+  it('updates the stored annual total when the monthly price changes', async () => {
+    const result = await updatePlan(
+      {
+        schoolId,
+        id: gateway.planToFind.id,
+        pricing: { mode: 'MONTHLY', amount: 45.5, months: 9 },
+      },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(result).toHaveProperty('id', gateway.planToFind.id)
+    expect(gateway.updatedData).toEqual({
+      amount: 409.5,
+      pricing: { mode: 'MONTHLY', amount: 45.5, months: 9 },
+    })
+  })
+
+  it('replaces monthly price metadata with annual pricing for an amount-only update', async () => {
+    gateway.planToFind.pricing = { mode: 'MONTHLY', amount: 50, months: 10 }
+    gateway.planToFind.amount = 500
+
+    await updatePlan(
+      { schoolId, id: gateway.planToFind.id, amount: 600 },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(gateway.updatedData).toEqual({ amount: 600, pricing: { mode: 'ANNUAL', amount: 600 } })
+  })
+
+  it('changes only the schedule when pricing is omitted', async () => {
+    gateway.planToFind.pricing = { mode: 'MONTHLY', amount: 50, months: 10 }
+    gateway.planToFind.amount = 500
+    const paymentSchedule = {
+      mode: 'INSTALLMENTS' as const,
+      dates: [
+        { month: 9, day: 15 },
+        { month: 1, day: 15 },
+      ],
+    }
+
+    await updatePlan(
+      { schoolId, id: gateway.planToFind.id, paymentSchedule },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(gateway.updatedData).toEqual({ paymentSchedule })
+    expect(gateway.updatedData).not.toHaveProperty('amount')
+    expect(gateway.updatedData).not.toHaveProperty('pricing')
+  })
+
+  it('clears deadline tracking explicitly with NONE without changing the price', async () => {
+    gateway.planToFind.paymentSchedule = { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 5 }
+
+    await updatePlan(
+      { schoolId, id: gateway.planToFind.id, paymentSchedule: { mode: 'NONE' } },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(gateway.updatedData).toEqual({ paymentSchedule: { mode: 'NONE' } })
+  })
+
+  it('rejects conflicting amount and pricing without updating the plan', async () => {
+    const result = await updatePlan(
+      {
+        schoolId,
+        id: gateway.planToFind.id,
+        amount: 500,
+        pricing: { mode: 'ANNUAL', amount: 600 },
+      },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(result).toBe('validationError')
+    expect(gateway.updatedData).toBeNull()
+  })
+
+  it('rejects a sixth installment without updating the plan', async () => {
+    const result = await updatePlan(
+      {
+        schoolId,
+        id: gateway.planToFind.id,
+        paymentSchedule: {
+          mode: 'INSTALLMENTS',
+          dates: [9, 10, 11, 12, 1, 2].map((month) => ({ month, day: 5 })),
+        },
+      },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(result).toBe('validationError')
+    expect(gateway.updatedData).toBeNull()
+  })
+
+  it('does not allow adding payment tracking to the reserved unpriced plan', async () => {
+    gateway.planToFind.name = '__unpriced__'
+    const result = await updatePlan(
+      {
+        schoolId,
+        id: gateway.planToFind.id,
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 15 },
+      },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw
+    )
+
+    expect(result).toBe('unpricedPlan')
+    expect(gateway.updatedData).toBeNull()
+  })
+
+  it.each([
+    { amount: 100.5 },
+    { pricing: { mode: 'ANNUAL' as const, amount: 100.5 } },
+    { pricing: { mode: 'MONTHLY' as const, amount: 10.05, months: 10 } },
+    { pricing: { mode: 'MONTHLY' as const, amount: 10.5, months: 2 } },
+  ])('rejects fractional KMF price updates %j', async (price) => {
+    const settings = vi.fn().mockResolvedValue({ currency: 'KMF', timeZone: 'Indian/Comoro' })
+    const result = await updatePlan(
+      { schoolId, id: gateway.planToFind.id, ...price },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw,
+      settings
+    )
+
+    expect(result).toBe('validationError')
+    expect(gateway.updatedData).toBeNull()
+    expect(settings).toHaveBeenCalledWith(schoolId)
+  })
+
+  it('accepts whole-unit KMF price updates', async () => {
+    const result = await updatePlan(
+      { schoolId, id: gateway.planToFind.id, amount: 100 },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw,
+      async () => ({ currency: 'KMF', timeZone: 'Indian/Comoro' })
+    )
+
+    expect(result).toHaveProperty('id', gateway.planToFind.id)
+    expect(gateway.updatedData).toEqual({ amount: 100, pricing: { mode: 'ANNUAL', amount: 100 } })
+  })
+
+  it('does not read currency settings when only the schedule or name changes', async () => {
+    const settings = vi.fn().mockResolvedValue({ currency: 'KMF', timeZone: 'Indian/Comoro' })
+    await updatePlan(
+      {
+        schoolId,
+        id: gateway.planToFind.id,
+        name: 'Renamed tuition',
+        paymentSchedule: { mode: 'NONE' },
+      },
+      gateway as unknown as PlanGw,
+      configGateway as unknown as ConfigGw,
+      settings
+    )
+
+    expect(settings).not.toHaveBeenCalled()
+    expect(gateway.updatedData).toEqual({
+      name: 'Renamed tuition',
+      paymentSchedule: { mode: 'NONE' },
+    })
   })
 })

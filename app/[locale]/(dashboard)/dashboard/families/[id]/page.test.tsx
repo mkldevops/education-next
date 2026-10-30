@@ -4,12 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const requireSchoolSessionMock = vi.fn()
 const isPaymentsEnabledMock = vi.fn()
 const getFamilyBalanceMock = vi.fn()
+const getFamilyPaymentTrackingMock = vi.fn()
 const getSelectedPeriodIdMock = vi.fn()
 const countDeletionImpactMock = vi.fn()
 const resolveFamilyMock = vi.fn()
 const getFamilyDialogDataMock = vi.fn()
 const heroBannerMock = vi.fn()
 const overviewTabMock = vi.fn()
+const paymentsTabMock = vi.fn()
 const recordPaymentActionMock = vi.fn()
 
 vi.mock('@/lib/school-regional-settings', () => ({
@@ -51,6 +53,9 @@ vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
 vi.mock('@/use-cases/payments/family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
+vi.mock('@/use-cases/payments/payment-tracking', () => ({
+  getFamilyPaymentTracking: getFamilyPaymentTrackingMock,
+}))
 vi.mock('../../../_components/school-switch-prompt', () => ({
   SchoolSwitchPrompt: () => <div data-testid="school-switch-prompt" />,
 }))
@@ -92,7 +97,10 @@ vi.mock('./_components/activity-tab', () => ({
   ActivityTab: () => <div data-testid="activity-tab" />,
 }))
 vi.mock('./_components/payments-tab', () => ({
-  PaymentsTab: () => <div data-testid="payments-tab" />,
+  PaymentsTab: (props: unknown) => {
+    paymentsTabMock(props)
+    return <div data-testid="payments-tab" />
+  },
 }))
 vi.mock('../../enrollments/_components/create-enrollment-dialog', () => ({
   CreateEnrollmentDialog: () => null,
@@ -136,6 +144,13 @@ const balanceFixture = {
   remainingAmountInCents: 8000,
 }
 
+const trackingFixture = {
+  expectedToDate: 150,
+  paidToDate: 120,
+  overdueAmount: 30,
+  tracked: true,
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   requireSchoolSessionMock.mockResolvedValue({
@@ -148,6 +163,7 @@ beforeEach(() => {
   resolveFamilyMock.mockResolvedValue(familyFixture)
   getFamilyDialogDataMock.mockResolvedValue({ plans: [], classes: [] })
   getFamilyBalanceMock.mockResolvedValue(balanceFixture)
+  getFamilyPaymentTrackingMock.mockResolvedValue(trackingFixture)
   getSelectedPeriodIdMock.mockResolvedValue(null)
   countDeletionImpactMock.mockResolvedValue(null)
 })
@@ -174,6 +190,23 @@ describe('FamilyDetailPage, payments enabled', () => {
     ])
     expect(heroBannerMock).toHaveBeenCalledWith(expect.objectContaining({ paymentsEnabled: true }))
     expect(overviewTabMock).toHaveBeenCalledWith(expect.objectContaining({ paymentsEnabled: true }))
+    expect(getFamilyPaymentTrackingMock).toHaveBeenCalledWith('school-1', 'family-1')
+  })
+
+  it('passes date-based tracking separately from the annual balance to the payments tab', async () => {
+    render(
+      await FamilyDetailPage({
+        params: Promise.resolve({ locale: 'fr', id: 'family-1' }),
+        searchParams: Promise.resolve({ tab: 'payments' }),
+      })
+    )
+
+    expect(paymentsTabMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tracking: trackingFixture,
+        currency: 'EUR',
+      })
+    )
   })
 
   it('mounts the record-payment dialog opened by ?action=addPayment', async () => {
@@ -212,6 +245,7 @@ describe('FamilyDetailPage, payments disabled', () => {
     expect(overviewTabMock).toHaveBeenCalledWith(
       expect.objectContaining({ paymentsEnabled: false })
     )
+    expect(getFamilyPaymentTrackingMock).not.toHaveBeenCalled()
   })
 
   it('never mounts the record-payment dialog, even opened by ?action=addPayment', async () => {
@@ -224,6 +258,7 @@ describe('FamilyDetailPage, payments disabled', () => {
 
     expect(document.querySelector('input[name="amount"]')).toBeNull()
     expect(recordPaymentActionMock).not.toHaveBeenCalled()
+    expect(getFamilyPaymentTrackingMock).not.toHaveBeenCalled()
   })
 })
 
@@ -254,6 +289,7 @@ describe('FamilyDetailPage, teacher with extended access', () => {
       'tabs.activity',
     ])
     expect(getFamilyBalanceMock).not.toHaveBeenCalled()
+    expect(getFamilyPaymentTrackingMock).not.toHaveBeenCalled()
     expect(countDeletionImpactMock).not.toHaveBeenCalled()
     expect(document.querySelector('input[name="amount"]')).toBeNull()
     expect(heroBannerMock).toHaveBeenCalledWith(

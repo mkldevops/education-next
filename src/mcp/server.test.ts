@@ -42,6 +42,8 @@ const listClassScheduleSlotsFromMcp = vi.fn()
 const createClassScheduleSlotFromMcp = vi.fn()
 const updateClassScheduleSlotFromMcp = vi.fn()
 const deleteClassScheduleSlotFromMcp = vi.fn()
+const createPlanFromMcp = vi.fn()
+const updatePlanFromMcp = vi.fn()
 const createLevelFromMcp = vi.fn()
 const createClassPeriodFromMcp = vi.fn()
 const getFamilyDeletionImpactFromMcp = vi.fn()
@@ -65,6 +67,7 @@ vi.mock('@/use-cases/mcp/list-attendance-calls', () => ({ listAttendanceCallsFro
 vi.mock('@/use-cases/mcp/get-event', () => ({ getEventFromMcp }))
 vi.mock('@/use-cases/mcp/update-event', () => ({ updateEventFromMcp }))
 vi.mock('@/use-cases/mcp/duplicate-event', () => ({ duplicateEventFromMcp }))
+vi.mock('@/use-cases/mcp/plan-configuration', () => ({ createPlanFromMcp, updatePlanFromMcp }))
 vi.mock('@/use-cases/mcp/create-level', () => ({ createLevelFromMcp }))
 vi.mock('@/use-cases/mcp/create-class-period', () => ({ createClassPeriodFromMcp }))
 vi.mock('@/use-cases/mcp/delete-resources', () => ({
@@ -131,6 +134,8 @@ describe('buildMcpServer', () => {
       'commit_class_schedule',
       'list_attendance_calls',
       'list_plans',
+      'create_plan',
+      'update_plan',
       'list_teachers',
       'create_teacher',
       'assign_teacher_to_class',
@@ -317,6 +322,41 @@ describe('buildMcpServer', () => {
     expect(result.isError).toBe(true)
     expect(payload(result)).toEqual({ error: 'notFound' })
     expect(getFamilyDeletionImpactFromMcp).toHaveBeenCalledWith(scope, { id })
+  })
+
+  it('publishes configuration writes only with payments and forwards the authenticated scope', async () => {
+    const tools = build()
+    const pricing = { mode: 'MONTHLY', amount: 100, months: 10 }
+    createPlanFromMcp.mockResolvedValue({ id: 'plan-1', amount: '1000' })
+    updatePlanFromMcp.mockResolvedValue('notFound')
+
+    expect(
+      payload((await tools.get('create_plan')?.handler({ name: 'Temps plein', pricing })) as never)
+    ).toEqual({
+      id: 'plan-1',
+      amount: '1000',
+    })
+    expect(createPlanFromMcp).toHaveBeenCalledWith(scope, { name: 'Temps plein', pricing })
+    const refused = await tools
+      .get('update_plan')
+      ?.handler({ id: 'plan-1', paymentSchedule: { mode: 'NONE' } })
+    expect(updatePlanFromMcp).toHaveBeenCalledWith(scope, {
+      id: 'plan-1',
+      paymentSchedule: { mode: 'NONE' },
+    })
+    expect(refused?.isError).toBe(true)
+    expect(payload(refused as never)).toEqual({ error: 'notFound' })
+    expect(tools.get('create_plan')?.config.annotations).toMatchObject({
+      readOnlyHint: false,
+      idempotentHint: false,
+    })
+    expect(tools.get('update_plan')?.config.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+    })
+    expect(build({ paymentsEnabled: false }).has('create_plan')).toBe(false)
+    expect(build({ paymentsEnabled: false }).has('update_plan')).toBe(false)
   })
 
   it('returns the use-case payload as JSON content on success', async () => {
