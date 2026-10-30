@@ -258,7 +258,7 @@ export function ChatPanel({
       onDrop={handleDrop}
     >
       {dragging ? (
-        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-background/85 text-sm font-medium text-primary">
+        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-background/85 text-sm font-medium text-foreground">
           <Paperclip className="mr-2 h-4 w-4" aria-hidden />
           {t('dropHere')}
         </div>

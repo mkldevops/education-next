@@ -145,7 +145,7 @@ export default async function PublicSchedulePage({ params, searchParams }: Props
                 />
               )}
               <div className="min-w-0">
-                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">
+                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground">
                   {result.school.name}
                 </p>
                 <h1 className="mt-1 text-3xl font-bold tracking-tight text-graphite sm:text-4xl print:text-2xl">

@@ -39,7 +39,7 @@ export function PaymentsTable({ payments, locale, currency, periodName }: Props)
     cell: ({ row }) => (
       <Link
         href={`/dashboard/families/${row.original.familyId}`}
-        className="font-medium text-primary hover:text-primary-hover"
+        className="font-medium text-foreground hover:underline"
       >
         {row.original.familyName}
       </Link>

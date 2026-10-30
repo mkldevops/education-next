@@ -13,7 +13,7 @@ type Props = {
 }
 
 const ICON_TONES = {
-  neutral: 'bg-surface text-primary',
+  neutral: 'bg-surface text-foreground',
   success: 'bg-success-subtle text-success',
   warning: 'bg-warning-subtle text-warning',
   danger: 'bg-danger-subtle text-danger',

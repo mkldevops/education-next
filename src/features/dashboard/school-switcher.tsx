@@ -118,7 +118,7 @@ export function SchoolSwitcher({
             className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
           >
             <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface px-6 py-5 shadow-lg">
-              <LoaderCircle size={24} className="animate-spin text-primary" aria-hidden />
+              <LoaderCircle size={24} className="animate-spin text-foreground" aria-hidden />
               <span className="text-sm font-medium text-muted-foreground">
                 {target ? t('switching', { schoolName: target.name }) : t('label')}
               </span>
@@ -154,7 +154,7 @@ export function SchoolSwitcher({
               <SchoolMark displayName={school.name} size="sm" />
               <span className="flex-1 truncate">{school.name}</span>
               {school.id === activeSchoolId && (
-                <Check size={16} className="shrink-0 text-primary" aria-hidden />
+                <Check size={16} className="shrink-0 text-foreground" aria-hidden />
               )}
             </button>
           ))}

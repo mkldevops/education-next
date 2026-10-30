@@ -171,7 +171,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           <h1 className="text-2xl font-bold text-graphite">
             <Link
               href={`/dashboard/students/${enrollment.student.id}`}
-              className="hover:text-primary hover:underline"
+              className="hover:text-foreground hover:underline"
             >
               {enrollment.student.person.name} {enrollment.student.person.lastname}
             </Link>
@@ -288,7 +288,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                       {isStaff ? (
                         <Link
                           href={`/dashboard/classes/${a.classPeriod.id}`}
-                          className="text-primary hover:underline"
+                          className="text-foreground hover:underline"
                         >
                           {a.classPeriod.name}
                         </Link>

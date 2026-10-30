@@ -342,7 +342,7 @@ export function AttendancePanel({
           </h1>
           <button
             type="button"
-            className="text-sm text-primary underline underline-offset-4"
+            className="text-sm text-foreground underline underline-offset-4"
             onClick={() => setShowDateForm((visible) => !visible)}
           >
             {labels.changeDate}
@@ -400,14 +400,14 @@ export function AttendancePanel({
           {slots.map((slot) => (
             <Link
               key={slot.id}
-              className="block min-h-11 rounded-md border px-3 py-2 text-primary"
+              className="block min-h-11 rounded-md border px-3 py-2 text-foreground"
               href={`/dashboard/my-classes/${classPeriodId}/attendance?date=${occurredOn}&slotId=${slot.id}`}
             >
               {labels.schedule}: {slot.startTime}–{slot.endTime}
             </Link>
           ))}
           <Link
-            className="block min-h-11 rounded-md border px-3 py-2 text-primary"
+            className="block min-h-11 rounded-md border px-3 py-2 text-foreground"
             href={`/dashboard/my-classes/${classPeriodId}/attendance?date=${occurredOn}&occurrence=adhoc`}
           >
             {labels.exceptional}

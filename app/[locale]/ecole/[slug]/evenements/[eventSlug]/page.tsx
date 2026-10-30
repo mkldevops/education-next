@@ -131,7 +131,7 @@ export default async function PublicEventPage({ params }: Props) {
 
           <div className="space-y-6 p-6 sm:p-8">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+              <p className="text-xs font-semibold uppercase tracking-widest text-foreground">
                 {tCategory(event.category)}
               </p>
               <h1
@@ -151,7 +151,7 @@ export default async function PublicEventPage({ params }: Props) {
             <dl className="grid gap-3 border-y border-alabaster-700 py-4 text-graphite sm:grid-cols-2">
               <div className="flex items-start gap-2">
                 <dt>
-                  <CalendarDays className="mt-0.5 h-4 w-4 text-primary" />
+                  <CalendarDays className="mt-0.5 h-4 w-4 text-foreground" />
                   <span className="sr-only">{t('date')}</span>
                 </dt>
                 <dd className="font-medium first-letter:uppercase">
@@ -161,7 +161,7 @@ export default async function PublicEventPage({ params }: Props) {
               {event.location && (
                 <div className="flex items-start gap-2">
                   <dt>
-                    <MapPin className="mt-0.5 h-4 w-4 text-primary" />
+                    <MapPin className="mt-0.5 h-4 w-4 text-foreground" />
                     <span className="sr-only">{t('location')}</span>
                   </dt>
                   <dd>{event.location}</dd>

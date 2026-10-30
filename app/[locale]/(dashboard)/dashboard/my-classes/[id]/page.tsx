@@ -247,7 +247,7 @@ export default async function MyClassDetailPage({ params }: Props) {
                           <a
                             key={phone.id}
                             href={`tel:${phone.phoneNumber.replace(/\s/g, '')}`}
-                            className="flex items-center gap-2 text-primary hover:underline"
+                            className="flex items-center gap-2 text-foreground hover:underline"
                           >
                             <Phone aria-hidden="true" className="size-3.5" />
                             {phone.phoneNumber}
@@ -256,7 +256,7 @@ export default async function MyClassDetailPage({ params }: Props) {
                         {person.email && (
                           <a
                             href={`mailto:${person.email}`}
-                            className="flex items-center gap-2 break-all text-primary hover:underline"
+                            className="flex items-center gap-2 break-all text-foreground hover:underline"
                           >
                             <Mail aria-hidden="true" className="size-3.5" />
                             {person.email}
