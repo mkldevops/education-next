@@ -120,7 +120,7 @@ export default async function DashboardLayout({ children, params }: Props) {
   const t = await getTranslations({ locale, namespace: 'common' })
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
+    <div className="flex h-(--app-available-height) overflow-hidden bg-background">
       <Suspense
         fallback={
           <div className="hidden w-60 shrink-0 border-r border-border bg-background md:block" />
@@ -139,9 +139,7 @@ export default async function DashboardLayout({ children, params }: Props) {
           <Suspense fallback={null}>
             <AnnouncementGate locale={locale} />
           </Suspense>
-          <Suspense fallback={null}>
-            <EventAnnouncementBanner />
-          </Suspense>
+          <EventAnnouncementBanner />
           <Suspense fallback={<header className="h-14 border-b border-border" />}>
             <DashboardHeader
               news={

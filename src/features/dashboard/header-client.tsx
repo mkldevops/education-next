@@ -1,12 +1,17 @@
 'use client'
 
 import { Menu, PanelLeft, Search } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { type ReactNode, useEffect, useState } from 'react'
 import { PeriodSelector } from '@/features/dashboard/period-selector'
-import { SearchModal } from '@/features/dashboard/search-modal'
 import { useSidebarStore } from '@/features/dashboard/sidebar-store'
+import { InstallApp } from '@/features/pwa/install-app'
 import { useSearchShortcutLabel } from './shortcut'
+
+const SearchModal = dynamic(() =>
+  import('@/features/dashboard/search-modal').then((module) => module.SearchModal)
+)
 
 interface DashboardHeaderClientProps {
   periods: { id: string; name: string; startAt: Date; endAt: Date }[]
@@ -15,7 +20,7 @@ interface DashboardHeaderClientProps {
 }
 
 const iconButton =
-  'flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-(--duration-fast) hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring'
+  'flex size-11 shrink-0 md:size-9 items-center justify-center rounded-md text-muted-foreground transition-colors duration-(--duration-fast) hover:bg-surface-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring'
 
 export function DashboardHeaderClient({
   periods,
@@ -42,7 +47,7 @@ export function DashboardHeaderClient({
 
   return (
     <header className="flex h-14 items-center justify-between gap-3 border-b border-border bg-background/85 px-3 backdrop-blur-md sm:px-4">
-      <div className="flex min-w-0 items-center gap-1.5">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <button
           type="button"
           onClick={toggleMobile}
@@ -63,8 +68,9 @@ export function DashboardHeaderClient({
         <PeriodSelector periods={periods} selectedPeriodId={selectedPeriodId} />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         {news}
+        <InstallApp compact />
         <button
           type="button"
           onClick={() => setSearchOpen(true)}

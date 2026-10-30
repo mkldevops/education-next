@@ -1,5 +1,7 @@
 import { storageGateway } from '@/gateways/storage-gateway'
+import { BRANDING_ICON_VARIANTS } from '@/lib/branding-assets'
 import { MAX_BRANDING_IMAGE_BYTES } from '@/lib/branding-config'
+import { renderBrandingIcon } from '@/lib/branding-image'
 import { optimizeImageToWebp } from '@/lib/image-optimizer'
 import { storeWebpImage, type UploadImageError } from './store-webp-image'
 
@@ -18,8 +20,10 @@ export type UploadBrandingImageResult = { result: 'OK'; url: string } | { result
 export async function uploadBrandingImage(
   input: { schoolId: string; contentType: string; bytes: Uint8Array; id: string },
   storage = storageGateway,
-  optimize = optimizeImageToWebp
+  optimize = optimizeImageToWebp,
+  renderIcon = renderBrandingIcon
 ): Promise<UploadBrandingImageResult> {
+  let icons: Array<{ suffix: string; body: Uint8Array }> = []
   const stored = await storeWebpImage(
     input,
     {
@@ -29,9 +33,33 @@ export async function uploadBrandingImage(
       prefix: 'branding',
     },
     storage,
-    optimize
+    async (bytes, options) => {
+      const optimized = await optimize(bytes, options)
+      if (optimized.result !== 'OK') return optimized
+      // Generate before storing anything, from the original to preserve detail.
+      try {
+        icons = await Promise.all(
+          BRANDING_ICON_VARIANTS.map(async (variant) => ({
+            suffix: variant.suffix,
+            body: await renderIcon(bytes, variant),
+          }))
+        )
+        return optimized
+      } catch {
+        return { result: 'invalidImage' }
+      }
+    }
   )
   if (stored.result !== 'OK') return stored
+
+  for (const icon of icons) {
+    const result = await storage.put({
+      key: stored.key.replace('.webp', `-icon-${icon.suffix}.png`),
+      body: icon.body,
+      contentType: 'image/png',
+    })
+    if (result !== 'OK') return { result }
+  }
 
   return { result: 'OK', url: stored.url }
 }

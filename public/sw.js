@@ -1,60 +1,49 @@
-const CACHE_NAME = 'education-app-v2'
-const STATIC_ASSETS = ['/', '/manifest.webmanifest', '/icon-192x192.png', '/icon-512x512.png']
+const CACHE_PREFIX = 'education-app-'
+const CACHE_NAME = `${CACHE_PREFIX}v4`
+const STATIC_ASSETS = ['/offline.html', '/icon-192x192.png', '/icon-512x512.png']
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch(() => {
-        // Continue even if some assets fail to cache
-      })
-    })
-  )
-  self.skipWaiting()
+  // A failed precache must not replace a working service worker.
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)))
+})
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    event.waitUntil(self.skipWaiting())
+  }
 })
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName)
-          }
-          return Promise.resolve()
-        })
+    caches.keys().then(async (names) => {
+      await Promise.all(
+        names
+          .filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
       )
+      await self.clients.claim()
     })
   )
-  self.clients.claim()
 })
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') {
+  const { request } = event
+  if (request.method !== 'GET') return
+
+  const url = new URL(request.url)
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return
+
+  if (request.mode === 'navigate') {
+    // Never cache school pages, including the personalized root redirect.
+    event.respondWith(
+      fetch(request).catch(async () => (await caches.match('/offline.html')) || Response.error())
+    )
     return
   }
 
-  const url = new URL(event.request.url)
-  if (url.origin !== self.location.origin || !STATIC_ASSETS.includes(url.pathname)) {
-    return
+  if (STATIC_ASSETS.includes(url.pathname)) {
+    event.respondWith(caches.match(url.pathname).then((response) => response || fetch(request)))
   }
-
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return (
-        response ||
-        fetch(event.request).then((response) => {
-          if (!response || response.status !== 200 || response.type === 'error') {
-            return response
-          }
-          const responseToCache = response.clone()
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache)
-          })
-          return response
-        })
-      )
-    })
-  )
 })
 
 self.addEventListener('push', (event) => {

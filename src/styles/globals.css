@@ -65,6 +65,12 @@
  * `--ring` et, tant que le lot 3 ne l'a pas retiré, `--background`.
  */
 :root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --app-available-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
+
   /* Surfaces */
   --background: var(--theme-background, oklch(0.985 0.002 250));
   --surface: oklch(1 0 0);
@@ -186,6 +192,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left);
   }
 
   /* Focus unique, visible sur fond clair comme sur un bouton primaire (offset sur le fond) */
@@ -197,6 +204,29 @@
   ::placeholder {
     color: var(--placeholder);
   }
+}
+
+/* Text fields stay readable and avoid automatic focus zoom on touch devices. */
+@media (pointer: coarse) {
+  input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='submit'], [type='button'], [type='hidden']),
+  textarea,
+  select {
+    font-size: 1rem;
+  }
+}
+
+.dialog-viewport {
+  padding: calc(1rem + var(--safe-area-top, 0px)) calc(1rem + var(--safe-area-right, 0px)) calc(1rem + var(--safe-area-bottom, 0px)) calc(1rem + var(--safe-area-left, 0px));
+}
+
+.pwa-status {
+  bottom: calc(1rem + var(--safe-area-bottom));
+  inset-inline-start: calc(1rem + var(--safe-area-left));
+  inset-inline-end: calc(1rem + var(--safe-area-right));
+}
+
+@media (width >= 40rem) {
+  .pwa-status { inset-inline-start: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
