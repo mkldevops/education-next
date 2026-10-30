@@ -272,7 +272,7 @@ function ScheduleSlotForm({ classes, teachersByClass, slot }: Props) {
                 }
                 setDescription(nextDescription)
               }}
-              className="min-h-24 rounded-b border border-alabaster-700 bg-white px-3 py-2 text-sm leading-relaxed text-graphite outline-none empty:before:pointer-events-none empty:before:text-graphite-400 empty:before:content-[attr(data-placeholder)] focus:border-primary focus:ring-2 focus:ring-primary/20 [&_em]:italic [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
+              className="min-h-24 rounded-b border border-alabaster-700 bg-white px-3 py-2 text-sm leading-relaxed text-graphite outline-none empty:before:pointer-events-none empty:before:text-graphite-400 empty:before:content-[attr(data-placeholder)] focus:border-foreground focus:ring-2 focus:ring-ring [&_em]:italic [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
             />
             <p className="text-xs text-graphite-600">
               {description.length}/{DESCRIPTION_MAX_LENGTH}

@@ -68,7 +68,7 @@ export function EnrollmentsTable({
     header: t('student'),
     accessorFn: (row) => `${row.student.person.name} ${row.student.person.lastname}`,
     cell: ({ row }) => (
-      <span className="font-medium text-primary">
+      <span className="font-medium text-foreground">
         {row.original.student.person.name} {row.original.student.person.lastname}
       </span>
     ),

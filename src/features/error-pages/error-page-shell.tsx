@@ -45,9 +45,9 @@ const toneClasses: Record<ErrorTone, { accent: string; background: string; text:
     text: 'text-red-700',
   },
   muted: {
-    accent: 'border-primary-light bg-primary-light text-primary-hover',
+    accent: 'border-primary-light bg-primary-subtle text-foreground',
     background: 'from-primary-light/50 via-white to-background',
-    text: 'text-primary',
+    text: 'text-foreground',
   },
   warning: {
     accent: 'border-amber-200 bg-amber-50 text-amber-700',

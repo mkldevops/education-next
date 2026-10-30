@@ -198,7 +198,7 @@ export function StudentAttendanceCard({
               <label className="flex items-center gap-3 text-sm font-medium">
                 {labels.lateMinutes}
                 <input
-                  className="h-10 w-24 rounded-lg border border-alabaster bg-white px-3 text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="h-10 w-24 rounded-lg border border-alabaster bg-white px-3 text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   inputMode="numeric"
                   min="0"
                   max="1440"
@@ -238,7 +238,7 @@ export function StudentAttendanceCard({
               <textarea
                 id={`message-${entry.id}`}
                 aria-describedby={`message-hint-${entry.id}`}
-                className="mt-2 min-h-20 w-full resize-y rounded-xl border border-alabaster bg-alabaster-900/40 px-3 py-2 text-sm text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="mt-2 min-h-20 w-full resize-y rounded-xl border border-alabaster bg-alabaster-900/40 px-3 py-2 text-sm text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={entry.message ?? ''}
                 disabled={globalPending}
                 maxLength={1000}

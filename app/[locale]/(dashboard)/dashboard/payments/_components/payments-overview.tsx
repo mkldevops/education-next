@@ -11,7 +11,7 @@ import type { PaymentStats } from '@/use-cases/payments/payment-stats'
 import { OutstandingFamilyActions } from './outstanding-family-actions'
 
 const KPI_TONES = {
-  primary: { tile: 'bg-primary-light', icon: 'text-primary' },
+  primary: { tile: 'bg-primary-subtle', icon: 'text-foreground' },
   amber: { tile: 'bg-amber-100', icon: 'text-amber-600' },
   blue: { tile: 'bg-blue-100', icon: 'text-blue-600' },
 } as const
@@ -168,7 +168,7 @@ export async function PaymentsOverview({ stats, locale, currency, periodName }: 
                   <div className="flex items-baseline justify-between gap-3">
                     <Link
                       href={`/dashboard/families/${family.familyId}`}
-                      className="text-sm font-medium text-primary hover:text-primary-hover"
+                      className="text-sm font-medium text-foreground hover:underline"
                     >
                       {family.familyName}
                     </Link>
@@ -223,17 +223,15 @@ function KpiCard({
   children?: ReactNode
 }) {
   return (
-    <Card className={cn('p-5', className)}>
+    <Card className={cn('min-w-0 p-5', className)}>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-graphite-600">{label}</p>
-          <p className="mt-2 text-3xl font-bold text-graphite">{value}</p>
-          <p className="mt-1 text-xs text-graphite-600">{caption}</p>
-        </div>
-        <div className={cn('rounded p-3', KPI_TONES[tone].tile)}>
+        <p className="min-w-0 text-sm font-medium text-graphite-600">{label}</p>
+        <div className={cn('shrink-0 rounded p-3', KPI_TONES[tone].tile)}>
           <Icon className={cn('h-6 w-6', KPI_TONES[tone].icon)} />
         </div>
       </div>
+      <p className="mt-2 wrap-anywhere text-3xl font-bold text-graphite">{value}</p>
+      <p className="mt-1 text-xs text-graphite-600">{caption}</p>
       {children}
     </Card>
   )

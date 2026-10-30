@@ -166,11 +166,11 @@ function SignInUpgradeBannerContent({
   return (
     <section
       aria-label={t('title')}
-      className="border-b border-primary/20 bg-primary-light px-4 py-2 text-sm text-graphite sm:px-6"
+      className="border-b border-primary/20 bg-primary-subtle px-4 py-2 text-sm text-graphite sm:px-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <KeyRound aria-hidden className="size-4 shrink-0 text-primary" />
+          <KeyRound aria-hidden className="size-4 shrink-0 text-foreground" />
           <p className="min-w-0">
             <span className="font-medium">{t('title')}</span>{' '}
             <span className="text-graphite-600">

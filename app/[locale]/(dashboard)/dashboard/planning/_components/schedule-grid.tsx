@@ -74,7 +74,7 @@ export function ScheduleGrid({
                     className="rounded-lg border border-alabaster-700 bg-background p-4 transition-shadow hover:shadow-sm"
                   >
                     <div className="flex items-start gap-3">
-                      <p className="shrink-0 rounded-md bg-primary/10 px-2.5 py-1.5 font-mono text-xs font-semibold text-primary">
+                      <p className="shrink-0 rounded-md bg-primary/10 px-2.5 py-1.5 font-mono text-xs font-semibold text-foreground">
                         {slot.startTime}–{slot.endTime}
                       </p>
                       <div className="min-w-0 flex-1">
@@ -94,7 +94,7 @@ export function ScheduleGrid({
                       <details className="group mt-2">
                         <summary
                           aria-label={contentLabel}
-                          className="flex cursor-pointer list-none items-center gap-2 py-1 text-graphite-500 marker:hidden hover:text-primary"
+                          className="flex cursor-pointer list-none items-center gap-2 py-1 text-graphite-500 marker:hidden hover:text-foreground"
                         >
                           <span aria-hidden="true" className="h-px flex-1 bg-alabaster-700" />
                           <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" />

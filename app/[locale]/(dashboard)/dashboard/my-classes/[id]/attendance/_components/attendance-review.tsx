@@ -177,7 +177,7 @@ export function AttendanceReview({
               <button
                 type="button"
                 aria-label={`${labels.edit} ${entry.studentName}`}
-                className="shrink-0 text-xs text-primary underline"
+                className="shrink-0 text-xs text-foreground underline"
                 disabled={validating}
                 onClick={() => onEdit(entry.id)}
               >
@@ -196,7 +196,7 @@ export function AttendanceReview({
         {validated ? (
           <>
             <Link
-              className="inline-flex min-h-11 items-center text-sm text-primary underline"
+              className="inline-flex min-h-11 items-center text-sm text-foreground underline"
               href={returnHref}
             >
               {labels.returnClasses}

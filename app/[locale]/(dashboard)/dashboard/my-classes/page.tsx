@@ -58,7 +58,7 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
       </header>
       {classes.length === 0 ? (
         <section className="rounded-3xl border border-dashed border-alabaster-700 bg-white px-6 py-14 text-center">
-          <GraduationCap aria-hidden="true" className="mx-auto mb-4 size-10 text-primary" />
+          <GraduationCap aria-hidden="true" className="mx-auto mb-4 size-10 text-foreground" />
           <h2 className="font-semibold text-graphite">{t('emptyTitle')}</h2>
           <p className="mt-2 text-sm text-graphite-600">{t('empty')}</p>
         </section>
@@ -71,7 +71,7 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
             >
               <div className="flex-1 space-y-5 p-6">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-foreground">
                     <GraduationCap aria-hidden="true" className="size-6" />
                   </span>
                   <span className="min-w-0 break-words rounded-lg bg-alabaster-900 px-3 py-1 text-sm font-medium text-graphite-600">
@@ -89,7 +89,7 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
                 </div>
                 <Link
                   href={`/dashboard/my-classes/${classPeriod.id}`}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:underline"
                 >
                   <Users aria-hidden="true" className="size-4 shrink-0" />
                   {t('viewClass')}
@@ -98,7 +98,7 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
               {attendanceEnabled && (
                 <div className="border-t border-alabaster-800 bg-alabaster-900/50 p-4">
                   <Link
-                    className="group flex min-h-12 items-center justify-between gap-3 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground motion-safe:transition-colors motion-safe:duration-150 hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                    className="group flex min-h-12 items-center justify-between gap-3 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground motion-safe:transition-colors motion-safe:duration-150 hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
                     href={`/dashboard/my-classes/${classPeriod.id}/attendance?date=${today}`}
                     aria-label={t('attendanceFor', { name: classPeriod.name })}
                   >

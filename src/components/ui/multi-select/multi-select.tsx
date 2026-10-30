@@ -333,7 +333,7 @@ export function MultiSelect({
                   )}
                 >
                   {option.name}
-                  {isSelected && <Check className="h-4 w-4 text-primary" aria-hidden="true" />}
+                  {isSelected && <Check className="h-4 w-4 text-foreground" aria-hidden="true" />}
                 </button>
               )
             })}
@@ -348,7 +348,7 @@ export function MultiSelect({
                 onMouseEnter={() => setActiveIndex(results.length)}
                 onClick={() => void create()}
                 className={cn(
-                  'flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-primary',
+                  'flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-foreground',
                   isCreateActive ? 'bg-alabaster-800' : 'bg-transparent'
                 )}
               >

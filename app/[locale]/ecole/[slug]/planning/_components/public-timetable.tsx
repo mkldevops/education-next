@@ -278,7 +278,7 @@ function WeekCalendar({ days, labels, toneOf, focused }: ViewProps) {
                   {String(hour).padStart(2, '0')}:00
                 </p>
                 {session && SessionIcon && (
-                  <p className="flex items-center justify-end gap-0.5 whitespace-nowrap text-[0.6rem] font-semibold uppercase tracking-wider text-primary print:text-[9px]">
+                  <p className="flex items-center justify-end gap-0.5 whitespace-nowrap text-[0.6rem] font-semibold uppercase tracking-wider text-foreground print:text-[9px]">
                     <SessionIcon aria-hidden="true" className="size-2.5" />
                     {labels.sessions[session]}
                   </p>
@@ -368,7 +368,7 @@ function DayList({ days, labels, toneOf, focused }: ViewProps) {
               return (
                 <div key={range.key} className="space-y-2 py-4">
                   <p className="flex items-center gap-2">
-                    <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+                    <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
                       <SessionIcon aria-hidden="true" className="size-3.5" />
                       {labels.sessions[session]}
                     </span>

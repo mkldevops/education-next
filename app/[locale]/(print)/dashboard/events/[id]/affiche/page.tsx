@@ -111,7 +111,7 @@ export default async function EventPosterPage({ params }: Props) {
             )}
 
             <div className="relative mt-[10mm] flex min-h-0 flex-1 flex-col">
-              <p className="text-[12pt] font-semibold uppercase tracking-widest text-primary">
+              <p className="text-[12pt] font-semibold uppercase tracking-widest text-foreground">
                 {tCategory(event.category)}
               </p>
               <h1 className="mt-[3mm] text-balance text-[34pt] font-extrabold leading-[1.1]">

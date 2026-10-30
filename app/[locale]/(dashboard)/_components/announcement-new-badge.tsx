@@ -11,7 +11,7 @@ export function AnnouncementNewBadge({ isNew, label }: { isNew: boolean; label: 
   if (!shown) return null
 
   return (
-    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-foreground">
       {label}
     </span>
   )

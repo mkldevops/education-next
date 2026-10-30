@@ -297,7 +297,7 @@ export default async function ClassDetailPage({ params }: Props) {
                     <td className="px-4 py-3">
                       <Link
                         href={`/dashboard/students/${row.studentId}`}
-                        className="font-medium text-primary hover:underline"
+                        className="font-medium text-foreground hover:underline"
                       >
                         {row.studentName}
                       </Link>

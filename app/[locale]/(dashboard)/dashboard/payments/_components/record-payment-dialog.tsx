@@ -209,7 +209,7 @@ function RecordPaymentForm({
                   className={cn(
                     'flex cursor-pointer flex-col items-center gap-1.5 rounded border p-3 text-xs font-medium transition-colors',
                     method === value
-                      ? 'border-primary bg-primary/5 text-primary'
+                      ? 'border-primary bg-primary/5 text-foreground'
                       : 'border-alabaster-700 text-graphite-600 hover:border-alabaster hover:bg-alabaster-900'
                   )}
                 >

@@ -61,7 +61,7 @@ export function StudentActionsMenu({ student, canEnroll, onEnroll }: Props) {
               close(false)
               onEnroll()
             }}
-            className="flex items-center gap-2 rounded px-3 py-2 text-sm text-primary hover:bg-alabaster-900"
+            className="flex items-center gap-2 rounded px-3 py-2 text-sm text-foreground hover:bg-alabaster-900"
           >
             <UserPlus className="h-4 w-4" />
             {t('enroll')}
