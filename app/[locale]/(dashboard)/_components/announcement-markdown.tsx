@@ -6,7 +6,7 @@ import Markdown from 'react-markdown'
  */
 export function AnnouncementMarkdown({ children }: { children: string }) {
   return (
-    <div className="space-y-3 text-sm leading-relaxed text-graphite-600 [&_a]:text-primary [&_a]:underline [&_h2]:font-semibold [&_h2]:text-graphite [&_h3]:font-semibold [&_h3]:text-graphite [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-graphite [&_ul]:list-disc [&_ul]:pl-5">
+    <div className="space-y-3 text-sm leading-relaxed text-graphite-600 [&_a]:text-foreground [&_a]:underline [&_h2]:font-semibold [&_h2]:text-graphite [&_h3]:font-semibold [&_h3]:text-graphite [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-graphite [&_ul]:list-disc [&_ul]:pl-5">
       <Markdown
         components={{
           a: ({ href, children: label }) => (

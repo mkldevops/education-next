@@ -166,7 +166,7 @@ export function UsersTable({
   const emptyMessage =
     members.length === 0 ? (
       <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-2">
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-light text-primary">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-subtle text-foreground">
           <Users className="h-5 w-5" aria-hidden="true" />
         </span>
         <div className="space-y-1">

@@ -57,7 +57,7 @@ function EmergencyContactCell({ family }: { family: FamilyRow }) {
       {phone && (
         <a
           href={`tel:${phone.replace(/[^+\d]/g, '')}`}
-          className="relative z-10 flex w-fit items-center gap-1 text-primary hover:text-primary-hover hover:underline"
+          className="relative z-10 flex w-fit items-center gap-1 text-foreground hover:underline"
         >
           <Phone className="h-3 w-3 shrink-0" />
           <span className="truncate">{phone}</span>
@@ -150,7 +150,7 @@ function RemainingCell({ family, currency }: { family: FamilyRow; currency: stri
           )}
           <Link
             href={`/dashboard/families/${family.id}`}
-            className="mt-3 block text-sm font-medium text-primary hover:text-primary-hover"
+            className="mt-3 block text-sm font-medium text-foreground hover:underline"
           >
             {t('viewFamily')}
           </Link>
@@ -171,7 +171,7 @@ export function FamiliesDataTable({ data, paymentsEnabled, currency }: Props) {
       cell: ({ row }) => (
         <Link
           href={`/dashboard/families/${row.original.id}`}
-          className="font-medium text-primary after:absolute after:inset-0 hover:text-primary-hover"
+          className="font-medium text-foreground after:absolute after:inset-0 hover:underline"
         >
           {row.original.name}
         </Link>

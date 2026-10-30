@@ -116,7 +116,7 @@ export function StudentsDataTable({
       return (
         <Link
           href={`/dashboard/families/${link.familyId}`}
-          className="relative z-10 text-primary hover:text-primary-hover hover:underline"
+          className="relative z-10 text-foreground hover:underline"
         >
           {link.family.name}
         </Link>
@@ -150,7 +150,7 @@ export function StudentsDataTable({
       cell: ({ row }) => (
         <Link
           href={`/dashboard/students/${row.original.id}`}
-          className="font-medium text-primary after:absolute after:inset-0 hover:text-primary-hover"
+          className="font-medium text-foreground after:absolute after:inset-0 hover:underline"
         >
           {row.original.person.name} {row.original.person.lastname}
         </Link>

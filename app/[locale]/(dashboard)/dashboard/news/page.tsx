@@ -45,7 +45,7 @@ export default async function NewsPage({ params }: { params: Promise<{ locale: s
       </header>
       {announcements.length === 0 ? (
         <section className="rounded-3xl border border-dashed border-alabaster-700 bg-white px-6 py-14 text-center">
-          <Megaphone aria-hidden="true" className="mx-auto mb-4 size-10 text-primary" />
+          <Megaphone aria-hidden="true" className="mx-auto mb-4 size-10 text-foreground" />
           <h2 className="font-semibold text-graphite">{t('emptyTitle')}</h2>
           <p className="mt-2 text-sm text-graphite-600">{t('empty')}</p>
         </section>

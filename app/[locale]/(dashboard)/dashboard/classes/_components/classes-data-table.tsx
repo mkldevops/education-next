@@ -65,7 +65,7 @@ export function ClassesDataTable({ classes, levels, teachers, canManage, emptyMe
       cell: ({ row }) => (
         <Link
           href={`/dashboard/classes/${row.original.id}`}
-          className="font-medium text-primary hover:underline"
+          className="font-medium text-foreground hover:underline"
         >
           {row.original.name}
         </Link>

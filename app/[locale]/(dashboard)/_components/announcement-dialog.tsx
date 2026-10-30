@@ -54,7 +54,7 @@ function AnnouncementDialogContent({ announcement }: { announcement: Announcemen
   return (
     <DialogContent>
       <DialogHeader>
-        <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-primary">
+        <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-foreground">
           <Sparkles aria-hidden className="size-3.5" />
           {t('dialogEyebrow')}
         </p>

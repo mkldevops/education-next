@@ -293,7 +293,7 @@ export function CashierForm({ familyId, lines, tuitionDue, currency, locale }: P
               className={cn(
                 'flex cursor-pointer items-center justify-center rounded border p-3 text-xs font-medium transition-colors',
                 method === value
-                  ? 'border-primary bg-primary/5 text-primary'
+                  ? 'border-primary bg-primary/5 text-foreground'
                   : 'border-alabaster-700 text-graphite-600 hover:border-alabaster hover:bg-alabaster-900'
               )}
             >

@@ -74,7 +74,7 @@ export default async function MealDebtorsPage({ params }: Props) {
                     <td className="py-2 pr-4">
                       <Link
                         href={`/dashboard/cashier/students/${row.studentId}`}
-                        className="font-medium text-primary hover:underline"
+                        className="font-medium text-foreground hover:underline"
                       >
                         {row.name}
                       </Link>
@@ -104,7 +104,7 @@ export default async function MealDebtorsPage({ params }: Props) {
                       {row.familyId && (
                         <Link
                           href={`/dashboard/cashier?familyId=${row.familyId}`}
-                          className="text-primary hover:underline"
+                          className="text-foreground hover:underline"
                         >
                           {t('collect')}
                         </Link>

@@ -63,10 +63,10 @@ export default async function CashierPage({ params, searchParams }: Props) {
           <p className="text-sm text-graphite-600">{t('intro')}</p>
         </div>
         <nav className="flex gap-4 text-sm">
-          <Link href="/dashboard/cashier/day" className="text-primary hover:underline">
+          <Link href="/dashboard/cashier/day" className="text-foreground hover:underline">
             {t('day.title')}
           </Link>
-          <Link href="/dashboard/cashier/debtors" className="text-primary hover:underline">
+          <Link href="/dashboard/cashier/debtors" className="text-foreground hover:underline">
             {t('debtors.title')}
           </Link>
         </nav>
@@ -118,7 +118,7 @@ export default async function CashierPage({ params, searchParams }: Props) {
             {isAdmin && (
               <Link
                 href={`/dashboard/families/${family.id}`}
-                className="text-sm text-primary hover:underline"
+                className="text-sm text-foreground hover:underline"
               >
                 {t('viewFamily')}
               </Link>
@@ -131,7 +131,7 @@ export default async function CashierPage({ params, searchParams }: Props) {
                 <Link
                   key={student.id}
                   href={`/dashboard/cashier/students/${student.id}`}
-                  className="text-primary hover:underline"
+                  className="text-foreground hover:underline"
                 >
                   {student.name}
                 </Link>

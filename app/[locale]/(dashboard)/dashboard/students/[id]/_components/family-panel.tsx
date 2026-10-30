@@ -43,7 +43,7 @@ export async function FamilyPanel({ family }: Props) {
           </p>
           <p className="mt-0.5 truncate font-medium text-graphite">{family.name}</p>
         </div>
-        <ChevronRight className="h-5 w-5 shrink-0 text-graphite-800 transition-colors group-hover:text-primary" />
+        <ChevronRight className="h-5 w-5 shrink-0 text-graphite-800 transition-colors group-hover:text-foreground" />
       </Link>
 
       <div className="p-4">
@@ -68,7 +68,7 @@ export async function FamilyPanel({ family }: Props) {
                     {contact.person.phoneNumbers[0] && (
                       <a
                         href={`tel:${contact.person.phoneNumbers[0].phoneNumber}`}
-                        className="flex items-center gap-1.5 text-xs text-graphite-600 hover:text-primary hover:underline"
+                        className="flex items-center gap-1.5 text-xs text-graphite-600 hover:text-foreground hover:underline"
                       >
                         <Phone className="h-3.5 w-3.5 text-graphite-700" />
                         {contact.person.phoneNumbers[0].phoneNumber}
@@ -77,7 +77,7 @@ export async function FamilyPanel({ family }: Props) {
                     {contact.person.email && (
                       <a
                         href={`mailto:${contact.person.email}`}
-                        className="flex items-center gap-1.5 truncate text-xs text-graphite-600 hover:text-primary hover:underline"
+                        className="flex items-center gap-1.5 truncate text-xs text-graphite-600 hover:text-foreground hover:underline"
                       >
                         <Mail className="h-3.5 w-3.5 shrink-0 text-graphite-700" />
                         <span className="truncate">{contact.person.email}</span>

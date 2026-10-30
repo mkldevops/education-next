@@ -38,7 +38,7 @@ export async function ChildrenSummary({ students, locale, currency, paymentsEnab
             <div className="min-w-0 flex-1">
               <Link
                 href={`/dashboard/students/${person.student.id}`}
-                className="text-sm font-medium text-primary hover:text-primary-hover hover:underline"
+                className="text-sm font-medium text-foreground hover:underline"
               >
                 {person.name}
               </Link>

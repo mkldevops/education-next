@@ -91,8 +91,8 @@
   /* Noir ou blanc selon la luminance du primaire : lisible quel que soit le nuancier d'école */
   --primary-foreground: oklch(from var(--primary) round(1.21 - l) 0 0);
   --primary-subtle: color-mix(in oklab, var(--primary) 10%, var(--surface));
-  /* Opaque : un anneau translucide tomberait sous 3:1 avec un primaire clair (WCAG 2.4.11) */
-  --ring: var(--primary);
+  /* Un primaire clair (jaune, par exemple) disparaît sur blanc : le focus reste neutre. */
+  --ring: var(--foreground);
 
   /* États métier : texte ≥ 4,5:1 sur leur fond pâle */
   --success: oklch(0.5 0.12 155);

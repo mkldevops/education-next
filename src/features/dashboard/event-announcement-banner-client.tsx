@@ -42,10 +42,10 @@ export function EventAnnouncementBannerClient({
   if (dismissed) return null
 
   return (
-    <div className="border-b border-primary/20 bg-primary-light px-4 py-2 text-sm text-graphite sm:px-6">
+    <div className="border-b border-primary/20 bg-primary-subtle px-4 py-2 text-sm text-graphite sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <CalendarClock className="size-4 shrink-0 text-primary" />
+          <CalendarClock className="size-4 shrink-0 text-foreground" />
           <span className="truncate font-medium">{message}</span>
         </div>
         <button
