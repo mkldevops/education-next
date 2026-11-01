@@ -1840,6 +1840,7 @@
               "due": "Dû",
               "unpaid": "À payer",
               "absent": "Absent",
+              "holiday": "Vacances et jours fériés",
               "closed": "Fermé"
             },
             "error": "Erreur lors de l'enregistrement",

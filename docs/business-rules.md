@@ -2109,7 +2109,10 @@ balance. One `recordReceipt()` (`src/use-cases/receipts/record-receipt.ts`) writ
 **Meal sheet and absences.** Under each service, the student card shows a month calendar of the
 scheduled days (`mealCalendar()`, `src/domain/meal-calendar.ts`, returned by `summarizeMealAccount()`):
 `paid` for the first served days the ledger owns, `due` for a later served day up to today, `unpaid`
-after it, `absent`, and `closed` for a published closure or holiday. One tap on a day calls
+after it, `absent`, and `closed` for a published closure or holiday. The view also overlays published
+school closures on every day of the displayed month, including days outside the child's meal schedule.
+`HOLIDAY` events have a separate holiday colour and legend; closed days cannot be marked absent.
+One tap on a day calls
 `toggleMealAbsence()` (`src/use-cases/meals/toggle-meal-absence.ts`), under the account lock:
 
 - an absence is a `MealAbsence` row (one per account and day, so a second tap on the same state is
