@@ -23,13 +23,14 @@ type Props = {
   familyName: string
   families: Array<{ id: string; name: string }>
   cleanUrl: string
+  defaultOpen?: boolean
 }
 
 export function MergeFamilyDialog(props: Props) {
   const t = useTranslations('dashboard.pages.families.merge')
   return (
-    <Dialog initialOpen>
-      <DialogRouteOpener open cleanUrl={props.cleanUrl} />
+    <Dialog initialOpen={props.defaultOpen}>
+      <DialogRouteOpener open={props.defaultOpen ?? false} cleanUrl={props.cleanUrl} />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>

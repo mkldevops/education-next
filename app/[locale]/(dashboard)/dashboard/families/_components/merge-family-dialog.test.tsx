@@ -20,6 +20,7 @@ beforeEach(() => {
 const open = () =>
   render(
     <MergeFamilyDialog
+      defaultOpen
       familyId="source"
       familyName="Source"
       families={[

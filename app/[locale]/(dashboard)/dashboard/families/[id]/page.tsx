@@ -103,8 +103,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     paymentsEnabled ? getFamilyPaymentTracking(family.schoolId, family.id) : null,
   ])
 
-  const mergeOptions =
-    isAdmin && openAction === 'mergeFamily' ? await familyGateway.list(family.schoolId) : []
+  const mergeOptions = isAdmin ? await familyGateway.list(family.schoolId) : []
 
   const {
     students,
@@ -233,7 +232,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               redirectTo={familyHref}
               showTrigger={false}
             />
-            {isAdmin && openAction === 'mergeFamily' && (
+            {isAdmin && (
               <MergeFamilyDialog
                 familyId={family.id}
                 familyName={family.name}
@@ -241,6 +240,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                   .filter((option) => option.id !== family.id)
                   .map(({ id, name }) => ({ id, name }))}
                 cleanUrl={familyHref}
+                defaultOpen={openAction === 'mergeFamily'}
               />
             )}
             {deletionImpact && (
