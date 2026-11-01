@@ -14,9 +14,11 @@ export async function updateFamilyPerson(input: Input) {
   const link = await familyGateway.findPerson(schoolId, familyId, personId)
   if (!link) return 'notFound' as const
 
-  return personGateway.updateWithFamily(schoolId, familyId, personId, {
-    person,
-    relationType,
-    phoneNumber,
-  })
+  return (
+    (await personGateway.updateWithFamily(schoolId, familyId, personId, {
+      person,
+      relationType,
+      phoneNumber,
+    })) ?? ('notFound' as const)
+  )
 }

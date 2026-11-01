@@ -88,6 +88,19 @@ describe('addPersonToFamily', () => {
     expect(result).toBe('notFound')
   })
 
+  it('returns notFound if the family is archived before creation', async () => {
+    familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
+    personGatewayMock.createWithFamily.mockResolvedValue(null)
+    expect(
+      await addPersonToFamily({
+        schoolId: 'school-1',
+        familyId: '550e8400-e29b-41d4-a716-446655440000',
+        relationType: 'PARENT',
+        person: { name: 'Jane', lastname: 'Doe' },
+      })
+    ).toBe('notFound')
+  })
+
   it('should succeed adding parent to family', async () => {
     familyGatewayMock.findById.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000' })
 

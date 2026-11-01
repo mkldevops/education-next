@@ -4,6 +4,8 @@ const dbMock = { user: { findUnique: vi.fn(), count: vi.fn() } }
 const dbArchivedMock = {
   user: { findUnique: vi.fn(), count: vi.fn(), update: vi.fn() },
   userFamily: { findFirst: vi.fn(), create: vi.fn(), deleteMany: vi.fn() },
+  $queryRaw: vi.fn(),
+  $transaction: vi.fn(async (fn: (tx: typeof dbArchivedMock) => unknown) => fn(dbArchivedMock)),
 }
 
 vi.mock('@/lib/db', () => ({ db: dbMock, dbArchived: dbArchivedMock }))
@@ -18,6 +20,7 @@ const USER = 'IQIcCmrvISuDG9mVxlPh4ISuCj7bdZxw'
 
 beforeEach(() => {
   vi.clearAllMocks()
+  dbArchivedMock.$queryRaw.mockResolvedValue([{ id: 'family-1' }])
 })
 
 describe('userGateway.findDetail', () => {
@@ -93,6 +96,15 @@ describe('userGateway family links', () => {
     const { where } = dbArchivedMock.userFamily.deleteMany.mock.calls[0][0]
     expect(where).toEqual({ userId: USER, familyId: 'family-1', schoolId: SCHOOL })
     expect(where.schoolId).not.toBe(OTHER_SCHOOL)
+  })
+
+  it('does not write links when the family is no longer active', async () => {
+    dbArchivedMock.$queryRaw.mockResolvedValue([])
+
+    expect(await userGateway.linkFamily(USER, 'family-1', SCHOOL)).toBeNull()
+    expect(await userGateway.unlinkFamily(USER, 'family-1', SCHOOL)).toBeNull()
+    expect(dbArchivedMock.userFamily.create).not.toHaveBeenCalled()
+    expect(dbArchivedMock.userFamily.deleteMany).not.toHaveBeenCalled()
   })
 
   it('writes the school on creation, which the composite key requires', async () => {

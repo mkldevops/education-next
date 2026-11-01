@@ -19,8 +19,11 @@ export function normalizeRosterText(value: string) {
     .toLowerCase()
 }
 
+export const rosterPersonKey = (person: { lastname: string; name: string }) =>
+  JSON.stringify([normalizeRosterText(person.lastname), normalizeRosterText(person.name)])
+
 const rosterKey = (row: { lastname: string; name: string; className: string }) =>
-  [row.lastname, row.name, row.className].map(normalizeRosterText).join('|')
+  JSON.stringify([rosterPersonKey(row), normalizeRosterText(row.className)])
 
 /**
  * Lignes lisibles et lignes refusées (colonne vide ou manquante). Une première ligne
@@ -75,6 +78,17 @@ export function planRosterImport(
     create.push({ ...row, className: target.name, classPeriodId: target.id })
   }
 
+  const classesByPerson = new Map<string, Set<string>>()
+  for (const entry of [...existing, ...rows]) {
+    const key = rosterPersonKey(entry)
+    const names = classesByPerson.get(key) ?? new Set<string>()
+    names.add(normalizeRosterText(entry.className))
+    classesByPerson.set(key, names)
+  }
+  const conflictingClasses = rows.filter(
+    (row) => (classesByPerson.get(rosterPersonKey(row))?.size ?? 0) > 1
+  )
+
   const overCapacity = classes
     .map((item) => ({
       name: item.name,
@@ -95,5 +109,38 @@ export function planRosterImport(
     .map(([lastname, names]) => ({ lastname, students: [...names].sort() }))
     .sort((a, b) => a.lastname.localeCompare(b.lastname))
 
-  return { create, skipped, unknownClass, overCapacity, sameLastname }
+  return { create, skipped, unknownClass, overCapacity, sameLastname, conflictingClasses }
+}
+
+export type RosterPerson = {
+  id: string
+  lastname: string
+  name: string
+  isActive: boolean
+  student: { id: string; isActive: boolean } | null
+  hasActiveFamily: boolean
+}
+
+/** Resolve full names only; shared surnames alone never establish a family relationship. */
+export function resolveRosterPeople(rows: RosterRow[], people: RosterPerson[]) {
+  const byName = new Map<string, RosterPerson[]>()
+  for (const person of people) {
+    const name = rosterPersonKey(person)
+    byName.set(name, [...(byName.get(name) ?? []), person])
+  }
+  return rows.map((row) => {
+    const matches = byName.get(rosterPersonKey(row)) ?? []
+    if (matches.length > 1) return { row, kind: 'ambiguous' as const }
+    const person = matches[0]
+    if (person && (!person.isActive || (person.student && !person.student.isActive))) {
+      return { row, kind: 'archived' as const }
+    }
+    return { row, kind: 'resolved' as const, person }
+  })
+}
+
+/** An open enrollment with an ended assignment still belongs to the period. */
+export function findOpenEnrollmentConflicts(rows: RosterRow[], assigned: RosterExisting[]) {
+  const names = new Set(assigned.map(rosterPersonKey))
+  return rows.filter((row) => names.has(rosterPersonKey(row)))
 }

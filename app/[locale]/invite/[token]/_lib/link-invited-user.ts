@@ -1,3 +1,4 @@
+import { lockActiveFamily } from '@/gateways/family-mutation-lock'
 import { grantMemberRole } from '@/gateways/school-member-gateway'
 import type { Invitation, Prisma } from '@/generated/prisma/client'
 
@@ -20,6 +21,21 @@ export async function linkInvitedUser(
   invitation: Invitation,
   userId: string
 ): Promise<LinkInvitedUserResult> {
+  // Merge may have moved the invitation since the public token lookup. Lock its
+  // current active family before consuming the token, in merge's family-first order.
+  let familyId = invitation.familyId
+  if (familyId) {
+    const current = await tx.invitation.findUnique({
+      where: { id: invitation.id, schoolId: invitation.schoolId },
+      select: { familyId: true },
+    })
+    if (!current) return 'alreadyUsed'
+    familyId = current.familyId
+    if (!familyId || !(await lockActiveFamily(tx, invitation.schoolId, familyId))) {
+      throw new Error('familyLinkUnavailable')
+    }
+  }
+
   const membership = await tx.schoolMember.findUnique({
     where: { userId_schoolId: { userId, schoolId: invitation.schoolId } },
     select: { roles: true },
@@ -57,13 +73,13 @@ export async function linkInvitedUser(
     if (linked.count !== 1) throw new Error('teacherLinkUnavailable')
   }
 
-  if (invitation.familyId) {
+  if (familyId) {
     await tx.userFamily.upsert({
       where: {
-        userId_familyId: { userId, familyId: invitation.familyId },
+        userId_familyId: { userId, familyId },
         schoolId: invitation.schoolId,
       },
-      create: { userId, familyId: invitation.familyId, schoolId: invitation.schoolId },
+      create: { userId, familyId, schoolId: invitation.schoolId },
       update: {},
     })
   }

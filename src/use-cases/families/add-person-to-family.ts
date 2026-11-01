@@ -20,5 +20,5 @@ export async function addPersonToFamily(input: Input) {
     parsed.data.phoneNumber
   )
 
-  return person
+  return person ?? ('notFound' as const)
 }

@@ -7,6 +7,7 @@ import {
 } from '@/domain/enrollment'
 import { validateStudentBirthday } from '@/domain/student'
 import { reserveClassSeats } from '@/gateways/class-seat-lock'
+import { lockActiveFamily } from '@/gateways/family-mutation-lock'
 import { planGateway } from '@/gateways/plan-gateway'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -50,11 +51,7 @@ export async function createEnrolledStudent(input: Input) {
   }
 
   return db.$transaction(async (tx) => {
-    const family = await tx.family.findFirst({
-      where: { id: familyId, schoolId, isActive: true },
-      select: { id: true },
-    })
-    if (!family) return 'notFound' as const
+    if (!(await lockActiveFamily(tx, schoolId, familyId))) return 'notFound' as const
 
     // La formule n'est résolue que drapeau actif : hors drapeau, la formule réservée est
     // créée dans cette transaction, donc elle repart avec le rollback si la classe s'avère
@@ -98,7 +95,7 @@ export async function createEnrolledStudent(input: Input) {
       data: {
         ...person,
         schoolId,
-        families: { create: { familyId: family.id, relationType: 'OTHER' } },
+        families: { create: { familyId, relationType: 'OTHER' } },
       },
       select: { id: true },
     })

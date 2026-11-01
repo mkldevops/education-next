@@ -127,18 +127,44 @@ is expendable.
 start of the year from a normalized `nom;prenom;classe` file.
 
 - **Dry run by default.** Without `--apply` nothing is written. The script prints the students it would
-  create, the ignored duplicates and the shared last names.
+  reuse, the families and enrollments it would create, the ignored duplicate enrollments and shared last names.
 - **Replayable.** A student already enrolled in the same class of the period is ignored, and so is a
   repeated line. The key is (last name, first name, class), compared without case, accents or extra
   spaces.
 - **All or nothing.** These problems block `--apply`: an incomplete line, a class unknown in the
-  period, or a class the import would fill beyond its capacity. Students are created in one
-  transaction.
+  period, an ambiguous identity, conflicting classes/open enrollments in the period, or a class
+  the import would fill beyond its capacity. Students are created in one transaction.
 - **Each created student** gets a `Person`, a `Student`, an `ACTIVE` enrollment on the named plan at
   its full amount, and a class assignment.
-- **Families are never inferred.** Two children with the same last name may or may not be siblings.
-  The script only lists them so the school can decide. Families and phone numbers are added afterwards
-  in the application.
+- **Every imported student has a family.** The import reuses an unambiguous school person/student
+  matched by normalized full name and retains their active families. Without an active family it
+  creates a separate family, linked as `OTHER`, using an active school admin as creator. This also
+  repairs missing families for already-enrolled, skipped students. Ambiguous names, archived matching
+  records, or a missing active admin when a family must be created block the import.
+- **Sibling relationships are never inferred from surnames.** Shared last names are only reported
+  for school review. Phone numbers and family details are preserved when already known, never invented.
+
+### Merging families
+
+School admins may merge an active family into another active family in the same school from the
+family detail actions (`src/use-cases/families/merge-families.ts`). They explicitly choose the retained
+family and confirm that parent access can be combined. All person links, parent account links,
+invitations, payments, receipts and payment transactions move, including archived financial rows.
+Students, enrollments and attendance records keep their identities. Duplicate links are collapsed;
+conflicting relationship types block the operation. A member linked to a third family (including an archived family) also
+blocks merging: replacing a family identifier may change the debtor while that third family is
+processing a payment. The emptied source family is archived.
+
+Missing emergency/pickup details are filled from the source, and home languages are combined.
+Conflicting nonempty emergency/pickup details block merging until reconciled. Pending online payments
+on either family also block it. Checkout opening locks and both family rows are acquired in identifier
+order in one Read Committed transaction, so reads after a waiting lock see the writer that just
+committed; a concurrent change returns a retryable conflict. Parent accounts and invitations from
+both families gain access to the combined record. Person/student creation, user links and unlinking,
+existing-family MCP enrollment, invitation issuance and acceptance share an active-family row lock
+with merge. Creation and linking are atomic, and stale archived targets are refused before writes.
+Invitation acceptance rereads the current family before consuming its token. Receipt cancellation
+refuses a stale family lock or a receipt moved to another family before touching its payments.
 
 ### Administering schools
 

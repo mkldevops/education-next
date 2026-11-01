@@ -2,7 +2,7 @@
 
 import { Button, useMenu } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
-import { Archive, CreditCard, MoreHorizontal, Pencil, Trash2, UserPlus } from 'lucide-react'
+import { Archive, CreditCard, Merge, MoreHorizontal, Pencil, Trash2, UserPlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useCallback } from 'react'
 import { useRouter } from '@/i18n/routing'
@@ -77,6 +77,7 @@ export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment, canDel
     },
     ...(canDelete
       ? [
+          { key: 'merge', label: t('merge'), icon: Merge, action: 'mergeFamily' as const },
           {
             key: 'delete',
             label: t('delete'),

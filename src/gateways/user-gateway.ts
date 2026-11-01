@@ -1,3 +1,4 @@
+import { lockActiveFamily } from '@/gateways/family-mutation-lock'
 import { db, dbArchived } from '@/lib/db'
 
 const listSelect = {
@@ -207,11 +208,15 @@ export const userGateway = {
   delete: (id: string) => dbArchived.user.delete({ where: { id } }),
 
   linkFamily: (userId: string, familyId: string, schoolId: string) =>
-    dbArchived.userFamily.create({ data: { userId, familyId, schoolId } }),
+    dbArchived.$transaction(async (tx) => {
+      if (!(await lockActiveFamily(tx, schoolId, familyId))) return null
+      return tx.userFamily.create({ data: { userId, familyId, schoolId } })
+    }),
 
   unlinkFamily: (userId: string, familyId: string, schoolId: string) =>
-    dbArchived.userFamily.deleteMany({
-      where: { userId, familyId, schoolId },
+    dbArchived.$transaction(async (tx) => {
+      if (!(await lockActiveFamily(tx, schoolId, familyId))) return null
+      return tx.userFamily.deleteMany({ where: { userId, familyId, schoolId } })
     }),
 
   hasFamilyLink: (userId: string, familyId: string, schoolId: string) =>

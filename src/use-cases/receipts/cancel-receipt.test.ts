@@ -91,6 +91,22 @@ describe('cancelReceipt', () => {
     expect(await run()).toBe('notFound')
   })
 
+  it('refuses a family archived by a concurrent merge before cancelling anything', async () => {
+    const { receiptGw, run } = setup()
+    lockFamilyForPayment.mockResolvedValue(false)
+    expect(await run()).toBe('notFound')
+    expect(receiptGw.lockForCancel).not.toHaveBeenCalled()
+    expect(deactivateMany).not.toHaveBeenCalled()
+  })
+
+  it('refuses a receipt moved to another family after the initial lookup', async () => {
+    const { receiptGw, run } = setup()
+    receiptGw.lockForCancel.mockResolvedValue({ familyId: 'target-family', cancelledAt: null })
+    expect(await run()).toBe('notFound')
+    expect(receiptGw.findActivePayments).not.toHaveBeenCalled()
+    expect(receiptGw.markCancelled).not.toHaveBeenCalled()
+  })
+
   it('requires a reason', async () => {
     const { run } = setup()
 
