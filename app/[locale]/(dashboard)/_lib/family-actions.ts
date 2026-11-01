@@ -9,6 +9,7 @@ import type { createFullFamilySchema } from '@/use-cases/families/create-full-fa
 import { deactivateFamily } from '@/use-cases/families/deactivate-family'
 import { deleteFamily } from '@/use-cases/families/delete-family'
 import { linkUserToFamily } from '@/use-cases/families/link-user-to-family'
+import { mergeFamilies } from '@/use-cases/families/merge-families'
 import type {
   addPersonToFamilySchema,
   linkUserToFamilySchema,
@@ -124,4 +125,12 @@ export async function addPhoneAction(
   })
   revalidatePath('/dashboard/families')
   return phone
+}
+
+export async function mergeFamiliesAction(sourceId: string, targetId: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await mergeFamilies({ schoolId, sourceId, targetId })
+  if (result !== 'OK') return result
+  revalidatePath('/dashboard', 'layout')
+  return 'OK' as const
 }

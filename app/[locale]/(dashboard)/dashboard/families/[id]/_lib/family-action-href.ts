@@ -5,6 +5,7 @@ export type FamilyAction =
   | 'editFamily'
   | 'archiveFamily'
   | 'deleteFamily'
+  | 'mergeFamily'
 
 export function familyActionHref(
   familyId: string,
