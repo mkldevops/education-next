@@ -56,6 +56,22 @@ export async function mergeFamilies(input: z.infer<typeof schema>) {
         const links = await tx.familyPerson.findMany({
           where: { schoolId, familyId: { in: [sourceId, targetId] } },
         })
+        // Shared custody can make a third family the debtor. Replacing a family ID
+        // may change that debtor without taking its payment lock, so leave these
+        // records untouched rather than risk concurrent overpayment.
+        if (
+          links.length &&
+          (await tx.familyPerson.findFirst({
+            where: {
+              schoolId,
+              personId: { in: [...new Set(links.map((link) => link.personId))] },
+              familyId: { notIn: [sourceId, targetId] },
+            },
+            select: { personId: true },
+          }))
+        )
+          return 'sharedMember' as const
+
         const targetLinks = new Map(
           links
             .filter((link) => link.familyId === targetId)
@@ -118,7 +134,8 @@ export async function mergeFamilies(input: z.infer<typeof schema>) {
         })
         return 'OK' as const
       },
-      { isolationLevel: 'Serializable' }
+      // Reads after a waiting family lock must see the writer that just committed.
+      { isolationLevel: 'ReadCommitted' }
     )
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2034') {

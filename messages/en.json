@@ -556,7 +556,8 @@
             "familyDetailsConflict": "Emergency contacts or pickup authorizations differ. Reconcile them before merging.",
             "relationConflict": "A person has different relationship types in these families. Correct them before merging.",
             "mergeConflict": "Another change occurred. Reload and try again.",
-            "validationError": "Check the selected family."
+            "validationError": "Check the selected family.",
+            "sharedMember": "A member also belongs to a third family. Merging is blocked to preserve payment allocation."
           }
         }
       },

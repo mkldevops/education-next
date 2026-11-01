@@ -18,8 +18,8 @@ export async function linkUserFamily(schoolId: string, input: Input) {
   const existing = await userGateway.hasFamilyLink(parsed.data.id, parsed.data.familyId, schoolId)
   if (existing) return 'alreadyLinked' as const
 
-  await userGateway.linkFamily(parsed.data.id, parsed.data.familyId, schoolId)
-  return 'OK' as const
+  const linked = await userGateway.linkFamily(parsed.data.id, parsed.data.familyId, schoolId)
+  return linked ? ('OK' as const) : ('familyNotFound' as const)
 }
 
 export async function unlinkUserFamily(schoolId: string, input: Input) {
@@ -29,6 +29,6 @@ export async function unlinkUserFamily(schoolId: string, input: Input) {
   const existing = await userGateway.hasFamilyLink(parsed.data.id, parsed.data.familyId, schoolId)
   if (!existing) return 'notFound' as const
 
-  await userGateway.unlinkFamily(parsed.data.id, parsed.data.familyId, schoolId)
-  return 'OK' as const
+  const deleted = await userGateway.unlinkFamily(parsed.data.id, parsed.data.familyId, schoolId)
+  return deleted && deleted.count > 0 ? ('OK' as const) : ('notFound' as const)
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
+import { lockActiveFamily } from '@/gateways/family-mutation-lock'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { schoolMemberGateway } from '@/gateways/school-member-gateway'
 import { db } from '@/lib/db'
@@ -110,20 +111,39 @@ export async function inviteUserAction(input: {
   const locale = resolveInvitationLocale(parsed.data.locale ?? (await getLocale()))
   const token = crypto.randomUUID()
 
-  await db.invitation.create({
-    data: {
-      schoolId,
-      email,
-      role,
-      token,
-      locale,
-      expiresAt: nextInvitationExpiry(),
-      createdById: userId,
-      familyId,
-      personId,
-      teacherId,
-    },
-  })
+  const data = {
+    schoolId,
+    email,
+    role,
+    token,
+    locale,
+    expiresAt: nextInvitationExpiry(),
+    createdById: userId,
+    familyId,
+    personId,
+    teacherId,
+  }
+  if (familyId) {
+    const created = await db.$transaction(async (tx) => {
+      if (!(await lockActiveFamily(tx, schoolId, familyId))) return false
+      // Recheck the parent link after acquiring the same lock as a family merge.
+      const parent = await tx.familyPerson.findFirst({
+        where: {
+          schoolId,
+          familyId,
+          personId,
+          person: { email: { equals: email, mode: 'insensitive' } },
+        },
+        select: { personId: true },
+      })
+      if (!parent) return false
+      await tx.invitation.create({ data })
+      return true
+    })
+    if (!created) return 'invalidInput'
+  } else {
+    await db.invitation.create({ data })
+  }
 
   const sent = await sendInvitationEmail({ to: email, token, locale, schoolName: school.name })
   if (sent !== 'OK') return 'emailError'

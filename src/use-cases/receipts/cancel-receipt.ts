@@ -29,9 +29,11 @@ export async function cancelReceipt(
   if (!familyId) return 'notFound' as const
 
   return receiptGw.transaction(async (tx) => {
-    await paymentGateway.lockFamilyForPayment(tx, schoolId, familyId)
+    if (!(await paymentGateway.lockFamilyForPayment(tx, schoolId, familyId))) {
+      return 'notFound' as const
+    }
     const receipt = await receiptGw.lockForCancel(tx, schoolId, receiptId)
-    if (!receipt) return 'notFound' as const
+    if (!receipt || receipt.familyId !== familyId) return 'notFound' as const
     if (receipt.cancelledAt) return 'alreadyCancelled' as const
 
     const payments = await receiptGw.findActivePayments(tx, schoolId, receiptId)

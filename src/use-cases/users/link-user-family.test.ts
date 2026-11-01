@@ -31,6 +31,8 @@ describe('linkUserFamily', () => {
     userGatewayMock.findManaged.mockResolvedValue({ id: targetId })
     familyGatewayMock.findById.mockResolvedValue({ id: familyId })
     userGatewayMock.hasFamilyLink.mockResolvedValue(null)
+    userGatewayMock.linkFamily.mockResolvedValue({ userId: targetId })
+    userGatewayMock.unlinkFamily.mockResolvedValue({ count: 1 })
   })
 
   it('rejects an empty id', async () => {
@@ -61,6 +63,11 @@ describe('linkUserFamily', () => {
     expect(userGatewayMock.hasFamilyLink).toHaveBeenCalledWith(targetId, familyId, schoolId)
   })
 
+  it('returns familyNotFound if the family disappears before the link', async () => {
+    userGatewayMock.linkFamily.mockResolvedValue(null)
+    expect(await linkUserFamily(schoolId, { id: targetId, familyId })).toBe('familyNotFound')
+  })
+
   it('links the user to the active school family', async () => {
     expect(await linkUserFamily(schoolId, { id: targetId, familyId })).toBe('OK')
     expect(userGatewayMock.linkFamily).toHaveBeenCalledWith(targetId, familyId, schoolId)
@@ -71,11 +78,19 @@ describe('unlinkUserFamily', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     userGatewayMock.hasFamilyLink.mockResolvedValue(null)
+    userGatewayMock.linkFamily.mockResolvedValue({ userId: targetId })
+    userGatewayMock.unlinkFamily.mockResolvedValue({ count: 1 })
   })
 
   it('returns notFound when the school-scoped link is absent', async () => {
     expect(await unlinkUserFamily(schoolId, { id: targetId, familyId })).toBe('notFound')
     expect(userGatewayMock.hasFamilyLink).toHaveBeenCalledWith(targetId, familyId, schoolId)
+  })
+
+  it('returns notFound if the family disappears before unlinking', async () => {
+    userGatewayMock.hasFamilyLink.mockResolvedValue({ userId: targetId })
+    userGatewayMock.unlinkFamily.mockResolvedValue(null)
+    expect(await unlinkUserFamily(schoolId, { id: targetId, familyId })).toBe('notFound')
   })
 
   it('unlinks an existing school-scoped link', async () => {

@@ -151,13 +151,20 @@ family detail actions (`src/use-cases/families/merge-families.ts`). They explici
 family and confirm that parent access can be combined. All person links, parent account links,
 invitations, payments, receipts and payment transactions move, including archived financial rows.
 Students, enrollments and attendance records keep their identities. Duplicate links are collapsed;
-conflicting relationship types block the operation. The emptied source family is archived.
+conflicting relationship types block the operation. A member linked to a third family (including an archived family) also
+blocks merging: replacing a family identifier may change the debtor while that third family is
+processing a payment. The emptied source family is archived.
 
 Missing emergency/pickup details are filled from the source, and home languages are combined.
 Conflicting nonempty emergency/pickup details block merging until reconciled. Pending online payments
 on either family also block it. Checkout opening locks and both family rows are acquired in identifier
-order in one serializable transaction; a concurrent change returns a retryable conflict. Parent accounts and invitations from
-both families gain access to the combined record.
+order in one Read Committed transaction, so reads after a waiting lock see the writer that just
+committed; a concurrent change returns a retryable conflict. Parent accounts and invitations from
+both families gain access to the combined record. Person/student creation, user links and unlinking,
+existing-family MCP enrollment, invitation issuance and acceptance share an active-family row lock
+with merge. Creation and linking are atomic, and stale archived targets are refused before writes.
+Invitation acceptance rereads the current family before consuming its token. Receipt cancellation
+refuses a stale family lock or a receipt moved to another family before touching its payments.
 
 ### Administering schools
 

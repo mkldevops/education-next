@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Invitation, Prisma } from '@/generated/prisma/client'
 import { linkInvitedUser } from './link-invited-user'
 
+const lockActiveFamilyMock = vi.fn()
+vi.mock('@/gateways/family-mutation-lock', () => ({
+  lockActiveFamily: (...args: unknown[]) => lockActiveFamilyMock(...args),
+}))
+
 const INVITATION = {
   id: 'invitation-1',
   schoolId: 'school-b',
@@ -20,6 +25,7 @@ function createTx(overrides: { membership?: unknown; closedCount?: number } = {}
     teacher: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     userFamily: { upsert: vi.fn() },
     invitation: {
+      findUnique: vi.fn().mockResolvedValue({ familyId: 'family-b' }),
       updateMany: vi.fn().mockResolvedValue({ count: overrides.closedCount ?? 1 }),
     },
   }
@@ -29,6 +35,7 @@ const asTx = (tx: ReturnType<typeof createTx>) => tx as unknown as Prisma.Transa
 
 beforeEach(() => {
   vi.clearAllMocks()
+  lockActiveFamilyMock.mockResolvedValue(true)
 })
 
 describe('linkInvitedUser', () => {
@@ -138,6 +145,29 @@ describe('linkInvitedUser', () => {
       )
     ).rejects.toThrow('teacherLinkUnavailable')
 
+    expect(tx.userFamily.upsert).not.toHaveBeenCalled()
+  })
+
+  it('uses the current family after the invitation was moved by a merge', async () => {
+    const tx = createTx()
+    tx.invitation.findUnique.mockResolvedValue({ familyId: 'merged-family' })
+    expect(await linkInvitedUser(asTx(tx), INVITATION, 'user-1')).toBe('OK')
+    expect(lockActiveFamilyMock).toHaveBeenCalledWith(tx, 'school-b', 'merged-family')
+    expect(tx.userFamily.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: { userId: 'user-1', familyId: 'merged-family', schoolId: 'school-b' },
+      })
+    )
+  })
+
+  it('does not consume the token or grant access if the family changed before locking', async () => {
+    const tx = createTx()
+    lockActiveFamilyMock.mockResolvedValue(false)
+    await expect(linkInvitedUser(asTx(tx), INVITATION, 'user-1')).rejects.toThrow(
+      'familyLinkUnavailable'
+    )
+    expect(tx.invitation.updateMany).not.toHaveBeenCalled()
+    expect(tx.schoolMember.create).not.toHaveBeenCalled()
     expect(tx.userFamily.upsert).not.toHaveBeenCalled()
   })
 

@@ -557,7 +557,8 @@
             "familyDetailsConflict": "Les contacts d’urgence ou les autorisations de sortie diffèrent. Harmonisez ces informations avant de fusionner.",
             "relationConflict": "Une personne a des liens de parenté différents dans ces familles. Corrigez-les avant de fusionner.",
             "mergeConflict": "Un autre changement a eu lieu. Rechargez la page et réessayez.",
-            "validationError": "Vérifiez la famille choisie."
+            "validationError": "Vérifiez la famille choisie.",
+            "sharedMember": "Un membre est aussi rattaché à une troisième famille. La fusion est bloquée pour préserver la répartition des paiements."
           }
         }
       },

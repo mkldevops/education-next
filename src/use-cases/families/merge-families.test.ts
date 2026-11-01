@@ -8,7 +8,7 @@ vi.mock('@/gateways/payment-gateway', () => ({
 const tx = {
   $queryRaw: vi.fn(),
   family: { findMany: vi.fn(), update: vi.fn() },
-  familyPerson: { findMany: vi.fn(), upsert: vi.fn(), deleteMany: vi.fn() },
+  familyPerson: { findFirst: vi.fn(), findMany: vi.fn(), upsert: vi.fn(), deleteMany: vi.fn() },
   userFamily: { findMany: vi.fn(), upsert: vi.fn(), deleteMany: vi.fn() },
   payment: { updateMany: vi.fn() },
   receipt: { updateMany: vi.fn() },
@@ -31,6 +31,7 @@ const family = {
 beforeEach(() => {
   vi.clearAllMocks()
   checkoutLock.mockResolvedValue(true)
+  tx.familyPerson.findFirst.mockResolvedValue(null)
   tx.family.findMany.mockResolvedValue([
     { ...family, id: sourceId },
     { ...family, id: targetId },
@@ -85,6 +86,24 @@ describe('mergeFamilies', () => {
     expect(await mergeFamilies(input)).toBe('relationConflict')
     expect(tx.familyPerson.upsert).not.toHaveBeenCalled()
   })
+  it('refuses third-family links so merging cannot change an unlocked debtor', async () => {
+    tx.familyPerson.findMany.mockResolvedValue([
+      { familyId: sourceId, personId: 'child', relationType: 'OTHER' },
+    ])
+    tx.familyPerson.findFirst.mockResolvedValue({ personId: 'child' })
+    expect(await mergeFamilies(input)).toBe('sharedMember')
+    expect(tx.familyPerson.findFirst).toHaveBeenCalledWith({
+      where: {
+        schoolId: 'school',
+        personId: { in: ['child'] },
+        familyId: { notIn: [sourceId, targetId] },
+      },
+      select: { personId: true },
+    })
+    expect(tx.payment.updateMany).not.toHaveBeenCalled()
+    expect(tx.family.update).not.toHaveBeenCalled()
+  })
+
   it('moves all history and access, deduplicates links and archives only the source', async () => {
     tx.family.findMany.mockResolvedValue([
       { ...family, id: sourceId, emergencyContactName: 'Contact', languagesAtHome: ['fr', 'ar'] },
@@ -132,7 +151,7 @@ describe('mergeFamilies', () => {
       data: { isActive: false },
     })
     expect(transaction).toHaveBeenCalledWith(expect.any(Function), {
-      isolationLevel: 'Serializable',
+      isolationLevel: 'ReadCommitted',
     })
   })
   it('returns a retryable conflict if the atomic transaction is aborted', async () => {
