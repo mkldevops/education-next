@@ -1839,6 +1839,7 @@
               "due": "Due",
               "unpaid": "To pay",
               "absent": "Absent",
+              "holiday": "Holidays and school breaks",
               "closed": "Closed"
             },
             "error": "Error while saving",

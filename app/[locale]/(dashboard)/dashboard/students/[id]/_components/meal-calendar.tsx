@@ -16,17 +16,19 @@ type Props = {
   /** Aujourd'hui dans le fuseau de l'école, `YYYY-MM-DD`. */
   today: string
   locale: string
+  closures?: Array<{ startOn: string; endOn: string; category: string }>
 }
 
-const STATUS_CLASS: Record<MealDayStatus, string> = {
+const STATUS_CLASS: Record<MealDayStatus | 'holiday', string> = {
   paid: 'bg-emerald-100 text-emerald-800',
   due: 'bg-red-100 text-red-800',
   unpaid: 'bg-graphite-900 text-graphite',
   absent: 'bg-amber-100 text-amber-800 line-through',
-  closed: 'bg-transparent text-graphite-800',
+  closed: 'bg-alabaster-700 text-graphite-600',
+  holiday: 'bg-yellow-200 text-yellow-900',
 }
 
-const LEGEND: MealDayStatus[] = ['paid', 'due', 'unpaid', 'absent', 'closed']
+const LEGEND = ['paid', 'due', 'unpaid', 'absent', 'holiday', 'closed'] as const
 
 /** `YYYY-MM` décalé de `delta` mois. */
 function shiftMonth(month: string, delta: number) {
@@ -39,7 +41,7 @@ function shiftMonth(month: string, delta: number) {
  * Feuille de repas d'un service : un mois, chaque jour prévu avec son état. Un toucher
  * marque l'absence d'un jour servi, un second la retire ; la fiche se recalcule aussitôt.
  */
-export function MealCalendar({ studentId, service, days, today, locale }: Props) {
+export function MealCalendar({ studentId, service, days, today, locale, closures = [] }: Props) {
   const t = useTranslations('dashboard.pages.studentDetails.meals.calendar')
   const [isPending, startTransition] = useTransition()
   const first = days[0]?.day.slice(0, 7)
@@ -61,7 +63,7 @@ export function MealCalendar({ studentId, service, days, today, locale }: Props)
   const weekdayLabels = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
     weekday,
     label: new Date(Date.UTC(2026, 0, 4 + weekday)).toLocaleDateString(locale, {
-      weekday: 'narrow',
+      weekday: 'short',
       timeZone: 'UTC',
     }),
   }))
@@ -79,7 +81,7 @@ export function MealCalendar({ studentId, service, days, today, locale }: Props)
   }
 
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-4">
       <div className="flex items-center justify-between">
         <Button
           variant="ghost"
@@ -90,7 +92,7 @@ export function MealCalendar({ studentId, service, days, today, locale }: Props)
         >
           <ChevronLeft className="size-4" />
         </Button>
-        <span className="text-sm font-medium capitalize text-graphite">
+        <span className="text-base font-semibold capitalize text-graphite">
           {start.toLocaleDateString(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' })}
         </span>
         <Button
@@ -103,9 +105,9 @@ export function MealCalendar({ studentId, service, days, today, locale }: Props)
           <ChevronRight className="size-4" />
         </Button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs">
+      <div className="grid grid-cols-7 gap-1.5 text-center text-sm">
         {weekdayLabels.map(({ weekday, label }) => (
-          <span key={weekday} className="text-graphite-600">
+          <span key={weekday} className="pb-2 text-xs font-medium text-graphite-600">
             {label}
           </span>
         ))}
@@ -113,11 +115,19 @@ export function MealCalendar({ studentId, service, days, today, locale }: Props)
           <span key={key} />
         ))}
         {cells.map((day) => {
-          const status = byDay.get(day)
+          const closure =
+            closures.find(
+              (entry) => entry.startOn <= day && entry.endOn >= day && entry.category === 'HOLIDAY'
+            ) ?? closures.find((entry) => entry.startOn <= day && entry.endOn >= day)
+          const status = closure ? 'closed' : byDay.get(day)
+          const displayStatus = closure?.category === 'HOLIDAY' ? 'holiday' : status
           const label = String(Number(day.slice(8)))
           if (!status) {
             return (
-              <span key={day} className="py-1.5 text-graphite-300">
+              <span
+                key={day}
+                className="flex min-h-11 items-center justify-center text-graphite-300"
+              >
                 {label}
               </span>
             )
@@ -128,12 +138,12 @@ export function MealCalendar({ studentId, service, days, today, locale }: Props)
               type="button"
               onClick={() => toggle(day, status)}
               disabled={isPending || status === 'closed'}
-              title={t(`status.${status}`)}
-              aria-label={`${day} · ${t(`status.${status}`)}`}
+              title={t(`status.${displayStatus}`)}
+              aria-label={`${day} · ${t(`status.${displayStatus}`)}`}
               aria-pressed={status === 'absent'}
               className={cn(
-                'rounded py-1.5 font-medium transition-opacity disabled:cursor-default',
-                STATUS_CLASS[status],
+                'min-h-11 rounded py-2 font-medium transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-graphite disabled:cursor-default',
+                STATUS_CLASS[displayStatus ?? status],
                 day === today && 'ring-1 ring-graphite',
                 isPending && 'opacity-60'
               )}
@@ -143,10 +153,15 @@ export function MealCalendar({ studentId, service, days, today, locale }: Props)
           )
         })}
       </div>
-      <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-graphite-600">
+      <ul className="flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-3 text-xs text-graphite-600">
         {LEGEND.map((status) => (
           <li key={status} className="flex items-center gap-1">
-            <span className={cn('inline-block size-3 rounded', STATUS_CLASS[status])} />
+            <span
+              className={cn(
+                'inline-block size-3 rounded border border-current/10',
+                STATUS_CLASS[status]
+              )}
+            />
             {t(`status.${status}`)}
           </li>
         ))}

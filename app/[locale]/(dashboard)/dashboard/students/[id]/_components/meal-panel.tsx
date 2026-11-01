@@ -1,4 +1,4 @@
-import { Card } from '@peaklab/ui'
+import { Card, cn } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
 import { schoolToday } from '@/domain/school-date'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
@@ -46,6 +46,32 @@ export async function MealPanel({
   const summaries = await mealAccountGateway.transaction((tx) =>
     loadMealAccountSummaries(tx, { schoolId, accounts, today })
   )
+  // Montrer aussi les fermetures hors des jours de repas de l'élève (ex. week-ends de vacances).
+  const months = [
+    ...new Set(
+      [...summaries.values()].flatMap((summary) =>
+        summary.calendar.map(({ day }) => day.slice(0, 7))
+      )
+    ),
+  ].sort()
+  const firstMonth = months[0]
+  const lastMonth = months.at(-1)
+  const closures =
+    firstMonth && lastMonth
+      ? await mealAccountGateway.findClosures(
+          schoolId,
+          `${firstMonth}-01`,
+          new Date(Date.UTC(Number(lastMonth.slice(0, 4)), Number(lastMonth.slice(5, 7)), 0))
+            .toISOString()
+            .slice(0, 10)
+        )
+      : []
+  const calendarClosures = closures.map((event) => ({
+    category: event.category,
+    startOn: event.startAt.toISOString().slice(0, 10),
+    endOn: (event.endAt ?? event.startAt).toISOString().slice(0, 10),
+  }))
+
   // Les dates `@db.Date` sont à minuit UTC : formatées en UTC, elles gardent leur jour.
   const formatDay = (day: string) =>
     new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, { timeZone: 'UTC' })
@@ -64,11 +90,11 @@ export async function MealPanel({
   if (rows.length === 0) return null
 
   return (
-    <Card className="p-4">
-      <h2 className="text-xs font-medium uppercase tracking-wide text-graphite-600">
+    <Card className="@container overflow-hidden p-0">
+      <h2 className="border-b border-border px-5 py-4 text-base font-semibold text-graphite">
         {t('title')}
       </h2>
-      <div className="mt-3 divide-y divide-alabaster-700">
+      <div className="divide-y divide-border">
         {rows.map(({ service, setting, summary, upcoming }) => {
           const current = summary?.current ?? null
           const coverage = summary?.coverage
@@ -81,71 +107,86 @@ export async function MealPanel({
             period: period && selectedPeriodId ? { id: selectedPeriodId, ...period } : null,
           }
           return (
-            <section key={service} className="space-y-2 py-3 first:pt-0 last:pb-0">
-              <h3 className="text-sm font-semibold text-graphite">{tServices(service)}</h3>
-              {current ? (
-                <dl className="space-y-1 text-sm">
-                  <div>
-                    <dt className="text-xs text-graphite-600">{t('days')}</dt>
-                    <dd className="text-graphite">
-                      {current.weekdays.map((day) => tWeekdays(String(day))).join(', ')}
-                    </dd>
-                    <dd className="text-xs text-graphite-600">
-                      {current.endOn
-                        ? t('between', {
-                            start: formatDay(current.startOn),
-                            end: formatDay(current.endOn),
-                          })
-                        : t('since', { start: formatDay(current.startOn) })}
-                    </dd>
-                    {upcoming && (
-                      <dd className="text-xs text-graphite-600">
-                        {t('upcoming', {
-                          start: formatDay(upcoming.startOn),
-                          days: upcoming.weekdays.map((day) => tWeekdays(String(day))).join(', '),
-                        })}
-                      </dd>
-                    )}
-                  </div>
-                  <div>
-                    <dt className="text-xs text-graphite-600">{t('paidThrough')}</dt>
-                    <dd className="text-graphite">
-                      {coverage?.paidThrough ? formatDay(coverage.paidThrough) : t('nothingPaid')}
-                    </dd>
-                    {coverage && coverage.dueDays > 0 && (
-                      <dd className="text-xs text-amber-600">
-                        {t('due', {
-                          days: coverage.dueDays,
-                          amount: formatCurrency(coverage.dueAmount, locale, currency),
-                        })}
-                      </dd>
-                    )}
-                  </div>
-                  {summary?.opening && (
-                    <div>
-                      <dt className="text-xs text-graphite-600">{t('opening')}</dt>
-                      <dd className="text-graphite">
-                        {t('openingDays', { days: summary.opening.days })}
-                        <span className="text-graphite-600"> · {summary.opening.reason}</span>
-                      </dd>
-                    </div>
+            <section key={service}>
+              <h3 className="px-5 pt-5 text-sm font-semibold text-graphite">
+                {tServices(service)}
+              </h3>
+              <div
+                className={cn('grid', summary && summary.calendar.length > 0 && '@xl:grid-cols-5')}
+              >
+                <div className="min-w-0 space-y-4 p-5 @xl:col-span-2">
+                  {current ? (
+                    <dl className="space-y-4 text-sm">
+                      <div>
+                        <dt className="text-xs text-graphite-600">{t('days')}</dt>
+                        <dd className="text-graphite">
+                          {current.weekdays.map((day) => tWeekdays(String(day))).join(', ')}
+                        </dd>
+                        <dd className="text-xs text-graphite-600">
+                          {current.endOn
+                            ? t('between', {
+                                start: formatDay(current.startOn),
+                                end: formatDay(current.endOn),
+                              })
+                            : t('since', { start: formatDay(current.startOn) })}
+                        </dd>
+                        {upcoming && (
+                          <dd className="text-xs text-graphite-600">
+                            {t('upcoming', {
+                              start: formatDay(upcoming.startOn),
+                              days: upcoming.weekdays
+                                .map((day) => tWeekdays(String(day)))
+                                .join(', '),
+                            })}
+                          </dd>
+                        )}
+                      </div>
+                      <div>
+                        <dt className="text-xs text-graphite-600">{t('paidThrough')}</dt>
+                        <dd className="text-graphite">
+                          {coverage?.paidThrough
+                            ? formatDay(coverage.paidThrough)
+                            : t('nothingPaid')}
+                        </dd>
+                        {coverage && coverage.dueDays > 0 && (
+                          <dd className="text-xs text-amber-600">
+                            {t('due', {
+                              days: coverage.dueDays,
+                              amount: formatCurrency(coverage.dueAmount, locale, currency),
+                            })}
+                          </dd>
+                        )}
+                      </div>
+                      {summary?.opening && (
+                        <div>
+                          <dt className="text-xs text-graphite-600">{t('opening')}</dt>
+                          <dd className="wrap-break-word text-graphite">
+                            {t('openingDays', { days: summary.opening.days })}
+                            <span className="text-graphite-600"> · {summary.opening.reason}</span>
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                  ) : (
+                    <p className="text-sm text-graphite-600">
+                      {dialog.period ? t('notSubscribed') : t('selectPeriod')}
+                    </p>
                   )}
-                </dl>
-              ) : (
-                <p className="text-sm text-graphite-600">
-                  {dialog.period ? t('notSubscribed') : t('selectPeriod')}
-                </p>
-              )}
-              {summary && summary.calendar.length > 0 && (
-                <MealCalendar
-                  studentId={studentId}
-                  service={service}
-                  days={summary.calendar}
-                  today={today}
-                  locale={locale}
-                />
-              )}
-              <div className="flex flex-wrap gap-2">
+                </div>
+                {summary && summary.calendar.length > 0 && (
+                  <div className="min-w-0 border-t border-border p-5 @xl:col-span-3 @xl:border-t-0 @xl:border-l">
+                    <MealCalendar
+                      studentId={studentId}
+                      service={service}
+                      days={summary.calendar}
+                      today={today}
+                      locale={locale}
+                      closures={calendarClosures}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2 border-t border-border bg-alabaster-900/40 px-5 py-3">
                 {!current && setting?.isEnabled && dialog.period && (
                   <MealDialog kind="subscribe" {...dialog} />
                 )}
