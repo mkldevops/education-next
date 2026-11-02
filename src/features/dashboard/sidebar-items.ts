@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  Baby,
   Banknote,
   BookMarked,
   BookOpen,
@@ -122,6 +123,13 @@ const financeItems: NavItemConfig[] = [
     href: '/dashboard/meals',
     icon: UtensilsCrossed,
     key: 'meals',
+    requiredRoles: ['ADMIN'],
+    feature: 'meals',
+  },
+  {
+    href: '/dashboard/childcare',
+    icon: Baby,
+    key: 'childcare',
     requiredRoles: ['ADMIN'],
     feature: 'meals',
   },

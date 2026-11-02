@@ -12,8 +12,8 @@
  *     question est plateforme, donc sans école, et doit voir les lignes archivées ;
  *  4. la purge de rétention des brouillons MCP expirés — un entretien global, sans
  *     école à produire, donc sans lecture de tenant ;
- *  5. le seed, la migration legacy et l'import de listes de classe — scripts lancés à la
- *     main, qui visent une école nommée en argument.
+ *  5. le seed, la migration legacy, l'import de listes de classe et la reprise des repas —
+ *     scripts lancés à la main, qui visent une école nommée en argument.
  *
  * Aucun autre appelant ne doit importer ce module.
  */

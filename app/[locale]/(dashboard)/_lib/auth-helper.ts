@@ -44,11 +44,19 @@ export async function requireSchoolCashier(): Promise<{
 }> {
   const context = await getSchoolContext()
   if (!context) return redirectToLogin()
-  const isAdmin = isActiveSchoolAdmin(context)
-  if (!isAdmin && !hasSchoolRole(context, 'CASHIER')) notFound()
-  if (!(await isMealsEnabled(context.schoolId))) notFound()
+  if (!(await canOpenSchoolCashier(context))) notFound()
 
-  return { schoolId: context.schoolId, userId: context.userId, isAdmin }
+  return {
+    schoolId: context.schoolId,
+    userId: context.userId,
+    isAdmin: isActiveSchoolAdmin(context),
+  }
+}
+
+export async function canOpenSchoolCashier(context: SchoolContext): Promise<boolean> {
+  if (!isActiveSchoolAdmin(context) && !hasSchoolRole(context, 'CASHIER')) return false
+
+  return isMealsEnabled(context.schoolId)
 }
 
 /**

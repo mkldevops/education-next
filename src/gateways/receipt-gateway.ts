@@ -74,6 +74,32 @@ export const receiptGateway = {
       },
     }),
 
+  /**
+   * Rattachements des enfants de ces mois de garderie, archivés compris : une dette facturée
+   * reste payable. Passer par le mois facturé laisse le soft-delete de `Student` hors de la
+   * lecture sans l'ouvrir aux repas, qui gardent `findStudentFamilies`.
+   */
+  findChargedStudentFamilies: async (tx: Tx, schoolId: string, chargeIds: string[]) => {
+    const charges = await tx.childcareCharge.findMany({
+      where: { schoolId, id: { in: chargeIds } },
+      select: {
+        subscription: {
+          select: {
+            student: {
+              select: {
+                id: true,
+                person: {
+                  select: { families: { select: { familyId: true, relationType: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+    return charges.map((charge) => charge.subscription.student)
+  },
+
   findFamilyId: async (schoolId: string, id: string) =>
     (
       await db.receipt.findUnique({
@@ -133,6 +159,22 @@ export const receiptGateway = {
               select: {
                 service: true,
                 student: { select: { person: { select: { name: true, lastname: true } } } },
+              },
+            },
+          },
+          orderBy: { id: 'asc' },
+        },
+        childcarePayments: {
+          select: {
+            amount: true,
+            charge: {
+              select: {
+                month: true,
+                subscription: {
+                  select: {
+                    student: { select: { person: { select: { name: true, lastname: true } } } },
+                  },
+                },
               },
             },
           },

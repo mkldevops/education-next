@@ -35,6 +35,7 @@ vi.mock('@/use-cases/payments/list-school-payments', () => ({
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
+vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: async () => true }))
 vi.mock('@/lib/db', () => ({ db: { family: { findMany: familyFindManyMock } } }))
 vi.mock('../../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
 

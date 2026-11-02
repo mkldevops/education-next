@@ -69,3 +69,37 @@ export const mealImpactOfClosureSchema = z.object({
   endAt: z.date().nullable(),
   today: z.iso.date(),
 })
+
+const importName = { lastname: z.string().trim().min(1), name: z.string().trim().min(1) }
+
+/** Fichier privé de reprise : noms et paiements restent hors du dépôt. */
+export const mealImportManifestSchema = z.object({
+  constatDate: z.iso.date(),
+  requiredClosures: z.array(z.iso.date()).min(1),
+  lines: z
+    .array(
+      z.object({
+        ...importName,
+        service,
+        className: z.string().trim().min(1),
+        aliases: z.array(z.object(importName)).optional(),
+        studentId: z.uuid().optional(),
+        weekdays: z.union([z.literal('usual'), weekdays.min(1)]),
+        startOn: z.iso.date(),
+        hold: z.string().trim().min(1).optional(),
+        coverage: z.discriminatedUnion('state', [
+          z.object({ state: z.literal('paid'), paidThrough: z.iso.date() }),
+          z.object({ state: z.literal('unpaid') }),
+          z.object({
+            state: z.enum(['uncertain', 'unknown']),
+            piece: z.string().trim().min(1),
+            proposedPaidThrough: z.iso.date().optional(),
+          }),
+        ]),
+        familyCode: z.string().trim().min(1).optional(),
+        water: z.boolean().optional(),
+        note: z.string().trim().min(1).optional(),
+      })
+    )
+    .min(1),
+})

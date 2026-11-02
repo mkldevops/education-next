@@ -13,6 +13,11 @@ const mealLineSchema = z.object({
   expectedPaidThrough: z.iso.date().nullable(),
 })
 
+const childcareLineSchema = z.object({
+  chargeId: z.uuid(),
+  amount: z.number().positive(),
+})
+
 export const recordReceiptSchema = z
   .object({
     schoolId: z.string().min(1),
@@ -23,8 +28,9 @@ export const recordReceiptSchema = z
     reference: z.string().trim().max(250).optional(),
     tuition: z.number().min(0),
     meals: z.array(mealLineSchema).max(20),
+    childcare: z.array(childcareLineSchema).max(60).default([]),
   })
-  .refine((data) => data.tuition > 0 || data.meals.length > 0, {
+  .refine((data) => data.tuition > 0 || data.meals.length + data.childcare.length > 0, {
     path: ['meals'],
     message: 'A receipt needs at least one line',
   })
@@ -33,6 +39,13 @@ export const recordReceiptSchema = z
       new Set(data.meals.map((line) => `${line.studentId}:${line.service}`)).size ===
       data.meals.length,
     { path: ['meals'], message: 'One line per student and service' }
+  )
+  .refine(
+    (data) => new Set(data.childcare.map((line) => line.chargeId)).size === data.childcare.length,
+    {
+      path: ['childcare'],
+      message: 'One line per billed month',
+    }
   )
 
 export const cancelReceiptSchema = z.object({

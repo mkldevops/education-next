@@ -173,6 +173,36 @@ The caller confirms the resolved plan using its owner-scoped draft and checksum 
 replay returns the recorded result. The commit rechecks the confirmed content under locks and
 refuses `staleDraft` if it changed, rather than merging a different plan.
 
+### Importing canteen and snack subscriptions
+
+`pnpm db:import-meals <slug> <file.json> --period <period> --canteen-days 1,2,3,4,5 --report <file.json>
+[--recorded-by <email>] [--apply]` (`prisma/import-meals.ts`, rules in `src/domain/meal-import.ts`)
+takes a school's existing meal subscriptions on board from a private file.
+
+- **Private data.** The file and the report name children: both are refused inside the repository, and
+  standard output only prints totals.
+- **Dry run by default.** Without `--apply` nothing is written. The report holds a decision per line.
+- **These problems block `--apply`:** meals or a service disabled, a start outside the period, a closure
+  the file requires that the calendar lacks, or openings to record without an ADMIN or CASHIER account
+  of the school in `--recorded-by`.
+- **A doubtful line never blocks the others.** The student is matched on the exact name, compared
+  without case, accents, hyphens or extra spaces, then on the aliases written in the file; never by
+  proximity. An unknown name, a homonym, a child without a debtor family, a repeated child in one
+  service or a held line writes nothing and is reported. A class difference is only reported.
+- **Replayable.** An identical segment or opening is left as is. A different one is reported as a
+  conflict and never overwritten, because a schedule cannot be corrected backwards.
+- **An opening is only taken from a dated paid-through the school has checked** (`paid`). A date read
+  from the paper record but not checked stays `uncertain`: it is kept in the file as
+  `proposedPaidThrough` and never written. An opening counts served days as
+  `recordMealOpening` does, and is withheld for reconciliation when the account already has a meal
+  payment on a receipt that is not cancelled, so nothing is counted twice. It creates no payment.
+- **Unpaid or unknown coverage records nothing:** the account simply has no paid days until the school
+  records a payment. No debt, revenue, credit or exemption is written.
+- **Every run prints the coverage totals.** Each line is confirmed (a checked `paid` with its opening,
+  or an explicit `unpaid` on an account with no payment or opening), unknown or to reconcile, or
+  retained (no subscription written). A subscription applied is not a validated balance.
+- **Water marks** stay in the file and are never billed.
+
 ### Administering schools
 
 `/dashboard/schools` is a **platform** surface. The page and the four actions
@@ -2124,7 +2154,8 @@ then lists one line per child and service for the children it is the **debtor fa
 (`resolveDebtorFamily()`), with today's price, « paid through », days due and quick amounts
 (`amountForDays()`: one week, two weeks, four weeks of the current rhythm, credit deducted; « settle »
 pays `dueAmount`). With `payments_enabled` on, a tuition line takes up to the family's remaining
-balance. One `recordReceipt()` (`src/use-cases/receipts/record-receipt.ts`) writes it all:
+balance. Each billed childcare month still open adds a line (see [Childcare](#childcare)). One
+`recordReceipt()` (`src/use-cases/receipts/record-receipt.ts`) writes it all:
 
 - **One receipt, numbered per school.** `Receipt` carries the family, total, method, reference, who
   took it and when. `ReceiptCounter` hands out the number with an `INSERT … ON CONFLICT DO UPDATE`
@@ -2151,11 +2182,15 @@ balance. One `recordReceipt()` (`src/use-cases/receipts/record-receipt.ts`) writ
 - **Tuition** splits through `distributePayment()` exactly like a manual payment
   (`overpayment`, `noPayableEnrollments`), into `Payment` rows that carry `receiptId`; it needs
   `payments_enabled` (`paymentsDisabled`).
+- **Childcare lines** name a billed month (`chargeId`): under lock, the month must be live in this
+  school (`staleState`), its child must belong to the family (`notInFamily`) and the amount must fit
+  what is left (`childcareOverpayment`). A receipt without childcare keeps its request hash.
 - **Receipt page** `/dashboard/cashier/receipts/[id]`, in the `(print)` group: A5 print, share through
   the phone's share sheet or a WhatsApp link, and cancel.
 - **Cancellation** (`cancelReceipt()`) requires a reason, sets `cancelledAt`/`cancelledById`/
   `cancelReason` and deactivates the receipt's tuition payments; its meal payments stop counting
-  because the ledger skips cancelled receipts. `alreadyCancelled` on a second try, `refundExceedsPaid`
+  because the ledger skips cancelled receipts, like its childcare payments. The billed month stays
+  and owes that amount again. `alreadyCancelled` on a second try, `refundExceedsPaid`
   when a refund already consumed that tuition.
 - **A receipt payment is cancelled with its receipt only.** The MCP `cancel_payments` tool refuses a
   payment that has a `receiptId` (`receiptPayment`): cancelling one line would leave a printed
@@ -2207,7 +2242,8 @@ day) sums, over the school's local day (`schoolDayBounds()`), the receipts **iss
 receipts **cancelled** that day whatever their issue day; net = issued − cancelled
 (`summarizeCashDay()`, `src/domain/cash-day.ts`). A cancellation lands on the day it is made, so a
 past day's net never changes. Totals split by method and by item: canteen and snack from the
-receipt's `MealPayment` rows, tuition as the rest of the total.
+receipt's `MealPayment` rows, childcare from its `ChildcarePayment` rows, tuition as the rest of the
+total.
 
 **Cashier role.** `CASHIER` is the school role of the person at the till (migration
 `20261029090000_cashier_role`; granted to nobody on deploy). `requireSchoolCashier()`
@@ -2215,7 +2251,7 @@ receipt's `MealPayment` rows, tuition as the rest of the total.
 `CASHIER`, and answers `notFound()` to everyone when `meals_enabled` is off — a cashier of a school
 without meals has no page at all. It returns `isAdmin`, which keeps admin-only controls off the page.
 
-- **A cashier may**: open the cashier, take a receipt (canteen, snack, tuition), print it, read the
+- **A cashier may**: open the cashier, take a receipt (canteen, snack, childcare, tuition), print it, read the
   unpaid list and the day's takings, and on `/dashboard/cashier/students/[id]` subscribe a child,
   change its days, stop it and mark or clear an absence.
 - **A cashier may not** (acceptance criterion 14): cancel a receipt, record an opening balance or an
@@ -2229,6 +2265,32 @@ without meals has no page at all. It returns `isAdmin`, which keeps admin-only c
 - `CASHIER` is invited, granted or kept only while `meals_enabled` is on (`inviteUserAction`,
   `changeSchoolMemberRolesAction`, `invalidInput` / `validation_error` otherwise); a member who
   already holds it can still lose it after meals are switched off.
+
+## Childcare
+
+Monthly childcare, per child, independent from school enrollment, canteen and snack. No `MealAccount`
+is read or created: a child who brings a lunch box is billed the same, and no day count exists.
+
+- **Subscription.** One `ChildcareSubscription` per child: `monthlyAmount`, `startMonth` and an
+  optional `endMonth`, both explicit months (`YYYY-MM`, stored as the 1st). The rate is the child's own;
+  no amount is hard-coded, EIC's 6,000 and 3,000 KMF are data. The form never guesses a start month.
+  `invalidPeriod` when the end precedes the start, `chargesOutsideRange` when a new period would
+  exclude a live billed month, `notFound` for a student archived or outside the school.
+- **Removal** is refused once a live month or any payment exists (`hasCharges`): history stays.
+- **Debt comes only from an explicit billing.** An admin bills a month on `/dashboard/childcare`
+  (`billChildcareMonth()`, `requireSchoolAdmin()`); nothing bills by itself and a future month is
+  refused (`futureMonth`, school time zone). Each covered active child gets one `ChildcareCharge`,
+  amount frozen; `@@unique` on subscription and month plus row locks make a replay write nothing.
+  A later rate change leaves billed months alone. A cancelled month billed again restarts at the
+  current rate. An archived child is no longer billed; an existing debt stays payable.
+- **Balance.** Left on a month = amount − payments of receipts not cancelled, never negative
+  (`chargeRemaining()`). Part payments are allowed; a month is paid through the cashier only, by
+  the child's debtor family (`resolveDebtorFamily()`), on one receipt with its other lines.
+- **Cancelling a billed month** (`cancelChildcareCharge()`) needs a reason, keeps the row and is
+  refused while an active receipt pays it (`hasPayments`): cancel that receipt first.
+- **Rights.** The screen and its actions need an admin; a cashier only collects what is billed.
+- **Tenancy.** The three tables are listed in the tenant guard and every foreign key is composite on
+  `schoolId`.
 
 ## Promotion
 
@@ -2345,7 +2407,8 @@ where financial history is destroyed rather than archived.
   `Payment.paymentTransaction`, `Payment.receipt`, `Receipt.family`. Each table is therefore emptied
   explicitly, leaf first; the family's cashier receipts go after its payments. What is `Cascade` —
   `UserFamily`, `FamilyPerson`, `PhoneNumber`, `Invitation.family`, a student's `MealAccount` with
-  its `MealSchedule`, `MealAdjustment` and `MealPayment` rows, and a receipt's `MealPayment` lines —
+  its `MealSchedule`, `MealAdjustment` and `MealPayment` rows, a student's `ChildcareSubscription` with its charges, and a receipt's `MealPayment` and
+  `ChildcarePayment` lines —
   goes with its parent, and `PaymentProviderEvent` is `SET NULL`, so the Stripe journal survives,
   detached.
 - **Every non-cascading foreign key into the deleted graph is listed** in
@@ -2898,6 +2961,9 @@ is counted there with the families, invitations, transactions and cashier receip
 rather than counting for themselves.
 
 ## Known gaps
+
+- **Childcare sits behind `meals_enabled`.** Its screen and receipts reuse the cashier gate: a school
+  with no canteen cannot use it, and turning meals off hides it. Childcare has no flag of its own.
 
 Real holes, verified against the running application. Not aspirations.
 

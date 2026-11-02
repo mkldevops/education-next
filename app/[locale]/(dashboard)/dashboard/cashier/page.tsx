@@ -142,6 +142,7 @@ export default async function CashierPage({ params, searchParams }: Props) {
             key={family.id}
             familyId={family.id}
             lines={family.lines}
+            childcare={family.childcare}
             tuitionDue={tuitionDue}
             currency={currency}
             locale={locale}

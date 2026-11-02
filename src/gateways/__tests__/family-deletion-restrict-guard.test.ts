@@ -124,6 +124,9 @@ describe('suppression définitive de famille — relations bloquantes', () => {
     const cascaded = [...removed].filter((model) => !EXPLICITLY_DELETED.includes(model)).sort()
     // Tables emportées par la base : un ajout ici mérite une relecture de la règle métier.
     expect(cascaded).toEqual([
+      'ChildcareCharge',
+      'ChildcarePayment',
+      'ChildcareSubscription',
       'FamilyPerson',
       'MealAbsence',
       'MealAccount',

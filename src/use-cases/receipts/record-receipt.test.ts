@@ -22,11 +22,13 @@ const { recordReceipt } = await import('./record-receipt')
 type ReceiptGw = Parameters<typeof recordReceipt>[1]
 type AccountGw = Parameters<typeof recordReceipt>[2]
 type ConfigGw = Parameters<typeof recordReceipt>[3]
+type ChildcareGw = Parameters<typeof recordReceipt>[4]
 
 const schoolId = 'school-a'
 const familyId = '0b6e3c1a-2d4f-4a5b-9c8d-7e6f5a4b3c2d'
 const studentId = '7f9c2b6e-1d3a-4c5b-8e9f-0a1b2c3d4e5f'
 const idempotencyKey = '5d1c9a2e-8b7f-4e3d-a6c5-b4a39281706f'
+const chargeId = '2a7d6f10-4c3b-4e8a-9b1c-6d5e4f3a2b1c'
 const tx = { tx: true }
 
 // Lundi, mardi, jeudi, vendredi depuis le lundi 7 septembre.
@@ -49,6 +51,11 @@ function setup(flags: Record<string, string> = {}) {
       .mockResolvedValue([
         { id: studentId, person: { families: [{ familyId, relationType: 'PARENT' }] } },
       ]),
+    findChargedStudentFamilies: vi
+      .fn()
+      .mockResolvedValue([
+        { id: studentId, person: { families: [{ familyId, relationType: 'PARENT' }] } },
+      ]),
     nextNumber: vi.fn().mockResolvedValue(7),
     create: vi.fn().mockResolvedValue({ id: 'receipt-1' }),
     createMealPayments: vi.fn(),
@@ -66,6 +73,12 @@ function setup(flags: Record<string, string> = {}) {
   const configGw = {
     get: vi.fn(async (_school: string, key: string) => ({ value: flags[key] ?? 'true' })),
   }
+  const childcareGw = {
+    lockCharges: vi
+      .fn()
+      .mockResolvedValue([{ id: chargeId, studentId, cancelled: false, remaining: 6000, paid: 0 }]),
+    createPayments: vi.fn(),
+  }
   const run = (input: Partial<Parameters<typeof recordReceipt>[0]> = {}) =>
     recordReceipt(
       {
@@ -80,9 +93,10 @@ function setup(flags: Record<string, string> = {}) {
       },
       receiptGw as unknown as ReceiptGw,
       accountGw as unknown as AccountGw,
-      configGw as unknown as ConfigGw
+      configGw as unknown as ConfigGw,
+      childcareGw as unknown as ChildcareGw
     )
-  return { receiptGw, accountGw, run }
+  return { receiptGw, accountGw, childcareGw, run }
 }
 
 beforeEach(() => {
@@ -94,6 +108,91 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+describe('recordReceipt childcare lines', () => {
+  const line = { chargeId, amount: 6000 }
+
+  it('labels the month on the receipt without any canteen line', async () => {
+    const { receiptGw, accountGw, childcareGw, run } = setup()
+
+    expect(await run({ meals: [], childcare: [line] })).toEqual({ id: 'receipt-1' })
+    expect(accountGw.lockAccounts).toHaveBeenCalledWith(tx, schoolId, [])
+    expect(receiptGw.create).toHaveBeenCalledWith(
+      tx,
+      schoolId,
+      expect.objectContaining({ total: 6000 })
+    )
+    expect(childcareGw.createPayments).toHaveBeenCalledWith(tx, schoolId, 'receipt-1', [line])
+  })
+
+  it('accepts a partial payment', async () => {
+    const { childcareGw, run } = setup()
+
+    await run({ meals: [], childcare: [{ chargeId, amount: 2500 }] })
+
+    expect(childcareGw.createPayments).toHaveBeenCalledOnce()
+  })
+
+  it('refuses more than what is left on the month', async () => {
+    const { receiptGw, childcareGw, run } = setup()
+    childcareGw.lockCharges.mockResolvedValue([
+      { id: chargeId, studentId, cancelled: false, remaining: 1000, paid: 5000 },
+    ])
+
+    expect(await run({ meals: [], childcare: [line] })).toBe('childcareOverpayment')
+    expect(receiptGw.create).not.toHaveBeenCalled()
+  })
+
+  it('refuses a month cancelled or unknown in this school', async () => {
+    const { receiptGw, childcareGw, run } = setup()
+    childcareGw.lockCharges.mockResolvedValue([])
+    expect(await run({ meals: [], childcare: [line] })).toBe('staleState')
+
+    childcareGw.lockCharges.mockResolvedValue([
+      { id: chargeId, studentId, cancelled: true, remaining: 6000, paid: 0 },
+    ])
+    expect(await run({ meals: [], childcare: [line] })).toBe('staleState')
+    expect(receiptGw.create).not.toHaveBeenCalled()
+  })
+
+  it('refuses a child whose debtor family is another one', async () => {
+    const { receiptGw, run } = setup()
+    receiptGw.findChargedStudentFamilies.mockResolvedValue([
+      { id: studentId, person: { families: [{ familyId: 'other', relationType: 'PARENT' }] } },
+    ])
+
+    expect(await run({ meals: [], childcare: [line] })).toBe('notInFamily')
+    expect(receiptGw.create).not.toHaveBeenCalled()
+  })
+
+  it('resolves childcare families from the validated charges, not the meals lookup', async () => {
+    const { receiptGw, run } = setup()
+
+    await run({ meals: [], childcare: [line] })
+
+    expect(receiptGw.findChargedStudentFamilies).toHaveBeenCalledWith(tx, schoolId, [chargeId])
+    expect(receiptGw.findStudentFamilies).toHaveBeenCalledWith(tx, schoolId, [])
+  })
+
+  it('returns the issued receipt on a replay', async () => {
+    const { receiptGw, childcareGw, run } = setup()
+    await run({ meals: [], childcare: [line] })
+    const requestHash = receiptGw.create.mock.calls[0]?.[2].requestHash
+    receiptGw.findByIdempotencyKey.mockResolvedValue({ id: 'receipt-1', requestHash })
+
+    expect(await run({ meals: [], childcare: [line] })).toEqual({ id: 'receipt-1' })
+    expect(childcareGw.createPayments).toHaveBeenCalledOnce()
+  })
+
+  it('leaves receipts without childcare untouched', async () => {
+    const { childcareGw, run } = setup()
+
+    await run()
+
+    expect(childcareGw.lockCharges).not.toHaveBeenCalled()
+    expect(childcareGw.createPayments).not.toHaveBeenCalled()
+  })
 })
 
 describe('recordReceipt', () => {

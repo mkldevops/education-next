@@ -14,16 +14,21 @@ export type ReceiptRequest = {
     amount: number
     expectedPaidThrough: string | null
   }>
+  childcare?: ReadonlyArray<{ chargeId: string; amount: number }>
 }
 
 /**
  * Forme canonique d'une demande d'encaissement, dont l'empreinte accompagne la clé
  * d'idempotence : un renvoi identique retrouve son reçu, un contenu différent sous la même
  * clé est refusé. Lignes triées et montants au centième, pour que l'ordre de saisie ou
- * l'écriture d'un nombre ne change pas l'empreinte.
+ * l'écriture d'un nombre ne change pas l'empreinte. La garderie n'y figure que si le reçu en
+ * porte, pour que l'empreinte des reçus antérieurs reste valable.
  */
 export function canonicalReceiptRequest(request: ReceiptRequest): string {
   const cents = (value: number) => Math.round(value * 100)
+  const childcare = [...(request.childcare ?? [])]
+    .map((line) => ({ chargeId: line.chargeId, amount: cents(line.amount) }))
+    .sort((a, b) => a.chargeId.localeCompare(b.chargeId))
   return JSON.stringify({
     familyId: request.familyId,
     method: request.method,
@@ -41,13 +46,17 @@ export function canonicalReceiptRequest(request: ReceiptRequest): string {
           ? a.service.localeCompare(b.service)
           : a.studentId.localeCompare(b.studentId)
       ),
+    ...(childcare.length > 0 ? { childcare } : {}),
   })
 }
 
-/** Total d'un reçu au centième : écolage et lignes repas. */
-export function receiptTotal(request: Pick<ReceiptRequest, 'tuition' | 'meals'>): number {
+/** Total d'un reçu au centième : écolage, lignes repas et mois de garderie. */
+export function receiptTotal(
+  request: Pick<ReceiptRequest, 'tuition' | 'meals' | 'childcare'>
+): number {
+  const lines = [...request.meals, ...(request.childcare ?? [])]
   const cents =
     Math.round(request.tuition * 100) +
-    request.meals.reduce((sum, line) => sum + Math.round(line.amount * 100), 0)
+    lines.reduce((sum, line) => sum + Math.round(line.amount * 100), 0)
   return cents / 100
 }

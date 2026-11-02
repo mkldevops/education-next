@@ -9,7 +9,12 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
   useFormatter: () => ({ number: (value: number) => String(value) }),
 }))
-vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ refresh: vi.fn(), replace }) }))
+vi.mock('@/i18n/routing', () => ({
+  Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
+  useRouter: () => ({ refresh: vi.fn(), replace }),
+}))
 vi.mock('../../../_lib/payment-actions', () => ({ recordPaymentAction: vi.fn() }))
 
 describe('RecordPaymentButton', () => {
@@ -32,5 +37,34 @@ describe('RecordPaymentButton', () => {
     const familyInput = document.body.querySelector<HTMLInputElement>('input[name="familyId"]')
     expect(familyInput?.value).toBe('family-1')
     expect(replace).toHaveBeenCalledWith('/dashboard/payments', { scroll: false })
+  })
+
+  it('states the tuition scope and offers the cashier of the picked family when allowed', () => {
+    render(
+      <RecordPaymentButton
+        families={[{ id: 'family-1', name: 'Benali' }]}
+        currency="EUR"
+        canOpenCashier
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Benali' }))
+
+    expect(screen.getByText('scopeHint')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'servicesLink' })).toHaveAttribute(
+      'href',
+      '/dashboard/cashier?familyId=family-1'
+    )
+  })
+
+  it('keeps the tuition scope without a cashier link when it is not allowed', () => {
+    render(<RecordPaymentButton families={[{ id: 'family-1', name: 'Benali' }]} currency="EUR" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Benali' }))
+
+    expect(screen.getByText('scopeHint')).toBeInTheDocument()
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
   })
 })

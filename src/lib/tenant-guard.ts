@@ -62,6 +62,9 @@ const TENANT_SCOPED_MODELS: Record<string, true> = {
   Receipt: true,
   ReceiptCounter: true,
   MealPayment: true,
+  ChildcareSubscription: true,
+  ChildcareCharge: true,
+  ChildcarePayment: true,
 }
 
 const WHERE_OPERATIONS: Record<string, true> = {

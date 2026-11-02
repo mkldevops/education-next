@@ -1,8 +1,9 @@
 import { resolveDebtorFamily } from '@/domain/family-debtor'
+import { childcareGateway } from '@/gateways/childcare-gateway'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
 import { db } from '@/lib/db'
 import { loadMealAccountSummaries } from '@/use-cases/meals/meal-account-summaries'
-import type { CashierLine } from '../_components/cashier-form'
+import type { CashierChildcareLine, CashierLine } from '../_components/cashier-form'
 
 /** Familles actives dont le nom, ou celui d'un membre, contient `query`. */
 export async function searchCashierFamilies(schoolId: string, query: string) {
@@ -35,8 +36,8 @@ export async function searchCashierFamilies(schoolId: string, query: string) {
 }
 
 /**
- * Lignes repas d'une famille : un compte par enfant et service, pour les seuls enfants dont
- * elle est la famille redevable. Un compte sans jour servi n'a rien à recharger.
+ * Lignes d'une famille, pour les seuls enfants dont elle est la famille redevable : un compte
+ * repas par enfant et service, sauf sans jour servi, et chaque mois de garderie restant dû.
  */
 export async function loadCashierFamily(schoolId: string, familyId: string, today: string) {
   const family = await db.family.findFirst({
@@ -93,5 +94,16 @@ export async function loadCashierFamily(schoolId: string, familyId: string, toda
   })
   lines.sort((a, b) => a.name.localeCompare(b.name) || a.service.localeCompare(b.service))
 
-  return { id: family.id, name: family.name, students, lines }
+  const charges = await childcareGateway.listOpenCharges(
+    schoolId,
+    students.map((student) => student.id)
+  )
+  const childcare: CashierChildcareLine[] = charges.map((charge) => ({
+    chargeId: charge.chargeId,
+    name: students.find((student) => student.id === charge.studentId)?.name ?? '',
+    month: charge.month,
+    remaining: charge.remaining,
+  }))
+
+  return { id: family.id, name: family.name, students, lines, childcare }
 }

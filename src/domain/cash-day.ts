@@ -1,5 +1,5 @@
-/** Ventilation d'une caisse : écolage, ou un service repas. */
-export type CashLine = 'CANTEEN' | 'SNACK' | 'TUITION'
+/** Ventilation d'une caisse : écolage, garderie, ou un service repas. */
+export type CashLine = 'CANTEEN' | 'SNACK' | 'CHILDCARE' | 'TUITION'
 
 export type CashTotals = {
   count: number
@@ -12,6 +12,7 @@ type CashReceipt = {
   total: number
   method: string
   meals: ReadonlyArray<{ service: 'CANTEEN' | 'SNACK'; amount: number }>
+  childcare: ReadonlyArray<{ amount: number }>
 }
 
 const round = (value: number) => Math.round(value * 100) / 100
@@ -29,8 +30,13 @@ function addReceipts(into: CashTotals, receipts: readonly CashReceipt[], sign: 1
       meals += meal.amount
       into.byLine[meal.service] = round(into.byLine[meal.service] + sign * meal.amount)
     }
-    // Un reçu porte des repas et de l'écolage : l'écolage est le reste du total.
-    into.byLine.TUITION = round(into.byLine.TUITION + sign * (receipt.total - meals))
+    let childcare = 0
+    for (const line of receipt.childcare) {
+      childcare += line.amount
+      into.byLine.CHILDCARE = round(into.byLine.CHILDCARE + sign * line.amount)
+    }
+    // L'écolage n'a pas de ligne propre : c'est le reste du total.
+    into.byLine.TUITION = round(into.byLine.TUITION + sign * (receipt.total - meals - childcare))
   }
   return into
 }
@@ -39,7 +45,7 @@ const empty = (): CashTotals => ({
   count: 0,
   total: 0,
   byMethod: {},
-  byLine: { CANTEEN: 0, SNACK: 0, TUITION: 0 },
+  byLine: { CANTEEN: 0, SNACK: 0, CHILDCARE: 0, TUITION: 0 },
 })
 
 /**

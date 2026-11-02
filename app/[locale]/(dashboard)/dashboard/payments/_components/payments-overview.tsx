@@ -21,9 +21,16 @@ interface Props {
   locale: string
   currency: string
   periodName: string | null
+  canOpenCashier?: boolean
 }
 
-export async function PaymentsOverview({ stats, locale, currency, periodName }: Props) {
+export async function PaymentsOverview({
+  stats,
+  locale,
+  currency,
+  periodName,
+  canOpenCashier = false,
+}: Props) {
   const t = await getTranslations('dashboard.pages.payments.stats')
   const tScope = await getTranslations('dashboard.stats')
   const tMethod = await getTranslations('paymentMethod')
@@ -194,6 +201,7 @@ export async function PaymentsOverview({ stats, locale, currency, periodName }: 
                     family={{ id: family.familyId, name: family.familyName }}
                     phone={family.contactPhone}
                     currency={currency}
+                    canOpenCashier={canOpenCashier}
                   />
                 </li>
               ))}

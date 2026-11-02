@@ -269,6 +269,7 @@
       "classes": "Classes",
       "plans": "Plans tarifaires",
       "meals": "Cantine et goûter",
+      "childcare": "Garderie",
       "config": "Configuration",
       "users": "Utilisateurs",
       "schools": "Écoles",
@@ -296,6 +297,7 @@
       "cashier": "Caisse",
       "plans": "Plans tarifaires",
       "meals": "Cantine et goûter",
+      "childcare": "Garderie",
       "config": "Configuration",
       "users": "Utilisateurs",
       "profile": "Profil",
@@ -1011,7 +1013,7 @@
           "outOf": "sur {amount}",
           "noCollection": "Aucun encaissement sur ce périmètre",
           "noOutstanding": "Aucune famille en retard sur les forfaits suivis",
-          "recordFor": "Enregistrer un règlement pour {family}",
+          "recordFor": "Enregistrer un règlement d'écolage pour {family}",
           "callFamily": "Appeler la famille {family}",
           "noPhone": "Aucun téléphone",
           "expectedToDate": "Attendu à ce jour",
@@ -1029,7 +1031,7 @@
           "viewFamily": "Voir le détail de ma famille"
         },
         "record": {
-          "title": "Enregistrer un règlement",
+          "title": "Enregistrer un règlement d'écolage",
           "selectFamily": "Famille",
           "amount": "Montant",
           "method": "Méthode de paiement",
@@ -1051,14 +1053,17 @@
             "STRIPE": "Référence Stripe"
           },
           "optional": "(facultatif)",
-          "remainingLabel": "Solde restant : {amount}",
+          "remainingLabel": "Solde d'écolage restant : {amount}",
+          "scopeHint": "Écolage uniquement : le montant est réparti sur les inscriptions de la famille, sans choix d'enfant.",
+          "servicesPrompt": "Cantine ou goûter ?",
+          "servicesLink": "Ouvrir la caisse de cette famille",
           "payFull": "Payer le solde",
           "paidAt": "Date de paiement",
           "cashedAt": "Date d'encaissement",
           "cashedAtHint": "À renseigner une fois le chèque encaissé",
           "cancel": "Annuler",
           "submit": "Enregistrer",
-          "success": "Règlement enregistré",
+          "success": "Règlement d'écolage enregistré",
           "error": "Erreur lors de l'enregistrement",
           "errors": {
             "overpayment": "Le montant dépasse le solde restant dû par la famille",
@@ -1211,13 +1216,13 @@
           "title": "Fiche repas",
           "collect": "Encaisser pour la famille"
         },
-        "intro": "Encaissez la cantine, le goûter et l'écolage d'une famille en une fois, avec un reçu numéroté.",
+        "intro": "Encaissez la cantine, le goûter, la garderie et l'écolage d'une famille en une fois, avec un reçu numéroté.",
         "search": "Nom de la famille ou d’un enfant",
         "searchSubmit": "Rechercher",
         "noResult": "Aucune famille trouvée",
         "noFamily": "Famille introuvable",
         "viewFamily": "Voir la famille",
-        "noLines": "Aucun enfant de cette famille n'est inscrit à la cantine ou au goûter.",
+        "noLines": "Aucun enfant de cette famille n'a de cantine, de goûter ou de garderie à encaisser.",
         "paidThrough": "Payé jusqu'au {date}",
         "nothingPaid": "Rien de payé",
         "due": "{days, plural, one {# jour dû} other {# jours dus}} ({amount})",
@@ -1236,6 +1241,8 @@
           "exceedsPeriod": "Le montant dépasse la fin de la période."
         },
         "tuition": "Écolage",
+        "childcare": "Garderie",
+        "childcareDue": "Reste {amount}",
         "tuitionDue": "Reste dû : {amount}",
         "method": "Mode de paiement",
         "reference": "Référence (facultatif)",
@@ -1253,6 +1260,7 @@
           "noPrice": "Aucun tarif en vigueur aujourd'hui pour ce service",
           "staleState": "Un autre encaissement vient de passer : les montants ont été actualisés, vérifiez avant de valider",
           "overpayment": "Le montant d'écolage dépasse le solde restant",
+          "childcareOverpayment": "Le montant dépasse ce qui reste dû sur ce mois de garderie",
           "noPayableEnrollments": "Aucune inscription n'attend de règlement d'écolage",
           "refundExceedsPaid": "Le montant dépasse ce qui reste payé sur l'inscription"
         },
@@ -1269,6 +1277,7 @@
           "total": "Total",
           "mealDetail": "+{days, plural, one {# jour} other {# jours}}, payé jusqu'au {date}",
           "mealDays": "+{days, plural, one {# jour} other {# jours}}",
+          "childcare": "Garderie",
           "cancelled": "Annulé",
           "cancelledReason": "Annulé : {reason}",
           "shareHeader": "{school} — reçu {number}",
@@ -1277,7 +1286,7 @@
           "cancel": {
             "trigger": "Annuler le reçu",
             "title": "Annuler ce reçu ?",
-            "description": "Les jours de repas et l'écolage encaissés sont retirés. Le numéro reste attribué.",
+            "description": "Les jours de repas, la garderie et l'écolage encaissés sont retirés. Le numéro reste attribué.",
             "reason": "Motif de l'annulation",
             "submit": "Annuler le reçu",
             "cancel": "Retour",
@@ -1305,6 +1314,7 @@
           "lines": {
             "CANTEEN": "Cantine",
             "SNACK": "Goûter",
+            "CHILDCARE": "Garderie",
             "TUITION": "Écolage"
           },
           "issuedReceipts": "Reçus émis",
@@ -1326,6 +1336,73 @@
           "coveredLeft": "{days, plural, =0 {plus aucun jour couvert} one {encore # jour couvert} other {encore # jours couverts}}",
           "dueDetail": "{days, plural, one {# jour} other {# jours}} · {amount}",
           "collect": "Encaisser"
+        }
+      },
+      "childcare": {
+        "title": "Garderie",
+        "intro": "Tarif mensuel par enfant, indépendant de la cantine et du goûter. Une dette naît seulement quand vous facturez un mois.",
+        "search": "Nom ou prénom de l'élève",
+        "searchSubmit": "Rechercher",
+        "noResult": "Aucun élève trouvé",
+        "noClass": "Sans classe",
+        "alreadySubscribed": "Déjà en garderie",
+        "empty": "Aucun enfant en garderie. Recherchez un élève pour l'ajouter.",
+        "archived": "archivé",
+        "noFamily": "Sans famille redevable",
+        "perMonth": "{amount} par mois",
+        "period": {
+          "open": "depuis {start}",
+          "closed": "de {start} à {end}"
+        },
+        "totals": "Facturé {billed} · Payé {paid} · Reste {remaining}",
+        "charge": {
+          "status": "{amount} · reste {remaining}",
+          "cancelled": "Annulé"
+        },
+        "form": {
+          "add": "Ajouter",
+          "edit": "Modifier",
+          "monthlyAmount": "Tarif mensuel",
+          "startMonth": "Premier mois",
+          "endMonth": "Dernier mois (facultatif)",
+          "success": "Garderie enregistrée"
+        },
+        "bill": {
+          "trigger": "Facturer un mois",
+          "title": "Facturer un mois de garderie",
+          "description": "Chaque enfant dont la période couvre ce mois est facturé à son tarif. Refaire l'opération ne facture rien deux fois.",
+          "month": "Mois",
+          "submit": "Facturer",
+          "result": "{billed, plural, =0 {Aucun enfant facturé} one {# enfant facturé} other {# enfants facturés}}, {alreadyBilled} déjà facturé(s), {outsideRange} hors période"
+        },
+        "cancelCharge": {
+          "trigger": "Annuler",
+          "title": "Annuler {month}",
+          "description": "Le mois ne sera plus dû. Vous pourrez le facturer à nouveau.",
+          "reason": "Motif",
+          "submit": "Annuler ce mois",
+          "success": "Mois annulé"
+        },
+        "remove": {
+          "trigger": "Retirer",
+          "title": "Retirer cet enfant de la garderie ?",
+          "description": "La garderie saisie sera supprimée. Aucun mois n'est facturé dessus.",
+          "submit": "Retirer",
+          "success": "Enfant retiré de la garderie"
+        },
+        "cancel": "Fermer",
+        "submit": "Enregistrer",
+        "error": "Une erreur est survenue",
+        "errors": {
+          "validationError": "Vérifiez le tarif et les mois saisis",
+          "mealsDisabled": "La caisse n'est pas activée pour cette école",
+          "notFound": "Élément introuvable",
+          "invalidPeriod": "Le dernier mois précède le premier",
+          "chargesOutsideRange": "Cette période exclut un mois déjà facturé : annulez-le d'abord",
+          "hasCharges": "Un mois est facturé ou encaissé sur cette garderie",
+          "futureMonth": "Un mois à venir ne se facture pas",
+          "alreadyCancelled": "Ce mois est déjà annulé",
+          "hasPayments": "Ce mois a des encaissements : annulez d'abord le reçu"
         }
       },
       "config": {
@@ -1584,8 +1661,9 @@
         },
         "actions": {
           "new": "Nouveau",
-          "pay": "Enregistrer un règlement",
-          "payUnavailable": "Cette famille n'a aucun solde à régler",
+          "pay": "Enregistrer un règlement d'écolage",
+          "payUnavailable": "Cette famille n'a aucun écolage à régler",
+          "collectServices": "Encaisser cantine et goûter",
           "newStudent": "Ajouter un élève",
           "manage": "Actions",
           "edit": "Modifier",
@@ -1772,7 +1850,8 @@
         "family": "Famille",
         "enrollments": "Inscriptions",
         "information": "Informations",
-        "pay": "Enregistrer un règlement",
+        "pay": "Enregistrer un règlement d'écolage",
+        "collectServices": "Encaisser cantine et goûter",
         "previousSchool": "École précédente",
         "snackAuthorization": "Autorisation de goûter",
         "age": "{age} ans",

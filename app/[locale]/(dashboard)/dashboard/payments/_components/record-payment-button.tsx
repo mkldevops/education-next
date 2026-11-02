@@ -7,9 +7,11 @@ import { RecordPaymentDialog } from './record-payment-dialog'
 export function RecordPaymentButton({
   families,
   currency,
+  canOpenCashier = false,
 }: {
   families: FamilyOption[]
   currency: string
+  canOpenCashier?: boolean
 }) {
   const t = useTranslations('dashboard.pages.payments.record')
 
@@ -21,6 +23,7 @@ export function RecordPaymentButton({
         <RecordPaymentDialog
           families={[family]}
           currency={currency}
+          canOpenCashier={canOpenCashier}
           defaultOpen
           showTrigger={false}
           redirectTo="/dashboard/payments"
