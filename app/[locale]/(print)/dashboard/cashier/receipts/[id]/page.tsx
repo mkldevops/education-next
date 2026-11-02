@@ -11,6 +11,7 @@ import { Link } from '@/i18n/routing'
 import { getBrandingConfig } from '@/lib/branding'
 import { formatCurrency, roundHalfUp } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
+import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { requireSchoolCashier } from '../../../../../(dashboard)/_lib/auth-helper'
 import { cashierPageMetadata } from '../../../../../(dashboard)/_lib/page-metadata'
 import { PrintButton } from '../../../../_components/print-button'
@@ -86,6 +87,14 @@ export default async function ReceiptPage({ params }: Props) {
     timeStyle: 'short',
   })
   const isCancelled = receipt.cancelledAt !== null
+  // Solde lu à l'affichage, pas figé au paiement : daté pour qu'une réimpression reste honnête.
+  const tuitionBalance =
+    tuition > 0 && !isCancelled
+      ? t('tuitionBalance', {
+          date: new Date().toLocaleDateString(locale, { timeZone }),
+          amount: money((await getFamilyBalance(schoolId, receipt.family.id)).remainingBalance),
+        })
+      : null
 
   const shareText = [
     t('shareHeader', { school: schoolName ?? '', number }),
@@ -93,6 +102,7 @@ export default async function ReceiptPage({ params }: Props) {
     ...lines.map((line) => `• ${line.label} : ${money(line.amount)} (${line.detail})`),
     ...(tuition > 0 ? [`• ${t('tuition')} : ${money(tuition)}`] : []),
     t('shareTotal', { amount: money(total), method: tMethods(receipt.method) }),
+    ...(tuitionBalance ? [tuitionBalance] : []),
     ...(isCancelled ? [t('cancelled')] : []),
   ].join('\n')
 
@@ -169,6 +179,8 @@ export default async function ReceiptPage({ params }: Props) {
             <span>{t('total')}</span>
             <span className="tabular-nums">{money(total)}</span>
           </p>
+
+          {tuitionBalance && <p className="text-sm text-graphite-600">{tuitionBalance}</p>}
 
           {isCancelled && receipt.cancelReason && (
             <p className="text-sm text-red-700">
