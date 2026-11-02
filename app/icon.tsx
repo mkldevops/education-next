@@ -6,6 +6,13 @@ export const dynamic = 'force-dynamic'
 export const size = { width: 32, height: 32 }
 export const contentType = 'image/png'
 
+/**
+ * `ImageResponse` marque sa réponse `immutable` pendant un an en production, alors que l'URL
+ * `/icon` ne change pas quand le logo change et sert toutes les écoles : sans cet en-tête, le
+ * navigateur garde le premier favicon reçu, souvent celui par défaut.
+ */
+const headers = { 'cache-control': 'private, no-cache' }
+
 /** Favicon généré depuis le logo de l'école, contenu sans déformation dans le carré. */
 export default async function Icon() {
   const schoolId = await resolveBrandingSchoolId()
@@ -34,6 +41,6 @@ export default async function Icon() {
         A
       </div>
     ),
-    size
+    { ...size, headers }
   )
 }
