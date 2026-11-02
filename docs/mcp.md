@@ -459,6 +459,10 @@ gets `notConfigured` from each of them.
 `list_attendance_calls` rereads `/dashboard/attendance` day by day, so an agent can tell which call
 is still to be taken or left open. It only reads: opening, entering, validating and cancelling a
 call stay dashboard actions. A school without `attendance_enabled` gets `notConfigured`.
+The school setting `attendance_frequency=DAILY` expects a single call per class/calendar day,
+even when its timetable contains several lessons; its `slotId`, `startTime` and `endTime` are null.
+The existing `PER_SLOT` behavior remains the default. Earlier recorded calls remain visible
+after a frequency change and are never silently merged or deleted.
 
 | Argument | Shape |
 |---|---|

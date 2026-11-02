@@ -47,6 +47,20 @@ describe('SchoolSettingsPanel', () => {
     expect(screen.queryByText('create.title')).not.toBeInTheDocument()
   })
 
+  it('shows a localized daily attendance value and restricts editing to supported frequencies', async () => {
+    render(
+      <Panel settings={[{ name: 'attendance_frequency', value: 'DAILY', valueType: 'TEXT' }]} />
+    )
+    expect(screen.getByText('daily')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    const select = await screen.findByRole('combobox')
+    expect(select).toHaveTextContent('daily')
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    fireEvent.click(select)
+    expect(await screen.findByRole('option', { name: 'perSlot' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'daily' })).toBeInTheDocument()
+  })
+
   it('gathers the theme colors in a single palette instead of one row each', () => {
     render(<Panel />)
 

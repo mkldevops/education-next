@@ -107,6 +107,20 @@ describe('setConfig', () => {
     expect(result).toHaveProperty('valueType', 'TEXT')
   })
 
+  it.each(['DAILY', 'PER_SLOT'])('stores attendance frequency %s', async (value) => {
+    expect(await run({ schoolId: SCHOOL_ID, name: 'attendance_frequency', value })).toMatchObject({
+      value,
+      valueType: 'TEXT',
+    })
+  })
+
+  it('rejects an unsupported attendance frequency', async () => {
+    expect(await run({ schoolId: SCHOOL_ID, name: 'attendance_frequency', value: 'WEEKLY' })).toBe(
+      'invalidConfigValue'
+    )
+    expect(gateway.setData).toBeNull()
+  })
+
   it('refuses an unknown class schedule visibility', async () => {
     const result = await run({
       schoolId: SCHOOL_ID,

@@ -1,5 +1,7 @@
 import type { z } from 'zod'
+import { ATTENDANCE_FREQUENCIES } from '@/domain/attendance-frequency'
 import { configGateway } from '@/gateways/config-gateway'
+import { ATTENDANCE_FREQUENCY_CONFIG_KEY } from '@/lib/attendance-config'
 import {
   CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
   ClassScheduleVisibility,
@@ -41,6 +43,12 @@ export async function setConfig(input: Input, configGw = configGateway) {
     name === CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY &&
     value !== ClassScheduleVisibility.Internal &&
     value !== ClassScheduleVisibility.Public
+  ) {
+    return 'invalidConfigValue' as const
+  }
+  if (
+    name === ATTENDANCE_FREQUENCY_CONFIG_KEY &&
+    !ATTENDANCE_FREQUENCIES.some((frequency) => frequency === value)
   ) {
     return 'invalidConfigValue' as const
   }

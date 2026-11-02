@@ -16,6 +16,7 @@ import { Link } from '@/i18n/routing'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { getSchoolContext, hasSchoolRole, isActiveSchoolAdmin } from '@/lib/school-context'
+import { getAttendanceFrequency } from '@/use-cases/config/get-attendance-frequency'
 import { requireSchoolSession, requireTeacher } from '../../_lib/auth-helper'
 import { AttendanceFilters } from './_components/attendance-filters'
 import { CancelAttendanceForm, CancelOccurrenceForm } from './_components/cancel-attendance-form'
@@ -43,7 +44,8 @@ function attendanceHref(date: Date, filters: Pick<SearchParams, 'classId' | 'tea
 
 function attendanceEntryHref(classPeriodId: string, date: Date, slotId?: string) {
   const params = new URLSearchParams({ date: dateParam(date) })
-  if (slotId) params.set('slotId', slotId)
+  if (slotId === 'daily') params.set('occurrence', 'daily')
+  else if (slotId) params.set('slotId', slotId)
   else params.set('occurrence', 'adhoc')
   return `/dashboard/my-classes/${classPeriodId}/attendance?${params.toString()}`
 }
@@ -135,6 +137,7 @@ export default async function AttendanceTrackingPage({
   })
   if (!readsAsOptedIn(config?.value)) notFound()
 
+  const frequency = await getAttendanceFrequency(schoolId)
   const selectedPeriod = await getSelectedPeriod(schoolId)
   const selectedDate = attendanceUtcDate(query.date)
   const classId = teacher ? undefined : uuidOrUndefined(query.classId)
@@ -211,19 +214,37 @@ export default async function AttendanceTrackingPage({
       ? slots.filter((slot) =>
           sessions.some(
             (session) =>
-              session.classPeriodId === slot.classPeriodId && session.occurrenceKey === slot.id
+              session.classPeriodId === slot.classPeriodId &&
+              session.occurrenceKey === (frequency === 'DAILY' ? 'daily' : slot.id)
           )
         )
       : slots,
-    sessions
+    sessions,
+    new Set(),
+    frequency
   )
-  const scheduledSessions = sessions.filter((session) => session.occurrenceKey !== 'adhoc')
-  const adhocSessions = sessions.filter((session) => session.occurrenceKey === 'adhoc')
+  const scheduledSessions = sessions.filter((session) =>
+    frequency === 'DAILY' ? session.occurrenceKey === 'daily' : session.occurrenceKey !== 'adhoc'
+  )
+  const adhocSessions = sessions.filter(
+    (session) =>
+      (frequency === 'DAILY'
+        ? session.occurrenceKey !== 'daily'
+        : session.occurrenceKey === 'adhoc') ||
+      (session.occurrenceKey === 'daily' &&
+        !occurrences.some(
+          (item) =>
+            item.classPeriodId === session.classPeriodId &&
+            item.occurrenceKey === session.occurrenceKey
+        ) &&
+        session.status !== 'CANCELLED')
+  )
   const cancelledSessions = scheduledSessions.filter(
     (session) =>
       session.status === 'CANCELLED' &&
-      session.classScheduleSlotId &&
-      slots.some((slot) => slot.id === session.classScheduleSlotId)
+      (session.occurrenceKey === 'daily' ||
+        (session.classScheduleSlotId &&
+          slots.some((slot) => slot.id === session.classScheduleSlotId)))
   )
   const filtersActive = Boolean(classId || filterTeacherId)
   const classItems = [
@@ -371,7 +392,7 @@ export default async function AttendanceTrackingPage({
               const session = scheduledSessions.find(
                 (candidate) =>
                   candidate.classPeriodId === item.classPeriodId &&
-                  candidate.occurrenceKey === item.classScheduleSlotId
+                  candidate.occurrenceKey === item.occurrenceKey
               )
               const status = EXPECTED_STATUS[item.status]
               return (
@@ -380,17 +401,16 @@ export default async function AttendanceTrackingPage({
                   title={slot?.classPeriod.name}
                   subtitle={
                     <>
-                      {formattedDate(selectedDate)} · {slot?.startTime}–{slot?.endTime}
+                      {formattedDate(selectedDate)} ·{' '}
+                      {frequency === 'DAILY'
+                        ? t('dailyCall')
+                        : `${slot?.startTime}–${slot?.endTime}`}
                     </>
                   }
                   badge={<StatusBadge status={status.badge} label={t(status.label)} />}
                 >
                   <Link
-                    href={attendanceEntryHref(
-                      item.classPeriodId,
-                      selectedDate,
-                      item.classScheduleSlotId
-                    )}
+                    href={attendanceEntryHref(item.classPeriodId, selectedDate, item.occurrenceKey)}
                     className={buttonVariants({ size: 'sm', className: 'min-h-11' })}
                   >
                     {t(status.action)}
@@ -426,7 +446,7 @@ export default async function AttendanceTrackingPage({
       {adhocSessions.length > 0 && (
         <section aria-labelledby="adhoc-occurrences-heading" className="space-y-3">
           <h2 id="adhoc-occurrences-heading" className="text-lg font-semibold text-graphite">
-            {t('adhocOccurrences')}
+            {t(frequency === 'DAILY' ? 'recordedOccurrences' : 'adhocOccurrences')}
           </h2>
           <div className="grid gap-3">
             {adhocSessions.map((session) => (
@@ -435,7 +455,10 @@ export default async function AttendanceTrackingPage({
                 title={session.classPeriod.name}
                 subtitle={
                   <>
-                    {t('exceptionalOccurrence')} · {formattedDate(selectedDate)}
+                    {session.occurrenceKey === 'daily'
+                      ? t('dailyCall')
+                      : t(frequency === 'DAILY' ? 'historicalCall' : 'exceptionalOccurrence')}{' '}
+                    · {formattedDate(selectedDate)}
                   </>
                 }
                 badge={
@@ -447,7 +470,13 @@ export default async function AttendanceTrackingPage({
               >
                 {session.status !== 'CANCELLED' && (
                   <Link
-                    href={attendanceEntryHref(session.classPeriodId, selectedDate)}
+                    href={
+                      session.occurrenceKey === 'daily'
+                        ? attendanceEntryHref(session.classPeriodId, selectedDate, 'daily')
+                        : frequency === 'DAILY'
+                          ? `/dashboard/my-classes/${session.classPeriodId}/attendance?date=${dateParam(selectedDate)}&occurrence=historical${session.classScheduleSlotId ? `&slotId=${session.classScheduleSlotId}` : ''}`
+                          : attendanceEntryHref(session.classPeriodId, selectedDate)
+                    }
                     className={buttonVariants({ size: 'sm', className: 'min-h-11' })}
                   >
                     {session.status === 'VALIDATED' ? t('viewOrCorrect') : t('resume')}
@@ -483,7 +512,10 @@ export default async function AttendanceTrackingPage({
               title={session.classPeriod.name}
               subtitle={
                 <>
-                  {formattedDate(selectedDate)} · {slot?.startTime}–{slot?.endTime}
+                  {formattedDate(selectedDate)} ·{' '}
+                  {session.occurrenceKey === 'daily'
+                    ? t('dailyCall')
+                    : `${slot?.startTime}–${slot?.endTime}`}
                 </>
               }
               badge={<StatusBadge status="red" label={t('sessionCancelled')} />}

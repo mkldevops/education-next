@@ -1371,6 +1371,12 @@
             "label": "Accès élargi des enseignants",
             "description": "Les enseignants accèdent aux classes, familles, élèves et inscriptions de toute l'école, et peuvent ajouter familles, élèves et inscriptions. Paiements, formules et réglages restent réservés aux administrateurs."
           },
+          "attendance_frequency": {
+            "label": "Fréquence des appels",
+            "description": "Un appel par classe et par jour, ou un appel pour chaque cours du planning. Les appels déjà enregistrés sont conservés.",
+            "daily": "Une fois par jour",
+            "perSlot": "À chaque cours"
+          },
           "attendance_enabled": {
             "label": "Appel",
             "description": "Active la saisie des appels de classe."
@@ -2276,6 +2282,9 @@
         "absent": "Absent",
         "unrecorded": "Non renseigné",
         "schedule": "Créneau",
+        "recordedOccurrences": "Appels enregistrés",
+        "historicalCall": "Appel antérieur",
+        "dailyCall": "Appel du jour",
         "selectOccurrence": "Choisissez la séance à renseigner",
         "exceptional": "Appel exceptionnel",
         "startExceptional": "Commencer l’appel exceptionnel",

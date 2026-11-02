@@ -1,6 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const frequencyMock = vi.hoisted(() => vi.fn(() => Promise.resolve('PER_SLOT')))
+vi.mock('@/use-cases/config/get-attendance-frequency', () => ({
+  getAttendanceFrequency: frequencyMock,
+}))
+
 const dbMock = {
   config: { findFirst: vi.fn() },
   classPeriod: { findFirst: vi.fn() },
@@ -52,6 +57,7 @@ const { default: AttendancePage } = await import('./page')
 
 beforeEach(() => {
   vi.clearAllMocks()
+  frequencyMock.mockResolvedValue('PER_SLOT')
   requireSchoolSessionMock.mockResolvedValue({
     schoolId: 'school-1',
     userId: 'admin-1',
@@ -138,4 +144,74 @@ describe('AttendancePage', () => {
       })
     ).rejects.toThrow('notFound')
   })
+})
+
+it.each(['slot-1', undefined])(
+  'reads the canonical daily session from any daily entrypoint (%s)',
+  async (slotId) => {
+    frequencyMock.mockResolvedValue('DAILY')
+    render(
+      await AttendancePage({
+        params: Promise.resolve({ locale: 'fr', id: 'class-1' }),
+        searchParams: Promise.resolve({ date: '2026-09-17', slotId }),
+      })
+    )
+    expect(dbMock.attendanceSession.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          schoolId_classPeriodId_occurredOn_occurrenceKey: {
+            schoolId: 'school-1',
+            classPeriodId: 'class-1',
+            occurredOn: new Date('2026-09-17T00:00:00.000Z'),
+            occurrenceKey: 'daily',
+          },
+        },
+      })
+    )
+    expect(screen.getByTestId('attendance-panel')).not.toHaveAttribute('data-slot-id')
+  }
+)
+
+it('reads historical slot sessions explicitly after switching to daily frequency', async () => {
+  frequencyMock.mockResolvedValue('DAILY')
+  await AttendancePage({
+    params: Promise.resolve({ locale: 'fr', id: 'class-1' }),
+    searchParams: Promise.resolve({
+      date: '2026-09-17',
+      slotId: 'slot-1',
+      occurrence: 'historical',
+    }),
+  })
+  expect(
+    dbMock.attendanceSession.findUnique.mock.calls[0][0].where
+      .schoolId_classPeriodId_occurredOn_occurrenceKey.occurrenceKey
+  ).toBe('slot-1')
+})
+
+it.each(['historical', 'daily'])(
+  'does not create missing historical %s calls in per-slot mode',
+  async (occurrence) => {
+    dbMock.attendanceSession.findUnique.mockResolvedValue(null)
+    dbMock.event.findMany.mockResolvedValue([])
+    await expect(
+      AttendancePage({
+        params: Promise.resolve({ locale: 'fr', id: 'class-1' }),
+        searchParams: Promise.resolve({ date: '2026-09-17', occurrence }),
+      })
+    ).rejects.toThrow('notFound')
+  }
+)
+
+it('reads an existing daily call after returning to per-slot frequency', async () => {
+  render(
+    await AttendancePage({
+      params: Promise.resolve({ locale: 'fr', id: 'class-1' }),
+      searchParams: Promise.resolve({ date: '2026-09-17', occurrence: 'daily' }),
+    })
+  )
+  expect(screen.getByTestId('attendance-panel')).toHaveAttribute('data-session-id', 'session-1')
+  expect(
+    dbMock.attendanceSession.findUnique.mock.calls[0][0].where
+      .schoolId_classPeriodId_occurredOn_occurrenceKey.occurrenceKey
+  ).toBe('daily')
 })

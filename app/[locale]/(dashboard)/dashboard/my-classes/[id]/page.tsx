@@ -127,6 +127,7 @@ export default async function MyClassDetailPage({ params }: Props) {
     }),
   ])
   const attendanceEnabled = readsAsOptedIn(attendanceConfig?.value)
+  const tAttendance = await getTranslations('dashboard.pages.attendance')
 
   const sessions = attendanceEnabled
     ? await db.attendanceSession.findMany({
@@ -162,13 +163,17 @@ export default async function MyClassDetailPage({ params }: Props) {
 
   const history = sessions.map((session) => {
     const date = session.occurredOn.toISOString().slice(0, 10)
-    const occurrence = session.classScheduleSlot
-      ? `slotId=${session.classScheduleSlot.id}`
-      : 'occurrence=adhoc'
+    const occurrence =
+      session.occurrenceKey === 'daily'
+        ? 'occurrence=daily'
+        : session.classScheduleSlot
+          ? `slotId=${session.classScheduleSlot.id}&occurrence=historical`
+          : 'occurrence=historical'
     return {
       id: session.id,
       date,
       status: session.status,
+      occurrenceKey: session.occurrenceKey,
       slot: session.classScheduleSlot,
       summary: summarizeAttendance(session.entries.map((entry) => entry.status)),
       href: `/dashboard/my-classes/${classPeriod.id}/attendance?date=${date}&${occurrence}`,
@@ -302,7 +307,11 @@ export default async function MyClassDetailPage({ params }: Props) {
               <tr key={row.id} className="text-sm">
                 <td className="px-4 py-3 text-graphite">{formatDate(row.date, locale)}</td>
                 <td className="px-4 py-3 text-graphite tabular-nums">
-                  {row.slot ? `${row.slot.startTime} – ${row.slot.endTime}` : t('history.adhoc')}
+                  {row.occurrenceKey === 'daily'
+                    ? tAttendance('dailyCall')
+                    : row.slot
+                      ? `${row.slot.startTime} – ${row.slot.endTime}`
+                      : t('history.adhoc')}
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge

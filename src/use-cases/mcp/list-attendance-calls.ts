@@ -6,6 +6,7 @@ import { readsAsOptedIn } from '@/domain/feature-flags'
 import { configGateway } from '@/gateways/config-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
+import { getAttendanceFrequency } from '@/use-cases/config/get-attendance-frequency'
 import { MCP_ATTENDANCE_RANGE_MAX_DAYS, mcpListAttendanceCallsSchema } from './schemas'
 
 type Input = z.infer<typeof mcpListAttendanceCallsSchema>
@@ -59,6 +60,7 @@ export async function listAttendanceCallsFromMcp(
   const config = await configGw.get(scope.schoolId, ATTENDANCE_ENABLED_CONFIG_KEY)
   if (!readsAsOptedIn(config?.value)) return 'notConfigured' as const
   if (!(await readGw.findPeriod(scope.schoolId, periodId))) return 'notFound' as const
+  const frequency = await getAttendanceFrequency(scope.schoolId, configGw)
 
   const before = new Date(to.getTime() + DAY_MS)
   const filter = { periodId, classPeriodId, from, before }
@@ -78,25 +80,35 @@ export async function listAttendanceCallsFromMcp(
       ? slots.filter((slot) =>
           daySessions.some(
             (session) =>
-              session.classPeriodId === slot.classPeriodId && session.occurrenceKey === slot.id
+              session.classPeriodId === slot.classPeriodId &&
+              session.occurrenceKey === (frequency === 'DAILY' ? 'daily' : slot.id)
           )
         )
       : slots
 
     const slotById = new Map(daySlots.map((slot) => [slot.id, slot]))
-    const scheduled = expectedAttendance(date, daySlots, daySessions).flatMap<Call>((item) => {
+    const scheduledSessionIds = new Set<string>()
+    const scheduled = expectedAttendance(
+      date,
+      daySlots,
+      daySessions,
+      new Set(),
+      frequency
+    ).flatMap<Call>((item) => {
       const slot = slotById.get(item.classScheduleSlotId)
       if (!slot) return []
       const session = daySessions.find(
         (candidate) =>
-          candidate.classPeriodId === item.classPeriodId && candidate.occurrenceKey === slot.id
+          candidate.classPeriodId === item.classPeriodId &&
+          candidate.occurrenceKey === item.occurrenceKey
       )
+      if (session) scheduledSessionIds.add(session.id)
       return [
         {
           classPeriod: slot.classPeriod,
-          slotId: slot.id,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
+          slotId: frequency === 'DAILY' ? null : slot.id,
+          startTime: frequency === 'DAILY' ? null : slot.startTime,
+          endTime: frequency === 'DAILY' ? null : slot.endTime,
           status: item.status,
           sessionId: session?.id ?? null,
           validatedAt: session?.validatedAt ?? null,
@@ -107,9 +119,11 @@ export async function listAttendanceCallsFromMcp(
     const others = daySessions
       .filter(
         (session) =>
-          session.occurrenceKey === ADHOC ||
-          (session.status === 'CANCELLED' &&
-            slots.some((slot) => slot.id === session.occurrenceKey))
+          !scheduledSessionIds.has(session.id) &&
+          (session.occurrenceKey === ADHOC ||
+            session.occurrenceKey === 'daily' ||
+            ((frequency === 'DAILY' || session.status === 'CANCELLED') &&
+              slots.some((slot) => slot.id === session.occurrenceKey)))
       )
       .map<Call>((session) => {
         const slot = slots.find((candidate) => candidate.id === session.occurrenceKey)

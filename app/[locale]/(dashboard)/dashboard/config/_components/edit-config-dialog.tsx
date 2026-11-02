@@ -20,6 +20,7 @@ import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import type { ConfigValueType } from '@/generated/prisma/client'
 import { useRouter } from '@/i18n/routing'
+import { ATTENDANCE_FREQUENCY_CONFIG_KEY } from '@/lib/attendance-config'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import {
   CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
@@ -63,14 +64,21 @@ export function EditConfigDialog({ config, label }: EditConfigDialogProps) {
 function EditConfigForm({ config }: Pick<EditConfigDialogProps, 'config'>) {
   const t = useTranslations('dashboard.pages.config.edit')
   const tVisibility = useTranslations('dashboard.pages.config.settings.class_schedule_visibility')
+  const tFrequency = useTranslations('dashboard.pages.config.settings.attendance_frequency')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
+  const frequencyItems = [
+    { value: 'PER_SLOT', label: tFrequency('perSlot') },
+    { value: 'DAILY', label: tFrequency('daily') },
+  ]
   const visibilityItems = [
     { value: ClassScheduleVisibility.Internal, label: tVisibility('internal') },
     { value: ClassScheduleVisibility.Public, label: tVisibility('public') },
   ]
-  const visibilityDefault =
-    visibilityItems.find((item) => item.value === config.value)?.value ?? visibilityItems[0]?.value
+  const selectItems =
+    config.name === ATTENDANCE_FREQUENCY_CONFIG_KEY ? frequencyItems : visibilityItems
+  const selectDefault =
+    selectItems.find((item) => item.value === config.value)?.value ?? selectItems[0]?.value
 
   const handleSubmit = onSubmit(
     (formData) =>
@@ -94,18 +102,19 @@ function EditConfigForm({ config }: Pick<EditConfigDialogProps, 'config'>) {
                 defaultValue={config.value}
                 disabled={isPending}
               />
-            ) : config.name === CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY ? (
+            ) : config.name === CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY ||
+              config.name === ATTENDANCE_FREQUENCY_CONFIG_KEY ? (
               <Select
                 name="value"
-                items={visibilityItems}
-                defaultValue={visibilityDefault}
+                items={selectItems}
+                defaultValue={selectDefault}
                 disabled={isPending}
               >
                 <SelectTrigger id="edit-config-value">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {visibilityItems.map((item) => (
+                  {selectItems.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
                       {item.label}
                     </SelectItem>

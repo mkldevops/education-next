@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { isAttendanceClosed } from '@/domain/attendance-closure'
+import { attendanceOccurrenceKey } from '@/domain/attendance-frequency'
 import {
   attendanceRosterWindow,
   canRefreshRoster,
@@ -15,6 +16,7 @@ import type { Prisma } from '@/generated/prisma/client'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { getAttendanceFrequency } from '@/use-cases/config/get-attendance-frequency'
 import { syncMealAbsencesFromAttendance } from '@/use-cases/meals/sync-meal-absences-from-attendance'
 import { requireSchoolAdmin, requireSchoolSession, requireTeacher } from './auth-helper'
 
@@ -135,7 +137,8 @@ async function openAttendance(
   const actor = await canOperateClass(classPeriodId)
   if (!actor) return 'notFound' as const
   if (!(await enabled(actor.schoolId))) return 'attendanceDisabled' as const
-  if (classScheduleSlotId) {
+  const frequency = await getAttendanceFrequency(actor.schoolId)
+  if (classScheduleSlotId || frequency === 'DAILY') {
     const closures = await db.event.findMany({
       where: {
         schoolId: actor.schoolId,
@@ -148,6 +151,8 @@ async function openAttendance(
       select: { status: true, category: true, startAt: true, endAt: true },
     })
     if (isAttendanceClosed(closures, occurredOn)) return 'attendanceClosed' as const
+  }
+  if (classScheduleSlotId) {
     const slot = await db.classScheduleSlot.findFirst({
       where: {
         id: classScheduleSlotId,
@@ -159,7 +164,7 @@ async function openAttendance(
     })
     if (!slot) return 'notFound' as const
   }
-  const occurrenceKey = classScheduleSlotId ?? 'adhoc'
+  const occurrenceKey = attendanceOccurrenceKey(frequency, classScheduleSlotId)
   const sessionWhere = {
     schoolId_classPeriodId_occurredOn_occurrenceKey: {
       schoolId: actor.schoolId,
@@ -183,7 +188,7 @@ async function openAttendance(
           data: {
             schoolId: actor.schoolId,
             classPeriodId,
-            classScheduleSlotId,
+            classScheduleSlotId: frequency === 'DAILY' ? null : classScheduleSlotId,
             occurrenceKey,
             occurredOn,
             createdById: actor.userId,
@@ -442,12 +447,14 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
     select: { id: true },
   })
   if (!slot) return 'notFound' as const
+  const frequency = await getAttendanceFrequency(admin.schoolId)
+  const occurrenceKey = attendanceOccurrenceKey(frequency, slot.id)
   const occurrenceWhere = {
     schoolId_classPeriodId_occurredOn_occurrenceKey: {
       schoolId: admin.schoolId,
       classPeriodId: parsed.data.classPeriodId,
       occurredOn,
-      occurrenceKey: slot.id,
+      occurrenceKey,
     },
   }
   const cancelExisting = async (existing: {
@@ -483,8 +490,8 @@ export async function cancelAttendanceOccurrenceAction(input: unknown) {
         data: {
           schoolId: admin.schoolId,
           classPeriodId: parsed.data.classPeriodId,
-          classScheduleSlotId: slot.id,
-          occurrenceKey: slot.id,
+          classScheduleSlotId: frequency === 'DAILY' ? null : slot.id,
+          occurrenceKey,
           occurredOn,
           status: 'CANCELLED',
           createdById: admin.userId,
