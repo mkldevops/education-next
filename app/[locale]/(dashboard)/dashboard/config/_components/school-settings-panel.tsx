@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { Fragment } from 'react'
 import type { ConfigValueType } from '@/generated/prisma/client'
+import { ATTENDANCE_FREQUENCY_CONFIG_KEY } from '@/lib/attendance-config'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import {
   CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
@@ -174,6 +175,14 @@ function SettingValue({
   setting: SchoolSetting
   notConfigured: string
 }) {
+  const tFrequency = useTranslations('dashboard.pages.config.settings.attendance_frequency')
+  if (setting.name === ATTENDANCE_FREQUENCY_CONFIG_KEY) {
+    return (
+      <p className="text-sm text-graphite">
+        {tFrequency(setting.value === 'DAILY' ? 'daily' : 'perSlot')}
+      </p>
+    )
+  }
   if (!setting.value) {
     return <p className="text-sm text-graphite-600">{notConfigured}</p>
   }

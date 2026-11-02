@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const frequencyMock = vi.hoisted(() => vi.fn(() => Promise.resolve('PER_SLOT')))
+vi.mock('@/use-cases/config/get-attendance-frequency', () => ({
+  getAttendanceFrequency: frequencyMock,
+}))
+
 const dbMock = {
   classScheduleSlot: { findMany: vi.fn() },
   attendanceSession: { findMany: vi.fn() },
@@ -29,6 +34,7 @@ const enabled = { periodId: 'period-1', attendanceEnabled: true, scheduleEnabled
 
 beforeEach(() => {
   vi.clearAllMocks()
+  frequencyMock.mockResolvedValue('PER_SLOT')
   dbMock.classScheduleSlot.findMany.mockResolvedValue([])
   dbMock.attendanceSession.findMany.mockResolvedValue([])
   dbMock.event.findMany.mockResolvedValue([])
@@ -118,4 +124,22 @@ describe('getTodayAgenda', () => {
     expect(agenda?.closed).toBe(true)
     expect(agenda?.classes.map((item) => item.slotId)).toEqual(['s2'])
   })
+})
+
+it('counts a single daily call for multiple lessons of a class', async () => {
+  frequencyMock.mockResolvedValue('DAILY')
+  dbMock.classScheduleSlot.findMany.mockResolvedValue([
+    slot('s1', 'c1', '09:00'),
+    slot('s2', 'c1', '11:00'),
+    slot('s3', 'c2', '10:00'),
+  ])
+  dbMock.attendanceSession.findMany.mockResolvedValue([
+    { classPeriodId: 'c1', occurrenceKey: 'daily', status: 'VALIDATED' },
+  ])
+  const agenda = await getTodayAgenda('school-1', enabled, WEDNESDAY)
+  expect(agenda?.classes.map((item) => [item.classPeriodId, item.attendance])).toEqual([
+    ['c1', 'VALIDATED'],
+    ['c2', 'NOT_STARTED'],
+  ])
+  expect(agenda?.attendanceToTake).toBe(1)
 })

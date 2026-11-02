@@ -3,6 +3,7 @@ import { type ExpectedAttendance, expectedAttendance } from '@/domain/attendance
 import { planningWeekday } from '@/domain/current-week-dates'
 import { DAY_MS, utcStartOfDay } from '@/domain/day'
 import { db } from '@/lib/db'
+import { getAttendanceFrequency } from '@/use-cases/config/get-attendance-frequency'
 
 export type TodayClass = {
   slotId: string
@@ -80,16 +81,18 @@ export async function getTodayAgenda(
     }),
   ])
 
+  const frequency = attendanceEnabled ? await getAttendanceFrequency(schoolId) : 'PER_SLOT'
   const closed = isAttendanceClosed(closures, day)
   const openSlots = closed
     ? slots.filter((slot) =>
         sessions.some(
           (session) =>
-            session.classPeriodId === slot.classPeriodId && session.occurrenceKey === slot.id
+            session.classPeriodId === slot.classPeriodId &&
+            session.occurrenceKey === (frequency === 'DAILY' ? 'daily' : slot.id)
         )
       )
     : slots
-  const expected = expectedAttendance(day, openSlots, sessions)
+  const expected = expectedAttendance(day, openSlots, sessions, new Set(), frequency)
   const slotsById = new Map(slots.map((slot) => [slot.id, slot]))
 
   const classes = expected.flatMap<TodayClass>((occurrence) => {

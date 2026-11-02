@@ -8,6 +8,7 @@ import { readsAsOptedIn } from '@/domain/feature-flags'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { getAttendanceFrequency } from '@/use-cases/config/get-attendance-frequency'
 import { requireSchoolSession, requireTeacher } from '../../../../_lib/auth-helper'
 import { AttendancePanel } from './_components/attendance-panel'
 
@@ -68,9 +69,17 @@ export default async function AttendancePage({
   const attendanceClosed = isAttendanceClosed(closures, occurredOn)
   const slots = attendanceClosed ? [] : scheduledSlots
   const selectedSlot = scheduledSlots.find((slot) => slot.id === query.slotId)
-  const selectedOccurrence = query.occurrence === 'adhoc' ? 'adhoc' : undefined
-  if ((query.slotId && !selectedSlot) || (query.slotId && selectedOccurrence)) notFound()
-  const occurrenceKey = selectedSlot?.id ?? selectedOccurrence
+  const frequency = await getAttendanceFrequency(schoolId)
+  const historical = query.occurrence === 'historical'
+  const daily = (frequency === 'DAILY' && !historical) || query.occurrence === 'daily'
+  const selectedOccurrence = daily
+    ? 'daily'
+    : query.occurrence === 'adhoc' || (historical && !query.slotId)
+      ? 'adhoc'
+      : undefined
+  if ((query.slotId && !selectedSlot) || (query.slotId && selectedOccurrence === 'adhoc'))
+    notFound()
+  const occurrenceKey = daily ? 'daily' : (selectedSlot?.id ?? selectedOccurrence)
   const initialSession = occurrenceKey
     ? await db.attendanceSession.findUnique({
         where: {
@@ -91,19 +100,24 @@ export default async function AttendancePage({
         },
       })
     : null
-  if (initialSession?.status === 'CANCELLED') notFound()
-  if (attendanceClosed && selectedSlot && !initialSession) notFound()
+  if (
+    initialSession?.status === 'CANCELLED' ||
+    ((historical || (query.occurrence === 'daily' && frequency !== 'DAILY')) && !initialSession)
+  )
+    notFound()
+  if (attendanceClosed && (selectedSlot || daily) && !initialSession) notFound()
   const panelSlots = attendanceClosed && selectedSlot && initialSession ? [selectedSlot] : slots
   const t = await getTranslations('dashboard.pages.attendance')
   return (
     <AttendancePanel
       key={`${classPeriod.id}:${date}:${selectedSlot?.id ?? selectedOccurrence ?? 'select'}`}
+      frequency={daily ? 'DAILY' : 'PER_SLOT'}
       classPeriodId={classPeriod.id}
       className={classPeriod.name}
       occurredOn={date}
       locale={locale}
       slots={panelSlots}
-      selectedSlotId={selectedSlot?.id}
+      selectedSlotId={daily ? undefined : selectedSlot?.id}
       selectedOccurrence={selectedOccurrence}
       initialSession={initialSession}
       returnHref={admin ? `/dashboard/attendance?date=${date}` : '/dashboard/my-classes'}

@@ -1370,6 +1370,12 @@
             "label": "Extended teacher access",
             "description": "Teachers can open every class, family, student and enrollment of the school, and add families, students and enrollments. Payments, plans and settings stay with administrators."
           },
+          "attendance_frequency": {
+            "label": "Attendance frequency",
+            "description": "One call per class and day, or one call for each scheduled lesson. Previously recorded calls are preserved.",
+            "daily": "Once a day",
+            "perSlot": "For each lesson"
+          },
           "attendance_enabled": {
             "label": "Attendance",
             "description": "Enables class attendance recording."
@@ -2275,6 +2281,9 @@
         "absent": "Absent",
         "unrecorded": "Not recorded",
         "schedule": "Schedule slot",
+        "recordedOccurrences": "Recorded calls",
+        "historicalCall": "Previous attendance call",
+        "dailyCall": "Daily attendance",
         "selectOccurrence": "Choose the attendance occurrence",
         "exceptional": "Exceptional attendance",
         "startExceptional": "Start exceptional attendance",

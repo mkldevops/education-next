@@ -49,6 +49,7 @@ function setup({
   sessions = [] as unknown[],
   closures = [] as unknown[],
   flag = 'true',
+  frequency = 'PER_SLOT',
   period = { id: periodId } as unknown,
 } = {}) {
   const readGw = {
@@ -57,7 +58,11 @@ function setup({
     listAttendanceSessions: vi.fn().mockResolvedValue(sessions),
     listAttendanceClosures: vi.fn().mockResolvedValue(closures),
   }
-  const configGw = { get: vi.fn().mockResolvedValue({ value: flag }) }
+  const configGw = {
+    get: vi.fn().mockImplementation(async (_schoolId, name) => ({
+      value: name === 'attendance_frequency' ? frequency : flag,
+    })),
+  }
   const run = (input: Record<string, unknown>) =>
     listAttendanceCallsFromMcp(
       scope,
@@ -211,7 +216,7 @@ describe('listAttendanceCallsFromMcp', () => {
     expect(await run({ periodId, from: SUNDAY, to: SATURDAY })).toBe('invalidDateRange')
     expect(await run({ periodId, from: '2026-09-01', to: '2026-10-02' })).toBe('rangeTooLong')
     expect(await run({ periodId, from: '2026-09-01', to: '2026-10-01' })).not.toBe('rangeTooLong')
-    expect(configGw.get).toHaveBeenCalledTimes(2)
+    expect(configGw.get).toHaveBeenCalledTimes(4)
     expect(readGw.listAttendanceSlots).toHaveBeenCalledTimes(2)
   })
 
@@ -228,5 +233,81 @@ describe('listAttendanceCallsFromMcp', () => {
 
     expect(await run({ periodId, from: SATURDAY })).toBe('notFound')
     expect(readGw.listAttendanceSessions).not.toHaveBeenCalled()
+  })
+
+  it('reports one daily call per class regardless of the number of lessons', async () => {
+    const { run, configGw } = setup({
+      frequency: 'DAILY',
+      slots: [slotA, { ...slotA, id: 'afternoon-a', startTime: '13:10', endTime: '14:30' }, slotB],
+      sessions: [session({ occurrenceKey: 'daily', status: 'VALIDATED' })],
+    })
+    const result = await run({ periodId, from: SATURDAY })
+    expect(result).toMatchObject({
+      days: [
+        {
+          calls: [
+            {
+              classPeriod: classA,
+              slotId: null,
+              startTime: null,
+              endTime: null,
+              status: 'VALIDATED',
+              sessionId: 'session-1',
+            },
+            { classPeriod: classB, slotId: null, status: 'NOT_STARTED', sessionId: null },
+          ],
+        },
+      ],
+    })
+    expect((result as { days: Array<{ calls: unknown[] }> }).days[0].calls).toHaveLength(2)
+    expect(configGw.get).toHaveBeenCalledWith('school-1', 'attendance_frequency')
+  })
+
+  it('keeps only opened daily calls on a closure and lists a cancelled daily call once', async () => {
+    const { run } = setup({
+      frequency: 'DAILY',
+      slots: [slotA, { ...slotA, id: 'afternoon-a', startTime: '13:10' }, slotB],
+      sessions: [session({ occurrenceKey: 'daily', status: 'CANCELLED' })],
+      closures: [
+        {
+          status: 'PUBLISHED',
+          category: 'CLOSURE',
+          startAt: new Date(`${SATURDAY}T00:00:00Z`),
+          endAt: null,
+        },
+      ],
+    })
+    const result = await run({ periodId, from: SATURDAY })
+    expect(result).toMatchObject({
+      days: [
+        {
+          closed: true,
+          calls: [
+            { classPeriod: classA, slotId: null, status: 'CANCELLED', sessionId: 'session-1' },
+          ],
+        },
+      ],
+    })
+    expect((result as { days: Array<{ calls: unknown[] }> }).days[0].calls).toHaveLength(1)
+  })
+
+  it('preserves daily sessions without lessons and historic calls after frequency changes', async () => {
+    const daily = setup({
+      frequency: 'DAILY',
+      slots: [],
+      sessions: [session({ occurrenceKey: 'daily' })],
+    })
+    expect(await daily.run({ periodId, from: SATURDAY })).toMatchObject({
+      days: [{ calls: [{ slotId: null, status: 'IN_PROGRESS', sessionId: 'session-1' }] }],
+    })
+    const historic = setup({ frequency: 'DAILY', sessions: [session({ status: 'VALIDATED' })] })
+    const result = await historic.run({ periodId, from: SATURDAY })
+    expect(
+      (
+        result as { days: Array<{ calls: Array<{ sessionId: string | null }> }> }
+      ).days[0].calls.filter((call) => call.sessionId)
+    ).toEqual([
+      expect.objectContaining({ sessionId: 'session-1', slotId: 'slot-a', status: 'VALIDATED' }),
+    ])
   })
 })

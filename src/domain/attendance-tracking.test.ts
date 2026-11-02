@@ -35,6 +35,7 @@ describe('expectedAttendance', () => {
       {
         classPeriodId: 'class-a',
         classScheduleSlotId: 'sunday',
+        occurrenceKey: 'sunday',
         occurredOn: date,
         status: 'NOT_STARTED',
       },
@@ -59,5 +60,59 @@ describe('expectedAttendance', () => {
     expect(
       expectedAttendance(date, [{ id: 'sunday', classPeriodId: 'a', weekday: 7 }], [])
     ).toHaveLength(1)
+  })
+})
+
+describe('daily expectedAttendance', () => {
+  const date = new Date('2026-09-16T00:00:00Z')
+  const slots = [
+    { id: 'afternoon', classPeriodId: 'a', weekday: 3, startTime: '14:00' },
+    { id: 'morning', classPeriodId: 'a', weekday: 3, startTime: '08:00' },
+    { id: 'other', classPeriodId: 'b', weekday: 3, startTime: '09:00' },
+  ]
+
+  it('collapses lessons per class and uses the earliest lesson as a link representative', () => {
+    expect(expectedAttendance(date, slots, [], new Set(), 'DAILY')).toEqual([
+      {
+        classPeriodId: 'a',
+        classScheduleSlotId: 'morning',
+        occurrenceKey: 'daily',
+        occurredOn: date,
+        status: 'NOT_STARTED',
+      },
+      {
+        classPeriodId: 'b',
+        classScheduleSlotId: 'other',
+        occurrenceKey: 'daily',
+        occurredOn: date,
+        status: 'NOT_STARTED',
+      },
+    ])
+  })
+
+  it('matches only the canonical daily session and preserves historical lesson identities', () => {
+    const sessions = [
+      { classPeriodId: 'a', occurrenceKey: 'morning', status: 'VALIDATED' as const },
+      { classPeriodId: 'b', occurrenceKey: 'daily', status: 'DRAFT' as const },
+    ]
+    expect(
+      expectedAttendance(date, slots, sessions, new Set(), 'DAILY').map((x) => x.status)
+    ).toEqual(['NOT_STARTED', 'IN_PROGRESS'])
+    expect(sessions[0].occurrenceKey).toBe('morning')
+  })
+
+  it('removes the whole daily occurrence when cancelled and respects exclusions before collapsing', () => {
+    expect(
+      expectedAttendance(
+        date,
+        slots,
+        [{ classPeriodId: 'a', occurrenceKey: 'daily', status: 'CANCELLED' }],
+        new Set(['other']),
+        'DAILY'
+      )
+    ).toEqual([])
+    expect(
+      expectedAttendance(date, slots, [], new Set(['morning']), 'DAILY')[0]?.classScheduleSlotId
+    ).toBe('afternoon')
   })
 })

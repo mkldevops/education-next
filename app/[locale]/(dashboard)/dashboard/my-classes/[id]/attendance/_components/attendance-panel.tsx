@@ -4,6 +4,7 @@ import { Button, Card } from '@peaklab/ui'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
+import type { AttendanceFrequency } from '@/domain/attendance-frequency'
 import { Link } from '@/i18n/routing'
 import {
   markAllPresentAction,
@@ -72,6 +73,7 @@ const errorFor = (result: unknown, labels: Labels) =>
   typeof result === 'string' ? (labels.errors[result] ?? labels.errors.unexpected) : null
 
 export function AttendancePanel({
+  frequency = 'PER_SLOT',
   classPeriodId,
   className,
   occurredOn,
@@ -83,13 +85,14 @@ export function AttendancePanel({
   returnHref,
   labels,
 }: {
+  frequency?: AttendanceFrequency
   classPeriodId: string
   className: string
   occurredOn: string
   locale: string
   slots: Slot[]
   selectedSlotId?: string
-  selectedOccurrence?: 'adhoc'
+  selectedOccurrence?: 'adhoc' | 'daily'
   initialSession: Session | null
   returnHref: string
   labels: Labels
@@ -350,8 +353,14 @@ export function AttendancePanel({
         </div>
         <p className="mt-2 text-sm text-graphite-600">
           {date}
-          {selectedSlot ? ` · ${selectedSlot.startTime}–${selectedSlot.endTime}` : ''}
-          {selectedOccurrence ? ` · ${labels.exceptional}` : ''}
+          {frequency !== 'DAILY' && selectedSlot
+            ? ` · ${selectedSlot.startTime}–${selectedSlot.endTime}`
+            : ''}
+          {frequency === 'DAILY'
+            ? ` · ${t('dailyCall')}`
+            : selectedOccurrence
+              ? ` · ${labels.exceptional}`
+              : ''}
         </p>
         {showDateForm ? (
           <form
@@ -394,7 +403,7 @@ export function AttendancePanel({
           {globalError}
         </p>
       ) : null}
-      {!selectedSlotId && !selectedOccurrence ? (
+      {frequency !== 'DAILY' && !selectedSlotId && !selectedOccurrence ? (
         <Card className="space-y-3 p-4">
           <p className="font-medium">{labels.selectOccurrence}</p>
           {slots.map((slot) => (
@@ -415,7 +424,7 @@ export function AttendancePanel({
         </Card>
       ) : !session ? (
         <Button onClick={start} disabled={globalPending}>
-          {selectedOccurrence ? labels.startExceptional : labels.start}
+          {frequency !== 'DAILY' && selectedOccurrence ? labels.startExceptional : labels.start}
         </Button>
       ) : session.status === 'CANCELLED' ? (
         <Card className="p-4">
