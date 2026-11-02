@@ -14,6 +14,8 @@ const getDashboardOverviewMock = vi.fn()
 const getTodayAgendaMock = vi.fn()
 const getParentHomeMock = vi.fn()
 const isOnlinePaymentAvailableMock = vi.fn()
+const isMealsEnabledMock = vi.fn()
+const loadMealDuesMock = vi.fn()
 const redirectMock = vi.fn()
 
 vi.mock('@/lib/school-regional-settings', () => ({
@@ -56,6 +58,22 @@ vi.mock('@/use-cases/events/is-events-enabled', () => ({
 }))
 vi.mock('@/use-cases/class-schedules/is-class-schedule-enabled', () => ({
   isClassScheduleEnabled: isClassScheduleEnabledMock,
+}))
+vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
+vi.mock('./cashier/_lib/debtors-data', () => ({ loadMealDues: loadMealDuesMock }))
+vi.mock('./_components/collection-overview', () => ({
+  CollectionOverview: ({
+    payments,
+    meals,
+  }: {
+    payments: unknown
+    meals: { services: Array<{ service: string }> } | null
+  }) => (
+    <div data-testid="collection">
+      {payments ? 'tuition' : 'no-tuition'}|
+      {meals ? meals.services.map((entry) => entry.service).join(',') : 'no-meals'}
+    </div>
+  ),
 }))
 vi.mock('../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
 vi.mock('./_lib/dashboard-overview', () => ({ getDashboardOverview: getDashboardOverviewMock }))
@@ -138,6 +156,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   isOnlinePaymentAvailableMock.mockResolvedValue(true)
   isEventsEnabledMock.mockResolvedValue(false)
+  isMealsEnabledMock.mockResolvedValue(false)
   isClassScheduleEnabledMock.mockResolvedValue(false)
   configGatewayMock.get.mockResolvedValue(null)
   getSelectedPeriodMock.mockResolvedValue({ id: 'period-1', name: '2026-2027' })
@@ -168,14 +187,13 @@ describe('DashboardPage, admin', () => {
     expect(getParentHomeMock).not.toHaveBeenCalled()
   })
 
-  it('hides the collection KPI, balances task, payment column and stats when payments are disabled', async () => {
+  it('hides the collection overview, payment column and stats when payments are disabled', async () => {
     isPaymentsEnabledMock.mockResolvedValue(false)
     getDashboardOverviewMock.mockResolvedValue(overview(false))
 
     await renderPage()
 
-    expect(screen.queryByText('insights.remaining')).not.toBeInTheDocument()
-    expect(screen.queryByText(/home\.todo\.outstanding/)).not.toBeInTheDocument()
+    expect(screen.queryByTestId('collection')).not.toBeInTheDocument()
     expect(screen.queryByText('table.payment')).not.toBeInTheDocument()
     expect(screen.queryByText('table.plan')).not.toBeInTheDocument()
     expect(screen.getByText('stats.pendingEnrollments')).toBeInTheDocument()
@@ -183,14 +201,13 @@ describe('DashboardPage, admin', () => {
     expect(screen.getByText('Alice Dupont')).toBeInTheDocument()
   })
 
-  it('shows the collection KPI, balances task, payment column and stats when payments are enabled', async () => {
+  it('shows the collection overview, payment column and stats when payments are enabled', async () => {
     isPaymentsEnabledMock.mockResolvedValue(true)
     getDashboardOverviewMock.mockResolvedValue(overview(true))
 
     await renderPage()
 
-    expect(screen.getByText('insights.remaining')).toBeInTheDocument()
-    expect(screen.getByText('home.todo.outstanding:{"count":3}')).toBeInTheDocument()
+    expect(screen.getByTestId('collection')).toHaveTextContent('tuition|no-meals')
     expect(screen.getByText('table.payment')).toBeInTheDocument()
     expect(screen.getByText('table.plan')).toBeInTheDocument()
     expect(screen.getByTestId('school-insights')).toHaveTextContent('has-stats')
@@ -229,6 +246,38 @@ describe('DashboardPage, admin', () => {
     expect(screen.getByText('home.schedule.title')).toBeInTheDocument()
     expect(screen.getByText('CP A')).toBeInTheDocument()
     expect(screen.getByText('notStarted')).toBeInTheDocument()
+  })
+
+  it('leaves meals out of the home when the school does not serve them', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(true)
+    getDashboardOverviewMock.mockResolvedValue(overview(true))
+
+    await renderPage()
+
+    expect(loadMealDuesMock).not.toHaveBeenCalled()
+    expect(screen.getByTestId('collection')).toHaveTextContent('no-meals')
+    expect(screen.queryByText(/home\.todo\.meals/)).not.toBeInTheDocument()
+  })
+
+  it('shows canteen and snack dues in the collection overview and their follow-up task', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(true)
+    isMealsEnabledMock.mockResolvedValue(true)
+    getDashboardOverviewMock.mockResolvedValue(overview(true))
+    loadMealDuesMock.mockResolvedValue({
+      services: [
+        { service: 'CANTEEN', subscribed: 10, upToDate: 4, overdue: 6, dueAmount: 300 },
+        { service: 'SNACK', subscribed: 5, upToDate: 5, overdue: 0, dueAmount: 0 },
+      ],
+      toRemind: 7,
+      dueAmount: 300,
+    })
+
+    await renderPage()
+
+    expect(loadMealDuesMock.mock.calls[0][0]).toBe('school-1')
+    expect(screen.getByTestId('collection')).toHaveTextContent('tuition|CANTEEN,SNACK')
+    expect(screen.getByText('home.todo.meals:{"count":7}')).toBeInTheDocument()
+    expect(screen.getByText('stats.families')).toBeInTheDocument()
   })
 
   it('shows the empty to-do state when nothing is pending', async () => {

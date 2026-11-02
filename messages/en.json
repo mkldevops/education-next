@@ -2961,22 +2961,18 @@
       "empty": "No upcoming event"
     },
     "home": {
-      "kpi": {
-        "label": "Key figures",
-        "collectionRate": "{rate}% collected"
-      },
       "todo": {
-        "title": "To do today",
+        "title": "To handle",
         "attendance": "{count, plural, one {# register to take} other {# registers to take}}",
         "attendanceHint": "Today's classes without a validated register",
         "pendingEnrollments": "{count, plural, one {# enrollment to activate} other {# enrollments to activate}}",
         "uncashed": "{count, plural, one {# cheque to deposit} other {# cheques to deposit}}",
         "uncashedHint": "{amount} waiting to be deposited",
-        "outstanding": "{count, plural, one {# enrollment with a balance due} other {# enrollments with a balance due}}",
-        "outstandingHint": "{amount} left to collect",
         "empty": "Nothing urgent today",
         "emptyHint": "Registers, enrollments and collections are up to date.",
-        "emptyAction": "View enrollments"
+        "emptyAction": "View enrollments",
+        "meals": "{count, plural, one {# meal account to follow up} other {# meal accounts to follow up}}",
+        "mealsHint": "Canteen and snack · {amount} due"
       },
       "schedule": {
         "title": "Today's classes",
@@ -2996,6 +2992,21 @@
         "tomorrow": "Tomorrow",
         "empty": "No child linked to your family",
         "emptyHint": "Contact the school if a child is missing."
+      },
+      "collection": {
+        "title": "Collections",
+        "outstanding": "Left to collect",
+        "overdue": "including {amount} overdue on the schedule",
+        "barLabel": "{collected} collected, {outstanding} left to collect",
+        "legendCollected": "Collected · {amount}",
+        "legendTuition": "Tuition · {amount}",
+        "legendMeals": "Canteen and snack · {amount}",
+        "tuition": "Tuition",
+        "tuitionHint": "{rate}% collected · {count, plural, =0 {all settled} one {# enrollment with a balance} other {# enrollments with a balance}}",
+        "mealHint": "{upToDate} of {subscribed} up to date"
+      },
+      "headcount": {
+        "label": "Headcount"
       }
     },
     "assistant": {

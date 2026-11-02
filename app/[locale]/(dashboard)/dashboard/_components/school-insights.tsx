@@ -50,27 +50,7 @@ export async function SchoolInsightsSection({ insights, locale, currency }: Prop
               {t('viewPayments')}
             </Link>
           </div>
-          <dl className="mt-4 grid gap-4 sm:grid-cols-3">
-            <div>
-              <dt className="text-xs text-muted-foreground">{t('collected')}</dt>
-              <dd className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                {formatCurrency(payments.totals.collected, locale, currency)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">{t('remaining')}</dt>
-              <dd className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                {formatCurrency(payments.totals.remaining, locale, currency)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">{t('collectionRate')}</dt>
-              <dd className="mt-2">
-                <ProgressBar value={payments.totals.collectionRate} />
-              </dd>
-            </div>
-          </dl>
-          <div className="mt-6">
+          <div className="mt-4">
             <BarChart
               data={chart}
               formatValue={(value) => (value > 0 ? compact.format(value) : '—')}

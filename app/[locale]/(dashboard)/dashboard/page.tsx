@@ -14,11 +14,10 @@ import {
   CalendarX2,
   ClipboardCheck,
   ClipboardList,
-  GraduationCap,
-  HandCoins,
   Landmark,
   Plus,
   Users,
+  UtensilsCrossed,
   Wallet,
 } from 'lucide-react'
 import type { Metadata } from 'next'
@@ -27,6 +26,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { totalPaidAmount } from '@/domain/payment'
+import { schoolToday } from '@/domain/school-date'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { configGateway } from '@/gateways/config-gateway'
 import { schoolGateway } from '@/gateways/school-gateway'
@@ -38,18 +38,22 @@ import { formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { getSchoolContext, hasSchoolRole, isActiveSchoolAdmin } from '@/lib/school-context'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
+import { cn } from '@/lib/utils'
 import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-schedule-enabled'
+import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { requireSchoolScope } from '../_lib/auth-helper'
-import { KpiCard, Panel, PanelLink, TaskRow } from './_components/home-widgets'
+import { CollectionOverview } from './_components/collection-overview'
+import { Panel, PanelLink, StatStrip, TaskRow } from './_components/home-widgets'
 import { SchoolInsightsSection } from './_components/school-insights'
 import { UnlinkedParentNotice } from './_components/unlinked-parent-notice'
 import { UpcomingEventsCard } from './_components/upcoming-events-card'
 import { getDashboardOverview } from './_lib/dashboard-overview'
 import { getParentHome } from './_lib/parent-home'
 import { getTodayAgenda } from './_lib/today-agenda'
+import { loadMealDues } from './cashier/_lib/debtors-data'
 import { ActivateEnrollmentButton } from './families/[id]/_components/activate-enrollment-button'
 import { OnlinePaymentButton } from './families/[id]/_components/online-payment-button'
 
@@ -277,7 +281,10 @@ export default async function DashboardPage({ params }: Props) {
     )
   }
 
-  const overview = await getDashboardOverview(scope.schoolId, paymentsEnabled)
+  const [overview, mealsEnabled] = await Promise.all([
+    getDashboardOverview(scope.schoolId, paymentsEnabled),
+    isMealsEnabled(scope.schoolId),
+  ])
   const {
     selectedPeriod,
     familyCount,
@@ -287,11 +294,14 @@ export default async function DashboardPage({ params }: Props) {
     recentEnrollments,
     insights,
   } = overview
-  const agenda = await getTodayAgenda(scope.schoolId, {
-    periodId: selectedPeriod?.id ?? null,
-    attendanceEnabled,
-    scheduleEnabled,
-  })
+  const [agenda, mealDues] = await Promise.all([
+    getTodayAgenda(scope.schoolId, {
+      periodId: selectedPeriod?.id ?? null,
+      attendanceEnabled,
+      scheduleEnabled,
+    }),
+    mealsEnabled ? loadMealDues(scope.schoolId, schoolToday(timeZone)) : null,
+  ])
   const totals = insights.payments?.totals ?? null
   type RecentEnrollment = (typeof recentEnrollments)[number]
 
@@ -332,15 +342,15 @@ export default async function DashboardPage({ params }: Props) {
           }),
         }
       : null,
-    totals && totals.outstandingCount > 0
+    mealDues && mealDues.toRemind > 0
       ? {
-          key: 'outstanding',
-          href: '/dashboard/payments',
-          icon: HandCoins,
+          key: 'meals',
+          href: '/dashboard/cashier/debtors',
+          icon: UtensilsCrossed,
           tone: 'danger' as const,
-          title: t('home.todo.outstanding', { count: totals.outstandingCount }),
-          hint: t('home.todo.outstandingHint', {
-            amount: formatCurrency(totals.remaining, locale, currency),
+          title: t('home.todo.meals', { count: mealDues.toRemind }),
+          hint: t('home.todo.mealsHint', {
+            amount: formatCurrency(mealDues.dueAmount, locale, currency),
           }),
         }
       : null,
@@ -430,160 +440,199 @@ export default async function DashboardPage({ params }: Props) {
     },
   ]
 
+  const sideColumn = agenda || eventsCard
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <PageHeader
         title={greeting}
         description={subtitle}
         actions={
-          <Link href="/dashboard/families?action=create" className={buttonVariants()}>
-            <Plus size={16} aria-hidden="true" />
-            {t('quickActions.newFamily')}
-          </Link>
+          <>
+            <Link
+              href="/dashboard/enrollments?action=create"
+              className={buttonVariants({ variant: 'outline' })}
+            >
+              {t('quickActions.newEnrollment')}
+            </Link>
+            <Link href="/dashboard/families?action=create" className={buttonVariants()}>
+              <Plus size={16} aria-hidden="true" />
+              {t('quickActions.newFamily')}
+            </Link>
+          </>
         }
       />
 
-      <section aria-label={t('home.kpi.label')}>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <KpiCard
-            href="/dashboard/families"
-            label={t('stats.families')}
-            value={familyCount}
-            hint={t('stats.scopeAll')}
-            icon={Users}
-          />
-          <KpiCard
-            href="/dashboard/students"
-            label={t('stats.students')}
-            value={studentCount}
-            hint={t('stats.scopeAll')}
-            icon={GraduationCap}
-          />
-          <KpiCard
-            href="/dashboard/enrollments"
-            label={t('stats.enrollments')}
-            value={enrollmentCount}
-            hint={periodScope}
-            icon={ClipboardList}
-          />
-          {totals ? (
-            <KpiCard
-              href="/dashboard/payments"
-              label={t('insights.remaining')}
-              value={formatCurrency(totals.remaining, locale, currency)}
-              hint={t('home.kpi.collectionRate', { rate: Math.round(totals.collectionRate) })}
-              icon={Wallet}
-            />
-          ) : (
-            <KpiCard
-              href="/dashboard/enrollments"
-              label={t('stats.pendingEnrollments')}
-              value={pendingEnrollmentCount}
-              hint={periodScope}
-              icon={CalendarClock}
-            />
-          )}
-        </div>
-      </section>
+      {(insights.payments || mealDues) && (
+        <CollectionOverview
+          payments={insights.payments}
+          meals={mealDues}
+          scope={periodScope}
+          locale={locale}
+          currency={currency}
+        />
+      )}
 
-      <div className={agenda ? 'grid grid-cols-1 gap-6 lg:grid-cols-5' : 'grid grid-cols-1 gap-6'}>
-        <Panel
-          id="todo-heading"
-          title={t('home.todo.title')}
-          className={agenda ? 'lg:col-span-3' : undefined}
-        >
-          {tasks.length === 0 ? (
-            <EmptyState
-              icon={BadgeCheck}
-              title={t('home.todo.empty')}
-              description={t('home.todo.emptyHint')}
-              className="border-0 py-8"
-              action={
-                <Link
-                  href="/dashboard/enrollments"
-                  className={buttonVariants({ variant: 'outline', size: 'sm' })}
-                >
-                  {t('home.todo.emptyAction')}
-                </Link>
-              }
-            />
-          ) : (
-            <ul className="space-y-0.5">
-              {tasks.map(({ key, ...task }) => (
-                <TaskRow key={key} {...task} />
-              ))}
-            </ul>
-          )}
-        </Panel>
-
-        {agenda && (
+      <div
+        className={sideColumn ? 'grid grid-cols-1 gap-6 lg:grid-cols-5' : 'grid grid-cols-1 gap-6'}
+      >
+        <div className={cn('space-y-6', sideColumn && 'lg:col-span-3')}>
           <Panel
-            id="today-classes-heading"
-            title={t('home.schedule.title')}
-            className="lg:col-span-2"
+            id="todo-heading"
+            title={t('home.todo.title')}
+            className="home-rise"
             action={
-              <PanelLink href={attendanceEnabled ? '/dashboard/attendance' : '/dashboard/planning'}>
-                {attendanceEnabled ? t('home.schedule.openAttendance') : t('home.schedule.viewAll')}
-              </PanelLink>
+              tasks.length > 0 ? (
+                <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-xs font-semibold text-danger tabular-nums">
+                  {tasks.length}
+                </span>
+              ) : undefined
             }
           >
-            {agenda.closed && (
-              <p className="mx-1 mb-2 flex items-center gap-2 rounded-md bg-warning-subtle px-3 py-2 text-xs font-medium text-warning">
-                <CalendarX2 size={14} aria-hidden="true" />
-                {t('home.schedule.closed')}
-              </p>
-            )}
-            {agenda.classes.length === 0 ? (
+            {tasks.length === 0 ? (
               <EmptyState
-                icon={CalendarClock}
-                title={t('home.schedule.empty')}
+                icon={BadgeCheck}
+                title={t('home.todo.empty')}
+                description={t('home.todo.emptyHint')}
                 className="border-0 py-8"
                 action={
                   <Link
-                    href={scheduleEnabled ? '/dashboard/planning' : '/dashboard/attendance'}
+                    href="/dashboard/enrollments"
                     className={buttonVariants({ variant: 'outline', size: 'sm' })}
                   >
-                    {scheduleEnabled
-                      ? t('home.schedule.viewAll')
-                      : t('home.schedule.openAttendance')}
+                    {t('home.todo.emptyAction')}
                   </Link>
                 }
               />
             ) : (
-              <ul className="divide-y divide-border">
-                {agenda.classes.map((item) => (
-                  <li key={item.slotId} className="flex items-center gap-3 px-3 py-2.5">
-                    <span className="w-24 shrink-0 text-xs font-medium text-muted-foreground tabular-nums">
-                      {item.startTime}–{item.endTime}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-foreground">
-                        {item.className}
-                      </span>
-                      {item.teachers.length > 0 && (
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {item.teachers.join(', ')}
-                        </span>
-                      )}
-                    </span>
-                    {item.attendance && (
-                      <StatusBadge
-                        status={ATTENDANCE_BADGE[item.attendance].status}
-                        label={tAttendance(ATTENDANCE_BADGE[item.attendance].label)}
-                        className="shrink-0"
-                      />
-                    )}
-                  </li>
+              <ul className="space-y-0.5">
+                {tasks.map(({ key, ...task }) => (
+                  <TaskRow key={key} {...task} />
                 ))}
               </ul>
             )}
           </Panel>
+          <StatStrip
+            label={t('home.headcount.label')}
+            items={[
+              {
+                key: 'students',
+                href: '/dashboard/students',
+                label: t('stats.students'),
+                value: studentCount,
+                hint: t('stats.scopeAll'),
+              },
+              {
+                key: 'families',
+                href: '/dashboard/families',
+                label: t('stats.families'),
+                value: familyCount,
+                hint: t('stats.scopeAll'),
+              },
+              {
+                key: 'enrollments',
+                href: '/dashboard/enrollments',
+                label: t('stats.enrollments'),
+                value: enrollmentCount,
+                hint: periodScope,
+              },
+              {
+                key: 'pending',
+                href: '/dashboard/enrollments',
+                label: t('stats.pendingEnrollments'),
+                value: pendingEnrollmentCount,
+                hint: periodScope,
+              },
+            ]}
+          />
+        </div>
+
+        {sideColumn && (
+          <div className="space-y-6 lg:col-span-2">
+            {agenda && (
+              <Panel
+                id="today-classes-heading"
+                title={t('home.schedule.title')}
+                className="home-rise"
+                action={
+                  <PanelLink
+                    href={attendanceEnabled ? '/dashboard/attendance' : '/dashboard/planning'}
+                  >
+                    {attendanceEnabled
+                      ? t('home.schedule.openAttendance')
+                      : t('home.schedule.viewAll')}
+                  </PanelLink>
+                }
+              >
+                {agenda.closed && (
+                  <p className="mx-1 mb-2 flex items-center gap-2 rounded-md bg-warning-subtle px-3 py-2 text-xs font-medium text-warning">
+                    <CalendarX2 size={14} aria-hidden="true" />
+                    {t('home.schedule.closed')}
+                  </p>
+                )}
+                {agenda.classes.length === 0 ? (
+                  <EmptyState
+                    icon={CalendarClock}
+                    title={t('home.schedule.empty')}
+                    className="border-0 py-8"
+                    action={
+                      <Link
+                        href={scheduleEnabled ? '/dashboard/planning' : '/dashboard/attendance'}
+                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                      >
+                        {scheduleEnabled
+                          ? t('home.schedule.viewAll')
+                          : t('home.schedule.openAttendance')}
+                      </Link>
+                    }
+                  />
+                ) : (
+                  <ol className="relative space-y-1 before:absolute before:top-3 before:bottom-3 before:left-4 before:w-px before:bg-border">
+                    {agenda.classes.map((item) => (
+                      <li key={item.slotId} className="relative flex items-start gap-3 px-1 py-2">
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            'relative mt-1.5 ml-2 size-2.5 shrink-0 rounded-full ring-4 ring-surface',
+                            item.attendance === 'VALIDATED'
+                              ? 'bg-success'
+                              : item.attendance === 'IN_PROGRESS'
+                                ? 'bg-warning'
+                                : 'bg-border'
+                          )}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-xs font-medium text-muted-foreground tabular-nums">
+                            {item.startTime}–{item.endTime}
+                          </span>
+                          <span className="block truncate text-sm font-medium text-foreground">
+                            {item.className}
+                          </span>
+                          {item.teachers.length > 0 && (
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {item.teachers.join(', ')}
+                            </span>
+                          )}
+                        </span>
+                        {item.attendance && (
+                          <StatusBadge
+                            status={ATTENDANCE_BADGE[item.attendance].status}
+                            label={tAttendance(ATTENDANCE_BADGE[item.attendance].label)}
+                            className="mt-1 shrink-0"
+                          />
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </Panel>
+            )}
+            {eventsCard}
+          </div>
         )}
       </div>
 
       <SchoolInsightsSection insights={insights} locale={locale} currency={currency} />
-
-      {eventsCard}
 
       <Panel
         id="recent-enrollments-heading"
