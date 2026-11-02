@@ -39,6 +39,11 @@ export const mcpUpdatePlanSchema = z.object({
 
 export const mcpResourceIdSchema = z.object({ id: z.uuid() })
 
+export const previewMergeFamiliesSchema = z.object({
+  sourceId: z.uuid(),
+  targetId: z.uuid(),
+})
+
 export const mcpDeleteFamilySchema = mcpResourceIdSchema.extend({
   confirmation: z.string().trim().min(1).max(50),
 })

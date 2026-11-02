@@ -503,7 +503,7 @@ opening replaces the first. The calendar reflects published closures and meal ab
 
 ## Writing: the preview/commit pairs
 
-Five pairs are shipped. `create_teacher` is shipped as a single write, without preview: it takes a
+Six pairs are shipped. `create_teacher` is shipped as a single write, without preview: it takes a
 first and last name (email and phone optional) and creates the teacher with no class, as the dashboard
 form does. An active teacher of the same name, in either order, or of the same email suspends the
 creation: the tool answers `{ "created": false, "reason": "possibleDuplicate", "matches": [...] }`
@@ -513,11 +513,20 @@ homonym anyway, once the human confirms it is someone else.
 | Tool | Paper it matches | State |
 |---|---|---|
 | `enroll_family` | a full enrollment form: family, parents, students, enrollment, deposit — or, by `familyId`, children of a family already entered | shipped |
+| `merge_families` | merge a source family into a retained target | shipped |
 | `record_payment` | a receipt or payment slip | shipped |
 | `update_enrollment` | a correction: a child moved to another plan, a discount granted | shipped |
 | `class_schedule` | a whole weekly planning: every class, day, time and teacher of a period | shipped |
 | `create_teacher` | a teacher sheet | shipped, single write (no preview) |
 | `record_teacher_expense` | a teacher expense note: a receipt for snacks, supplies, goods | shipped |
+
+For a family merge, `preview_merge_families` accepts `sourceId` and `targetId` and shows
+both families' members and accounts, blockers, and the `expandedFamilyAccess` warning. The
+human must review the expanded access before `commit_merge_families` archives the source.
+The draft belongs to its caller, expires after 30 minutes and is committed with its checksum;
+a replay returns the recorded result. The commit rechecks the confirmed content under locks
+and returns `staleDraft` if it changed. The same restrictions as the dashboard merge apply.
+This pair is available whether payments are enabled or disabled.
 
 The shape, and the reason for it:
 
