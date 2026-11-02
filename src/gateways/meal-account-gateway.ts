@@ -359,4 +359,38 @@ export const mealAccountGateway = {
       schedules: account.schedules.map(toScheduleRow),
     }))
   },
+
+  /** Segments d'élèves actifs qui couvrent `day`, et leurs absences ce jour-là. */
+  listStudentDay: async (schoolId: string, service: MealService, day: string) => {
+    const date = toDbDate(day)
+    const segments = await db.mealSchedule.findMany({
+      where: {
+        schoolId,
+        startOn: { lte: date },
+        OR: [{ endOn: null }, { endOn: { gte: date } }],
+        account: { service, student: { isActive: true } },
+      },
+      select: {
+        accountId: true,
+        weekdays: true,
+        startOn: true,
+        endOn: true,
+        period: { select: { endAt: true } },
+      },
+    })
+    const absences = await db.mealAbsence.findMany({
+      where: { schoolId, date, account: { service } },
+      select: { accountId: true },
+    })
+    return {
+      segments: segments.map((row) => ({
+        accountId: row.accountId,
+        weekdays: row.weekdays,
+        startOn: toDay(row.startOn),
+        endOn: row.endOn ? toDay(row.endOn) : null,
+        periodEnd: toDay(row.period.endAt),
+      })),
+      absentAccountIds: new Set(absences.map((row) => row.accountId)),
+    }
+  },
 }

@@ -5,17 +5,21 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { priceOn } from '@/domain/meal-price'
 import { schoolToday } from '@/domain/school-date'
+import { staffMealGateway } from '@/gateways/staff-meal-gateway'
 import { MealService } from '@/generated/prisma/enums'
 import { Link } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
+import { dailyMealHeadcount } from '@/use-cases/meals/daily-meal-headcount'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
 import { AddMealPriceDialog } from './_components/add-meal-price-dialog'
 import { MealServiceSettingsForm } from './_components/meal-service-settings-form'
 import { RemoveMealPriceButton } from './_components/remove-meal-price-button'
+import { RemoveStaffMealButton } from './_components/remove-staff-meal-button'
+import { StaffMealDialog } from './_components/staff-meal-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -39,7 +43,7 @@ export default async function MealsPage({ params }: Props) {
 
   if (!(await isMealsEnabled(schoolId))) notFound()
 
-  const [{ currency, timeZone }, settings, prices] = await Promise.all([
+  const [{ currency, timeZone }, settings, prices, staffMeals, teachers] = await Promise.all([
     getSchoolRegionalSettings(schoolId),
     db.mealServiceSetting.findMany({
       where: { schoolId },
@@ -50,8 +54,16 @@ export default async function MealsPage({ params }: Props) {
       select: { id: true, service: true, amount: true, effectiveFrom: true },
       orderBy: { effectiveFrom: 'desc' },
     }),
+    staffMealGateway.listActive(schoolId),
+    staffMealGateway.listActiveTeachers(schoolId),
   ])
   const today = schoolToday(timeZone)
+  const headcount = await dailyMealHeadcount({ schoolId, day: today })
+  const fullName = (person: { firstName: string; lastName: string }) =>
+    `${person.firstName} ${person.lastName}`.trim()
+  const staffServices = settings
+    .filter((setting) => setting.isEnabled && setting.allowedWeekdays.length > 0)
+    .map(({ service, allowedWeekdays }) => ({ service, allowedWeekdays }))
   // Les dates `@db.Date` sont à minuit UTC : formatées en UTC, elles gardent leur jour.
   const formatDay = (day: string) =>
     new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, { timeZone: 'UTC' })
@@ -84,6 +96,7 @@ export default async function MealsPage({ params }: Props) {
               effectiveFrom: price.effectiveFrom.toISOString().slice(0, 10),
             }))
           const current = priceOn(history, today)
+          const served = typeof headcount === 'string' ? null : headcount[service]
 
           return (
             <Card key={service} className="rounded border border-alabaster-700">
@@ -91,6 +104,15 @@ export default async function MealsPage({ params }: Props) {
                 <CardTitle>{t(`services.${service}`)}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {served && (
+                  <p className="text-sm text-graphite">
+                    {t('headcount.today', {
+                      students: served.students,
+                      staff: served.staff,
+                      free: served.staffFree,
+                    })}
+                  </p>
+                )}
                 <MealServiceSettingsForm
                   service={service}
                   isEnabled={setting?.isEnabled ?? false}
@@ -143,6 +165,48 @@ export default async function MealsPage({ params }: Props) {
           )
         })}
       </div>
+      <Card className="rounded border border-alabaster-700">
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>{t('staff.title')}</CardTitle>
+            <StaffMealDialog
+              teachers={teachers.map((teacher) => ({ id: teacher.id, name: fullName(teacher) }))}
+              services={staffServices}
+            />
+          </div>
+          <p className="text-sm text-graphite-600">{t('staff.intro')}</p>
+        </CardHeader>
+        <CardContent>
+          {staffMeals.length === 0 ? (
+            <p className="text-sm text-graphite-600">{t('staff.empty')}</p>
+          ) : (
+            <ul className="divide-y divide-alabaster-700 text-sm">
+              {staffMeals.map((meal) => (
+                <li
+                  key={`${meal.teacherId}-${meal.service}`}
+                  className="flex flex-wrap items-center gap-3 py-2"
+                >
+                  <span className="font-medium text-graphite">{fullName(meal.teacher)}</span>
+                  <span className="text-graphite-600">{t(`services.${meal.service}`)}</span>
+                  <span className="text-graphite-600">
+                    {meal.weekdays.map((day) => t(`weekdays.${day}`)).join(', ')}
+                  </span>
+                  {meal.isFree && (
+                    <span className="text-xs font-medium text-graphite">{t('staff.free')}</span>
+                  )}
+                  <span className="ml-auto">
+                    <RemoveStaffMealButton
+                      teacherId={meal.teacherId}
+                      service={meal.service}
+                      name={fullName(meal.teacher)}
+                    />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

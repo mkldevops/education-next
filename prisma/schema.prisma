@@ -184,6 +184,7 @@ model School {
   receipts                  Receipt[]
   receiptCounter            ReceiptCounter?
   mealPayments              MealPayment[]
+  staffMeals                StaffMeal[]
   childcareSubscriptions    ChildcareSubscription[]
   childcareCharges          ChildcareCharge[]
   childcarePayments         ChildcarePayment[]
@@ -577,6 +578,7 @@ model Teacher {
   scheduleSlots ClassScheduleSlotTeacher[]
   expenses      TeacherExpense[]
   invitations   Invitation[]
+  staffMeals    StaffMeal[]
 
   @@unique([id, schoolId])
   @@unique([userId, schoolId])
@@ -1180,6 +1182,26 @@ model MealAccount {
 
   @@unique([id, schoolId])
   @@unique([schoolId, studentId, service])
+  @@index([schoolId])
+}
+
+/// Repas du personnel (#545) : comptés dans les effectifs du jour, jamais facturés. Une ligne
+/// par membre et service ; la retirer arrête ses repas. `isFree` marque une gratuité accordée.
+model StaffMeal {
+  id        String      @id @default(uuid())
+  schoolId  String
+  teacherId String
+  service   MealService
+  weekdays  Int[]
+  isFree    Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  school  School  @relation(fields: [schoolId], references: [id])
+  teacher Teacher @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Cascade)
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, teacherId, service])
   @@index([schoolId])
 }
 

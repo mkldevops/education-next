@@ -1206,7 +1206,50 @@
             "mealsDisabled": "Canteen and snack are turned off for this school"
           }
         },
-        "debtorsLink": "Unpaid and reminders"
+        "debtorsLink": "Unpaid and reminders",
+        "headcount": {
+          "today": "Today: {students, plural, =0 {no students} one {# student} other {# students}} · {staff, plural, =0 {no staff} one {# staff member} other {# staff members}}{free, plural, =0 {} other { (# free)}}"
+        },
+        "staff": {
+          "title": "Staff canteen",
+          "intro": "Meals counted in the day's headcount, apart from students. Nothing is billed.",
+          "empty": "No staff member signed up.",
+          "free": "Free",
+          "add": {
+            "title": "Sign up a staff member",
+            "teacher": "Staff member",
+            "teacherPlaceholder": "Choose…",
+            "teacherHint": "Staff come from the teacher list. Signing a member up again replaces their days.",
+            "service": "Service",
+            "weekdays": "Meal days",
+            "isFree": "Free meals",
+            "isFreeHint": "Granted by the school, counted apart.",
+            "cancel": "Cancel",
+            "submit": "Save",
+            "success": "Staff meals saved",
+            "error": "Could not save",
+            "errors": {
+              "validationError": "Choose a member and at least one day",
+              "invalidWeekdays": "Tick at least one day the service offers",
+              "serviceDisabled": "This service is not offered",
+              "notFound": "Staff member not found",
+              "mealsDisabled": "Canteen and snack are disabled for this school"
+            }
+          },
+          "remove": {
+            "trigger": "Remove",
+            "title": "Remove {name}?",
+            "description": "Their meals will no longer be counted from today.",
+            "confirm": "Remove",
+            "cancel": "Cancel",
+            "success": "Staff meals removed",
+            "error": "Could not remove",
+            "errors": {
+              "notSubscribed": "This member does not eat at this service",
+              "mealsDisabled": "Canteen and snack are disabled for this school"
+            }
+          }
+        }
       },
       "cashier": {
         "title": "Cashier",

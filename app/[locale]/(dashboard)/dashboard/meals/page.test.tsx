@@ -6,6 +6,11 @@ const dbMock = {
 }
 const requireSchoolAdminMock = vi.fn()
 const isMealsEnabledMock = vi.fn()
+const staffMealGatewayMock = {
+  listActive: vi.fn().mockResolvedValue([]),
+  listActiveTeachers: vi.fn().mockResolvedValue([]),
+}
+const dailyMealHeadcountMock = vi.fn()
 
 vi.mock('@/lib/school-regional-settings', () => ({
   getSchoolRegionalSettings: async () => ({ currency: 'KMF', timeZone: 'Indian/Comoro' }),
@@ -31,6 +36,10 @@ vi.mock('@/i18n/routing', () => ({
 }))
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
+vi.mock('@/gateways/staff-meal-gateway', () => ({ staffMealGateway: staffMealGatewayMock }))
+vi.mock('@/use-cases/meals/daily-meal-headcount', () => ({
+  dailyMealHeadcount: dailyMealHeadcountMock,
+}))
 vi.mock('../../_lib/auth-helper', () => ({ requireSchoolAdmin: requireSchoolAdminMock }))
 vi.mock('../../_lib/meal-actions', () => ({}))
 
@@ -52,12 +61,15 @@ describe('MealsPage', () => {
     expect(isMealsEnabledMock).toHaveBeenCalledWith('school-1')
     expect(dbMock.mealServiceSetting.findMany).not.toHaveBeenCalled()
     expect(dbMock.mealPrice.findMany).not.toHaveBeenCalled()
+    expect(staffMealGatewayMock.listActive).not.toHaveBeenCalled()
+    expect(dailyMealHeadcountMock).not.toHaveBeenCalled()
   })
 
   it('reads settings and prices scoped to the school once opted in', async () => {
     isMealsEnabledMock.mockResolvedValue(true)
     dbMock.mealServiceSetting.findMany.mockResolvedValue([])
     dbMock.mealPrice.findMany.mockResolvedValue([])
+    dailyMealHeadcountMock.mockResolvedValue('mealsDisabled')
 
     await MealsPage({ params: Promise.resolve({ locale: 'fr' }) })
 
@@ -66,6 +78,11 @@ describe('MealsPage', () => {
     )
     expect(dbMock.mealPrice.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { schoolId: 'school-1' } })
+    )
+    expect(staffMealGatewayMock.listActive).toHaveBeenCalledWith('school-1')
+    expect(staffMealGatewayMock.listActiveTeachers).toHaveBeenCalledWith('school-1')
+    expect(dailyMealHeadcountMock).toHaveBeenCalledWith(
+      expect.objectContaining({ schoolId: 'school-1' })
     )
   })
 })
