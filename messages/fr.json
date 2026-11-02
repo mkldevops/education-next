@@ -3022,6 +3022,8 @@
           "list_plans": "Formules tarifaires",
           "list_teachers": "Enseignants",
           "find_students": "Chercher un élève",
+          "preview_merge_families": "Aperçu de fusion de familles",
+          "commit_merge_families": "Fusionner les familles",
           "preview_enroll_family": "Aperçu d'inscription",
           "commit_enroll_family": "Inscrire la famille",
           "create_event": "Créer un événement",

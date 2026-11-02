@@ -3021,6 +3021,8 @@
           "list_plans": "Pricing plans",
           "list_teachers": "Teachers",
           "find_students": "Find a student",
+          "preview_merge_families": "Family merge preview",
+          "commit_merge_families": "Merge families",
           "preview_enroll_family": "Enrollment preview",
           "commit_enroll_family": "Enroll the family",
           "create_event": "Create an event",

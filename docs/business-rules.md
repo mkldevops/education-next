@@ -166,6 +166,13 @@ with merge. Creation and linking are atomic, and stale archived targets are refu
 Invitation acceptance rereads the current family before consuming its token. Receipt cancellation
 refuses a stale family lock or a receipt moved to another family before touching its payments.
 
+The MCP and integrated assistant also expose `preview_merge_families` and
+`commit_merge_families`, regardless of the payments setting. The preview shows both families'
+members and accounts, the `expandedFamilyAccess` warning and the same blockers as the dashboard.
+The caller confirms the resolved plan using its owner-scoped draft and checksum within 30 minutes;
+replay returns the recorded result. The commit rechecks the confirmed content under locks and
+refuses `staleDraft` if it changed, rather than merging a different plan.
+
 ### Administering schools
 
 `/dashboard/schools` is a **platform** surface. The page and the four actions
