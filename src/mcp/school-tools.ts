@@ -73,6 +73,7 @@ import {
   previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
 import { updateEventFromMcp } from '@/use-cases/mcp/update-event'
+import { listMealTools } from './meal-tools'
 
 const NO_ARGS = z.object({})
 
@@ -156,6 +157,7 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
   const { schoolId } = scope
 
   const tools: SchoolTool[] = [
+    ...listMealTools(scope),
     define({
       name: 'describe_school',
       title: 'École courante',
