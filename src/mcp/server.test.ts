@@ -120,6 +120,19 @@ beforeEach(() => {
 describe('buildMcpServer', () => {
   it('publishes the reads, the schedule and event tools and the five preview/commit pairs when payments are enabled', () => {
     expect([...build().keys()]).toEqual([
+      'get_meal_settings',
+      'get_student_meals',
+      'list_family_receipts',
+      'set_meal_service_setting',
+      'set_meal_price',
+      'remove_meal_price',
+      'subscribe_meal',
+      'change_meal_schedule',
+      'stop_meal',
+      'record_meal_opening',
+      'toggle_meal_absence',
+      'record_receipt',
+      'cancel_receipt',
       'describe_school',
       'list_levels',
       'create_level',
@@ -166,6 +179,19 @@ describe('buildMcpServer', () => {
 
   it('omits the money tools when the school has turned payments off', () => {
     expect([...build({ paymentsEnabled: false }).keys()]).toEqual([
+      'get_meal_settings',
+      'get_student_meals',
+      'list_family_receipts',
+      'set_meal_service_setting',
+      'set_meal_price',
+      'remove_meal_price',
+      'subscribe_meal',
+      'change_meal_schedule',
+      'stop_meal',
+      'record_meal_opening',
+      'toggle_meal_absence',
+      'record_receipt',
+      'cancel_receipt',
       'describe_school',
       'list_levels',
       'create_level',

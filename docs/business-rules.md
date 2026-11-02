@@ -2016,6 +2016,29 @@ Opt-in per school: `meals_enabled` (`src/lib/meals-config.ts`, read by `isMealsE
 answers `notFound()`, the sidebar entry disappears, and every meal use case refuses with
 `mealsDisabled`. The page and its actions are `requireSchoolAdmin()`.
 
+**MCP and assistant.** The shared catalog (`src/mcp/meal-tools.ts`, registered by
+`listSchoolTools`) exposes `get_meal_settings`, `get_student_meals` and
+`list_family_receipts`, plus `set_meal_service_setting`, `set_meal_price`,
+`remove_meal_price`, `subscribe_meal`, `change_meal_schedule`, `stop_meal`,
+`record_meal_opening`, `toggle_meal_absence`, `record_receipt` and `cancel_receipt`.
+These tools stay discoverable with meals disabled and return `mealsDisabled`; they are
+independent of `payments_enabled` except for the tuition portion of a receipt. School and
+recording/cancelling user come only from the authenticated admin scope, never tool arguments.
+All mutations reuse the existing meal/receipt use cases, and the integrated assistant requires
+approval for each write. Domain `OK` becomes `{ success: true }` at the tool boundary.
+Reads use explicit projections (`mcp-meal-read-gateway.ts`); no request hash or actor identity is
+published. The student calendar defaults to 31 days from the current month's first day and
+accepts an inclusive `from`/`to` window of at most 93 days. Family receipt reads return the latest
+50 receipts by default (100 maximum), including cancelled receipts, with `hasMore` when truncated.
+An unknown/archived student or family in that school returns `notFound`.
+
+`record_receipt` preserves the cashier's idempotency key and `expectedPaidThrough` contract.
+Its meal amounts create meal payments, never tuition payments through `record_payment`.
+It has no historical date or unit-price override: issuance and valuation are today's.
+A historical takeover uses `record_meal_opening` with a source reference in the required reason,
+after verifying segments and published closures; it records days of coverage, not historical
+cash revenue or a historical numbered receipt. Recording it again replaces the existing opening.
+
 **Two services, `CANTEEN` and `SNACK`.** `MealServiceSetting` holds, per school and service,
 `isEnabled` and `allowedWeekdays` (ISO, Monday = 1). `setMealServiceSetting()` refuses an empty,
 duplicated or out-of-range list (`invalidWeekdays`, `validateMealWeekdays()` in

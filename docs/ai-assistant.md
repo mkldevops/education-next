@@ -87,6 +87,14 @@ administrator's session (`ownerKind: ADMIN_SESSION`). MCP drafts are owned by th
 isolated: neither side can present the other's draft. Adding a tool to `listSchoolTools` exposes it
 on both surfaces. `docs/mcp.md` covers the key-based access.
 
+Canteen and snack tools share this approval boundary. `get_meal_settings`,
+`get_student_meals` and `list_family_receipts` read the current school's meal records;
+settings, prices, subscriptions, openings, absences and cashier receipts are writes requiring
+approval. Meal income uses `record_receipt`, with a stable idempotency key and the coverage
+last read from `get_student_meals`; it must never be entered as tuition with `record_payment`.
+Historical coverage uses `record_meal_opening` with its source in the reason. Receipts use
+today's date and price and cannot reproduce a historical cash payment.
+
 ## Choosing the model
 
 The allowlist holds models known to read an image and call a tool. Which one reads real sheets
