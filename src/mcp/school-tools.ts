@@ -10,6 +10,7 @@ import {
 } from '@/use-cases/mcp/class-schedule'
 import { commitClassSchedule } from '@/use-cases/mcp/commit-class-schedule'
 import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
+import { commitMergeFamilies } from '@/use-cases/mcp/commit-merge-families'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
 import { commitRecordTeacherExpense } from '@/use-cases/mcp/commit-record-teacher-expense'
 import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
@@ -35,6 +36,7 @@ import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
 import { createPlanFromMcp, updatePlanFromMcp } from '@/use-cases/mcp/plan-configuration'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
+import { previewMergeFamilies } from '@/use-cases/mcp/preview-merge-families'
 import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
 import { previewRecordTeacherExpense } from '@/use-cases/mcp/preview-record-teacher-expense'
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
@@ -68,6 +70,7 @@ import {
   mcpUpdatePlanSchema,
   previewClassScheduleSchema,
   previewEnrollFamilySchema,
+  previewMergeFamiliesSchema,
   previewRecordPaymentSchema,
   previewRecordTeacherExpenseSchema,
   previewUpdateEnrollmentSchema,
@@ -454,6 +457,36 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       annotations: { readOnlyHint: true, openWorldHint: false },
       kind: 'read',
       run: (args) => findStudentsFromMcp(scope, args),
+    }),
+    define({
+      name: 'preview_merge_families',
+      title: 'Préparer la fusion de familles',
+      description:
+        'Prépare la fusion de la famille source dans la famille cible conservée. ' +
+        'Présente les membres et comptes des deux familles ainsi que les avertissements, ' +
+        'notamment `expandedFamilyAccess`, avant confirmation. Rend un brouillon, son ' +
+        '`checksum`, le plan et les éventuels `blockers`.',
+      inputSchema: previewMergeFamiliesSchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+      kind: 'draft',
+      run: (args) => previewMergeFamilies(scope, args),
+    }),
+    define({
+      name: 'commit_merge_families',
+      title: 'Fusionner les familles',
+      description:
+        'Engage la fusion prévisualisée après validation humaine avec `draftId` et `checksum`. ' +
+        'La famille source est archivée. Un plan modifié depuis sa validation est refusé ' +
+        'avec `staleDraft`. Le brouillon expire après trente minutes et son rejeu rend le résultat enregistré.',
+      inputSchema: commitDraftSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+      kind: 'write',
+      run: (args) => commitMergeFamilies(scope, args),
     }),
     define({
       name: 'get_family_deletion_impact',

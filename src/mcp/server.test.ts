@@ -24,6 +24,8 @@ const mcpReadGateway = {
   listClassScheduleSlots: vi.fn(),
 }
 
+const previewMergeFamilies = vi.fn()
+const commitMergeFamilies = vi.fn()
 const previewEnrollFamily = vi.fn()
 const commitEnrollFamily = vi.fn()
 const previewRecordPayment = vi.fn()
@@ -55,6 +57,8 @@ const archivePlanFromMcp = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ McpServer: FakeMcpServer }))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
+vi.mock('@/use-cases/mcp/preview-merge-families', () => ({ previewMergeFamilies }))
+vi.mock('@/use-cases/mcp/commit-merge-families', () => ({ commitMergeFamilies }))
 vi.mock('@/use-cases/mcp/preview-enroll-family', () => ({ previewEnrollFamily }))
 vi.mock('@/use-cases/mcp/commit-enroll-family', () => ({ commitEnrollFamily }))
 vi.mock('@/use-cases/mcp/preview-record-payment', () => ({ previewRecordPayment }))
@@ -118,7 +122,7 @@ beforeEach(() => {
 })
 
 describe('buildMcpServer', () => {
-  it('publishes the reads, the schedule and event tools and the five preview/commit pairs when payments are enabled', () => {
+  it('publishes the reads, the schedule and event tools and the six preview/commit pairs when payments are enabled', () => {
     expect([...build().keys()]).toEqual([
       'get_meal_settings',
       'get_student_meals',
@@ -155,6 +159,8 @@ describe('buildMcpServer', () => {
       'preview_record_teacher_expense',
       'commit_record_teacher_expense',
       'find_students',
+      'preview_merge_families',
+      'commit_merge_families',
       'get_family_deletion_impact',
       'delete_family',
       'archive_student',
@@ -211,6 +217,8 @@ describe('buildMcpServer', () => {
       'preview_record_teacher_expense',
       'commit_record_teacher_expense',
       'find_students',
+      'preview_merge_families',
+      'commit_merge_families',
       'get_family_deletion_impact',
       'delete_family',
       'archive_student',
@@ -232,6 +240,7 @@ describe('buildMcpServer', () => {
 
     for (const name of [
       'preview_enroll_family',
+      'preview_merge_families',
       'preview_class_schedule',
       'preview_record_teacher_expense',
       'preview_record_payment',
@@ -242,6 +251,11 @@ describe('buildMcpServer', () => {
         idempotentHint: false,
       })
     }
+    expect(tools.get('commit_merge_families')?.config.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+    })
     for (const name of [
       'commit_enroll_family',
       'commit_class_schedule',
@@ -254,6 +268,23 @@ describe('buildMcpServer', () => {
         idempotentHint: true,
       })
     }
+  })
+
+  it('delegates family merge with the caller scope and returns typed errors', async () => {
+    const tools = build()
+    const previewArgs = { sourceId: 'source', targetId: 'target', schoolId: 'other-school' }
+    const commitArgs = { draftId: 'draft', checksum: 'checksum' }
+    previewMergeFamilies.mockResolvedValue({ draftId: 'draft', blockers: [] })
+    commitMergeFamilies.mockResolvedValue('staleDraft')
+
+    const preview = await tools.get('preview_merge_families')?.handler(previewArgs)
+    const commit = await tools.get('commit_merge_families')?.handler(commitArgs)
+
+    expect(previewMergeFamilies).toHaveBeenCalledWith(scope, previewArgs)
+    expect(commitMergeFamilies).toHaveBeenCalledWith(scope, commitArgs)
+    expect(payload(preview as never)).toEqual({ draftId: 'draft', blockers: [] })
+    expect(commit?.isError).toBe(true)
+    expect(payload(commit as never)).toEqual({ error: 'staleDraft' })
   })
 
   it('never lets a tool argument name a school; the key decides', async () => {
