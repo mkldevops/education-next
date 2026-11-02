@@ -20,6 +20,7 @@ import { toast } from '@/lib/toast'
 import { mcpSite } from '../_lib/mcp-client-setup'
 import { revokeMcpOAuthGrantAction } from '../_lib/mcp-oauth-grant-actions'
 import type { McpOAuthGrantView } from '../_lib/mcp-oauth-grant-view'
+import { ClaudeConnectionGuide } from './claude-connection-guide'
 import { Field } from './mcp-client-guides'
 
 type Props = {
@@ -66,6 +67,8 @@ export function ConnectedAppsSection({ connections }: Props) {
     <Card className="rounded border border-alabaster-700 p-6">
       <h3 className="text-base font-semibold text-graphite">{t('title')}</h3>
       <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
+
+      <ClaudeConnectionGuide site={site} onCopy={copy} />
 
       <details className="mt-4 rounded border border-alabaster-700 px-4 py-3">
         <summary className="cursor-pointer text-sm font-medium text-graphite">

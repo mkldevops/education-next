@@ -3336,6 +3336,18 @@
         "title": "Applications connectées",
         "description": "Les applications autorisées par OAuth sur l'école active, ChatGPT par exemple. Chaque connexion agit avec vos droits d'administration sur cette école, et sur elle seule.",
         "empty": "Aucune application connectée pour le moment.",
+        "claudeSetup": {
+          "title": "Connecter Claude.ai · Tutoriel vidéo",
+          "description": "Suivez la connexion pas à pas en 1 min 31. Voix et sous-titres en français. Aucune clé API à créer : autorisez simplement votre compte EIC depuis Claude.",
+          "videoLabel": "Comment connecter Claude.ai à EIC",
+          "captionsLabel": "Français",
+          "download": "Télécharger le tutoriel vidéo",
+          "urlLabel": "URL du serveur MCP de ce site",
+          "copyUrl": "Copier l’URL pour Claude.ai",
+          "step1": "Dans Claude, ouvrez Personnalisation › Connecteurs › Ajouter › Ajouter un connecteur personnalisé, puis collez l’URL ci-dessous.",
+          "step2": "Conservez « Se connecter maintenant » et « S’enregistrer automatiquement », puis cliquez sur « Ajouter ».",
+          "step3": "Connectez-vous sur ce site, sélectionnez votre école et autorisez Claude. Dans la conversation, activez ensuite le connecteur depuis le menu « + » › Connecteurs."
+        },
         "setup": {
           "title": "Connecter ChatGPT",
           "step1": "Dans ChatGPT, activez Paramètres › Sécurité et connexion › Mode développeur.",

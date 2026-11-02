@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { McpOAuthGrantView } from '../_lib/mcp-oauth-grant-view'
 
@@ -61,7 +61,8 @@ describe('ConnectedAppsSection', () => {
 
     expect(screen.getByText('empty')).toBeInTheDocument()
     expect(screen.getByText('setup.title')).toBeInTheDocument()
-    expect(screen.getByText(`${window.location.origin}/api/mcp`)).toBeInTheDocument()
+    const setup = screen.getByText('setup.title').closest('details') as HTMLElement
+    expect(within(setup).getByText(`${window.location.origin}/api/mcp`)).toBeInTheDocument()
     expect(screen.queryByText(/edu_mcp_/)).not.toBeInTheDocument()
   })
 

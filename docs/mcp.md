@@ -38,6 +38,20 @@ Revoking takes effect on the next call: revocation, expiry, account deactivation
 
 ## Connecting a client
 
+### Claude.ai video tutorial
+
+In **Settings › API keys › Connected apps**, expand **Connect Claude.ai · Video tutorial**.
+The French video, with French captions, is available before creating any key: the OAuth connection
+does not need one. The guide also offers the current site's MCP URL to copy.
+
+The approved ElevenLabs video and its poster/captions live in the private MinIO bucket configured
+by `S3_*`, under `videos/connecter-claude-eic-elevenlabs-2026-11-01.mp4`,
+`videos/connecter-claude-eic-2026-11-01.jpg`, and `videos/connecter-claude-eic-2026-11-01.fr.vtt`.
+The authenticated `/api/tutorials/claude-connection/{video,poster,captions}` endpoint serves only
+those three objects and supports byte ranges for seeking. No public bucket or expiring URL is needed.
+
+### Client configuration
+
 After a key is created, the tab offers four clients. Every snippet is built from the site the page is
 served from: the URL is `<origin>/api/mcp`, and the server name carries the host —
 `education-ecole-example-fr` for `https://ecole.example.fr` — so two deployments configured on the

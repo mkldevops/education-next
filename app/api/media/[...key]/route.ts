@@ -25,7 +25,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ ke
       const sourceKey = objectKey.replace(`-icon-${variant.suffix}.png`, '.webp')
       const source = await storageGateway.get(sourceKey)
       if (source === 'notConfigured') object = source
-      else if (source !== 'notFound') {
+      else if (source !== 'notFound' && source !== 'invalidRange') {
         try {
           const bytes = new Uint8Array(await new Response(source.body).arrayBuffer())
           const png = await renderBrandingIcon(bytes, variant)
@@ -43,7 +43,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ ke
   if (object === 'notConfigured') {
     return NextResponse.json({ error: 'notConfigured' }, { status: 503 })
   }
-  if (object === 'notFound') {
+  if (object === 'notFound' || object === 'invalidRange') {
     return NextResponse.json({ error: 'notFound' }, { status: 404 })
   }
 
