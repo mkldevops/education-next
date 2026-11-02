@@ -103,19 +103,6 @@ const { default: DashboardPage } = await import('./page')
 const renderPage = async (locale = 'fr') =>
   render(await DashboardPage({ params: Promise.resolve({ locale }) }))
 
-const recentEnrollments = [
-  {
-    id: 'enrollment-1',
-    status: 'ACTIVE' as const,
-    totalAmount: 100,
-    registeredAt: new Date('2026-01-10'),
-    student: { id: 'student-1', person: { name: 'Alice', lastname: 'Dupont' } },
-    plan: { name: 'Standard' },
-    classAssignments: [],
-    payments: [{ amount: 50 }],
-  },
-]
-
 const totals = {
   due: 1000,
   collected: 600,
@@ -135,7 +122,6 @@ const overview = (paymentsEnabled: boolean, pendingEnrollmentCount = 0) => ({
   studentCount: 4,
   enrollmentCount: 5,
   pendingEnrollmentCount,
-  recentEnrollments,
   insights: {
     payments: paymentsEnabled ? { totals, monthly: [], methods: [], families: [] } : null,
     classes: [],
@@ -186,28 +172,23 @@ describe('DashboardPage, admin', () => {
     expect(getParentHomeMock).not.toHaveBeenCalled()
   })
 
-  it('hides the collection overview, payment column and stats when payments are disabled', async () => {
+  it('hides the collection overview and stats when payments are disabled', async () => {
     isPaymentsEnabledMock.mockResolvedValue(false)
     getDashboardOverviewMock.mockResolvedValue(overview(false))
 
     await renderPage()
 
     expect(screen.queryByTestId('collection')).not.toBeInTheDocument()
-    expect(screen.queryByText('table.payment')).not.toBeInTheDocument()
-    expect(screen.queryByText('table.plan')).not.toBeInTheDocument()
     expect(screen.getByTestId('school-insights')).toHaveTextContent('no-stats')
-    expect(screen.getByText('Alice Dupont')).toBeInTheDocument()
   })
 
-  it('shows the collection overview, payment column and stats when payments are enabled', async () => {
+  it('shows the collection overview and stats when payments are enabled', async () => {
     isPaymentsEnabledMock.mockResolvedValue(true)
     getDashboardOverviewMock.mockResolvedValue(overview(true))
 
     await renderPage()
 
     expect(screen.getByTestId('collection')).toHaveTextContent('tuition|no-meals')
-    expect(screen.getByText('table.payment')).toBeInTheDocument()
-    expect(screen.getByText('table.plan')).toBeInTheDocument()
     expect(screen.getByTestId('school-insights')).toHaveTextContent('has-stats')
   })
 

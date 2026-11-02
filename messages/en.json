@@ -217,17 +217,7 @@
       "newPayment": "Record a payment",
       "newStudent": "Add student"
     },
-    "recentEnrollments": "Recent enrollments",
-    "viewAll": "View all",
     "viewFamily": "Open my family",
-    "table": {
-      "student": "Student",
-      "plan": "Plan",
-      "class": "Class",
-      "status": "Status",
-      "payment": "Payment",
-      "date": "Date"
-    },
     "welcome": {
       "title": "Welcome!",
       "description": "Here is an overview of {schoolName}."

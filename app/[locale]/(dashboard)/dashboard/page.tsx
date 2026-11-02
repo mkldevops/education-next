@@ -291,7 +291,6 @@ export default async function DashboardPage({ params }: Props) {
     studentCount,
     enrollmentCount,
     pendingEnrollmentCount,
-    recentEnrollments,
     insights,
   } = overview
   const [agenda, mealDues] = await Promise.all([
@@ -303,7 +302,6 @@ export default async function DashboardPage({ params }: Props) {
     mealsEnabled ? loadMealDues(scope.schoolId, schoolToday(timeZone)) : null,
   ])
   const totals = insights.payments?.totals ?? null
-  type RecentEnrollment = (typeof recentEnrollments)[number]
 
   const periodScope = selectedPeriod
     ? t('stats.scopePeriod', { period: selectedPeriod.name })
@@ -353,90 +351,6 @@ export default async function DashboardPage({ params }: Props) {
         }
       : null,
   ].filter((task) => task !== null)
-
-  const enrollmentColumns: Column<RecentEnrollment>[] = [
-    {
-      key: 'student',
-      header: t('table.student'),
-      render: (item) => (
-        <Link
-          href={`/dashboard/students/${item.student.id}`}
-          className="font-medium text-foreground hover:underline"
-        >
-          {item.student.person.name} {item.student.person.lastname}
-        </Link>
-      ),
-    },
-    ...(paymentsEnabled
-      ? [
-          {
-            key: 'plan',
-            header: t('table.plan'),
-            className: 'text-muted-foreground',
-            render: (item) =>
-              item.plan.name === UNPRICED_PLAN_NAME ? (
-                <StatusBadge status="amber" label={t('pages.enrollments.unpriced.badge')} />
-              ) : (
-                item.plan.name
-              ),
-          } satisfies Column<RecentEnrollment>,
-        ]
-      : []),
-    {
-      key: 'class',
-      header: t('table.class'),
-      className: 'text-muted-foreground',
-      render: (item) => {
-        const current = item.classAssignments.find((assignment) => !assignment.endAt)
-        if (!current) return '—'
-        return (
-          <Link
-            href={`/dashboard/classes/${current.classPeriod.id}`}
-            className="text-foreground hover:underline"
-          >
-            {current.classPeriod.level.name}
-          </Link>
-        )
-      },
-    },
-    {
-      key: 'status',
-      header: t('table.status'),
-      render: (item) => (
-        <StatusDot
-          color={item.status === 'ACTIVE' ? 'green' : 'amber'}
-          label={tStatus(item.status)}
-        />
-      ),
-    },
-    ...(paymentsEnabled
-      ? [
-          {
-            key: 'payment',
-            header: t('table.payment'),
-            render: (item) => {
-              const finalAmount = Number(item.totalAmount)
-              const totalPaid = totalPaidAmount(item.payments ?? [])
-              const ratio = finalAmount > 0 ? (totalPaid / finalAmount) * 100 : 0
-              return <ProgressBar value={ratio} />
-            },
-          } satisfies Column<RecentEnrollment>,
-        ]
-      : []),
-    {
-      key: 'date',
-      header: t('table.date'),
-      className: 'text-muted-foreground tabular-nums',
-      render: (item) => formatDate(item.registeredAt, locale),
-    },
-    {
-      key: 'actions',
-      header: '',
-      className: 'text-right',
-      render: (item) =>
-        item.status === 'PENDING' ? <ActivateEnrollmentButton enrollmentId={item.id} /> : null,
-    },
-  ]
 
   const sideColumn = agenda || eventsCard
 
@@ -620,38 +534,6 @@ export default async function DashboardPage({ params }: Props) {
       </div>
 
       <SchoolInsightsSection insights={insights} locale={locale} currency={currency} />
-
-      <Panel
-        id="recent-enrollments-heading"
-        title={t('recentEnrollments')}
-        action={<PanelLink href="/dashboard/enrollments">{t('viewAll')}</PanelLink>}
-      >
-        {recentEnrollments.length === 0 ? (
-          <EmptyState
-            icon={ClipboardList}
-            title={
-              selectedPeriod
-                ? t('pages.enrollments.noEnrollmentsInPeriod', { period: selectedPeriod.name })
-                : t('pages.enrollments.noEnrollments')
-            }
-            className="border-0 py-8"
-            action={
-              <Link
-                href="/dashboard/enrollments?action=create"
-                className={buttonVariants({ variant: 'outline', size: 'sm' })}
-              >
-                {t('quickActions.newEnrollment')}
-              </Link>
-            }
-          />
-        ) : (
-          <DataTable
-            data={recentEnrollments}
-            columns={enrollmentColumns}
-            getRowKey={(item) => item.id}
-          />
-        )}
-      </Panel>
     </div>
   )
 }

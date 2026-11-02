@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const dbMock = {
   family: { count: vi.fn() },
   student: { count: vi.fn(), findMany: vi.fn() },
-  enrollment: { count: vi.fn(), findMany: vi.fn() },
+  enrollment: { count: vi.fn() },
 }
 const getSelectedPeriodMock = vi.fn()
 const getSchoolInsightsMock = vi.fn()
@@ -21,20 +21,14 @@ beforeEach(() => {
   dbMock.family.count.mockResolvedValue(0)
   dbMock.student.count.mockResolvedValue(0)
   dbMock.enrollment.count.mockResolvedValue(0)
-  dbMock.enrollment.findMany.mockResolvedValue([])
   getSchoolInsightsMock.mockResolvedValue({ payments: null, classes: [] })
 })
 
 describe('getDashboardOverview', () => {
-  it('scopes every count and list to the school', async () => {
+  it('scopes every count to the school', async () => {
     await getDashboardOverview('school-1', true)
 
-    for (const mock of [
-      dbMock.family.count,
-      dbMock.student.count,
-      dbMock.enrollment.count,
-      dbMock.enrollment.findMany,
-    ]) {
+    for (const mock of [dbMock.family.count, dbMock.student.count, dbMock.enrollment.count]) {
       for (const [args] of mock.mock.calls) expect(args.where.schoolId).toBe('school-1')
     }
   })
@@ -56,22 +50,6 @@ describe('getDashboardOverview', () => {
     expect(pending?.[0].where.classAssignments).toEqual({
       some: { classPeriod: { periodId: 'period-1' } },
     })
-  })
-
-  it('does not request the payments relation on recent enrollments when payments are disabled', async () => {
-    await getDashboardOverview('school-1', false)
-
-    const call = dbMock.enrollment.findMany.mock.calls[0][0]
-    expect(call.include).not.toHaveProperty('payments')
-  })
-
-  it('requests only active payments on recent enrollments when payments are enabled', async () => {
-    await getDashboardOverview('school-1', true)
-
-    // Un paiement annulé est soft-deleted : sans filtre explicite sur la relation imbriquée,
-    // la barre de progression le compterait encore (#424).
-    const call = dbMock.enrollment.findMany.mock.calls[0][0]
-    expect(call.include.payments).toEqual({ where: { isActive: true } })
   })
 
   it('forwards the flag to getSchoolInsights', async () => {

@@ -217,17 +217,7 @@
       "newPayment": "Saisir un paiement",
       "newStudent": "Ajouter un élève"
     },
-    "recentEnrollments": "Inscriptions récentes",
-    "viewAll": "Voir tout",
     "viewFamily": "Ouvrir ma famille",
-    "table": {
-      "student": "Élève",
-      "plan": "Plan",
-      "class": "Classe",
-      "status": "Statut",
-      "payment": "Paiement",
-      "date": "Date"
-    },
     "welcome": {
       "title": "Bienvenue !",
       "description": "Voici un aperçu de {schoolName}."
