@@ -37,7 +37,6 @@ const baseInsights: SchoolInsights = {
     overdueFamilies: [],
   },
   classes: [{ id: 'class-1', name: 'CP-A', level: 'CP', enrolled: 18, capacity: 20 }],
-  levels: [{ level: 'CP', enrolled: 18 }],
 }
 
 describe('SchoolInsightsSection', () => {
@@ -60,6 +59,5 @@ describe('SchoolInsightsSection', () => {
     expect(screen.queryByText('collectionTitle')).not.toBeInTheDocument()
     expect(screen.queryByText('viewPayments')).not.toBeInTheDocument()
     expect(screen.getByText('classFillTitle')).toBeInTheDocument()
-    expect(screen.getByText('levelsTitle')).toBeInTheDocument()
   })
 })

@@ -139,7 +139,6 @@ const overview = (paymentsEnabled: boolean, pendingEnrollmentCount = 0) => ({
   insights: {
     payments: paymentsEnabled ? { totals, monthly: [], methods: [], families: [] } : null,
     classes: [],
-    levels: [],
   },
 })
 
@@ -196,7 +195,6 @@ describe('DashboardPage, admin', () => {
     expect(screen.queryByTestId('collection')).not.toBeInTheDocument()
     expect(screen.queryByText('table.payment')).not.toBeInTheDocument()
     expect(screen.queryByText('table.plan')).not.toBeInTheDocument()
-    expect(screen.getByText('stats.pendingEnrollments')).toBeInTheDocument()
     expect(screen.getByTestId('school-insights')).toHaveTextContent('no-stats')
     expect(screen.getByText('Alice Dupont')).toBeInTheDocument()
   })

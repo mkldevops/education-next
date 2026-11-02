@@ -252,9 +252,7 @@
       "noCollection": "Aucun encaissement sur ce périmètre",
       "classFillTitle": "Remplissage des classes",
       "viewClasses": "Voir les classes",
-      "noClasses": "Aucune classe sur cette période",
-      "levelsTitle": "Élèves par niveau",
-      "studentsCount": "{count, plural, =0 {aucun élève} one {# élève} other {# élèves}}"
+      "noClasses": "Aucune classe sur cette période"
     },
     "breadcrumbs": {
       "dashboard": "Tableau de bord",
@@ -2973,7 +2971,7 @@
         "emptyHint": "Appels, inscriptions et encaissements sont à jour.",
         "emptyAction": "Voir les inscriptions",
         "meals": "{count, plural, one {# compte repas à relancer} other {# comptes repas à relancer}}",
-        "mealsHint": "Cantine et goûter · {amount} dus"
+        "mealsHint": "Cantine et goûter"
       },
       "schedule": {
         "title": "Cours du jour",
@@ -3000,8 +2998,8 @@
         "overdue": "dont {amount} en retard sur l'échéancier",
         "barLabel": "{collected} encaissés, {outstanding} restant à encaisser",
         "legendCollected": "Encaissé · {amount}",
-        "legendTuition": "Écolage · {amount}",
-        "legendMeals": "Cantine et goûter · {amount}",
+        "legendTuition": "Écolage",
+        "legendMeals": "Cantine et goûter",
         "tuition": "Écolage",
         "tuitionHint": "{rate} % encaissé · {count, plural, =0 {tout est réglé} one {# inscription avec un solde} other {# inscriptions avec un solde}}",
         "mealHint": "{upToDate} sur {subscribed} à jour"

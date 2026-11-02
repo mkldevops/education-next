@@ -22,7 +22,7 @@ beforeEach(() => {
   dbMock.student.count.mockResolvedValue(0)
   dbMock.enrollment.count.mockResolvedValue(0)
   dbMock.enrollment.findMany.mockResolvedValue([])
-  getSchoolInsightsMock.mockResolvedValue({ payments: null, classes: [], levels: [] })
+  getSchoolInsightsMock.mockResolvedValue({ payments: null, classes: [] })
 })
 
 describe('getDashboardOverview', () => {

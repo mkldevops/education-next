@@ -252,9 +252,7 @@
       "noCollection": "No payment collected in this scope",
       "classFillTitle": "Class fill",
       "viewClasses": "View classes",
-      "noClasses": "No class in this period",
-      "levelsTitle": "Students per level",
-      "studentsCount": "{count, plural, =0 {no student} one {# student} other {# students}}"
+      "noClasses": "No class in this period"
     },
     "breadcrumbs": {
       "dashboard": "Dashboard",
@@ -2972,7 +2970,7 @@
         "emptyHint": "Registers, enrollments and collections are up to date.",
         "emptyAction": "View enrollments",
         "meals": "{count, plural, one {# meal account to follow up} other {# meal accounts to follow up}}",
-        "mealsHint": "Canteen and snack · {amount} due"
+        "mealsHint": "Canteen and snack"
       },
       "schedule": {
         "title": "Today's classes",
@@ -2999,8 +2997,8 @@
         "overdue": "including {amount} overdue on the schedule",
         "barLabel": "{collected} collected, {outstanding} left to collect",
         "legendCollected": "Collected · {amount}",
-        "legendTuition": "Tuition · {amount}",
-        "legendMeals": "Canteen and snack · {amount}",
+        "legendTuition": "Tuition",
+        "legendMeals": "Canteen and snack",
         "tuition": "Tuition",
         "tuitionHint": "{rate}% collected · {count, plural, =0 {all settled} one {# enrollment with a balance} other {# enrollments with a balance}}",
         "mealHint": "{upToDate} of {subscribed} up to date"

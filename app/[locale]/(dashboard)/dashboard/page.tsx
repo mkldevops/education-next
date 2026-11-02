@@ -349,9 +349,7 @@ export default async function DashboardPage({ params }: Props) {
           icon: UtensilsCrossed,
           tone: 'danger' as const,
           title: t('home.todo.meals', { count: mealDues.toRemind }),
-          hint: t('home.todo.mealsHint', {
-            amount: formatCurrency(mealDues.dueAmount, locale, currency),
-          }),
+          hint: t('home.todo.mealsHint'),
         }
       : null,
   ].filter((task) => task !== null)
@@ -467,7 +465,6 @@ export default async function DashboardPage({ params }: Props) {
         <CollectionOverview
           payments={insights.payments}
           meals={mealDues}
-          scope={periodScope}
           locale={locale}
           currency={currency}
         />
@@ -520,28 +517,18 @@ export default async function DashboardPage({ params }: Props) {
                 href: '/dashboard/students',
                 label: t('stats.students'),
                 value: studentCount,
-                hint: t('stats.scopeAll'),
               },
               {
                 key: 'families',
                 href: '/dashboard/families',
                 label: t('stats.families'),
                 value: familyCount,
-                hint: t('stats.scopeAll'),
               },
               {
                 key: 'enrollments',
                 href: '/dashboard/enrollments',
                 label: t('stats.enrollments'),
                 value: enrollmentCount,
-                hint: periodScope,
-              },
-              {
-                key: 'pending',
-                href: '/dashboard/enrollments',
-                label: t('stats.pendingEnrollments'),
-                value: pendingEnrollmentCount,
-                hint: periodScope,
               },
             ]}
           />

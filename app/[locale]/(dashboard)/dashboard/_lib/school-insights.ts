@@ -10,16 +10,10 @@ export type ClassFill = {
   capacity: number
 }
 
-export type LevelFill = {
-  level: string
-  enrolled: number
-}
-
 export type SchoolInsights = {
   /** `null` quand le drapeau paiements est coupé : aucun chiffre d'encaissement à lire. */
   payments: PaymentStats | null
   classes: ClassFill[]
-  levels: LevelFill[]
 }
 
 export function classFillRate(classPeriod: Pick<ClassFill, 'enrolled' | 'capacity'>): number {
@@ -81,16 +75,10 @@ export async function getSchoolInsights(
     capacity: classPeriod.capacity,
   }))
 
-  const byLevel = new Map<string, number>()
-  for (const classPeriod of classes) {
-    byLevel.set(classPeriod.level, (byLevel.get(classPeriod.level) ?? 0) + classPeriod.enrolled)
-  }
-
   return {
     payments,
     classes: [...classes].sort(
       (a, b) => classFillRate(b) - classFillRate(a) || a.name.localeCompare(b.name)
     ),
-    levels: [...byLevel.entries()].map(([level, enrolled]) => ({ level, enrolled })),
   }
 }

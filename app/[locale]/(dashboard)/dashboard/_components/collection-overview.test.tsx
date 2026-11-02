@@ -44,7 +44,6 @@ const renderOverview = async (props: Partial<Parameters<typeof CollectionOvervie
     await CollectionOverview({
       payments: null,
       meals: null,
-      scope: '2026-2027',
       locale: 'fr',
       currency: 'KMF',
       ...props,

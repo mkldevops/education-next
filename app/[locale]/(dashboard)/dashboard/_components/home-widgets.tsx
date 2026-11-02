@@ -49,12 +49,12 @@ export function StatStrip({
   items,
 }: {
   label: string
-  items: { key: string; href: string; label: string; value: ReactNode; hint?: ReactNode }[]
+  items: { key: string; href: string; label: string; value: ReactNode }[]
 }) {
   return (
     <section
       aria-label={label}
-      className="home-rise grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-surface shadow-xs"
+      className="home-rise grid grid-cols-3 overflow-hidden rounded-xl border border-border bg-surface shadow-xs"
     >
       {items.map((item, index) => (
         <Link
@@ -62,8 +62,7 @@ export function StatStrip({
           href={item.href}
           className={cn(
             'group flex flex-col gap-1 border-border p-4 transition-colors duration-(--duration-fast) hover:bg-surface-2 sm:p-5',
-            index % 2 === 1 && 'border-l',
-            index >= 2 && 'border-t',
+            index > 0 && 'border-l',
             focusRing
           )}
         >
@@ -71,7 +70,6 @@ export function StatStrip({
           <span className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
             {item.value}
           </span>
-          {item.hint && <span className="truncate text-xs text-muted-foreground">{item.hint}</span>}
         </Link>
       ))}
     </section>

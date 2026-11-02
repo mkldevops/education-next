@@ -9,7 +9,6 @@ import type { MealServiceDues } from '../cashier/_lib/debtors-data'
 interface Props {
   payments: Pick<PaymentStats, 'totals' | 'tracking'> | null
   meals: { services: MealServiceDues[]; dueAmount: number } | null
-  scope: string
   locale: string
   currency: string
 }
@@ -21,7 +20,7 @@ function share(part: number, whole: number) {
   return whole > 0 ? `${(part / whole) * 100}%` : '0%'
 }
 
-export async function CollectionOverview({ payments, meals, scope, locale, currency }: Props) {
+export async function CollectionOverview({ payments, meals, locale, currency }: Props) {
   const t = await getTranslations('dashboard.home.collection')
   const tServices = await getTranslations('dashboard.pages.meals.services')
   const money = (amount: number) => formatCurrency(amount, locale, currency)
@@ -65,15 +64,12 @@ export async function CollectionOverview({ payments, meals, scope, locale, curre
     >
       <div className="grid lg:grid-cols-5">
         <div className="flex flex-col gap-5 border-b border-border p-5 sm:p-6 lg:col-span-3 lg:border-r lg:border-b-0">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2
-              id="collection-heading"
-              className="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-            >
-              {t('title')}
-            </h2>
-            <span className="truncate text-xs text-muted-foreground">{scope}</span>
-          </div>
+          <h2
+            id="collection-heading"
+            className="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+          >
+            {t('title')}
+          </h2>
 
           <div>
             <p className="text-sm text-muted-foreground">{t('outstanding')}</p>
@@ -110,13 +106,13 @@ export async function CollectionOverview({ payments, meals, scope, locale, curre
               {totals && (
                 <li className="flex items-center gap-1.5">
                   <span aria-hidden="true" className="size-2 rounded-full bg-warning" />
-                  {t('legendTuition', { amount: money(tuitionLeft) })}
+                  {t('legendTuition')}
                 </li>
               )}
               {meals && (
                 <li className="flex items-center gap-1.5">
                   <span aria-hidden="true" className="size-2 rounded-full bg-danger" />
-                  {t('legendMeals', { amount: money(mealLeft) })}
+                  {t('legendMeals')}
                 </li>
               )}
             </ul>
