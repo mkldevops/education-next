@@ -1274,6 +1274,7 @@
           "method": "Paiement",
           "recordedBy": "Encaissé par",
           "tuition": "Écolage",
+          "tuitionBalance": "Solde d'écolage au {date} : {amount}",
           "total": "Total",
           "mealDetail": "+{days, plural, one {# jour} other {# jours}}, payé jusqu'au {date}",
           "mealDays": "+{days, plural, one {# jour} other {# jours}}",

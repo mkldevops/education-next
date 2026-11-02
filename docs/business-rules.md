@@ -2186,7 +2186,10 @@ balance. Each billed childcare month still open adds a line (see [Childcare](#ch
   school (`staleState`), its child must belong to the family (`notInFamily`) and the amount must fit
   what is left (`childcareOverpayment`). A receipt without childcare keeps its request hash.
 - **Receipt page** `/dashboard/cashier/receipts/[id]`, in the `(print)` group: A5 print, share through
-  the phone's share sheet or a WhatsApp link, and cancel.
+  the phone's share sheet or a WhatsApp link, and cancel. A receipt that is not cancelled and carries
+  tuition also shows the family's tuition balance (`getFamilyBalance()`), dated with the school's
+  current day: it is read when the page renders, not stored at payment, so a reprint shows the balance
+  at the time of reprinting.
 - **Cancellation** (`cancelReceipt()`) requires a reason, sets `cancelledAt`/`cancelledById`/
   `cancelReason` and deactivates the receipt's tuition payments; its meal payments stop counting
   because the ledger skips cancelled receipts, like its childcare payments. The billed month stays
