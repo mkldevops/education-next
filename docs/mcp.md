@@ -473,6 +473,48 @@ publishes `classPeriod { id, name }`, `slotId`, `startTime`, `endTime`, `status`
 calls already opened remain. No student, entry or roster is published. `to` before `from` is
 `invalidDateRange`, a longer range `rangeTooLong`.
 
+## Canteen, snack and cashier receipts
+
+The shared MCP/assistant catalog exposes these tools to school administrators. They take no
+school or actor argument; those come from the authenticated scope. They remain discoverable
+with `meals_enabled` off and return `mealsDisabled`. Meal-only receipts work even when tuition
+payments are disabled. Every mutation requires the dashboard assistant's normal approval.
+
+| Tool | Input and behavior |
+| --- | --- |
+| `get_meal_settings` | No arguments; service settings and dated prices, including price IDs |
+| `get_student_meals` | `studentId`, optional inclusive `from`/`to`; accounts, schedules, current price, opening, coverage and calendar; at most 93 days, default 31 days from the current month's first day |
+| `list_family_receipts` | `familyId`, optional `limit` (default 50, maximum 100); latest numbered receipts including cancelled ones, meal lines and `hasMore` |
+| `set_meal_service_setting` | `service`, `isEnabled`, `allowedWeekdays`; replaces service settings, ISO weekdays 1–7 |
+| `set_meal_price` | `service`, `amount`, `effectiveFrom`; same date replaces the price; only the first price may start in the past |
+| `remove_meal_price` | Price `id`; only before its effective day |
+| `subscribe_meal` | `studentId`, `service`, `periodId`, `weekdays`, `startOn`; opens a segment, past starts within the period allowed |
+| `change_meal_schedule` | `studentId`, `service`, `weekdays`, `effectiveFrom`; changes today or later |
+| `stop_meal` | `studentId`, `service`, `effectiveFrom`; stops today or later |
+| `record_meal_opening` | `studentId`, `service`, `paidThrough`, required `reason`; replaces historical opening coverage, creates no receipt |
+| `toggle_meal_absence` | `studentId`, `service`, `day`, `absent`; marks or removes an absence on a scheduled open day |
+| `record_receipt` | `familyId`, stable UUID `idempotencyKey`, `method`, optional `reference`, `tuition`, `meals`; returns receipt `id` |
+| `cancel_receipt` | `receiptId`, required `reason`; cancels all its meal and tuition lines, retaining its number |
+
+`service` is `CANTEEN` or `SNACK`; dates use `YYYY-MM-DD`; monetary amounts are in the school's
+currency. Resolve student and debtor-family IDs with `find_students`, period IDs with
+`list_periods`. Reuse existing business refusals, including `notFound`, `notSubscribed`,
+`invalidWeekdays`, `backdated`, `alreadyEffective`, `notServed` and `alreadyCancelled`.
+
+Each receipt meal line contains `studentId`, `service`, `amount` and `expectedPaidThrough`:
+copy the last `coverage.paidThrough` from `get_student_meals` (possibly `null`). After `staleState`,
+reread the account before retrying. Keep the same idempotency key and content after a dropped
+connection: replay returns the existing receipt; changed content returns `idempotencyConflict`.
+Cashier methods are `CASH`, `MOBILE_MONEY`, `TRANSFER` and `CHECK`. Set `tuition: 0` for meals only;
+a positive tuition portion also requires `payments_enabled`.
+
+**Meal income belongs in `record_receipt`, never `preview_record_payment`/`commit_record_payment`.**
+The receipt applies today's price and issue date; there is no historical date or price override.
+For a paper-ledger takeover, first verify subscriptions and published closures, then use
+`record_meal_opening` with the source payment reference/date/amount in its reason. This preserves
+coverage without creating historical cash revenue or inventing a numbered receipt. A second
+opening replaces the first. The calendar reflects published closures and meal absences.
+
 ## Writing: the preview/commit pairs
 
 Five pairs are shipped. `create_teacher` is shipped as a single write, without preview: it takes a

@@ -69,6 +69,32 @@ describe('MealCalendar', () => {
     )
   })
 
+  it('shows holidays across the entire range, including days without a meal, and prevents absence toggles', () => {
+    render(
+      <MealCalendar
+        studentId="student-1"
+        service="CANTEEN"
+        days={days}
+        today="2026-10-24"
+        locale="fr"
+        closures={[
+          { startOn: '2026-10-03', endOn: '2026-10-06', category: 'HOLIDAY' },
+          { startOn: '2026-10-15', endOn: '2026-10-15', category: 'CLOSURE' },
+        ]}
+      />
+    )
+
+    for (const day of ['03', '04', '05', '06']) {
+      const holiday = screen.getByRole('button', { name: `2026-10-${day} · status.holiday` })
+      expect(holiday).toBeDisabled()
+      fireEvent.click(holiday)
+    }
+    expect(screen.getByRole('button', { name: '2026-10-15 · status.closed' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: '2026-10-07 · status.holiday' })).toBeNull()
+    expect(screen.getByRole('button', { name: '2026-10-26 · status.unpaid' })).toBeEnabled()
+    expect(toggleMock).not.toHaveBeenCalled()
+  })
+
   it('reports a refusal', async () => {
     toggleMock.mockResolvedValue('notServed')
     show()

@@ -535,7 +535,31 @@
             "notFound": "Person not found"
           }
         },
-        "description": "Enrolled households, their guardians and their balance."
+        "description": "Enrolled households, their guardians and their balance.",
+        "merge": {
+          "title": "Merge families",
+          "description": "All members and history from “{name}” will move into the selected family. The original family will be archived.",
+          "search": "Search families",
+          "target": "Family to keep",
+          "choose": "Choose a family",
+          "preview": "“{source}” will be merged into “{target}”.",
+          "accessWarning": "Parent accounts and invitations from both families will grant access to all children and information in the combined family.",
+          "confirmation": "I confirm these records belong to the same family and their access can be combined.",
+          "cancel": "Cancel",
+          "confirm": "Merge",
+          "success": "Families merged.",
+          "error": "Merge failed.",
+          "errors": {
+            "sameFamily": "Choose another family.",
+            "notFound": "One family is no longer available in this school.",
+            "pendingPayment": "An online payment is pending. Complete or cancel it before merging.",
+            "familyDetailsConflict": "Emergency contacts or pickup authorizations differ. Reconcile them before merging.",
+            "relationConflict": "A person has different relationship types in these families. Correct them before merging.",
+            "mergeConflict": "Another change occurred. Reload and try again.",
+            "validationError": "Check the selected family.",
+            "sharedMember": "A member also belongs to a third family. Merging is blocked to preserve payment allocation."
+          }
+        }
       },
       "students": {
         "title": "Students",
@@ -1562,7 +1586,8 @@
           "archive": "Archive",
           "addChild": "Add child",
           "addEnrollment": "New enrollment",
-          "addPayment": "New payment"
+          "addPayment": "New payment",
+          "merge": "Merge into a family"
         },
         "portalInvitation": {
           "action": "Invite to portal",
@@ -1839,6 +1864,7 @@
               "due": "Due",
               "unpaid": "To pay",
               "absent": "Absent",
+              "holiday": "Holidays and school breaks",
               "closed": "Closed"
             },
             "error": "Error while saving",

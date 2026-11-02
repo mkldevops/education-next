@@ -1,3 +1,4 @@
+import { lockActiveFamily } from '@/gateways/family-mutation-lock'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
@@ -30,13 +31,16 @@ export const personGateway = {
     },
     phoneNumber?: string
   ) =>
-    db.person.create({
-      data: {
-        ...data,
-        schoolId,
-        families: { create: { familyId, relationType } },
-        ...(phoneNumber ? { phoneNumbers: { create: { phoneNumber, channels: [] } } } : {}),
-      },
+    db.$transaction(async (tx) => {
+      if (!(await lockActiveFamily(tx, schoolId, familyId))) return null
+      return tx.person.create({
+        data: {
+          ...data,
+          schoolId,
+          families: { create: { familyId, relationType } },
+          ...(phoneNumber ? { phoneNumbers: { create: { phoneNumber, channels: [] } } } : {}),
+        },
+      })
     }),
 
   update: (schoolId: string, id: string, data: Prisma.PersonUpdateInput) =>
@@ -64,6 +68,7 @@ export const personGateway = {
     }
   ) =>
     db.$transaction(async (tx) => {
+      if (!(await lockActiveFamily(tx, schoolId, familyId))) return null
       const person = await tx.person.update({
         where: { id_schoolId: { id: personId, schoolId } },
         data: data.person,

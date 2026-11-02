@@ -11,7 +11,11 @@ export async function linkUserToFamily(input: Input) {
   const family = await familyGateway.findById(parsed.data.schoolId, parsed.data.familyId)
   if (!family) return 'notFound' as const
 
-  await familyGateway.linkUser(parsed.data.schoolId, parsed.data.userId, parsed.data.familyId)
+  const linked = await familyGateway.linkUser(
+    parsed.data.schoolId,
+    parsed.data.userId,
+    parsed.data.familyId
+  )
 
-  return 'OK' as const
+  return linked ? ('OK' as const) : ('notFound' as const)
 }

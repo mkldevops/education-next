@@ -71,3 +71,65 @@ describe('planRosterImport', () => {
     ])
   })
 })
+
+describe('resolveRosterPeople', () => {
+  const row = { line: 1, lastname: ' SAÏD ', name: 'Léa', className: 'PS' }
+  const person = {
+    id: 'person',
+    lastname: 'said',
+    name: 'LEA',
+    isActive: true,
+    student: { id: 'student', isActive: true },
+    hasActiveFamily: true,
+  }
+
+  it('matches the complete normalized name and preserves the existing family', async () => {
+    const { resolveRosterPeople } = await import('./roster-import')
+    expect(resolveRosterPeople([row], [person])).toEqual([{ row, kind: 'resolved', person }])
+    expect(resolveRosterPeople([row], [{ ...person, name: 'Ali' }])[0]).toEqual({
+      row,
+      kind: 'resolved',
+      person: undefined,
+    })
+  })
+
+  it('blocks ambiguous or archived matches', async () => {
+    const { resolveRosterPeople } = await import('./roster-import')
+    expect(resolveRosterPeople([row], [person, { ...person, id: 'other' }])[0].kind).toBe(
+      'ambiguous'
+    )
+    expect(
+      resolveRosterPeople(
+        [row],
+        [{ ...person, student: { ...person.student, isActive: false } }]
+      )[0].kind
+    ).toBe('archived')
+  })
+})
+
+describe('class conflicts', () => {
+  it('blocks one normalized student listed in two classes, including an existing assignment', () => {
+    const rows = [
+      { line: 1, lastname: 'Saïd', name: 'Léa', className: 'PS' },
+      { line: 2, lastname: 'said', name: 'lea', className: 'MS' },
+    ]
+    expect(planRosterImport(rows, classes, []).conflictingClasses.map((row) => row.line)).toEqual([
+      1, 2,
+    ])
+    expect(
+      planRosterImport([rows[1]], classes, [rows[0]]).conflictingClasses.map((row) => row.line)
+    ).toEqual([2])
+    expect(planRosterImport([rows[0]], classes, [rows[0]]).conflictingClasses).toEqual([])
+  })
+
+  it('blocks a new enrollment when an open enrollment has an assignment in the period', async () => {
+    const { findOpenEnrollmentConflicts } = await import('./roster-import')
+    const row = { line: 1, lastname: 'Saïd', name: 'Léa', className: 'PS' }
+    expect(
+      findOpenEnrollmentConflicts([row], [{ lastname: 'said', name: 'lea', className: 'MS' }])
+    ).toEqual([row])
+    expect(
+      findOpenEnrollmentConflicts([row], [{ lastname: 'said', name: 'ali', className: 'PS' }])
+    ).toEqual([])
+  })
+})

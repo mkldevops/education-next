@@ -127,18 +127,44 @@ is expendable.
 start of the year from a normalized `nom;prenom;classe` file.
 
 - **Dry run by default.** Without `--apply` nothing is written. The script prints the students it would
-  create, the ignored duplicates and the shared last names.
+  reuse, the families and enrollments it would create, the ignored duplicate enrollments and shared last names.
 - **Replayable.** A student already enrolled in the same class of the period is ignored, and so is a
   repeated line. The key is (last name, first name, class), compared without case, accents or extra
   spaces.
 - **All or nothing.** These problems block `--apply`: an incomplete line, a class unknown in the
-  period, or a class the import would fill beyond its capacity. Students are created in one
-  transaction.
+  period, an ambiguous identity, conflicting classes/open enrollments in the period, or a class
+  the import would fill beyond its capacity. Students are created in one transaction.
 - **Each created student** gets a `Person`, a `Student`, an `ACTIVE` enrollment on the named plan at
   its full amount, and a class assignment.
-- **Families are never inferred.** Two children with the same last name may or may not be siblings.
-  The script only lists them so the school can decide. Families and phone numbers are added afterwards
-  in the application.
+- **Every imported student has a family.** The import reuses an unambiguous school person/student
+  matched by normalized full name and retains their active families. Without an active family it
+  creates a separate family, linked as `OTHER`, using an active school admin as creator. This also
+  repairs missing families for already-enrolled, skipped students. Ambiguous names, archived matching
+  records, or a missing active admin when a family must be created block the import.
+- **Sibling relationships are never inferred from surnames.** Shared last names are only reported
+  for school review. Phone numbers and family details are preserved when already known, never invented.
+
+### Merging families
+
+School admins may merge an active family into another active family in the same school from the
+family detail actions (`src/use-cases/families/merge-families.ts`). They explicitly choose the retained
+family and confirm that parent access can be combined. All person links, parent account links,
+invitations, payments, receipts and payment transactions move, including archived financial rows.
+Students, enrollments and attendance records keep their identities. Duplicate links are collapsed;
+conflicting relationship types block the operation. A member linked to a third family (including an archived family) also
+blocks merging: replacing a family identifier may change the debtor while that third family is
+processing a payment. The emptied source family is archived.
+
+Missing emergency/pickup details are filled from the source, and home languages are combined.
+Conflicting nonempty emergency/pickup details block merging until reconciled. Pending online payments
+on either family also block it. Checkout opening locks and both family rows are acquired in identifier
+order in one Read Committed transaction, so reads after a waiting lock see the writer that just
+committed; a concurrent change returns a retryable conflict. Parent accounts and invitations from
+both families gain access to the combined record. Person/student creation, user links and unlinking,
+existing-family MCP enrollment, invitation issuance and acceptance share an active-family row lock
+with merge. Creation and linking are atomic, and stale archived targets are refused before writes.
+Invitation acceptance rereads the current family before consuming its token. Receipt cancellation
+refuses a stale family lock or a receipt moved to another family before touching its payments.
 
 ### Administering schools
 
@@ -1990,6 +2016,29 @@ Opt-in per school: `meals_enabled` (`src/lib/meals-config.ts`, read by `isMealsE
 answers `notFound()`, the sidebar entry disappears, and every meal use case refuses with
 `mealsDisabled`. The page and its actions are `requireSchoolAdmin()`.
 
+**MCP and assistant.** The shared catalog (`src/mcp/meal-tools.ts`, registered by
+`listSchoolTools`) exposes `get_meal_settings`, `get_student_meals` and
+`list_family_receipts`, plus `set_meal_service_setting`, `set_meal_price`,
+`remove_meal_price`, `subscribe_meal`, `change_meal_schedule`, `stop_meal`,
+`record_meal_opening`, `toggle_meal_absence`, `record_receipt` and `cancel_receipt`.
+These tools stay discoverable with meals disabled and return `mealsDisabled`; they are
+independent of `payments_enabled` except for the tuition portion of a receipt. School and
+recording/cancelling user come only from the authenticated admin scope, never tool arguments.
+All mutations reuse the existing meal/receipt use cases, and the integrated assistant requires
+approval for each write. Domain `OK` becomes `{ success: true }` at the tool boundary.
+Reads use explicit projections (`mcp-meal-read-gateway.ts`); no request hash or actor identity is
+published. The student calendar defaults to 31 days from the current month's first day and
+accepts an inclusive `from`/`to` window of at most 93 days. Family receipt reads return the latest
+50 receipts by default (100 maximum), including cancelled receipts, with `hasMore` when truncated.
+An unknown/archived student or family in that school returns `notFound`.
+
+`record_receipt` preserves the cashier's idempotency key and `expectedPaidThrough` contract.
+Its meal amounts create meal payments, never tuition payments through `record_payment`.
+It has no historical date or unit-price override: issuance and valuation are today's.
+A historical takeover uses `record_meal_opening` with a source reference in the required reason,
+after verifying segments and published closures; it records days of coverage, not historical
+cash revenue or a historical numbered receipt. Recording it again replaces the existing opening.
+
 **Two services, `CANTEEN` and `SNACK`.** `MealServiceSetting` holds, per school and service,
 `isEnabled` and `allowedWeekdays` (ISO, Monday = 1). `setMealServiceSetting()` refuses an empty,
 duplicated or out-of-range list (`invalidWeekdays`, `validateMealWeekdays()` in
@@ -2109,7 +2158,10 @@ balance. One `recordReceipt()` (`src/use-cases/receipts/record-receipt.ts`) writ
 **Meal sheet and absences.** Under each service, the student card shows a month calendar of the
 scheduled days (`mealCalendar()`, `src/domain/meal-calendar.ts`, returned by `summarizeMealAccount()`):
 `paid` for the first served days the ledger owns, `due` for a later served day up to today, `unpaid`
-after it, `absent`, and `closed` for a published closure or holiday. One tap on a day calls
+after it, `absent`, and `closed` for a published closure or holiday. The view also overlays published
+school closures on every day of the displayed month, including days outside the child's meal schedule.
+`HOLIDAY` events have a separate holiday colour and legend; closed days cannot be marked absent.
+One tap on a day calls
 `toggleMealAbsence()` (`src/use-cases/meals/toggle-meal-absence.ts`), under the account lock:
 
 - an absence is a `MealAbsence` row (one per account and day, so a second tap on the same state is

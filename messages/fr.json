@@ -536,7 +536,31 @@
             "notFound": "Personne introuvable"
           }
         },
-        "description": "Les foyers inscrits, leurs responsables et leur solde."
+        "description": "Les foyers inscrits, leurs responsables et leur solde.",
+        "merge": {
+          "title": "Fusionner les familles",
+          "description": "Les membres et tout l’historique de « {name} » seront transférés dans la famille choisie. La famille d’origine sera archivée.",
+          "search": "Rechercher une famille",
+          "target": "Famille à conserver",
+          "choose": "Choisir une famille",
+          "preview": "« {source} » sera fusionnée dans « {target} ».",
+          "accessWarning": "Les comptes parents et les invitations des deux familles donneront accès à tous les enfants et aux informations de la famille réunie.",
+          "confirmation": "Je confirme que ces dossiers appartiennent à la même famille et que leurs accès peuvent être réunis.",
+          "cancel": "Annuler",
+          "confirm": "Fusionner",
+          "success": "Les familles ont été fusionnées.",
+          "error": "La fusion a échoué.",
+          "errors": {
+            "sameFamily": "Choisissez une autre famille.",
+            "notFound": "Une des familles n’est plus disponible dans cette école.",
+            "pendingPayment": "Un paiement en ligne est en cours. Terminez-le ou annulez-le avant de fusionner.",
+            "familyDetailsConflict": "Les contacts d’urgence ou les autorisations de sortie diffèrent. Harmonisez ces informations avant de fusionner.",
+            "relationConflict": "Une personne a des liens de parenté différents dans ces familles. Corrigez-les avant de fusionner.",
+            "mergeConflict": "Un autre changement a eu lieu. Rechargez la page et réessayez.",
+            "validationError": "Vérifiez la famille choisie.",
+            "sharedMember": "Un membre est aussi rattaché à une troisième famille. La fusion est bloquée pour préserver la répartition des paiements."
+          }
+        }
       },
       "students": {
         "title": "Élèves",
@@ -1563,7 +1587,8 @@
           "archive": "Archiver",
           "addChild": "Ajouter un enfant",
           "addEnrollment": "Nouvelle inscription",
-          "addPayment": "Nouveau paiement"
+          "addPayment": "Nouveau paiement",
+          "merge": "Fusionner avec une famille"
         },
         "portalInvitation": {
           "action": "Inviter au portail",
@@ -1840,6 +1865,7 @@
               "due": "Dû",
               "unpaid": "À payer",
               "absent": "Absent",
+              "holiday": "Vacances et jours fériés",
               "closed": "Fermé"
             },
             "error": "Erreur lors de l'enregistrement",
