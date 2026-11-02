@@ -3363,6 +3363,18 @@
         "title": "Connected apps",
         "description": "Apps authorized through OAuth on the active school, ChatGPT for instance. Each connection acts with your administration rights on this school, and on it alone.",
         "empty": "No connected app yet.",
+        "claudeSetup": {
+          "title": "Connect Claude.ai · Video tutorial",
+          "description": "Follow the connection step by step in 1 min 31. Narration and captions are in French. No API key needed: authorize your EIC account from Claude.",
+          "videoLabel": "How to connect Claude.ai to EIC",
+          "captionsLabel": "French",
+          "download": "Download the video tutorial",
+          "urlLabel": "MCP server URL for this site",
+          "copyUrl": "Copy the URL for Claude.ai",
+          "step1": "In Claude, open Customize › Connectors › Add › Add custom connector, then paste the URL below.",
+          "step2": "Keep “Sign in now” and “Register automatically”, then click “Add”.",
+          "step3": "Sign in on this site, select your school and authorize Claude. In your conversation, enable the connector from the “+” menu › Connectors."
+        },
         "setup": {
           "title": "Connect ChatGPT",
           "step1": "In ChatGPT, turn on Settings › Security and login › Developer mode.",
