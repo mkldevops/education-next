@@ -184,6 +184,9 @@ model School {
   receipts                  Receipt[]
   receiptCounter            ReceiptCounter?
   mealPayments              MealPayment[]
+  childcareSubscriptions    ChildcareSubscription[]
+  childcareCharges          ChildcareCharge[]
+  childcarePayments         ChildcarePayment[]
 }
 
 // Hors garde tenant par construction : le contexte doit lire les appartenances
@@ -244,6 +247,8 @@ model User {
   recordedMealAbsences      MealAbsence[]        @relation("mealAbsenceRecordedBy")
   recordedReceipts          Receipt[]            @relation("receiptRecordedBy")
   cancelledReceipts         Receipt[]            @relation("receiptCancelledBy")
+  recordedChildcareCharges  ChildcareCharge[]    @relation("childcareChargeRecordedBy")
+  cancelledChildcareCharges ChildcareCharge[]    @relation("childcareChargeCancelledBy")
 }
 
 model Session {
@@ -415,11 +420,12 @@ model Student {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  school            School            @relation(fields: [schoolId], references: [id])
-  person            Person            @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Cascade)
-  enrollments       Enrollment[]
-  attendanceEntries AttendanceEntry[]
-  mealAccounts      MealAccount[]
+  school                 School                  @relation(fields: [schoolId], references: [id])
+  person                 Person                  @relation(fields: [personId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  enrollments            Enrollment[]
+  attendanceEntries      AttendanceEntry[]
+  mealAccounts           MealAccount[]
+  childcareSubscriptions ChildcareSubscription[]
 
   @@unique([id, schoolId])
   @@unique([personId, schoolId])
@@ -1256,12 +1262,13 @@ model Receipt {
   cancelReason   String?       @db.VarChar(250)
   createdAt      DateTime      @default(now())
 
-  school       School        @relation(fields: [schoolId], references: [id])
-  family       Family        @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
-  recordedBy   User          @relation("receiptRecordedBy", fields: [recordedById], references: [id])
-  cancelledBy  User?         @relation("receiptCancelledBy", fields: [cancelledById], references: [id])
-  mealPayments MealPayment[]
-  payments     Payment[]
+  school            School             @relation(fields: [schoolId], references: [id])
+  family            Family             @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  recordedBy        User               @relation("receiptRecordedBy", fields: [recordedById], references: [id])
+  cancelledBy       User?              @relation("receiptCancelledBy", fields: [cancelledById], references: [id])
+  mealPayments      MealPayment[]
+  childcarePayments ChildcarePayment[]
+  payments          Payment[]
 
   @@unique([id, schoolId])
   @@unique([schoolId, number])
@@ -1298,4 +1305,70 @@ model MealPayment {
   @@unique([id, schoolId])
   @@index([receiptId])
   @@index([accountId])
+}
+
+/// Garderie d'un enfant (#534) : un forfait mensuel, indépendant des comptes repas et de
+/// l'inscription scolaire. `startMonth` et `endMonth` sont le 1er du mois ; `endMonth` nul : ouvert.
+model ChildcareSubscription {
+  id            String    @id @default(uuid())
+  schoolId      String
+  studentId     String
+  monthlyAmount Decimal   @db.Decimal(10, 2)
+  startMonth    DateTime  @db.Date
+  endMonth      DateTime? @db.Date
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  school  School            @relation(fields: [schoolId], references: [id])
+  student Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  charges ChildcareCharge[]
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, studentId])
+  @@index([studentId])
+}
+
+/// Mois facturé à un enfant, créé seulement par une facturation explicite. Le montant est figé :
+/// changer le tarif ne reprice pas un mois facturé. Une ligne par mois : rejouer ne double rien.
+model ChildcareCharge {
+  id             String    @id @default(uuid())
+  schoolId       String
+  subscriptionId String
+  month          DateTime  @db.Date
+  amount         Decimal   @db.Decimal(10, 2)
+  recordedById   String?
+  cancelledAt    DateTime?
+  cancelledById  String?
+  cancelReason   String?   @db.VarChar(250)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  school       School                @relation(fields: [schoolId], references: [id])
+  subscription ChildcareSubscription @relation(fields: [subscriptionId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  recordedBy   User?                 @relation("childcareChargeRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  cancelledBy  User?                 @relation("childcareChargeCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+  payments     ChildcarePayment[]
+
+  @@unique([id, schoolId])
+  @@unique([schoolId, subscriptionId, month])
+  @@index([subscriptionId])
+}
+
+/// Ligne garderie d'un reçu : un versement, entier ou partiel, sur un mois facturé. Elle cesse de
+/// compter quand son reçu est annulé.
+model ChildcarePayment {
+  id        String   @id @default(uuid())
+  schoolId  String
+  receiptId String
+  chargeId  String
+  amount    Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  school  School          @relation(fields: [schoolId], references: [id])
+  receipt Receipt         @relation(fields: [receiptId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  charge  ChildcareCharge @relation(fields: [chargeId, schoolId], references: [id, schoolId], onDelete: Cascade)
+
+  @@unique([id, schoolId])
+  @@index([receiptId])
+  @@index([chargeId])
 }

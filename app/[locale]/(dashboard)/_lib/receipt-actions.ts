@@ -7,7 +7,7 @@ import { recordReceipt } from '@/use-cases/receipts/record-receipt'
 import type { recordReceiptSchema } from '@/use-cases/receipts/schemas'
 import { requireSchoolAdmin, requireSchoolCashier } from './auth-helper'
 
-type RecordReceiptInput = z.infer<typeof recordReceiptSchema>
+type RecordReceiptInput = z.input<typeof recordReceiptSchema>
 
 export async function recordReceiptAction(
   data: Omit<RecordReceiptInput, 'schoolId' | 'recordedById'>

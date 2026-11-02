@@ -25,6 +25,7 @@ vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsE
 
 const {
   requireSchoolAdmin,
+  canOpenSchoolCashier,
   requireSchoolCashier,
   requireSchoolRecordsScope,
   requireSchoolScope,
@@ -186,6 +187,20 @@ describe('cashier role', () => {
     getSchoolContextMock.mockResolvedValue(value)
     isMealsEnabledMock.mockResolvedValue(false)
     await expect(requireSchoolCashier()).rejects.toThrow('NEXT_NOT_FOUND')
+  })
+
+  it.each([
+    ['a cashier', member(['CASHIER']), true],
+    ['an admin', member(['ADMIN']), true],
+    ['a teacher', member(['TEACHER']), false],
+    ['a parent', member(['PARENT'], 'family-1'), false],
+  ])('tells whether %s may follow a link to the cashier', async (_label, value, expected) => {
+    await expect(canOpenSchoolCashier(value as never)).resolves.toBe(expected)
+  })
+
+  it('offers no cashier link when the school has no meals', async () => {
+    isMealsEnabledMock.mockResolvedValue(false)
+    await expect(canOpenSchoolCashier(member(['ADMIN']) as never)).resolves.toBe(false)
   })
 
   // Critère 14 : élèves, familles, classes, annulations et ajustements restent derrière ces

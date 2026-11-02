@@ -7,6 +7,7 @@ import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
+import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { listSchoolPayments } from '@/use-cases/payments/list-school-payments'
 import { getPaymentStats } from '@/use-cases/payments/payment-stats'
@@ -47,7 +48,7 @@ export default async function PaymentsPage({ params }: Props) {
   const { currency } = await getSchoolRegionalSettings(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
-  const [payments, stats, families] = await Promise.all([
+  const [payments, stats, families, canOpenCashier] = await Promise.all([
     listSchoolPayments(scope.schoolId, selectedPeriodId),
     getPaymentStats(scope.schoolId, selectedPeriodId),
     db.family.findMany({
@@ -55,6 +56,7 @@ export default async function PaymentsPage({ params }: Props) {
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     }),
+    isMealsEnabled(scope.schoolId),
   ])
 
   const paymentRows = payments.map((payment) => ({
@@ -84,13 +86,20 @@ export default async function PaymentsPage({ params }: Props) {
         ]}
         title={t('title')}
         description={t('description')}
-        actions={<RecordPaymentButton families={families} currency={currency} />}
+        actions={
+          <RecordPaymentButton
+            families={families}
+            currency={currency}
+            canOpenCashier={canOpenCashier}
+          />
+        }
       />
       <PaymentsOverview
         stats={stats}
         locale={locale}
         currency={currency}
         periodName={selectedPeriod?.name ?? null}
+        canOpenCashier={canOpenCashier}
       />
       <PaymentsTable
         currency={currency}

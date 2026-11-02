@@ -58,7 +58,15 @@ describe('resolveNavItems', () => {
       features: { events: false, payments: true, meals: true },
     })
 
-    expect(keys(group(optedIn, 'finance'))).toEqual(['payments', 'plans', 'cashier', 'meals'])
+    expect(keys(group(optedIn, 'finance'))).toEqual([
+      'payments',
+      'plans',
+      'cashier',
+      'meals',
+      'childcare',
+    ])
+    expect(keys(all(optedOut))).not.toContain('childcare')
+    expect(keys(all(teacher))).not.toContain('childcare')
     expect(keys(all(optedOut))).not.toContain('meals')
     expect(keys(all(optedOut))).not.toContain('cashier')
     expect(keys(all(teacher))).not.toContain('meals')

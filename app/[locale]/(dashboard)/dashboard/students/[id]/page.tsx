@@ -1,5 +1,5 @@
 import { Breadcrumbs, buttonVariants, Card } from '@peaklab/ui'
-import { CreditCard, HeartPulse, TriangleAlert } from 'lucide-react'
+import { CreditCard, HeartPulse, TriangleAlert, UtensilsCrossed } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
@@ -13,7 +13,7 @@ import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
-import { requireSchoolSession } from '../../../_lib/auth-helper'
+import { canOpenSchoolCashier, requireSchoolSession } from '../../../_lib/auth-helper'
 import { loadSuggestedLevels } from '../../../_lib/class-options-loader'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
@@ -68,6 +68,8 @@ export default async function StudentDetailPage({ params }: Props) {
   const paymentsEnabled = (isAdmin || !isStaff) && (await isPaymentsEnabled(student.schoolId))
   const { currency } = await getSchoolRegionalSettings(student.schoolId)
   const mealsEnabled = isAdmin && (await isMealsEnabled(student.schoolId))
+
+  const canOpenCashier = isStaff && (await canOpenSchoolCashier(context))
 
   const selectedPeriodId = isStaff ? await getSelectedPeriodId(student.schoolId) : null
 
@@ -182,7 +184,7 @@ export default async function StudentDetailPage({ params }: Props) {
           </div>
         </div>
         {isStaff && (
-          <div className="flex shrink-0 gap-2">
+          <div className="flex flex-wrap gap-2 md:shrink-0 md:justify-end">
             {isAdmin && family && payableRemaining > 0 && (
               <Link
                 href={`/dashboard/families/${family.id}?action=addPayment&tab=payments`}
@@ -190,6 +192,15 @@ export default async function StudentDetailPage({ params }: Props) {
               >
                 <CreditCard className="h-4 w-4" />
                 {t('pay')}
+              </Link>
+            )}
+            {canOpenCashier && family?.isActive && (
+              <Link
+                href={`/dashboard/cashier?familyId=${family.id}`}
+                className={buttonVariants({ size: 'sm', variant: 'outline' })}
+              >
+                <UtensilsCrossed className="h-4 w-4" />
+                {t('collectServices')}
               </Link>
             )}
             <EditStudentDialog

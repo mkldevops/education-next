@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const requireSchoolSessionMock = vi.fn()
+const canOpenSchoolCashierMock = vi.fn()
 const isPaymentsEnabledMock = vi.fn()
 const getFamilyBalanceMock = vi.fn()
 const getFamilyPaymentTrackingMock = vi.fn()
@@ -56,11 +57,15 @@ vi.mock('@/use-cases/payments/family-balance', () => ({ getFamilyBalance: getFam
 vi.mock('@/use-cases/payments/payment-tracking', () => ({
   getFamilyPaymentTracking: getFamilyPaymentTrackingMock,
 }))
+vi.mock('@/use-cases/payments/stripe-settings', () => ({
+  isOnlinePaymentAvailable: async () => false,
+}))
 vi.mock('../../../_components/school-switch-prompt', () => ({
   SchoolSwitchPrompt: () => <div data-testid="school-switch-prompt" />,
 }))
 vi.mock('../../../_lib/auth-helper', () => ({
   requireSchoolSession: requireSchoolSessionMock,
+  canOpenSchoolCashier: canOpenSchoolCashierMock,
 }))
 vi.mock('../../../_lib/school-switch', () => ({ canSwitchSchool: async () => false }))
 // `deriveFamilyDetail` reste réel : c'est une pure fonction de dérivation, pas une
@@ -125,6 +130,7 @@ const familyFixture = {
     id: 'family-1',
     schoolId: 'school-1',
     name: 'Dupont',
+    isActive: true,
     emergencyContactName: null,
     emergencyContactPhone: null,
     authorizedPickup: null,
@@ -160,6 +166,7 @@ beforeEach(() => {
     userId: 'user-1',
     familyId: null,
   })
+  canOpenSchoolCashierMock.mockResolvedValue(false)
   resolveFamilyMock.mockResolvedValue(familyFixture)
   getFamilyDialogDataMock.mockResolvedValue({ plans: [], classes: [] })
   getFamilyBalanceMock.mockResolvedValue(balanceFixture)
@@ -218,6 +225,64 @@ describe('FamilyDetailPage, payments enabled', () => {
     )
 
     expect(document.querySelector('input[name="amount"]')).not.toBeNull()
+  })
+})
+
+describe('FamilyDetailPage, cashier link', () => {
+  const renderPayment = async () =>
+    render(
+      await FamilyDetailPage({
+        params: Promise.resolve({ locale: 'fr', id: 'family-1' }),
+        searchParams: Promise.resolve({ action: 'addPayment' }),
+      })
+    )
+  const cashierLink = () => document.querySelector('a[href="/dashboard/cashier?familyId=family-1"]')
+
+  beforeEach(() => {
+    isPaymentsEnabledMock.mockResolvedValue(true)
+  })
+
+  it('opens the cashier on this family when the account may use it', async () => {
+    canOpenSchoolCashierMock.mockResolvedValue(true)
+
+    await renderPayment()
+
+    expect(heroBannerMock).toHaveBeenCalledWith(expect.objectContaining({ canOpenCashier: true }))
+    expect(cashierLink()).not.toBeNull()
+  })
+
+  it('hides the link when the cashier guard refuses', async () => {
+    await renderPayment()
+
+    expect(heroBannerMock).toHaveBeenCalledWith(expect.objectContaining({ canOpenCashier: false }))
+    expect(cashierLink()).toBeNull()
+  })
+
+  it('hides the link for an archived family, which the cashier does not load', async () => {
+    canOpenSchoolCashierMock.mockResolvedValue(true)
+    resolveFamilyMock.mockResolvedValue({
+      ...familyFixture,
+      resource: { ...familyFixture.resource, isActive: false },
+    })
+
+    await renderPayment()
+
+    expect(heroBannerMock).toHaveBeenCalledWith(expect.objectContaining({ canOpenCashier: false }))
+  })
+
+  it('never asks the cashier guard for a parent on its family page', async () => {
+    requireSchoolSessionMock.mockResolvedValue({
+      roles: ['PARENT'],
+      isSuperAdmin: false,
+      schoolId: 'school-1',
+      userId: 'user-1',
+      familyId: 'family-1',
+    })
+
+    await renderPayment()
+
+    expect(canOpenSchoolCashierMock).not.toHaveBeenCalled()
+    expect(cashierLink()).toBeNull()
   })
 })
 

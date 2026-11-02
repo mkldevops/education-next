@@ -12,6 +12,7 @@ type Props = {
   remainingBalance: number
   showActions?: boolean
   canDelete?: boolean
+  canOpenCashier?: boolean
   children?: React.ReactNode
 }
 
@@ -24,13 +25,14 @@ export async function HeroBanner({
   remainingBalance,
   showActions,
   canDelete = false,
+  canOpenCashier = false,
   children,
 }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails')
   const languagesAtHome = languagesOf(family.languagesAtHome)
 
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
       <div className="min-w-0">
         <h1 className="truncate text-2xl font-bold text-graphite" title={family.name}>
           {family.name}
@@ -47,13 +49,14 @@ export async function HeroBanner({
       </div>
 
       {(showActions || children) && (
-        <div className="flex shrink-0 items-center gap-2 self-end md:self-auto">
+        <div className="flex shrink-0 items-center gap-2 self-end xl:self-auto">
           {showActions && (
             <ActionMenu
               familyId={family.id}
               paymentsEnabled={paymentsEnabled}
               canRecordPayment={remainingBalance > 0}
               canDelete={canDelete}
+              canOpenCashier={canOpenCashier}
             />
           )}
           {children}

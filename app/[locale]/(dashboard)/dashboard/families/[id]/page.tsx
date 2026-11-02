@@ -13,7 +13,7 @@ import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { getFamilyPaymentTracking } from '@/use-cases/payments/payment-tracking'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
-import { requireSchoolSession } from '../../../_lib/auth-helper'
+import { canOpenSchoolCashier, requireSchoolSession } from '../../../_lib/auth-helper'
 import { classLabel } from '../../../_lib/class-options'
 import { loadSuggestedLevels, toClassOption } from '../../../_lib/class-options-loader'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
@@ -79,6 +79,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   const isStaff = await hasActiveSchoolStaffAccess(context)
   const seesFinances = isAdmin || !isStaff
   const paymentsEnabled = seesFinances && (await isPaymentsEnabled(family.schoolId))
+  const canOpenCashier = isStaff && family.isActive && (await canOpenSchoolCashier(context))
   const tabKeys: TabKey[] = paymentsEnabled
     ? ['overview', 'children', 'payments', 'activity']
     : ['overview', 'children', 'activity']
@@ -171,6 +172,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         remainingBalance={remainingBalance}
         showActions={isStaff}
         canDelete={isAdmin}
+        canOpenCashier={canOpenCashier}
       >
         {isStaff && (
           <>
@@ -195,6 +197,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                 families={[{ id: family.id, name: family.name }]}
                 remainingAmount={remainingBalance}
                 currency={currency}
+                canOpenCashier={canOpenCashier}
                 defaultOpen={openAction === 'addPayment'}
                 redirectTo={familyHref}
                 showTrigger={false}

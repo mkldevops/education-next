@@ -9,10 +9,16 @@ interface Props {
   family: { id: string; name: string }
   phone: string | null
   currency: string
+  canOpenCashier?: boolean
 }
 
 /** Actions d'une famille à relancer : l'appeler, ou saisir son règlement sans quitter la page. */
-export function OutstandingFamilyActions({ family, phone, currency }: Props) {
+export function OutstandingFamilyActions({
+  family,
+  phone,
+  currency,
+  canOpenCashier = false,
+}: Props) {
   const t = useTranslations('dashboard.pages.payments.stats')
   const tRecord = useTranslations('dashboard.pages.payments.record')
 
@@ -33,6 +39,7 @@ export function OutstandingFamilyActions({ family, phone, currency }: Props) {
       <RecordPaymentDialog
         families={[family]}
         currency={currency}
+        canOpenCashier={canOpenCashier}
         trigger={
           <Button size="sm" variant="outline" aria-label={t('recordFor', { family: family.name })}>
             <HandCoins className="h-3.5 w-3.5" />

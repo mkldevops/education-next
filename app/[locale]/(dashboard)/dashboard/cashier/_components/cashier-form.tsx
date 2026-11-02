@@ -4,6 +4,7 @@ import { Button, cn, Input, Label } from '@peaklab/ui'
 import { useRouter as useNextRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
+import { formatChildcareMonth } from '@/domain/childcare'
 import { amountForDays, type MealLedger, previewMealPayment } from '@/domain/meal-ledger'
 import { receiptTotal } from '@/domain/receipt'
 import { useRouter } from '@/i18n/routing'
@@ -26,9 +27,17 @@ export type CashierLine = {
   daysPerWeek: number
 }
 
+export type CashierChildcareLine = {
+  chargeId: string
+  name: string
+  month: string
+  remaining: number
+}
+
 type Props = {
   familyId: string
   lines: CashierLine[]
+  childcare: CashierChildcareLine[]
   /** Écolage restant dû, `null` quand l'école n'encaisse pas l'écolage. */
   tuitionDue: number | null
   currency: string
@@ -58,7 +67,7 @@ function idempotencyKey(familyId: string) {
   return { key, storageKey }
 }
 
-export function CashierForm({ familyId, lines, tuitionDue, currency, locale }: Props) {
+export function CashierForm({ familyId, lines, childcare, tuitionDue, currency, locale }: Props) {
   const t = useTranslations('dashboard.pages.cashier')
   const tServices = useTranslations('dashboard.pages.meals.services')
   const tMethods = useTranslations('dashboard.pages.payments.record.methods')
@@ -67,6 +76,7 @@ export function CashierForm({ familyId, lines, tuitionDue, currency, locale }: P
   const nextRouter = useNextRouter()
   const [isPending, startTransition] = useTransition()
   const [amounts, setAmounts] = useState<Record<string, string>>({})
+  const [childcareAmounts, setChildcareAmounts] = useState<Record<string, string>>({})
   const [tuition, setTuition] = useState('')
   const [method, setMethod] = useState<CashierPaymentMethod>('CASH')
   const [reference, setReference] = useState('')
@@ -90,7 +100,11 @@ export function CashierForm({ familyId, lines, tuitionDue, currency, locale }: P
       : []
   })
   const tuitionAmount = tuitionDue === null ? 0 : toAmount(tuition)
-  const total = receiptTotal({ tuition: tuitionAmount, meals })
+  const childcareLines = childcare.flatMap((line) => {
+    const amount = toAmount(childcareAmounts[line.chargeId])
+    return amount > 0 ? [{ chargeId: line.chargeId, amount }] : []
+  })
+  const total = receiptTotal({ tuition: tuitionAmount, meals, childcare: childcareLines })
 
   const setAmount = (line: CashierLine, value: number) =>
     setAmounts((current) => ({ ...current, [lineKey(line)]: String(value) }))
@@ -105,13 +119,20 @@ export function CashierForm({ familyId, lines, tuitionDue, currency, locale }: P
         reference: reference.trim() || undefined,
         tuition: tuitionAmount,
         meals,
+        childcare: childcareLines,
       })
       if (typeof result === 'string') {
         toastActionError(t, result)
         // Rien n'a été écrit : la clé reste valable pour un contenu corrigé. Un conflit dit
         // qu'un reçu est déjà sorti sous cette clé : la caisse repart d'une clé neuve.
         if (result === 'idempotencyConflict') sessionStorage.removeItem(storageKey)
-        if (result === 'staleState' || result === 'idempotencyConflict') nextRouter.refresh()
+        if (
+          result === 'staleState' ||
+          result === 'idempotencyConflict' ||
+          result === 'childcareOverpayment'
+        ) {
+          nextRouter.refresh()
+        }
         return
       }
       sessionStorage.removeItem(storageKey)
@@ -127,9 +148,10 @@ export function CashierForm({ familyId, lines, tuitionDue, currency, locale }: P
       }}
       className="space-y-6"
     >
-      {lines.length === 0 ? (
+      {lines.length === 0 && childcare.length === 0 && (
         <p className="text-sm text-graphite-600">{t('noLines')}</p>
-      ) : (
+      )}
+      {lines.length > 0 && (
         <ul className="divide-y divide-alabaster-700">
           {lines.map((line) => {
             const amount = toAmount(amounts[lineKey(line)])
@@ -240,6 +262,60 @@ export function CashierForm({ familyId, lines, tuitionDue, currency, locale }: P
                     )}
                   </>
                 )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {childcare.length > 0 && (
+        <ul className="divide-y divide-alabaster-700">
+          {childcare.map((line) => {
+            const id = `cashier-childcare-${line.chargeId}`
+            return (
+              <li key={line.chargeId} className="space-y-2 py-3 first:pt-0">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <Label htmlFor={id} className="text-sm font-semibold text-graphite">
+                    {line.name} · {t('childcare')}
+                  </Label>
+                  <span className="text-xs text-graphite-600">
+                    {formatChildcareMonth(line.month, locale)} ·{' '}
+                    {t('childcareDue', { amount: money(line.remaining) })}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    id={id}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={line.remaining}
+                    step={step}
+                    value={childcareAmounts[line.chargeId] ?? ''}
+                    onChange={(event) =>
+                      setChildcareAmounts((current) => ({
+                        ...current,
+                        [line.chargeId]: event.target.value,
+                      }))
+                    }
+                    disabled={isPending}
+                    className="w-36"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() =>
+                      setChildcareAmounts((current) => ({
+                        ...current,
+                        [line.chargeId]: String(line.remaining),
+                      }))
+                    }
+                  >
+                    {t('quick.settle')}
+                  </Button>
+                </div>
               </li>
             )
           })}

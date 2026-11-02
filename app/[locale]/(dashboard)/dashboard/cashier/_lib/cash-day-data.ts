@@ -11,6 +11,7 @@ const receiptSelect = {
   cancelledAt: true,
   family: { select: { name: true } },
   mealPayments: { select: { amount: true, account: { select: { service: true } } } },
+  childcarePayments: { select: { amount: true } },
 } as const
 
 /** Reçus émis et reçus annulés pendant le jour local `day` de l'école, et leur caisse. */
@@ -35,6 +36,7 @@ export async function loadCashDay(schoolId: string, day: string, timeZone: strin
       service: payment.account.service,
       amount: Number(payment.amount),
     })),
+    childcare: receipt.childcarePayments.map((payment) => ({ amount: Number(payment.amount) })),
   })
   const toRow = (receipt: (typeof issued)[number]) => ({
     id: receipt.id,

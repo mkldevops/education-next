@@ -2,7 +2,15 @@
 
 import { Button, useMenu } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
-import { Archive, CreditCard, MoreHorizontal, Pencil, Trash2, UserPlus } from 'lucide-react'
+import {
+  Archive,
+  CreditCard,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  UserPlus,
+  UtensilsCrossed,
+} from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useCallback } from 'react'
 import { useRouter } from '@/i18n/routing'
@@ -15,6 +23,7 @@ type Props = {
   canRecordPayment: boolean
   /** Suppression définitive, réservée à l'administration. */
   canDelete: boolean
+  canOpenCashier: boolean
 }
 
 type FamilyActionItem = {
@@ -22,18 +31,26 @@ type FamilyActionItem = {
   label: string
   icon: LucideIcon
   action?: FamilyAction
+  href?: string
   danger?: boolean
   disabled?: boolean
   title?: string
 }
 
-export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment, canDelete }: Props) {
+export function ActionMenu({
+  familyId,
+  paymentsEnabled,
+  canRecordPayment,
+  canDelete,
+  canOpenCashier,
+}: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.actions')
   const router = useRouter()
 
-  const handleAction = useCallback(
-    (action: FamilyAction) => {
-      router.push(familyActionHref(familyId, action))
+  const handleSelect = useCallback(
+    ({ action, href }: FamilyActionItem) => {
+      if (href) router.push(href)
+      else if (action) router.push(familyActionHref(familyId, action))
     },
     [familyId, router]
   )
@@ -51,6 +68,16 @@ export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment, canDel
             action: 'addPayment' as const,
             disabled: !canRecordPayment,
             title: canRecordPayment ? undefined : t('payUnavailable'),
+          },
+        ]
+      : []),
+    ...(canOpenCashier
+      ? [
+          {
+            key: 'collectServices',
+            label: t('collectServices'),
+            icon: UtensilsCrossed,
+            href: `/dashboard/cashier?familyId=${familyId}`,
           },
         ]
       : []),
@@ -95,26 +122,26 @@ export function ActionMenu({ familyId, paymentsEnabled, canRecordPayment, canDel
       <div className="hidden items-center gap-2 md:flex">
         {/* Un seul bouton plein en en-tête : le premier (le règlement quand l'école gère
             l'argent), les suivants en contour pour ne pas se disputer l'attention. */}
-        {primaryActions.map(({ key, label, icon: Icon, action, disabled, title }, index) => (
+        {primaryActions.map((item, index) => (
           <Button
-            key={key}
+            key={item.key}
             size="sm"
             variant={index === 0 ? 'default' : 'outline'}
-            disabled={disabled}
-            title={title ?? label}
-            aria-label={label}
+            disabled={item.disabled}
+            title={item.title ?? item.label}
+            aria-label={item.label}
             className="px-2 lg:px-3"
-            onClick={() => action && handleAction(action)}
+            onClick={() => handleSelect(item)}
           >
-            <Icon className="h-4 w-4" />
-            <span className="hidden lg:inline">{label}</span>
+            <item.icon className="h-4 w-4" />
+            <span className="hidden lg:inline">{item.label}</span>
           </Button>
         ))}
-        <ActionDropdown ariaLabel={t('manage')} items={managementActions} onSelect={handleAction} />
+        <ActionDropdown ariaLabel={t('manage')} items={managementActions} onSelect={handleSelect} />
       </div>
 
       <div className="md:hidden">
-        <ActionDropdown ariaLabel={t('manage')} items={mobileActions} onSelect={handleAction} />
+        <ActionDropdown ariaLabel={t('manage')} items={mobileActions} onSelect={handleSelect} />
       </div>
     </>
   )
@@ -127,7 +154,7 @@ function ActionDropdown({
 }: {
   ariaLabel: string
   items: FamilyActionItem[]
-  onSelect: (action: FamilyAction) => void
+  onSelect: (item: FamilyActionItem) => void
 }) {
   const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
 
@@ -151,36 +178,38 @@ function ActionDropdown({
           role="menu"
           className="absolute right-0 top-full z-20 mt-1 w-56 rounded border border-alabaster-700 bg-white py-1 shadow-lg"
         >
-          {items.map(({ key, label, icon: Icon, action, danger, disabled, title }) => (
-            <button
-              key={key}
-              type="button"
-              role="menuitem"
-              disabled={disabled}
-              title={title}
-              onClick={() => {
-                if (!action) return
-                close()
-                onSelect(action)
-              }}
-              className={cn(
-                'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors',
-                disabled && 'cursor-not-allowed text-graphite-700',
-                !disabled && !danger && 'text-graphite hover:bg-alabaster-900',
-                !disabled && danger && 'text-red-600 hover:bg-red-50'
-              )}
-            >
-              <Icon
+          {items.map((item) => {
+            const { key, label, icon: Icon, danger, disabled, title } = item
+            return (
+              <button
+                key={key}
+                type="button"
+                role="menuitem"
+                disabled={disabled}
+                title={title}
+                onClick={() => {
+                  close()
+                  onSelect(item)
+                }}
                 className={cn(
-                  'h-4 w-4',
-                  disabled && 'text-graphite-800',
-                  !disabled && !danger && 'text-graphite-700',
-                  !disabled && danger && 'text-red-500'
+                  'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors',
+                  disabled && 'cursor-not-allowed text-graphite-700',
+                  !disabled && !danger && 'text-graphite hover:bg-alabaster-900',
+                  !disabled && danger && 'text-red-600 hover:bg-red-50'
                 )}
-              />
-              {label}
-            </button>
-          ))}
+              >
+                <Icon
+                  className={cn(
+                    'h-4 w-4',
+                    disabled && 'text-graphite-800',
+                    !disabled && !danger && 'text-graphite-700',
+                    !disabled && danger && 'text-red-500'
+                  )}
+                />
+                {label}
+              </button>
+            )
+          })}
         </div>
       )}
     </div>

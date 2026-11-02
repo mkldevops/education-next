@@ -10,7 +10,8 @@ type Input = z.infer<typeof cancelReceiptSchema>
 
 /**
  * Annule un reçu sans l'effacer : il garde son numéro, ses lignes repas sortent du grand
- * livre et ses règlements d'écolage sont désactivés. Le motif est obligatoire.
+ * livre, ses lignes garderie ne comptent plus au payé et ses règlements d'écolage sont
+ * désactivés. Le mois de garderie reste facturé. Le motif est obligatoire.
  *
  * Verrou de la famille d'abord, comme un encaissement ou une suppression de famille, puis
  * le reçu : pris dans l'autre sens, une suppression concurrente s'interbloquerait.

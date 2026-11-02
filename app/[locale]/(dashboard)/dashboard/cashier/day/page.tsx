@@ -18,7 +18,7 @@ type Props = {
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
-const LINES: CashLine[] = ['CANTEEN', 'SNACK', 'TUITION']
+const LINES: CashLine[] = ['CANTEEN', 'SNACK', 'CHILDCARE', 'TUITION']
 
 const shiftDay = (day: string, delta: number) =>
   new Date(Date.parse(`${day}T00:00:00.000Z`) + delta * 86_400_000).toISOString().slice(0, 10)

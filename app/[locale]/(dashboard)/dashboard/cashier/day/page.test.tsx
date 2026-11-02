@@ -41,7 +41,7 @@ const totals = {
   count: 0,
   total: 0,
   byMethod: {},
-  byLine: { CANTEEN: 0, SNACK: 0, TUITION: 0 },
+  byLine: { CANTEEN: 0, SNACK: 0, CHILDCARE: 0, TUITION: 0 },
 }
 
 beforeEach(() => {

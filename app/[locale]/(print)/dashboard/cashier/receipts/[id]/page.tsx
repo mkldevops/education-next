@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { dateToMonth, formatChildcareMonth } from '@/domain/childcare'
 import { formatReceiptNumber } from '@/domain/receipt'
 import { receiptGateway } from '@/gateways/receipt-gateway'
 import { Link } from '@/i18n/routing'
@@ -57,14 +58,27 @@ export default async function ReceiptPage({ params }: Props) {
   const formatDay = (day: Date) => day.toLocaleDateString(locale, { timeZone: 'UTC' })
   const number = formatReceiptNumber(receipt.number)
   const total = Number(receipt.total)
-  const lines = receipt.mealPayments.map((line) => ({
-    label: `${line.account.student.person.name} ${line.account.student.person.lastname} · ${tServices(line.account.service)}`,
-    amount: Number(line.amount),
-    detail: line.paidThroughAtReceipt
-      ? t('mealDetail', { days: line.daysAdded, date: formatDay(line.paidThroughAtReceipt) })
-      : t('mealDays', { days: line.daysAdded }),
-  }))
-  // L'écolage n'a pas de ligne propre : c'est le reste du total une fois les repas déduits.
+  const lines = [
+    ...receipt.mealPayments.map((line) => ({
+      key: `meal:${line.account.student.person.name}:${line.account.service}`,
+      label: `${line.account.student.person.name} ${line.account.student.person.lastname} · ${tServices(line.account.service)}`,
+      amount: Number(line.amount),
+      detail: line.paidThroughAtReceipt
+        ? t('mealDetail', { days: line.daysAdded, date: formatDay(line.paidThroughAtReceipt) })
+        : t('mealDays', { days: line.daysAdded }),
+    })),
+    ...receipt.childcarePayments.map((line) => {
+      const { person } = line.charge.subscription.student
+      const month = dateToMonth(line.charge.month)
+      return {
+        key: `childcare:${person.name}:${person.lastname}:${month}`,
+        label: `${person.name} ${person.lastname} · ${t('childcare')}`,
+        amount: Number(line.amount),
+        detail: formatChildcareMonth(month, locale),
+      }
+    }),
+  ]
+  // L'écolage n'a pas de ligne propre : c'est le reste du total une fois les lignes déduites.
   const tuition = roundHalfUp(total - lines.reduce((sum, line) => sum + line.amount, 0))
   const paidAt = receipt.paidAt.toLocaleString(locale, {
     timeZone,
@@ -135,7 +149,7 @@ export default async function ReceiptPage({ params }: Props) {
 
           <ul className="divide-y divide-alabaster-700 border-y border-alabaster-700 text-sm">
             {lines.map((line) => (
-              <li key={line.label} className="flex justify-between gap-4 py-2">
+              <li key={line.key} className="flex justify-between gap-4 py-2">
                 <span>
                   <span className="block">{line.label}</span>
                   <span className="block text-xs text-graphite-600">{line.detail}</span>

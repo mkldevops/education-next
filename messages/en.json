@@ -269,6 +269,7 @@
       "classes": "Classes",
       "plans": "Pricing Plans",
       "meals": "Canteen and snack",
+      "childcare": "Childcare",
       "config": "Configuration",
       "users": "Users",
       "schools": "Schools",
@@ -295,6 +296,7 @@
       "cashier": "Cashier",
       "plans": "Pricing plans",
       "meals": "Canteen and snack",
+      "childcare": "Childcare",
       "config": "Configuration",
       "users": "Users",
       "profile": "Profile",
@@ -986,7 +988,7 @@
           "outOf": "of {amount}",
           "noCollection": "No payment collected in this scope",
           "noOutstanding": "No overdue families on tracked plans",
-          "recordFor": "Record a payment for {family}",
+          "recordFor": "Record a tuition payment for {family}",
           "callFamily": "Call the {family} family",
           "noPhone": "No phone number",
           "expectedToDate": "Expected to date",
@@ -1004,7 +1006,7 @@
           "viewFamily": "View my family details"
         },
         "record": {
-          "title": "Record a collection",
+          "title": "Record a tuition payment",
           "selectFamily": "Family",
           "amount": "Amount",
           "method": "Payment Method",
@@ -1026,14 +1028,17 @@
             "STRIPE": "Stripe reference"
           },
           "optional": "(optional)",
-          "remainingLabel": "Remaining balance: {amount}",
+          "remainingLabel": "Remaining tuition balance: {amount}",
+          "scopeHint": "Tuition only: the amount is spread across the family's enrollments, with no choice of child.",
+          "servicesPrompt": "Canteen or snack?",
+          "servicesLink": "Open this family's cashier",
           "payFull": "Pay the balance",
           "paidAt": "Payment Date",
           "cashedAt": "Cash Date",
           "cashedAtHint": "Fill in once the check has been cashed",
           "cancel": "Cancel",
           "submit": "Record",
-          "success": "Collection recorded",
+          "success": "Tuition payment recorded",
           "error": "Error recording payment",
           "errors": {
             "overpayment": "The amount exceeds what the family still owes",
@@ -1186,13 +1191,13 @@
           "title": "Meal sheet",
           "collect": "Collect for the family"
         },
-        "intro": "Take a family's canteen, snack and tuition payment at once, with a numbered receipt.",
+        "intro": "Collect canteen, snack, childcare and tuition for a family in one go, with a numbered receipt.",
         "search": "Family or child's name",
         "searchSubmit": "Search",
         "noResult": "No family found",
         "noFamily": "Family not found",
         "viewFamily": "View family",
-        "noLines": "No child in this family is subscribed to canteen or snack.",
+        "noLines": "No child in this family has canteen, snack or childcare to collect.",
         "paidThrough": "Paid through {date}",
         "nothingPaid": "Nothing paid",
         "due": "{days, plural, one {# day due} other {# days due}} ({amount})",
@@ -1211,6 +1216,8 @@
           "exceedsPeriod": "The amount goes past the end of the period."
         },
         "tuition": "Tuition",
+        "childcare": "Childcare",
+        "childcareDue": "{amount} left",
         "tuitionDue": "Remaining: {amount}",
         "method": "Payment method",
         "reference": "Reference (optional)",
@@ -1228,6 +1235,7 @@
           "noPrice": "No price applies today for this service",
           "staleState": "Another payment just went through: amounts were refreshed, check them before confirming",
           "overpayment": "The tuition amount exceeds the remaining balance",
+          "childcareOverpayment": "The amount exceeds what is left on this childcare month",
           "noPayableEnrollments": "No enrollment is awaiting tuition payment",
           "refundExceedsPaid": "The amount exceeds what remains paid on the enrollment"
         },
@@ -1244,6 +1252,7 @@
           "total": "Total",
           "mealDetail": "+{days, plural, one {# day} other {# days}}, paid through {date}",
           "mealDays": "+{days, plural, one {# day} other {# days}}",
+          "childcare": "Childcare",
           "cancelled": "Cancelled",
           "cancelledReason": "Cancelled: {reason}",
           "shareHeader": "{school} — receipt {number}",
@@ -1252,7 +1261,7 @@
           "cancel": {
             "trigger": "Cancel receipt",
             "title": "Cancel this receipt?",
-            "description": "The meal days and tuition it paid are withdrawn. Its number stays used.",
+            "description": "The meal days, childcare and tuition it paid are withdrawn. Its number stays used.",
             "reason": "Reason for cancelling",
             "submit": "Cancel receipt",
             "cancel": "Back",
@@ -1280,6 +1289,7 @@
           "lines": {
             "CANTEEN": "Canteen",
             "SNACK": "Snack",
+            "CHILDCARE": "Childcare",
             "TUITION": "Tuition"
           },
           "issuedReceipts": "Receipts issued",
@@ -1301,6 +1311,73 @@
           "coveredLeft": "{days, plural, =0 {no covered day left} one {# covered day left} other {# covered days left}}",
           "dueDetail": "{days, plural, one {# day} other {# days}} · {amount}",
           "collect": "Collect"
+        }
+      },
+      "childcare": {
+        "title": "Childcare",
+        "intro": "Monthly rate per child, independent from canteen and snack. A debt only exists once you bill a month.",
+        "search": "Student first or last name",
+        "searchSubmit": "Search",
+        "noResult": "No student found",
+        "noClass": "No class",
+        "alreadySubscribed": "Already in childcare",
+        "empty": "No child in childcare. Search for a student to add them.",
+        "archived": "archived",
+        "noFamily": "No debtor family",
+        "perMonth": "{amount} per month",
+        "period": {
+          "open": "since {start}",
+          "closed": "from {start} to {end}"
+        },
+        "totals": "Billed {billed} · Paid {paid} · Left {remaining}",
+        "charge": {
+          "status": "{amount} · {remaining} left",
+          "cancelled": "Cancelled"
+        },
+        "form": {
+          "add": "Add",
+          "edit": "Edit",
+          "monthlyAmount": "Monthly rate",
+          "startMonth": "First month",
+          "endMonth": "Last month (optional)",
+          "success": "Childcare saved"
+        },
+        "bill": {
+          "trigger": "Bill a month",
+          "title": "Bill a childcare month",
+          "description": "Every child whose period covers this month is billed at their rate. Repeating it never bills twice.",
+          "month": "Month",
+          "submit": "Bill",
+          "result": "{billed, plural, =0 {No child billed} one {# child billed} other {# children billed}}, {alreadyBilled} already billed, {outsideRange} outside their period"
+        },
+        "cancelCharge": {
+          "trigger": "Cancel",
+          "title": "Cancel {month}",
+          "description": "This month will no longer be due. You can bill it again.",
+          "reason": "Reason",
+          "submit": "Cancel this month",
+          "success": "Month cancelled"
+        },
+        "remove": {
+          "trigger": "Remove",
+          "title": "Remove this child from childcare?",
+          "description": "This childcare entry will be deleted. No month is billed on it.",
+          "submit": "Remove",
+          "success": "Child removed from childcare"
+        },
+        "cancel": "Close",
+        "submit": "Save",
+        "error": "Something went wrong",
+        "errors": {
+          "validationError": "Check the rate and months entered",
+          "mealsDisabled": "The cashier is not enabled for this school",
+          "notFound": "Item not found",
+          "invalidPeriod": "The last month is before the first",
+          "chargesOutsideRange": "This period excludes a billed month: cancel it first",
+          "hasCharges": "A month is billed or paid on this childcare",
+          "futureMonth": "A future month cannot be billed",
+          "alreadyCancelled": "This month is already cancelled",
+          "hasPayments": "This month has payments: cancel the receipt first"
         }
       },
       "config": {
@@ -1553,8 +1630,9 @@
         },
         "actions": {
           "new": "New",
-          "pay": "Record a collection",
-          "payUnavailable": "This family has no outstanding balance",
+          "pay": "Record a tuition payment",
+          "payUnavailable": "This family has no tuition balance to pay",
+          "collectServices": "Collect canteen and snack",
           "newStudent": "Add a student",
           "manage": "Actions",
           "edit": "Edit",
@@ -1740,7 +1818,8 @@
         "family": "Family",
         "enrollments": "Enrollments",
         "information": "Information",
-        "pay": "Record a collection",
+        "pay": "Record a tuition payment",
+        "collectServices": "Collect canteen and snack",
         "previousSchool": "Previous school",
         "snackAuthorization": "Snack authorization",
         "age": "{age} years old",

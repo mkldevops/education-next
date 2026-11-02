@@ -23,7 +23,7 @@ import { ArrowLeftRight, Banknote, CreditCard, FileCheck, Plus } from 'lucide-re
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
 import { type ReactNode, useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
-import { useRouter } from '@/i18n/routing'
+import { Link, useRouter } from '@/i18n/routing'
 import { currencyFractionDigits, currencyStep, currencySymbol } from '@/lib/decimal'
 import type { ManualPaymentMethod } from '@/use-cases/payments/schemas'
 import { recordPaymentAction } from '../../../_lib/payment-actions'
@@ -48,9 +48,11 @@ export function RecordPaymentDialog({
   remainingAmount,
   currency,
   trigger,
+  canOpenCashier = false,
 }: {
   families: Option[]
   currency: string
+  canOpenCashier?: boolean
   defaultOpen?: boolean
   redirectTo?: string
   showTrigger?: boolean
@@ -82,6 +84,7 @@ export function RecordPaymentDialog({
           families={families}
           remainingAmount={remainingAmount}
           currency={currency}
+          canOpenCashier={canOpenCashier}
         />
       </DialogContent>
     </Dialog>
@@ -92,10 +95,12 @@ function RecordPaymentForm({
   families,
   remainingAmount,
   currency,
+  canOpenCashier,
 }: {
   families: Option[]
   currency: string
   remainingAmount?: number
+  canOpenCashier: boolean
 }) {
   const t = useTranslations('dashboard.pages.payments.record')
   const locale = useLocale()
@@ -127,6 +132,21 @@ function RecordPaymentForm({
     <form onSubmit={handleSubmit}>
       <DialogBody>
         <div className="space-y-5">
+          <div className="space-y-1 rounded border border-alabaster-700 p-3 text-sm">
+            <p className="text-graphite-600">{t('scopeHint')}</p>
+            {canOpenCashier && families.length === 1 && (
+              <p>
+                <span className="text-graphite-600">{t('servicesPrompt')}</span>{' '}
+                <Link
+                  href={`/dashboard/cashier?familyId=${families[0].id}`}
+                  className="font-medium text-foreground underline"
+                >
+                  {t('servicesLink')}
+                </Link>
+              </p>
+            )}
+          </div>
+
           {families.length === 1 ? (
             <input type="hidden" name="familyId" value={families[0].id} />
           ) : (
