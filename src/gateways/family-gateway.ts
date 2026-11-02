@@ -1,4 +1,5 @@
 import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
+import { lockActiveFamily } from '@/gateways/family-mutation-lock'
 import type { Prisma, PrismaClient } from '@/generated/prisma/client'
 import { db, dbArchived } from '@/lib/db'
 
@@ -350,13 +351,9 @@ export const familyGateway = {
     personId: string,
     relationType: 'PARENT' | 'TUTOR' | 'GRANDPARENT' | 'SIBLING' | 'OTHER'
   ) =>
-    db.familyPerson.create({
-      data: {
-        schoolId,
-        familyId,
-        personId,
-        relationType,
-      },
+    db.$transaction(async (tx) => {
+      if (!(await lockActiveFamily(tx, schoolId, familyId))) return null
+      return tx.familyPerson.create({ data: { schoolId, familyId, personId, relationType } })
     }),
 
   findPerson: (schoolId: string, familyId: string, personId: string) =>
@@ -365,11 +362,8 @@ export const familyGateway = {
     }),
 
   linkUser: (schoolId: string, userId: string, familyId: string) =>
-    db.userFamily.create({
-      data: {
-        schoolId,
-        userId,
-        familyId,
-      },
+    db.$transaction(async (tx) => {
+      if (!(await lockActiveFamily(tx, schoolId, familyId))) return null
+      return tx.userFamily.create({ data: { schoolId, userId, familyId } })
     }),
 }

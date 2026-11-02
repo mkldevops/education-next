@@ -1,18 +1,27 @@
 export default function StudentDetailLoading() {
   return (
-    <div className="space-y-6 animate-pulse">
-      <div className="h-10 bg-alabaster-700 rounded w-48" />
+    <div className="animate-pulse space-y-6">
+      <div className="h-5 w-64 max-w-full rounded bg-alabaster-700" />
+      <div className="h-28 rounded-xl bg-alabaster-700" />
 
-      <div className="rounded bg-alabaster-700 h-40" />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded bg-alabaster-700 h-48" />
-        <div className="rounded bg-alabaster-700 h-48" />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((item) => (
+          <div key={item} className="h-24 rounded-lg bg-alabaster-700" />
+        ))}
       </div>
 
-      <div>
-        <div className="h-8 bg-alabaster-700 rounded w-40 mb-4" />
-        <div className="rounded bg-alabaster-700 h-64" />
+      <div className="grid items-start gap-6 xl:grid-cols-3">
+        <div className="space-y-6 xl:col-span-2">
+          <div className="space-y-3">
+            <div className="h-6 w-32 rounded bg-alabaster-700" />
+            <div className="h-40 rounded-lg bg-alabaster-700" />
+          </div>
+          <div className="h-96 rounded-lg bg-alabaster-700" />
+        </div>
+        <div className="space-y-4">
+          <div className="h-40 rounded-lg bg-alabaster-700" />
+          <div className="h-32 rounded-lg bg-alabaster-700" />
+        </div>
       </div>
     </div>
   )

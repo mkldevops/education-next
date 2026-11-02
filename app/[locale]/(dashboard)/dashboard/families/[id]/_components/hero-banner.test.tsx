@@ -63,7 +63,7 @@ describe('HeroBanner', () => {
       })
     )
 
-    expect(container.firstElementChild?.lastElementChild).toHaveClass('self-end', 'md:self-auto')
+    expect(container.firstElementChild?.lastElementChild).toHaveClass('self-end', 'xl:self-auto')
     expect(container.firstElementChild?.lastElementChild).not.toHaveClass('self-start')
   })
 

@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { NEW_ENROLLMENT_STATUS } from '@/domain/enrollment'
 import { reserveClassSeatsInOrder } from '@/gateways/class-seat-lock'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
+import { lockActiveFamily } from '@/gateways/family-mutation-lock'
 import { claimResolved, commitInTransaction, releaseDraft } from './claim-draft'
 import type { DraftScope } from './draft-scope'
 import { countSeatsByClass, ENROLL_FAMILY_TOOL } from './preview-enroll-family'
@@ -94,6 +95,10 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
   // un client injecté, et enchaîner les use cases laisserait une famille orpheline au
   // premier échec. Précédent du dépôt : `create-enrollment.ts`.
   return commitInTransaction(schoolId, draftId, async (tx) => {
+    const existingFamilyId = 'id' in resolved.family ? resolved.family.id : null
+    if (existingFamilyId && !(await lockActiveFamily(tx, schoolId, existingFamilyId))) {
+      return 'notFound' as const
+    }
     // Élèves existants d'abord : verrou (école, élève, période) de `createEnrollment`, pris
     // avant les verrous de classe comme partout ailleurs, pour que la relecture des
     // inscriptions en cours plus bas ne croise pas une inscription concurrente du dashboard.
@@ -128,7 +133,6 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
     // Une famille visée par son identifiant, et chaque membre retrouvé, sont relus avant
     // la première écriture : une famille archivée ou un enfant inscrit depuis le preview
     // refusent l'engagement au lieu d'ouvrir une seconde inscription.
-    const existingFamilyId = 'id' in resolved.family ? resolved.family.id : null
     for (const student of resolved.students) {
       if (!student.personId) continue
       if (!existingFamilyId) return 'validationError' as const

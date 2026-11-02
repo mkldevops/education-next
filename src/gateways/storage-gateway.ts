@@ -10,6 +10,7 @@ export type StoredObject = {
   body: ReadableStream
   contentType: string
   contentLength?: number
+  contentRange?: string
 }
 
 async function ensureBucket(): Promise<'OK' | 'notConfigured'> {
@@ -51,21 +52,28 @@ export const storageGateway = {
     return 'OK'
   },
 
-  get: async (key: string): Promise<StoredObject | 'notFound' | 'notConfigured'> => {
+  get: async (
+    key: string,
+    range?: string
+  ): Promise<StoredObject | 'notFound' | 'notConfigured' | 'invalidRange'> => {
     const client = getStorageClient()
     const config = getStorageConfig()
     if (!client || !config) return 'notConfigured'
 
     try {
-      const result = await client.send(new GetObjectCommand({ Bucket: config.bucket, Key: key }))
+      const result = await client.send(
+        new GetObjectCommand({ Bucket: config.bucket, Key: key, Range: range })
+      )
       if (!result.Body) return 'notFound'
 
       return {
         body: result.Body.transformToWebStream(),
         contentType: result.ContentType || 'application/octet-stream',
         contentLength: result.ContentLength,
+        contentRange: result.ContentRange,
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.name === 'InvalidRange') return 'invalidRange'
       return 'notFound'
     }
   },

@@ -43,7 +43,10 @@ vi.mock('@/i18n/routing', () => ({
 }))
 vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriodId: getSelectedPeriodIdMock }))
 vi.mock('@/gateways/family-gateway', () => ({
-  familyGateway: { countDeletionImpact: countDeletionImpactMock },
+  familyGateway: {
+    countDeletionImpact: countDeletionImpactMock,
+    list: vi.fn().mockResolvedValue([]),
+  },
 }))
 vi.mock('@/lib/school-context', () => ({
   isActiveSchoolAdmin: (context: { roles: string[] }) => context.roles.includes('ADMIN'),
@@ -178,6 +181,23 @@ beforeEach(() => {
 describe('FamilyDetailPage, payments enabled', () => {
   beforeEach(() => {
     isPaymentsEnabledMock.mockResolvedValue(true)
+  })
+
+  it('keeps the merge dialog mounted when its action URL is cleaned', async () => {
+    const view = render(
+      await FamilyDetailPage({
+        params: Promise.resolve({ locale: 'fr', id: 'family-1' }),
+        searchParams: Promise.resolve({ action: 'mergeFamily' }),
+      })
+    )
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    view.rerender(
+      await FamilyDetailPage({
+        params: Promise.resolve({ locale: 'fr', id: 'family-1' }),
+        searchParams: Promise.resolve({}),
+      })
+    )
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
   it('lists the payments tab and threads paymentsEnabled to the banner and overview', async () => {

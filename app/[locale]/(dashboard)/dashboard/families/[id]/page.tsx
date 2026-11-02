@@ -24,6 +24,7 @@ import { CreateStudentDialog } from '../../students/_components/create-student-d
 import { DeactivateFamilyButton } from '../_components/deactivate-family-button'
 import { DeleteFamilyDialog } from '../_components/delete-family-dialog'
 import { EditFamilyDialog } from '../_components/edit-family-dialog'
+import { MergeFamilyDialog } from '../_components/merge-family-dialog'
 import { ActivityTab } from './_components/activity-tab'
 import { ChildrenTab } from './_components/children-tab'
 import { HeroBanner } from './_components/hero-banner'
@@ -102,6 +103,8 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     getSchoolRegionalSettings(family.schoolId),
     paymentsEnabled ? getFamilyPaymentTracking(family.schoolId, family.id) : null,
   ])
+
+  const mergeOptions = isAdmin ? await familyGateway.list(family.schoolId) : []
 
   const {
     students,
@@ -232,6 +235,17 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               redirectTo={familyHref}
               showTrigger={false}
             />
+            {isAdmin && (
+              <MergeFamilyDialog
+                familyId={family.id}
+                familyName={family.name}
+                families={mergeOptions
+                  .filter((option) => option.id !== family.id)
+                  .map(({ id, name }) => ({ id, name }))}
+                cleanUrl={familyHref}
+                defaultOpen={openAction === 'mergeFamily'}
+              />
+            )}
             {deletionImpact && (
               <DeleteFamilyDialog
                 familyId={family.id}

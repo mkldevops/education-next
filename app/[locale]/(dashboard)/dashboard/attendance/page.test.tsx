@@ -2,6 +2,11 @@ import { render, screen } from '@testing-library/react'
 import type { HTMLAttributes, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const frequencyMock = vi.hoisted(() => vi.fn(() => Promise.resolve('PER_SLOT')))
+vi.mock('@/use-cases/config/get-attendance-frequency', () => ({
+  getAttendanceFrequency: frequencyMock,
+}))
+
 const dbMock = {
   config: { findFirst: vi.fn() },
   classScheduleSlot: { findMany: vi.fn() },
@@ -109,6 +114,7 @@ const slot = (id: string, startTime: string, endTime: string) => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  frequencyMock.mockResolvedValue('PER_SLOT')
   requireSchoolSessionMock.mockResolvedValue({
     schoolId: 'school-1',
     roles: ['ADMIN'],
@@ -309,4 +315,77 @@ describe('AttendanceTrackingPage metadata', () => {
     getSchoolContextMock.mockResolvedValue(null)
     await expect(metadataFor()).resolves.toEqual({ title: 'errorPages.404.title' })
   })
+})
+
+it('shows one canonical daily call for two lessons, retaining explicit historical access', async () => {
+  frequencyMock.mockResolvedValue('DAILY')
+  dbMock.attendanceSession.findMany.mockResolvedValue([
+    {
+      id: 'daily-1',
+      classPeriodId: 'class-1',
+      classScheduleSlotId: null,
+      occurrenceKey: 'daily',
+      status: 'VALIDATED',
+      classPeriod: { name: 'CP-A' },
+    },
+    {
+      id: 'old-1',
+      classPeriodId: 'class-1',
+      classScheduleSlotId: 'slot-morning',
+      occurrenceKey: 'slot-morning',
+      status: 'VALIDATED',
+      classPeriod: { name: 'CP-A' },
+    },
+  ])
+  render(
+    await AttendanceTrackingPage({
+      params: Promise.resolve({ locale: 'fr' }),
+      searchParams: Promise.resolve({ date: '2026-09-17' }),
+    })
+  )
+  const links = screen.getAllByRole('link', { name: 'viewOrCorrect' })
+  expect(links).toHaveLength(2)
+  expect(links[0]).toHaveAttribute(
+    'href',
+    '/dashboard/my-classes/class-1/attendance?date=2026-09-17&occurrence=daily'
+  )
+  expect(links[1]).toHaveAttribute(
+    'href',
+    '/dashboard/my-classes/class-1/attendance?date=2026-09-17&occurrence=historical&slotId=slot-morning'
+  )
+  expect(screen.getByText(/dailyCall/)).toBeInTheDocument()
+  expect(screen.queryByText('08:30')).not.toBeInTheDocument()
+})
+
+it('retains daily history links and cancelled labels when returning to per-slot attendance', async () => {
+  dbMock.attendanceSession.findMany.mockResolvedValue([
+    {
+      id: 'daily-1',
+      classPeriodId: 'class-1',
+      classScheduleSlotId: null,
+      occurrenceKey: 'daily',
+      status: 'VALIDATED',
+      classPeriod: { name: 'CP-A' },
+    },
+    {
+      id: 'daily-2',
+      classPeriodId: 'class-2',
+      classScheduleSlotId: null,
+      occurrenceKey: 'daily',
+      status: 'CANCELLED',
+      classPeriod: { name: 'CE1' },
+    },
+  ])
+  render(
+    await AttendanceTrackingPage({
+      params: Promise.resolve({ locale: 'fr' }),
+      searchParams: Promise.resolve({ date: '2026-09-17' }),
+    })
+  )
+  expect(screen.getByRole('link', { name: 'viewOrCorrect' })).toHaveAttribute(
+    'href',
+    '/dashboard/my-classes/class-1/attendance?date=2026-09-17&occurrence=daily'
+  )
+  expect(screen.getAllByText(/dailyCall/)).toHaveLength(2)
+  expect(screen.queryByText(/undefined/)).not.toBeInTheDocument()
 })

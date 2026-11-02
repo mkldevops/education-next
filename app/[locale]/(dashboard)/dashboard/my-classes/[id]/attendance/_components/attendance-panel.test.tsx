@@ -351,3 +351,30 @@ describe('AttendancePanel', () => {
     expect(screen.queryByRole('button', { name: 'refreshRoster' })).not.toBeInTheDocument()
   })
 })
+
+it('opens one daily call without a lesson or exceptional-call selector', async () => {
+  mocks.startAdhoc.mockResolvedValue(makeSession([]))
+  render(
+    <AttendancePanel
+      {...props}
+      frequency="DAILY"
+      selectedOccurrence="daily"
+      slots={[
+        { id: 'slot-1', startTime: '09:00', endTime: '10:00' },
+        { id: 'slot-2', startTime: '11:00', endTime: '12:00' },
+      ]}
+      initialSession={null}
+    />
+  )
+  expect(screen.queryByText('Choose')).not.toBeInTheDocument()
+  expect(screen.queryByText('Exceptional')).not.toBeInTheDocument()
+  expect(screen.queryAllByRole('link')).toHaveLength(0)
+  fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+  await waitFor(() =>
+    expect(mocks.startAdhoc).toHaveBeenCalledWith({
+      classPeriodId: props.classPeriodId,
+      occurredOn: props.occurredOn,
+    })
+  )
+  expect(mocks.startScheduled).not.toHaveBeenCalled()
+})

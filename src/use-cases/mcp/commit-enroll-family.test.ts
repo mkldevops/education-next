@@ -678,7 +678,8 @@ describe('commitEnrollFamily', () => {
       await commitEnrollFamily(scope, input)
 
       const [studentLock] = tx.$executeRaw.mock.invocationCallOrder
-      const [classLock] = tx.$queryRaw.mock.invocationCallOrder
+      const [familyLock, classLock] = tx.$queryRaw.mock.invocationCallOrder
+      expect(familyLock).toBeLessThan(studentLock)
       expect(tx.$executeRaw.mock.calls[0]).toContain('enrollment:school-1:student-7:period-1')
       expect(studentLock).toBeLessThan(classLock)
     })

@@ -10,6 +10,7 @@ import {
 } from '@/use-cases/mcp/class-schedule'
 import { commitClassSchedule } from '@/use-cases/mcp/commit-class-schedule'
 import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
+import { commitMergeFamilies } from '@/use-cases/mcp/commit-merge-families'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
 import { commitRecordTeacherExpense } from '@/use-cases/mcp/commit-record-teacher-expense'
 import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
@@ -35,6 +36,7 @@ import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
 import { createPlanFromMcp, updatePlanFromMcp } from '@/use-cases/mcp/plan-configuration'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
+import { previewMergeFamilies } from '@/use-cases/mcp/preview-merge-families'
 import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
 import { previewRecordTeacherExpense } from '@/use-cases/mcp/preview-record-teacher-expense'
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
@@ -68,11 +70,13 @@ import {
   mcpUpdatePlanSchema,
   previewClassScheduleSchema,
   previewEnrollFamilySchema,
+  previewMergeFamiliesSchema,
   previewRecordPaymentSchema,
   previewRecordTeacherExpenseSchema,
   previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
 import { updateEventFromMcp } from '@/use-cases/mcp/update-event'
+import { listMealTools } from './meal-tools'
 
 const NO_ARGS = z.object({})
 
@@ -156,6 +160,7 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
   const { schoolId } = scope
 
   const tools: SchoolTool[] = [
+    ...listMealTools(scope),
     define({
       name: 'describe_school',
       title: 'École courante',
@@ -311,7 +316,9 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       description:
         "Appels de l'école jour par jour, comme la page de suivi des appels : créneaux " +
         'attendus (`NOT_STARTED`, `IN_PROGRESS`, `VALIDATED`), appels exceptionnels ' +
-        '(`slotId` nul) et appels annulés (`CANCELLED`). `periodId` vient de `list_periods`, ' +
+        '(`slotId` nul) et appels annulés (`CANCELLED`). Si attendance_frequency=DAILY, ' +
+        'un seul appel est attendu par classe/jour (slotId et heures nuls), même avec plusieurs cours ; ' +
+        'les appels historiques restent visibles. `periodId` vient de `list_periods`, ' +
         '`classPeriodId` facultatif de `list_class_periods` ; `from` et `to` sont des jours ' +
         `inclus (\`2026-09-26\`), \`to\` vaut \`from\` par défaut, ${MCP_ATTENDANCE_RANGE_MAX_DAYS} ` +
         'jours au plus. Un jour de fermeture (`closed`) ne garde que les appels déjà ouverts. ' +
@@ -452,6 +459,36 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       annotations: { readOnlyHint: true, openWorldHint: false },
       kind: 'read',
       run: (args) => findStudentsFromMcp(scope, args),
+    }),
+    define({
+      name: 'preview_merge_families',
+      title: 'Préparer la fusion de familles',
+      description:
+        'Prépare la fusion de la famille source dans la famille cible conservée. ' +
+        'Présente les membres et comptes des deux familles ainsi que les avertissements, ' +
+        'notamment `expandedFamilyAccess`, avant confirmation. Rend un brouillon, son ' +
+        '`checksum`, le plan et les éventuels `blockers`.',
+      inputSchema: previewMergeFamiliesSchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+      kind: 'draft',
+      run: (args) => previewMergeFamilies(scope, args),
+    }),
+    define({
+      name: 'commit_merge_families',
+      title: 'Fusionner les familles',
+      description:
+        'Engage la fusion prévisualisée après validation humaine avec `draftId` et `checksum`. ' +
+        'La famille source est archivée. Un plan modifié depuis sa validation est refusé ' +
+        'avec `staleDraft`. Le brouillon expire après trente minutes et son rejeu rend le résultat enregistré.',
+      inputSchema: commitDraftSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+      kind: 'write',
+      run: (args) => commitMergeFamilies(scope, args),
     }),
     define({
       name: 'get_family_deletion_impact',

@@ -38,6 +38,20 @@ Revoking takes effect on the next call: revocation, expiry, account deactivation
 
 ## Connecting a client
 
+### Claude.ai video tutorial
+
+In **Settings › API keys › Connected apps**, expand **Connect Claude.ai · Video tutorial**.
+The French video, with French captions, is available before creating any key: the OAuth connection
+does not need one. The guide also offers the current site's MCP URL to copy.
+
+The approved ElevenLabs video and its poster/captions live in the private MinIO bucket configured
+by `S3_*`, under `videos/connecter-claude-eic-elevenlabs-2026-11-01.mp4`,
+`videos/connecter-claude-eic-2026-11-01.jpg`, and `videos/connecter-claude-eic-2026-11-01.fr.vtt`.
+The authenticated `/api/tutorials/claude-connection/{video,poster,captions}` endpoint serves only
+those three objects and supports byte ranges for seeking. No public bucket or expiring URL is needed.
+
+### Client configuration
+
 After a key is created, the tab offers four clients. Every snippet is built from the site the page is
 served from: the URL is `<origin>/api/mcp`, and the server name carries the host —
 `education-ecole-example-fr` for `https://ecole.example.fr` — so two deployments configured on the
@@ -445,6 +459,10 @@ gets `notConfigured` from each of them.
 `list_attendance_calls` rereads `/dashboard/attendance` day by day, so an agent can tell which call
 is still to be taken or left open. It only reads: opening, entering, validating and cancelling a
 call stay dashboard actions. A school without `attendance_enabled` gets `notConfigured`.
+The school setting `attendance_frequency=DAILY` expects a single call per class/calendar day,
+even when its timetable contains several lessons; its `slotId`, `startTime` and `endTime` are null.
+The existing `PER_SLOT` behavior remains the default. Earlier recorded calls remain visible
+after a frequency change and are never silently merged or deleted.
 
 | Argument | Shape |
 |---|---|
@@ -459,9 +477,51 @@ publishes `classPeriod { id, name }`, `slotId`, `startTime`, `endTime`, `status`
 calls already opened remain. No student, entry or roster is published. `to` before `from` is
 `invalidDateRange`, a longer range `rangeTooLong`.
 
+## Canteen, snack and cashier receipts
+
+The shared MCP/assistant catalog exposes these tools to school administrators. They take no
+school or actor argument; those come from the authenticated scope. They remain discoverable
+with `meals_enabled` off and return `mealsDisabled`. Meal-only receipts work even when tuition
+payments are disabled. Every mutation requires the dashboard assistant's normal approval.
+
+| Tool | Input and behavior |
+| --- | --- |
+| `get_meal_settings` | No arguments; service settings and dated prices, including price IDs |
+| `get_student_meals` | `studentId`, optional inclusive `from`/`to`; accounts, schedules, current price, opening, coverage and calendar; at most 93 days, default 31 days from the current month's first day |
+| `list_family_receipts` | `familyId`, optional `limit` (default 50, maximum 100); latest numbered receipts including cancelled ones, meal lines and `hasMore` |
+| `set_meal_service_setting` | `service`, `isEnabled`, `allowedWeekdays`; replaces service settings, ISO weekdays 1–7 |
+| `set_meal_price` | `service`, `amount`, `effectiveFrom`; same date replaces the price; only the first price may start in the past |
+| `remove_meal_price` | Price `id`; only before its effective day |
+| `subscribe_meal` | `studentId`, `service`, `periodId`, `weekdays`, `startOn`; opens a segment, past starts within the period allowed |
+| `change_meal_schedule` | `studentId`, `service`, `weekdays`, `effectiveFrom`; changes today or later |
+| `stop_meal` | `studentId`, `service`, `effectiveFrom`; stops today or later |
+| `record_meal_opening` | `studentId`, `service`, `paidThrough`, required `reason`; replaces historical opening coverage, creates no receipt |
+| `toggle_meal_absence` | `studentId`, `service`, `day`, `absent`; marks or removes an absence on a scheduled open day |
+| `record_receipt` | `familyId`, stable UUID `idempotencyKey`, `method`, optional `reference`, `tuition`, `meals`; returns receipt `id` |
+| `cancel_receipt` | `receiptId`, required `reason`; cancels all its meal and tuition lines, retaining its number |
+
+`service` is `CANTEEN` or `SNACK`; dates use `YYYY-MM-DD`; monetary amounts are in the school's
+currency. Resolve student and debtor-family IDs with `find_students`, period IDs with
+`list_periods`. Reuse existing business refusals, including `notFound`, `notSubscribed`,
+`invalidWeekdays`, `backdated`, `alreadyEffective`, `notServed` and `alreadyCancelled`.
+
+Each receipt meal line contains `studentId`, `service`, `amount` and `expectedPaidThrough`:
+copy the last `coverage.paidThrough` from `get_student_meals` (possibly `null`). After `staleState`,
+reread the account before retrying. Keep the same idempotency key and content after a dropped
+connection: replay returns the existing receipt; changed content returns `idempotencyConflict`.
+Cashier methods are `CASH`, `MOBILE_MONEY`, `TRANSFER` and `CHECK`. Set `tuition: 0` for meals only;
+a positive tuition portion also requires `payments_enabled`.
+
+**Meal income belongs in `record_receipt`, never `preview_record_payment`/`commit_record_payment`.**
+The receipt applies today's price and issue date; there is no historical date or price override.
+For a paper-ledger takeover, first verify subscriptions and published closures, then use
+`record_meal_opening` with the source payment reference/date/amount in its reason. This preserves
+coverage without creating historical cash revenue or inventing a numbered receipt. A second
+opening replaces the first. The calendar reflects published closures and meal absences.
+
 ## Writing: the preview/commit pairs
 
-Five pairs are shipped. `create_teacher` is shipped as a single write, without preview: it takes a
+Six pairs are shipped. `create_teacher` is shipped as a single write, without preview: it takes a
 first and last name (email and phone optional) and creates the teacher with no class, as the dashboard
 form does. An active teacher of the same name, in either order, or of the same email suspends the
 creation: the tool answers `{ "created": false, "reason": "possibleDuplicate", "matches": [...] }`
@@ -471,11 +531,20 @@ homonym anyway, once the human confirms it is someone else.
 | Tool | Paper it matches | State |
 |---|---|---|
 | `enroll_family` | a full enrollment form: family, parents, students, enrollment, deposit — or, by `familyId`, children of a family already entered | shipped |
+| `merge_families` | merge a source family into a retained target | shipped |
 | `record_payment` | a receipt or payment slip | shipped |
 | `update_enrollment` | a correction: a child moved to another plan, a discount granted | shipped |
 | `class_schedule` | a whole weekly planning: every class, day, time and teacher of a period | shipped |
 | `create_teacher` | a teacher sheet | shipped, single write (no preview) |
 | `record_teacher_expense` | a teacher expense note: a receipt for snacks, supplies, goods | shipped |
+
+For a family merge, `preview_merge_families` accepts `sourceId` and `targetId` and shows
+both families' members and accounts, blockers, and the `expandedFamilyAccess` warning. The
+human must review the expanded access before `commit_merge_families` archives the source.
+The draft belongs to its caller, expires after 30 minutes and is committed with its checksum;
+a replay returns the recorded result. The commit rechecks the confirmed content under locks
+and returns `staleDraft` if it changed. The same restrictions as the dashboard merge apply.
+This pair is available whether payments are enabled or disabled.
 
 The shape, and the reason for it:
 

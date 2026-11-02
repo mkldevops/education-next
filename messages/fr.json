@@ -538,7 +538,31 @@
             "notFound": "Personne introuvable"
           }
         },
-        "description": "Les foyers inscrits, leurs responsables et leur solde."
+        "description": "Les foyers inscrits, leurs responsables et leur solde.",
+        "merge": {
+          "title": "Fusionner les familles",
+          "description": "Les membres et tout l’historique de « {name} » seront transférés dans la famille choisie. La famille d’origine sera archivée.",
+          "search": "Rechercher une famille",
+          "target": "Famille à conserver",
+          "choose": "Choisir une famille",
+          "preview": "« {source} » sera fusionnée dans « {target} ».",
+          "accessWarning": "Les comptes parents et les invitations des deux familles donneront accès à tous les enfants et aux informations de la famille réunie.",
+          "confirmation": "Je confirme que ces dossiers appartiennent à la même famille et que leurs accès peuvent être réunis.",
+          "cancel": "Annuler",
+          "confirm": "Fusionner",
+          "success": "Les familles ont été fusionnées.",
+          "error": "La fusion a échoué.",
+          "errors": {
+            "sameFamily": "Choisissez une autre famille.",
+            "notFound": "Une des familles n’est plus disponible dans cette école.",
+            "pendingPayment": "Un paiement en ligne est en cours. Terminez-le ou annulez-le avant de fusionner.",
+            "familyDetailsConflict": "Les contacts d’urgence ou les autorisations de sortie diffèrent. Harmonisez ces informations avant de fusionner.",
+            "relationConflict": "Une personne a des liens de parenté différents dans ces familles. Corrigez-les avant de fusionner.",
+            "mergeConflict": "Un autre changement a eu lieu. Rechargez la page et réessayez.",
+            "validationError": "Vérifiez la famille choisie.",
+            "sharedMember": "Un membre est aussi rattaché à une troisième famille. La fusion est bloquée pour préserver la répartition des paiements."
+          }
+        }
       },
       "students": {
         "title": "Élèves",
@@ -1424,6 +1448,12 @@
             "label": "Accès élargi des enseignants",
             "description": "Les enseignants accèdent aux classes, familles, élèves et inscriptions de toute l'école, et peuvent ajouter familles, élèves et inscriptions. Paiements, formules et réglages restent réservés aux administrateurs."
           },
+          "attendance_frequency": {
+            "label": "Fréquence des appels",
+            "description": "Un appel par classe et par jour, ou un appel pour chaque cours du planning. Les appels déjà enregistrés sont conservés.",
+            "daily": "Une fois par jour",
+            "perSlot": "À chaque cours"
+          },
           "attendance_enabled": {
             "label": "Appel",
             "description": "Active la saisie des appels de classe."
@@ -1641,7 +1671,8 @@
           "archive": "Archiver",
           "addChild": "Ajouter un enfant",
           "addEnrollment": "Nouvelle inscription",
-          "addPayment": "Nouveau paiement"
+          "addPayment": "Nouveau paiement",
+          "merge": "Fusionner avec une famille"
         },
         "portalInvitation": {
           "action": "Inviter au portail",
@@ -1919,6 +1950,7 @@
               "due": "Dû",
               "unpaid": "À payer",
               "absent": "Absent",
+              "holiday": "Vacances et jours fériés",
               "closed": "Fermé"
             },
             "error": "Erreur lors de l'enregistrement",
@@ -2329,6 +2361,9 @@
         "absent": "Absent",
         "unrecorded": "Non renseigné",
         "schedule": "Créneau",
+        "recordedOccurrences": "Appels enregistrés",
+        "historicalCall": "Appel antérieur",
+        "dailyCall": "Appel du jour",
         "selectOccurrence": "Choisissez la séance à renseigner",
         "exceptional": "Appel exceptionnel",
         "startExceptional": "Commencer l’appel exceptionnel",
@@ -3075,6 +3110,8 @@
           "list_plans": "Formules tarifaires",
           "list_teachers": "Enseignants",
           "find_students": "Chercher un élève",
+          "preview_merge_families": "Aperçu de fusion de familles",
+          "commit_merge_families": "Fusionner les familles",
           "preview_enroll_family": "Aperçu d'inscription",
           "commit_enroll_family": "Inscrire la famille",
           "create_event": "Créer un événement",
@@ -3415,6 +3452,18 @@
         "title": "Applications connectées",
         "description": "Les applications autorisées par OAuth sur l'école active, ChatGPT par exemple. Chaque connexion agit avec vos droits d'administration sur cette école, et sur elle seule.",
         "empty": "Aucune application connectée pour le moment.",
+        "claudeSetup": {
+          "title": "Connecter Claude.ai · Tutoriel vidéo",
+          "description": "Suivez la connexion pas à pas en 1 min 31. Voix et sous-titres en français. Aucune clé API à créer : autorisez simplement votre compte EIC depuis Claude.",
+          "videoLabel": "Comment connecter Claude.ai à EIC",
+          "captionsLabel": "Français",
+          "download": "Télécharger le tutoriel vidéo",
+          "urlLabel": "URL du serveur MCP de ce site",
+          "copyUrl": "Copier l’URL pour Claude.ai",
+          "step1": "Dans Claude, ouvrez Personnalisation › Connecteurs › Ajouter › Ajouter un connecteur personnalisé, puis collez l’URL ci-dessous.",
+          "step2": "Conservez « Se connecter maintenant » et « S’enregistrer automatiquement », puis cliquez sur « Ajouter ».",
+          "step3": "Connectez-vous sur ce site, sélectionnez votre école et autorisez Claude. Dans la conversation, activez ensuite le connecteur depuis le menu « + » › Connecteurs."
+        },
         "setup": {
           "title": "Connecter ChatGPT",
           "step1": "Dans ChatGPT, activez Paramètres › Sécurité et connexion › Mode développeur.",

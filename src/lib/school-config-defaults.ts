@@ -1,4 +1,7 @@
-import { ATTENDANCE_ENABLED_CONFIG_DEFAULT } from './attendance-config'
+import {
+  ATTENDANCE_ENABLED_CONFIG_DEFAULT,
+  ATTENDANCE_FREQUENCY_CONFIG_DEFAULT,
+} from './attendance-config'
 import { BRANDING_CONFIG_DEFAULTS } from './branding-config'
 import { CLASS_SCHEDULE_CONFIG_DEFAULTS } from './class-schedule-config'
 import { EVENTS_CONFIG_DEFAULT } from './events-config'
@@ -24,6 +27,7 @@ export const SCHOOL_CONFIG_DEFAULTS = [
   TEACHER_STAFF_ACCESS_CONFIG_DEFAULT,
   EVENTS_CONFIG_DEFAULT,
   ATTENDANCE_ENABLED_CONFIG_DEFAULT,
+  ATTENDANCE_FREQUENCY_CONFIG_DEFAULT,
   MEALS_ENABLED_CONFIG_DEFAULT,
   ...CLASS_SCHEDULE_CONFIG_DEFAULTS,
   // À `'true'` : une école neuve encaisse comme toutes les autres. Aucune migration ne

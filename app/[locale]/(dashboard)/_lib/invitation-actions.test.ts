@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const lockActiveFamilyMock = vi.fn()
+vi.mock('@/gateways/family-mutation-lock', () => ({
+  lockActiveFamily: (...args: unknown[]) => lockActiveFamilyMock(...args),
+}))
+
 const requireSchoolAdminMock = vi.fn()
 const findMembershipMock = vi.fn()
 const findActiveByIdMock = vi.fn()
@@ -21,7 +26,9 @@ const dbMock = {
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('next-intl/server', () => ({ getLocale: async () => 'fr' }))
-vi.mock('@/lib/db', () => ({ db: dbMock }))
+vi.mock('@/lib/db', () => ({
+  db: { ...dbMock, $transaction: (fn: (tx: typeof dbMock) => unknown) => fn(dbMock) },
+}))
 vi.mock('@/gateways/school-gateway', () => ({
   schoolGateway: { findActiveById: findActiveByIdMock },
 }))
@@ -44,6 +51,7 @@ const PERSON_ID = '33333333-3333-4333-8333-333333333333'
 
 beforeEach(() => {
   vi.clearAllMocks()
+  lockActiveFamilyMock.mockResolvedValue(true)
   requireSchoolAdminMock.mockResolvedValue({ schoolId: 'school-b', userId: 'admin-1' })
   findActiveByIdMock.mockResolvedValue({ id: 'school-b', name: 'Horizon', slug: 'horizon' })
   dbMock.user.findUnique.mockResolvedValue(null)
@@ -63,6 +71,13 @@ beforeEach(() => {
 
 describe('inviteUserAction', () => {
   describe('family scope', () => {
+    it('does not create or send an invitation after the family was merged', async () => {
+      lockActiveFamilyMock.mockResolvedValue(false)
+      expect(await inviteUserAction({ ...INPUT, familyId: FAMILY_ID })).toBe('invalidInput')
+      expect(dbMock.invitation.create).not.toHaveBeenCalled()
+      expect(sendInvitationEmailMock).not.toHaveBeenCalled()
+    })
+
     it('resolves the parent of the family from the invited address when only the family is given', async () => {
       // Le formulaire des utilisateurs ne choisit que la famille : le parent est
       // retrouvé par l'adresse, jamais rattaché à l'aveugle.

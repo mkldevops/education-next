@@ -1,4 +1,4 @@
-import { Breadcrumbs, buttonVariants, Card } from '@peaklab/ui'
+import { Breadcrumbs, buttonVariants, Card, cn } from '@peaklab/ui'
 import { CreditCard, HeartPulse, TriangleAlert, UtensilsCrossed } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -155,13 +155,16 @@ export default async function StudentDetailPage({ params }: Props) {
         ]}
       />
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-5 rounded-xl border border-border bg-surface p-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex min-w-0 items-center gap-4">
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xl font-semibold text-blue-900">
             {student.person.name.charAt(0)}
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold text-graphite" title={fullName}>
+            <h1
+              className="wrap-break-word text-xl font-bold tracking-tight text-graphite sm:text-2xl"
+              title={fullName}
+            >
               {fullName}
             </h1>
             {(birthday || student.birthplace) && (
@@ -184,7 +187,7 @@ export default async function StudentDetailPage({ params }: Props) {
           </div>
         </div>
         {isStaff && (
-          <div className="flex flex-wrap gap-2 md:shrink-0 md:justify-end">
+          <div className="flex flex-wrap items-center gap-2 xl:max-w-md xl:justify-end">
             {isAdmin && family && payableRemaining > 0 && (
               <Link
                 href={`/dashboard/families/${family.id}?action=addPayment&tab=payments`}
@@ -243,7 +246,10 @@ export default async function StudentDetailPage({ params }: Props) {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.label} className="p-4">
+          <Card
+            key={kpi.label}
+            className={cn('p-4 sm:p-5', kpi.tone === 'amber' && 'border-amber-200 bg-amber-50')}
+          >
             <p className="text-xs font-medium uppercase tracking-wide text-graphite-600">
               {kpi.label}
             </p>
@@ -262,45 +268,43 @@ export default async function StudentDetailPage({ params }: Props) {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-graphite">{t('enrollments')}</h2>
-            {/* Une inscription en cours par élève et par période : proposer un second bouton de
+      <div className="grid items-start gap-6 xl:grid-cols-3">
+        <div className="min-w-0 space-y-6 xl:col-span-2">
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-graphite">{t('enrollments')}</h2>
+              {/* Une inscription en cours par élève et par période : proposer un second bouton de
                 création n'ouvrirait qu'un formulaire refusé par `createEnrollment`. */}
-            {isStaff && !isEnrolledInSelectedPeriod && (
-              <CreateEnrollmentDialog
-                students={[
-                  {
-                    id: student.id,
-                    name: fullName,
-                    suggestedLevelId: suggestedLevels.get(student.id) ?? null,
-                  },
-                ]}
-                plans={(isAdmin ? plans : []).map((p) => ({
-                  id: p.id,
-                  name: p.name,
-                  amount: Number(p.amount),
-                }))}
-                classes={classes}
-                paymentsEnabled={paymentsEnabled}
-                currency={currency}
-                defaultStudentId={student.id}
-                redirectTo={`/dashboard/students/${student.id}`}
-                triggerSize="sm"
-              />
-            )}
-          </div>
-          <EnrollmentList
-            enrollments={student.enrollments}
-            currency={currency}
-            locale={locale}
-            paymentsEnabled={paymentsEnabled}
-          />
-        </div>
-
-        <div className="space-y-4">
-          <FamilyPanel family={family} />
+              {isStaff && !isEnrolledInSelectedPeriod && (
+                <CreateEnrollmentDialog
+                  students={[
+                    {
+                      id: student.id,
+                      name: fullName,
+                      suggestedLevelId: suggestedLevels.get(student.id) ?? null,
+                    },
+                  ]}
+                  plans={(isAdmin ? plans : []).map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    amount: Number(p.amount),
+                  }))}
+                  classes={classes}
+                  paymentsEnabled={paymentsEnabled}
+                  currency={currency}
+                  defaultStudentId={student.id}
+                  redirectTo={`/dashboard/students/${student.id}`}
+                  triggerSize="sm"
+                />
+              )}
+            </div>
+            <EnrollmentList
+              enrollments={student.enrollments}
+              currency={currency}
+              locale={locale}
+              paymentsEnabled={paymentsEnabled}
+            />
+          </section>
 
           {mealsEnabled && (
             <MealPanel
@@ -310,6 +314,10 @@ export default async function StudentDetailPage({ params }: Props) {
               selectedPeriodId={selectedPeriodId}
             />
           )}
+        </div>
+
+        <aside className="min-w-0 space-y-4">
+          <FamilyPanel family={family} />
 
           {infoRows.length > 0 && (
             <Card className="p-4">
@@ -320,13 +328,13 @@ export default async function StudentDetailPage({ params }: Props) {
                 {infoRows.map((row) => (
                   <div key={row.label}>
                     <dt className="text-xs text-graphite-600">{row.label}</dt>
-                    <dd className="mt-0.5 text-sm text-graphite">{row.value}</dd>
+                    <dd className="mt-0.5 wrap-break-word text-sm text-graphite">{row.value}</dd>
                   </div>
                 ))}
               </dl>
             </Card>
           )}
-        </div>
+        </aside>
       </div>
     </div>
   )

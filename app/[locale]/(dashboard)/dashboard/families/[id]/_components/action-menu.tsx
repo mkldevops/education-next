@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Archive,
   CreditCard,
+  Merge,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -104,6 +105,7 @@ export function ActionMenu({
     },
     ...(canDelete
       ? [
+          { key: 'merge', label: t('merge'), icon: Merge, action: 'mergeFamily' as const },
           {
             key: 'delete',
             label: t('delete'),

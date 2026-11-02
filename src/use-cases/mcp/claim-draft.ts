@@ -128,7 +128,11 @@ class CommitRefused extends Error {
   }
 }
 
-type CommitOptions = { timeout?: number; maxWait?: number }
+type CommitOptions = {
+  timeout?: number
+  maxWait?: number
+  isolationLevel?: Prisma.TransactionIsolationLevel
+}
 
 /**
  * Exécute l'écriture d'un brouillon engagé et y attache son résultat.

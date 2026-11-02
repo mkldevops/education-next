@@ -610,3 +610,141 @@ describe('attendance cancellation transitions', () => {
     })
   })
 })
+
+describe('per-slot attendance compatibility', () => {
+  it('preserves exceptional adhoc opening on a closed day in per-slot mode', async () => {
+    db.event.findMany.mockResolvedValue([
+      { category: 'CLOSURE', status: 'PUBLISHED', startAt: new Date('2026-01-01'), endAt: null },
+    ])
+    expect(
+      await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
+    ).toMatchObject({ id })
+    expect(db.event.findMany).not.toHaveBeenCalled()
+  })
+
+  it('keeps lesson and adhoc identities separate by default', async () => {
+    await actions.startScheduledAttendanceAction({
+      classPeriodId: id,
+      classScheduleSlotId: id,
+      occurredOn: '2026-01-01',
+    })
+    expect(db.attendanceSession.create.mock.calls[0][0].data).toMatchObject({
+      classScheduleSlotId: id,
+      occurrenceKey: id,
+    })
+    await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
+    expect(db.attendanceSession.create.mock.calls[1][0].data).toMatchObject({
+      classScheduleSlotId: null,
+      occurrenceKey: 'adhoc',
+    })
+  })
+})
+
+describe('daily attendance identity', () => {
+  beforeEach(() => {
+    db.config.findFirst.mockImplementation(async ({ where }) => ({
+      value: where.name === 'attendance_frequency' ? 'DAILY' : 'true',
+    }))
+  })
+
+  it('opens all same-day lesson links and adhoc calls with one daily key and no stored lesson', async () => {
+    const secondSlot = '00000000-0000-4000-8000-000000000002'
+    let stored: unknown = null
+    db.attendanceSession.findUnique.mockImplementation(async () => stored)
+    db.attendanceSession.create.mockImplementation(async ({ data }) => {
+      stored = { id, status: 'DRAFT', entries: [], ...data }
+      return stored
+    })
+    const input = { classPeriodId: id, occurredOn: '2026-01-01' }
+    const first = await actions.startScheduledAttendanceAction({
+      ...input,
+      classScheduleSlotId: id,
+    })
+    expect(
+      await actions.startScheduledAttendanceAction({ ...input, classScheduleSlotId: secondSlot })
+    ).toEqual(first)
+    expect(await actions.startAdhocAttendanceAction(input)).toEqual(first)
+    expect(db.attendanceSession.create).toHaveBeenCalledTimes(1)
+    expect(db.attendanceSession.create.mock.calls[0][0].data).toMatchObject({
+      occurrenceKey: 'daily',
+      classScheduleSlotId: null,
+    })
+    for (const [query] of db.attendanceSession.findUnique.mock.calls) {
+      expect(query.where.schoolId_classPeriodId_occurredOn_occurrenceKey).toMatchObject({
+        schoolId: 's',
+        classPeriodId: id,
+        occurrenceKey: 'daily',
+      })
+    }
+  })
+
+  it('uses the canonical daily key for concurrent creation recovery', async () => {
+    db.attendanceSession.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id, status: 'DRAFT', entries: [] })
+    db.attendanceSession.create.mockRejectedValueOnce({ code: 'P2002' })
+    expect(
+      await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
+    ).toMatchObject({ id })
+    expect(
+      db.attendanceSession.findUnique.mock.calls[1][0].where
+        .schoolId_classPeriodId_occurredOn_occurrenceKey.occurrenceKey
+    ).toBe('daily')
+  })
+
+  it('cancels the day as a whole and blocks reopening through another lesson or adhoc', async () => {
+    const cancelled = { id, status: 'CANCELLED', entries: [] }
+    db.attendanceSession.create.mockResolvedValue(cancelled)
+    expect(
+      await actions.cancelAttendanceOccurrenceAction({
+        classPeriodId: id,
+        classScheduleSlotId: id,
+        occurredOn: '2026-01-01',
+      })
+    ).toBe('OK')
+    expect(db.attendanceSession.create.mock.calls[0][0].data).toMatchObject({
+      occurrenceKey: 'daily',
+      classScheduleSlotId: null,
+      status: 'CANCELLED',
+    })
+    db.attendanceSession.findUnique.mockResolvedValue(cancelled)
+    expect(
+      await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
+    ).toBe('sessionCancelled')
+  })
+
+  it('refuses daily opening without a lesson on a published closure', async () => {
+    db.event.findMany.mockResolvedValue([
+      { category: 'CLOSURE', status: 'PUBLISHED', startAt: new Date('2026-01-01'), endAt: null },
+    ])
+    expect(
+      await actions.startAdhocAttendanceAction({ classPeriodId: id, occurredOn: '2026-01-01' })
+    ).toBe('attendanceClosed')
+    expect(db.attendanceSession.create).not.toHaveBeenCalled()
+    expect(db.classScheduleSlot.findFirst).not.toHaveBeenCalled()
+    expect(db.event.findMany.mock.calls[0][0].where.schoolId).toBe('s')
+  })
+
+  it('still refuses a foreign lesson and school closures before creating a daily call', async () => {
+    db.classScheduleSlot.findFirst.mockResolvedValue(null)
+    expect(
+      await actions.startScheduledAttendanceAction({
+        classPeriodId: id,
+        classScheduleSlotId: id,
+        occurredOn: '2026-01-01',
+      })
+    ).toBe('notFound')
+    db.classScheduleSlot.findFirst.mockResolvedValue({ id })
+    db.event.findMany.mockResolvedValue([
+      { category: 'CLOSURE', status: 'PUBLISHED', startAt: new Date('2026-01-01'), endAt: null },
+    ])
+    expect(
+      await actions.startScheduledAttendanceAction({
+        classPeriodId: id,
+        classScheduleSlotId: id,
+        occurredOn: '2026-01-01',
+      })
+    ).toBe('attendanceClosed')
+    expect(db.attendanceSession.create).not.toHaveBeenCalled()
+  })
+})
