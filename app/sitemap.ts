@@ -1,7 +1,9 @@
 import type { MetadataRoute } from 'next'
+import { connection } from 'next/server'
 import { routing } from '@/i18n/routing'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await connection()
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
   const publicPages = ['/login', '/forgot-password']

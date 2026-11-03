@@ -20,13 +20,20 @@ aligned. Never hard-code production secrets in Docker or Compose configuration.
 
 `compose.yaml` starts PostgreSQL 18 and Mailpit only; it does not run the Next.js application.
 
-The Docker image generates Prisma Client and runs `pnpm build` at build time, then starts with
-`pnpm start:prod`, which runs `prisma migrate deploy` before `next start`. A container therefore
-refuses to serve a database it has not migrated. `pnpm start` skips that step and is for local use.
-`pnpm build:prod` generates the client, deploys migrations, and builds; it is the CI-side counterpart.
+One image serves every instance. `.github/workflows/image.yaml` builds it once per `main` commit,
+pushes `ghcr.io/mkldevops/education-next:<sha>`, waits for the `quality` check, then points each
+Coolify application at that tag and deploys it. The container runs `prisma migrate deploy` from
+`/migrate` before `node server.js`, so it refuses to serve a database it has not migrated.
 
-Docker and CI currently pin Node.js 22 while the repository pins `pnpm@11.1.2`. A Node.js 24 upgrade
-must update `Dockerfile`, `.github/workflows/ci.yaml`, and developer guidance together.
+`NEXT_PUBLIC_*` values are never passed at build time: Next would inline them into the shared image.
+Server code reads them at runtime; routes that use them must be dynamic (`await connection()`), and
+client code derives the origin from `window.location`.
+
+The migrator stage deletes Prisma CLI dependencies that `migrate deploy` does not load. After a Prisma
+upgrade, the image workflow's smoke test is what proves that list is still safe.
+
+Docker and CI pin Node.js 26 while the repository pins `pnpm@11.1.2`. A runtime upgrade must update
+`Dockerfile`, both workflows, and developer guidance together.
 
 ## Compose Safety
 
