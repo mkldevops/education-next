@@ -8,6 +8,7 @@ export type ReceiptRequest = {
   method: string
   reference: string | null
   tuition: number
+  tuitionEnrollmentId?: string
   meals: ReadonlyArray<{
     studentId: string
     service: string
@@ -21,8 +22,9 @@ export type ReceiptRequest = {
  * Forme canonique d'une demande d'encaissement, dont l'empreinte accompagne la clé
  * d'idempotence : un renvoi identique retrouve son reçu, un contenu différent sous la même
  * clé est refusé. Lignes triées et montants au centième, pour que l'ordre de saisie ou
- * l'écriture d'un nombre ne change pas l'empreinte. La garderie n'y figure que si le reçu en
- * porte, pour que l'empreinte des reçus antérieurs reste valable.
+ * l'écriture d'un nombre ne change pas l'empreinte. La garderie et l'inscription ciblée par
+ * l'écolage n'y figurent que si le reçu en porte, pour que l'empreinte des reçus antérieurs reste
+ * valable.
  */
 export function canonicalReceiptRequest(request: ReceiptRequest): string {
   const cents = (value: number) => Math.round(value * 100)
@@ -34,6 +36,7 @@ export function canonicalReceiptRequest(request: ReceiptRequest): string {
     method: request.method,
     reference: request.reference,
     tuition: cents(request.tuition),
+    ...(request.tuitionEnrollmentId ? { tuitionEnrollmentId: request.tuitionEnrollmentId } : {}),
     meals: [...request.meals]
       .map((line) => ({
         studentId: line.studentId,

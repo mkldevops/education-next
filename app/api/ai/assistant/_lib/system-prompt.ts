@@ -95,7 +95,9 @@ export function buildAssistantSystemPrompt({
           '  balance, in cash, today. Pass `studentId` or `familyId` and go straight to',
           '  `preview_record_payment` without asking first: the approval card is the',
           '  confirmation. Mention the defaults in your summary so the administrator can',
-          '  change them.',
+          '  change them. When the administrator says which child the family is paying for,',
+          "  pass that child's `studentId` with `target: 'student'` so the whole amount goes to",
+          '  that child instead of being spread across the family.',
           '- To undo a recorded payment, find it with `get_family_payments`, then call',
           '  `cancel_payments` with its ids. Online (Stripe) payments cannot be cancelled here.',
         ]

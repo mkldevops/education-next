@@ -187,6 +187,62 @@ describe('recordPayment', () => {
     expect(result).toBe('OK')
   })
 
+  describe('targeting one enrollment (#551)', () => {
+    const familyId = '550e8400-e29b-41d4-a716-446655440000'
+    const zaynab = '550e8400-e29b-41d4-a716-446655440011'
+    const other = '550e8400-e29b-41d4-a716-446655440012'
+
+    beforeEach(() => {
+      enrollmentGatewayMock.findPayableByFamily.mockResolvedValue([
+        { id: zaynab, totalAmount: 64_000, discount: 0, payments: [{ amount: 32_000 }] },
+        {
+          id: '550e8400-e29b-41d4-a716-446655440013',
+          totalAmount: 68_000,
+          discount: 0,
+          payments: [],
+        },
+        {
+          id: '550e8400-e29b-41d4-a716-446655440014',
+          totalAmount: 68_000,
+          discount: 0,
+          payments: [],
+        },
+      ])
+    })
+
+    const record = (enrollmentId: string, amount = 32_000) =>
+      recordPayment({
+        schoolId,
+        familyId,
+        enrollmentId,
+        amount,
+        method: 'CASH',
+        paidAt: new Date(),
+      })
+
+    it('writes the whole amount on the chosen enrollment only', async () => {
+      expect(await record(zaynab)).toBe('OK')
+      expect(paymentGatewayMock.createForFamily).toHaveBeenCalledWith(tx, schoolId, [
+        expect.objectContaining({ familyId, enrollmentId: zaynab, amount: 32_000 }),
+      ])
+    })
+
+    it('rejects an enrollment that is not payable for this family', async () => {
+      expect(await record(other)).toBe('enrollmentNotPayable')
+      expect(paymentGatewayMock.createForFamily).not.toHaveBeenCalled()
+    })
+
+    it('rejects more than the chosen enrollment still owes', async () => {
+      expect(await record(zaynab, 32_001)).toBe('overpayment')
+      expect(paymentGatewayMock.createForFamily).not.toHaveBeenCalled()
+    })
+
+    it('rejects a malformed target before reading balances', async () => {
+      expect(await record('not-a-uuid')).toBe('validationError')
+      expect(transaction).not.toHaveBeenCalled()
+    })
+  })
+
   it('should record payment with correct payment method', async () => {
     const paidAt = new Date()
     enrollmentGatewayMock.findPayableByFamily.mockResolvedValue([

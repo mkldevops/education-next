@@ -3,7 +3,7 @@ import type { z } from 'zod'
 import { exceedsCharge } from '@/domain/childcare'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { previewMealPayment } from '@/domain/meal-ledger'
-import { distributePayment } from '@/domain/payment'
+import { allocatePayment } from '@/domain/payment'
 import { canonicalReceiptRequest, receiptTotal } from '@/domain/receipt'
 import { schoolToday } from '@/domain/school-date'
 import { childcareGateway } from '@/gateways/childcare-gateway'
@@ -32,6 +32,7 @@ type RecordReceiptError =
   | 'childcareOverpayment'
   | 'noPayableEnrollments'
   | 'refundExceedsPaid'
+  | 'enrollmentNotPayable'
 
 /** Sort de la transaction sans rien écrire, en portant le refus métier. */
 class Rollback extends Error {
@@ -66,7 +67,8 @@ export async function recordReceipt(
 ) {
   const parsed = recordReceiptSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
-  const { schoolId, familyId, meals, childcare, tuition, idempotencyKey } = parsed.data
+  const { schoolId, familyId, meals, childcare, tuition, tuitionEnrollmentId, idempotencyKey } =
+    parsed.data
   const reference = parsed.data.reference || null
 
   if (!(await isMealsEnabled(schoolId, configGw))) return 'mealsDisabled' as const
@@ -173,7 +175,7 @@ export async function recordReceipt(
       if (tuition > 0) {
         const balances = await readLockedFamilyBalances(tx, schoolId, familyId)
         if (balances === 'notFound') throw new Rollback('notFound')
-        const distribution = distributePayment(tuition, balances)
+        const distribution = allocatePayment(tuition, balances, tuitionEnrollmentId)
         if (distribution.result !== 'OK') throw new Rollback(distribution.result)
         tuitionRows = distribution.distribution
       }

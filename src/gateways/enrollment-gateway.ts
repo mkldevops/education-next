@@ -296,6 +296,8 @@ export const enrollmentGateway = {
           select: {
             person: {
               select: {
+                name: true,
+                lastname: true,
                 families: { select: { familyId: true, relationType: true } },
               },
             },
@@ -307,7 +309,10 @@ export const enrollmentGateway = {
 
     return rows
       .filter((row) => resolveDebtorFamily(row.student.person.families)?.familyId === familyId)
-      .map(({ student: _student, ...enrollment }) => enrollment)
+      .map(({ student, ...enrollment }) => ({
+        ...enrollment,
+        studentName: `${student.person.name} ${student.person.lastname}`,
+      }))
   },
 
   findEnrolledStudentIds: async (schoolId: string, periodId: string, studentIds: string[]) => {

@@ -262,4 +262,52 @@ describe('commitRecordPayment', () => {
     )
     expect(claim).not.toHaveBeenCalled()
   })
+
+  describe('targeted at one enrollment (#551)', () => {
+    const targeted = {
+      ...resolved,
+      amount: 60,
+      enrollmentId: 'enr-1',
+      allocation: [{ enrollmentId: 'enr-1', amount: 60 }],
+    }
+
+    beforeEach(() => {
+      findById.mockResolvedValue({
+        ownerKind: 'MCP_KEY',
+        keyId: 'key-1',
+        userId: null,
+        tool: 'record_payment',
+        checksum: input.checksum,
+        resolved: targeted,
+      })
+    })
+
+    it('writes the single line on the targeted enrollment', async () => {
+      const result = await commitRecordPayment(scope, input)
+
+      expect(tx.payment.create).toHaveBeenCalledTimes(1)
+      expect(tx.payment.create.mock.calls[0][0].data).toMatchObject({
+        enrollmentId: 'enr-1',
+        amount: 60,
+      })
+      expect(result).toEqual({ familyId: 'family-1', amount: 60, paymentIds: ['payment-1'] })
+    })
+
+    it('refuses once the targeted enrollment no longer owes the amount', async () => {
+      tx.enrollment.findMany.mockResolvedValue([
+        enrollment('enr-1', 90, [40]),
+        enrollment('enr-2', 90),
+      ])
+
+      expect(await commitRecordPayment(scope, input)).toBe('overpayment')
+      expect(tx.payment.create).not.toHaveBeenCalled()
+    })
+
+    it('refuses once the targeted enrollment left the payable list', async () => {
+      tx.enrollment.findMany.mockResolvedValue([enrollment('enr-2', 90)])
+
+      expect(await commitRecordPayment(scope, input)).toBe('enrollmentNotPayable')
+      expect(tx.payment.create).not.toHaveBeenCalled()
+    })
+  })
 })

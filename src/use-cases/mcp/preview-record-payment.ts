@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 import type { McpFinding } from '@/domain/mcp-draft'
-import { distributePayment, enrollmentBalances } from '@/domain/payment'
+import { allocatePayment, enrollmentBalances } from '@/domain/payment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
@@ -24,6 +24,30 @@ function familyLookup(data: ParsedInput) {
   if (data.familyId) return { field: 'familyId', value: data.familyId } as const
   if (data.studentId) return { field: 'studentId', value: data.studentId } as const
   return { field: 'familyName', value: data.familyName ?? '' } as const
+}
+
+/**
+ * Inscription visée par l'encaissement, `undefined` pour la répartition sur la famille.
+ * `target: 'student'` cherche l'unique inscription payable de l'élève dans cette famille ;
+ * sans elle, ou devant plusieurs, l'agent doit passer `enrollmentId`.
+ */
+function targetEnrollment(
+  data: ParsedInput,
+  enrollments: ReadonlyArray<{ id: string; studentId: string }>
+): { enrollmentId?: string; blocker?: McpFinding } {
+  if (data.enrollmentId) return { enrollmentId: data.enrollmentId }
+  if (data.target !== 'student' || !data.studentId) return {}
+
+  const studentId = data.studentId
+  const own = enrollments.filter((enrollment) => enrollment.studentId === studentId)
+  if (own.length === 1) return { enrollmentId: own[0].id }
+  return {
+    blocker: {
+      field: 'studentId',
+      value: studentId,
+      reason: own.length === 0 ? 'enrollmentNotPayable' : 'ambiguousEnrollment',
+    },
+  }
 }
 
 export async function previewRecordPayment(
@@ -66,9 +90,22 @@ export async function previewRecordPayment(
   const { currency } = await getSchoolRegionalSettings(schoolId)
   const balances = enrollmentBalances(enrollments)
 
-  // Sans montant, la famille solde ce qu'elle doit : c'est le cas courant au guichet.
+  const target = targetEnrollment(data, enrollments)
+  if (target.blocker) {
+    blockers.push(target.blocker)
+    return blockedPreview(matches, warnings, blockers)
+  }
+  const enrollmentId = target.enrollmentId
+
+  // Sans montant, la famille — ou l'enfant visé — solde ce qu'il doit : c'est le cas courant
+  // au guichet.
   const amount =
-    data.amount ?? roundHalfUp(balances.reduce((sum, row) => sum + row.remainingBalance, 0))
+    data.amount ??
+    roundHalfUp(
+      balances
+        .filter((row) => enrollmentId === undefined || row.enrollmentId === enrollmentId)
+        .reduce((sum, row) => sum + row.remainingBalance, 0)
+    )
 
   let allocation: Array<{ enrollmentId: string; amount: number }> = []
   if (amount === 0) {
@@ -76,9 +113,15 @@ export async function previewRecordPayment(
   } else if (!fitsCurrencyPrecision(amount, currency)) {
     blockers.push({ field: 'amount', value: String(amount), reason: 'invalidPrecision' })
   } else {
-    const distribution = distributePayment(amount, balances)
+    const distribution = allocatePayment(amount, balances, enrollmentId)
     if (distribution.result === 'OK') {
       allocation = distribution.distribution
+    } else if (distribution.result === 'enrollmentNotPayable') {
+      blockers.push({
+        field: 'enrollmentId',
+        value: enrollmentId ?? '',
+        reason: distribution.result,
+      })
     } else {
       blockers.push({ field: 'amount', value: String(amount), reason: distribution.result })
     }
@@ -108,6 +151,9 @@ export async function previewRecordPayment(
     cashedAt: data.cashedAt ? new Date(data.cashedAt).toISOString() : undefined,
     amount,
     currency,
+    // Absente, le montant est réparti sur la famille ; présente, il va tout entier à cette
+    // inscription, et le commit rejoue la même cible.
+    enrollmentId,
     // La répartition résolue est ce que l'action serveur actuelle ne montre jamais :
     // l'humain valide un encaissement ventilé, pas un montant global. Le commit la
     // recalcule sur les soldes frais et refuse si elle a bougé.

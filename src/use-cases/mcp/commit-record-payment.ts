@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { distributePayment } from '@/domain/payment'
+import { allocatePayment } from '@/domain/payment'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { readLockedFamilyBalances } from '@/use-cases/payments/locked-family-balance'
 import { claimResolved, commitInTransaction } from './claim-draft'
@@ -14,6 +14,7 @@ const resolvedSchema = z.object({
   paidAt: z.coerce.date(),
   cashedAt: z.coerce.date().optional(),
   amount: z.number(),
+  enrollmentId: z.string().optional(),
   allocation: z.array(z.object({ enrollmentId: z.string(), amount: z.number() })),
 })
 
@@ -50,7 +51,7 @@ export async function commitRecordPayment(scope: DraftScope, input: Input) {
     const balances = await readLockedFamilyBalances(tx, schoolId, resolved.family.id)
     if (balances === 'notFound') return 'notFound' as const
 
-    const distribution = distributePayment(resolved.amount, balances)
+    const distribution = allocatePayment(resolved.amount, balances, resolved.enrollmentId)
     if (distribution.result !== 'OK') return distribution.result
 
     // La ventilation validée par l'humain doit rester celle qu'on écrit. Une

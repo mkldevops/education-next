@@ -8,6 +8,7 @@ export const recordPaymentSchema = z
   .object({
     schoolId: z.string().min(1),
     familyId: z.uuid(),
+    enrollmentId: z.uuid().optional(),
     amount: z.number().refine((n) => n !== 0, { message: 'Amount must not be zero' }),
     method: manualPaymentMethodSchema,
     reference: z.string().max(250).optional(),

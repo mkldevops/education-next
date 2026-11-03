@@ -25,8 +25,10 @@ import { type ReactNode, useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { Link, useRouter } from '@/i18n/routing'
 import { currencyFractionDigits, currencyStep, currencySymbol } from '@/lib/decimal'
+import type { PayableEnrollmentChoice } from '@/use-cases/payments/payable-enrollment-choices'
 import type { ManualPaymentMethod } from '@/use-cases/payments/schemas'
 import { recordPaymentAction } from '../../../_lib/payment-actions'
+import { SPREAD_TARGET, TuitionTargetField, targetEnrollmentId } from './tuition-target-field'
 
 interface Option {
   id: string
@@ -49,9 +51,12 @@ export function RecordPaymentDialog({
   currency,
   trigger,
   canOpenCashier = false,
+  enrollments = [],
 }: {
   families: Option[]
   currency: string
+  /** Inscriptions à régler de l'unique famille, pour porter le règlement sur un seul enfant. */
+  enrollments?: PayableEnrollmentChoice[]
   canOpenCashier?: boolean
   defaultOpen?: boolean
   redirectTo?: string
@@ -85,6 +90,7 @@ export function RecordPaymentDialog({
           remainingAmount={remainingAmount}
           currency={currency}
           canOpenCashier={canOpenCashier}
+          enrollments={families.length === 1 ? enrollments : []}
         />
       </DialogContent>
     </Dialog>
@@ -96,11 +102,13 @@ function RecordPaymentForm({
   remainingAmount,
   currency,
   canOpenCashier,
+  enrollments,
 }: {
   families: Option[]
   currency: string
   remainingAmount?: number
   canOpenCashier: boolean
+  enrollments: PayableEnrollmentChoice[]
 }) {
   const t = useTranslations('dashboard.pages.payments.record')
   const locale = useLocale()
@@ -109,6 +117,9 @@ function RecordPaymentForm({
   const { isPending, close, onSubmit } = useDialogForm(t)
   const [method, setMethod] = useState<ManualPaymentMethod>('CASH')
   const [amount, setAmount] = useState('')
+  const [target, setTarget] = useState(SPREAD_TARGET)
+  const targeted = enrollments.find((enrollment) => enrollment.enrollmentId === target)
+  const payableAmount = targeted ? targeted.remainingBalance : remainingAmount
   const familyItems = families.map((family) => ({ value: family.id, label: family.name }))
   const router = useRouter()
 
@@ -116,6 +127,7 @@ function RecordPaymentForm({
     (formData) =>
       recordPaymentAction({
         familyId: formData.get('familyId') as string,
+        enrollmentId: targetEnrollmentId(target),
         amount: Number(formData.get('amount')),
         method,
         reference: (formData.get('reference') as string) || undefined,
@@ -173,6 +185,15 @@ function RecordPaymentForm({
             </div>
           )}
 
+          <TuitionTargetField
+            id="payment-target"
+            enrollments={enrollments}
+            value={target}
+            onChange={setTarget}
+            currency={currency}
+            disabled={isPending}
+          />
+
           <div className="space-y-2">
             <Label htmlFor="payment-amount">{t('amount')}</Label>
             <div className="relative">
@@ -196,11 +217,11 @@ function RecordPaymentForm({
                 {currencySymbol(locale, currency)}
               </span>
             </div>
-            {remainingAmount !== undefined && remainingAmount > 0 && (
+            {payableAmount !== undefined && payableAmount > 0 && (
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="text-graphite-600">
                   {t('remainingLabel', {
-                    amount: format.number(remainingAmount, {
+                    amount: format.number(payableAmount, {
                       style: 'currency',
                       currency,
                     }),
@@ -210,7 +231,7 @@ function RecordPaymentForm({
                   type="button"
                   variant="link"
                   size="sm"
-                  onClick={() => setAmount(String(remainingAmount))}
+                  onClick={() => setAmount(String(payableAmount))}
                   disabled={isPending}
                   className="h-auto px-0"
                 >

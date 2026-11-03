@@ -1056,7 +1056,12 @@
           },
           "optional": "(optional)",
           "remainingLabel": "Remaining tuition balance: {amount}",
-          "scopeHint": "Tuition only: the amount is spread across the family's enrollments, with no choice of child.",
+          "scopeHint": "Tuition only: the amount is spread across the family's enrollments, unless you put it on a single child.",
+          "target": {
+            "label": "Apply to",
+            "spread": "Whole family (spread)",
+            "child": "{name} — {amount} left"
+          },
           "servicesPrompt": "Canteen or snack?",
           "servicesLink": "Open this family's cashier",
           "payFull": "Pay the balance",
@@ -1072,7 +1077,8 @@
             "noPayableEnrollments": "This family has no current enrollment to pay",
             "refundExceedsPaid": "The refund exceeds the amount already paid",
             "validationError": "Check the information entered",
-            "notFound": "Family not found"
+            "notFound": "Family not found",
+            "enrollmentNotPayable": "This enrollment does not belong to the family or no longer awaits payment"
           }
         },
         "description": "Payments received, cheques to deposit and amounts still due."
@@ -1307,7 +1313,8 @@
           "overpayment": "The tuition amount exceeds the remaining balance",
           "childcareOverpayment": "The amount exceeds what is left on this childcare month",
           "noPayableEnrollments": "No enrollment is awaiting tuition payment",
-          "refundExceedsPaid": "The amount exceeds what remains paid on the enrollment"
+          "refundExceedsPaid": "The amount exceeds what remains paid on the enrollment",
+          "enrollmentNotPayable": "This enrollment does not belong to the family or no longer awaits tuition"
         },
         "receipt": {
           "title": "Receipt",
@@ -3706,7 +3713,8 @@
     "capacityBelowEnrolled": "Capacity cannot be lower than the number of enrolled students",
     "overpayment": "Amount exceeds the remaining balance due",
     "noPayableEnrollments": "No current enrollments for this family",
-    "refundExceedsPaid": "Refund exceeds the amount already paid"
+    "refundExceedsPaid": "Refund exceeds the amount already paid",
+    "enrollmentNotPayable": "This enrollment does not await payment for this family"
   },
   "search": {
     "placeholder": "Search students and families...",

@@ -165,6 +165,8 @@ export const previewRecordPaymentSchema = z
     familyId: z.uuid().optional(),
     familyName: z.string().trim().min(1).max(50).optional(),
     studentId: z.uuid().optional(),
+    target: z.enum(['family', 'student']).optional(),
+    enrollmentId: z.uuid().optional(),
     amount: paymentFields.amount.optional(),
     method: mcpPaymentMethodSchema.optional(),
     reference: paymentFields.reference,
@@ -177,6 +179,9 @@ export const previewRecordPaymentSchema = z
   )
   .refine((data) => data.method === 'CHECK' || data.cashedAt === undefined, {
     path: ['cashedAt'],
+  })
+  .refine((data) => data.target !== 'student' || data.studentId !== undefined, {
+    path: ['target'],
   })
 
 export const mcpFindStudentsSchema = z.object({

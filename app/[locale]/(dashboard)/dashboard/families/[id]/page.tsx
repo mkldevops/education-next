@@ -10,6 +10,7 @@ import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-co
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
+import { listPayableEnrollmentChoices } from '@/use-cases/payments/payable-enrollment-choices'
 import { getFamilyPaymentTracking } from '@/use-cases/payments/payment-tracking'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
@@ -95,6 +96,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     onlinePaymentAvailable,
     { currency },
     paymentTracking,
+    payableEnrollments,
   ] = await Promise.all([
     getSelectedPeriodId(family.schoolId),
     seesFinances ? getFamilyBalance(family.schoolId, family.id) : null,
@@ -102,6 +104,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     isStaff ? false : isOnlinePaymentAvailable(family.schoolId),
     getSchoolRegionalSettings(family.schoolId),
     paymentsEnabled ? getFamilyPaymentTracking(family.schoolId, family.id) : null,
+    paymentsEnabled && isStaff ? listPayableEnrollmentChoices(family.schoolId, family.id) : [],
   ])
 
   const mergeOptions = isAdmin ? await familyGateway.list(family.schoolId) : []
@@ -199,6 +202,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               <RecordPaymentDialog
                 families={[{ id: family.id, name: family.name }]}
                 remainingAmount={remainingBalance}
+                enrollments={payableEnrollments}
                 currency={currency}
                 canOpenCashier={canOpenCashier}
                 defaultOpen={openAction === 'addPayment'}

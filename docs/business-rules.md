@@ -1719,6 +1719,22 @@ owe anything and never receive an allocation. **Money received stays received**,
 active payments still count in `totalPaid` (the family's « Total payé »), so cancelling an
 enrollment never makes a recorded payment disappear from the family totals.
 
+**Spread by default, one child on request.** A manual payment is spread across the family's payable
+enrollments unless the cashier says which child it is for. `allocatePayment()` in
+`src/domain/payment.ts` then writes the whole amount on that one enrollment:
+
+- the target must be one of the family's payable (`PENDING`/`ACTIVE`) enrollments, read under the
+  family lock — anything else is `enrollmentNotPayable`;
+- the amount is capped at that enrollment's own remaining balance (`overpayment`), and a refund at
+  what it has received (`refundExceedsPaid`).
+
+The dashboard dialog (family page) and the cashier offer the child choice only when more than one
+enrollment still owes money; the server action and `record_receipt` (`tuitionEnrollmentId`) validate
+it again. Over MCP, `preview_record_payment` targets one enrollment with `enrollmentId`, or with
+`studentId` plus `target: 'student'` when that student has exactly one payable enrollment
+(`ambiguousEnrollment` otherwise); `studentId` alone still spreads over the family. The draft keeps
+the target, and `commit_record_payment` re-checks it under the lock.
+
 ### Payment deadlines and arrears
 
 Owner: `src/domain/payment-schedule.ts`, `src/use-cases/payments/payment-tracking.ts`.

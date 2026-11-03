@@ -10,8 +10,14 @@ import { receiptTotal } from '@/domain/receipt'
 import { useRouter } from '@/i18n/routing'
 import { currencyFractionDigits, formatCurrency } from '@/lib/decimal'
 import { toastActionError } from '@/lib/toast'
+import type { PayableEnrollmentChoice } from '@/use-cases/payments/payable-enrollment-choices'
 import type { CashierPaymentMethod } from '@/use-cases/receipts/schemas'
 import { recordReceiptAction } from '../../../_lib/receipt-actions'
+import {
+  SPREAD_TARGET,
+  TuitionTargetField,
+  targetEnrollmentId,
+} from '../../payments/_components/tuition-target-field'
 
 export type CashierLine = {
   studentId: string
@@ -40,6 +46,8 @@ type Props = {
   childcare: CashierChildcareLine[]
   /** Écolage restant dû, `null` quand l'école n'encaisse pas l'écolage. */
   tuitionDue: number | null
+  /** Inscriptions à régler, pour porter l'écolage sur un seul enfant. */
+  tuitionEnrollments: PayableEnrollmentChoice[]
   currency: string
   locale: string
 }
@@ -67,7 +75,15 @@ function idempotencyKey(familyId: string) {
   return { key, storageKey }
 }
 
-export function CashierForm({ familyId, lines, childcare, tuitionDue, currency, locale }: Props) {
+export function CashierForm({
+  familyId,
+  lines,
+  childcare,
+  tuitionDue,
+  tuitionEnrollments,
+  currency,
+  locale,
+}: Props) {
   const t = useTranslations('dashboard.pages.cashier')
   const tServices = useTranslations('dashboard.pages.meals.services')
   const tMethods = useTranslations('dashboard.pages.payments.record.methods')
@@ -78,6 +94,7 @@ export function CashierForm({ familyId, lines, childcare, tuitionDue, currency, 
   const [amounts, setAmounts] = useState<Record<string, string>>({})
   const [childcareAmounts, setChildcareAmounts] = useState<Record<string, string>>({})
   const [tuition, setTuition] = useState('')
+  const [tuitionTarget, setTuitionTarget] = useState(SPREAD_TARGET)
   const [method, setMethod] = useState<CashierPaymentMethod>('CASH')
   const [reference, setReference] = useState('')
 
@@ -100,6 +117,10 @@ export function CashierForm({ familyId, lines, childcare, tuitionDue, currency, 
       : []
   })
   const tuitionAmount = tuitionDue === null ? 0 : toAmount(tuition)
+  const tuitionEnrollmentId = tuitionAmount > 0 ? targetEnrollmentId(tuitionTarget) : undefined
+  const tuitionPayable =
+    tuitionEnrollments.find((enrollment) => enrollment.enrollmentId === tuitionTarget)
+      ?.remainingBalance ?? tuitionDue
   const childcareLines = childcare.flatMap((line) => {
     const amount = toAmount(childcareAmounts[line.chargeId])
     return amount > 0 ? [{ chargeId: line.chargeId, amount }] : []
@@ -118,6 +139,7 @@ export function CashierForm({ familyId, lines, childcare, tuitionDue, currency, 
         method,
         reference: reference.trim() || undefined,
         tuition: tuitionAmount,
+        tuitionEnrollmentId,
         meals,
         childcare: childcareLines,
       })
@@ -329,16 +351,24 @@ export function CashierForm({ familyId, lines, childcare, tuitionDue, currency, 
               {t('tuition')}
             </Label>
             <span className="text-xs text-graphite-600">
-              {t('tuitionDue', { amount: money(tuitionDue) })}
+              {t('tuitionDue', { amount: money(tuitionPayable ?? tuitionDue) })}
             </span>
           </div>
+          <TuitionTargetField
+            id="cashier-tuition-target"
+            enrollments={tuitionEnrollments}
+            value={tuitionTarget}
+            onChange={setTuitionTarget}
+            currency={currency}
+            disabled={isPending}
+          />
           <div className="flex flex-wrap items-center gap-2">
             <Input
               id="cashier-tuition"
               type="number"
               inputMode="decimal"
               min={0}
-              max={tuitionDue}
+              max={tuitionPayable ?? tuitionDue}
               step={step}
               value={tuition}
               onChange={(event) => setTuition(event.target.value)}
@@ -351,7 +381,7 @@ export function CashierForm({ familyId, lines, childcare, tuitionDue, currency, 
                 variant="outline"
                 size="sm"
                 disabled={isPending}
-                onClick={() => setTuition(String(tuitionDue))}
+                onClick={() => setTuition(String(tuitionPayable ?? tuitionDue))}
               >
                 {t('quick.settle')}
               </Button>

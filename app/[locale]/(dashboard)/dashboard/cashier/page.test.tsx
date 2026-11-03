@@ -32,6 +32,9 @@ vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
 vi.mock('@/use-cases/payments/family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
+vi.mock('@/use-cases/payments/payable-enrollment-choices', () => ({
+  listPayableEnrollmentChoices: async () => [],
+}))
 vi.mock('../../_lib/auth-helper', () => ({ requireSchoolCashier: requireSchoolCashierMock }))
 vi.mock('./_lib/cashier-data', () => ({
   searchCashierFamilies: searchMock,
