@@ -29,9 +29,14 @@ export function CustomizeHomeDialog({ available, hidden }: Props) {
   return (
     <Dialog>
       <DialogTrigger>
-        <Button type="button" variant="outline">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={t('open')}
+          title={t('open')}
+        >
           <SlidersHorizontal size={16} aria-hidden="true" />
-          {t('open')}
         </Button>
       </DialogTrigger>
       <DialogContent>

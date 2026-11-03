@@ -3035,7 +3035,10 @@
             "label": "Upcoming events",
             "hint": "The school's upcoming events"
           }
-        }
+        },
+        "hide": "Hide “{name}”",
+        "hidden": "“{name}” hidden",
+        "undo": "Undo"
       }
     },
     "assistant": {

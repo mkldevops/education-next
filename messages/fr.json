@@ -3036,7 +3036,10 @@
             "label": "Prochains événements",
             "hint": "Événements à venir de l'école"
           }
-        }
+        },
+        "hide": "Masquer « {name} »",
+        "hidden": "« {name} » masqué",
+        "undo": "Annuler"
       }
     },
     "assistant": {

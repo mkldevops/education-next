@@ -84,6 +84,11 @@ vi.mock('./_components/customize-home-dialog', () => ({
     </div>
   ),
 }))
+vi.mock('./_components/hideable-widget', () => ({
+  HideableWidget: ({ widget, children }: { widget: string; children: React.ReactNode }) => (
+    <div data-widget={widget}>{children}</div>
+  ),
+}))
 vi.mock('../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
 vi.mock('./_lib/dashboard-overview', () => ({ getDashboardOverview: getDashboardOverviewMock }))
 vi.mock('./_lib/today-agenda', () => ({ getTodayAgenda: getTodayAgendaMock }))
@@ -97,13 +102,13 @@ vi.mock('./_components/school-insights', () => ({
     showClasses,
   }: {
     insights: { payments: unknown }
-    showChart: boolean
-    showClasses: boolean
+    showChart?: boolean
+    showClasses?: boolean
   }) => (
     <div data-testid="school-insights">
       {insights.payments ? 'has-stats' : 'no-stats'}
-      {showChart ? '' : '|no-chart'}
-      {showClasses ? '' : '|no-classes'}
+      {showChart === false ? '|no-chart' : ''}
+      {showClasses === false ? '|no-classes' : ''}
     </div>
   ),
 }))
@@ -211,7 +216,23 @@ describe('DashboardPage, admin', () => {
     await renderPage()
 
     expect(screen.getByTestId('collection')).toHaveTextContent('tuition|no-meals')
-    expect(screen.getByTestId('school-insights')).toHaveTextContent('has-stats')
+    expect(screen.getAllByTestId('school-insights').map((node) => node.textContent)).toEqual([
+      'has-stats|no-classes',
+      'has-stats|no-chart',
+    ])
+  })
+
+  it('wraps every shown block so it can be hidden from its own card', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(true)
+    getDashboardOverviewMock.mockResolvedValue(overview(true))
+
+    const { container } = await renderPage()
+
+    expect(
+      [...container.querySelectorAll('[data-widget]')].map((node) =>
+        node.getAttribute('data-widget')
+      )
+    ).toEqual(['collection', 'tasks', 'headcount', 'collectionChart', 'classFill'])
   })
 
   it('lists the attendance and pending enrollment tasks and today classes', async () => {

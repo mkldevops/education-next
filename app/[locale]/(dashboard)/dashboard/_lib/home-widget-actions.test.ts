@@ -2,14 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getSessionMock = vi.fn()
 const updateMock = vi.fn()
+const findUniqueMock = vi.fn()
 const revalidatePathMock = vi.fn()
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }))
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: getSessionMock } } }))
-vi.mock('@/lib/db', () => ({ db: { user: { update: updateMock } } }))
+vi.mock('@/lib/db', () => ({ db: { user: { update: updateMock, findUnique: findUniqueMock } } }))
 
-const { saveHiddenWidgetsAction } = await import('./home-widget-actions')
+const { saveHiddenWidgetsAction, setWidgetHiddenAction } = await import('./home-widget-actions')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -49,6 +50,41 @@ describe('saveHiddenWidgetsAction', () => {
     })
 
     expect(await saveHiddenWidgetsAction([])).toBe('impersonating')
+    expect(updateMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('setWidgetHiddenAction', () => {
+  it('adds one block to the hidden list without duplicates', async () => {
+    findUniqueMock.mockResolvedValue({ dashboardHiddenWidgets: ['events'] })
+
+    expect(await setWidgetHiddenAction({ widget: 'events', hidden: true })).toBe('OK')
+    expect(await setWidgetHiddenAction({ widget: 'tasks', hidden: true })).toBe('OK')
+
+    expect(findUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: { dashboardHiddenWidgets: true },
+    })
+    expect(updateMock.mock.calls.map(([call]) => call.data.dashboardHiddenWidgets)).toEqual([
+      ['events'],
+      ['events', 'tasks'],
+    ])
+  })
+
+  it('shows a block again for undo', async () => {
+    findUniqueMock.mockResolvedValue({ dashboardHiddenWidgets: ['events', 'tasks'] })
+
+    expect(await setWidgetHiddenAction({ widget: 'events', hidden: false })).toBe('OK')
+    expect(updateMock.mock.calls[0][0].data.dashboardHiddenWidgets).toEqual(['tasks'])
+  })
+
+  it('rejects an unknown block and refuses impersonation before any read', async () => {
+    expect(await setWidgetHiddenAction({ widget: 'secret', hidden: true })).toBe('validationError')
+
+    getSessionMock.mockResolvedValue({ user: { id: 'user-1' }, session: { impersonatedBy: 'a' } })
+    expect(await setWidgetHiddenAction({ widget: 'tasks', hidden: true })).toBe('impersonating')
+
+    expect(findUniqueMock).not.toHaveBeenCalled()
     expect(updateMock).not.toHaveBeenCalled()
   })
 })

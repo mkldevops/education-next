@@ -49,6 +49,7 @@ import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { requireSchoolScope } from '../_lib/auth-helper'
 import { CollectionOverview } from './_components/collection-overview'
 import { CustomizeHomeDialog } from './_components/customize-home-dialog'
+import { HideableWidget } from './_components/hideable-widget'
 import { Panel, PanelLink, StatStrip, TaskRow } from './_components/home-widgets'
 import { SchoolInsightsSection } from './_components/school-insights'
 import { UnlinkedParentNotice } from './_components/unlinked-parent-notice'
@@ -386,10 +387,6 @@ export default async function DashboardPage({ params }: Props) {
         description={subtitle}
         actions={
           <>
-            <CustomizeHomeDialog
-              available={available}
-              hidden={available.filter((widget) => !shows(widget))}
-            />
             <Link
               href="/dashboard/enrollments?action=create"
               className={buttonVariants({ variant: 'outline' })}
@@ -400,6 +397,10 @@ export default async function DashboardPage({ params }: Props) {
               <Plus size={16} aria-hidden="true" />
               {t('quickActions.newFamily')}
             </Link>
+            <CustomizeHomeDialog
+              available={available}
+              hidden={available.filter((widget) => !shows(widget))}
+            />
           </>
         }
       />
@@ -413,12 +414,14 @@ export default async function DashboardPage({ params }: Props) {
       )}
 
       {hasCollection && shows('collection') && (
-        <CollectionOverview
-          payments={insights.payments}
-          meals={mealDues}
-          locale={locale}
-          currency={currency}
-        />
+        <HideableWidget widget="collection">
+          <CollectionOverview
+            payments={insights.payments}
+            meals={mealDues}
+            locale={locale}
+            currency={currency}
+          />
+        </HideableWidget>
       )}
 
       <div
@@ -431,75 +434,90 @@ export default async function DashboardPage({ params }: Props) {
         {mainColumn && (
           <div className={cn('space-y-6', sideColumn && 'lg:col-span-3')}>
             {shows('tasks') && (
-              <Panel
-                id="todo-heading"
-                title={t('home.todo.title')}
-                className="home-rise"
-                action={
-                  tasks.length > 0 ? (
-                    <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-xs font-semibold text-danger tabular-nums">
-                      {tasks.length}
-                    </span>
-                  ) : undefined
-                }
-              >
-                {tasks.length === 0 ? (
-                  <EmptyState
-                    icon={BadgeCheck}
-                    title={t('home.todo.empty')}
-                    description={t('home.todo.emptyHint')}
-                    className="border-0 py-8"
-                    action={
-                      <Link
-                        href="/dashboard/enrollments"
-                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
-                      >
-                        {t('home.todo.emptyAction')}
-                      </Link>
-                    }
-                  />
-                ) : (
-                  <ul className="space-y-0.5">
-                    {tasks.map(({ key, ...task }) => (
-                      <TaskRow key={key} {...task} />
-                    ))}
-                  </ul>
-                )}
-              </Panel>
+              <HideableWidget widget="tasks">
+                <Panel
+                  id="todo-heading"
+                  title={t('home.todo.title')}
+                  className="home-rise"
+                  action={
+                    tasks.length > 0 ? (
+                      <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-xs font-semibold text-danger tabular-nums">
+                        {tasks.length}
+                      </span>
+                    ) : undefined
+                  }
+                >
+                  {tasks.length === 0 ? (
+                    <EmptyState
+                      icon={BadgeCheck}
+                      title={t('home.todo.empty')}
+                      description={t('home.todo.emptyHint')}
+                      className="border-0 py-8"
+                      action={
+                        <Link
+                          href="/dashboard/enrollments"
+                          className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                        >
+                          {t('home.todo.emptyAction')}
+                        </Link>
+                      }
+                    />
+                  ) : (
+                    <ul className="space-y-0.5">
+                      {tasks.map(({ key, ...task }) => (
+                        <TaskRow key={key} {...task} />
+                      ))}
+                    </ul>
+                  )}
+                </Panel>
+              </HideableWidget>
             )}
             {shows('headcount') && (
-              <StatStrip
-                label={t('home.headcount.label')}
-                items={[
-                  {
-                    key: 'students',
-                    href: '/dashboard/students',
-                    label: t('stats.students'),
-                    value: studentCount,
-                  },
-                  {
-                    key: 'families',
-                    href: '/dashboard/families',
-                    label: t('stats.families'),
-                    value: familyCount,
-                  },
-                  {
-                    key: 'enrollments',
-                    href: '/dashboard/enrollments',
-                    label: t('stats.enrollments'),
-                    value: enrollmentCount,
-                  },
-                ]}
-              />
+              <HideableWidget widget="headcount">
+                <StatStrip
+                  label={t('home.headcount.label')}
+                  items={[
+                    {
+                      key: 'students',
+                      href: '/dashboard/students',
+                      label: t('stats.students'),
+                      value: studentCount,
+                    },
+                    {
+                      key: 'families',
+                      href: '/dashboard/families',
+                      label: t('stats.families'),
+                      value: familyCount,
+                    },
+                    {
+                      key: 'enrollments',
+                      href: '/dashboard/enrollments',
+                      label: t('stats.enrollments'),
+                      value: enrollmentCount,
+                    },
+                  ]}
+                />
+              </HideableWidget>
             )}
-            {(shows('collectionChart') || shows('classFill')) && (
-              <SchoolInsightsSection
-                insights={insights}
-                locale={locale}
-                currency={currency}
-                showChart={shows('collectionChart')}
-                showClasses={shows('classFill')}
-              />
+            {insights.payments && shows('collectionChart') && (
+              <HideableWidget widget="collectionChart">
+                <SchoolInsightsSection
+                  insights={insights}
+                  locale={locale}
+                  currency={currency}
+                  showClasses={false}
+                />
+              </HideableWidget>
+            )}
+            {shows('classFill') && (
+              <HideableWidget widget="classFill">
+                <SchoolInsightsSection
+                  insights={insights}
+                  locale={locale}
+                  currency={currency}
+                  showChart={false}
+                />
+              </HideableWidget>
             )}
           </div>
         )}
@@ -507,84 +525,86 @@ export default async function DashboardPage({ params }: Props) {
         {sideColumn && (
           <div className={cn('space-y-6', mainColumn && 'lg:col-span-2')}>
             {showSchedule && agenda && (
-              <Panel
-                id="today-classes-heading"
-                title={t('home.schedule.title')}
-                className="home-rise"
-                action={
-                  <PanelLink
-                    href={attendanceEnabled ? '/dashboard/attendance' : '/dashboard/planning'}
-                  >
-                    {attendanceEnabled
-                      ? t('home.schedule.openAttendance')
-                      : t('home.schedule.viewAll')}
-                  </PanelLink>
-                }
-              >
-                {agenda.closed && (
-                  <p className="mx-1 mb-2 flex items-center gap-2 rounded-md bg-warning-subtle px-3 py-2 text-xs font-medium text-warning">
-                    <CalendarX2 size={14} aria-hidden="true" />
-                    {t('home.schedule.closed')}
-                  </p>
-                )}
-                {agenda.classes.length === 0 ? (
-                  <EmptyState
-                    icon={CalendarClock}
-                    title={t('home.schedule.empty')}
-                    className="border-0 py-8"
-                    action={
-                      <Link
-                        href={scheduleEnabled ? '/dashboard/planning' : '/dashboard/attendance'}
-                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
-                      >
-                        {scheduleEnabled
-                          ? t('home.schedule.viewAll')
-                          : t('home.schedule.openAttendance')}
-                      </Link>
-                    }
-                  />
-                ) : (
-                  <ol className="relative space-y-1 before:absolute before:top-3 before:bottom-3 before:left-4 before:w-px before:bg-border">
-                    {agenda.classes.map((item) => (
-                      <li key={item.slotId} className="relative flex items-start gap-3 px-1 py-2">
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            'relative mt-1.5 ml-2 size-2.5 shrink-0 rounded-full ring-4 ring-surface',
-                            item.attendance === 'VALIDATED'
-                              ? 'bg-success'
-                              : item.attendance === 'IN_PROGRESS'
-                                ? 'bg-warning'
-                                : 'bg-border'
-                          )}
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-xs font-medium text-muted-foreground tabular-nums">
-                            {item.startTime}–{item.endTime}
-                          </span>
-                          <span className="block truncate text-sm font-medium text-foreground">
-                            {item.className}
-                          </span>
-                          {item.teachers.length > 0 && (
-                            <span className="block truncate text-xs text-muted-foreground">
-                              {item.teachers.join(', ')}
-                            </span>
-                          )}
-                        </span>
-                        {item.attendance && (
-                          <StatusBadge
-                            status={ATTENDANCE_BADGE[item.attendance].status}
-                            label={tAttendance(ATTENDANCE_BADGE[item.attendance].label)}
-                            className="mt-1 shrink-0"
+              <HideableWidget widget="schedule">
+                <Panel
+                  id="today-classes-heading"
+                  title={t('home.schedule.title')}
+                  className="home-rise"
+                  action={
+                    <PanelLink
+                      href={attendanceEnabled ? '/dashboard/attendance' : '/dashboard/planning'}
+                    >
+                      {attendanceEnabled
+                        ? t('home.schedule.openAttendance')
+                        : t('home.schedule.viewAll')}
+                    </PanelLink>
+                  }
+                >
+                  {agenda.closed && (
+                    <p className="mx-1 mb-2 flex items-center gap-2 rounded-md bg-warning-subtle px-3 py-2 text-xs font-medium text-warning">
+                      <CalendarX2 size={14} aria-hidden="true" />
+                      {t('home.schedule.closed')}
+                    </p>
+                  )}
+                  {agenda.classes.length === 0 ? (
+                    <EmptyState
+                      icon={CalendarClock}
+                      title={t('home.schedule.empty')}
+                      className="border-0 py-8"
+                      action={
+                        <Link
+                          href={scheduleEnabled ? '/dashboard/planning' : '/dashboard/attendance'}
+                          className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                        >
+                          {scheduleEnabled
+                            ? t('home.schedule.viewAll')
+                            : t('home.schedule.openAttendance')}
+                        </Link>
+                      }
+                    />
+                  ) : (
+                    <ol className="relative space-y-1 before:absolute before:top-3 before:bottom-3 before:left-4 before:w-px before:bg-border">
+                      {agenda.classes.map((item) => (
+                        <li key={item.slotId} className="relative flex items-start gap-3 px-1 py-2">
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              'relative mt-1.5 ml-2 size-2.5 shrink-0 rounded-full ring-4 ring-surface',
+                              item.attendance === 'VALIDATED'
+                                ? 'bg-success'
+                                : item.attendance === 'IN_PROGRESS'
+                                  ? 'bg-warning'
+                                  : 'bg-border'
+                            )}
                           />
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </Panel>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-xs font-medium text-muted-foreground tabular-nums">
+                              {item.startTime}–{item.endTime}
+                            </span>
+                            <span className="block truncate text-sm font-medium text-foreground">
+                              {item.className}
+                            </span>
+                            {item.teachers.length > 0 && (
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {item.teachers.join(', ')}
+                              </span>
+                            )}
+                          </span>
+                          {item.attendance && (
+                            <StatusBadge
+                              status={ATTENDANCE_BADGE[item.attendance].status}
+                              label={tAttendance(ATTENDANCE_BADGE[item.attendance].label)}
+                              className="mt-1 shrink-0"
+                            />
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </Panel>
+              </HideableWidget>
             )}
-            {showEvents && eventsCard}
+            {showEvents && <HideableWidget widget="events">{eventsCard}</HideableWidget>}
           </div>
         )}
       </div>
