@@ -17,6 +17,7 @@ const isOnlinePaymentAvailableMock = vi.fn()
 const isMealsEnabledMock = vi.fn()
 const loadMealDuesMock = vi.fn()
 const redirectMock = vi.fn()
+const findUserMock = vi.fn()
 
 vi.mock('@/lib/school-regional-settings', () => ({
   getSchoolRegionalSettings: async () => ({ currency: 'EUR', timeZone: 'Europe/Paris' }),
@@ -75,6 +76,14 @@ vi.mock('./_components/collection-overview', () => ({
     </div>
   ),
 }))
+vi.mock('@/lib/db', () => ({ db: { user: { findUnique: findUserMock } } }))
+vi.mock('./_components/customize-home-dialog', () => ({
+  CustomizeHomeDialog: ({ available, hidden }: { available: string[]; hidden: string[] }) => (
+    <div data-testid="customize">
+      {available.join(',')}|{hidden.join(',')}
+    </div>
+  ),
+}))
 vi.mock('../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
 vi.mock('./_lib/dashboard-overview', () => ({ getDashboardOverview: getDashboardOverviewMock }))
 vi.mock('./_lib/today-agenda', () => ({ getTodayAgenda: getTodayAgendaMock }))
@@ -82,8 +91,20 @@ vi.mock('./_lib/parent-home', () => ({ getParentHome: getParentHomeMock }))
 // Composants serveur asynchrones couverts par leurs propres tests : le moteur de rendu
 // client des tests ne sait pas résoudre un composant serveur imbriqué.
 vi.mock('./_components/school-insights', () => ({
-  SchoolInsightsSection: ({ insights }: { insights: { payments: unknown } }) => (
-    <div data-testid="school-insights">{insights.payments ? 'has-stats' : 'no-stats'}</div>
+  SchoolInsightsSection: ({
+    insights,
+    showChart,
+    showClasses,
+  }: {
+    insights: { payments: unknown }
+    showChart: boolean
+    showClasses: boolean
+  }) => (
+    <div data-testid="school-insights">
+      {insights.payments ? 'has-stats' : 'no-stats'}
+      {showChart ? '' : '|no-chart'}
+      {showClasses ? '' : '|no-classes'}
+    </div>
   ),
 }))
 vi.mock('./_components/unlinked-parent-notice', () => ({
@@ -148,6 +169,7 @@ beforeEach(() => {
   getTodayAgendaMock.mockResolvedValue(null)
   schoolGatewayMock.findActiveById.mockResolvedValue({ id: 'school-1', name: 'Al-Nour' })
   authMock.api.getSession.mockResolvedValue({ user: { name: 'Jane', email: 'jane@example.com' } })
+  findUserMock.mockResolvedValue({ dashboardHiddenWidgets: [] })
 })
 
 describe('DashboardPage, admin', () => {
@@ -267,6 +289,49 @@ describe('DashboardPage, admin', () => {
 
     expect(screen.getByText('home.todo.empty')).toBeInTheDocument()
     expect(screen.queryByText('home.schedule.title')).not.toBeInTheDocument()
+  })
+
+  it('reads the hidden blocks of the signed-in user and leaves them out', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(true)
+    getDashboardOverviewMock.mockResolvedValue(overview(true))
+    findUserMock.mockResolvedValue({
+      dashboardHiddenWidgets: ['collection', 'tasks', 'collectionChart', 'removed-widget'],
+    })
+
+    await renderPage()
+
+    expect(findUserMock).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: { dashboardHiddenWidgets: true },
+    })
+    expect(screen.queryByTestId('collection')).not.toBeInTheDocument()
+    expect(screen.queryByText('home.todo.title')).not.toBeInTheDocument()
+    expect(screen.getByText('stats.families')).toBeInTheDocument()
+    expect(screen.getByTestId('school-insights')).toHaveTextContent('has-stats|no-chart')
+    expect(screen.getByTestId('customize')).toHaveTextContent(
+      'collection,tasks,headcount,collectionChart,classFill|collection,tasks,collectionChart'
+    )
+  })
+
+  it('offers only the blocks the school modules provide', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(false)
+    getDashboardOverviewMock.mockResolvedValue(overview(false))
+
+    await renderPage()
+
+    expect(screen.getByTestId('customize')).toHaveTextContent('tasks,headcount,classFill|')
+  })
+
+  it('explains how to bring blocks back when every block is hidden', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(false)
+    getDashboardOverviewMock.mockResolvedValue(overview(false))
+    findUserMock.mockResolvedValue({ dashboardHiddenWidgets: ['tasks', 'headcount', 'classFill'] })
+
+    await renderPage()
+
+    expect(screen.getByText('home.customize.allHidden')).toBeInTheDocument()
+    expect(screen.queryByTestId('school-insights')).not.toBeInTheDocument()
+    expect(screen.queryByText('stats.families')).not.toBeInTheDocument()
   })
 })
 

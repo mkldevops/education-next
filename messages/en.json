@@ -2996,6 +2996,46 @@
       },
       "headcount": {
         "label": "Headcount"
+      },
+      "customize": {
+        "open": "Customize",
+        "title": "Customize home",
+        "description": "Choose which blocks appear on your home. This setting only affects you.",
+        "showAll": "Show all",
+        "save": "Save",
+        "error": "Your preferences could not be saved.",
+        "allHidden": "All blocks are hidden",
+        "allHiddenHint": "Use “Customize” to show them again.",
+        "widgets": {
+          "collection": {
+            "label": "Collection",
+            "hint": "Amount left to collect, tuition and meals"
+          },
+          "tasks": {
+            "label": "To do",
+            "hint": "Attendance, enrollments, cheques and meal reminders"
+          },
+          "headcount": {
+            "label": "Headcount",
+            "hint": "Students, families and enrollments"
+          },
+          "collectionChart": {
+            "label": "Collections this year",
+            "hint": "Amounts collected month by month"
+          },
+          "classFill": {
+            "label": "Class fill",
+            "hint": "Seats taken per class"
+          },
+          "schedule": {
+            "label": "Today's classes",
+            "hint": "Today's schedule and attendance status"
+          },
+          "events": {
+            "label": "Upcoming events",
+            "hint": "The school's upcoming events"
+          }
+        }
       }
     },
     "assistant": {

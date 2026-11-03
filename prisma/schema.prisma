@@ -229,6 +229,10 @@ model User {
   /// après cette date est « nouvelle » ; `null` se lit comme `createdAt`.
   announcementsSeenAt DateTime?
 
+  /// Blocs de l'accueil admin masqués par l'utilisateur (clés de `HOME_WIDGETS`). En base pour
+  /// suivre l'utilisateur sur tous ses appareils.
+  dashboardHiddenWidgets String[] @default([])
+
   sessions                  Session[]
   accounts                  Account[]
   families                  UserFamily[]
