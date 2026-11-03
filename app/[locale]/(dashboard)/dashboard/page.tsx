@@ -446,6 +446,7 @@ export default async function DashboardPage({ params }: Props) {
               },
             ]}
           />
+          <SchoolInsightsSection insights={insights} locale={locale} currency={currency} />
         </div>
 
         {sideColumn && (
@@ -532,8 +533,6 @@ export default async function DashboardPage({ params }: Props) {
           </div>
         )}
       </div>
-
-      <SchoolInsightsSection insights={insights} locale={locale} currency={currency} />
     </div>
   )
 }
