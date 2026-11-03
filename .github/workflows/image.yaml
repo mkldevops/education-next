@@ -119,4 +119,4 @@ jobs:
               -H "Authorization: Bearer $COOLIFY_TOKEN" -H 'Content-Type: application/json' \
               -d "{\"docker_registry_image_tag\":\"${{ github.sha }}\"}" > /dev/null
           done
-          curl -fsS "$COOLIFY_URL/api/v1/deploy?uuid=$APP_UUIDS" -H "Authorization: Bearer $COOLIFY_TOKEN"
+          curl -fsS -X POST "$COOLIFY_URL/api/v1/deploy?uuid=$APP_UUIDS" -H "Authorization: Bearer $COOLIFY_TOKEN"
