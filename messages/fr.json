@@ -3040,6 +3040,49 @@
       },
       "headcount": {
         "label": "Effectifs"
+      },
+      "customize": {
+        "open": "Personnaliser",
+        "title": "Personnaliser l'accueil",
+        "description": "Choisissez les blocs affichés sur votre accueil. Ce réglage ne concerne que vous.",
+        "showAll": "Tout afficher",
+        "save": "Enregistrer",
+        "error": "Impossible d'enregistrer vos préférences.",
+        "allHidden": "Tous les blocs sont masqués",
+        "allHiddenHint": "Utilisez « Personnaliser » pour en réafficher.",
+        "widgets": {
+          "collection": {
+            "label": "Recouvrement",
+            "hint": "Montant restant à encaisser, écolage et repas"
+          },
+          "tasks": {
+            "label": "À traiter",
+            "hint": "Appels, inscriptions, chèques et repas à relancer"
+          },
+          "headcount": {
+            "label": "Effectifs",
+            "hint": "Élèves, familles et inscriptions"
+          },
+          "collectionChart": {
+            "label": "Encaissements de l'année",
+            "hint": "Montants encaissés mois par mois"
+          },
+          "classFill": {
+            "label": "Remplissage des classes",
+            "hint": "Places occupées par classe"
+          },
+          "schedule": {
+            "label": "Cours du jour",
+            "hint": "Planning et état des appels du jour"
+          },
+          "events": {
+            "label": "Prochains événements",
+            "hint": "Événements à venir de l'école"
+          }
+        },
+        "hide": "Masquer « {name} »",
+        "hidden": "« {name} » masqué",
+        "undo": "Annuler"
       }
     },
     "assistant": {
