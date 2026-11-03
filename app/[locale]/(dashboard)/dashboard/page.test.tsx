@@ -18,6 +18,7 @@ const isMealsEnabledMock = vi.fn()
 const loadMealDuesMock = vi.fn()
 const redirectMock = vi.fn()
 const findUserMock = vi.fn()
+const getCollectionSeriesMock = vi.fn()
 
 vi.mock('@/lib/school-regional-settings', () => ({
   getSchoolRegionalSettings: async () => ({ currency: 'EUR', timeZone: 'Europe/Paris' }),
@@ -96,21 +97,17 @@ vi.mock('./_lib/parent-home', () => ({ getParentHome: getParentHomeMock }))
 // Composants serveur asynchrones couverts par leurs propres tests : le moteur de rendu
 // client des tests ne sait pas résoudre un composant serveur imbriqué.
 vi.mock('./_components/school-insights', () => ({
-  SchoolInsightsSection: ({
-    insights,
-    showChart,
-    showClasses,
-  }: {
-    insights: { payments: unknown }
-    showChart?: boolean
-    showClasses?: boolean
-  }) => (
-    <div data-testid="school-insights">
-      {insights.payments ? 'has-stats' : 'no-stats'}
-      {showChart === false ? '|no-chart' : ''}
-      {showClasses === false ? '|no-classes' : ''}
+  SchoolInsightsSection: () => <div data-testid="school-insights" />,
+}))
+vi.mock('./_components/collection-chart-card', () => ({
+  CollectionChartCard: ({ view }: { view: { granularity: string; range: string } }) => (
+    <div data-testid="collection-chart">
+      {view.granularity}|{view.range}
     </div>
   ),
+}))
+vi.mock('@/use-cases/payments/collection-series', () => ({
+  getCollectionSeries: getCollectionSeriesMock,
 }))
 vi.mock('./_components/unlinked-parent-notice', () => ({
   UnlinkedParentNotice: () => <div data-testid="unlinked-parent" />,
@@ -149,7 +146,7 @@ const overview = (paymentsEnabled: boolean, pendingEnrollmentCount = 0) => ({
   enrollmentCount: 5,
   pendingEnrollmentCount,
   insights: {
-    payments: paymentsEnabled ? { totals, monthly: [], methods: [], families: [] } : null,
+    payments: paymentsEnabled ? { totals, methods: [], families: [] } : null,
     classes: [],
   },
 })
@@ -175,6 +172,7 @@ beforeEach(() => {
   schoolGatewayMock.findActiveById.mockResolvedValue({ id: 'school-1', name: 'Al-Nour' })
   authMock.api.getSession.mockResolvedValue({ user: { name: 'Jane', email: 'jane@example.com' } })
   findUserMock.mockResolvedValue({ dashboardHiddenWidgets: [] })
+  getCollectionSeriesMock.mockResolvedValue([])
 })
 
 describe('DashboardPage, admin', () => {
@@ -206,7 +204,9 @@ describe('DashboardPage, admin', () => {
     await renderPage()
 
     expect(screen.queryByTestId('collection')).not.toBeInTheDocument()
-    expect(screen.getByTestId('school-insights')).toHaveTextContent('no-stats')
+    expect(screen.getByTestId('school-insights')).toBeInTheDocument()
+    expect(screen.queryByTestId('collection-chart')).not.toBeInTheDocument()
+    expect(getCollectionSeriesMock).not.toHaveBeenCalled()
   })
 
   it('shows the collection overview and stats when payments are enabled', async () => {
@@ -216,10 +216,26 @@ describe('DashboardPage, admin', () => {
     await renderPage()
 
     expect(screen.getByTestId('collection')).toHaveTextContent('tuition|no-meals')
-    expect(screen.getAllByTestId('school-insights').map((node) => node.textContent)).toEqual([
-      'has-stats|no-classes',
-      'has-stats|no-chart',
-    ])
+    expect(screen.getByTestId('collection-chart')).toHaveTextContent('month|12m')
+    expect(screen.getByTestId('school-insights')).toBeInTheDocument()
+  })
+
+  it('charts the collection with the view saved by the user', async () => {
+    isPaymentsEnabledMock.mockResolvedValue(true)
+    getDashboardOverviewMock.mockResolvedValue(overview(true))
+    findUserMock.mockResolvedValue({
+      dashboardHiddenWidgets: [],
+      dashboardChartGranularity: 'day',
+      dashboardChartRange: '30d',
+    })
+
+    await renderPage()
+
+    expect(getCollectionSeriesMock).toHaveBeenCalledWith('school-1', 'period-1', {
+      granularity: 'day',
+      range: '30d',
+    })
+    expect(screen.getByTestId('collection-chart')).toHaveTextContent('day|30d')
   })
 
   it('wraps every shown block so it can be hidden from its own card', async () => {
@@ -323,12 +339,18 @@ describe('DashboardPage, admin', () => {
 
     expect(findUserMock).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      select: { dashboardHiddenWidgets: true },
+      select: {
+        dashboardHiddenWidgets: true,
+        dashboardChartGranularity: true,
+        dashboardChartRange: true,
+      },
     })
     expect(screen.queryByTestId('collection')).not.toBeInTheDocument()
     expect(screen.queryByText('home.todo.title')).not.toBeInTheDocument()
     expect(screen.getByText('stats.families')).toBeInTheDocument()
-    expect(screen.getByTestId('school-insights')).toHaveTextContent('has-stats|no-chart')
+    expect(screen.getByTestId('school-insights')).toBeInTheDocument()
+    expect(screen.queryByTestId('collection-chart')).not.toBeInTheDocument()
+    expect(getCollectionSeriesMock).not.toHaveBeenCalled()
     expect(screen.getByTestId('customize')).toHaveTextContent(
       'collection,tasks,headcount,collectionChart,classFill|collection,tasks,collectionChart'
     )

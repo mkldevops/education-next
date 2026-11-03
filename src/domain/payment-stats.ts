@@ -18,19 +18,6 @@ export type UncashedCheques = {
   count: number
 }
 
-export type DatedAmount = {
-  amount: DecimalLike
-  paidAt: Date
-}
-
-export type MonthWindow = {
-  /** Premier instant du premier mois affiché, en UTC. */
-  from: Date
-  /** Premier instant du mois suivant le dernier mois affiché, exclu, en UTC. */
-  to: Date
-  months: number
-}
-
 export type PaymentTotals = {
   due: number
   collected: number
@@ -42,12 +29,6 @@ export type PaymentTotals = {
   paymentCount: number
   uncashedAmount: number
   uncashedCount: number
-}
-
-export type MonthlyCollection = {
-  month: string
-  amount: number
-  count: number
 }
 
 export type MethodCollection = {
@@ -118,59 +99,6 @@ export function summarizePayments(
     uncashedAmount: roundHalfUp(amountOf(uncashed.amount)),
     uncashedCount: uncashed.count,
   }
-}
-
-function monthKey(date: Date): string {
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
-}
-
-function monthStart(date: Date, offset = 0): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + offset, 1))
-}
-
-/** Premier instant, en UTC, du mois qui suit `date` : borne exclue du mois courant. */
-export function nextMonthStart(date: Date): Date {
-  return monthStart(date, 1)
-}
-
-/**
- * Fenêtre du graphique mensuel, en mois UTC comme les dates de paiement saisies.
- *
- * Elle se termine au mois du dernier paiement plutôt qu'au mois courant, sans jamais le dépasser :
- * une période scolaire passée resterait sinon affichée vide, et une date saisie dans le futur
- * étirerait le graphique au point d'écraser les mois utiles.
- */
-export function monthWindow(
-  latestPaidAt: Date | null,
-  { months = 12, reference = new Date() }: { months?: number; reference?: Date } = {}
-): MonthWindow {
-  const cap = nextMonthStart(reference)
-  const end = latestPaidAt && latestPaidAt < cap ? latestPaidAt : reference
-
-  return { from: monthStart(end, 1 - months), to: nextMonthStart(end), months }
-}
-
-/** Série mensuelle des encaissements sur la fenêtre, mois vides compris. */
-export function monthlyCollection(
-  payments: DatedAmount[],
-  window: MonthWindow
-): MonthlyCollection[] {
-  const buckets = new Map<string, { amount: number; count: number }>()
-
-  for (const payment of payments) {
-    if (payment.paidAt < window.from || payment.paidAt >= window.to) continue
-    const key = monthKey(payment.paidAt)
-    const bucket = buckets.get(key) ?? { amount: 0, count: 0 }
-    bucket.amount += toNumber(payment.amount)
-    bucket.count += 1
-    buckets.set(key, bucket)
-  }
-
-  return Array.from({ length: window.months }, (_, index) => {
-    const key = monthKey(monthStart(window.from, index))
-    const bucket = buckets.get(key)
-    return { month: key, amount: roundHalfUp(bucket?.amount ?? 0), count: bucket?.count ?? 0 }
-  })
 }
 
 /** Répartition par mode de paiement, triée par montant décroissant. */

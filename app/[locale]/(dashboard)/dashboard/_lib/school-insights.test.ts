@@ -34,7 +34,6 @@ describe('getSchoolInsights', () => {
         uncashedAmount: 0,
         uncashedCount: 0,
       },
-      monthly: [],
       methods: [],
       families: [],
     })

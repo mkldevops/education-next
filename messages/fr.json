@@ -235,14 +235,31 @@
     "insights": {
       "remaining": "Reste à encaisser",
       "familiesCount": "{count, plural, =0 {aucune famille} one {# famille} other {# familles}}",
-      "collectionTitle": "Encaissements de l'année",
+      "collectionTitle": "Encaissements",
       "viewPayments": "Voir les encaissements",
       "collected": "Encaissé",
       "collectionRate": "Taux de recouvrement",
       "noCollection": "Aucun encaissement sur ce périmètre",
       "classFillTitle": "Remplissage des classes",
       "viewClasses": "Voir les classes",
-      "noClasses": "Aucune classe sur cette période"
+      "noClasses": "Aucune classe sur cette période",
+      "chartView": {
+        "granularityLabel": "Découpage",
+        "rangeLabel": "Période",
+        "error": "Impossible d'enregistrer la vue du graphique.",
+        "granularity": {
+          "day": "Jour",
+          "month": "Mois",
+          "year": "An"
+        },
+        "range": {
+          "7d": "7 j",
+          "30d": "30 j",
+          "3m": "3 mois",
+          "6m": "6 mois",
+          "12m": "12 mois"
+        }
+      }
     },
     "breadcrumbs": {
       "dashboard": "Tableau de bord",
@@ -993,8 +1010,6 @@
           "paymentsCount": "{count, plural, =0 {aucun paiement} one {# paiement} other {# paiements}}",
           "outstandingEnrollments": "{outstanding, plural, =0 {aucune inscription non soldée} one {# inscription non soldée} other {# inscriptions non soldées}} sur {total}",
           "uncashedCount": "{count, plural, =0 {aucun chèque en attente} one {# chèque remis} other {# chèques remis}}",
-          "monthlyTitle": "Évolution des encaissements",
-          "monthlySubtitle": "{months} derniers mois",
           "methodsTitle": "Répartition par mode de paiement",
           "outstandingTitle": "Familles en retard",
           "outstandingSubtitle": "Retard décroissant selon les échéances",
@@ -3064,8 +3079,8 @@
             "hint": "Élèves, familles et inscriptions"
           },
           "collectionChart": {
-            "label": "Encaissements de l'année",
-            "hint": "Montants encaissés mois par mois"
+            "label": "Encaissements",
+            "hint": "Montants encaissés par jour, mois ou année"
           },
           "classFill": {
             "label": "Remplissage des classes",

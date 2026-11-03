@@ -4,10 +4,6 @@ import {
   type FamilyOutstanding,
   familiesOutstanding,
   type MethodCollection,
-  type MonthlyCollection,
-  monthlyCollection,
-  monthWindow,
-  nextMonthStart,
   type PaymentTotals,
   summarizePayments,
 } from '@/domain/payment-stats'
@@ -19,12 +15,10 @@ import {
   type TrackedFamily,
 } from './payment-tracking'
 
-const MONTHS_CHARTED = 12
 const FAMILIES_LISTED = 6
 
 export type PaymentStats = {
   totals: PaymentTotals
-  monthly: MonthlyCollection[]
   methods: MethodCollection[]
   families: FamilyToFollowUp[]
   tracking: FamilyPaymentTracking
@@ -79,27 +73,35 @@ async function contactPhones(schoolId: string, familyIds: string[]) {
   return phones
 }
 
-/**
- * Statistiques d'encaissement d'une école, sur la période sélectionnée.
- *
- * Le périmètre est celui de la dette : inscriptions `PENDING` et `ACTIVE`, comme
- * `calculateFamilyBalance`. Les paiements sont agrégés en base : seul le graphique lit des lignes,
- * bornées à sa fenêtre, pour que le coût ne croisse pas avec l'historique de l'école.
- */
-export async function getPaymentStats(
-  schoolId: string,
-  periodId: string | null,
-  reference: Date = new Date()
-): Promise<PaymentStats> {
+/** Périmètre de la dette : inscriptions `PENDING` et `ACTIVE`, bornées à la période choisie. */
+export function paymentScope(schoolId: string, periodId: string | null) {
   const enrollmentWhere = {
     schoolId,
     isActive: true,
     status: { in: ['PENDING' as const, 'ACTIVE' as const] },
     ...(periodId ? { classAssignments: { some: { classPeriod: { periodId } } } } : {}),
   }
-  const paymentWhere = { schoolId, isActive: true, enrollment: enrollmentWhere }
+  return {
+    enrollmentWhere,
+    paymentWhere: { schoolId, isActive: true, enrollment: enrollmentWhere },
+  }
+}
 
-  const [rows, paidByEnrollment, byMethod, uncashed, latest, tracking] = await Promise.all([
+/**
+ * Statistiques d'encaissement d'une école, sur la période sélectionnée.
+ *
+ * Le périmètre est celui de la dette : inscriptions `PENDING` et `ACTIVE`, comme
+ * `calculateFamilyBalance`. Les paiements sont agrégés en base ; le graphique a son propre chargeur,
+ * `getCollectionSeries`.
+ */
+export async function getPaymentStats(
+  schoolId: string,
+  periodId: string | null,
+  reference: Date = new Date()
+): Promise<PaymentStats> {
+  const { enrollmentWhere, paymentWhere } = paymentScope(schoolId, periodId)
+
+  const [rows, paidByEnrollment, byMethod, uncashed, tracking] = await Promise.all([
     db.enrollment.findMany({
       where: enrollmentWhere,
       select: {
@@ -134,14 +136,9 @@ export async function getPaymentStats(
       _sum: { amount: true },
       _count: { _all: true },
     }),
-    db.payment.aggregate({
-      where: { ...paymentWhere, paidAt: { lt: nextMonthStart(reference) } },
-      _max: { paidAt: true },
-    }),
     getPaymentTrackingByFamily(schoolId, { periodId, reference }),
   ])
 
-  const window = monthWindow(latest._max.paidAt, { months: MONTHS_CHARTED, reference })
   const paid = new Map(paidByEnrollment.map((row) => [row.enrollmentId, row._sum.amount]))
   const enrollments = rows.map((row) => ({
     totalAmount: row.totalAmount,
@@ -158,14 +155,8 @@ export async function getPaymentStats(
   const overdueFamilies = tracking
     .filter((family) => family.overdueAmount > 0)
     .slice(0, FAMILIES_LISTED)
-  const [charted, phones] = await Promise.all([
-    db.payment.findMany({
-      where: { ...paymentWhere, paidAt: { gte: window.from, lt: window.to } },
-      select: { amount: true, paidAt: true },
-    }),
-    contactPhones(schoolId, [
-      ...new Set([...outstanding, ...overdueFamilies].map((family) => family.familyId)),
-    ]),
+  const phones = await contactPhones(schoolId, [
+    ...new Set([...outstanding, ...overdueFamilies].map((family) => family.familyId)),
   ])
 
   return {
@@ -173,7 +164,6 @@ export async function getPaymentStats(
       amount: uncashed._sum.amount,
       count: uncashed._count._all,
     }),
-    monthly: monthlyCollection(charted, window),
     methods: collectionByMethod(methods),
     families: outstanding.map((family) => ({
       ...family,

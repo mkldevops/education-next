@@ -6,6 +6,8 @@ export interface BarChartPoint {
   value: number
   /** Texte affiché au survol, en complément de la valeur. */
   caption?: string
+  /** Infobulle complète, à la place de « libellé · caption ». */
+  tooltip?: string
 }
 
 export interface BarChartProps {
@@ -48,7 +50,9 @@ export function BarChart({
           <div
             key={point.label}
             className="flex h-full min-w-8 flex-1 flex-col items-center gap-2"
-            title={point.caption ? `${point.label} · ${point.caption}` : point.label}
+            title={
+              point.tooltip ?? (point.caption ? `${point.label} · ${point.caption}` : point.label)
+            }
           >
             <div className="relative min-h-0 w-full flex-1">
               <span

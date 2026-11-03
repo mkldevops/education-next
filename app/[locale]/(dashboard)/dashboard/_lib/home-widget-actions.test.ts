@@ -10,7 +10,8 @@ vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }))
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: getSessionMock } } }))
 vi.mock('@/lib/db', () => ({ db: { user: { update: updateMock, findUnique: findUniqueMock } } }))
 
-const { saveHiddenWidgetsAction, setWidgetHiddenAction } = await import('./home-widget-actions')
+const { saveCollectionChartViewAction, saveHiddenWidgetsAction, setWidgetHiddenAction } =
+  await import('./home-widget-actions')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -85,6 +86,39 @@ describe('setWidgetHiddenAction', () => {
     expect(await setWidgetHiddenAction({ widget: 'tasks', hidden: true })).toBe('impersonating')
 
     expect(findUniqueMock).not.toHaveBeenCalled()
+    expect(updateMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('saveCollectionChartViewAction', () => {
+  it('stores the chart view on the signed-in user', async () => {
+    expect(await saveCollectionChartViewAction({ granularity: 'day', range: '30d' })).toBe('OK')
+
+    expect(updateMock).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { dashboardChartGranularity: 'day', dashboardChartRange: '30d' },
+      select: { id: true },
+    })
+    expect(revalidatePathMock).toHaveBeenCalledWith('/[locale]/dashboard', 'page')
+    expect(revalidatePathMock).toHaveBeenCalledWith('/[locale]/dashboard/payments', 'page')
+  })
+
+  it('rejects an unknown value or an unreadable pair before any write', async () => {
+    expect(await saveCollectionChartViewAction({ granularity: 'week', range: '30d' })).toBe(
+      'validationError'
+    )
+    expect(await saveCollectionChartViewAction({ granularity: 'day', range: '12m' })).toBe(
+      'validationError'
+    )
+    expect(updateMock).not.toHaveBeenCalled()
+  })
+
+  it('leaves the impersonated user preferences untouched', async () => {
+    getSessionMock.mockResolvedValue({ user: { id: 'user-1' }, session: { impersonatedBy: 'a' } })
+
+    expect(await saveCollectionChartViewAction({ granularity: 'day', range: '7d' })).toBe(
+      'impersonating'
+    )
     expect(updateMock).not.toHaveBeenCalled()
   })
 })
