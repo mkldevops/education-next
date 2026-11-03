@@ -25,6 +25,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { readChartView } from '@/domain/collection-chart'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { totalPaidAmount } from '@/domain/payment'
 import { schoolToday } from '@/domain/school-date'
@@ -45,8 +46,10 @@ import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-sch
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
+import { getCollectionSeries } from '@/use-cases/payments/collection-series'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { requireSchoolScope } from '../_lib/auth-helper'
+import { CollectionChartCard } from './_components/collection-chart-card'
 import { CollectionOverview } from './_components/collection-overview'
 import { CustomizeHomeDialog } from './_components/customize-home-dialog'
 import { HideableWidget } from './_components/hideable-widget'
@@ -291,10 +294,18 @@ export default async function DashboardPage({ params }: Props) {
     isMealsEnabled(scope.schoolId),
     db.user.findUnique({
       where: { id: scope.userId },
-      select: { dashboardHiddenWidgets: true },
+      select: {
+        dashboardHiddenWidgets: true,
+        dashboardChartGranularity: true,
+        dashboardChartRange: true,
+      },
     }),
   ])
   const hidden = readHiddenWidgets(preferences?.dashboardHiddenWidgets ?? [])
+  const chartView = readChartView(
+    preferences?.dashboardChartGranularity,
+    preferences?.dashboardChartRange
+  )
   const shows = (widget: HomeWidget) => !hidden.has(widget)
   const {
     selectedPeriod,
@@ -304,13 +315,16 @@ export default async function DashboardPage({ params }: Props) {
     pendingEnrollmentCount,
     insights,
   } = overview
-  const [agenda, mealDues] = await Promise.all([
+  const [agenda, mealDues, collectionSeries] = await Promise.all([
     getTodayAgenda(scope.schoolId, {
       periodId: selectedPeriod?.id ?? null,
       attendanceEnabled,
       scheduleEnabled,
     }),
     mealsEnabled ? loadMealDues(scope.schoolId, schoolToday(timeZone)) : null,
+    insights.payments && shows('collectionChart')
+      ? getCollectionSeries(scope.schoolId, selectedPeriod?.id ?? null, chartView)
+      : null,
   ])
   const totals = insights.payments?.totals ?? null
 
@@ -499,24 +513,19 @@ export default async function DashboardPage({ params }: Props) {
                 />
               </HideableWidget>
             )}
-            {insights.payments && shows('collectionChart') && (
+            {collectionSeries && (
               <HideableWidget widget="collectionChart">
-                <SchoolInsightsSection
-                  insights={insights}
+                <CollectionChartCard
+                  series={collectionSeries}
+                  view={chartView}
                   locale={locale}
                   currency={currency}
-                  showClasses={false}
                 />
               </HideableWidget>
             )}
             {shows('classFill') && (
               <HideableWidget widget="classFill">
-                <SchoolInsightsSection
-                  insights={insights}
-                  locale={locale}
-                  currency={currency}
-                  showChart={false}
-                />
+                <SchoolInsightsSection classes={insights.classes} />
               </HideableWidget>
             )}
           </div>

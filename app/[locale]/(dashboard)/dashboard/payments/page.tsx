@@ -3,15 +3,18 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { readChartView } from '@/domain/collection-chart'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { getCollectionSeries } from '@/use-cases/payments/collection-series'
 import { listSchoolPayments } from '@/use-cases/payments/list-school-payments'
 import { getPaymentStats } from '@/use-cases/payments/payment-stats'
 import { requireSchoolScope } from '../../_lib/auth-helper'
+import { CollectionChartCard } from '../_components/collection-chart-card'
 import { PaymentsOverview } from './_components/payments-overview'
 import { PaymentsTable } from './_components/payments-table'
 import { RecordPaymentButton } from './_components/record-payment-button'
@@ -48,7 +51,16 @@ export default async function PaymentsPage({ params }: Props) {
   const { currency } = await getSchoolRegionalSettings(scope.schoolId)
   const selectedPeriodId = selectedPeriod?.id ?? null
 
-  const [payments, stats, families, canOpenCashier] = await Promise.all([
+  const preferences = await db.user.findUnique({
+    where: { id: scope.userId },
+    select: { dashboardChartGranularity: true, dashboardChartRange: true },
+  })
+  const chartView = readChartView(
+    preferences?.dashboardChartGranularity,
+    preferences?.dashboardChartRange
+  )
+
+  const [payments, stats, families, canOpenCashier, series] = await Promise.all([
     listSchoolPayments(scope.schoolId, selectedPeriodId),
     getPaymentStats(scope.schoolId, selectedPeriodId),
     db.family.findMany({
@@ -57,6 +69,7 @@ export default async function PaymentsPage({ params }: Props) {
       orderBy: { name: 'asc' },
     }),
     isMealsEnabled(scope.schoolId),
+    getCollectionSeries(scope.schoolId, selectedPeriodId, chartView),
   ])
 
   const paymentRows = payments.map((payment) => ({
@@ -100,6 +113,15 @@ export default async function PaymentsPage({ params }: Props) {
         currency={currency}
         periodName={selectedPeriod?.name ?? null}
         canOpenCashier={canOpenCashier}
+        chart={
+          <CollectionChartCard
+            series={series}
+            view={chartView}
+            locale={locale}
+            currency={currency}
+            showPaymentsLink={false}
+          />
+        }
       />
       <PaymentsTable
         currency={currency}

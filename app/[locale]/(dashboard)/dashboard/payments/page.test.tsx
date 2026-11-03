@@ -6,6 +6,8 @@ const getSelectedPeriodMock = vi.fn()
 const getPaymentStatsMock = vi.fn()
 const listSchoolPaymentsMock = vi.fn()
 const familyFindManyMock = vi.fn()
+const userFindUniqueMock = vi.fn()
+const getCollectionSeriesMock = vi.fn()
 
 vi.mock('@/lib/school-regional-settings', () => ({
   getSchoolRegionalSettings: async () => ({ currency: 'EUR', timeZone: 'Europe/Paris' }),
@@ -36,7 +38,13 @@ vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
 vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: async () => true }))
-vi.mock('@/lib/db', () => ({ db: { family: { findMany: familyFindManyMock } } }))
+vi.mock('@/lib/db', () => ({
+  db: { family: { findMany: familyFindManyMock }, user: { findUnique: userFindUniqueMock } },
+}))
+vi.mock('@/use-cases/payments/collection-series', () => ({
+  getCollectionSeries: getCollectionSeriesMock,
+}))
+vi.mock('../_components/collection-chart-card', () => ({ CollectionChartCard: () => null }))
 vi.mock('../../_lib/auth-helper', () => ({ requireSchoolScope: requireSchoolScopeMock }))
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, sa factory est lazy.
@@ -71,9 +79,13 @@ describe('PaymentsPage', () => {
     getSelectedPeriodMock.mockResolvedValue({ id: 'period-1', name: '2026-2027' })
     listSchoolPaymentsMock.mockResolvedValue([])
     familyFindManyMock.mockResolvedValue([])
+    userFindUniqueMock.mockResolvedValue({
+      dashboardChartGranularity: 'day',
+      dashboardChartRange: '7d',
+    })
+    getCollectionSeriesMock.mockResolvedValue([])
     getPaymentStatsMock.mockResolvedValue({
       totals: { collected: 0, remaining: 0, collectionRate: 0 },
-      monthly: [],
       methods: [],
       families: [],
     })
@@ -83,6 +95,14 @@ describe('PaymentsPage', () => {
     expect(getSelectedPeriodMock).toHaveBeenCalledWith('school-1')
     expect(listSchoolPaymentsMock).toHaveBeenCalledWith('school-1', 'period-1')
     expect(getPaymentStatsMock).toHaveBeenCalledWith('school-1', 'period-1')
+    expect(userFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: { dashboardChartGranularity: true, dashboardChartRange: true },
+    })
+    expect(getCollectionSeriesMock).toHaveBeenCalledWith('school-1', 'period-1', {
+      granularity: 'day',
+      range: '7d',
+    })
     // Le sélecteur du bouton « Enregistrer un règlement » ne liste que les familles actives
     // de l'école courante.
     expect(familyFindManyMock).toHaveBeenCalledWith(

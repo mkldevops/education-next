@@ -1,4 +1,4 @@
-import { BarChart, Card, ProgressBar } from '@peaklab/ui'
+import { Card, ProgressBar } from '@peaklab/ui'
 import type { LucideIcon } from 'lucide-react'
 import { Banknote, HandCoins, Landmark, Wallet } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
@@ -22,6 +22,7 @@ interface Props {
   currency: string
   periodName: string | null
   canOpenCashier?: boolean
+  chart?: ReactNode
 }
 
 export async function PaymentsOverview({
@@ -30,32 +31,14 @@ export async function PaymentsOverview({
   currency,
   periodName,
   canOpenCashier = false,
+  chart,
 }: Props) {
   const t = await getTranslations('dashboard.pages.payments.stats')
   const tScope = await getTranslations('dashboard.stats')
   const tMethod = await getTranslations('paymentMethod')
-  const { totals, monthly, methods, overdueFamilies: families, tracking } = stats
+  const { totals, methods, overdueFamilies: families, tracking } = stats
 
   const scope = periodName ? tScope('scopePeriod', { period: periodName }) : tScope('scopeAll')
-  const monthLabel = new Intl.DateTimeFormat(locale, { month: 'short' })
-  const monthCaption = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
-  const compact = new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  })
-
-  const chart = monthly.map((point) => {
-    const date = new Date(`${point.month}-01T00:00:00`)
-
-    return {
-      label: monthLabel.format(date),
-      value: point.amount,
-      caption: `${monthCaption.format(date)} · ${formatCurrency(point.amount, locale, currency)} · ${t('paymentsCount', { count: point.count })}`,
-    }
-  })
-
   return (
     <div className="space-y-6">
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -115,22 +98,7 @@ export async function PaymentsOverview({
         />
       </div>
 
-      <Card className="p-6">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-lg font-semibold text-graphite">{t('monthlyTitle')}</h2>
-          <p className="text-sm text-graphite-600">
-            {t('monthlySubtitle', { months: chart.length })}
-          </p>
-        </div>
-        <div className="mt-6">
-          <BarChart
-            data={chart}
-            formatValue={(value) => (value > 0 ? compact.format(value) : '—')}
-            emptyMessage={t('noCollection')}
-            height={200}
-          />
-        </div>
-      </Card>
+      {chart}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card className="p-6">

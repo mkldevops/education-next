@@ -233,6 +233,10 @@ model User {
   /// Blocs de l'accueil admin masqués par l'utilisateur (clés de `HOME_WIDGETS`). En base pour
   /// suivre l'utilisateur sur tous ses appareils.
   dashboardHiddenWidgets String[] @default([])
+  /// Vue du graphique d'encaissements de l'accueil admin (`day`, `month`, `year`) et sa période
+  /// (`7d`, `30d`, `3m`, `6m`, `12m`). Nulle : vue par défaut, mois sur douze mois.
+  dashboardChartGranularity String?
+  dashboardChartRange       String?
 
   sessions                  Session[]
   accounts                  Account[]

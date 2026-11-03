@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const dbMock = {
   enrollment: { findMany: vi.fn() },
   family: { findMany: vi.fn() },
-  payment: { groupBy: vi.fn(), aggregate: vi.fn(), findMany: vi.fn() },
+  payment: { groupBy: vi.fn(), aggregate: vi.fn() },
 }
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
@@ -48,12 +48,7 @@ describe('getPaymentStats', () => {
           : [{ method: 'CHECK', _sum: { amount: 60 }, _count: { _all: 1 } }]
       )
     )
-    dbMock.payment.aggregate
-      .mockResolvedValueOnce({ _sum: { amount: 60 }, _count: { _all: 1 } })
-      .mockResolvedValueOnce({ _max: { paidAt: new Date('2026-09-02T00:00:00.000Z') } })
-    dbMock.payment.findMany.mockResolvedValue([
-      { amount: 60, paidAt: new Date('2026-09-02T00:00:00.000Z') },
-    ])
+    dbMock.payment.aggregate.mockResolvedValue({ _sum: { amount: 60 }, _count: { _all: 1 } })
     dbMock.family.findMany.mockResolvedValue([])
   })
 
@@ -89,9 +84,6 @@ describe('getPaymentStats', () => {
       '01 00 00 00 00'
     )
 
-    dbMock.payment.aggregate
-      .mockResolvedValueOnce({ _sum: { amount: 60 }, _count: { _all: 1 } })
-      .mockResolvedValueOnce({ _max: { paidAt: null } })
     dbMock.family.findMany.mockResolvedValue([
       { id: 'family-1', emergencyContactPhone: null, persons: [] },
     ])
@@ -119,18 +111,6 @@ describe('getPaymentStats', () => {
         enrollment: { schoolId: 'school-1', isActive: true },
       })
     }
-  })
-
-  it('caps the latest-payment lookup at the current month', async () => {
-    await getPaymentStats('school-1', null, reference)
-
-    expect(dbMock.payment.aggregate).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          paidAt: { lt: new Date('2026-10-01T00:00:00.000Z') },
-        }),
-      })
-    )
   })
 
   it('keeps annual balances separate from arrears and never offsets debt between families', async () => {
@@ -166,22 +146,6 @@ describe('getPaymentStats', () => {
       expect.objectContaining({ familyId: 'family-1', overdueAmount: 40 }),
     ])
     expect(trackingMock).toHaveBeenCalledWith('school-1', { periodId: 'period-1', reference })
-  })
-
-  it('reads only the rows of the charted window', async () => {
-    const stats = await getPaymentStats('school-1', null, reference)
-
-    expect(dbMock.payment.findMany).toHaveBeenCalledWith({
-      where: expect.objectContaining({
-        paidAt: {
-          gte: new Date('2025-10-01T00:00:00.000Z'),
-          lt: new Date('2026-10-01T00:00:00.000Z'),
-        },
-      }),
-      select: { amount: true, paidAt: true },
-    })
-    expect(stats.monthly).toHaveLength(12)
-    expect(stats.monthly.at(-1)).toEqual({ month: '2026-09', amount: 60, count: 1 })
   })
 
   it('ignores an enrollment attached to no family', async () => {
