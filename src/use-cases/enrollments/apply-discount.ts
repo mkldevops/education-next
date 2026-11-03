@@ -4,7 +4,7 @@ import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { readLockedPaidAmount } from './locked-paid-amount'
-import { resolveEnrollmentPricing } from './pricing'
+import { resolveEnrollmentPricing, resolveOwedPlanAmount } from './pricing'
 import { applyDiscountSchema } from './schemas'
 
 type Input = z.input<typeof applyDiscountSchema>
@@ -21,8 +21,17 @@ export async function applyDiscount(input: Input, configGw = configGateway) {
     return 'notFound' as const
   }
 
+  // Une inscription arrivée en cours d'année se tarife sur ses seules échéances dues.
+  const planAmount = await resolveOwedPlanAmount(
+    schoolId,
+    enrollmentId,
+    enrollment.plan,
+    enrollment.startMonth
+  )
+  if (typeof planAmount === 'string') return planAmount
+
   const pricing = resolveEnrollmentPricing(
-    Number(enrollment.plan.amount),
+    planAmount,
     parsed.data.discount,
     parsed.data.totalAmount
   )

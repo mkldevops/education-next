@@ -15,6 +15,7 @@ import {
 import { ApplyDiscountDialog } from './apply-discount-dialog'
 import { ReassignClassDialog } from './reassign-class-dialog'
 import { SetEnrollmentPlanDialog } from './set-enrollment-plan-dialog'
+import { SetStartMonthDialog, type StartMonthSetting } from './set-start-month-dialog'
 
 interface Props {
   enrollmentId: string
@@ -27,6 +28,8 @@ interface Props {
   paymentsEnabled: boolean
   planName: string
   availablePlans: Array<{ id: string; name: string }>
+  /** Absent: the surface cannot edit the start month. */
+  startMonth?: StartMonthSetting
   onCancelled?: () => void
 }
 
@@ -41,6 +44,7 @@ export function EnrollmentActions({
   paymentsEnabled,
   planName,
   availablePlans,
+  startMonth,
   onCancelled,
 }: Props) {
   const t = useTranslations('dashboard.pages.enrollmentDetails.actions')
@@ -104,6 +108,9 @@ export function EnrollmentActions({
               currentTotalAmount={currentTotalAmount}
               currency={currency}
             />
+          )}
+          {paymentsEnabled && startMonth && (
+            <SetStartMonthDialog enrollmentId={enrollmentId} startMonth={startMonth} />
           )}
           {paymentsEnabled && planName === UNPRICED_PLAN_NAME && availablePlans.length > 0 && (
             <SetEnrollmentPlanDialog enrollmentId={enrollmentId} plans={availablePlans} />

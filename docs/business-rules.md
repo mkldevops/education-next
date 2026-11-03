@@ -1011,8 +1011,13 @@ stay where they are. **The new total never falls below what the enrollment alrea
 `totalBelowPaid`, since a balance never goes negative and an overpayment nobody decided to refund
 must not appear. A request that changes nothing → `noChange`; several open enrollments for the
 student → `ambiguousEnrollment`, listed so the caller retries with `enrollmentId`. The commit
-compares the enrollment's current plan, discount and total to the validated `before`, and the target
-plan's price to the validated `after` → `staleDraft` when either moved.
+compares the enrollment's current plan, discount, total and start month to the validated `before`,
+and the target plan's price to the validated `after` → `staleDraft` when either moved. `startMonth`
+(`YYYY-MM`) sets or, with `null`, clears the enrollment's start month (Enrollments, Money); absent,
+the current one is kept, so a plan or discount change keeps the proration already decided. The
+preview shows it before → after, with the part of the plan due (`planAmountDue`).
+`preview_enroll_family` takes the same `startMonth`, for the family or per student (the student's
+wins), checked against the class period.
 
 **An existing family is named by `familyId`, instead of `familyName`.** A child entered on the
 dashboard without an enrollment — a sibling added to the family, never enrolled — must not come back
@@ -1673,6 +1678,18 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
   « Payé 180 € / Reste 0 € » while the family balance already shows 180 € owed.
 - Changing a plan's price does not retroactively change existing enrollments. Applying a discount
   does, because it recomputes from the plan.
+- **An enrollment may carry a start month** (`Enrollment.startMonth`, the first day of a month,
+  null by default) for a student who joins during the year. Only the plan's installments due from
+  that month are owed: `plan.amount` above becomes that **part due** (`owedPlanAmount` in
+  `src/domain/payment-schedule.ts`, `resolveOwedPlanAmount` in
+  `src/use-cases/enrollments/pricing.ts`) in every total rule — discount, typed final amount, plan
+  change. A Sept–May monthly plan of 9 × 16 000 joined in October owes 8 × 16 000 = 128 000.
+- The start month must fall within the enrollment's period (latest class assignment) →
+  `startMonthOutsidePeriod`; the plan needs a schedule → `noPaymentSchedule`; a month after its
+  last installment → `noInstallmentDue`. A new total below what the enrollment already banked →
+  `totalBelowPaid`, read under the family lock like a discount (#425). Clearing it restores
+  `plan.amount - discount`. An enrollment without one behaves exactly as before, with no extra read.
+- Set from the enrollment page (admins, payments enabled), `update_enrollment` and `enroll_family`.
 
 ## Plans
 
@@ -1747,7 +1764,9 @@ Owner: `src/domain/payment-schedule.ts`, `src/use-cases/payments/payment-trackin
 - Each enrollment uses its plan's current schedule and its stored `totalAmount`, already net of
   discount. Editing a schedule changes tracking for existing enrollments too; it does not reprice
   their debt. A late enrollment follows the same deadlines as the other subscribers, without
-  automatic proration.
+  automatic proration — unless it carries a start month (Enrollments, Money): installments before
+  that month are then neither expected nor counted, and its stored total is split over the
+  remaining deadlines only. No September arrears for a student who joined in October.
 - Month/day settings are anchored to the enrollment's school period, from its latest class
   assignment. A month before the period start month falls in the following calendar year. They
   never restart on the current year. Short months clamp a due day of 29–31 to their last day.

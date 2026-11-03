@@ -957,7 +957,11 @@
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école.",
             "validationError": "Vérifiez les informations saisies.",
             "notFound": "Inscription ou formule introuvable.",
-            "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif."
+            "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif.",
+            "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "discountExceedsPlan": "La réduction dépasse la part due de la formule"
           }
         },
         "description": "Inscriptions de la période, à suivre et régler.",
@@ -2062,6 +2066,8 @@
         "pricing": "Tarification",
         "totalAmount": "Montant total",
         "discount": "Réduction",
+        "startMonth": "Début des échéances",
+        "startMonthDefault": "Début de la période",
         "totalPaid": "Total payé",
         "remaining": "Restant dû",
         "balanceBadge": "{amount} restant",
@@ -2126,9 +2132,31 @@
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
             "totalBelowPaid": "Le montant dû serait inférieur à ce qui a déjà été payé sur cette inscription",
-            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois"
           },
           "totalAmount": "Montant final dû ({currency})"
+        },
+        "setStartMonth": {
+          "title": "Mois de début",
+          "label": "Premier mois dû",
+          "hint": "Les échéances antérieures ne sont ni attendues ni comptées dans le total. Laissez vide pour un début avec la période.",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Mois de début enregistré",
+          "error": "Erreur lors de l'enregistrement",
+          "errors": {
+            "discountExceedsPlan": "La réduction dépasse la part due de la formule",
+            "notFound": "Inscription introuvable",
+            "validationError": "Vérifiez le mois saisi",
+            "totalBelowPaid": "Le nouveau total serait inférieur à ce qui a déjà été payé sur cette inscription",
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois"
+          }
         }
       },
       "users": {

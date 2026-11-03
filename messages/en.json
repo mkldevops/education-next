@@ -956,7 +956,11 @@
             "paymentsDisabled": "Payment management is turned off for this school.",
             "validationError": "Check the submitted details.",
             "notFound": "Enrollment or plan not found.",
-            "unpricedPlan": "That plan is reserved for enrollments without a price."
+            "unpricedPlan": "That plan is reserved for enrollments without a price.",
+            "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
+            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noInstallmentDue": "No installment of the plan falls on or after that month",
+            "discountExceedsPlan": "The discount exceeds the part of the plan that is due"
           }
         },
         "description": "This period's enrollments, to follow and settle.",
@@ -2061,6 +2065,8 @@
         "pricing": "Pricing",
         "totalAmount": "Total Amount",
         "discount": "Discount",
+        "startMonth": "Installments start",
+        "startMonthDefault": "Start of the period",
         "totalPaid": "Total Paid",
         "remaining": "Remaining",
         "balanceBadge": "{amount} due",
@@ -2125,9 +2131,31 @@
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimal places",
             "totalBelowPaid": "The amount due would fall below what has already been paid on this enrollment",
-            "paymentsDisabled": "Payment management is turned off for this school"
+            "paymentsDisabled": "Payment management is turned off for this school",
+            "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
+            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noInstallmentDue": "No installment of the plan falls on or after that month"
           },
           "totalAmount": "Final amount due ({currency})"
+        },
+        "setStartMonth": {
+          "title": "Start month",
+          "label": "First month due",
+          "hint": "Earlier installments are neither expected nor counted in the total. Leave empty to start with the period.",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Start month saved",
+          "error": "Error saving the start month",
+          "errors": {
+            "discountExceedsPlan": "The discount exceeds the part of the plan that is due",
+            "notFound": "Enrollment not found",
+            "validationError": "Check the month you entered",
+            "totalBelowPaid": "The new total would fall below what has already been paid on this enrollment",
+            "paymentsDisabled": "Payment management is turned off for this school",
+            "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
+            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noInstallmentDue": "No installment of the plan falls on or after that month"
+          }
         }
       },
       "users": {

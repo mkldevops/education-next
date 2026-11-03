@@ -683,6 +683,8 @@ model Enrollment {
   totalAmount   Decimal          @db.Decimal(10, 2)
   discount      Decimal          @default(0) @db.Decimal(10, 2)
   registeredAt  DateTime         @default(now())
+  /// First month the enrollment owes installments (first day, UTC). Null: the period start.
+  startMonth    DateTime?        @db.Date
   canLeaveAlone Boolean          @default(false)
   isActive      Boolean          @default(true)
   createdAt     DateTime         @default(now())

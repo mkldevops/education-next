@@ -120,6 +120,38 @@ describe('commitEnrollFamily', () => {
     )
   })
 
+  it('writes the start month the preview resolved, and none for an older draft', async () => {
+    await commitEnrollFamily(scope, input)
+    expect(tx.enrollment.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ startMonth: null }) })
+    )
+
+    vi.clearAllMocks()
+    transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
+    claim.mockResolvedValue({ count: 1 })
+    tx.person.create
+      .mockResolvedValueOnce({ id: 'person-parent' })
+      .mockResolvedValueOnce({ id: 'person-student' })
+    findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
+      keyId: 'key-1',
+      userId: null,
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [{ ...resolved.students[0], startMonth: '2026-10' }],
+      },
+    })
+
+    await commitEnrollFamily(scope, input)
+    expect(tx.enrollment.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ startMonth: new Date('2026-10-01T00:00:00.000Z') }),
+      })
+    )
+  })
+
   it('scopes every write to the school carried by the key', async () => {
     await commitEnrollFamily(scope, input)
 

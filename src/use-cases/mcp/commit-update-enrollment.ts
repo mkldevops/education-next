@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { startMonthFromDate, startMonthToDate } from '@/domain/payment-schedule'
 import { roundHalfUp } from '@/lib/decimal'
 import { claimResolved, commitInTransaction } from './claim-draft'
 import type { DraftScope } from './draft-scope'
@@ -9,6 +10,8 @@ const pricingSchema = z.object({
   plan: z.object({ id: z.string(), name: z.string(), amount: z.number() }),
   discount: z.number(),
   totalAmount: z.number(),
+  // Absent d'un brouillon antérieur au mois de début : il n'en portait pas.
+  startMonth: z.string().nullable().default(null),
 })
 
 const resolvedSchema = z.object({
@@ -39,6 +42,7 @@ export async function commitUpdateEnrollment(scope: DraftScope, input: Input) {
         planId: true,
         discount: true,
         totalAmount: true,
+        startMonth: true,
         payments: { where: { isActive: true }, select: { amount: true } },
       },
     })
@@ -49,7 +53,8 @@ export async function commitUpdateEnrollment(scope: DraftScope, input: Input) {
     if (
       current.planId !== before.plan.id ||
       Number(current.discount) !== before.discount ||
-      Number(current.totalAmount) !== before.totalAmount
+      Number(current.totalAmount) !== before.totalAmount ||
+      startMonthFromDate(current.startMonth) !== before.startMonth
     ) {
       return 'staleDraft' as const
     }
@@ -71,6 +76,7 @@ export async function commitUpdateEnrollment(scope: DraftScope, input: Input) {
         planId: after.plan.id,
         discount: after.discount,
         totalAmount: after.totalAmount,
+        startMonth: after.startMonth ? startMonthToDate(after.startMonth) : null,
       },
     })
 
@@ -79,6 +85,7 @@ export async function commitUpdateEnrollment(scope: DraftScope, input: Input) {
       planId: after.plan.id,
       discount: after.discount,
       totalAmount: after.totalAmount,
+      startMonth: after.startMonth,
       remaining: roundHalfUp(after.totalAmount - paid),
     }
 

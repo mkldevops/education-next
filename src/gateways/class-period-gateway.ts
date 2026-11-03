@@ -100,6 +100,15 @@ export const classPeriodGateway = {
   countEnrolled: (schoolId: string, id: string) =>
     db.classAssignment.count({ where: seatHoldingAssignmentsWhere(schoolId, id) }),
 
+  /** Bornes de la période d'une classe, pour placer un mois de début d'inscription. */
+  findPeriodBounds: async (schoolId: string, id: string) =>
+    (
+      await db.classPeriod.findFirst({
+        where: { id, schoolId },
+        select: { period: { select: { startAt: true, endAt: true } } },
+      })
+    )?.period ?? null,
+
   deactivate: (schoolId: string, id: string) =>
     db.$transaction(async (tx) => {
       const classPeriod = await tx.classPeriod.findUnique({
