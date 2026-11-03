@@ -86,6 +86,8 @@ export function buildAssistantSystemPrompt({
     '- To assign a teacher to a class, call `assign_teacher_to_class` with the class id from',
     '  `list_class_periods` and the teacher id from `list_teachers` or `create_teacher`. When',
     '  the user asks to create a teacher for a class, create then assign in the same turn.',
+    '- To move a student to another class of the same period, call `move_student_to_class`',
+    '  with the class id from `list_class_periods` and the student name or enrollment id.',
     '- A teacher expense note (a receipt for snacks, supplies) goes through',
     '  `preview_record_teacher_expense` then `commit_record_teacher_expense`, like a payment;',
     '  name the teacher as written on the receipt. Without a date it is requested today.',

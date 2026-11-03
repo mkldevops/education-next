@@ -33,6 +33,7 @@ import { findStudentsFromMcp } from '@/use-cases/mcp/find-students'
 import { getEventFromMcp } from '@/use-cases/mcp/get-event'
 import { listAttendanceCallsFromMcp } from '@/use-cases/mcp/list-attendance-calls'
 import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
+import { moveStudentToClassFromMcp } from '@/use-cases/mcp/move-student-to-class'
 import { createPlanFromMcp, updatePlanFromMcp } from '@/use-cases/mcp/plan-configuration'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
@@ -64,6 +65,7 @@ import {
   mcpListAttendanceCallsSchema,
   mcpListClassScheduleSlotsSchema,
   mcpListEventsSchema,
+  mcpMoveStudentToClassSchema,
   mcpResourceIdSchema,
   mcpUpdateClassScheduleSlotSchema,
   mcpUpdateEventSchema,
@@ -599,6 +601,25 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       annotations: IDEMPOTENT_COMMIT,
       kind: 'write',
       run: (args) => commitEnrollFamily(scope, args),
+    }),
+    define({
+      name: 'move_student_to_class',
+      title: 'Changer un élève de classe',
+      description:
+        'Déplace une inscription en attente ou active vers une autre classe de la même période, ' +
+        "comme le changement de classe du tableau de bord. L'inscription se désigne par " +
+        "`enrollmentId`, ou par le prénom et le nom de l'élève (`studentName`, " +
+        '`studentLastname`) ; `classPeriodId` vient de `list_class_periods`. La formule, la ' +
+        'remise, les paiements et les repas ne bougent pas. Rend `enrollmentId` et ' +
+        "`classPeriodId` ; un élève déjà dans la classe visée n'écrit rien. Refus : `notFound` " +
+        '(inscription ou classe absente, archivée ou d’une autre école), `ambiguousEnrollment` ' +
+        '(plusieurs inscriptions ouvertes pour ce nom : passer l’`enrollmentId` lu dans ' +
+        '`find_students`), `periodMismatch` (classe d’une autre période), `classFull`, ' +
+        '`duplicateEnrollment`, `invalidStatusTransition`, `validationError`.',
+      inputSchema: mcpMoveStudentToClassSchema,
+      annotations: IDEMPOTENT_OVERWRITE,
+      kind: 'write',
+      run: (args) => moveStudentToClassFromMcp(scope, args),
     }),
     // Déclarés même quand `events_enabled` est éteint, à l'inverse des outils d'argent : le
     // refus `notConfigured` de `createEvent` est ici le contrat, identique à celui de l'action
