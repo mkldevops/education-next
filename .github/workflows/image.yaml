@@ -3,6 +3,15 @@ name: Image
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/image.yaml
+      - package.json
+      - pnpm-lock.yaml
+      - prisma/**
   workflow_dispatch:
 
 concurrency:
