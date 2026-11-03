@@ -2101,7 +2101,8 @@ answers `notFound()`, the sidebar entry disappears, and every meal use case refu
 `listSchoolTools`) exposes `get_meal_settings`, `get_student_meals` and
 `list_family_receipts`, plus `set_meal_service_setting`, `set_meal_price`,
 `remove_meal_price`, `subscribe_meal`, `change_meal_schedule`, `stop_meal`,
-`record_meal_opening`, `toggle_meal_absence`, `record_receipt` and `cancel_receipt`.
+`record_meal_opening`, `toggle_meal_absence`, `record_receipt` and `cancel_receipt`; the
+childcare tools sit beside them (see [Childcare](#childcare)).
 These tools stay discoverable with meals disabled and return `mealsDisabled`; they are
 independent of `payments_enabled` except for the tuition portion of a receipt. School and
 recording/cancelling user come only from the authenticated admin scope, never tool arguments.
@@ -2371,7 +2372,23 @@ is read or created: a child who brings a lunch box is billed the same, and no da
   the child's debtor family (`resolveDebtorFamily()`), on one receipt with its other lines.
 - **Cancelling a billed month** (`cancelChildcareCharge()`) needs a reason, keeps the row and is
   refused while an active receipt pays it (`hasPayments`): cancel that receipt first.
+- **Opening** (`recordChildcareOpening()`, `src/use-cases/childcare/record-childcare-opening.ts`).
+  A front-desk paper list saying a child is « à jour » sets `openingPaidThrough` and a required
+  `openingReason` on the subscription (one per child, recording again replaces it; the migration
+  checks both are set together). Every month up to it is settled (`settledByOpening()`): nothing
+  is left on it, billed before or after the opening, whatever its receipts paid. It creates no
+  receipt and no `ChildcarePayment`, so the day's takings never show money nobody handed over —
+  the meal opening's choice. `paidByReceipts` and `hasPayments` still count receipts only: a
+  settled month without a receipt can be cancelled. `futureMonth` past the school's current
+  month, `invalidPeriod` before `startMonth`, `notSubscribed` without childcare, `notFound` for an
+  archived student. A receipt line on a settled month is `childcareOverpayment`. The opening is
+  set through the MCP only; the childcare screen shows it read-only.
 - **Rights.** The screen and its actions need an admin; a cashier only collects what is billed.
+- **MCP.** `get_student_childcare`, `save_childcare_subscription`, `bill_childcare_month`,
+  `record_childcare_opening` and `cancel_childcare_charge` (`src/mcp/childcare-tools.ts`) call the
+  same use cases with the school and actor from the admin scope; `record_receipt` carries
+  `childcare` lines (`chargeId`, `amount`) under the cashier's locks. `bill_childcare_month` bills
+  the whole school, as the screen does. See `docs/mcp.md`, Childcare.
 - **Tenancy.** The three tables are listed in the tenant guard and every foreign key is composite on
   `schoolId`.
 

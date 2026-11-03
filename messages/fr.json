@@ -1414,6 +1414,7 @@
         "empty": "Aucun enfant en garderie. Recherchez un élève pour l'ajouter.",
         "archived": "archivé",
         "noFamily": "Sans famille redevable",
+        "opening": "Réglé avant l’application jusqu’à {month} inclus ({reason})",
         "perMonth": "{amount} par mois",
         "period": {
           "open": "depuis {start}",

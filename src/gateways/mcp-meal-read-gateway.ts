@@ -41,6 +41,10 @@ export const mcpMealReadGateway = {
           },
           orderBy: { id: 'asc' },
         },
+        childcarePayments: {
+          select: { chargeId: true, amount: true },
+          orderBy: { id: 'asc' },
+        },
       },
     }),
 }

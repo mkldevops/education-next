@@ -44,6 +44,7 @@ describe('MCP meal read projections', () => {
     expect(Object.keys(query.select).sort()).toEqual([
       'cancelReason',
       'cancelledAt',
+      'childcarePayments',
       'id',
       'mealPayments',
       'method',
@@ -55,6 +56,7 @@ describe('MCP meal read projections', () => {
     expect(query.select.mealPayments.select.account).toEqual({
       select: { studentId: true, service: true },
     })
+    expect(query.select.childcarePayments.select).toEqual({ chargeId: true, amount: true })
     expect(query.select).not.toHaveProperty('requestHash')
     expect(query.select).not.toHaveProperty('idempotencyKey')
     expect(query.select).not.toHaveProperty('recordedById')
