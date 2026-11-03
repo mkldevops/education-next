@@ -1,5 +1,6 @@
+import type { MealOwner } from '@/domain/meal-owner'
 import type { MealStopPlan } from '@/domain/meal-schedule'
-import type { MealService, Prisma } from '@/generated/prisma/client'
+import { type MealService, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
 type Tx = Prisma.TransactionClient
@@ -8,6 +9,12 @@ type Reader = Pick<Tx, 'mealAbsence' | 'mealAdjustment' | 'mealPayment' | 'mealP
 /** Les dates `@db.Date` sont lues et écrites à minuit UTC. */
 const toDbDate = (day: string) => new Date(`${day}T00:00:00.000Z`)
 const toDay = (date: Date) => date.toISOString().slice(0, 10)
+
+/** Colonne et id du titulaire, pour les requêtes brutes. */
+const ownerColumn = (owner: MealOwner) =>
+  'studentId' in owner
+    ? { column: Prisma.sql`"studentId"`, id: owner.studentId }
+    : { column: Prisma.sql`"staffMemberId"`, id: owner.staffMemberId }
 
 type MealScheduleRow = {
   id: string
@@ -54,25 +61,26 @@ export const mealAccountGateway = {
 
   /**
    * Tient le compte d'un service jusqu'à la fin de `tx` : deux saisies sur les jours d'un
-   * même enfant s'attendent au lieu de créer deux segments qui se chevauchent. `create`
+   * même titulaire s'attendent au lieu de créer deux segments qui se chevauchent. `create`
    * ouvre le compte s'il n'existe pas encore. Rend son id, ou `null` sans compte.
    */
   lockAccount: async (
     tx: Tx,
     schoolId: string,
-    studentId: string,
+    owner: MealOwner,
     service: MealService,
     create: boolean
   ) => {
+    const { column, id } = ownerColumn(owner)
     if (create) {
       await tx.$executeRaw`
-        INSERT INTO "MealAccount" ("id", "schoolId", "studentId", "service", "updatedAt")
-        VALUES (gen_random_uuid()::text, ${schoolId}, ${studentId}, ${service}::"MealService", now())
-        ON CONFLICT ("schoolId", "studentId", "service") DO NOTHING`
+        INSERT INTO "MealAccount" ("id", "schoolId", ${column}, "service", "updatedAt")
+        VALUES (gen_random_uuid()::text, ${schoolId}, ${id}, ${service}::"MealService", now())
+        ON CONFLICT ("schoolId", ${column}, "service") DO NOTHING`
     }
     const rows = await tx.$queryRaw<Array<{ id: string }>>`
       SELECT "id" FROM "MealAccount"
-      WHERE "schoolId" = ${schoolId} AND "studentId" = ${studentId}
+      WHERE "schoolId" = ${schoolId} AND ${column} = ${id}
         AND "service" = ${service}::"MealService"
       FOR NO KEY UPDATE`
     return rows[0]?.id ?? null
@@ -299,6 +307,13 @@ export const mealAccountGateway = {
   isActiveStudent: async (schoolId: string, studentId: string) =>
     (await db.student.count({ where: { schoolId, id: studentId } })) === 1,
 
+  isActiveOwner: async (schoolId: string, owner: MealOwner) =>
+    'studentId' in owner
+      ? (await db.student.count({ where: { schoolId, id: owner.studentId } })) === 1
+      : (await db.staffMember.count({
+          where: { schoolId, id: owner.staffMemberId, isActive: true },
+        })) === 1,
+
   findPeriod: async (schoolId: string, periodId: string) => {
     const period = await db.period.findFirst({
       where: { schoolId, id: periodId },
@@ -337,11 +352,13 @@ export const mealAccountGateway = {
   },
 
   /** Comptes des élèves actifs de l'école, pour l'impact d'une fermeture. */
-  findActiveStudentAccounts: (schoolId: string) =>
-    db.mealAccount.findMany({
+  findActiveStudentAccounts: async (schoolId: string) => {
+    const rows = await db.mealAccount.findMany({
       where: { schoolId, student: { isActive: true } },
       select: { id: true, studentId: true, service: true },
-    }),
+    })
+    return rows.flatMap(({ studentId, ...row }) => (studentId ? [{ ...row, studentId }] : []))
+  },
 
   /** Comptes d'élèves et leurs segments, pour leur fiche ou la caisse. */
   findStudentAccounts: async (schoolId: string, studentIds: string[]) => {
@@ -354,24 +371,45 @@ export const mealAccountGateway = {
         schedules: { select: scheduleSelect, orderBy: { startOn: 'asc' } },
       },
     })
-    return accounts.map((account) => ({
-      ...account,
-      schedules: account.schedules.map(toScheduleRow),
-    }))
+    return accounts.flatMap(({ studentId, ...account }) =>
+      studentId ? [{ ...account, studentId, schedules: account.schedules.map(toScheduleRow) }] : []
+    )
   },
 
-  /** Segments d'élèves actifs qui couvrent `day`, et leurs absences ce jour-là. */
-  listStudentDay: async (schoolId: string, service: MealService, day: string) => {
+  /** Comptes repas d'un ou plusieurs membres du personnel. */
+  findStaffAccounts: async (schoolId: string, staffMemberIds: string[]) => {
+    const accounts = await db.mealAccount.findMany({
+      where: { schoolId, staffMemberId: { in: staffMemberIds } },
+      select: {
+        id: true,
+        service: true,
+        staffMemberId: true,
+        schedules: { select: scheduleSelect, orderBy: { startOn: 'asc' } },
+      },
+    })
+    return accounts.flatMap(({ staffMemberId, ...account }) =>
+      staffMemberId
+        ? [{ ...account, staffMemberId, schedules: account.schedules.map(toScheduleRow) }]
+        : []
+    )
+  },
+
+  /** Segments des élèves et du personnel actifs qui couvrent `day`, et leurs absences. */
+  listDay: async (schoolId: string, service: MealService, day: string) => {
     const date = toDbDate(day)
     const segments = await db.mealSchedule.findMany({
       where: {
         schoolId,
         startOn: { lte: date },
         OR: [{ endOn: null }, { endOn: { gte: date } }],
-        account: { service, student: { isActive: true } },
+        account: {
+          service,
+          OR: [{ student: { isActive: true } }, { staffMember: { isActive: true } }],
+        },
       },
       select: {
         accountId: true,
+        account: { select: { staffMember: { select: { mealExempt: true } } } },
         weekdays: true,
         startOn: true,
         endOn: true,
@@ -385,6 +423,7 @@ export const mealAccountGateway = {
     return {
       segments: segments.map((row) => ({
         accountId: row.accountId,
+        staff: row.account.staffMember ? { exempt: row.account.staffMember.mealExempt } : null,
         weekdays: row.weekdays,
         startOn: toDay(row.startOn),
         endOn: row.endOn ? toDay(row.endOn) : null,

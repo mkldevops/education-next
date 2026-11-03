@@ -12,6 +12,7 @@ import {
   Label,
 } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
+import type { MealOwner } from '@/domain/meal-owner'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import type { MealService } from '@/generated/prisma/enums'
 import {
@@ -25,7 +26,7 @@ export type MealDialogKind = 'subscribe' | 'change' | 'stop' | 'opening'
 
 type Props = {
   kind: MealDialogKind
-  studentId: string
+  owner: MealOwner
   service: MealService
   /** Jours proposés par l'école pour ce service. */
   allowedWeekdays: number[]
@@ -64,12 +65,12 @@ export function MealDialog(props: Props) {
   )
 }
 
-function MealForm({ kind, studentId, service, allowedWeekdays, weekdays, today, period }: Props) {
+function MealForm({ kind, owner, service, allowedWeekdays, weekdays, today, period }: Props) {
   const t = useTranslations('dashboard.pages.studentDetails.meals.dialog')
   const tWeekdays = useTranslations('dashboard.pages.meals.weekdays')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const id = (field: string) => `meal-${kind}-${service}-${field}`
-  const target = { studentId, service }
+  const target = { ...owner, service }
 
   const handleSubmit = onSubmit(
     (formData) => {

@@ -1,4 +1,5 @@
 import type { z } from 'zod'
+import { mealOwner } from '@/domain/meal-owner'
 import { planStop } from '@/domain/meal-schedule'
 import { schoolToday } from '@/domain/school-date'
 import { configGateway } from '@/gateways/config-gateway'
@@ -19,14 +20,16 @@ export async function stopMeal(
   const parsed = stopMealSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const { schoolId, studentId, service, effectiveFrom } = parsed.data
+  const { schoolId, service, effectiveFrom } = parsed.data
+  const owner = mealOwner(parsed.data)
+  if (!owner) return 'validationError' as const
   if (!(await isMealsEnabled(schoolId, configGw))) return 'mealsDisabled' as const
 
   const { timeZone } = await getSchoolRegionalSettings(schoolId)
   if (effectiveFrom < schoolToday(timeZone, now)) return 'backdated' as const
 
   return accountGw.transaction(async (tx) => {
-    const accountId = await accountGw.lockAccount(tx, schoolId, studentId, service, false)
+    const accountId = await accountGw.lockAccount(tx, schoolId, owner, service, false)
     if (!accountId) return 'notSubscribed' as const
 
     const plan = planStop(await accountGw.listSegments(tx, schoolId, [accountId]), effectiveFrom)

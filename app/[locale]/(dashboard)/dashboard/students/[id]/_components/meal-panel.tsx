@@ -1,5 +1,6 @@
 import { Card, cn } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
+import type { MealOwner } from '@/domain/meal-owner'
 import { schoolToday } from '@/domain/school-date'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
 import { MealService } from '@/generated/prisma/enums'
@@ -12,7 +13,11 @@ import { MealDialog } from './meal-dialogs'
 
 type Props = {
   schoolId: string
-  studentId: string
+  owner: MealOwner
+  /** Services proposés : le personnel ne mange qu'à la cantine. */
+  services?: MealService[]
+  /** Repas comptés mais jamais facturés : aucun reste dû n'est affiché. */
+  exempt?: boolean
   locale: string
   selectedPeriodId: string | null
   /** La reprise d'un solde corrige l'historique : réservée à l'administration. */
@@ -21,10 +26,12 @@ type Props = {
 
 const SERVICES = Object.values(MealService)
 
-/** Abonnements cantine et goûter d'un élève : jours servis, payé jusqu'au, reprise. */
+/** Abonnements cantine et goûter d'un titulaire : jours servis, payé jusqu'au, reprise. */
 export async function MealPanel({
   schoolId,
-  studentId,
+  owner,
+  services = SERVICES,
+  exempt = false,
   locale,
   selectedPeriodId,
   canRecordOpening = true,
@@ -39,7 +46,9 @@ export async function MealPanel({
       where: { schoolId },
       select: { service: true, isEnabled: true, allowedWeekdays: true },
     }),
-    mealAccountGateway.findStudentAccounts(schoolId, [studentId]),
+    'studentId' in owner
+      ? mealAccountGateway.findStudentAccounts(schoolId, [owner.studentId])
+      : mealAccountGateway.findStaffAccounts(schoolId, [owner.staffMemberId]),
     selectedPeriodId ? mealAccountGateway.findPeriod(schoolId, selectedPeriodId) : null,
   ])
   const today = schoolToday(timeZone)
@@ -76,16 +85,18 @@ export async function MealPanel({
   const formatDay = (day: string) =>
     new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, { timeZone: 'UTC' })
 
-  const rows = SERVICES.map((service) => {
-    const setting = settings.find((s) => s.service === service)
-    const account = accounts.find((a) => a.service === service)
-    const summary = account ? (summaries.get(account.id) ?? null) : null
-    const upcoming =
-      summary?.current && account
-        ? (account.schedules.find((s) => s.startOn > (summary.current?.startOn ?? today)) ?? null)
-        : null
-    return { service, setting, summary, upcoming }
-  }).filter(({ setting, summary }) => setting?.isEnabled || summary?.current)
+  const rows = services
+    .map((service) => {
+      const setting = settings.find((s) => s.service === service)
+      const account = accounts.find((a) => a.service === service)
+      const summary = account ? (summaries.get(account.id) ?? null) : null
+      const upcoming =
+        summary?.current && account
+          ? (account.schedules.find((s) => s.startOn > (summary.current?.startOn ?? today)) ?? null)
+          : null
+      return { service, setting, summary, upcoming }
+    })
+    .filter(({ setting, summary }) => setting?.isEnabled || summary?.current)
 
   if (rows.length === 0) return null
 
@@ -99,7 +110,7 @@ export async function MealPanel({
           const current = summary?.current ?? null
           const coverage = summary?.coverage
           const dialog = {
-            studentId,
+            owner,
             service,
             allowedWeekdays: setting?.allowedWeekdays ?? [],
             weekdays: current?.weekdays ?? [],
@@ -148,7 +159,7 @@ export async function MealPanel({
                             ? formatDay(coverage.paidThrough)
                             : t('nothingPaid')}
                         </dd>
-                        {coverage && coverage.dueDays > 0 && (
+                        {coverage && coverage.dueDays > 0 && !exempt && (
                           <dd className="text-xs text-amber-600">
                             {t('due', {
                               days: coverage.dueDays,
@@ -176,7 +187,7 @@ export async function MealPanel({
                 {summary && summary.calendar.length > 0 && (
                   <div className="min-w-0 border-t border-border p-5 @xl:col-span-3 @xl:border-t-0 @xl:border-l">
                     <MealCalendar
-                      studentId={studentId}
+                      owner={owner}
                       service={service}
                       days={summary.calendar}
                       today={today}

@@ -178,13 +178,13 @@ model School {
   mealServiceSettings       MealServiceSetting[]
   mealPrices                MealPrice[]
   mealAccounts              MealAccount[]
+  staffMembers              StaffMember[]
   mealSchedules             MealSchedule[]
   mealAdjustments           MealAdjustment[]
   mealAbsences              MealAbsence[]
   receipts                  Receipt[]
   receiptCounter            ReceiptCounter?
   mealPayments              MealPayment[]
-  staffMeals                StaffMeal[]
   childcareSubscriptions    ChildcareSubscription[]
   childcareCharges          ChildcareCharge[]
   childcarePayments         ChildcarePayment[]
@@ -586,7 +586,6 @@ model Teacher {
   scheduleSlots ClassScheduleSlotTeacher[]
   expenses      TeacherExpense[]
   invitations   Invitation[]
-  staffMeals    StaffMeal[]
 
   @@unique([id, schoolId])
   @@unique([userId, schoolId])
@@ -1172,17 +1171,40 @@ model EventImage {
   @@index([schoolId])
 }
 
-/// Inscription d'un élève à un service repas. Ligne verrouillée par toute mutation du compte.
+/// Membre du personnel qui mange à la cantine (#545). Liste propre à l'école, distincte des
+/// enseignants. `mealExempt` : ses repas sont comptés mais jamais facturés.
+model StaffMember {
+  id         String   @id @default(uuid())
+  schoolId   String
+  name       String   @db.VarChar(250)
+  note       String?  @db.VarChar(250)
+  mealExempt Boolean  @default(false)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  school       School        @relation(fields: [schoolId], references: [id])
+  mealAccounts MealAccount[]
+  receipts     Receipt[]
+
+  @@unique([id, schoolId])
+  @@index([schoolId])
+}
+
+/// Inscription d'un élève ou d'un membre du personnel à un service repas : exactement l'un des
+/// deux (contrainte `MealAccount_owner_check`). Ligne verrouillée par toute mutation du compte.
 model MealAccount {
-  id        String      @id @default(uuid())
-  schoolId  String
-  studentId String
-  service   MealService
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id            String      @id @default(uuid())
+  schoolId      String
+  studentId     String?
+  staffMemberId String?
+  service       MealService
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   school      School           @relation(fields: [schoolId], references: [id])
-  student     Student          @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  student     Student?         @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  staffMember StaffMember?     @relation(fields: [staffMemberId, schoolId], references: [id, schoolId], onDelete: Restrict)
   schedules   MealSchedule[]
   adjustments MealAdjustment[]
   payments    MealPayment[]
@@ -1190,26 +1212,7 @@ model MealAccount {
 
   @@unique([id, schoolId])
   @@unique([schoolId, studentId, service])
-  @@index([schoolId])
-}
-
-/// Repas du personnel (#545) : comptés dans les effectifs du jour, jamais facturés. Une ligne
-/// par membre et service ; la retirer arrête ses repas. `isFree` marque une gratuité accordée.
-model StaffMeal {
-  id        String      @id @default(uuid())
-  schoolId  String
-  teacherId String
-  service   MealService
-  weekdays  Int[]
-  isFree    Boolean     @default(false)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  school  School  @relation(fields: [schoolId], references: [id])
-  teacher Teacher @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Cascade)
-
-  @@unique([id, schoolId])
-  @@unique([schoolId, teacherId, service])
+  @@unique([schoolId, staffMemberId, service])
   @@index([schoolId])
 }
 
@@ -1274,11 +1277,13 @@ model MealAbsence {
 }
 
 /// Un versement au guichet : un numéro, un mode, un total, N lignes repas et écolage d'une même
-/// famille (§14). La clé d'idempotence rend un double envoi inoffensif.
+/// famille (§14), ou la cantine d'un membre du personnel : exactement l'un des deux payeurs
+/// (contrainte `Receipt_payer_check`). La clé d'idempotence rend un double envoi inoffensif.
 model Receipt {
   id             String        @id @default(uuid())
   schoolId       String
-  familyId       String
+  familyId       String?
+  staffMemberId  String?
   number         Int
   total          Decimal       @db.Decimal(10, 2)
   method         PaymentMethod
@@ -1293,7 +1298,8 @@ model Receipt {
   createdAt      DateTime      @default(now())
 
   school            School             @relation(fields: [schoolId], references: [id])
-  family            Family             @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  family            Family?            @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  staffMember       StaffMember?       @relation(fields: [staffMemberId, schoolId], references: [id, schoolId], onDelete: Restrict)
   recordedBy        User               @relation("receiptRecordedBy", fields: [recordedById], references: [id])
   cancelledBy       User?              @relation("receiptCancelledBy", fields: [cancelledById], references: [id])
   mealPayments      MealPayment[]
@@ -1304,6 +1310,7 @@ model Receipt {
   @@unique([schoolId, number])
   @@unique([schoolId, idempotencyKey])
   @@index([familyId])
+  @@index([staffMemberId])
 }
 
 /// Prochain numéro de reçu de l'école, jamais remis à zéro.

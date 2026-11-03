@@ -309,7 +309,7 @@ export default async function StudentDetailPage({ params }: Props) {
           {mealsEnabled && (
             <MealPanel
               schoolId={student.schoolId}
-              studentId={student.id}
+              owner={{ studentId: student.id }}
               locale={locale}
               selectedPeriodId={selectedPeriodId}
             />

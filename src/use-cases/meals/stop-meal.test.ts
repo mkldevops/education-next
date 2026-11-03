@@ -40,7 +40,7 @@ describe('stopMeal', () => {
     ])
 
     expect(await run()).toBe('OK')
-    expect(accountGw.lockAccount).toHaveBeenCalledWith(tx, schoolId, studentId, 'SNACK', false)
+    expect(accountGw.lockAccount).toHaveBeenCalledWith(tx, schoolId, { studentId }, 'SNACK', false)
     expect(accountGw.applyStop).toHaveBeenCalledWith(tx, schoolId, {
       removed: ['next'],
       closed: [{ id: 'running', endOn: '2026-10-25' }],

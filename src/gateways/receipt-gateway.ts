@@ -29,8 +29,7 @@ export const receiptGateway = {
   create: (
     tx: Tx,
     schoolId: string,
-    data: {
-      familyId: string
+    data: ({ familyId: string } | { staffMemberId: string }) & {
       number: number
       total: number
       method: PaymentMethod
@@ -100,18 +99,19 @@ export const receiptGateway = {
     return charges.map((charge) => charge.subscription.student)
   },
 
-  findFamilyId: async (schoolId: string, id: string) =>
-    (
-      await db.receipt.findUnique({
-        where: { id_schoolId: { id, schoolId } },
-        select: { familyId: true },
-      })
-    )?.familyId ?? null,
+  /** Payeur d'un reçu : sa famille, ou le membre du personnel dont il paie la cantine. */
+  findPayer: (schoolId: string, id: string) =>
+    db.receipt.findUnique({
+      where: { id_schoolId: { id, schoolId } },
+      select: { familyId: true, staffMemberId: true },
+    }),
 
   /** Tient le reçu jusqu'à la fin de `tx` : deux annulations ne se croisent pas. */
   lockForCancel: async (tx: Tx, schoolId: string, id: string) => {
-    const rows = await tx.$queryRaw<Array<{ familyId: string; cancelledAt: Date | null }>>`
-      SELECT "familyId", "cancelledAt" FROM "Receipt"
+    const rows = await tx.$queryRaw<
+      Array<{ familyId: string | null; staffMemberId: string | null; cancelledAt: Date | null }>
+    >`
+      SELECT "familyId", "staffMemberId", "cancelledAt" FROM "Receipt"
       WHERE "id" = ${id} AND "schoolId" = ${schoolId}
       FOR UPDATE`
     return rows[0] ?? null
@@ -149,6 +149,7 @@ export const receiptGateway = {
         cancelledAt: true,
         cancelReason: true,
         family: { select: { id: true, name: true } },
+        staffMember: { select: { name: true } },
         recordedBy: { select: { name: true } },
         mealPayments: {
           select: {
@@ -159,6 +160,7 @@ export const receiptGateway = {
               select: {
                 service: true,
                 student: { select: { person: { select: { name: true, lastname: true } } } },
+                staffMember: { select: { name: true } },
               },
             },
           },
