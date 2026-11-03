@@ -99,7 +99,9 @@ export function buildAssistantSystemPrompt({
           "  pass that child's `studentId` with `target: 'student'` so the whole amount goes to",
           '  that child instead of being spread across the family.',
           '- To undo a recorded payment, find it with `get_family_payments`, then call',
-          '  `cancel_payments` with its ids. Online (Stripe) payments cannot be cancelled here.',
+          '  `cancel_payments` with its ids and the reason the administrator gave. Online (Stripe)',
+          '  payments cannot be cancelled here; a cashier payment is cancelled with its receipt',
+          '  (`cancel_receipt`).',
         ]
       : []),
     '- When the user says to cancel or stop ("annule", "laisse tomber"), drop the operation in',

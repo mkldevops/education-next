@@ -65,7 +65,8 @@ export async function findPaymentTransactionByProviderSessionId(
  * `McpOAuthGrant` y figure aussi : la connexion est sous garde tenant, mais la compter
  * par `userId` seul — toutes écoles, révoquées comprises — est cette même question
  * plateforme, et sa clé étrangère `Restrict` bloque la suppression comme les autres.
- * `MealAdjustment` de même : un ajustement de jours repas garde son auteur.
+ * `MealAdjustment` de même : un ajustement de jours repas garde son auteur, et un paiement
+ * annulé (`Payment.cancelledById`) celui de son annulation, comme un reçu.
  */
 export async function countRowsBlockingUserDeletion(userId: string): Promise<number> {
   const db = archivedClient()
@@ -76,6 +77,7 @@ export async function countRowsBlockingUserDeletion(userId: string): Promise<num
     db.mcpOAuthGrant.count({ where: { userId } }),
     db.mealAdjustment.count({ where: { recordedById: userId } }),
     db.receipt.count({ where: { OR: [{ recordedById: userId }, { cancelledById: userId }] } }),
+    db.payment.count({ where: { cancelledById: userId } }),
   ])
   return counts.reduce((sum, count) => sum + count, 0)
 }

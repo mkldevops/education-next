@@ -3,15 +3,19 @@ import { Receipt } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { type FamilyPayment, groupFamilyPayments } from '@/domain/payment'
 import type { PaymentMethod } from '@/generated/prisma/client'
+import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import type { FamilyDetailPayment } from '../_lib/family-detail'
+import { CancelPaymentDialog } from './cancel-payment-dialog'
 
 type Props = {
   payments: FamilyDetailPayment[]
   locale: string
   currency: string
+  /** Administrateur de l'école : peut annuler une saisie manuelle. */
+  canCancel?: boolean
 }
 
 const METHOD_STYLES: Record<PaymentMethod, string> = {
@@ -61,7 +65,45 @@ function MethodBadge({ method, label }: { method: PaymentMethod; label: string }
   )
 }
 
-export async function PaymentHistoryTable({ payments, locale, currency }: Props) {
+/**
+ * Seule une saisie manuelle s'annule ici : un paiement en ligne se rembourse chez Stripe, un
+ * règlement de caisse s'annule avec son reçu. Le serveur applique la même règle.
+ */
+function PaymentCancellation({
+  payment,
+  locale,
+  currency,
+  t,
+}: {
+  payment: FamilyPayment<FamilyDetailPayment>
+  locale: string
+  currency: string
+  t: Awaited<ReturnType<typeof getTranslations>>
+}) {
+  if (payment.lines.some((line) => line.paymentTransactionId !== null)) {
+    return <span className="text-xs text-graphite-600">{t('cancel.onlineHint')}</span>
+  }
+  const receiptId = payment.lines.find((line) => line.receiptId !== null)?.receiptId
+  if (receiptId) {
+    return (
+      <Link
+        href={`/dashboard/cashier/receipts/${receiptId}`}
+        className="text-xs text-primary underline-offset-2 hover:underline"
+      >
+        {t('cancel.receiptHint')}
+      </Link>
+    )
+  }
+  return (
+    <CancelPaymentDialog
+      paymentIds={payment.lines.map((line) => line.id)}
+      amount={formatCurrency(Math.abs(payment.amount), locale, currency)}
+      isRefund={payment.amount < 0}
+    />
+  )
+}
+
+export async function PaymentHistoryTable({ payments, locale, currency, canCancel }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails.paymentHistory')
 
   if (payments.length === 0) {
@@ -115,6 +157,11 @@ export async function PaymentHistoryTable({ payments, locale, currency }: Props)
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('cashedAt')}
               </th>
+              {canCancel && (
+                <th className="px-4 py-2.5">
+                  <span className="sr-only">{t('actions')}</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-alabaster-800">
@@ -152,6 +199,16 @@ export async function PaymentHistoryTable({ payments, locale, currency }: Props)
                     <span className="text-graphite-800">—</span>
                   )}
                 </td>
+                {canCancel && (
+                  <td className="px-4 py-3 text-right">
+                    <PaymentCancellation
+                      payment={payment}
+                      locale={locale}
+                      currency={currency}
+                      t={t}
+                    />
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -163,7 +220,7 @@ export async function PaymentHistoryTable({ payments, locale, currency }: Props)
               <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-graphite">
                 {formatCurrency(total, locale, currency)}
               </td>
-              <td colSpan={4} />
+              <td colSpan={canCancel ? 5 : 4} />
             </tr>
           </tfoot>
         </table>
@@ -211,6 +268,12 @@ export async function PaymentHistoryTable({ payments, locale, currency }: Props)
                 </div>
               )}
             </dl>
+
+            {canCancel && (
+              <div className="flex justify-end">
+                <PaymentCancellation payment={payment} locale={locale} currency={currency} t={t} />
+              </div>
+            )}
           </li>
         ))}
       </ul>

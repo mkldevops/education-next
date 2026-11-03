@@ -1197,7 +1197,9 @@ that one instead of asking.
 **Undoing a manual payment.** `cancel_payments` (write, approval required) deactivates payments by id
 — the soft deletion every payment read already respects, so balances fall back at once. All ids must
 be active manual payments of one family: missing → `notFound`, a Stripe payment → `onlinePayment`,
-two families → `mixedFamilies`. It takes the family payment lock, rereads the payments under it
+a cashier payment → `receiptPayment`, two families → `mixedFamilies`. It runs `cancelPayments()`,
+shared with the family page (Payments, Cancelling a manual payment), and records the caller and an
+optional `reason`. It takes the family payment lock, rereads the payments under it
 (`notFound` if one vanished meanwhile), then deactivates them in the same transaction.
 **The amount paid on an enrollment never goes negative** (`paymentGateway.sumActiveByEnrollment`):
 under the same lock, the tool recomputes what each touched enrollment would still hold once the
@@ -1828,6 +1830,31 @@ Screens show what the family handed over instead: `groupFamilyPayments()` in
   among the latest of its enrollments. `calculateFamilyBalance()` accepts that aggregated `paid`
   total in place of the payment rows.
 
+### Cancelling a manual payment
+
+`cancelPayments()` (`src/use-cases/payments/cancel-payments.ts`) undoes a payment entered by mistake.
+The dashboard and the MCP `cancel_payments` tool both call it: same rules, same typed refusals.
+
+- **Who.** A school admin: `cancelPaymentsAction` (`app/[locale]/(dashboard)/_lib/payment-actions.ts`)
+  is guarded by `requireSchoolAdmin()` and scoped to the active school; the MCP tool runs under the
+  key's school. Payments disabled for the school → `paymentsDisabled`.
+- **Deactivated, not erased.** The rows go `isActive = false` — the soft deletion every payment read
+  already respects, so the balance and arrears fall back at once — and keep `cancelledAt`,
+  `cancelledById` and an optional `cancelReason` (≤ 250 characters, blank stored as none). A user
+  who cancelled a payment cannot be deleted for good (`countRowsBlockingUserDeletion`), like a
+  receipt's author.
+- **Manual payments only.** A Stripe payment → `onlinePayment` (refund it from Stripe); a cashier
+  receipt payment → `receiptPayment` (cancel the receipt). Missing, inactive or another school's id
+  → `notFound`; ids spanning two families → `mixedFamilies`. All or nothing, at most 20 ids.
+- **Under the family payment lock.** The ids are reread under the lock (`notFound` if one vanished
+  meanwhile) and deactivated in the same transaction.
+- **The amount paid on an enrollment never goes negative**: the refusal `refundExceedsPaid` applies
+  when an active refund would exceed what remains paid (see Undoing a manual payment, AI assistant).
+- **The family page cancels one history line.** In the payment history, an admin sees "Cancel" on a
+  manual payment; it cancels every row of that line (one per enrollment) after a confirmation stating
+  the amount and its effect on the balance due. An online payment shows a Stripe hint instead, a
+  cashier payment a link to its receipt. Parents and staff without admin access see no action.
+
 ### Collection statistics
 
 `src/domain/payment-stats.ts` feeds the payments dashboard. It reads the **same perimeter as the
@@ -2211,7 +2238,7 @@ balance. Each billed childcare month still open adds a line (see [Childcare](#ch
   because the ledger skips cancelled receipts, like its childcare payments. The billed month stays
   and owes that amount again. `alreadyCancelled` on a second try, `refundExceedsPaid`
   when a refund already consumed that tuition.
-- **A receipt payment is cancelled with its receipt only.** The MCP `cancel_payments` tool refuses a
+- **A receipt payment is cancelled with its receipt only.** `cancelPayments()` (app and MCP) refuses a
   payment that has a `receiptId` (`receiptPayment`): cancelling one line would leave a printed
   receipt wrong.
 - A user who took or cancelled a receipt cannot be deleted for good: receipts are counted in

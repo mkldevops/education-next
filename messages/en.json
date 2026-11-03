@@ -1880,6 +1880,29 @@
             "CHECK": "Check",
             "MOBILE_MONEY": "Mobile money",
             "STRIPE": "Stripe"
+          },
+          "actions": "Actions",
+          "cancel": {
+            "trigger": "Cancel",
+            "title": "Cancel this payment?",
+            "description": "The {amount} payment leaves the history and the family's balance due rises by {amount}. It is not erased: the cancellation keeps who did it and why.",
+            "refundDescription": "The {amount} refund leaves the history and the family's balance due drops by {amount}. It is not erased: the cancellation keeps who did it and why.",
+            "reason": "Reason (optional)",
+            "submit": "Cancel payment",
+            "cancel": "Back",
+            "success": "Payment cancelled",
+            "error": "Could not cancel the payment",
+            "onlineHint": "Online payment: refund it from Stripe",
+            "receiptHint": "Cashier payment: cancel the receipt",
+            "errors": {
+              "notFound": "This payment no longer exists or was already cancelled",
+              "onlinePayment": "An online payment is refunded from Stripe",
+              "receiptPayment": "A cashier payment is cancelled with its receipt",
+              "mixedFamilies": "These payments do not belong to the same family",
+              "refundExceedsPaid": "An active refund would exceed what remains paid: cancel that refund first",
+              "paymentsDisabled": "Payments are disabled for this school",
+              "validationError": "The reason must not exceed 250 characters"
+            }
           }
         },
         "relationType": {

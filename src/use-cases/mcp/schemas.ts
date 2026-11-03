@@ -10,6 +10,7 @@ import {
 } from '@/use-cases/class-schedules/schemas'
 import { EVENT_CATEGORIES, EVENT_STATUSES, EVENT_VISIBILITIES } from '@/use-cases/events/schemas'
 import { createLevelSchema } from '@/use-cases/levels/schemas'
+import { cancelPaymentsSchema } from '@/use-cases/payments/schemas'
 import { createPlanSchema, updatePlanSchema } from '@/use-cases/plans/schemas'
 
 export const mcpCreateLevelSchema = createLevelSchema.omit({ schoolId: true }).extend({
@@ -191,9 +192,7 @@ export const mcpFindStudentsSchema = z.object({
 
 export const mcpFamilyPaymentsSchema = z.object({ familyId: z.uuid() })
 
-export const mcpCancelPaymentsSchema = z.object({
-  paymentIds: z.array(z.uuid()).min(1).max(10),
-})
+export const mcpCancelPaymentsSchema = cancelPaymentsSchema.pick({ paymentIds: true, reason: true })
 
 /**
  * L'inscription se désigne par son identifiant, ou par l'élève qu'elle concerne.

@@ -747,9 +747,10 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         title: 'Annuler des paiements',
         description:
           "Annule des paiements saisis par erreur : ils sortent des soldes et de l'historique, " +
-          'sans être effacés. Tous doivent appartenir à la même famille ; un paiement en ligne ' +
-          '(Stripe) est refusé, il se rembourse depuis Stripe ; un paiement de caisse aussi, ' +
-          "il s'annule avec son reçu depuis l'écran du reçu.",
+          'sans être effacés. Les identifiants se trouvent avec `get_family_payments`. Tous ' +
+          'doivent appartenir à la même famille ; un paiement en ligne (Stripe) est refusé, il ' +
+          'se rembourse depuis Stripe ; un paiement de caisse aussi, il s’annule avec son reçu ' +
+          '(`cancel_receipt`). `reason`, facultatif, est conservé avec l’auteur de l’annulation.',
         inputSchema: mcpCancelPaymentsSchema,
         annotations: DESTRUCTIVE_WRITE,
         kind: 'write',
