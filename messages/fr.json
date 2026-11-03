@@ -1195,7 +1195,50 @@
             "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
           }
         },
-        "debtorsLink": "Impayés et relances"
+        "debtorsLink": "Impayés et relances",
+        "headcount": {
+          "today": "Aujourd'hui : {students, plural, =0 {aucun élève} one {# élève} other {# élèves}} · {staff, plural, =0 {aucun membre du personnel} one {# membre du personnel} other {# membres du personnel}}{free, plural, =0 {} other { (dont # gratuit{free, plural, one {} other {s}})}}"
+        },
+        "staff": {
+          "title": "Cantine du personnel",
+          "intro": "Repas comptés dans les effectifs du jour, à part des élèves. Rien n'est facturé.",
+          "empty": "Aucun membre du personnel inscrit.",
+          "free": "Gratuit",
+          "add": {
+            "title": "Inscrire un membre du personnel",
+            "teacher": "Membre du personnel",
+            "teacherPlaceholder": "Choisir…",
+            "teacherHint": "Le personnel vient de la liste des enseignants. Inscrire de nouveau un membre remplace ses jours.",
+            "service": "Service",
+            "weekdays": "Jours de repas",
+            "isFree": "Repas gratuits",
+            "isFreeHint": "Gratuité accordée par l'école, comptée à part.",
+            "cancel": "Annuler",
+            "submit": "Enregistrer",
+            "success": "Repas du personnel enregistrés",
+            "error": "Erreur lors de l'enregistrement",
+            "errors": {
+              "validationError": "Choisissez un membre et au moins un jour",
+              "invalidWeekdays": "Cochez au moins un jour proposé par le service",
+              "serviceDisabled": "Ce service n'est pas proposé",
+              "notFound": "Membre du personnel introuvable",
+              "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
+            }
+          },
+          "remove": {
+            "trigger": "Retirer",
+            "title": "Retirer {name} ?",
+            "description": "Ses repas ne seront plus comptés à partir d'aujourd'hui.",
+            "confirm": "Retirer",
+            "cancel": "Annuler",
+            "success": "Repas du personnel retirés",
+            "error": "Erreur lors du retrait",
+            "errors": {
+              "notSubscribed": "Ce membre ne mange pas à ce service",
+              "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
+            }
+          }
+        }
       },
       "cashier": {
         "title": "Caisse",

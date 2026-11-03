@@ -103,3 +103,22 @@ export const mealImportManifestSchema = z.object({
     )
     .min(1),
 })
+
+const staffService = {
+  schoolId: z.string().min(1),
+  teacherId: z.uuid(),
+  service,
+}
+
+export const setStaffMealSchema = z.object({
+  ...staffService,
+  weekdays,
+  isFree: z.boolean(),
+})
+
+export const removeStaffMealSchema = z.object(staffService)
+
+export const dailyMealHeadcountSchema = z.object({
+  schoolId: z.string().min(1),
+  day: z.iso.date(),
+})

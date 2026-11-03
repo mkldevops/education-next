@@ -2235,6 +2235,26 @@ called from `attendance-actions.ts`):
 - with `meals_enabled` off nothing is written (`mealsDisabled`). Column added by migration
   `20261030090000_meal_absence_from_attendance`.
 
+**Staff canteen (#545).** Staff meals are **counted, never billed**: no price, payment, receipt,
+debt or revenue is attached to them, and nothing will be until the school validates a billing model
+(billing the staff, a payroll deduction, and the staff price). A staff member is an active `Teacher`
+of the school — non-teaching staff are recorded as `Teacher` too. `StaffMeal` holds one row per
+member and service: the ISO weekdays they eat and `isFree`, a free meal granted by the school,
+counted apart and never valued. On `/dashboard/meals` (`requireSchoolAdmin()`),
+`setStaffMeal()` signs a member up or replaces their days, among the service's `allowedWeekdays`
+(`invalidWeekdays`), refusing a disabled service (`serviceDisabled`) and an unknown or inactive
+member (`notFound`); `removeStaffMeal()` deletes the row (`notSubscribed` without one). A « yes »
+without named days takes every allowed day of the service, which the dialog ticks by default. A
+deactivated teacher drops out of the list and the counts; the migration repeats the weekday `CHECK`
+of `MealSchedule`.
+
+**Day's headcount.** Each service card on `/dashboard/meals` shows today's meals in the school's time
+zone, students and staff apart (`dailyMealHeadcount()`, `mealHeadcount()` in
+`src/domain/meal-headcount.ts`): a student counts once per account whose segment serves the day,
+unless marked absent; a staff member counts when the day is one of theirs, the free ones repeated in
+brackets. A published closure or holiday serves nobody. Coverage plays no part: an unpaid day is still
+served.
+
 **Unpaid and reminders.** `/dashboard/cashier/debtors` (`requireSchoolCashier()`, `notFound()` when
 `meals_enabled` is off, linked from the cashier and the meals page) lists, for active students, each
 account with days due, or with served days still ahead of which at most `REMIND_WITHIN_DAYS` (2) are
