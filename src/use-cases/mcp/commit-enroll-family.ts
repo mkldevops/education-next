@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { NEW_ENROLLMENT_STATUS } from '@/domain/enrollment'
+import { startMonthToDate } from '@/domain/payment-schedule'
 import { reserveClassSeatsInOrder } from '@/gateways/class-seat-lock'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { lockActiveFamily } from '@/gateways/family-mutation-lock'
@@ -45,6 +46,8 @@ const resolvedSchema = z.object({
       studentId: z.string().optional(),
       classPeriod: z.object({ id: z.string(), name: z.string() }),
       plan: z.object({ id: z.string(), name: z.string(), amount: z.number() }),
+      // Absent d'un brouillon antérieur au mois de début : l'inscription commence avec sa période.
+      startMonth: z.string().nullable().default(null),
       totalAmount: z.number(),
     })
   ),
@@ -220,6 +223,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
       studentId,
       classPeriod,
       plan,
+      startMonth,
       totalAmount,
       ...person
     } of resolved.students) {
@@ -248,6 +252,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
           planId: plan.id,
           totalAmount,
           discount: resolved.discount,
+          startMonth: startMonth ? startMonthToDate(startMonth) : null,
           status: NEW_ENROLLMENT_STATUS,
         },
         select: { id: true },

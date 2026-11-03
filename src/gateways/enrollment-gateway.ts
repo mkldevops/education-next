@@ -215,6 +215,36 @@ export const enrollmentGateway = {
     }),
 
   /**
+   * Bornes de la période de l'inscription, lue sur sa dernière affectation de classe —
+   * la même que celle du suivi des échéances (`getPaymentTrackingByFamily`).
+   */
+  findPeriodBounds: async (
+    schoolId: string,
+    enrollmentId: string,
+    client: Prisma.TransactionClient = db
+  ) => {
+    const assignment = await client.classAssignment.findFirst({
+      where: { schoolId, enrollmentId },
+      orderBy: { startAt: 'desc' },
+      select: { classPeriod: { select: { period: { select: { startAt: true, endAt: true } } } } },
+    })
+    return assignment?.classPeriod.period ?? null
+  },
+
+  /** Mois de début et total recalculé qui va avec ; la remise ne bouge pas. */
+  updateStartMonth: (
+    schoolId: string,
+    id: string,
+    startMonth: Date | null,
+    totalAmount: number,
+    client: Prisma.TransactionClient = db
+  ) =>
+    client.enrollment.update({
+      where: { id_schoolId: { id, schoolId } },
+      data: { startMonth, totalAmount },
+    }),
+
+  /**
    * Affecte une formule et le total recalculé qui va avec ; la remise ne bouge pas.
    * `client` reçoit la transaction qui a relu le déjà-payé sous le verrou de la famille.
    */
@@ -255,7 +285,8 @@ export const enrollmentGateway = {
         status: true,
         discount: true,
         totalAmount: true,
-        plan: { select: { id: true, name: true, amount: true } },
+        startMonth: true,
+        plan: { select: { id: true, name: true, amount: true, paymentSchedule: true } },
         student: { select: { person: { select: { name: true, lastname: true } } } },
         classAssignments: { select: { classPeriod: { select: { name: true } } } },
         payments: { where: { isActive: true }, select: { amount: true } },

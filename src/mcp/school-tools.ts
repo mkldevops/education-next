@@ -582,7 +582,11 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         'existante : un élève déjà membre reçoit son inscription sans être recréé. Rend un ' +
         '`draftId`, un `checksum`, le plan résolu, les ' +
         'homonymes trouvés, des avertissements et des `blockers`. Un `blockers` non vide ' +
-        'nomme le champ à corriger et interdit le commit.',
+        'nomme le champ à corriger et interdit le commit. `startMonth` (`YYYY-MM`, pour la ' +
+        "famille ou par élève) inscrit un élève arrivé en cours d'année : seules les " +
+        'échéances de la formule à partir de ce mois sont dues et font le total. Il doit ' +
+        'tomber dans la période de la classe (`startMonthOutsidePeriod`) et la formule ' +
+        'avoir un échéancier (`noPaymentSchedule`).',
       inputSchema: previewEnrollFamilySchema,
       annotations: NON_IDEMPOTENT_WRITE,
       kind: 'draft',
@@ -710,11 +714,16 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'preview_update_enrollment',
         title: "Préparer la modification d'une inscription",
         description:
-          "Change la formule et/ou la remise d'une inscription en attente ou active, sans rien " +
+          "Change la formule, la remise et/ou le mois de début d'une inscription en attente " +
+          'ou active, sans rien ' +
           "écrire. L'inscription se désigne par son identifiant, ou par le prénom et le nom de " +
           "l'élève ; la formule est attendue en libellé. Sans remise, l'inscription garde la " +
           'sienne. Rend le passage « avant → après », le total recalculé et le reste à payer ; ' +
-          'plusieurs inscriptions candidates sont un `blocker` qui les liste.',
+          'plusieurs inscriptions candidates sont un `blocker` qui les liste. `startMonth` ' +
+          '(`YYYY-MM`) fixe le premier mois dû : les échéances antérieures ne sont plus ' +
+          'attendues et sortent du total ; `null` le retire, absent il est gardé. Refusé hors ' +
+          'de la période (`startMonthOutsidePeriod`), sans échéancier (`noPaymentSchedule`), ' +
+          'ou sous le déjà-payé (`totalBelowPaid`).',
         inputSchema: previewUpdateEnrollmentSchema,
         annotations: NON_IDEMPOTENT_WRITE,
         kind: 'draft',
@@ -724,7 +733,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'commit_update_enrollment',
         title: "Engager la modification d'une inscription",
         description:
-          'Applique la formule, la remise et le total déjà prévisualisés. Les paiements ' +
+          'Applique la formule, la remise, le mois de début et le total déjà prévisualisés. ' +
+          'Les paiements ' +
           "restent sur l'inscription. Rejouer le même `draftId` rend le résultat enregistré.",
         inputSchema: commitDraftSchema,
         annotations: IDEMPOTENT_COMMIT,

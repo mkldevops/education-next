@@ -82,12 +82,13 @@ export function paymentInstallments(
   schedule: PaymentSchedule,
   totalAmount: number,
   periodStart: Date,
-  currency: string
+  currency: string,
+  startMonth: string | null = null
 ): PaymentInstallment[] {
   if (schedule.mode === 'NONE') return []
   const year = periodStart.getUTCFullYear()
-  const startMonth = periodStart.getUTCMonth() + 1
-  const yearOf = (month: number) => year + (month < startMonth ? 1 : 0)
+  const periodFirstMonth = periodStart.getUTCMonth() + 1
+  const yearOf = (month: number) => year + (month < periodFirstMonth ? 1 : 0)
   const dates =
     schedule.mode === 'INSTALLMENTS'
       ? schedule.dates.map((date) => dueDate(yearOf(date.month), date.month - 1, date.day)).sort()
@@ -98,6 +99,14 @@ export function paymentInstallments(
             schedule.dueDay
           )
         )
+  // A late enrollment owes nothing before its start month: its total is split over the
+  // remaining deadlines only, so the earlier ones never show as arrears.
+  const owedDates = startMonth ? dates.filter((date) => date >= firstDayOf(startMonth)) : dates
+  if (owedDates.length === 0) return []
+  return splitAmount(owedDates, totalAmount, currency)
+}
+
+function splitAmount(dates: string[], totalAmount: number, currency: string) {
   const factor = 10 ** currencyFractionDigits(currency)
   // Preserve fractional legacy amounts rather than inventing debt by rounding up.
   // New plan prices validate the school's currency precision.
@@ -107,6 +116,54 @@ export function paymentInstallments(
     dueDate: date,
     amount: (index === dates.length - 1 ? totalUnits - units * index : units) / factor,
   }))
+}
+
+/** `YYYY-MM`: the month an enrollment starts owing installments. */
+export const startMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+
+function firstDayOf(startMonth: string): string {
+  return `${startMonth}-01`
+}
+
+const monthOf = (date: Date) => date.toISOString().slice(0, 7)
+
+/** Persisted as the first day of the month, at midnight UTC. */
+export function startMonthToDate(startMonth: string): Date {
+  return new Date(`${firstDayOf(startMonth)}T00:00:00.000Z`)
+}
+
+export function startMonthFromDate(date: Date | null | undefined): string | null {
+  return date ? monthOf(date) : null
+}
+
+export function validateStartMonth(
+  startMonth: string,
+  period: { startAt: Date; endAt: Date }
+): 'OK' | 'startMonthOutsidePeriod' {
+  return startMonth >= monthOf(period.startAt) && startMonth <= monthOf(period.endAt)
+    ? 'OK'
+    : 'startMonthOutsidePeriod'
+}
+
+/**
+ * The part of a plan an enrollment owes when it starts at `startMonth`: the plan's
+ * installments due from that month on. Without a start month, the whole plan amount.
+ * A plan without deadlines cannot be prorated, and a start after the last deadline
+ * would owe nothing: both are refused rather than guessed.
+ */
+export function owedPlanAmount(
+  planAmount: number,
+  schedule: PaymentSchedule,
+  periodStart: Date,
+  currency: string,
+  startMonth: string | null
+): number | 'noPaymentSchedule' | 'noInstallmentDue' {
+  if (!startMonth) return planAmount
+  const all = paymentInstallments(schedule, planAmount, periodStart, currency)
+  if (all.length === 0) return 'noPaymentSchedule'
+  const owed = all.filter((installment) => installment.dueDate >= firstDayOf(startMonth))
+  if (owed.length === 0) return 'noInstallmentDue'
+  return roundHalfUp(owed.reduce((sum, installment) => sum + installment.amount, 0))
 }
 
 export function paymentTracking(

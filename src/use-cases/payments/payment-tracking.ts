@@ -3,6 +3,7 @@ import {
   paymentInstallments,
   paymentTracking,
   readPaymentSchedule,
+  startMonthFromDate,
 } from '@/domain/payment-schedule'
 import { schoolDayBounds, schoolToday } from '@/domain/school-date'
 import { db } from '@/lib/db'
@@ -52,6 +53,7 @@ export async function getPaymentTrackingByFamily(
       select: {
         id: true,
         totalAmount: true,
+        startMonth: true,
         plan: { select: { paymentSchedule: true } },
         classAssignments: {
           orderBy: { startAt: 'desc' },
@@ -91,7 +93,13 @@ export async function getPaymentTrackingByFamily(
     const paid = toNumber(paidByEnrollment.get(enrollment.id) ?? 0)
     const tracking = paymentTracking(
       period
-        ? paymentInstallments(schedule, toNumber(enrollment.totalAmount), period.startAt, currency)
+        ? paymentInstallments(
+            schedule,
+            toNumber(enrollment.totalAmount),
+            period.startAt,
+            currency,
+            startMonthFromDate(enrollment.startMonth)
+          )
         : [],
       paid,
       today

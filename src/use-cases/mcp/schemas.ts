@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { isCurrencyAmount } from '@/domain/enrollment'
 import { MCP_DRAFT_CHECKSUM_LENGTH } from '@/domain/mcp-draft'
 import { MCP_KEY_LIFETIMES_DAYS } from '@/domain/mcp-key'
+import { startMonthSchema } from '@/domain/payment-schedule'
 import { createClassPeriodSchema } from '@/use-cases/class-periods/schemas'
 import {
   createClassScheduleSlotSchema,
@@ -104,6 +105,8 @@ const mcpStudentSchema = mcpPersonSchema.extend({
   // Même raison que la classe : une fiche mêle un grand élève à 90 et un petit à 180. Sans
   // libellé, l'élève prend la formule de la famille.
   planName: z.string().trim().min(1).max(50).optional(),
+  // Un élève arrivé en cours d'année : `YYYY-MM`, sinon celui de la fiche, sinon la période.
+  startMonth: startMonthSchema.optional(),
 })
 
 const paymentFields = {
@@ -141,6 +144,7 @@ export const previewEnrollFamilySchema = z
     students: z.array(mcpStudentSchema).min(1).max(10),
     planName: z.string().trim().min(1).max(50).optional(),
     discount: z.number().min(0).default(0),
+    startMonth: startMonthSchema.optional(),
     payment: mcpPaymentSchema.optional(),
   })
   .refine((data) => (data.familyId === undefined) !== (data.familyName === undefined))
@@ -209,6 +213,8 @@ export const previewUpdateEnrollmentSchema = z
     planName: z.string().trim().min(1).max(50).optional(),
     discount: z.number().min(0).optional(),
     totalAmount: z.number().min(0).refine(isCurrencyAmount).optional(),
+    /** `YYYY-MM` ; `null` efface le mois de début. */
+    startMonth: startMonthSchema.nullable().optional(),
   })
   .refine(
     (data) =>
@@ -217,7 +223,10 @@ export const previewUpdateEnrollmentSchema = z
   )
   .refine(
     (data) =>
-      data.planName !== undefined || data.discount !== undefined || data.totalAmount !== undefined
+      data.planName !== undefined ||
+      data.discount !== undefined ||
+      data.totalAmount !== undefined ||
+      data.startMonth !== undefined
   )
 
 export const commitDraftSchema = z.object({
