@@ -1892,6 +1892,29 @@
             "CHECK": "Chèque",
             "MOBILE_MONEY": "Mobile money",
             "STRIPE": "Stripe"
+          },
+          "actions": "Actions",
+          "cancel": {
+            "trigger": "Annuler",
+            "title": "Annuler ce paiement ?",
+            "description": "Le paiement de {amount} sort de l'historique et le reste dû de la famille augmente de {amount}. Il n'est pas effacé : l'annulation garde son auteur et son motif.",
+            "refundDescription": "Le remboursement de {amount} sort de l'historique et le reste dû de la famille diminue de {amount}. Il n'est pas effacé : l'annulation garde son auteur et son motif.",
+            "reason": "Motif (facultatif)",
+            "submit": "Annuler le paiement",
+            "cancel": "Retour",
+            "success": "Paiement annulé",
+            "error": "Erreur lors de l'annulation",
+            "onlineHint": "Paiement en ligne : remboursez-le depuis Stripe",
+            "receiptHint": "Paiement de caisse : annulez le reçu",
+            "errors": {
+              "notFound": "Ce paiement n'existe plus ou a déjà été annulé",
+              "onlinePayment": "Un paiement en ligne se rembourse depuis Stripe",
+              "receiptPayment": "Un paiement de caisse s'annule avec son reçu",
+              "mixedFamilies": "Ces paiements n'appartiennent pas à la même famille",
+              "refundExceedsPaid": "Un remboursement actif dépasserait ce qui resterait payé : annulez d'abord ce remboursement",
+              "paymentsDisabled": "Les paiements sont désactivés pour cette école",
+              "validationError": "Le motif ne doit pas dépasser 250 caractères"
+            }
           }
         },
         "relationType": {

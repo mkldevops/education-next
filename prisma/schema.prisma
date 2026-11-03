@@ -257,6 +257,7 @@ model User {
   cancelledReceipts         Receipt[]            @relation("receiptCancelledBy")
   recordedChildcareCharges  ChildcareCharge[]    @relation("childcareChargeRecordedBy")
   cancelledChildcareCharges ChildcareCharge[]    @relation("childcareChargeCancelledBy")
+  cancelledPayments         Payment[]            @relation("paymentCancelledBy")
 }
 
 model Session {
@@ -778,10 +779,16 @@ model Payment {
   paidAt               DateTime
   cashedAt             DateTime?
   isActive             Boolean       @default(true)
+  /// Annulation d'une saisie manuelle (`cancelPayments`) : qui, quand et pourquoi. Un règlement
+  /// désactivé par l'annulation de son reçu ne la porte pas : le reçu garde la sienne.
+  cancelledAt          DateTime?
+  cancelledById        String?
+  cancelReason         String?       @db.VarChar(250)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
   school             School              @relation(fields: [schoolId], references: [id])
+  cancelledBy        User?               @relation("paymentCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
   family             Family              @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
   enrollment         Enrollment          @relation(fields: [enrollmentId, schoolId], references: [id, schoolId], onDelete: Restrict)
   paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId, schoolId], references: [id, schoolId], onDelete: Restrict)

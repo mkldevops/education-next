@@ -710,9 +710,10 @@ A family owes one balance across its children and may settle it in several payme
 `preview_record_payment` defaults what a receipt often omits: the whole remaining balance
 (`nothingDue` when there is none), `CASH`, today. The family may be named by `studentId`.
 
-`cancel_payments` (`paymentIds`) is a direct write, not a pair: it deactivates active manual payments
-of one family, under the family payment lock. Refusals: `notFound`, `onlinePayment` (Stripe),
-`mixedFamilies`.
+`cancel_payments` (`paymentIds`, optional `reason`) is a direct write, not a pair: it runs the
+dashboard's `cancelPayments()` use case, which deactivates active manual payments of one family under
+the family payment lock and records who cancelled and why. Refusals: `notFound`, `onlinePayment`
+(Stripe), `receiptPayment` (use `cancel_receipt`), `mixedFamilies`, `refundExceedsPaid`.
 
 ## The dashboard assistant shares the tools and the drafts
 

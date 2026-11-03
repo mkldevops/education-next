@@ -19,3 +19,13 @@ export const recordPaymentSchema = z
     path: ['cashedAt'],
     message: 'Cash date only applies to check payments',
   })
+
+/** Une ligne de l'historique famille réunit une ligne par inscription : la borne la couvre. */
+const CANCEL_PAYMENTS_MAX = 20
+
+export const cancelPaymentsSchema = z.object({
+  schoolId: z.string().min(1),
+  cancelledById: z.string().min(1),
+  paymentIds: z.array(z.uuid()).min(1).max(CANCEL_PAYMENTS_MAX),
+  reason: z.string().trim().max(250).optional(),
+})

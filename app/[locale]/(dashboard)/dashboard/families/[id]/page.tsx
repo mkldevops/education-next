@@ -336,6 +336,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                       locale={locale}
                       currency={currency}
                       tracking={paymentTracking}
+                      canCancel={isAdmin}
                     />
                   ),
                 },

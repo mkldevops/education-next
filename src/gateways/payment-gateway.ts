@@ -115,6 +115,18 @@ export const paymentGateway = {
       data: { isActive: false },
     }),
 
+  /** Annulation d'une saisie : désactive en gardant l'auteur, la date et le motif. */
+  cancelMany: (
+    tx: Prisma.TransactionClient,
+    schoolId: string,
+    ids: string[],
+    audit: { cancelledById: string; cancelReason: string | null }
+  ) =>
+    tx.payment.updateMany({
+      where: { schoolId, id: { in: ids }, isActive: true },
+      data: { isActive: false, cancelledAt: new Date(), ...audit },
+    }),
+
   listByFamily: (schoolId: string, familyId: string) =>
     db.payment.findMany({
       where: { schoolId, familyId },
