@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
+import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { listPayableEnrollmentChoices } from '@/use-cases/payments/payable-enrollment-choices'
@@ -40,10 +41,11 @@ export default async function CashierPage({ params, searchParams }: Props) {
   const { currency, timeZone } = await getSchoolRegionalSettings(schoolId)
   const today = schoolToday(timeZone)
 
-  const [results, family, paymentsEnabled] = await Promise.all([
+  const [results, family, paymentsEnabled, mealsEnabled] = await Promise.all([
     query.length >= 2 && !selectedId ? searchCashierFamilies(schoolId, query) : null,
     selectedId ? loadCashierFamily(schoolId, selectedId, today) : null,
     isPaymentsEnabled(schoolId),
+    isMealsEnabled(schoolId),
   ])
   const [tuitionDue, tuitionEnrollments] =
     family && paymentsEnabled
@@ -73,6 +75,11 @@ export default async function CashierPage({ params, searchParams }: Props) {
           <Link href="/dashboard/cashier/debtors" className="text-foreground hover:underline">
             {t('debtors.title')}
           </Link>
+          {mealsEnabled && (
+            <Link href="/dashboard/cashier/staff" className="text-foreground hover:underline">
+              {t('staff.title')}
+            </Link>
+          )}
         </nav>
       </div>
 

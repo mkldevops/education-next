@@ -24,7 +24,7 @@ const tx = { tx: true }
 function setup() {
   const receiptGw = {
     transaction: vi.fn(async (fn: (client: unknown) => unknown) => fn(tx)),
-    findFamilyId: vi.fn().mockResolvedValue('family-1'),
+    findPayer: vi.fn().mockResolvedValue({ familyId: 'family-1', teacherId: null }),
     lockForCancel: vi.fn().mockResolvedValue({ familyId: 'family-1', cancelledAt: null }),
     findActivePayments: vi
       .fn()
@@ -86,7 +86,7 @@ describe('cancelReceipt', () => {
 
   it('refuses an unknown receipt', async () => {
     const { receiptGw, run } = setup()
-    receiptGw.findFamilyId.mockResolvedValue(null)
+    receiptGw.findPayer.mockResolvedValue(null)
 
     expect(await run()).toBe('notFound')
   })
@@ -105,6 +105,17 @@ describe('cancelReceipt', () => {
     expect(await run()).toBe('notFound')
     expect(receiptGw.findActivePayments).not.toHaveBeenCalled()
     expect(receiptGw.markCancelled).not.toHaveBeenCalled()
+  })
+
+  it('cancels a staff receipt without locking any family', async () => {
+    const { receiptGw, run } = setup()
+    receiptGw.findPayer.mockResolvedValue({ familyId: null, teacherId: 'staff-1' })
+    receiptGw.lockForCancel.mockResolvedValue({ familyId: null, cancelledAt: null })
+    receiptGw.findActivePayments.mockResolvedValue([])
+
+    expect(await run()).toBe('OK')
+    expect(lockFamilyForPayment).not.toHaveBeenCalled()
+    expect(receiptGw.markCancelled).toHaveBeenCalled()
   })
 
   it('requires a reason', async () => {

@@ -24,9 +24,11 @@ export const removeMealPriceSchema = z.object({
 
 const weekdays = z.array(z.number().int().min(1).max(7))
 
+/** Un élève ou un membre du personnel : `mealOwner` refuse une saisie qui n'en nomme pas un seul. */
 const studentService = {
   schoolId: z.string().min(1),
-  studentId: z.uuid(),
+  studentId: z.uuid().optional(),
+  teacherId: z.uuid().optional(),
   service,
 }
 
@@ -103,20 +105,6 @@ export const mealImportManifestSchema = z.object({
     )
     .min(1),
 })
-
-const staffService = {
-  schoolId: z.string().min(1),
-  teacherId: z.uuid(),
-  service,
-}
-
-export const setStaffMealSchema = z.object({
-  ...staffService,
-  weekdays,
-  isFree: z.boolean(),
-})
-
-export const removeStaffMealSchema = z.object(staffService)
 
 export const dailyMealHeadcountSchema = z.object({
   schoolId: z.string().min(1),

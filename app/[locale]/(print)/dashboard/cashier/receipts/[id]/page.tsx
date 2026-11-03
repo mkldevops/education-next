@@ -6,6 +6,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { dateToMonth, formatChildcareMonth } from '@/domain/childcare'
 import { formatReceiptNumber } from '@/domain/receipt'
+import { teacherName } from '@/domain/teacher'
 import { receiptGateway } from '@/gateways/receipt-gateway'
 import { Link } from '@/i18n/routing'
 import { getBrandingConfig } from '@/lib/branding'
@@ -58,11 +59,19 @@ export default async function ReceiptPage({ params }: Props) {
   // `paidThroughAtReceipt` est un `@db.Date`, à minuit UTC : formaté en UTC, il garde son jour.
   const formatDay = (day: Date) => day.toLocaleDateString(locale, { timeZone: 'UTC' })
   const number = formatReceiptNumber(receipt.number)
+  const payer = receipt.family?.name ?? (receipt.teacher ? teacherName(receipt.teacher) : '')
+  const payerLabel = receipt.family ? t('family') : t('staff')
+  const mealOwnerName = (account: (typeof receipt.mealPayments)[number]['account']) =>
+    account.student
+      ? `${account.student.person.name} ${account.student.person.lastname}`
+      : account.teacher
+        ? teacherName(account.teacher)
+        : ''
   const total = Number(receipt.total)
   const lines = [
     ...receipt.mealPayments.map((line) => ({
-      key: `meal:${line.account.student.person.name}:${line.account.service}`,
-      label: `${line.account.student.person.name} ${line.account.student.person.lastname} · ${tServices(line.account.service)}`,
+      key: `meal:${line.account.student?.person.name ?? (line.account.teacher ? teacherName(line.account.teacher) : '')}:${line.account.service}`,
+      label: `${mealOwnerName(line.account)} · ${tServices(line.account.service)}`,
       amount: Number(line.amount),
       detail: line.paidThroughAtReceipt
         ? t('mealDetail', { days: line.daysAdded, date: formatDay(line.paidThroughAtReceipt) })
@@ -89,7 +98,7 @@ export default async function ReceiptPage({ params }: Props) {
   const isCancelled = receipt.cancelledAt !== null
   // Solde lu à l'affichage, pas figé au paiement : daté pour qu'une réimpression reste honnête.
   const tuitionBalance =
-    tuition > 0 && !isCancelled
+    tuition > 0 && !isCancelled && receipt.family
       ? t('tuitionBalance', {
           date: new Date().toLocaleDateString(locale, { timeZone }),
           amount: money((await getFamilyBalance(schoolId, receipt.family.id)).remainingBalance),
@@ -98,7 +107,7 @@ export default async function ReceiptPage({ params }: Props) {
 
   const shareText = [
     t('shareHeader', { school: schoolName ?? '', number }),
-    t('shareFamily', { family: receipt.family.name, date: paidAt }),
+    t('sharePayer', { label: payerLabel, payer, date: paidAt }),
     ...lines.map((line) => `• ${line.label} : ${money(line.amount)} (${line.detail})`),
     ...(tuition > 0 ? [`• ${t('tuition')} : ${money(tuition)}`] : []),
     t('shareTotal', { amount: money(total), method: tMethods(receipt.method) }),
@@ -146,8 +155,8 @@ export default async function ReceiptPage({ params }: Props) {
           </header>
 
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-            <dt className="text-graphite-600">{t('family')}</dt>
-            <dd>{receipt.family.name}</dd>
+            <dt className="text-graphite-600">{payerLabel}</dt>
+            <dd>{payer}</dd>
             <dt className="text-graphite-600">{t('method')}</dt>
             <dd>
               {tMethods(receipt.method)}

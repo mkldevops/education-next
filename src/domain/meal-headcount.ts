@@ -1,34 +1,32 @@
 import { weekdayOf } from './meal-ledger'
 
-type StudentSegment = {
+type Segment = {
   accountId: string
+  /** `null` pour un élève ; pour le personnel, exempté ou non. */
+  staff: { exempt: boolean } | null
   weekdays: readonly number[]
   startOn: string
   endOn: string | null
   periodEnd: string
 }
 
-type StaffRhythm = { weekdays: readonly number[]; isFree: boolean }
-
 export type MealHeadcount = { students: number; staff: number; staffFree: number }
 
 /**
- * Repas servis un jour, élèves et personnel séparés (#545). Un élève compte une fois par
- * compte dont un segment sert ce jour, sauf absence ; un membre du personnel compte si le jour
- * est un des siens. Un jour fermé ne sert personne.
+ * Repas servis un jour, élèves et personnel séparés (#545). Chaque titulaire compte une fois
+ * par compte dont un segment sert ce jour, sauf absence. Un jour fermé ne sert personne.
  */
 export function mealHeadcount(input: {
   day: string
   isClosed: boolean
-  segments: readonly StudentSegment[]
+  segments: readonly Segment[]
   absentAccountIds: ReadonlySet<string>
-  staff: readonly StaffRhythm[]
 }): MealHeadcount {
   if (input.isClosed) return { students: 0, staff: 0, staffFree: 0 }
   const weekday = weekdayOf(input.day)
   const { day } = input
 
-  const served = new Set<string>()
+  const served = new Map<string, Segment['staff']>()
   for (const segment of input.segments) {
     const last =
       segment.endOn !== null && segment.endOn < segment.periodEnd
@@ -37,13 +35,14 @@ export function mealHeadcount(input: {
     if (segment.startOn > day || last < day) continue
     if (!segment.weekdays.includes(weekday)) continue
     if (input.absentAccountIds.has(segment.accountId)) continue
-    served.add(segment.accountId)
+    served.set(segment.accountId, segment.staff)
   }
 
-  const eating = input.staff.filter((member) => member.weekdays.includes(weekday))
+  const owners = [...served.values()]
+  const staff = owners.filter((owner) => owner !== null)
   return {
-    students: served.size,
-    staff: eating.length,
-    staffFree: eating.filter((member) => member.isFree).length,
+    students: owners.length - staff.length,
+    staff: staff.length,
+    staffFree: staff.filter((owner) => owner.exempt).length,
   }
 }

@@ -26,11 +26,13 @@ export async function cancelReceipt(
   const { schoolId, receiptId } = parsed.data
   if (!(await isMealsEnabled(schoolId, configGw))) return 'mealsDisabled' as const
 
-  const familyId = await receiptGw.findFamilyId(schoolId, receiptId)
-  if (!familyId) return 'notFound' as const
+  const payer = await receiptGw.findPayer(schoolId, receiptId)
+  if (!payer) return 'notFound' as const
+  const { familyId } = payer
 
   return receiptGw.transaction(async (tx) => {
-    if (!(await paymentGateway.lockFamilyForPayment(tx, schoolId, familyId))) {
+    // Un reçu du personnel ne porte que de la cantine : aucune famille à tenir.
+    if (familyId && !(await paymentGateway.lockFamilyForPayment(tx, schoolId, familyId))) {
       return 'notFound' as const
     }
     const receipt = await receiptGw.lockForCancel(tx, schoolId, receiptId)

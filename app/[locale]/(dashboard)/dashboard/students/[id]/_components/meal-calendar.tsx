@@ -5,12 +5,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import type { MealDayStatus } from '@/domain/meal-calendar'
+import type { MealOwner } from '@/domain/meal-owner'
 import type { MealService } from '@/generated/prisma/enums'
 import { toastActionError } from '@/lib/toast'
 import { toggleMealAbsenceAction } from '../../../../_lib/meal-actions'
 
 type Props = {
-  studentId: string
+  owner: MealOwner
   service: MealService
   days: Array<{ day: string; status: MealDayStatus }>
   /** Aujourd'hui dans le fuseau de l'école, `YYYY-MM-DD`. */
@@ -41,7 +42,7 @@ function shiftMonth(month: string, delta: number) {
  * Feuille de repas d'un service : un mois, chaque jour prévu avec son état. Un toucher
  * marque l'absence d'un jour servi, un second la retire ; la fiche se recalcule aussitôt.
  */
-export function MealCalendar({ studentId, service, days, today, locale, closures = [] }: Props) {
+export function MealCalendar({ owner, service, days, today, locale, closures = [] }: Props) {
   const t = useTranslations('dashboard.pages.studentDetails.meals.calendar')
   const [isPending, startTransition] = useTransition()
   const first = days[0]?.day.slice(0, 7)
@@ -71,7 +72,7 @@ export function MealCalendar({ studentId, service, days, today, locale, closures
   const toggle = (day: string, status: MealDayStatus) => {
     startTransition(async () => {
       const result = await toggleMealAbsenceAction({
-        studentId,
+        ...owner,
         service,
         day,
         absent: status !== 'absent',

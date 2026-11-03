@@ -1,5 +1,6 @@
 import type { z } from 'zod'
 import { validateMealWeekdays } from '@/domain/meal-ledger'
+import { mealOwner } from '@/domain/meal-owner'
 import { planStop, segmentFrom } from '@/domain/meal-schedule'
 import { schoolToday } from '@/domain/school-date'
 import { configGateway } from '@/gateways/config-gateway'
@@ -23,7 +24,9 @@ export async function changeMealSchedule(
   const parsed = changeMealScheduleSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const { schoolId, studentId, service, weekdays, effectiveFrom } = parsed.data
+  const { schoolId, service, weekdays, effectiveFrom } = parsed.data
+  const owner = mealOwner(parsed.data)
+  if (!owner) return 'validationError' as const
   if (!(await isMealsEnabled(schoolId, configGw))) return 'mealsDisabled' as const
 
   const setting = await accountGw.findSetting(schoolId, service)
@@ -36,7 +39,7 @@ export async function changeMealSchedule(
   if (effectiveFrom < schoolToday(timeZone, now)) return 'backdated' as const
 
   return accountGw.transaction(async (tx) => {
-    const accountId = await accountGw.lockAccount(tx, schoolId, studentId, service, false)
+    const accountId = await accountGw.lockAccount(tx, schoolId, owner, service, false)
     if (!accountId) return 'notSubscribed' as const
 
     const segments = await accountGw.listSegments(tx, schoolId, [accountId])

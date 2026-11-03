@@ -31,6 +31,7 @@ vi.mock('@/i18n/routing', () => ({
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
+vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: async () => true }))
 vi.mock('@/use-cases/payments/family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
 vi.mock('@/use-cases/payments/payable-enrollment-choices', () => ({
   listPayableEnrollmentChoices: async () => [],

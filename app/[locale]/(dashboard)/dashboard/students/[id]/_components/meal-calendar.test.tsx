@@ -26,7 +26,7 @@ const days = [
 const show = () =>
   render(
     <MealCalendar
-      studentId="student-1"
+      owner={{ studentId: 'student-1' }}
       service="CANTEEN"
       days={days}
       today="2026-10-24"
@@ -72,7 +72,7 @@ describe('MealCalendar', () => {
   it('shows holidays across the entire range, including days without a meal, and prevents absence toggles', () => {
     render(
       <MealCalendar
-        studentId="student-1"
+        owner={{ studentId: 'student-1' }}
         service="CANTEEN"
         days={days}
         today="2026-10-24"

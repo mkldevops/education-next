@@ -1218,47 +1218,12 @@
         },
         "debtorsLink": "Impayés et relances",
         "headcount": {
-          "today": "Aujourd'hui : {students, plural, =0 {aucun élève} one {# élève} other {# élèves}} · {staff, plural, =0 {aucun membre du personnel} one {# membre du personnel} other {# membres du personnel}}{free, plural, =0 {} other { (dont # gratuit{free, plural, one {} other {s}})}}"
+          "today": "Aujourd'hui : {students, plural, =0 {aucun élève} one {# élève} other {# élèves}} · {staff, plural, =0 {aucun membre du personnel} one {# membre du personnel} other {# membres du personnel}}{free, plural, =0 {} other { (dont # exonéré{free, plural, one {} other {s}})}}"
         },
         "staff": {
           "title": "Cantine du personnel",
-          "intro": "Repas comptés dans les effectifs du jour, à part des élèves. Rien n'est facturé.",
-          "empty": "Aucun membre du personnel inscrit.",
-          "free": "Gratuit",
-          "add": {
-            "title": "Inscrire un membre du personnel",
-            "teacher": "Membre du personnel",
-            "teacherPlaceholder": "Choisir…",
-            "teacherHint": "Le personnel vient de la liste des enseignants. Inscrire de nouveau un membre remplace ses jours.",
-            "service": "Service",
-            "weekdays": "Jours de repas",
-            "isFree": "Repas gratuits",
-            "isFreeHint": "Gratuité accordée par l'école, comptée à part.",
-            "cancel": "Annuler",
-            "submit": "Enregistrer",
-            "success": "Repas du personnel enregistrés",
-            "error": "Erreur lors de l'enregistrement",
-            "errors": {
-              "validationError": "Choisissez un membre et au moins un jour",
-              "invalidWeekdays": "Cochez au moins un jour proposé par le service",
-              "serviceDisabled": "Ce service n'est pas proposé",
-              "notFound": "Membre du personnel introuvable",
-              "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
-            }
-          },
-          "remove": {
-            "trigger": "Retirer",
-            "title": "Retirer {name} ?",
-            "description": "Ses repas ne seront plus comptés à partir d'aujourd'hui.",
-            "confirm": "Retirer",
-            "cancel": "Annuler",
-            "success": "Repas du personnel retirés",
-            "error": "Erreur lors du retrait",
-            "errors": {
-              "notSubscribed": "Ce membre ne mange pas à ce service",
-              "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
-            }
-          }
+          "intro": "Le personnel mange au tarif cantine des élèves et paie en caisse. Les membres exonérés sont comptés sans être facturés.",
+          "open": "Gérer la cantine du personnel"
         }
       },
       "cashier": {
@@ -1324,6 +1289,7 @@
           "print": "Imprimer",
           "share": "Partager",
           "family": "Famille",
+          "staff": "Personnel",
           "method": "Paiement",
           "recordedBy": "Encaissé par",
           "tuition": "Écolage",
@@ -1335,7 +1301,7 @@
           "cancelled": "Annulé",
           "cancelledReason": "Annulé : {reason}",
           "shareHeader": "{school} — reçu {number}",
-          "shareFamily": "Famille {family}, le {date}",
+          "sharePayer": "{label} {payer}, le {date}",
           "shareTotal": "Total : {amount} ({method})",
           "cancel": {
             "trigger": "Annuler le reçu",
@@ -1390,6 +1356,51 @@
           "coveredLeft": "{days, plural, =0 {plus aucun jour couvert} one {encore # jour couvert} other {encore # jours couverts}}",
           "dueDetail": "{days, plural, one {# jour} other {# jours}} · {amount}",
           "collect": "Encaisser"
+        },
+        "staff": {
+          "title": "Personnel",
+          "sheetTitle": "Cantine du personnel",
+          "intro": "Cantine des enseignants et du personnel : jours, encaissements et repas du jour. Les exemptés mangent sans être facturés.",
+          "counts": {
+            "subscribed": "Inscrits",
+            "exempt": "Exemptés",
+            "eatsToday": "Mangent aujourd'hui"
+          },
+          "empty": "Aucun enseignant. Ajoutez le personnel dans Enseignants pour l'inscrire à la cantine.",
+          "exemptBadge": "Exempté",
+          "inactiveBadge": "Désactivé",
+          "noCanteen": "Pas inscrit à la cantine",
+          "paidThrough": "Payé jusqu'au {date}",
+          "nothingPaid": "Rien de payé",
+          "due": "{days, plural, one {# jour dû} other {# jours dus}} ({amount})",
+          "exemptHint": "Exempté : ses repas sont comptés mais jamais facturés.",
+          "inactiveHint": "Enseignant désactivé : il ne peut plus être inscrit ni encaissé.",
+          "collect": "Encaisser la cantine",
+          "amount": "Montant",
+          "error": "Erreur lors de l'encaissement",
+          "errors": {
+            "validationError": "Vérifiez le montant saisi",
+            "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école",
+            "notFound": "Enseignant introuvable",
+            "exempt": "Ce membre du personnel est exempté : sa cantine ne se paie pas",
+            "notSubscribed": "Ce membre du personnel n'est pas inscrit à la cantine",
+            "noPrice": "Aucun tarif cantine en vigueur aujourd'hui",
+            "staleState": "Un autre encaissement vient de passer : les montants ont été actualisés, vérifiez avant de valider",
+            "idempotencyConflict": "Un reçu a déjà été émis pour un encaissement précédent : vérifiez-le avant de recommencer"
+          },
+          "dialog": {
+            "editTitle": "Exonération",
+            "mealExempt": "Exempté de paiement",
+            "mealExemptHint": "Ses repas sont comptés mais jamais facturés.",
+            "cancel": "Annuler",
+            "submit": "Enregistrer",
+            "success": "Exonération enregistrée",
+            "error": "Erreur lors de l'enregistrement",
+            "errors": {
+              "validationError": "Vérifiez les informations saisies",
+              "notFound": "Enseignant introuvable"
+            }
+          }
         }
       },
       "childcare": {

@@ -1217,47 +1217,12 @@
         },
         "debtorsLink": "Unpaid and reminders",
         "headcount": {
-          "today": "Today: {students, plural, =0 {no students} one {# student} other {# students}} · {staff, plural, =0 {no staff} one {# staff member} other {# staff members}}{free, plural, =0 {} other { (# free)}}"
+          "today": "Today: {students, plural, =0 {no students} one {# student} other {# students}} · {staff, plural, =0 {no staff} one {# staff member} other {# staff members}}{free, plural, =0 {} other { (# exempt)}}"
         },
         "staff": {
           "title": "Staff canteen",
-          "intro": "Meals counted in the day's headcount, apart from students. Nothing is billed.",
-          "empty": "No staff member signed up.",
-          "free": "Free",
-          "add": {
-            "title": "Sign up a staff member",
-            "teacher": "Staff member",
-            "teacherPlaceholder": "Choose…",
-            "teacherHint": "Staff come from the teacher list. Signing a member up again replaces their days.",
-            "service": "Service",
-            "weekdays": "Meal days",
-            "isFree": "Free meals",
-            "isFreeHint": "Granted by the school, counted apart.",
-            "cancel": "Cancel",
-            "submit": "Save",
-            "success": "Staff meals saved",
-            "error": "Could not save",
-            "errors": {
-              "validationError": "Choose a member and at least one day",
-              "invalidWeekdays": "Tick at least one day the service offers",
-              "serviceDisabled": "This service is not offered",
-              "notFound": "Staff member not found",
-              "mealsDisabled": "Canteen and snack are disabled for this school"
-            }
-          },
-          "remove": {
-            "trigger": "Remove",
-            "title": "Remove {name}?",
-            "description": "Their meals will no longer be counted from today.",
-            "confirm": "Remove",
-            "cancel": "Cancel",
-            "success": "Staff meals removed",
-            "error": "Could not remove",
-            "errors": {
-              "notSubscribed": "This member does not eat at this service",
-              "mealsDisabled": "Canteen and snack are disabled for this school"
-            }
-          }
+          "intro": "Staff eat at the student canteen price and pay at the cashier. Exempt members are counted but never billed.",
+          "open": "Manage staff canteen"
         }
       },
       "cashier": {
@@ -1323,6 +1288,7 @@
           "print": "Print",
           "share": "Share",
           "family": "Family",
+          "staff": "Staff",
           "method": "Payment",
           "recordedBy": "Taken by",
           "tuition": "Tuition",
@@ -1334,7 +1300,7 @@
           "cancelled": "Cancelled",
           "cancelledReason": "Cancelled: {reason}",
           "shareHeader": "{school} — receipt {number}",
-          "shareFamily": "Family {family}, {date}",
+          "sharePayer": "{label} {payer}, {date}",
           "shareTotal": "Total: {amount} ({method})",
           "cancel": {
             "trigger": "Cancel receipt",
@@ -1389,6 +1355,51 @@
           "coveredLeft": "{days, plural, =0 {no covered day left} one {# covered day left} other {# covered days left}}",
           "dueDetail": "{days, plural, one {# day} other {# days}} · {amount}",
           "collect": "Collect"
+        },
+        "staff": {
+          "title": "Staff",
+          "sheetTitle": "Staff canteen",
+          "intro": "Canteen for teachers and staff: days, payments and today's meals. Exempt staff eat without being billed.",
+          "counts": {
+            "subscribed": "Subscribed",
+            "exempt": "Exempt",
+            "eatsToday": "Eating today"
+          },
+          "empty": "No teachers yet. Add staff under Teachers to subscribe them to the canteen.",
+          "exemptBadge": "Exempt",
+          "inactiveBadge": "Deactivated",
+          "noCanteen": "Not subscribed to the canteen",
+          "paidThrough": "Paid through {date}",
+          "nothingPaid": "Nothing paid",
+          "due": "{days, plural, one {# day due} other {# days due}} ({amount})",
+          "exemptHint": "Exempt: meals are counted but never billed.",
+          "inactiveHint": "Deactivated teacher: can no longer be subscribed or charged.",
+          "collect": "Collect canteen payment",
+          "amount": "Amount",
+          "error": "Error while recording the payment",
+          "errors": {
+            "validationError": "Check the amount entered",
+            "mealsDisabled": "Canteen and snack are disabled for this school",
+            "notFound": "Teacher not found",
+            "exempt": "This staff member is exempt: their canteen is not paid",
+            "notSubscribed": "This staff member is not subscribed to the canteen",
+            "noPrice": "No canteen price in effect today",
+            "staleState": "Another payment just went through: amounts were refreshed, check before confirming",
+            "idempotencyConflict": "A receipt was already issued for a previous payment: check it before trying again"
+          },
+          "dialog": {
+            "editTitle": "Exemption",
+            "mealExempt": "Exempt from payment",
+            "mealExemptHint": "Meals are counted but never billed.",
+            "cancel": "Cancel",
+            "submit": "Save",
+            "success": "Exemption saved",
+            "error": "Error while saving",
+            "errors": {
+              "validationError": "Check the information entered",
+              "notFound": "Teacher not found"
+            }
+          }
         }
       },
       "childcare": {

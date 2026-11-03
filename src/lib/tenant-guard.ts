@@ -48,6 +48,7 @@ const TENANT_SCOPED_MODELS: Record<string, true> = {
   ClassScheduleSlot: true,
   ClassScheduleSlotTeacher: true,
   TeacherExpense: true,
+  StaffMember: true,
   McpDraft: true,
   McpOAuthGrant: true,
   AiConversation: true,

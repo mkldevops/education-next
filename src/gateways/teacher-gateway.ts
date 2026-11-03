@@ -127,6 +127,8 @@ export const teacherGateway = {
               scheduleSlots: true,
               expenses: true,
               invitations: true,
+              mealAccounts: true,
+              receipts: true,
             },
           },
         },
