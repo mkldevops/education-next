@@ -27,6 +27,15 @@ describe('receipt', () => {
     expect(canonicalReceiptRequest(reordered)).toBe(canonicalReceiptRequest(request))
   })
 
+  it('keeps the hash of spread tuition and changes it for a targeted one', () => {
+    expect(canonicalReceiptRequest({ ...request, tuitionEnrollmentId: undefined })).toBe(
+      canonicalReceiptRequest(request)
+    )
+    expect(canonicalReceiptRequest({ ...request, tuitionEnrollmentId: 'e1' })).not.toBe(
+      canonicalReceiptRequest(request)
+    )
+  })
+
   it('changes the canonical form with the content', () => {
     expect(canonicalReceiptRequest({ ...request, method: 'CHECK' })).not.toBe(
       canonicalReceiptRequest(request)

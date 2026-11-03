@@ -681,7 +681,12 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
           "l'identifiant d'un de ses élèves (`studentId`) ou par son nom ; un nom ou un élève " +
           'qui vise plusieurs familles est un `blocker`. Valeurs par défaut : le montant est ' +
           "tout le reste à payer, le moyen `CASH`, la date aujourd'hui — ne les demander que " +
-          "si l'utilisateur veut autre chose.",
+          "si l'utilisateur veut autre chose. Le montant est réparti sur toute la famille ; " +
+          "quand l'utilisateur dit pour quel enfant la famille paie, passer `target: 'student'` " +
+          'avec son `studentId` (son unique inscription payable reçoit tout, et le montant par ' +
+          'défaut devient son reste) ou `enrollmentId`. Refus : `overpayment` au-delà du reste ' +
+          "de l'inscription visée, `enrollmentNotPayable` hors des inscriptions payables de la " +
+          'famille, `ambiguousEnrollment` si l’élève en a plusieurs.',
         inputSchema: previewRecordPaymentSchema,
         annotations: NON_IDEMPOTENT_WRITE,
         kind: 'draft',
@@ -691,7 +696,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'commit_record_payment',
         title: 'Engager un encaissement',
         description:
-          'Écrit les paiements de la répartition déjà prévisualisée. Rejouer le même ' +
+          'Écrit les paiements de la répartition déjà prévisualisée, sur la même cible ' +
+          '(famille ou inscription). Rejouer le même ' +
           '`draftId` rend le résultat enregistré au lieu de doubler le versement.',
         inputSchema: commitDraftSchema,
         annotations: IDEMPOTENT_COMMIT,

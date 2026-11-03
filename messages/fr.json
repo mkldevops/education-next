@@ -1042,7 +1042,12 @@
           },
           "optional": "(facultatif)",
           "remainingLabel": "Solde d'écolage restant : {amount}",
-          "scopeHint": "Écolage uniquement : le montant est réparti sur les inscriptions de la famille, sans choix d'enfant.",
+          "scopeHint": "Écolage uniquement : le montant est réparti sur les inscriptions de la famille, sauf si vous le portez sur un seul enfant.",
+          "target": {
+            "label": "Affecter à",
+            "spread": "Toute la famille (réparti)",
+            "child": "{name} — reste {amount}"
+          },
           "servicesPrompt": "Cantine ou goûter ?",
           "servicesLink": "Ouvrir la caisse de cette famille",
           "payFull": "Payer le solde",
@@ -1058,7 +1063,8 @@
             "noPayableEnrollments": "Cette famille n'a aucune inscription en cours à régler",
             "refundExceedsPaid": "Le remboursement dépasse le montant déjà réglé",
             "validationError": "Vérifiez les informations saisies",
-            "notFound": "Famille introuvable"
+            "notFound": "Famille introuvable",
+            "enrollmentNotPayable": "Cette inscription n'appartient pas à la famille ou n'attend plus de règlement"
           }
         },
         "description": "Règlements reçus, chèques à encaisser et reste dû."
@@ -1293,7 +1299,8 @@
           "overpayment": "Le montant d'écolage dépasse le solde restant",
           "childcareOverpayment": "Le montant dépasse ce qui reste dû sur ce mois de garderie",
           "noPayableEnrollments": "Aucune inscription n'attend de règlement d'écolage",
-          "refundExceedsPaid": "Le montant dépasse ce qui reste payé sur l'inscription"
+          "refundExceedsPaid": "Le montant dépasse ce qui reste payé sur l'inscription",
+          "enrollmentNotPayable": "Cette inscription n'appartient pas à la famille ou n'attend plus de règlement d'écolage"
         },
         "receipt": {
           "title": "Reçu",
@@ -3692,7 +3699,8 @@
     "capacityBelowEnrolled": "La capacité ne peut pas être inférieure au nombre d'inscrits",
     "overpayment": "Le montant dépasse le solde restant dû",
     "noPayableEnrollments": "Aucune inscription en cours pour cette famille",
-    "refundExceedsPaid": "Le remboursement dépasse le montant déjà payé"
+    "refundExceedsPaid": "Le remboursement dépasse le montant déjà payé",
+    "enrollmentNotPayable": "Cette inscription n'attend pas de règlement pour cette famille"
   },
   "search": {
     "placeholder": "Rechercher élèves et familles...",

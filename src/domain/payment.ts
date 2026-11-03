@@ -67,6 +67,34 @@ export function distributePayment(
 }
 
 /**
+ * Encaissement manuel : réparti sur toutes les inscriptions payables de la famille par défaut,
+ * ou porté en entier sur une seule quand le guichet dit pour quel enfant la famille paie.
+ *
+ * `enrollments` sont les inscriptions payables de la famille (`readLockedFamilyBalances`) :
+ * une cible absente de cette liste — inscription d'une autre famille, annulée ou terminée —
+ * vaut `enrollmentNotPayable`. Une cible n'accepte pas plus que son propre reste dû
+ * (`overpayment`), ni un remboursement supérieur à ce qu'elle a reçu (`refundExceedsPaid`).
+ */
+export function allocatePayment(
+  amount: number,
+  enrollments: EnrollmentBalance[],
+  enrollmentId?: string
+): DistributionResult | { result: 'enrollmentNotPayable' } {
+  if (enrollmentId === undefined) return distributePayment(amount, enrollments)
+
+  const target = enrollments.find((enrollment) => enrollment.enrollmentId === enrollmentId)
+  if (!target) return { result: 'enrollmentNotPayable' }
+
+  if (amount > target.remainingBalance) return { result: 'overpayment' }
+  if (-amount > roundHalfUp(target.totalAmount - target.remainingBalance)) {
+    return { result: 'refundExceedsPaid' }
+  }
+  if (amount === 0) return { result: 'OK', distribution: [] }
+
+  return { result: 'OK', distribution: [{ enrollmentId, amount: roundHalfUp(amount) }] }
+}
+
+/**
  * Le webhook Stripe appelle cette fonction après que la carte a déjà été débitée : refuser
  * n'annule pas le débit, ça perd juste sa trace. Contrairement à `distributePayment`, elle
  * n'échoue jamais faute de solde suffisant. Chaque inscription reçoit d'abord sa part normale,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  allocatePayment,
   distributePayment,
   distributeReceivedPayment,
   type EnrollmentBalance,
@@ -17,6 +18,43 @@ describe('totalPaidAmount', () => {
 
   it('returns zero without payments', () => {
     expect(totalPaidAmount([])).toBe(0)
+  })
+})
+
+describe('allocatePayment', () => {
+  const family: EnrollmentBalance[] = [
+    { enrollmentId: 'zaynab', remainingBalance: 32_000, totalAmount: 64_000, discount: 0 },
+    { enrollmentId: 'waliya', remainingBalance: 34_000, totalAmount: 68_000, discount: 0 },
+    { enrollmentId: 'hawa', remainingBalance: 34_000, totalAmount: 68_000, discount: 0 },
+  ]
+
+  it('puts the whole amount on the targeted enrollment only (#551)', () => {
+    expect(allocatePayment(32_000, family, 'zaynab')).toEqual({
+      result: 'OK',
+      distribution: [{ enrollmentId: 'zaynab', amount: 32_000 }],
+    })
+  })
+
+  it('spreads across the family without a target, exactly like distributePayment', () => {
+    expect(allocatePayment(32_000, family)).toEqual(distributePayment(32_000, family))
+  })
+
+  it('rejects an enrollment outside the family payable list', () => {
+    expect(allocatePayment(1_000, family, 'other-family')).toEqual({
+      result: 'enrollmentNotPayable',
+    })
+  })
+
+  it('rejects an amount above the targeted remaining balance, even if the family owes more', () => {
+    expect(allocatePayment(32_001, family, 'zaynab')).toEqual({ result: 'overpayment' })
+  })
+
+  it('refunds the targeted enrollment up to what it received', () => {
+    expect(allocatePayment(-32_000, family, 'zaynab')).toEqual({
+      result: 'OK',
+      distribution: [{ enrollmentId: 'zaynab', amount: -32_000 }],
+    })
+    expect(allocatePayment(-32_001, family, 'zaynab')).toEqual({ result: 'refundExceedsPaid' })
   })
 })
 

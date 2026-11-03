@@ -27,12 +27,18 @@ export const recordReceiptSchema = z
     method: cashierPaymentMethodSchema,
     reference: z.string().trim().max(250).optional(),
     tuition: z.number().min(0),
+    /** Écolage porté sur une seule inscription au lieu d'être réparti sur la famille. */
+    tuitionEnrollmentId: z.uuid().optional(),
     meals: z.array(mealLineSchema).max(20),
     childcare: z.array(childcareLineSchema).max(60).default([]),
   })
   .refine((data) => data.tuition > 0 || data.meals.length + data.childcare.length > 0, {
     path: ['meals'],
     message: 'A receipt needs at least one line',
+  })
+  .refine((data) => data.tuitionEnrollmentId === undefined || data.tuition > 0, {
+    path: ['tuitionEnrollmentId'],
+    message: 'A tuition target needs a tuition amount',
   })
   .refine(
     (data) =>

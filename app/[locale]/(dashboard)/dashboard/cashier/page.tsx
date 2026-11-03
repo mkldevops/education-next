@@ -7,6 +7,7 @@ import { Link } from '@/i18n/routing'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
+import { listPayableEnrollmentChoices } from '@/use-cases/payments/payable-enrollment-choices'
 import { requireSchoolCashier } from '../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../_lib/page-metadata'
 import { CashierForm } from './_components/cashier-form'
@@ -44,10 +45,13 @@ export default async function CashierPage({ params, searchParams }: Props) {
     selectedId ? loadCashierFamily(schoolId, selectedId, today) : null,
     isPaymentsEnabled(schoolId),
   ])
-  const tuitionDue =
+  const [tuitionDue, tuitionEnrollments] =
     family && paymentsEnabled
-      ? (await getFamilyBalance(schoolId, family.id)).remainingBalance
-      : null
+      ? await Promise.all([
+          getFamilyBalance(schoolId, family.id).then((balance) => balance.remainingBalance),
+          listPayableEnrollmentChoices(schoolId, family.id),
+        ])
+      : [null, []]
 
   return (
     <div className="space-y-6">
@@ -144,6 +148,7 @@ export default async function CashierPage({ params, searchParams }: Props) {
             lines={family.lines}
             childcare={family.childcare}
             tuitionDue={tuitionDue}
+            tuitionEnrollments={tuitionEnrollments}
             currency={currency}
             locale={locale}
           />

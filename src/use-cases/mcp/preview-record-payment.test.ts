@@ -256,4 +256,81 @@ describe('previewRecordPayment', () => {
       'validationError'
     )
   })
+
+  describe('one child instead of the whole family (#551)', () => {
+    const enrollmentId = '44444444-4444-4444-8444-444444444444'
+    const studentId = '55555555-5555-4555-8555-555555555555'
+
+    beforeEach(() => {
+      findPayableByFamily.mockResolvedValue([
+        { ...enrollment(enrollmentId, 100, 40), studentId },
+        { ...enrollment('enr-2', 100, 0), studentId: 'sibling' },
+      ])
+    })
+
+    it('shows a single-line allocation for an explicit enrollment', async () => {
+      const result = await previewRecordPayment(scope, { ...input, amount: 60, enrollmentId })
+      assertPreview(result)
+
+      expect(result.blockers).toEqual([])
+      expect(result.plan?.allocation).toEqual([{ enrollmentId, amount: 60 }])
+      expect(result.plan?.enrollmentId).toBe(enrollmentId)
+    })
+
+    it("resolves the student's only payable enrollment and defaults to what it owes", async () => {
+      const result = await previewRecordPayment(scope, {
+        studentId,
+        target: 'student',
+        method: 'CASH',
+      })
+      assertPreview(result)
+
+      expect(result.plan?.amount).toBe(60)
+      expect(result.plan?.allocation).toEqual([{ enrollmentId, amount: 60 }])
+    })
+
+    it('keeps spreading by default when only a student designates the family', async () => {
+      const result = await previewRecordPayment(scope, { studentId, amount: 60, method: 'CASH' })
+      assertPreview(result)
+
+      expect(result.plan?.enrollmentId).toBeUndefined()
+      expect(result.plan?.allocation).toHaveLength(2)
+    })
+
+    it('blocks an amount above the targeted enrollment balance', async () => {
+      const result = await previewRecordPayment(scope, { ...input, amount: 61, enrollmentId })
+      assertPreview(result)
+
+      expect(result.blockers).toEqual([{ field: 'amount', value: '61', reason: 'overpayment' }])
+    })
+
+    it('blocks an enrollment outside the family payable list', async () => {
+      const other = '66666666-6666-4666-8666-666666666666'
+      const result = await previewRecordPayment(scope, { ...input, enrollmentId: other })
+      assertPreview(result)
+
+      expect(result.blockers).toEqual([
+        { field: 'enrollmentId', value: other, reason: 'enrollmentNotPayable' },
+      ])
+    })
+
+    it('blocks a student with several payable enrollments', async () => {
+      findPayableByFamily.mockResolvedValue([
+        { ...enrollment(enrollmentId, 100, 0), studentId },
+        { ...enrollment('enr-2', 100, 0), studentId },
+      ])
+      const result = await previewRecordPayment(scope, { studentId, target: 'student' })
+      assertPreview(result)
+
+      expect(result.blockers).toEqual([
+        { field: 'studentId', value: studentId, reason: 'ambiguousEnrollment' },
+      ])
+    })
+
+    it('rejects a student target without a student', async () => {
+      expect(await previewRecordPayment(scope, { ...input, target: 'student' })).toBe(
+        'validationError'
+      )
+    })
+  })
 })

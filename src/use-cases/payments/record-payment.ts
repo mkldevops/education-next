@@ -1,5 +1,5 @@
 import type { z } from 'zod'
-import { distributePayment } from '@/domain/payment'
+import { allocatePayment } from '@/domain/payment'
 import { configGateway } from '@/gateways/config-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { db } from '@/lib/db'
@@ -25,7 +25,7 @@ export async function recordPayment(input: Input, configGw = configGateway) {
     const balances = await readLockedFamilyBalances(tx, schoolId, familyId)
     if (balances === 'notFound') return 'notFound' as const
 
-    const distribution = distributePayment(parsed.data.amount, balances)
+    const distribution = allocatePayment(parsed.data.amount, balances, parsed.data.enrollmentId)
     if (distribution.result !== 'OK') return distribution.result
 
     await paymentGateway.createForFamily(

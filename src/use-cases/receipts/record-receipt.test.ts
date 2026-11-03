@@ -322,6 +322,56 @@ describe('recordReceipt', () => {
     expect(receiptGw.create).not.toHaveBeenCalled()
   })
 
+  describe('tuition for one child (#551)', () => {
+    const zaynab = '3c1d2e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f'
+    const balances = [
+      { enrollmentId: zaynab, remainingBalance: 32_000, totalAmount: 64_000, discount: 0 },
+      { enrollmentId: 'enrollment-2', remainingBalance: 68_000, totalAmount: 68_000, discount: 0 },
+    ]
+
+    it('puts the tuition on the chosen enrollment only', async () => {
+      const { run } = setup()
+      readLockedFamilyBalances.mockResolvedValue(balances)
+
+      expect(await run({ tuition: 32_000, tuitionEnrollmentId: zaynab, meals: [] })).toEqual({
+        id: 'receipt-1',
+      })
+      expect(createForFamily).toHaveBeenCalledWith(tx, schoolId, [
+        expect.objectContaining({ enrollmentId: zaynab, amount: 32_000, receiptId: 'receipt-1' }),
+      ])
+    })
+
+    it('refuses an enrollment the family cannot pay', async () => {
+      const { receiptGw, run } = setup()
+      readLockedFamilyBalances.mockResolvedValue(balances)
+
+      expect(
+        await run({
+          tuition: 1_000,
+          tuitionEnrollmentId: '9d8c7b6a-5f4e-4d3c-8b2a-1f0e9d8c7b6a',
+          meals: [],
+        })
+      ).toBe('enrollmentNotPayable')
+      expect(receiptGw.create).not.toHaveBeenCalled()
+    })
+
+    it('refuses more than the chosen enrollment owes', async () => {
+      const { receiptGw, run } = setup()
+      readLockedFamilyBalances.mockResolvedValue(balances)
+
+      expect(await run({ tuition: 32_001, tuitionEnrollmentId: zaynab, meals: [] })).toBe(
+        'overpayment'
+      )
+      expect(receiptGw.create).not.toHaveBeenCalled()
+    })
+
+    it('refuses a target without tuition', async () => {
+      const { run } = setup()
+
+      expect(await run({ tuition: 0, tuitionEnrollmentId: zaynab })).toBe('validationError')
+    })
+  })
+
   it('refuses tuition when online and manual payments are off', async () => {
     const { run } = setup({ payments_enabled: 'false' })
 
