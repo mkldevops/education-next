@@ -2240,6 +2240,12 @@ called from `attendance-actions.ts`):
 account with days due, or with served days still ahead of which at most `REMIND_WITHIN_DAYS` (2) are
 covered. Most owed first; each row links to the student's meal sheet and to the cashier of the debtor family.
 
+**Meals do not depend on a class.** A meal account belongs to the student, not to an enrollment. An
+active student enrolled in no class still gets cashier lines (`loadCashierFamily()`) and unpaid rows
+(`loadMealDebtors()`) for their subscribed services. This is intended: a child can eat at the canteen
+or come for snack before, or without, being placed in a class. To stop billing a child, stop their
+meal service.
+
 **Day's takings.** `/dashboard/cashier/day?day=YYYY-MM-DD` (same guards, today by default, no future
 day) sums, over the school's local day (`schoolDayBounds()`), the receipts **issued** that day and the
 receipts **cancelled** that day whatever their issue day; net = issued − cancelled
