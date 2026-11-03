@@ -54,6 +54,7 @@ const archiveStudentFromMcp = vi.fn()
 const archiveClassPeriodFromMcp = vi.fn()
 const archiveLevelFromMcp = vi.fn()
 const archivePlanFromMcp = vi.fn()
+const moveStudentToClassFromMcp = vi.fn()
 
 vi.mock('@modelcontextprotocol/server', () => ({ McpServer: FakeMcpServer }))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
@@ -74,6 +75,7 @@ vi.mock('@/use-cases/mcp/duplicate-event', () => ({ duplicateEventFromMcp }))
 vi.mock('@/use-cases/mcp/plan-configuration', () => ({ createPlanFromMcp, updatePlanFromMcp }))
 vi.mock('@/use-cases/mcp/create-level', () => ({ createLevelFromMcp }))
 vi.mock('@/use-cases/mcp/create-class-period', () => ({ createClassPeriodFromMcp }))
+vi.mock('@/use-cases/mcp/move-student-to-class', () => ({ moveStudentToClassFromMcp }))
 vi.mock('@/use-cases/mcp/delete-resources', () => ({
   getFamilyDeletionImpactFromMcp,
   deleteFamilyFromMcp,
@@ -175,6 +177,7 @@ describe('buildMcpServer', () => {
       'archive_plan',
       'preview_enroll_family',
       'commit_enroll_family',
+      'move_student_to_class',
       'create_event',
       'list_events',
       'get_event',
@@ -239,6 +242,7 @@ describe('buildMcpServer', () => {
       'archive_plan',
       'preview_enroll_family',
       'commit_enroll_family',
+      'move_student_to_class',
       'create_event',
       'list_events',
       'get_event',
@@ -280,6 +284,26 @@ describe('buildMcpServer', () => {
         idempotentHint: true,
       })
     }
+  })
+
+  it('moves a student to another class with the caller scope and returns typed errors', async () => {
+    const tools = build()
+    const args = { studentName: 'Houmaira', studentLastname: 'Cheikh', classPeriodId: 'class' }
+    moveStudentToClassFromMcp.mockResolvedValueOnce({ enrollmentId: 'e', classPeriodId: 'class' })
+    moveStudentToClassFromMcp.mockResolvedValueOnce('classFull')
+
+    const moved = await tools.get('move_student_to_class')?.handler(args)
+    const full = await tools.get('move_student_to_class')?.handler(args)
+
+    expect(moveStudentToClassFromMcp).toHaveBeenCalledWith(scope, args)
+    expect(tools.get('move_student_to_class')?.config.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+    })
+    expect(payload(moved as never)).toEqual({ enrollmentId: 'e', classPeriodId: 'class' })
+    expect(full?.isError).toBe(true)
+    expect(payload(full as never)).toEqual({ error: 'classFull' })
   })
 
   it('delegates family merge with the caller scope and returns typed errors', async () => {

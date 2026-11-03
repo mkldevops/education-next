@@ -1652,6 +1652,9 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
 - **Already in the target class** → `OK` without writing, so a double submit is harmless.
 - The current assignment is closed (`endAt`) and the new one created in the same transaction: a
   failure leaves the student in the old class, never in none.
+- The MCP `move_student_to_class` tool (`src/use-cases/mcp/move-student-to-class.ts`) calls the same
+  use case with the key's `schoolId`: same rules, same refusals. Named by the student, the
+  enrollment must be the only open one matching, else `ambiguousEnrollment`.
 
 ### Money
 

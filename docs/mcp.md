@@ -678,6 +678,16 @@ Its commit refuses with `staleDraft` when the enrollment or the target plan's pr
 preview, `notFound` when the enrollment is no longer open or the plan no longer active, and
 `totalBelowPaid` when a payment banked in between now exceeds the new total.
 
+`move_student_to_class` (`enrollmentId`, or `studentName` and `studentLastname`, plus
+`classPeriodId` from `list_class_periods`) is a direct write, not a pair: it runs the dashboard's
+`reassignClass()` use case, which closes the enrollment's current class assignment and opens one in
+the target class of the same period. Plan, discount, payments and meals are untouched; a student
+already in the target class writes nothing. It is declared whether payments are enabled or not. It
+answers `{ enrollmentId, classPeriodId }`. Refusals: `notFound` (no open enrollment, or the class is
+missing, archived or another school's), `ambiguousEnrollment` (several open enrollments match the
+name: pass the `enrollmentId` read from `find_students`), `periodMismatch`, `classFull`,
+`duplicateEnrollment`, `invalidStatusTransition`, `validationError`.
+
 `class_schedule` enters a whole weekly planning in one transaction, or nothing. `periodId` comes
 from `list_periods`; each line of `slots` carries `className`, `weekday`, `startTime`, `endTime`,
 an optional `description` and `teacherNames` — labels, resolved by the preview against the classes

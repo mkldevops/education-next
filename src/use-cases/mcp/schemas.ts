@@ -362,3 +362,17 @@ export const mcpAssignTeacherSchema = z.object({
   classPeriodId: z.string().uuid(),
   teacherId: z.string().uuid(),
 })
+
+export const mcpMoveStudentToClassSchema = z
+  .object({
+    enrollmentId: z.uuid().optional(),
+    studentName: z.string().trim().min(1).max(250).optional(),
+    studentLastname: z.string().trim().min(1).max(250).optional(),
+    classPeriodId: z.uuid(),
+  })
+  .refine(
+    (data) =>
+      data.enrollmentId !== undefined ||
+      (data.studentName !== undefined && data.studentLastname !== undefined),
+    { message: 'enrollmentId or studentName and studentLastname', path: ['enrollmentId'] }
+  )
