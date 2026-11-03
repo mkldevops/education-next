@@ -1,38 +1,48 @@
 import { createHash } from 'node:crypto'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { canonicalReceiptRequest } from '@/domain/receipt'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 
-const { configGateway, mealAccountGateway, mealGateway, receiptGateway, mcpMealReadGateway } =
-  vi.hoisted(() => ({
-    configGateway: { get: vi.fn() },
-    mealAccountGateway: {
-      transaction: vi.fn(),
-      lockAccount: vi.fn(),
-      listSegments: vi.fn(),
-      findClosures: vi.fn(),
-      replaceOpening: vi.fn(),
-      isActiveStudent: vi.fn(),
-      findStudentAccounts: vi.fn(),
-      listLedgers: vi.fn(),
-      listPrices: vi.fn(),
-      listAbsences: vi.fn(),
-    },
-    mealGateway: { upsertSetting: vi.fn() },
-    receiptGateway: { findByIdempotencyKey: vi.fn(), transaction: vi.fn() },
-    mcpMealReadGateway: {
-      settings: vi.fn(),
-      prices: vi.fn(),
-      familyExists: vi.fn(),
-      receipts: vi.fn(),
-    },
-  }))
+const {
+  configGateway,
+  mealAccountGateway,
+  mealGateway,
+  receiptGateway,
+  mcpMealReadGateway,
+  staffCanteenGateway,
+} = vi.hoisted(() => ({
+  configGateway: { get: vi.fn() },
+  mealAccountGateway: {
+    transaction: vi.fn(),
+    lockAccount: vi.fn(),
+    listSegments: vi.fn(),
+    findClosures: vi.fn(),
+    replaceOpening: vi.fn(),
+    applyStop: vi.fn(),
+    isActiveStudent: vi.fn(),
+    findStudentAccounts: vi.fn(),
+    findStaffAccounts: vi.fn(),
+    listLedgers: vi.fn(),
+    listPrices: vi.fn(),
+    listAbsences: vi.fn(),
+  },
+  mealGateway: { upsertSetting: vi.fn() },
+  receiptGateway: { findByIdempotencyKey: vi.fn(), transaction: vi.fn() },
+  mcpMealReadGateway: {
+    settings: vi.fn(),
+    prices: vi.fn(),
+    familyExists: vi.fn(),
+    receipts: vi.fn(),
+  },
+  staffCanteenGateway: { find: vi.fn(), list: vi.fn() },
+}))
 vi.mock('@/gateways/config-gateway', () => ({ configGateway }))
 vi.mock('@/gateways/meal-account-gateway', () => ({ mealAccountGateway }))
 vi.mock('@/gateways/meal-gateway', () => ({ mealGateway }))
 vi.mock('@/gateways/receipt-gateway', () => ({ receiptGateway }))
 vi.mock('@/gateways/mcp-meal-read-gateway', () => ({ mcpMealReadGateway }))
+vi.mock('@/gateways/staff-canteen-gateway', () => ({ staffCanteenGateway }))
 vi.mock('@/lib/school-regional-settings', () => ({
   getSchoolRegionalSettings: vi
     .fn()
@@ -290,5 +300,174 @@ describe('meal tools shared by MCP and assistant', () => {
     expect(
       listMealTools(scope).find((tool) => tool.name === 'record_meal_opening')?.annotations
     ).toMatchObject({ destructiveHint: true })
+  })
+})
+
+describe('staff meal tools', () => {
+  const teacherId = '00000000-0000-4000-8000-000000000010'
+  const otherId = '00000000-0000-4000-8000-000000000011'
+  const segment = {
+    id: 'segment-a',
+    accountId: 'account-a',
+    periodId: 'period-a',
+    weekdays: [1, 2, 3, 4],
+    startOn: '2026-10-26',
+    endOn: null,
+    periodEnd: '2026-12-31',
+  }
+  const member = (id: string, extra: object = {}) => ({
+    id,
+    name: `Staff ${id.slice(-2)}`,
+    mealExempt: false,
+    isActive: true,
+    ...extra,
+  })
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-30T08:00:00.000Z'))
+    mealAccountGateway.listLedgers.mockResolvedValue({ adjustments: [], payments: [] })
+    mealAccountGateway.listPrices.mockResolvedValue([
+      { service: 'CANTEEN', amount: 750, effectiveFrom: '2026-10-01' },
+    ])
+    mealAccountGateway.listAbsences.mockResolvedValue([])
+    mealAccountGateway.findStaffAccounts.mockResolvedValue([
+      { id: 'account-a', teacherId, service: 'CANTEEN', schedules: [segment] },
+    ])
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('shows a subscribed staff member with weekdays, start date and dues', async () => {
+    staffCanteenGateway.find.mockResolvedValue(member(teacherId))
+    expect(
+      await run('get_staff_meals', { teacherId, from: '2026-10-26', to: '2026-10-29' })
+    ).toMatchObject({
+      teacherId,
+      mealExempt: false,
+      accounts: [
+        {
+          service: 'CANTEEN',
+          current: { weekdays: [1, 2, 3, 4], startOn: '2026-10-26', endOn: null },
+          coverage: { paidThrough: null, dueDays: 4, dueAmount: 3000 },
+          calendar: [
+            { day: '2026-10-26', status: 'due' },
+            { day: '2026-10-27', status: 'due' },
+            { day: '2026-10-28', status: 'due' },
+            { day: '2026-10-29', status: 'due' },
+          ],
+        },
+      ],
+    })
+    expect(staffCanteenGateway.find).toHaveBeenCalledWith('school-a', teacherId)
+    expect(mealAccountGateway.findStaffAccounts).toHaveBeenCalledWith('school-a', [teacherId])
+  })
+
+  it('owes nothing for an exempt member', async () => {
+    staffCanteenGateway.find.mockResolvedValue(member(teacherId, { mealExempt: true }))
+    expect(await run('get_staff_meals', { teacherId })).toMatchObject({
+      mealExempt: true,
+      accounts: [{ coverage: { dueDays: 0, dueAmount: 0 } }],
+    })
+  })
+
+  it('refuses a teacher of another school or deactivated', async () => {
+    staffCanteenGateway.find.mockResolvedValue(null)
+    expect(await run('get_staff_meals', { teacherId })).toBe('notFound')
+    staffCanteenGateway.find.mockResolvedValue(member(teacherId, { isActive: false }))
+    expect(await run('get_staff_meals', { teacherId })).toBe('notFound')
+    expect(mealAccountGateway.findStaffAccounts).not.toHaveBeenCalled()
+    configGateway.get.mockResolvedValue(null)
+    expect(await run('get_staff_meals', { teacherId })).toBe('mealsDisabled')
+    expect(await run('list_staff_meal_subscriptions')).toBe('mealsDisabled')
+  })
+
+  it('lists every active staff member of the school in one call', async () => {
+    staffCanteenGateway.list.mockResolvedValue([
+      member(teacherId),
+      member(otherId, { mealExempt: true }),
+      member('00000000-0000-4000-8000-000000000012', { isActive: false }),
+    ])
+    mealAccountGateway.findStaffAccounts.mockResolvedValue([
+      { id: 'account-a', teacherId, service: 'CANTEEN', schedules: [segment] },
+      {
+        id: 'account-b',
+        teacherId: otherId,
+        service: 'CANTEEN',
+        schedules: [{ ...segment, id: 'segment-b', accountId: 'account-b' }],
+      },
+      { id: 'account-c', teacherId, service: 'SNACK', schedules: [] },
+    ])
+    const result = await run('list_staff_meal_subscriptions', {
+      service: 'CANTEEN',
+      date: '2026-11-02',
+    })
+    expect(result).toMatchObject({
+      today: '2026-10-30',
+      date: '2026-11-02',
+      staff: [
+        {
+          teacherId,
+          accounts: [
+            {
+              id: 'account-a',
+              service: 'CANTEEN',
+              segment: { weekdays: [1, 2, 3, 4], startOn: '2026-10-26' },
+              paidThrough: null,
+              dueDays: 4,
+              dueAmount: 3000,
+            },
+          ],
+        },
+        { teacherId: otherId, mealExempt: true, accounts: [{ dueDays: 0, dueAmount: 0 }] },
+      ],
+    })
+    const { staff } = result as { staff: Array<{ accounts: unknown[] }> }
+    expect(staff).toHaveLength(2)
+    expect(staff[0].accounts).toHaveLength(1)
+    expect(staffCanteenGateway.list).toHaveBeenCalledWith('school-a')
+    expect(mealAccountGateway.findStaffAccounts).toHaveBeenCalledWith('school-a', [
+      teacherId,
+      otherId,
+    ])
+  })
+
+  it('stops and opens a staff account through the shared use cases', async () => {
+    expect(
+      await run('stop_meal', { teacherId, service: 'CANTEEN', effectiveFrom: '2026-11-02' })
+    ).toEqual({ success: true })
+    expect(mealAccountGateway.lockAccount).toHaveBeenCalledWith(
+      tx,
+      'school-a',
+      { teacherId },
+      'CANTEEN',
+      false
+    )
+    expect(
+      await run('record_meal_opening', {
+        teacherId,
+        service: 'CANTEEN',
+        paidThrough: '2026-10-29',
+        reason: 'Cahier',
+      })
+    ).toEqual({ success: true })
+    expect(mealAccountGateway.replaceOpening).toHaveBeenCalledWith(tx, 'school-a', {
+      accountId: 'account-a',
+      days: 4,
+      reason: 'Cahier',
+      recordedById: 'admin-a',
+    })
+  })
+
+  it('requires exactly one owner on the account tools', async () => {
+    const base = { service: 'CANTEEN', effectiveFrom: '2026-11-02' }
+    expect(await run('stop_meal', base)).toBe('validationError')
+    expect(await run('stop_meal', { ...base, studentId, teacherId })).toBe('validationError')
+    expect(
+      await run('change_meal_schedule', { ...base, weekdays: [1], studentId, teacherId })
+    ).toBe('validationError')
+    expect(
+      await run('toggle_meal_absence', { service: 'CANTEEN', day: '2026-10-27', absent: true })
+    ).toBe('validationError')
+    expect(mealAccountGateway.transaction).not.toHaveBeenCalled()
   })
 })

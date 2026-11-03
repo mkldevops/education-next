@@ -2120,9 +2120,10 @@ answers `notFound()`, the sidebar entry disappears, and every meal use case refu
 `mealsDisabled`. The page and its actions are `requireSchoolAdmin()`.
 
 **MCP and assistant.** The shared catalog (`src/mcp/meal-tools.ts`, registered by
-`listSchoolTools`) exposes `get_meal_settings`, `get_student_meals` and
-`list_family_receipts`, plus `set_meal_service_setting`, `set_meal_price`,
-`remove_meal_price`, `subscribe_meal`, `change_meal_schedule`, `stop_meal`,
+`listSchoolTools`) exposes `get_meal_settings`, `get_student_meals`, `get_staff_meals`,
+`list_staff_meal_subscriptions` and `list_family_receipts`, plus `set_meal_service_setting`,
+`set_meal_price`, `remove_meal_price`, `subscribe_meal`, `subscribe_staff_meal`,
+`change_meal_schedule`, `stop_meal`,
 `record_meal_opening`, `toggle_meal_absence`, `record_receipt` and `cancel_receipt`; the
 childcare tools sit beside them (see [Childcare](#childcare)).
 These tools stay discoverable with meals disabled and return `mealsDisabled`; they are
@@ -2135,6 +2136,17 @@ published. The student calendar defaults to 31 days from the current month's fir
 accepts an inclusive `from`/`to` window of at most 93 days. Family receipt reads return the latest
 50 receipts by default (100 maximum), including cancelled receipts, with `hasMore` when truncated.
 An unknown/archived student or family in that school returns `notFound`.
+
+Staff meals (#569) go through the same use cases as the staff meal sheet. `get_staff_meals`
+(`teacherId`, same window) returns the student shape plus `name` and `mealExempt`; an unknown,
+other-school or deactivated teacher returns `notFound`. `list_staff_meal_subscriptions` (optional
+`service` and `date`) lists every active teacher with their accounts: the segment serving `date`
+(default today, else the next one), all segments, `paidThrough`, `dueDays` and `dueAmount`; a teacher
+without an account comes back with no accounts. An exempt member owes nothing on both reads and on
+the cashier staff list (`staffMealDue()` in `src/domain/teacher.ts`). `change_meal_schedule`,
+`stop_meal`, `record_meal_opening` and `toggle_meal_absence` take exactly one of `studentId` or
+`teacherId` (`mealOwner()`), as the dashboard meal panel does; both or neither returns
+`validationError`.
 
 `record_receipt` preserves the cashier's idempotency key and `expectedPaidThrough` contract.
 Its meal amounts create meal payments, never tuition payments through `record_payment`.

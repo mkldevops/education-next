@@ -1,3 +1,4 @@
+import { staffMealDue } from '@/domain/teacher'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
 import { staffCanteenGateway } from '@/gateways/staff-canteen-gateway'
 import { loadMealAccountSummaries } from '@/use-cases/meals/meal-account-summaries'
@@ -34,8 +35,7 @@ export async function loadStaffRows(schoolId: string, today: string): Promise<St
       ...member,
       weekdays: summary?.current?.weekdays ?? [],
       paidThrough: summary?.coverage.paidThrough ?? null,
-      dueDays: member.mealExempt ? 0 : (summary?.coverage.dueDays ?? 0),
-      dueAmount: member.mealExempt ? 0 : (summary?.coverage.dueAmount ?? 0),
+      ...staffMealDue(summary?.coverage, member.mealExempt),
       eatsToday: todayStatus !== undefined && todayStatus !== 'absent' && todayStatus !== 'closed',
     }
   })
