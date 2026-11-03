@@ -64,4 +64,4 @@ USER nextjs
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "cd /migrate && node node_modules/prisma/build/index.js migrate deploy && cd /app && exec node server.js"]
+CMD ["sh", "-c", "cd /migrate && node node_modules/prisma/build/index.js migrate deploy && cd /app && HOSTNAME=:: exec node server.js"]

@@ -24,7 +24,7 @@ One image serves every instance. `.github/workflows/image.yaml` builds it once p
 pushes `ghcr.io/mkldevops/education-next:<sha>`, waits for the `quality` check, then points each
 Coolify application at that tag and deploys it. The container runs `prisma migrate deploy` from
 `/migrate` before `node server.js`, so it refuses to serve a database it has not migrated.
-It listens on `::` because Coolify's healthcheck runs `wget localhost` inside the container and
+Its CMD forces `HOSTNAME=::` (Coolify injects `HOSTNAME=0.0.0.0`) because Coolify's healthcheck runs `wget localhost` inside the container and
 Alpine resolves `localhost` to `::1`; the smoke test repeats that check.
 
 `NEXT_PUBLIC_*` values are never passed at build time: Next would inline them into the shared image.
