@@ -3,29 +3,16 @@
 import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
 import { recordStaffReceipt } from '@/use-cases/staff/record-staff-receipt'
-import { createStaffMember, updateStaffMember } from '@/use-cases/staff/save-staff-member'
-import type {
-  createStaffMemberSchema,
-  recordStaffReceiptSchema,
-  updateStaffMemberSchema,
-} from '@/use-cases/staff/schemas'
+import type { recordStaffReceiptSchema, setStaffMealExemptSchema } from '@/use-cases/staff/schemas'
+import { setStaffMealExempt } from '@/use-cases/staff/set-staff-meal-exempt'
 import { requireSchoolAdmin, requireSchoolCashier } from './auth-helper'
 
-type CreateInput = z.input<typeof createStaffMemberSchema>
-type UpdateInput = z.input<typeof updateStaffMemberSchema>
+type ExemptInput = z.input<typeof setStaffMealExemptSchema>
 type ReceiptInput = z.input<typeof recordStaffReceiptSchema>
 
-export async function createStaffMemberAction(data: Omit<CreateInput, 'schoolId'>) {
+export async function setStaffMealExemptAction(data: Omit<ExemptInput, 'schoolId'>) {
   const { schoolId } = await requireSchoolAdmin()
-  const result = await createStaffMember({ ...data, schoolId })
-  if (typeof result === 'string') return result
-  revalidatePath('/dashboard/cashier/staff')
-  return 'OK' as const
-}
-
-export async function updateStaffMemberAction(data: Omit<UpdateInput, 'schoolId'>) {
-  const { schoolId } = await requireSchoolAdmin()
-  const result = await updateStaffMember({ ...data, schoolId })
+  const result = await setStaffMealExempt({ ...data, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/cashier/staff')
   revalidatePath(`/dashboard/cashier/staff/${data.id}`)
@@ -39,6 +26,6 @@ export async function recordStaffReceiptAction(
   const result = await recordStaffReceipt({ ...data, schoolId, recordedById: userId })
   if (typeof result === 'string') return result
   revalidatePath('/dashboard/cashier')
-  revalidatePath(`/dashboard/cashier/staff/${data.staffMemberId}`)
+  revalidatePath(`/dashboard/cashier/staff/${data.teacherId}`)
   return result
 }

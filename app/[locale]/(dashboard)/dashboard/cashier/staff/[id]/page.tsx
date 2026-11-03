@@ -6,14 +6,14 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolToday } from '@/domain/school-date'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
-import { staffMemberGateway } from '@/gateways/staff-member-gateway'
+import { staffCanteenGateway } from '@/gateways/staff-canteen-gateway'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { loadMealAccountSummaries } from '@/use-cases/meals/meal-account-summaries'
 import { requireSchoolCashier } from '../../../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../../../_lib/page-metadata'
 import { MealPanel } from '../../../students/[id]/_components/meal-panel'
-import { StaffMemberDialog } from '../_components/staff-member-dialog'
+import { StaffExemptDialog } from '../_components/staff-exempt-dialog'
 import { StaffReceiptForm } from '../_components/staff-receipt-form'
 
 type Props = {
@@ -39,7 +39,7 @@ export default async function CashierStaffMemberPage({ params }: Props) {
   if (!UUID.test(id)) notFound()
   if (!(await isMealsEnabled(schoolId))) notFound()
 
-  const member = await staffMemberGateway.find(schoolId, id)
+  const member = await staffCanteenGateway.find(schoolId, id)
   if (!member) notFound()
 
   const { currency, timeZone } = await getSchoolRegionalSettings(schoolId)
@@ -71,16 +71,15 @@ export default async function CashierStaffMemberPage({ params }: Props) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold text-graphite">{member.name}</h1>
-          {member.note && <p className="text-sm text-graphite-600">{member.note}</p>}
           {member.mealExempt && <p className="text-sm text-graphite-600">{t('exemptHint')}</p>}
           {!member.isActive && <p className="text-sm text-amber-600">{t('inactiveHint')}</p>}
         </div>
-        {isAdmin && <StaffMemberDialog member={member} />}
+        {isAdmin && <StaffExemptDialog member={member} />}
       </div>
       <div className="grid max-w-5xl gap-6 lg:grid-cols-2">
         <MealPanel
           schoolId={schoolId}
-          owner={{ staffMemberId: member.id }}
+          owner={{ teacherId: member.id }}
           services={['CANTEEN']}
           exempt={member.mealExempt}
           locale={locale}
@@ -91,7 +90,7 @@ export default async function CashierStaffMemberPage({ params }: Props) {
           <Card className="p-5">
             <h2 className="mb-4 text-base font-semibold text-graphite">{t('collect')}</h2>
             <StaffReceiptForm
-              staffMemberId={member.id}
+              teacherId={member.id}
               unitPrice={summary.unitPrice}
               served={summary.served}
               ledger={summary.ledger}

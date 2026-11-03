@@ -121,9 +121,7 @@ export function listMealTools(scope: DraftScope): SchoolTool[] {
       'subscribe_meal',
       'Inscrire aux repas',
       'Ouvre un segment pour studentId, service, periodId de list_periods, weekdays ISO et startOn dans la période, passé inclus. Refus mealsDisabled, serviceDisabled, invalidWeekdays, outsidePeriod, alreadySubscribed, notFound.',
-      subscribeMealSchema
-        .omit({ schoolId: true, staffMemberId: true })
-        .required({ studentId: true }),
+      subscribeMealSchema.omit({ schoolId: true, teacherId: true }).required({ studentId: true }),
       write,
       (args) => subscribeMeal({ ...args, ...school })
     ),
@@ -132,7 +130,7 @@ export function listMealTools(scope: DraftScope): SchoolTool[] {
       'Changer les jours de repas',
       'Remplace le rythme weekdays à effectiveFrom, aujourd’hui ou après dans le fuseau de l’école. Relire get_student_meals. Refus mealsDisabled, backdated, notSubscribed, invalidWeekdays.',
       changeMealScheduleSchema
-        .omit({ schoolId: true, staffMemberId: true })
+        .omit({ schoolId: true, teacherId: true })
         .required({ studentId: true }),
       { ...write, destructiveHint: true },
       (args) => changeMealSchedule({ ...args, ...school })
@@ -141,7 +139,7 @@ export function listMealTools(scope: DraftScope): SchoolTool[] {
       'stop_meal',
       'Arrêter les repas',
       'Arrête le service de studentId à effectiveFrom, aujourd’hui ou après ; ferme ou retire ses segments futurs. Refus mealsDisabled, backdated, notSubscribed.',
-      stopMealSchema.omit({ schoolId: true, staffMemberId: true }).required({ studentId: true }),
+      stopMealSchema.omit({ schoolId: true, teacherId: true }).required({ studentId: true }),
       { ...write, destructiveHint: true },
       (args) => stopMeal({ ...args, ...school })
     ),
@@ -150,7 +148,7 @@ export function listMealTools(scope: DraftScope): SchoolTool[] {
       'Reprendre un solde repas historique',
       'Enregistre le déjà payé jusqu’à paidThrough avec reason obligatoire, en jours servis connus (segments et fermetures publiées). Remplace la reprise existante. Ne crée aucun reçu ni encaissement historique. Refus mealsDisabled, notSubscribed.',
       recordMealOpeningSchema
-        .omit({ schoolId: true, staffMemberId: true, recordedById: true })
+        .omit({ schoolId: true, teacherId: true, recordedById: true })
         .required({ studentId: true }),
       overwrite,
       (args) => recordMealOpening({ ...args, ...actor })
@@ -160,7 +158,7 @@ export function listMealTools(scope: DraftScope): SchoolTool[] {
       'Saisir une absence repas',
       'Pose absent=true ou retire absent=false pour day YYYY-MM-DD sur un jour prévu ouvert, passé ou futur. La couverture se recalcule. Idempotent. Refus mealsDisabled, notSubscribed, notServed.',
       toggleMealAbsenceSchema
-        .omit({ schoolId: true, staffMemberId: true, recordedById: true })
+        .omit({ schoolId: true, teacherId: true, recordedById: true })
         .required({ studentId: true }),
       overwrite,
       (args) => toggleMealAbsence({ ...args, ...actor })

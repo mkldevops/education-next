@@ -56,10 +56,10 @@ export async function removeMealPriceAction(id: string) {
 }
 
 /** La fiche élève et la fiche repas de la caisse affichent le même compte. */
-function revalidateStudentMeals(owner: { studentId?: string; staffMemberId?: string }) {
-  if (owner.staffMemberId) {
+function revalidateStudentMeals(owner: { studentId?: string; teacherId?: string }) {
+  if (owner.teacherId) {
     revalidatePath('/dashboard/cashier/staff')
-    revalidatePath(`/dashboard/cashier/staff/${owner.staffMemberId}`)
+    revalidatePath(`/dashboard/cashier/staff/${owner.teacherId}`)
     return
   }
   revalidatePath(`/dashboard/students/${owner.studentId}`)

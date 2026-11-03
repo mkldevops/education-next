@@ -1,11 +1,10 @@
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
-import { staffMemberGateway } from '@/gateways/staff-member-gateway'
+import { staffCanteenGateway } from '@/gateways/staff-canteen-gateway'
 import { loadMealAccountSummaries } from '@/use-cases/meals/meal-account-summaries'
 
 export type StaffRow = {
   id: string
   name: string
-  note: string | null
   mealExempt: boolean
   isActive: boolean
   weekdays: number[]
@@ -15,9 +14,9 @@ export type StaffRow = {
   eatsToday: boolean
 }
 
-/** Personnel de l'école avec sa cantine : jours, payé jusqu'au, reste dû, repas du jour. */
+/** Enseignants de l'école avec sa cantine : jours, payé jusqu'au, reste dû, repas du jour. */
 export async function loadStaffRows(schoolId: string, today: string): Promise<StaffRow[]> {
-  const staff = await staffMemberGateway.list(schoolId)
+  const staff = await staffCanteenGateway.list(schoolId)
   const accounts = await mealAccountGateway.findStaffAccounts(
     schoolId,
     staff.map((member) => member.id)
@@ -28,7 +27,7 @@ export async function loadStaffRows(schoolId: string, today: string): Promise<St
   )
 
   return staff.map((member) => {
-    const account = canteen.find((a) => a.staffMemberId === member.id)
+    const account = canteen.find((a) => a.teacherId === member.id)
     const summary = account ? summaries.get(account.id) : undefined
     const todayStatus = summary?.calendar.find(({ day }) => day === today)?.status
     return {

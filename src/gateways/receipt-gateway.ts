@@ -29,7 +29,7 @@ export const receiptGateway = {
   create: (
     tx: Tx,
     schoolId: string,
-    data: ({ familyId: string } | { staffMemberId: string }) & {
+    data: ({ familyId: string } | { teacherId: string }) & {
       number: number
       total: number
       method: PaymentMethod
@@ -103,15 +103,15 @@ export const receiptGateway = {
   findPayer: (schoolId: string, id: string) =>
     db.receipt.findUnique({
       where: { id_schoolId: { id, schoolId } },
-      select: { familyId: true, staffMemberId: true },
+      select: { familyId: true, teacherId: true },
     }),
 
   /** Tient le reçu jusqu'à la fin de `tx` : deux annulations ne se croisent pas. */
   lockForCancel: async (tx: Tx, schoolId: string, id: string) => {
     const rows = await tx.$queryRaw<
-      Array<{ familyId: string | null; staffMemberId: string | null; cancelledAt: Date | null }>
+      Array<{ familyId: string | null; teacherId: string | null; cancelledAt: Date | null }>
     >`
-      SELECT "familyId", "staffMemberId", "cancelledAt" FROM "Receipt"
+      SELECT "familyId", "teacherId", "cancelledAt" FROM "Receipt"
       WHERE "id" = ${id} AND "schoolId" = ${schoolId}
       FOR UPDATE`
     return rows[0] ?? null
@@ -149,7 +149,7 @@ export const receiptGateway = {
         cancelledAt: true,
         cancelReason: true,
         family: { select: { id: true, name: true } },
-        staffMember: { select: { name: true } },
+        teacher: { select: { firstName: true, lastName: true } },
         recordedBy: { select: { name: true } },
         mealPayments: {
           select: {
@@ -160,7 +160,7 @@ export const receiptGateway = {
               select: {
                 service: true,
                 student: { select: { person: { select: { name: true, lastname: true } } } },
-                staffMember: { select: { name: true } },
+                teacher: { select: { firstName: true, lastName: true } },
               },
             },
           },

@@ -6,6 +6,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { dateToMonth, formatChildcareMonth } from '@/domain/childcare'
 import { formatReceiptNumber } from '@/domain/receipt'
+import { teacherName } from '@/domain/teacher'
 import { receiptGateway } from '@/gateways/receipt-gateway'
 import { Link } from '@/i18n/routing'
 import { getBrandingConfig } from '@/lib/branding'
@@ -58,16 +59,18 @@ export default async function ReceiptPage({ params }: Props) {
   // `paidThroughAtReceipt` est un `@db.Date`, à minuit UTC : formaté en UTC, il garde son jour.
   const formatDay = (day: Date) => day.toLocaleDateString(locale, { timeZone: 'UTC' })
   const number = formatReceiptNumber(receipt.number)
-  const payer = receipt.family?.name ?? receipt.staffMember?.name ?? ''
+  const payer = receipt.family?.name ?? (receipt.teacher ? teacherName(receipt.teacher) : '')
   const payerLabel = receipt.family ? t('family') : t('staff')
   const mealOwnerName = (account: (typeof receipt.mealPayments)[number]['account']) =>
     account.student
       ? `${account.student.person.name} ${account.student.person.lastname}`
-      : (account.staffMember?.name ?? '')
+      : account.teacher
+        ? teacherName(account.teacher)
+        : ''
   const total = Number(receipt.total)
   const lines = [
     ...receipt.mealPayments.map((line) => ({
-      key: `meal:${line.account.student?.person.name ?? line.account.staffMember?.name}:${line.account.service}`,
+      key: `meal:${line.account.student?.person.name ?? (line.account.teacher ? teacherName(line.account.teacher) : '')}:${line.account.service}`,
       label: `${mealOwnerName(line.account)} · ${tServices(line.account.service)}`,
       amount: Number(line.amount),
       detail: line.paidThroughAtReceipt

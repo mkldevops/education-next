@@ -48,7 +48,7 @@ export async function MealPanel({
     }),
     'studentId' in owner
       ? mealAccountGateway.findStudentAccounts(schoolId, [owner.studentId])
-      : mealAccountGateway.findStaffAccounts(schoolId, [owner.staffMemberId]),
+      : mealAccountGateway.findStaffAccounts(schoolId, [owner.teacherId]),
     selectedPeriodId ? mealAccountGateway.findPeriod(schoolId, selectedPeriodId) : null,
   ])
   const today = schoolToday(timeZone)

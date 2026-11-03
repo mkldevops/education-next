@@ -1,26 +1,17 @@
 import { z } from 'zod'
 import { MealService } from '@/generated/prisma/enums'
 
-const fields = {
-  name: z.string().trim().min(1).max(250),
-  note: z.string().trim().max(250).optional(),
-  mealExempt: z.boolean(),
-}
-
-export const createStaffMemberSchema = z.object({ schoolId: z.string().min(1), ...fields })
-
-export const updateStaffMemberSchema = z.object({
+export const setStaffMealExemptSchema = z.object({
   schoolId: z.string().min(1),
   id: z.uuid(),
-  ...fields,
-  isActive: z.boolean(),
+  mealExempt: z.boolean(),
 })
 
 export const recordStaffReceiptSchema = z.object({
   schoolId: z.string().min(1),
   recordedById: z.string().min(1),
   idempotencyKey: z.uuid(),
-  staffMemberId: z.uuid(),
+  teacherId: z.uuid(),
   service: z.enum(MealService),
   amount: z.number().positive(),
   expectedPaidThrough: z.iso.date().nullable(),

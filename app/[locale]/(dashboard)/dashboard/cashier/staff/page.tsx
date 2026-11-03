@@ -11,7 +11,7 @@ import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { requireSchoolCashier } from '../../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../../_lib/page-metadata'
 import { loadStaffRows } from '../_lib/staff-data'
-import { StaffMemberDialog } from './_components/staff-member-dialog'
+import { StaffExemptDialog } from './_components/staff-exempt-dialog'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Cantine du personnel : liste de l'école, jours de cantine, payé jusqu'au et repas du jour.
+ * Cantine du personnel : les enseignants de l'école, jours de cantine, payé jusqu'au et repas du jour.
  * Les exemptés sont comptés sans jamais être facturés.
  */
 export default async function CashierStaffPage({ params }: Props) {
@@ -66,7 +66,6 @@ export default async function CashierStaffPage({ params }: Props) {
           <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
           <p className="text-sm text-graphite-600">{t('intro')}</p>
         </div>
-        {isAdmin && <StaffMemberDialog />}
       </div>
 
       <dl className="grid max-w-xl grid-cols-3 gap-3">
@@ -104,7 +103,6 @@ export default async function CashierStaffPage({ params }: Props) {
                     {t('inactiveBadge')}
                   </span>
                 )}
-                {row.note && <p className="text-xs text-graphite-600">{row.note}</p>}
                 <p className="text-xs text-graphite-600">
                   {row.weekdays.length > 0
                     ? row.weekdays.map((day) => tWeekdays(String(day))).join(', ')
@@ -127,7 +125,7 @@ export default async function CashierStaffPage({ params }: Props) {
                     )}
                   </span>
                 )}
-                {isAdmin && <StaffMemberDialog member={row} />}
+                {isAdmin && <StaffExemptDialog member={row} />}
               </div>
             </li>
           ))}

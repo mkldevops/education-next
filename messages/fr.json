@@ -1360,28 +1360,28 @@
         "staff": {
           "title": "Personnel",
           "sheetTitle": "Cantine du personnel",
-          "intro": "Cantine du personnel : jours, encaissements et repas du jour. Les exemptés mangent sans être facturés.",
+          "intro": "Cantine des enseignants et du personnel : jours, encaissements et repas du jour. Les exemptés mangent sans être facturés.",
           "counts": {
             "subscribed": "Inscrits",
             "exempt": "Exemptés",
             "eatsToday": "Mangent aujourd'hui"
           },
-          "empty": "Aucun membre du personnel. Ajoutez-en un pour l'inscrire à la cantine.",
+          "empty": "Aucun enseignant. Ajoutez le personnel dans Enseignants pour l'inscrire à la cantine.",
           "exemptBadge": "Exempté",
-          "inactiveBadge": "Retiré",
+          "inactiveBadge": "Désactivé",
           "noCanteen": "Pas inscrit à la cantine",
           "paidThrough": "Payé jusqu'au {date}",
           "nothingPaid": "Rien de payé",
           "due": "{days, plural, one {# jour dû} other {# jours dus}} ({amount})",
           "exemptHint": "Exempté : ses repas sont comptés mais jamais facturés.",
-          "inactiveHint": "Retiré de la liste : il ne peut plus être inscrit ni encaissé.",
+          "inactiveHint": "Enseignant désactivé : il ne peut plus être inscrit ni encaissé.",
           "collect": "Encaisser la cantine",
           "amount": "Montant",
           "error": "Erreur lors de l'encaissement",
           "errors": {
             "validationError": "Vérifiez le montant saisi",
             "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école",
-            "notFound": "Membre du personnel introuvable ou retiré",
+            "notFound": "Enseignant introuvable",
             "exempt": "Ce membre du personnel est exempté : sa cantine ne se paie pas",
             "notSubscribed": "Ce membre du personnel n'est pas inscrit à la cantine",
             "noPrice": "Aucun tarif cantine en vigueur aujourd'hui",
@@ -1389,21 +1389,16 @@
             "idempotencyConflict": "Un reçu a déjà été émis pour un encaissement précédent : vérifiez-le avant de recommencer"
           },
           "dialog": {
-            "addTitle": "Ajouter un membre",
-            "editTitle": "Modifier",
-            "name": "Nom",
-            "note": "Note (facultatif)",
-            "notePlaceholder": "Fonction, classe…",
+            "editTitle": "Exonération",
             "mealExempt": "Exempté de paiement",
             "mealExemptHint": "Ses repas sont comptés mais jamais facturés.",
-            "isActive": "Toujours dans le personnel",
             "cancel": "Annuler",
             "submit": "Enregistrer",
-            "success": "Personnel enregistré",
+            "success": "Exonération enregistrée",
             "error": "Erreur lors de l'enregistrement",
             "errors": {
               "validationError": "Vérifiez les informations saisies",
-              "notFound": "Membre du personnel introuvable"
+              "notFound": "Enseignant introuvable"
             }
           }
         }

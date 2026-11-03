@@ -14,7 +14,7 @@ const toDay = (date: Date) => date.toISOString().slice(0, 10)
 const ownerColumn = (owner: MealOwner) =>
   'studentId' in owner
     ? { column: Prisma.sql`"studentId"`, id: owner.studentId }
-    : { column: Prisma.sql`"staffMemberId"`, id: owner.staffMemberId }
+    : { column: Prisma.sql`"teacherId"`, id: owner.teacherId }
 
 type MealScheduleRow = {
   id: string
@@ -310,8 +310,8 @@ export const mealAccountGateway = {
   isActiveOwner: async (schoolId: string, owner: MealOwner) =>
     'studentId' in owner
       ? (await db.student.count({ where: { schoolId, id: owner.studentId } })) === 1
-      : (await db.staffMember.count({
-          where: { schoolId, id: owner.staffMemberId, isActive: true },
+      : (await db.teacher.count({
+          where: { schoolId, id: owner.teacherId, isActive: true },
         })) === 1,
 
   findPeriod: async (schoolId: string, periodId: string) => {
@@ -377,20 +377,18 @@ export const mealAccountGateway = {
   },
 
   /** Comptes repas d'un ou plusieurs membres du personnel. */
-  findStaffAccounts: async (schoolId: string, staffMemberIds: string[]) => {
+  findStaffAccounts: async (schoolId: string, teacherIds: string[]) => {
     const accounts = await db.mealAccount.findMany({
-      where: { schoolId, staffMemberId: { in: staffMemberIds } },
+      where: { schoolId, teacherId: { in: teacherIds } },
       select: {
         id: true,
         service: true,
-        staffMemberId: true,
+        teacherId: true,
         schedules: { select: scheduleSelect, orderBy: { startOn: 'asc' } },
       },
     })
-    return accounts.flatMap(({ staffMemberId, ...account }) =>
-      staffMemberId
-        ? [{ ...account, staffMemberId, schedules: account.schedules.map(toScheduleRow) }]
-        : []
+    return accounts.flatMap(({ teacherId, ...account }) =>
+      teacherId ? [{ ...account, teacherId, schedules: account.schedules.map(toScheduleRow) }] : []
     )
   },
 
@@ -404,12 +402,12 @@ export const mealAccountGateway = {
         OR: [{ endOn: null }, { endOn: { gte: date } }],
         account: {
           service,
-          OR: [{ student: { isActive: true } }, { staffMember: { isActive: true } }],
+          OR: [{ student: { isActive: true } }, { teacher: { isActive: true } }],
         },
       },
       select: {
         accountId: true,
-        account: { select: { staffMember: { select: { mealExempt: true } } } },
+        account: { select: { teacher: { select: { mealExempt: true } } } },
         weekdays: true,
         startOn: true,
         endOn: true,
@@ -423,7 +421,7 @@ export const mealAccountGateway = {
     return {
       segments: segments.map((row) => ({
         accountId: row.accountId,
-        staff: row.account.staffMember ? { exempt: row.account.staffMember.mealExempt } : null,
+        staff: row.account.teacher ? { exempt: row.account.teacher.mealExempt } : null,
         weekdays: row.weekdays,
         startOn: toDay(row.startOn),
         endOn: row.endOn ? toDay(row.endOn) : null,

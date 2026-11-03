@@ -24,7 +24,7 @@ const tx = { tx: true }
 function setup() {
   const receiptGw = {
     transaction: vi.fn(async (fn: (client: unknown) => unknown) => fn(tx)),
-    findPayer: vi.fn().mockResolvedValue({ familyId: 'family-1', staffMemberId: null }),
+    findPayer: vi.fn().mockResolvedValue({ familyId: 'family-1', teacherId: null }),
     lockForCancel: vi.fn().mockResolvedValue({ familyId: 'family-1', cancelledAt: null }),
     findActivePayments: vi
       .fn()
@@ -109,7 +109,7 @@ describe('cancelReceipt', () => {
 
   it('cancels a staff receipt without locking any family', async () => {
     const { receiptGw, run } = setup()
-    receiptGw.findPayer.mockResolvedValue({ familyId: null, staffMemberId: 'staff-1' })
+    receiptGw.findPayer.mockResolvedValue({ familyId: null, teacherId: 'staff-1' })
     receiptGw.lockForCancel.mockResolvedValue({ familyId: null, cancelledAt: null })
     receiptGw.findActivePayments.mockResolvedValue([])
 

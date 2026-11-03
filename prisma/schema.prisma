@@ -178,7 +178,6 @@ model School {
   mealServiceSettings       MealServiceSetting[]
   mealPrices                MealPrice[]
   mealAccounts              MealAccount[]
-  staffMembers              StaffMember[]
   mealSchedules             MealSchedule[]
   mealAdjustments           MealAdjustment[]
   mealAbsences              MealAbsence[]
@@ -232,7 +231,7 @@ model User {
 
   /// Blocs de l'accueil admin masqués par l'utilisateur (clés de `HOME_WIDGETS`). En base pour
   /// suivre l'utilisateur sur tous ses appareils.
-  dashboardHiddenWidgets String[] @default([])
+  dashboardHiddenWidgets    String[] @default([])
   /// Vue du graphique d'encaissements de l'accueil admin (`day`, `month`, `year`) et sa période
   /// (`7d`, `30d`, `3m`, `6m`, `12m`). Nulle : vue par défaut, mois sur douze mois.
   dashboardChartGranularity String?
@@ -569,16 +568,17 @@ model ClassPeriod {
 }
 
 model Teacher {
-  id        String   @id @default(uuid())
-  schoolId  String
-  userId    String?
-  firstName String   @db.VarChar(250)
-  lastName  String   @db.VarChar(250)
-  email     String?  @db.VarChar(250)
-  phone     String?  @db.VarChar(20)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  schoolId   String
+  userId     String?
+  firstName  String   @db.VarChar(250)
+  lastName   String   @db.VarChar(250)
+  email      String?  @db.VarChar(250)
+  phone      String?  @db.VarChar(20)
+  isActive   Boolean  @default(true)
+  mealExempt Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   school        School                     @relation(fields: [schoolId], references: [id])
   user          User?                      @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -586,6 +586,8 @@ model Teacher {
   scheduleSlots ClassScheduleSlotTeacher[]
   expenses      TeacherExpense[]
   invitations   Invitation[]
+  mealAccounts  MealAccount[]
+  receipts      Receipt[]
 
   @@unique([id, schoolId])
   @@unique([userId, schoolId])
@@ -1173,38 +1175,20 @@ model EventImage {
 
 /// Membre du personnel qui mange à la cantine (#545). Liste propre à l'école, distincte des
 /// enseignants. `mealExempt` : ses repas sont comptés mais jamais facturés.
-model StaffMember {
-  id         String   @id @default(uuid())
-  schoolId   String
-  name       String   @db.VarChar(250)
-  note       String?  @db.VarChar(250)
-  mealExempt Boolean  @default(false)
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  school       School        @relation(fields: [schoolId], references: [id])
-  mealAccounts MealAccount[]
-  receipts     Receipt[]
-
-  @@unique([id, schoolId])
-  @@index([schoolId])
-}
-
 /// Inscription d'un élève ou d'un membre du personnel à un service repas : exactement l'un des
 /// deux (contrainte `MealAccount_owner_check`). Ligne verrouillée par toute mutation du compte.
 model MealAccount {
-  id            String      @id @default(uuid())
-  schoolId      String
-  studentId     String?
-  staffMemberId String?
-  service       MealService
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id        String      @id @default(uuid())
+  schoolId  String
+  studentId String?
+  teacherId String?
+  service   MealService
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   school      School           @relation(fields: [schoolId], references: [id])
   student     Student?         @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
-  staffMember StaffMember?     @relation(fields: [staffMemberId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  teacher     Teacher?         @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Restrict)
   schedules   MealSchedule[]
   adjustments MealAdjustment[]
   payments    MealPayment[]
@@ -1212,7 +1196,7 @@ model MealAccount {
 
   @@unique([id, schoolId])
   @@unique([schoolId, studentId, service])
-  @@unique([schoolId, staffMemberId, service])
+  @@unique([schoolId, teacherId, service])
   @@index([schoolId])
 }
 
@@ -1283,7 +1267,7 @@ model Receipt {
   id             String        @id @default(uuid())
   schoolId       String
   familyId       String?
-  staffMemberId  String?
+  teacherId      String?
   number         Int
   total          Decimal       @db.Decimal(10, 2)
   method         PaymentMethod
@@ -1299,7 +1283,7 @@ model Receipt {
 
   school            School             @relation(fields: [schoolId], references: [id])
   family            Family?            @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
-  staffMember       StaffMember?       @relation(fields: [staffMemberId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  teacher           Teacher?           @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Restrict)
   recordedBy        User               @relation("receiptRecordedBy", fields: [recordedById], references: [id])
   cancelledBy       User?              @relation("receiptCancelledBy", fields: [cancelledById], references: [id])
   mealPayments      MealPayment[]
@@ -1310,7 +1294,7 @@ model Receipt {
   @@unique([schoolId, number])
   @@unique([schoolId, idempotencyKey])
   @@index([familyId])
-  @@index([staffMemberId])
+  @@index([teacherId])
 }
 
 /// Prochain numéro de reçu de l'école, jamais remis à zéro.

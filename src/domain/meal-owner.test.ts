@@ -4,11 +4,11 @@ import { mealOwner } from './meal-owner'
 describe('mealOwner', () => {
   it('names exactly one owner', () => {
     expect(mealOwner({ studentId: 's' })).toEqual({ studentId: 's' })
-    expect(mealOwner({ staffMemberId: 'm' })).toEqual({ staffMemberId: 'm' })
+    expect(mealOwner({ teacherId: 'm' })).toEqual({ teacherId: 'm' })
   })
 
   it('rejects none or both', () => {
     expect(mealOwner({})).toBeNull()
-    expect(mealOwner({ studentId: 's', staffMemberId: 'm' })).toBeNull()
+    expect(mealOwner({ studentId: 's', teacherId: 'm' })).toBeNull()
   })
 })

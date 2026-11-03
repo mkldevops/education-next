@@ -5,7 +5,7 @@ import { schoolToday } from '@/domain/school-date'
 import { configGateway } from '@/gateways/config-gateway'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
 import { receiptGateway } from '@/gateways/receipt-gateway'
-import { staffMemberGateway } from '@/gateways/staff-member-gateway'
+import { staffCanteenGateway } from '@/gateways/staff-canteen-gateway'
 import { fitsCurrencyPrecision, roundHalfUp } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
@@ -35,13 +35,12 @@ export async function recordStaffReceipt(
   input: Input,
   receiptGw = receiptGateway,
   accountGw = mealAccountGateway,
-  staffGw = staffMemberGateway,
+  staffGw = staffCanteenGateway,
   configGw = configGateway
 ) {
   const parsed = recordStaffReceiptSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
-  const { schoolId, staffMemberId, service, amount, expectedPaidThrough, idempotencyKey } =
-    parsed.data
+  const { schoolId, teacherId, service, amount, expectedPaidThrough, idempotencyKey } = parsed.data
   const reference = parsed.data.reference || null
 
   if (!(await isMealsEnabled(schoolId, configGw))) return 'mealsDisabled' as const
@@ -51,7 +50,7 @@ export async function recordStaffReceipt(
   const requestHash = createHash('sha256')
     .update(
       JSON.stringify({
-        staffMemberId,
+        teacherId,
         service,
         amount: Math.round(amount * 100),
         expectedPaidThrough,
@@ -76,8 +75,8 @@ export async function recordStaffReceipt(
 
   try {
     return await receiptGw.transaction(async (tx) => {
-      const accountId = await accountGw.lockAccount(tx, schoolId, { staffMemberId }, service, false)
-      const staff = await staffGw.findForReceipt(tx, schoolId, staffMemberId)
+      const accountId = await accountGw.lockAccount(tx, schoolId, { teacherId }, service, false)
+      const staff = await staffGw.findForReceipt(tx, schoolId, teacherId)
       if (!staff?.isActive) throw new Rollback('notFound')
       if (staff.mealExempt) throw new Rollback('exempt')
       if (!accountId) throw new Rollback('notSubscribed')
@@ -102,7 +101,7 @@ export async function recordStaffReceipt(
 
       const number = await receiptGw.nextNumber(tx, schoolId)
       const receipt = await receiptGw.create(tx, schoolId, {
-        staffMemberId,
+        teacherId,
         number,
         total: roundHalfUp(amount),
         method: parsed.data.method,

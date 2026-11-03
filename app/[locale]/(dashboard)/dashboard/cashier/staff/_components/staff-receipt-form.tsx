@@ -12,7 +12,7 @@ import type { CashierPaymentMethod } from '@/use-cases/receipts/schemas'
 import { recordStaffReceiptAction } from '../../../../_lib/staff-actions'
 
 type Props = {
-  staffMemberId: string
+  teacherId: string
   /** Tarif cantine du jour, `null` sans tarif en vigueur. */
   unitPrice: number | null
   served: string[]
@@ -32,8 +32,8 @@ const toAmount = (value: string) => {
 }
 
 /** Même garde que la caisse famille : un renvoi retrouve le reçu déjà émis. */
-function idempotencyKey(staffMemberId: string) {
-  const storageKey = `cashier-staff-receipt-key:${staffMemberId}`
+function idempotencyKey(teacherId: string) {
+  const storageKey = `cashier-staff-receipt-key:${teacherId}`
   const existing = sessionStorage.getItem(storageKey)
   if (existing) return { key: existing, storageKey }
   const key = crypto.randomUUID()
@@ -43,7 +43,7 @@ function idempotencyKey(staffMemberId: string) {
 
 /** Encaisse la cantine d'un membre du personnel et ouvre le reçu. */
 export function StaffReceiptForm({
-  staffMemberId,
+  teacherId,
   unitPrice,
   served,
   ledger,
@@ -82,10 +82,10 @@ export function StaffReceiptForm({
 
   const submit = () => {
     startTransition(async () => {
-      const { key, storageKey } = idempotencyKey(staffMemberId)
+      const { key, storageKey } = idempotencyKey(teacherId)
       const result = await recordStaffReceiptAction({
         idempotencyKey: key,
-        staffMemberId,
+        teacherId,
         service: 'CANTEEN',
         amount,
         expectedPaidThrough: paidThrough,

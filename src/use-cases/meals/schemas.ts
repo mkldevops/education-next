@@ -28,7 +28,7 @@ const weekdays = z.array(z.number().int().min(1).max(7))
 const studentService = {
   schoolId: z.string().min(1),
   studentId: z.uuid().optional(),
-  staffMemberId: z.uuid().optional(),
+  teacherId: z.uuid().optional(),
   service,
 }
 

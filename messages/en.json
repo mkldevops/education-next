@@ -1359,28 +1359,28 @@
         "staff": {
           "title": "Staff",
           "sheetTitle": "Staff canteen",
-          "intro": "Staff canteen: days, payments and today's meals. Exempt staff eat without being billed.",
+          "intro": "Canteen for teachers and staff: days, payments and today's meals. Exempt staff eat without being billed.",
           "counts": {
             "subscribed": "Subscribed",
             "exempt": "Exempt",
             "eatsToday": "Eating today"
           },
-          "empty": "No staff yet. Add one to subscribe them to the canteen.",
+          "empty": "No teachers yet. Add staff under Teachers to subscribe them to the canteen.",
           "exemptBadge": "Exempt",
-          "inactiveBadge": "Removed",
+          "inactiveBadge": "Deactivated",
           "noCanteen": "Not subscribed to the canteen",
           "paidThrough": "Paid through {date}",
           "nothingPaid": "Nothing paid",
           "due": "{days, plural, one {# day due} other {# days due}} ({amount})",
           "exemptHint": "Exempt: meals are counted but never billed.",
-          "inactiveHint": "Removed from the list: can no longer be subscribed or charged.",
+          "inactiveHint": "Deactivated teacher: can no longer be subscribed or charged.",
           "collect": "Collect canteen payment",
           "amount": "Amount",
           "error": "Error while recording the payment",
           "errors": {
             "validationError": "Check the amount entered",
             "mealsDisabled": "Canteen and snack are disabled for this school",
-            "notFound": "Staff member not found or removed",
+            "notFound": "Teacher not found",
             "exempt": "This staff member is exempt: their canteen is not paid",
             "notSubscribed": "This staff member is not subscribed to the canteen",
             "noPrice": "No canteen price in effect today",
@@ -1388,21 +1388,16 @@
             "idempotencyConflict": "A receipt was already issued for a previous payment: check it before trying again"
           },
           "dialog": {
-            "addTitle": "Add staff member",
-            "editTitle": "Edit",
-            "name": "Name",
-            "note": "Note (optional)",
-            "notePlaceholder": "Role, class…",
+            "editTitle": "Exemption",
             "mealExempt": "Exempt from payment",
             "mealExemptHint": "Meals are counted but never billed.",
-            "isActive": "Still on staff",
             "cancel": "Cancel",
             "submit": "Save",
-            "success": "Staff member saved",
+            "success": "Exemption saved",
             "error": "Error while saving",
             "errors": {
               "validationError": "Check the information entered",
-              "notFound": "Staff member not found"
+              "notFound": "Teacher not found"
             }
           }
         }

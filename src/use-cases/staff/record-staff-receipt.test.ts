@@ -20,7 +20,7 @@ type StaffGw = Parameters<typeof recordStaffReceipt>[3]
 type ConfigGw = Parameters<typeof recordStaffReceipt>[4]
 
 const schoolId = 'school-a'
-const staffMemberId = '7f9c2b6e-1d3a-4c5b-8e9f-0a1b2c3d4e5f'
+const teacherId = '7f9c2b6e-1d3a-4c5b-8e9f-0a1b2c3d4e5f'
 const idempotencyKey = '5d1c9a2e-8b7f-4e3d-a6c5-b4a39281706f'
 
 function setup(
@@ -71,7 +71,7 @@ function setup(
         schoolId,
         recordedById: 'cashier-1',
         idempotencyKey,
-        staffMemberId,
+        teacherId,
         service: 'CANTEEN',
         amount: 20,
         expectedPaidThrough: null,
@@ -94,14 +94,14 @@ describe('recordStaffReceipt', () => {
     expect(accountGw.lockAccount).toHaveBeenCalledWith(
       { tx: true },
       schoolId,
-      { staffMemberId },
+      { teacherId },
       'CANTEEN',
       false
     )
     expect(receiptGw.create).toHaveBeenCalledWith(
       { tx: true },
       schoolId,
-      expect.objectContaining({ staffMemberId, number: 7, total: 20 })
+      expect.objectContaining({ teacherId, number: 7, total: 20 })
     )
     expect(receiptGw.create.mock.calls[0][2]).not.toHaveProperty('familyId')
     expect(receiptGw.createMealPayments).toHaveBeenCalledWith({ tx: true }, schoolId, 'receipt-1', [

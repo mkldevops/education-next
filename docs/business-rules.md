@@ -2251,28 +2251,29 @@ called from `attendance-actions.ts`):
 - with `meals_enabled` off nothing is written (`mealsDisabled`). Column added by migration
   `20261030090000_meal_absence_from_attendance`.
 
-**Staff canteen (#545).** Staff eat and pay like students. `StaffMember` is a per-school list
-(name, note, `mealExempt`, `isActive`), apart from `Teacher`. A meal account belongs to a student or
-a staff member, never both (`MealOwner`, `CHECK` in migration `20261103100000_staff_canteen`), so
-subscriptions, schedule changes, absences, closures and the ledger are shared. Staff pay the school's
-`CANTEEN` price; no staff price exists. `/dashboard/cashier/staff` (`requireSchoolCashier()`,
-`notFound()` when `meals_enabled` is off) lists the members with their days, coverage, amount due and
-whether they eat today; admins add, edit, exempt or deactivate a member there. Each member has a meal
-sheet at `/dashboard/cashier/staff/[id]`.
+**Staff canteen (#545).** Staff eat and pay like students. The staff are the school's `Teacher`
+records (non-teaching staff are recorded there too), with `Teacher.mealExempt`. A meal account belongs
+to a student or a teacher, never both (`MealOwner`, `CHECK` in migration
+`20261103100000_staff_canteen`), so subscriptions, schedule changes, absences, closures and the ledger
+are shared. Staff pay the school's `CANTEEN` price; no staff price exists. `/dashboard/cashier/staff`
+(`requireSchoolCashier()`, `notFound()` when `meals_enabled` is off) lists the active teachers, and
+deactivated ones that keep a meal account, with their days, coverage, amount due and whether they eat
+today; admins set or lift the exemption there (`setStaffMealExempt()`). Each teacher has a meal sheet at
+`/dashboard/cashier/staff/[id]`.
 
 - `recordStaffReceipt()` (`src/use-cases/staff/record-staff-receipt.ts`) records a numbered receipt
-  with no family (`Receipt.staffMemberId`; `CHECK` that exactly one payer is set) and one meal line
+  with no family (`Receipt.teacherId`; `CHECK` that exactly one payer is set) and one meal line
   for the service. It re-reads the member under the account lock and refuses an inactive or unknown
   member (`notFound`), an exempt one (`exempt`), a member without served days (`notSubscribed`), a
   missing price (`noPrice`) and a coverage that moved (`staleState`). It is idempotent like
   `recordReceipt()`.
 - **An exempt member is never billed**: amount due 0, no receipt form, `exempt` from the use case.
   Their meals still count in the day's headcount.
-- Deactivating a member keeps their accounts and receipts and drops them from the counts. A
-  deactivated member cannot be subscribed or charged.
+- Deactivating a teacher keeps their accounts and receipts and drops them from the counts. A
+  deactivated teacher cannot be subscribed or charged, and a teacher with a meal account or a
+  receipt cannot be deleted (`teacherInUse`).
 - Cancelling a staff receipt locks no family.
-- The migration drops the `StaffMeal` table of #547 (count only, on `Teacher`). It was empty in
-  production.
+- The migration drops the `StaffMeal` table of #547 (count only). It was empty in production.
 
 **Day's headcount.** Each service card on `/dashboard/meals` shows today's meals in the school's time
 zone, students and staff apart (`dailyMealHeadcount()`, `mealHeadcount()` in
