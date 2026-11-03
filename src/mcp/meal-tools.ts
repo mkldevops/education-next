@@ -126,6 +126,14 @@ export function listMealTools(scope: DraftScope): SchoolTool[] {
       (args) => subscribeMeal({ ...args, ...school })
     ),
     tool(
+      'subscribe_staff_meal',
+      'Inscrire un enseignant à la cantine',
+      'Ouvre un segment pour teacherId de list_teachers (le personnel est enregistré comme enseignant), service, periodId de list_periods, weekdays ISO et startOn dans la période. Facturé au tarif élève sauf exemption. Refus mealsDisabled, serviceDisabled, invalidWeekdays, outsidePeriod, alreadySubscribed, notFound.',
+      subscribeMealSchema.omit({ schoolId: true, studentId: true }).required({ teacherId: true }),
+      write,
+      (args) => subscribeMeal({ ...args, ...school })
+    ),
+    tool(
       'change_meal_schedule',
       'Changer les jours de repas',
       'Remplace le rythme weekdays à effectiveFrom, aujourd’hui ou après dans le fuseau de l’école. Relire get_student_meals. Refus mealsDisabled, backdated, notSubscribed, invalidWeekdays.',
