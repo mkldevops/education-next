@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  chargeLeft,
   chargeRemaining,
   coversMonth,
   dateToMonth,
@@ -9,6 +10,7 @@ import {
   isValidRange,
   monthToDate,
   planChildcareBilling,
+  settledByOpening,
   summarizeChildcare,
 } from '../childcare'
 
@@ -109,5 +111,18 @@ describe('childcare balance', () => {
         { amount: 3000, paid: 0, cancelled: true },
       ])
     ).toEqual({ billed: 12000, paid: 8000, remaining: 4000 })
+  })
+
+  it('counts a month settled by the opening as paid without any receipt', () => {
+    expect(settledByOpening('2026-10', '2026-10')).toBe(true)
+    expect(settledByOpening('2026-11', '2026-10')).toBe(false)
+    expect(settledByOpening('2026-09', null)).toBe(false)
+    expect(chargeLeft({ amount: 6000, paid: 0, settled: true })).toBe(0)
+    expect(
+      summarizeChildcare([
+        { amount: 6000, paid: 0, settled: true, cancelled: false },
+        { amount: 6000, paid: 1000, settled: false, cancelled: false },
+      ])
+    ).toEqual({ billed: 12000, paid: 7000, remaining: 5000 })
   })
 })

@@ -7,6 +7,7 @@ vi.mock('@/lib/school-regional-settings', () => ({
 const { billChildcareMonth } = await import('./bill-childcare-month')
 const { cancelChildcareCharge } = await import('./cancel-childcare-charge')
 const { removeChildcareSubscription } = await import('./remove-childcare-subscription')
+const { recordChildcareOpening } = await import('./record-childcare-opening')
 const { saveChildcareSubscription } = await import('./save-childcare-subscription')
 
 type Gateway = Parameters<typeof billChildcareMonth>[1]
@@ -29,6 +30,8 @@ function fakeGateway() {
     transaction: vi.fn(async (fn: (client: unknown) => unknown) => fn(tx)),
     studentExists: vi.fn().mockResolvedValue(true),
     lockStudentSubscription: vi.fn().mockResolvedValue(null),
+    lockSubscriptionStart: vi.fn().mockResolvedValue({ id: 'sub-1', startMonth: '2026-09' }),
+    setOpening: vi.fn(),
     listLiveMonths: vi.fn().mockResolvedValue([]),
     upsertSubscription: vi.fn(),
     hasBillingHistory: vi.fn().mockResolvedValue(false),
@@ -215,5 +218,59 @@ describe('removeChildcareSubscription', () => {
 
   it('answers notFound for another school', async () => {
     expect(await run()).toBe('notFound')
+  })
+})
+
+describe('recordChildcareOpening', () => {
+  const now = new Date('2026-10-30T08:00:00.000Z')
+  const input = {
+    schoolId,
+    recordedById: 'admin',
+    studentId,
+    paidThrough: '2026-10',
+    reason: 'Liste papier Moyenne Section du 30/10/2026',
+  }
+  const run = (over = {}, config = enabled) =>
+    recordChildcareOpening({ ...input, ...over }, asGateway(), config, now)
+
+  it('settles the months up to paidThrough without any receipt', async () => {
+    expect(await run()).toBe('OK')
+    expect(gateway.setOpening).toHaveBeenCalledWith(tx, schoolId, 'sub-1', {
+      paidThrough: '2026-10',
+      reason: 'Liste papier Moyenne Section du 30/10/2026',
+      recordedById: 'admin',
+    })
+    expect(gateway.createCharges).not.toHaveBeenCalled()
+  })
+
+  it('refuses a future month in the school time zone', async () => {
+    expect(await run({ paidThrough: '2026-11' })).toBe('futureMonth')
+    expect(gateway.transaction).not.toHaveBeenCalled()
+  })
+
+  it('refuses an archived or foreign student', async () => {
+    gateway.studentExists.mockResolvedValue(false)
+
+    expect(await run()).toBe('notFound')
+    expect(gateway.setOpening).not.toHaveBeenCalled()
+  })
+
+  it('refuses a child without childcare', async () => {
+    gateway.lockSubscriptionStart.mockResolvedValue(null)
+
+    expect(await run()).toBe('notSubscribed')
+  })
+
+  it('refuses a month before the subscription starts', async () => {
+    expect(await run({ paidThrough: '2026-08' })).toBe('invalidPeriod')
+    expect(gateway.setOpening).not.toHaveBeenCalled()
+  })
+
+  it('requires a reason', async () => {
+    expect(await run({ reason: '  ' })).toBe('validationError')
+  })
+
+  it('stays closed when the feature is off', async () => {
+    expect(await run({}, disabled)).toBe('mealsDisabled')
   })
 })

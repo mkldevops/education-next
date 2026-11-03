@@ -1,4 +1,4 @@
-import { chargeRemaining, dateToMonth, monthToDate } from '@/domain/childcare'
+import { chargeLeft, dateToMonth, monthToDate, settledByOpening } from '@/domain/childcare'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
@@ -15,6 +15,8 @@ const toSubscription = (row: {
   startMonth: dateToMonth(row.startMonth),
   endMonth: row.endMonth ? dateToMonth(row.endMonth) : null,
 })
+
+const monthOrNull = (date: Date | null) => (date ? dateToMonth(date) : null)
 
 /** Encaissé par mois facturé, reçus annulés exclus. */
 async function sumPaid(
@@ -66,6 +68,34 @@ export const childcareGateway = {
       FOR NO KEY UPDATE`
     return rows[0]?.id ?? null
   },
+
+  /** Tient la garderie d'un enfant pour poser sa reprise ; rend son premier mois. */
+  lockSubscriptionStart: async (tx: Tx, schoolId: string, studentId: string) => {
+    const rows = await tx.$queryRaw<Array<{ id: string; startMonth: Date }>>`
+      SELECT "id", "startMonth" FROM "ChildcareSubscription"
+      WHERE "schoolId" = ${schoolId} AND "studentId" = ${studentId}
+      FOR NO KEY UPDATE`
+    const row = rows[0]
+    return row ? { id: row.id, startMonth: dateToMonth(row.startMonth) } : null
+  },
+
+  /** Remplace la reprise : les mois jusqu'à `paidThrough` inclus sont réglés hors application. */
+  setOpening: (
+    tx: Tx,
+    schoolId: string,
+    id: string,
+    data: { paidThrough: string; reason: string; recordedById: string }
+  ) =>
+    tx.childcareSubscription.update({
+      where: { id_schoolId: { id, schoolId } },
+      data: {
+        openingPaidThrough: monthToDate(data.paidThrough),
+        openingReason: data.reason,
+        openingRecordedById: data.recordedById,
+        openingRecordedAt: new Date(),
+      },
+      select: { id: true },
+    }),
 
   /** Mois encore facturés de la garderie, pour refuser une période qui les exclurait. */
   listLiveMonths: async (tx: Tx, schoolId: string, subscriptionId: string) => {
@@ -161,27 +191,41 @@ export const childcareGateway = {
 
   /**
    * Mois facturés d'un encaissement ou d'une annulation, verrouillés dans l'ordre des ids :
-   * après les comptes repas, avant le compteur de reçus. Rendus avec ce qu'il en reste à payer.
+   * après les comptes repas, avant le compteur de reçus. Rendus avec ce qu'il en reste à payer ;
+   * `paid` ne compte que les reçus, une reprise n'encaisse rien. La garderie n'est pas
+   * verrouillée : la facturation la tient avant de ranimer un mois, l'inverse ferait un
+   * interblocage.
    */
   lockCharges: async (tx: Tx, schoolId: string, ids: string[]) => {
     if (ids.length === 0) return []
     const locked = await tx.$queryRaw<
-      Array<{ id: string; studentId: string; amount: Prisma.Decimal; cancelledAt: Date | null }>
+      Array<{
+        id: string
+        studentId: string
+        month: Date
+        amount: Prisma.Decimal
+        cancelledAt: Date | null
+        openingPaidThrough: Date | null
+      }>
     >`
-      SELECT c."id", s."studentId", c."amount", c."cancelledAt"
+      SELECT c."id", s."studentId", c."month", c."amount", c."cancelledAt", s."openingPaidThrough"
       FROM "ChildcareCharge" c
-      JOIN "ChildcareSubscription" s ON s."id" = c."subscriptionId"
+      JOIN "ChildcareSubscription" s ON s."id" = c."subscriptionId" AND s."schoolId" = c."schoolId"
       WHERE c."schoolId" = ${schoolId} AND c."id" = ANY(${ids})
       ORDER BY c."id"
       FOR NO KEY UPDATE OF c`
     const paid = await sumPaid(tx, schoolId, ids)
-    return locked.map((row) => ({
-      id: row.id,
-      studentId: row.studentId,
-      cancelled: row.cancelledAt !== null,
-      remaining: chargeRemaining(Number(row.amount), paid.get(row.id) ?? 0),
-      paid: paid.get(row.id) ?? 0,
-    }))
+    return locked.map((row) => {
+      const receipts = paid.get(row.id) ?? 0
+      const settled = settledByOpening(dateToMonth(row.month), monthOrNull(row.openingPaidThrough))
+      return {
+        id: row.id,
+        studentId: row.studentId,
+        cancelled: row.cancelledAt !== null,
+        remaining: chargeLeft({ amount: Number(row.amount), paid: receipts, settled }),
+        paid: receipts,
+      }
+    })
   },
 
   cancelCharge: (
@@ -219,7 +263,7 @@ export const childcareGateway = {
         id: true,
         month: true,
         amount: true,
-        subscription: { select: { studentId: true } },
+        subscription: { select: { studentId: true, openingPaidThrough: true } },
       },
       orderBy: { month: 'asc' },
     })
@@ -229,7 +273,14 @@ export const childcareGateway = {
       charges.map((charge) => charge.id)
     )
     return charges.flatMap((charge) => {
-      const remaining = chargeRemaining(Number(charge.amount), paid.get(charge.id) ?? 0)
+      const remaining = chargeLeft({
+        amount: Number(charge.amount),
+        paid: paid.get(charge.id) ?? 0,
+        settled: settledByOpening(
+          dateToMonth(charge.month),
+          monthOrNull(charge.subscription.openingPaidThrough)
+        ),
+      })
       return remaining > 0
         ? [
             {
@@ -244,15 +295,17 @@ export const childcareGateway = {
     })
   },
 
-  /** Écran garderie : chaque enfant, sa période et ses mois facturés. */
-  listSubscriptions: async (schoolId: string) => {
+  /** Écran garderie : chaque enfant, sa période, sa reprise et ses mois facturés. */
+  listSubscriptions: async (schoolId: string, studentId?: string) => {
     const rows = await db.childcareSubscription.findMany({
-      where: { schoolId },
+      where: studentId === undefined ? { schoolId } : { schoolId, studentId },
       select: {
         id: true,
         monthlyAmount: true,
         startMonth: true,
         endMonth: true,
+        openingPaidThrough: true,
+        openingReason: true,
         student: {
           select: {
             id: true,
@@ -283,17 +336,27 @@ export const childcareGateway = {
       schoolId,
       rows.flatMap((row) => row.charges.map((charge) => charge.id))
     )
-    return rows.map((row) => ({
-      ...toSubscription(row),
-      student: row.student,
-      charges: row.charges.map((charge) => ({
-        id: charge.id,
-        month: dateToMonth(charge.month),
-        amount: Number(charge.amount),
-        paid: paid.get(charge.id) ?? 0,
-        cancelled: charge.cancelledAt !== null,
-      })),
-    }))
+    return rows.map((row) => {
+      const openingPaidThrough = monthOrNull(row.openingPaidThrough)
+      return {
+        ...toSubscription(row),
+        opening: openingPaidThrough
+          ? { paidThrough: openingPaidThrough, reason: row.openingReason ?? '' }
+          : null,
+        student: row.student,
+        charges: row.charges.map((charge) => {
+          const month = dateToMonth(charge.month)
+          return {
+            id: charge.id,
+            month,
+            amount: Number(charge.amount),
+            paid: paid.get(charge.id) ?? 0,
+            settled: settledByOpening(month, openingPaidThrough),
+            cancelled: charge.cancelledAt !== null,
+          }
+        }),
+      }
+    })
   },
 
   /** Élèves actifs à rattacher : la classe courante lève les homonymes. */

@@ -28,41 +28,8 @@ import { toggleMealAbsence } from '@/use-cases/meals/toggle-meal-absence'
 import { cancelReceipt } from '@/use-cases/receipts/cancel-receipt'
 import { recordReceipt } from '@/use-cases/receipts/record-receipt'
 import { cancelReceiptSchema, recordReceiptSchema } from '@/use-cases/receipts/schemas'
+import { overwrite, read, tool, write } from './catalog-tool'
 import type { SchoolTool } from './school-tools'
-
-const read = { readOnlyHint: true, openWorldHint: false }
-const write = {
-  readOnlyHint: false,
-  destructiveHint: false,
-  idempotentHint: false,
-  openWorldHint: false,
-}
-const overwrite = { ...write, destructiveHint: true, idempotentHint: true }
-
-/** Validate even direct catalog callers, strip unknown arguments, and adapt domain OK. */
-function tool<S extends z.ZodObject>(
-  name: string,
-  title: string,
-  description: string,
-  inputSchema: S,
-  annotations: NonNullable<SchoolTool['annotations']>,
-  run: (args: z.infer<S>) => Promise<unknown>
-): SchoolTool {
-  return {
-    name,
-    title,
-    description,
-    inputSchema,
-    annotations,
-    kind: annotations.readOnlyHint ? 'read' : 'write',
-    run: async (input) => {
-      const parsed = inputSchema.safeParse(input)
-      if (!parsed.success) return 'validationError'
-      const result = await run(parsed.data)
-      return result === 'OK' ? { success: true } : result
-    },
-  }
-}
 
 /** Published even when meals are off: existing use cases enforce the live feature gate. */
 export function listMealTools(scope: DraftScope): SchoolTool[] {
@@ -88,7 +55,7 @@ export function listMealTools(scope: DraftScope): SchoolTool[] {
     tool(
       'list_family_receipts',
       'Reçus d’une famille',
-      'Derniers reçus numérotés, lignes cantine/goûter, annulations incluses ; limit 50 par défaut, 100 maximum, hasMore signale une liste tronquée. familyId vient de find_students ou get_family_payments. Refus mealsDisabled, notFound.',
+      'Derniers reçus numérotés, lignes cantine/goûter et garderie (chargeId), annulations incluses ; limit 50 par défaut, 100 maximum, hasMore signale une liste tronquée. familyId vient de find_students ou get_family_payments. Refus mealsDisabled, notFound.',
       familyReceiptsSchema,
       read,
       (args) => listFamilyReceiptsFromMcp(scope, args)
@@ -174,7 +141,7 @@ export function listMealTools(scope: DraftScope): SchoolTool[] {
     tool(
       'record_receipt',
       'Encaisser un reçu de caisse',
-      'Crée un reçu réel AUJOURD’HUI au tarif du jour, jamais antidaté. meals contient studentId, service, amount et expectedPaidThrough (coverage.paidThrough relu dans get_student_meals, null si aucun). tuition=0 pour un reçu repas seul ; tuition est réparti sur les inscriptions de la famille, ou porté en entier sur tuitionEnrollmentId (inscription payable de la famille, refus enrollmentNotPayable) ; aucune recette repas ne doit passer par record_payment. method CASH/MOBILE_MONEY/TRANSFER/CHECK. Conserver le même UUID idempotencyKey et contenu lors d’une reprise après coupure : même reçu ; contenu différent : idempotencyConflict. Relire après staleState. Reprise historique : record_meal_opening. Refus mealsDisabled, paymentsDisabled (écolage seulement), notInFamily, notSubscribed, noPrice, overpayment.',
+      'Crée un reçu réel AUJOURD’HUI au tarif du jour, jamais antidaté. meals contient studentId, service, amount et expectedPaidThrough (coverage.paidThrough relu dans get_student_meals, null si aucun). tuition=0 pour un reçu repas seul ; tuition est réparti sur les inscriptions de la famille, ou porté en entier sur tuitionEnrollmentId (inscription payable de la famille, refus enrollmentNotPayable) ; aucune recette repas ne doit passer par record_payment. childcare contient chargeId (get_student_childcare) et amount au plus remaining, paiement partiel permis ; familyId est alors debtorFamilyId. meals=[] et tuition=0 pour un reçu garderie seul. method CASH/MOBILE_MONEY/TRANSFER/CHECK. Conserver le même UUID idempotencyKey et contenu lors d’une reprise après coupure : même reçu ; contenu différent : idempotencyConflict. Relire après staleState. Reprise historique : record_meal_opening ou record_childcare_opening. Refus mealsDisabled, paymentsDisabled (écolage seulement), notInFamily, notSubscribed, noPrice, overpayment, childcareOverpayment, staleState.',
       z.object(recordReceiptSchema.shape).omit({ schoolId: true, recordedById: true }),
       { ...write, idempotentHint: true },
       (args) => recordReceipt({ ...args, ...actor })

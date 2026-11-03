@@ -1413,6 +1413,7 @@
         "empty": "No child in childcare. Search for a student to add them.",
         "archived": "archived",
         "noFamily": "No debtor family",
+        "opening": "Paid before the application through {month} ({reason})",
         "perMonth": "{amount} per month",
         "period": {
           "open": "since {start}",

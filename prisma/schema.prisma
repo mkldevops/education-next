@@ -240,24 +240,25 @@ model User {
   sessions                  Session[]
   accounts                  Account[]
   families                  UserFamily[]
-  createdFamilies           Family[]             @relation("createdBy")
+  createdFamilies           Family[]                @relation("createdBy")
   createdInvitations        Invitation[]
-  paymentTransactions       PaymentTransaction[] @relation("paymentInitiatedBy")
+  paymentTransactions       PaymentTransaction[]    @relation("paymentInitiatedBy")
   passkeys                  Passkey[]
   schoolMemberships         SchoolMember[]
   mcpApiKeys                McpApiKey[]
   mcpOAuthGrants            McpOAuthGrant[]
   aiConversations           AiConversation[]
   teacherProfiles           Teacher[]
-  createdAttendanceSessions AttendanceSession[]  @relation("attendanceCreatedBy")
-  updatedAttendanceSessions AttendanceSession[]  @relation("attendanceUpdatedBy")
-  recordedMealAdjustments   MealAdjustment[]     @relation("mealAdjustmentRecordedBy")
-  recordedMealAbsences      MealAbsence[]        @relation("mealAbsenceRecordedBy")
-  recordedReceipts          Receipt[]            @relation("receiptRecordedBy")
-  cancelledReceipts         Receipt[]            @relation("receiptCancelledBy")
-  recordedChildcareCharges  ChildcareCharge[]    @relation("childcareChargeRecordedBy")
-  cancelledChildcareCharges ChildcareCharge[]    @relation("childcareChargeCancelledBy")
-  cancelledPayments         Payment[]            @relation("paymentCancelledBy")
+  createdAttendanceSessions AttendanceSession[]     @relation("attendanceCreatedBy")
+  updatedAttendanceSessions AttendanceSession[]     @relation("attendanceUpdatedBy")
+  recordedMealAdjustments   MealAdjustment[]        @relation("mealAdjustmentRecordedBy")
+  recordedMealAbsences      MealAbsence[]           @relation("mealAbsenceRecordedBy")
+  recordedReceipts          Receipt[]               @relation("receiptRecordedBy")
+  cancelledReceipts         Receipt[]               @relation("receiptCancelledBy")
+  recordedChildcareCharges  ChildcareCharge[]       @relation("childcareChargeRecordedBy")
+  cancelledChildcareCharges ChildcareCharge[]       @relation("childcareChargeCancelledBy")
+  childcareOpenings         ChildcareSubscription[] @relation("childcareOpeningRecordedBy")
+  cancelledPayments         Payment[]               @relation("paymentCancelledBy")
 }
 
 model Session {
@@ -1338,18 +1339,24 @@ model MealPayment {
 /// Garderie d'un enfant (#534) : un forfait mensuel, indépendant des comptes repas et de
 /// l'inscription scolaire. `startMonth` et `endMonth` sont le 1er du mois ; `endMonth` nul : ouvert.
 model ChildcareSubscription {
-  id            String    @id @default(uuid())
-  schoolId      String
-  studentId     String
-  monthlyAmount Decimal   @db.Decimal(10, 2)
-  startMonth    DateTime  @db.Date
-  endMonth      DateTime? @db.Date
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(uuid())
+  schoolId            String
+  studentId           String
+  monthlyAmount       Decimal   @db.Decimal(10, 2)
+  startMonth          DateTime  @db.Date
+  endMonth            DateTime? @db.Date
+  /// Reprise : mois réglés avant l'application, jusqu'à ce mois inclus. Aucun reçu ni encaissement.
+  openingPaidThrough  DateTime? @db.Date
+  openingReason       String?   @db.VarChar(250)
+  openingRecordedById String?
+  openingRecordedAt   DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  school  School            @relation(fields: [schoolId], references: [id])
-  student Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
-  charges ChildcareCharge[]
+  school            School            @relation(fields: [schoolId], references: [id])
+  student           Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  openingRecordedBy User?             @relation("childcareOpeningRecordedBy", fields: [openingRecordedById], references: [id], onDelete: SetNull)
+  charges           ChildcareCharge[]
 
   @@unique([id, schoolId])
   @@unique([schoolId, studentId])

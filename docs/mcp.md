@@ -488,7 +488,7 @@ payments are disabled. Every mutation requires the dashboard assistant's normal 
 | --- | --- |
 | `get_meal_settings` | No arguments; service settings and dated prices, including price IDs |
 | `get_student_meals` | `studentId`, optional inclusive `from`/`to`; accounts, schedules, current price, opening, coverage and calendar; at most 93 days, default 31 days from the current month's first day |
-| `list_family_receipts` | `familyId`, optional `limit` (default 50, maximum 100); latest numbered receipts including cancelled ones, meal lines and `hasMore` |
+| `list_family_receipts` | `familyId`, optional `limit` (default 50, maximum 100); latest numbered receipts including cancelled ones, meal and childcare lines and `hasMore` |
 | `set_meal_service_setting` | `service`, `isEnabled`, `allowedWeekdays`; replaces service settings, ISO weekdays 1–7 |
 | `set_meal_price` | `service`, `amount`, `effectiveFrom`; same date replaces the price; only the first price may start in the past |
 | `remove_meal_price` | Price `id`; only before its effective day |
@@ -497,7 +497,7 @@ payments are disabled. Every mutation requires the dashboard assistant's normal 
 | `stop_meal` | `studentId`, `service`, `effectiveFrom`; stops today or later |
 | `record_meal_opening` | `studentId`, `service`, `paidThrough`, required `reason`; replaces historical opening coverage, creates no receipt |
 | `toggle_meal_absence` | `studentId`, `service`, `day`, `absent`; marks or removes an absence on a scheduled open day |
-| `record_receipt` | `familyId`, stable UUID `idempotencyKey`, `method`, optional `reference`, `tuition`, `meals`; returns receipt `id` |
+| `record_receipt` | `familyId`, stable UUID `idempotencyKey`, `method`, optional `reference`, `tuition`, `meals`, optional `childcare`; returns receipt `id` |
 | `cancel_receipt` | `receiptId`, required `reason`; cancels all its meal and tuition lines, retaining its number |
 
 `service` is `CANTEEN` or `SNACK`; dates use `YYYY-MM-DD`; monetary amounts are in the school's
@@ -518,6 +518,29 @@ For a paper-ledger takeover, first verify subscriptions and published closures, 
 `record_meal_opening` with the source payment reference/date/amount in its reason. This preserves
 coverage without creating historical cash revenue or inventing a numbered receipt. A second
 opening replaces the first. The calendar reflects published closures and meal absences.
+
+## Childcare
+
+Monthly childcare (see `docs/business-rules.md`, Childcare) reuses the dashboard's use cases, under
+the same `meals_enabled` gate, scope injection and approval rules as the meal tools.
+
+| Tool | Input and behavior |
+| --- | --- |
+| `get_student_childcare` | `studentId`; subscription (`monthlyAmount`, `startMonth`, `endMonth`, `opening`), billed months with `chargeId`, `amount`, `paidByReceipts`, `settledByOpening`, `remaining`, `cancelled`, totals, `debtorFamilyId` and the school's `currentMonth` |
+| `save_childcare_subscription` | `studentId`, `monthlyAmount`, `startMonth`, `endMonth` (`YYYY-MM` or `null`); creates or replaces the subscription |
+| `bill_childcare_month` | `month`; bills that month for **every** active subscription of the school covering it; a replay bills nothing twice |
+| `record_childcare_opening` | `studentId`, `paidThrough`, required `reason`; months through `paidThrough` owe nothing, no receipt is created; replaces the previous opening |
+| `cancel_childcare_charge` | `chargeId`, required `reason`; refused while a receipt pays it (`hasPayments`) |
+
+Months use `YYYY-MM`. A billed month is paid through `record_receipt`: each `childcare` line names a
+`chargeId` and an `amount` up to its `remaining` (`childcareOverpayment` beyond it); pass the child's
+`debtorFamilyId` as `familyId`, `meals: []` and `tuition: 0` for a childcare-only receipt.
+
+**A paper list saying a child is up to date is an opening, not a receipt.** Subscribe the child with
+its own rate and explicit start month, then call `record_childcare_opening` with the last month
+the list says is paid and the list as reason. Recording money today would add it to today's
+takings although nobody handed it over. Billing those months before or after the opening makes no
+difference: they show as billed and settled.
 
 ## Writing: the preview/commit pairs
 

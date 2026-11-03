@@ -76,6 +76,7 @@ import {
   previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
 import { updateEventFromMcp } from '@/use-cases/mcp/update-event'
+import { listChildcareTools } from './childcare-tools'
 import { listMealTools } from './meal-tools'
 
 const NO_ARGS = z.object({})
@@ -161,6 +162,7 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
 
   const tools: SchoolTool[] = [
     ...listMealTools(scope),
+    ...listChildcareTools(scope),
     define({
       name: 'describe_school',
       title: 'École courante',
