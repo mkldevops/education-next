@@ -47,7 +47,7 @@ export function BarChart({
         return (
           <div
             key={point.label}
-            className="flex h-full min-w-10 flex-1 flex-col items-center gap-2"
+            className="flex h-full min-w-8 flex-1 flex-col items-center gap-2"
             title={point.caption ? `${point.label} · ${point.caption}` : point.label}
           >
             <div className="relative min-h-0 w-full flex-1">

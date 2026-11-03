@@ -44,6 +44,38 @@ export function KpiCard({
   )
 }
 
+export function StatStrip({
+  label,
+  items,
+}: {
+  label: string
+  items: { key: string; href: string; label: string; value: ReactNode }[]
+}) {
+  return (
+    <section
+      aria-label={label}
+      className="home-rise grid grid-cols-3 overflow-hidden rounded-xl border border-border bg-surface shadow-xs"
+    >
+      {items.map((item, index) => (
+        <Link
+          key={item.key}
+          href={item.href}
+          className={cn(
+            'group flex flex-col gap-1 border-border p-4 transition-colors duration-(--duration-fast) hover:bg-surface-2 sm:p-5',
+            index > 0 && 'border-l',
+            focusRing
+          )}
+        >
+          <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+          <span className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+            {item.value}
+          </span>
+        </Link>
+      ))}
+    </section>
+  )
+}
+
 const TONES = {
   info: 'bg-info-subtle text-info',
   warning: 'bg-warning-subtle text-warning',

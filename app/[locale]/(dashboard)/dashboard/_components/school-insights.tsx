@@ -12,16 +12,17 @@ interface Props {
 
 const CLASSES_LISTED = 6
 
+function sameLabel(name: string, level: string) {
+  return name.includes(level) || level.includes(name)
+}
+
 export async function SchoolInsightsSection({ insights, locale, currency }: Props) {
   const t = await getTranslations('dashboard.insights')
-  const { payments, classes, levels } = insights
-  const maxLevel = Math.max(...levels.map((level) => level.enrolled), 0)
+  const { payments, classes } = insights
 
   const monthLabel = new Intl.DateTimeFormat(locale, { month: 'short' })
   const monthCaption = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
   const compact = new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
     notation: 'compact',
     maximumFractionDigits: 1,
   })
@@ -38,7 +39,7 @@ export async function SchoolInsightsSection({ insights, locale, currency }: Prop
     }) ?? []
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {payments && (
         <Card className="p-4 sm:p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -50,29 +51,10 @@ export async function SchoolInsightsSection({ insights, locale, currency }: Prop
               {t('viewPayments')}
             </Link>
           </div>
-          <dl className="mt-4 grid gap-4 sm:grid-cols-3">
-            <div>
-              <dt className="text-xs text-muted-foreground">{t('collected')}</dt>
-              <dd className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                {formatCurrency(payments.totals.collected, locale, currency)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">{t('remaining')}</dt>
-              <dd className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                {formatCurrency(payments.totals.remaining, locale, currency)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">{t('collectionRate')}</dt>
-              <dd className="mt-2">
-                <ProgressBar value={payments.totals.collectionRate} />
-              </dd>
-            </div>
-          </dl>
-          <div className="mt-6">
+          <div className="mt-4">
             <BarChart
               data={chart}
+              className="gap-1"
               formatValue={(value) => (value > 0 ? compact.format(value) : '—')}
               emptyMessage={t('noCollection')}
               height={180}
@@ -81,76 +63,46 @@ export async function SchoolInsightsSection({ insights, locale, currency }: Prop
         </Card>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Card className="p-4 sm:p-5">
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="text-sm font-semibold text-foreground">{t('classFillTitle')}</h2>
-            <Link
-              href="/dashboard/classes"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {t('viewClasses')}
-            </Link>
-          </div>
-          {classes.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">{t('noClasses')}</p>
-          ) : (
-            <ul className="mt-4 space-y-4">
-              {classes.slice(0, CLASSES_LISTED).map((classPeriod) => (
-                <li key={classPeriod.id}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <Link
-                      href={`/dashboard/classes/${classPeriod.id}`}
-                      className="truncate text-sm font-medium text-foreground hover:underline"
-                    >
-                      {classPeriod.name}
-                    </Link>
-                    <span className="shrink-0 text-sm text-foreground tabular-nums">
-                      {classPeriod.enrolled}/{classPeriod.capacity}
+      <Card className="p-4 sm:p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="text-sm font-semibold text-foreground">{t('classFillTitle')}</h2>
+          <Link
+            href="/dashboard/classes"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t('viewClasses')}
+          </Link>
+        </div>
+        {classes.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">{t('noClasses')}</p>
+        ) : (
+          <ul className="mt-4 space-y-4">
+            {classes.slice(0, CLASSES_LISTED).map((classPeriod) => (
+              <li key={classPeriod.id}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <Link
+                    href={`/dashboard/classes/${classPeriod.id}`}
+                    className="truncate text-sm font-medium text-foreground hover:underline"
+                  >
+                    {classPeriod.name}
+                  </Link>
+                  <span className="shrink-0 text-sm text-foreground tabular-nums">
+                    {classPeriod.enrolled}/{classPeriod.capacity}
+                    {!sameLabel(classPeriod.name, classPeriod.level) && (
                       <span className="ml-2 text-xs text-muted-foreground">
                         {classPeriod.level}
                       </span>
-                    </span>
-                  </div>
-                  <div className="mt-2">
-                    <ProgressBar value={classFillRate(classPeriod) * 100} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card className="p-4 sm:p-5">
-          <h2 className="text-sm font-semibold text-foreground">{t('levelsTitle')}</h2>
-          {levels.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">{t('noClasses')}</p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {levels.map((level) => (
-                <li
-                  key={level.level}
-                  className="grid grid-cols-[4rem_1fr_2.5rem] items-center gap-3"
-                  title={t('studentsCount', { count: level.enrolled })}
-                >
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {level.level}
+                    )}
                   </span>
-                  <div className="h-2 rounded-full bg-alabaster-700">
-                    <div
-                      className="h-2 rounded-full bg-primary"
-                      style={{ width: `${maxLevel > 0 ? (level.enrolled / maxLevel) * 100 : 0}%` }}
-                    />
-                  </div>
-                  <span className="text-right text-sm text-foreground tabular-nums">
-                    {level.enrolled}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
+                </div>
+                <div className="mt-2">
+                  <ProgressBar value={classFillRate(classPeriod) * 100} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </div>
   )
 }

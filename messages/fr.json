@@ -217,17 +217,7 @@
       "newPayment": "Saisir un paiement",
       "newStudent": "Ajouter un élève"
     },
-    "recentEnrollments": "Inscriptions récentes",
-    "viewAll": "Voir tout",
     "viewFamily": "Ouvrir ma famille",
-    "table": {
-      "student": "Élève",
-      "plan": "Plan",
-      "class": "Classe",
-      "status": "Statut",
-      "payment": "Paiement",
-      "date": "Date"
-    },
     "welcome": {
       "title": "Bienvenue !",
       "description": "Voici un aperçu de {schoolName}."
@@ -252,9 +242,7 @@
       "noCollection": "Aucun encaissement sur ce périmètre",
       "classFillTitle": "Remplissage des classes",
       "viewClasses": "Voir les classes",
-      "noClasses": "Aucune classe sur cette période",
-      "levelsTitle": "Élèves par niveau",
-      "studentsCount": "{count, plural, =0 {aucun élève} one {# élève} other {# élèves}}"
+      "noClasses": "Aucune classe sur cette période"
     },
     "breadcrumbs": {
       "dashboard": "Tableau de bord",
@@ -2963,22 +2951,18 @@
       "empty": "Aucun événement à venir"
     },
     "home": {
-      "kpi": {
-        "label": "Indicateurs clés",
-        "collectionRate": "{rate} % encaissé"
-      },
       "todo": {
-        "title": "À faire aujourd'hui",
+        "title": "À traiter",
         "attendance": "{count, plural, one {# appel à faire} other {# appels à faire}}",
         "attendanceHint": "Cours du jour sans appel validé",
         "pendingEnrollments": "{count, plural, one {# inscription à activer} other {# inscriptions à activer}}",
         "uncashed": "{count, plural, one {# chèque à encaisser} other {# chèques à encaisser}}",
         "uncashedHint": "{amount} en attente de dépôt",
-        "outstanding": "{count, plural, one {# inscription avec un solde dû} other {# inscriptions avec un solde dû}}",
-        "outstandingHint": "{amount} restant à encaisser",
         "empty": "Rien d'urgent aujourd'hui",
         "emptyHint": "Appels, inscriptions et encaissements sont à jour.",
-        "emptyAction": "Voir les inscriptions"
+        "emptyAction": "Voir les inscriptions",
+        "meals": "{count, plural, one {# compte repas à relancer} other {# comptes repas à relancer}}",
+        "mealsHint": "Cantine et goûter"
       },
       "schedule": {
         "title": "Cours du jour",
@@ -2998,6 +2982,21 @@
         "tomorrow": "Demain",
         "empty": "Aucun enfant rattaché à votre famille",
         "emptyHint": "Contactez l'école si un enfant manque à l'appel."
+      },
+      "collection": {
+        "title": "Recouvrement",
+        "outstanding": "Reste à encaisser",
+        "overdue": "dont {amount} en retard sur l'échéancier",
+        "barLabel": "{collected} encaissés, {outstanding} restant à encaisser",
+        "legendCollected": "Encaissé · {amount}",
+        "legendTuition": "Écolage",
+        "legendMeals": "Cantine et goûter",
+        "tuition": "Écolage",
+        "tuitionHint": "{rate} % encaissé · {count, plural, =0 {tout est réglé} one {# inscription avec un solde} other {# inscriptions avec un solde}}",
+        "mealHint": "{upToDate} sur {subscribed} à jour"
+      },
+      "headcount": {
+        "label": "Effectifs"
       }
     },
     "assistant": {

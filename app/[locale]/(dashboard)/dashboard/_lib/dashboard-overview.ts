@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { getSchoolInsights } from './school-insights'
 
 /**
- * Compteurs, inscriptions récentes et indicateurs de l'accueil administrateur, tous bornés par
+ * Compteurs et indicateurs de l'accueil administrateur, tous bornés par
  * `schoolId`. L'accueil parent a son propre chargeur, borné par la famille liée.
  */
 export async function getDashboardOverview(schoolId: string, paymentsEnabled: boolean) {
@@ -12,41 +12,18 @@ export async function getDashboardOverview(schoolId: string, paymentsEnabled: bo
     ? { classAssignments: { some: { classPeriod: { periodId: selectedPeriod.id } } } }
     : {}
 
-  const [
-    familyCount,
-    studentCount,
-    enrollmentCount,
-    pendingEnrollmentCount,
-    recentEnrollments,
-    insights,
-  ] = await Promise.all([
-    db.family.count({ where: { schoolId, isActive: true } }),
-    db.student.count({ where: { schoolId, isActive: true } }),
-    db.enrollment.count({
-      where: { schoolId, status: { in: ['PENDING', 'ACTIVE'] }, isActive: true, ...periodFilter },
-    }),
-    db.enrollment.count({
-      where: { schoolId, status: 'PENDING', isActive: true, ...periodFilter },
-    }),
-    db.enrollment.findMany({
-      where: { schoolId, isActive: true, ...periodFilter },
-      include: {
-        student: { include: { person: true } },
-        plan: true,
-        // Alimente uniquement la colonne de progression de règlement : ne pas la tirer
-        // quand elle ne sera pas affichée. Les paiements annulés sont soft-deleted et
-        // l'extension ne filtre pas les relations imbriquées : filtre explicite.
-        ...(paymentsEnabled ? { payments: { where: { isActive: true } } } : {}),
-        classAssignments: {
-          include: { classPeriod: { include: { level: true } } },
-          orderBy: { startAt: 'desc' },
-        },
-      },
-      orderBy: { registeredAt: 'desc' },
-      take: 5,
-    }),
-    getSchoolInsights(schoolId, selectedPeriod?.id ?? null, paymentsEnabled),
-  ])
+  const [familyCount, studentCount, enrollmentCount, pendingEnrollmentCount, insights] =
+    await Promise.all([
+      db.family.count({ where: { schoolId, isActive: true } }),
+      db.student.count({ where: { schoolId, isActive: true } }),
+      db.enrollment.count({
+        where: { schoolId, status: { in: ['PENDING', 'ACTIVE'] }, isActive: true, ...periodFilter },
+      }),
+      db.enrollment.count({
+        where: { schoolId, status: 'PENDING', isActive: true, ...periodFilter },
+      }),
+      getSchoolInsights(schoolId, selectedPeriod?.id ?? null, paymentsEnabled),
+    ])
 
   return {
     selectedPeriod,
@@ -54,7 +31,6 @@ export async function getDashboardOverview(schoolId: string, paymentsEnabled: bo
     studentCount,
     enrollmentCount,
     pendingEnrollmentCount,
-    recentEnrollments,
     insights,
   }
 }
