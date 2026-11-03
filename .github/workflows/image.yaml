@@ -71,7 +71,8 @@ jobs:
             -e NEXT_PUBLIC_APP_URL=https://smoke.example.test \
             "$IMAGE:${{ github.sha }}"
           for i in $(seq 1 30); do
-            curl -fsS http://localhost:3000/robots.txt | grep -q "smoke.example.test/sitemap.xml" && exit 0
+            curl -fsS http://localhost:3000/robots.txt | grep -q "smoke.example.test/sitemap.xml" \
+              && docker exec app wget -qO /dev/null http://localhost:3000/robots.txt && exit 0
             sleep 2
           done
           docker logs app

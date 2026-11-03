@@ -48,7 +48,7 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production \
-  HOSTNAME=0.0.0.0 \
+  HOSTNAME=:: \
   PORT=3000
 
 RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
