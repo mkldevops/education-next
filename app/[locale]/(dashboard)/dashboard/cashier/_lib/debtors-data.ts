@@ -4,6 +4,7 @@ import { mealAccountGateway } from '@/gateways/meal-account-gateway'
 import type { MealService } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { loadMealAccountSummaries } from '@/use-cases/meals/meal-account-summaries'
+import { familyContactPhones } from '@/use-cases/payments/payment-stats'
 
 /** Jours encore couverts sous lesquels un enfant toujours inscrit est à relancer. */
 export const REMIND_WITHIN_DAYS = 2
@@ -44,7 +45,8 @@ function needsReminder(summary: MealAccountSummary, today: string) {
 
 /**
  * Comptes repas à encaisser (écran « impayés ») : des jours dus, ou des jours à venir dont
- * seuls `REMIND_WITHIN_DAYS` au plus sont couverts. Les plus gros montants dus d'abord.
+ * seuls `REMIND_WITHIN_DAYS` au plus sont couverts. Les plus gros montants dus d'abord. Chaque
+ * ligne porte le téléphone de la famille redevable, pour la relancer.
  */
 export async function loadMealDebtors(schoolId: string, today: string) {
   const { students, accounts, summaries } = await loadMealAccountStates(schoolId, today)
@@ -67,10 +69,15 @@ export async function loadMealDebtors(schoolId: string, today: string) {
       },
     ]
   })
-  return rows.sort(
-    (a, b) =>
-      b.dueAmount - a.dueAmount || a.coveredLeft - b.coveredLeft || a.name.localeCompare(b.name)
-  )
+  const phones = await familyContactPhones(schoolId, [
+    ...new Set(rows.flatMap((row) => (row.familyId ? [row.familyId] : []))),
+  ])
+  return rows
+    .map((row) => ({ ...row, phone: row.familyId ? (phones.get(row.familyId) ?? null) : null }))
+    .sort(
+      (a, b) =>
+        b.dueAmount - a.dueAmount || a.coveredLeft - b.coveredLeft || a.name.localeCompare(b.name)
+    )
 }
 
 export type MealServiceDues = {

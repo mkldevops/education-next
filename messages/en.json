@@ -1385,7 +1385,11 @@
           "nothingPaid": "Nothing paid",
           "coveredLeft": "{days, plural, =0 {no covered day left} one {# covered day left} other {# covered days left}}",
           "dueDetail": "{days, plural, one {# day} other {# days}} · {amount}",
-          "collect": "Collect"
+          "collect": "Collect",
+          "whatsApp": "WhatsApp",
+          "whatsAppFor": "Remind {student}'s family on WhatsApp",
+          "whatsAppDue": "Hello, unless we are mistaken, {amount} remains to be paid for {student}'s {service}. Please settle it as soon as possible or contact us if you have any difficulty.",
+          "whatsAppRunningOut": "Hello, {days, plural, =0 {the meals paid for {student} ({service}) have run out} one {the meals paid for {student} ({service}) cover # more day} other {the meals paid for {student} ({service}) cover # more days}}. Please renew the payment to continue."
         },
         "staff": {
           "title": "Staff",

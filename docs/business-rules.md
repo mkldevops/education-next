@@ -1936,6 +1936,10 @@ announced figures cannot drift from what a family is asked to pay.
   mobiles (`0639`/`0692`/`0693` → `262`, `0690`/`0691` → `590`, `0694` → `594`, `0696`/`0697` →
   `596`); a `+` or `00` number is kept as is; any other number shows no link
   (`toWhatsAppNumber`, `src/domain/whatsapp-link.ts`).
+- **A meal debtor can be reminded on WhatsApp the same way** (`/dashboard/cashier/debtors`): the
+  link uses the debtor family's contact phone (same resolution as above, `familyContactPhones`) and
+  prefills either the amount due for the service or, for an account about to run out, the days
+  still covered. A student with no debtor family or no usable number shows no link.
 
 ### Refunds
 
