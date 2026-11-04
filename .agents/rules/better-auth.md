@@ -22,8 +22,11 @@ if (!session) return 'unauthorized' as const
 
 Never allow `session?.user.id` or another optional identity to reach a Prisma `where` clause.
 
-Dashboard operations use `requireSchoolAdmin()`, `requireSchoolSession()`, `requireSchoolScope()`, or
-`requirePlatformAdmin()` from `app/[locale]/(dashboard)/_lib/auth-helper.ts`. Parent reads must also
+Dashboard operations use the guards in `app/[locale]/(dashboard)/_lib/auth-helper.ts`:
+`requireSchoolAdmin()`, `requireSchoolCashier()`, `requireSchoolStaff()`, `requireTeacher()`,
+`requireSchoolSession()`, `requireSchoolScope()`, `requireSchoolRecordsScope()`, or
+`requirePlatformAdmin()`. Pick the narrowest guard matching the operation; cashier and staff scopes
+still reserve payments, plans and destructive operations to `isAdmin`. Parent reads must also
 constrain data by the linked `familyId`; resource pages return `notFound()` when the caller is
 outside that scope. If a parent has no linked family, deny access before building the query. Never
 pass an optional identity or scope into Prisma.

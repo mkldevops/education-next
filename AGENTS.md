@@ -6,8 +6,41 @@ payments, administration. Next.js 16 App Router.
 `package.json`, `pnpm-lock.yaml`, and checked-in configuration are the version source of truth. Never
 infer a dependency version from documentation.
 
-Layer conventions, auth, Prisma, i18n, styling, and testing rules load from `.agents/rules/`. This file
+Layer conventions, auth, Prisma, i18n, styling, and testing rules live in `.agents/rules/`. This file
 only carries what those rules and the code itself do not.
+
+## Rules to read
+
+Claude loads them through `.claude/rules -> ../.agents/rules`. Other agents must read them explicitly.
+
+Always read before any change:
+
+- [`better-auth.md`](.agents/rules/better-auth.md): session, guards, impersonation, public flows
+- [`server-actions.md`](.agents/rules/server-actions.md): action boundary order and result contracts
+- [`multi-tenant.md`](.agents/rules/multi-tenant.md): `schoolId` isolation
+- [`git.md`](.agents/rules/git.md) and [`biome.md`](.agents/rules/biome.md)
+
+Read when the change touches the matching area:
+
+| Rule | Read when changing | Template |
+|---|---|---|
+| [`clean-architecture.md`](.agents/rules/clean-architecture.md) | `app/**`, `src/**` layering | `patterns/clean-architecture` |
+| [`nextjs-app-router.md`](.agents/rules/nextjs-app-router.md) | pages, layouts, routes, `proxy.ts` | `frameworks/nextjs-app-router` |
+| [`prisma.md`](.agents/rules/prisma.md) | schema, migrations, queries | `data/prisma` |
+| [`zod.md`](.agents/rules/zod.md) | input schemas | `validation-auth/zod` |
+| [`next-intl.md`](.agents/rules/next-intl.md) | user-facing text, locales, navigation | `frontend/next-intl` |
+| [`tailwind-v4.md`](.agents/rules/tailwind-v4.md) | `*.tsx`, `*.css` styling | `frontend/tailwind-v4` |
+| [`shadcn-ui.md`](.agents/rules/shadcn-ui.md) | `src/components/**` | `frontend/shadcn-ui` |
+| [`zustand.md`](.agents/rules/zustand.md) | `src/features/**` client stores | `frontend/zustand` |
+| [`vitest.md`](.agents/rules/vitest.md) | tests | `testing/vitest` |
+| [`resend.md`](.agents/rules/resend.md) | email config and gateways | `data/resend` |
+| [`stripe.md`](.agents/rules/stripe.md) | online payments, Stripe webhooks | `data/stripe` |
+| [`docker.md`](.agents/rules/docker.md) | `Dockerfile`, `compose.yaml` | `infra/docker` |
+
+Templates come from the `peaklab.sync-ai-docs` catalogue; every rule carries local adaptations, so a
+regeneration must review rather than overwrite them. Directory guides (`AGENTS.md` under `app/api/`,
+`app/[locale]/(dashboard)/`, `prisma/`, `src/actions/`, `src/components/ui/`, `src/i18n/`, `src/lib/`,
+`src/use-cases/`) apply when working inside those directories.
 
 ## Toolchain
 
