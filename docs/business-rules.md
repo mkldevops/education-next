@@ -1911,6 +1911,13 @@ announced figures cannot drift from what a family is asked to pay.
   else of a tutor, else the family's emergency contact (`getPaymentStats`,
   `src/use-cases/payments/payment-stats.ts`). Each row also opens the manual payment dialog already
   set on that family. Nothing is sent to the family automatically.
+- **A family to follow up can be reminded on WhatsApp by hand**: next to the phone, a `wa.me` link
+  opens the conversation with a prefilled message carrying the family name and its overdue amount;
+  the staff member reviews and sends it from their own WhatsApp, so no WhatsApp Business account
+  or per-message fee is involved. A ten-digit French national number gets `33`, except overseas
+  mobiles (`0639`/`0692`/`0693` → `262`, `0690`/`0691` → `590`, `0694` → `594`, `0696`/`0697` →
+  `596`); a `+` or `00` number is kept as is; any other number shows no link
+  (`toWhatsAppNumber`, `src/domain/whatsapp-link.ts`).
 
 ### Refunds
 
