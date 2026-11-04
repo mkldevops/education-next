@@ -1239,8 +1239,6 @@
         },
         "intro": "Encaissez la cantine, le goûter, la garderie et l'écolage d'une famille en une fois, avec un reçu numéroté.",
         "search": "Nom de la famille ou d’un enfant",
-        "searchSubmit": "Rechercher",
-        "noResult": "Aucune famille trouvée",
         "noFamily": "Famille introuvable",
         "viewFamily": "Voir la famille",
         "noLines": "Aucun enfant de cette famille n'a de cantine, de goûter ou de garderie à encaisser.",
@@ -1405,7 +1403,48 @@
               "notFound": "Enseignant introuvable"
             }
           }
-        }
+        },
+        "searchPrompt": "Quelle famille vient payer ?",
+        "searchHelp": "Tapez le nom de la famille ou d'un enfant : les résultats s'affichent pendant la saisie.",
+        "searchHint": "↑ ↓ pour choisir, Entrée pour ouvrir, / pour revenir à la recherche.",
+        "noResultFor": "Aucune famille pour « {query} »",
+        "noResultTips": {
+          "child": "Essayez le prénom ou le nom d'un enfant.",
+          "active": "Seules les familles actives apparaissent.",
+          "families": "Chercher dans la liste des familles"
+        },
+        "today": "Aujourd'hui · {count, plural, =0 {aucun reçu} one {# reçu} other {# reçus}}",
+        "recent": "Servies aujourd’hui",
+        "recentEmpty": "Aucune famille servie aujourd'hui.",
+        "changeFamily": "Changer de famille",
+        "tabs": {
+          "collect": "Encaisser"
+        },
+        "groups": {
+          "meals": "Cantine et goûter",
+          "due": "Dû : {amount}"
+        },
+        "previewShift": "Payé jusqu'au {from} → {to}",
+        "previewFirst": "Payé jusqu'au {to}",
+        "previewDays": "+{days, plural, one {# jour} other {# jours}}",
+        "panel": {
+          "title": "Reçu",
+          "empty": "Choisissez un montant à gauche pour le voir ici.",
+          "total": "Total",
+          "tendered": "Montant reçu",
+          "change": "À rendre",
+          "missing": "Manque",
+          "shortcut": "Ctrl + Entrée pour encaisser",
+          "exact": "Montant exact"
+        },
+        "submitAmount": "Encaisser {amount}",
+        "done": {
+          "title": "{amount} encaissés",
+          "detail": "{family} · {method} · reçu {number}",
+          "view": "Voir et imprimer le reçu",
+          "next": "Famille suivante : cherchez-la ci-dessous."
+        },
+        "tuitionUpToDate": "À jour, rien à encaisser"
       },
       "childcare": {
         "title": "Garderie",

@@ -3,7 +3,7 @@
 import { Button, cn, Input, Label } from '@peaklab/ui'
 import { useRouter as useNextRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { useState, useTransition } from 'react'
+import { type ReactNode, useState, useTransition } from 'react'
 import { formatChildcareMonth } from '@/domain/childcare'
 import { amountForDays, type MealLedger, previewMealPayment } from '@/domain/meal-ledger'
 import { receiptTotal } from '@/domain/receipt'
@@ -18,6 +18,7 @@ import {
   TuitionTargetField,
   targetEnrollmentId,
 } from '../../payments/_components/tuition-target-field'
+import { suggestTenders } from '../_lib/cash-tender'
 
 export type CashierLine = {
   studentId: string
@@ -75,6 +76,41 @@ function idempotencyKey(familyId: string) {
   return { key, storageKey }
 }
 
+function Group({ title, due, children }: { title: string; due?: string; children: ReactNode }) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-alabaster-700">
+      <header className="flex items-baseline justify-between gap-2 bg-alabaster-900 px-4 py-2.5">
+        <h3 className="text-sm font-semibold text-graphite">{title}</h3>
+        {due && <span className="text-sm font-semibold tabular-nums text-amber-700">{due}</span>}
+      </header>
+      <ul className="divide-y divide-alabaster-700">{children}</ul>
+    </section>
+  )
+}
+
+function Chip({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: ReactNode
+  onClick: () => void
+  disabled: boolean
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={disabled}
+      onClick={onClick}
+      className="h-7 rounded-full px-3 text-xs"
+    >
+      {children}
+    </Button>
+  )
+}
+
 export function CashierForm({
   familyId,
   lines,
@@ -97,11 +133,16 @@ export function CashierForm({
   const [tuitionTarget, setTuitionTarget] = useState(SPREAD_TARGET)
   const [method, setMethod] = useState<CashierPaymentMethod>('CASH')
   const [reference, setReference] = useState('')
+  const [tendered, setTendered] = useState('')
 
   const step = 1 / 10 ** currencyFractionDigits(currency)
   const money = (value: number) => formatCurrency(value, locale, currency)
   const formatDay = (day: string) =>
-    new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, { timeZone: 'UTC' })
+    new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, {
+      timeZone: 'UTC',
+      day: 'numeric',
+      month: 'short',
+    })
 
   const meals = lines.flatMap((line) => {
     const amount = toAmount(amounts[lineKey(line)])
@@ -127,10 +168,42 @@ export function CashierForm({
   })
   const total = receiptTotal({ tuition: tuitionAmount, meals, childcare: childcareLines })
 
+  const mealsDue = lines.reduce(
+    (sum, line) => (line.unitPrice === null ? sum : sum + line.dueAmount),
+    0
+  )
+  const childcareDue = childcare.reduce((sum, line) => sum + line.remaining, 0)
+
+  const receiptLines = [
+    ...lines.flatMap((line) => {
+      const amount = toAmount(amounts[lineKey(line)])
+      return amount > 0 && line.unitPrice !== null
+        ? [{ key: lineKey(line), label: `${line.name} · ${tServices(line.service)}`, amount }]
+        : []
+    }),
+    ...childcare.flatMap((line) => {
+      const amount = toAmount(childcareAmounts[line.chargeId])
+      return amount > 0
+        ? [
+            {
+              key: line.chargeId,
+              label: `${line.name} · ${t('childcare')} ${formatChildcareMonth(line.month, locale)}`,
+              amount,
+            },
+          ]
+        : []
+    }),
+    ...(tuitionAmount > 0 ? [{ key: 'tuition', label: t('tuition'), amount: tuitionAmount }] : []),
+  ]
+
+  const tenderedAmount = toAmount(tendered)
+  const change = tenderedAmount - total
+
   const setAmount = (line: CashierLine, value: number) =>
     setAmounts((current) => ({ ...current, [lineKey(line)]: String(value) }))
 
   const submit = () => {
+    if (isPending || total <= 0) return
     startTransition(async () => {
       const { key, storageKey } = idempotencyKey(familyId)
       const result = await recordReceiptAction({
@@ -158,7 +231,7 @@ export function CashierForm({
         return
       }
       sessionStorage.removeItem(storageKey)
-      router.push(`/dashboard/cashier/receipts/${result.id}`)
+      router.push(`/dashboard/cashier?receipt=${result.id}`)
     })
   }
 
@@ -168,275 +241,360 @@ export function CashierForm({
         event.preventDefault()
         submit()
       }}
-      className="space-y-6"
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault()
+          submit()
+        }
+      }}
+      className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]"
     >
-      {lines.length === 0 && childcare.length === 0 && (
-        <p className="text-sm text-graphite-600">{t('noLines')}</p>
-      )}
-      {lines.length > 0 && (
-        <ul className="divide-y divide-alabaster-700">
-          {lines.map((line) => {
-            const amount = toAmount(amounts[lineKey(line)])
-            const preview =
-              amount > 0 && line.unitPrice !== null
-                ? previewMealPayment({
-                    served: line.served,
-                    ledger: line.ledger,
-                    amount,
-                    unitPrice: line.unitPrice,
-                    daysPerWeek: line.daysPerWeek,
-                  })
-                : null
-            const id = `cashier-${lineKey(line)}`
-            const unitPrice = line.unitPrice
-            const quick =
-              unitPrice === null
-                ? []
-                : [
-                    { key: 'week', days: line.daysPerWeek },
-                    { key: 'twoWeeks', days: line.daysPerWeek * 2 },
-                    { key: 'month', days: line.daysPerWeek * 4 },
-                  ].filter((option) => option.days > 0)
+      <div className="space-y-4">
+        {lines.length === 0 && childcare.length === 0 && (
+          <p className="rounded-lg border border-alabaster-700 p-4 text-sm text-graphite-600">
+            {t('noLines')}
+          </p>
+        )}
 
-            return (
-              <li key={lineKey(line)} className="space-y-2 py-3 first:pt-0">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <Label htmlFor={id} className="text-sm font-semibold text-graphite">
-                    {line.name} · {tServices(line.service)}
-                  </Label>
-                  <span className="text-xs text-graphite-600">
-                    {line.paidThrough
-                      ? t('paidThrough', { date: formatDay(line.paidThrough) })
-                      : t('nothingPaid')}
-                    {line.dueDays > 0 &&
-                      ` · ${t('due', { days: line.dueDays, amount: money(line.dueAmount) })}`}
-                  </span>
-                </div>
-                {unitPrice === null ? (
-                  <p className="text-sm text-amber-600">{t('errors.noPrice')}</p>
-                ) : (
-                  <>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Input
-                        id={id}
-                        type="number"
-                        inputMode="decimal"
-                        min={0}
-                        step={step}
-                        value={amounts[lineKey(line)] ?? ''}
-                        onChange={(event) =>
-                          setAmounts((current) => ({
-                            ...current,
-                            [lineKey(line)]: event.target.value,
-                          }))
-                        }
-                        disabled={isPending}
-                        className="w-36"
-                      />
-                      {quick.map((option) => (
-                        <Button
-                          key={option.key}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={isPending}
-                          onClick={() =>
-                            setAmount(
-                              line,
-                              amountForDays(option.days, unitPrice, line.ledger.credit)
-                            )
-                          }
-                        >
-                          {t(`quick.${option.key}`)}
-                        </Button>
-                      ))}
-                      {line.dueAmount > 0 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={isPending}
-                          onClick={() => setAmount(line, line.dueAmount)}
-                        >
-                          {t('quick.settle')}
-                        </Button>
+        {lines.length > 0 && (
+          <Group
+            title={t('groups.meals')}
+            due={mealsDue > 0 ? t('groups.due', { amount: money(mealsDue) }) : undefined}
+          >
+            {lines.map((line) => {
+              const amount = toAmount(amounts[lineKey(line)])
+              const preview =
+                amount > 0 && line.unitPrice !== null
+                  ? previewMealPayment({
+                      served: line.served,
+                      ledger: line.ledger,
+                      amount,
+                      unitPrice: line.unitPrice,
+                      daysPerWeek: line.daysPerWeek,
+                    })
+                  : null
+              const id = `cashier-${lineKey(line)}`
+              const unitPrice = line.unitPrice
+              const quick =
+                unitPrice === null
+                  ? []
+                  : [
+                      { key: 'week', days: line.daysPerWeek },
+                      { key: 'twoWeeks', days: line.daysPerWeek * 2 },
+                      { key: 'month', days: line.daysPerWeek * 4 },
+                    ].filter((option) => option.days > 0)
+              return (
+                <li key={lineKey(line)} className="space-y-2 px-4 py-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <Label htmlFor={id} className="text-sm font-semibold text-graphite">
+                      {line.name} · {tServices(line.service)}
+                    </Label>
+                    <span className="text-xs text-graphite-600">
+                      {line.paidThrough
+                        ? t('paidThrough', { date: formatDay(line.paidThrough) })
+                        : t('nothingPaid')}
+                      {line.dueDays > 0 && (
+                        <span className="font-semibold text-amber-700">
+                          {` · ${t('due', { days: line.dueDays, amount: money(line.dueAmount) })}`}
+                        </span>
                       )}
-                    </div>
-                    <p className="text-xs text-graphite-600">
-                      {t('unitPrice', { amount: money(unitPrice) })}
-                    </p>
-                    {preview && (
-                      <div className="space-y-1 text-sm">
-                        <p className="text-graphite">
-                          {t('preview', {
-                            days: preview.daysAdded,
-                            date: preview.newPaidThrough ? formatDay(preview.newPaidThrough) : '—',
-                          })}
-                          {preview.remainder > 0 &&
-                            ` · ${t('remainder', { amount: money(preview.remainder) })}`}
-                        </p>
-                        {preview.warnings.map((warning) => (
-                          <p key={warning} className="text-xs text-amber-600">
-                            {t(`warnings.${warning}`)}
-                          </p>
-                        ))}
+                    </span>
+                  </div>
+                  {unitPrice === null ? (
+                    <p className="text-sm text-amber-600">{t('errors.noPrice')}</p>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          {quick.map((option) => (
+                            <Chip
+                              key={option.key}
+                              disabled={isPending}
+                              onClick={() =>
+                                setAmount(
+                                  line,
+                                  amountForDays(option.days, unitPrice, line.ledger.credit)
+                                )
+                              }
+                            >
+                              {t(`quick.${option.key}`)}
+                            </Chip>
+                          ))}
+                          {line.dueAmount > 0 && (
+                            <Chip
+                              disabled={isPending}
+                              onClick={() => setAmount(line, line.dueAmount)}
+                            >
+                              {t('quick.settle')}
+                            </Chip>
+                          )}
+                        </div>
+                        <Input
+                          id={id}
+                          type="number"
+                          inputMode="decimal"
+                          min={0}
+                          step={step}
+                          value={amounts[lineKey(line)] ?? ''}
+                          onChange={(event) =>
+                            setAmounts((current) => ({
+                              ...current,
+                              [lineKey(line)]: event.target.value,
+                            }))
+                          }
+                          disabled={isPending}
+                          className="w-32 text-right tabular-nums"
+                        />
                       </div>
-                    )}
-                  </>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
+                      <p className="text-xs text-graphite-600">
+                        {t('unitPrice', { amount: money(unitPrice) })}
+                      </p>
+                      {preview && (
+                        <div className="space-y-1">
+                          <p className="flex flex-wrap items-center gap-x-2 rounded-md bg-primary/5 px-3 py-1.5 text-sm text-graphite">
+                            <span>
+                              {line.paidThrough
+                                ? t('previewShift', {
+                                    from: formatDay(line.paidThrough),
+                                    to: preview.newPaidThrough
+                                      ? formatDay(preview.newPaidThrough)
+                                      : '—',
+                                  })
+                                : t('previewFirst', {
+                                    to: preview.newPaidThrough
+                                      ? formatDay(preview.newPaidThrough)
+                                      : '—',
+                                  })}
+                            </span>
+                            <span className="ml-auto font-semibold">
+                              {t('previewDays', { days: preview.daysAdded })}
+                            </span>
+                          </p>
+                          {preview.remainder > 0 && (
+                            <p className="text-xs text-graphite-600">
+                              {t('remainder', { amount: money(preview.remainder) })}
+                            </p>
+                          )}
+                          {preview.warnings.map((warning) => (
+                            <p
+                              key={warning}
+                              className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-700"
+                            >
+                              {t(`warnings.${warning}`)}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </li>
+              )
+            })}
+          </Group>
+        )}
 
-      {childcare.length > 0 && (
-        <ul className="divide-y divide-alabaster-700">
-          {childcare.map((line) => {
-            const id = `cashier-childcare-${line.chargeId}`
-            return (
-              <li key={line.chargeId} className="space-y-2 py-3 first:pt-0">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <Label htmlFor={id} className="text-sm font-semibold text-graphite">
-                    {line.name} · {t('childcare')}
-                  </Label>
-                  <span className="text-xs text-graphite-600">
-                    {formatChildcareMonth(line.month, locale)} ·{' '}
-                    {t('childcareDue', { amount: money(line.remaining) })}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
+        {childcare.length > 0 && (
+          <Group
+            title={t('childcare')}
+            due={childcareDue > 0 ? t('groups.due', { amount: money(childcareDue) }) : undefined}
+          >
+            {childcare.map((line) => {
+              const id = `cashier-childcare-${line.chargeId}`
+              return (
+                <li key={line.chargeId} className="space-y-2 px-4 py-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <Label htmlFor={id} className="text-sm font-semibold text-graphite">
+                      {line.name} · {formatChildcareMonth(line.month, locale)}
+                    </Label>
+                    <span className="text-xs text-graphite-600">
+                      {t('childcareDue', { amount: money(line.remaining) })}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Chip
+                      disabled={isPending}
+                      onClick={() =>
+                        setChildcareAmounts((current) => ({
+                          ...current,
+                          [line.chargeId]: String(line.remaining),
+                        }))
+                      }
+                    >
+                      {t('quick.settle')}
+                    </Chip>
+                    <Input
+                      id={id}
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      max={line.remaining}
+                      step={step}
+                      value={childcareAmounts[line.chargeId] ?? ''}
+                      onChange={(event) =>
+                        setChildcareAmounts((current) => ({
+                          ...current,
+                          [line.chargeId]: event.target.value,
+                        }))
+                      }
+                      disabled={isPending}
+                      className="w-32 text-right tabular-nums"
+                    />
+                  </div>
+                </li>
+              )
+            })}
+          </Group>
+        )}
+
+        {tuitionDue !== null && (
+          <Group
+            title={t('tuition')}
+            due={
+              tuitionDue > 0
+                ? t('tuitionDue', { amount: money(tuitionPayable ?? tuitionDue) })
+                : undefined
+            }
+          >
+            {tuitionDue > 0 ? (
+              <li className="space-y-2 px-4 py-3">
+                <TuitionTargetField
+                  id="cashier-tuition-target"
+                  enrollments={tuitionEnrollments}
+                  value={tuitionTarget}
+                  onChange={setTuitionTarget}
+                  currency={currency}
+                  disabled={isPending}
+                />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Chip
+                    disabled={isPending}
+                    onClick={() => setTuition(String(tuitionPayable ?? tuitionDue))}
+                  >
+                    {t('quick.settle')}
+                  </Chip>
                   <Input
-                    id={id}
+                    id="cashier-tuition"
                     type="number"
                     inputMode="decimal"
                     min={0}
-                    max={line.remaining}
+                    max={tuitionPayable ?? tuitionDue}
                     step={step}
-                    value={childcareAmounts[line.chargeId] ?? ''}
-                    onChange={(event) =>
-                      setChildcareAmounts((current) => ({
-                        ...current,
-                        [line.chargeId]: event.target.value,
-                      }))
-                    }
+                    value={tuition}
+                    onChange={(event) => setTuition(event.target.value)}
                     disabled={isPending}
-                    className="w-36"
+                    aria-label={t('tuition')}
+                    className="w-32 text-right tabular-nums"
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() =>
-                      setChildcareAmounts((current) => ({
-                        ...current,
-                        [line.chargeId]: String(line.remaining),
-                      }))
-                    }
-                  >
-                    {t('quick.settle')}
-                  </Button>
                 </div>
               </li>
-            )
-          })}
-        </ul>
-      )}
+            ) : (
+              <li className="px-4 py-3 text-sm text-graphite-600">{t('tuitionUpToDate')}</li>
+            )}
+          </Group>
+        )}
+      </div>
 
-      {tuitionDue !== null && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <Label htmlFor="cashier-tuition" className="text-sm font-semibold text-graphite">
-              {t('tuition')}
-            </Label>
-            <span className="text-xs text-graphite-600">
-              {t('tuitionDue', { amount: money(tuitionPayable ?? tuitionDue) })}
-            </span>
+      <aside className="space-y-4 rounded-lg border border-alabaster-700 bg-alabaster-900 p-4 lg:sticky lg:top-4">
+        <h3 className="text-base font-semibold text-graphite">{t('panel.title')}</h3>
+        {receiptLines.length === 0 ? (
+          <p className="text-sm text-graphite-600">{t('panel.empty')}</p>
+        ) : (
+          <ul className="space-y-1 text-sm">
+            {receiptLines.map((line) => (
+              <li key={line.key} className="flex justify-between gap-3">
+                <span className="text-graphite-600">{line.label}</span>
+                <span className="tabular-nums text-graphite">{money(line.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="flex items-baseline justify-between border-t-2 border-graphite pt-3">
+          <span className="text-sm font-medium text-graphite">{t('panel.total')}</span>
+          <span className="text-2xl font-bold tabular-nums text-graphite">{money(total)}</span>
+        </p>
+
+        <fieldset disabled={isPending} className="space-y-2">
+          <legend className="mb-2 text-sm font-medium leading-none">{t('method')}</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {METHODS.map((value) => (
+              <label
+                key={value}
+                className={cn(
+                  'flex cursor-pointer items-center justify-center rounded border bg-white p-2.5 text-xs font-medium transition-colors',
+                  method === value
+                    ? 'border-2 border-primary text-foreground'
+                    : 'border-alabaster-700 text-graphite-600 hover:border-alabaster'
+                )}
+              >
+                <input
+                  type="radio"
+                  name="method"
+                  value={value}
+                  checked={method === value}
+                  onChange={() => setMethod(value)}
+                  className="sr-only"
+                />
+                {tMethods(value)}
+              </label>
+            ))}
           </div>
-          <TuitionTargetField
-            id="cashier-tuition-target"
-            enrollments={tuitionEnrollments}
-            value={tuitionTarget}
-            onChange={setTuitionTarget}
-            currency={currency}
-            disabled={isPending}
-          />
-          <div className="flex flex-wrap items-center gap-2">
+        </fieldset>
+
+        {method === 'CASH' && total > 0 && (
+          <div className="space-y-2 rounded-md border border-alabaster-700 bg-white p-3">
+            <Label htmlFor="cashier-tendered">{t('panel.tendered')}</Label>
             <Input
-              id="cashier-tuition"
+              id="cashier-tendered"
               type="number"
               inputMode="decimal"
               min={0}
-              max={tuitionPayable ?? tuitionDue}
               step={step}
-              value={tuition}
-              onChange={(event) => setTuition(event.target.value)}
-              disabled={isPending || tuitionDue <= 0}
-              className="w-36"
+              value={tendered}
+              onChange={(event) => setTendered(event.target.value)}
+              disabled={isPending}
+              className="tabular-nums"
             />
-            {tuitionDue > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isPending}
-                onClick={() => setTuition(String(tuitionPayable ?? tuitionDue))}
+            <div className="flex flex-wrap gap-1.5">
+              <Chip disabled={isPending} onClick={() => setTendered(String(total))}>
+                {t('panel.exact')}
+              </Chip>
+              {suggestTenders(total).map((value) => (
+                <Chip key={value} disabled={isPending} onClick={() => setTendered(String(value))}>
+                  {money(value)}
+                </Chip>
+              ))}
+            </div>
+            {tenderedAmount > 0 && (
+              <p
+                className={cn(
+                  'flex justify-between text-sm font-semibold',
+                  change >= 0 ? 'text-green-700' : 'text-amber-700'
+                )}
               >
-                {t('quick.settle')}
-              </Button>
+                <span>{change >= 0 ? t('panel.change') : t('panel.missing')}</span>
+                <span className="tabular-nums">{money(Math.abs(change))}</span>
+              </p>
             )}
           </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="cashier-reference">{t('reference')}</Label>
+          <Input
+            id="cashier-reference"
+            maxLength={250}
+            value={reference}
+            onChange={(event) => setReference(event.target.value)}
+            placeholder={tPlaceholders(method)}
+            disabled={isPending}
+          />
         </div>
-      )}
 
-      <fieldset disabled={isPending} className="space-y-2">
-        <legend className="mb-2 text-sm font-medium leading-none">{t('method')}</legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {METHODS.map((value) => (
-            <label
-              key={value}
-              className={cn(
-                'flex cursor-pointer items-center justify-center rounded border p-3 text-xs font-medium transition-colors',
-                method === value
-                  ? 'border-primary bg-primary/5 text-foreground'
-                  : 'border-alabaster-700 text-graphite-600 hover:border-alabaster hover:bg-alabaster-900'
-              )}
-            >
-              <input
-                type="radio"
-                name="method"
-                value={value}
-                checked={method === value}
-                onChange={() => setMethod(value)}
-                className="sr-only"
-              />
-              {tMethods(value)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <div className="space-y-2">
-        <Label htmlFor="cashier-reference">{t('reference')}</Label>
-        <Input
-          id="cashier-reference"
-          maxLength={250}
-          value={reference}
-          onChange={(event) => setReference(event.target.value)}
-          placeholder={tPlaceholders(method)}
-          disabled={isPending}
-        />
-      </div>
-
-      <div className="flex items-center justify-between gap-4 border-t border-alabaster-700 pt-4">
-        <p className="text-lg font-semibold text-graphite">
-          {t('total', { amount: money(total) })}
-        </p>
-        <Button type="submit" disabled={isPending || total <= 0}>
-          {t('submit')}
+        <Button type="submit" disabled={isPending || total <= 0} className="h-12 w-full text-base">
+          {total > 0 ? t('submitAmount', { amount: money(total) }) : t('submit')}
         </Button>
-      </div>
+        <p className="text-center text-xs text-graphite-600">{t('panel.shortcut')}</p>
+      </aside>
     </form>
   )
 }
