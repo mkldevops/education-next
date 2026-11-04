@@ -107,3 +107,26 @@ export async function loadCashierFamily(schoolId: string, familyId: string, toda
 
   return { id: family.id, name: family.name, students, lines, childcare }
 }
+
+/** Reçu de famille tout juste émis, pour l'écran de confirmation de la caisse. */
+export async function loadCashierReceipt(schoolId: string, receiptId: string) {
+  const receipt = await db.receipt.findFirst({
+    where: { id: receiptId, schoolId, familyId: { not: null } },
+    select: {
+      id: true,
+      number: true,
+      total: true,
+      method: true,
+      cancelledAt: true,
+      family: { select: { name: true } },
+    },
+  })
+  if (!receipt || receipt.cancelledAt) return null
+  return {
+    id: receipt.id,
+    number: receipt.number,
+    total: Number(receipt.total),
+    method: receipt.method,
+    family: receipt.family?.name ?? '',
+  }
+}

@@ -1238,8 +1238,6 @@
         },
         "intro": "Collect canteen, snack, childcare and tuition for a family in one go, with a numbered receipt.",
         "search": "Family or child's name",
-        "searchSubmit": "Search",
-        "noResult": "No family found",
         "noFamily": "Family not found",
         "viewFamily": "View family",
         "noLines": "No child in this family has canteen, snack or childcare to collect.",
@@ -1404,7 +1402,48 @@
               "notFound": "Teacher not found"
             }
           }
-        }
+        },
+        "searchPrompt": "Which family is paying?",
+        "searchHelp": "Type the family's or a child's name: results show up as you type.",
+        "searchHint": "↑ ↓ to choose, Enter to open, / to come back to search.",
+        "noResultFor": "No family for “{query}”",
+        "noResultTips": {
+          "child": "Try a child's first or last name.",
+          "active": "Only active families are listed.",
+          "families": "Search the family list"
+        },
+        "today": "Today · {count, plural, =0 {no receipts} one {# receipt} other {# receipts}}",
+        "recent": "Served today",
+        "recentEmpty": "No family served today.",
+        "changeFamily": "Change family",
+        "tabs": {
+          "collect": "Collect"
+        },
+        "groups": {
+          "meals": "Canteen and snack",
+          "due": "Due: {amount}"
+        },
+        "previewShift": "Paid through {from} → {to}",
+        "previewFirst": "Paid through {to}",
+        "previewDays": "+{days, plural, one {# day} other {# days}}",
+        "panel": {
+          "title": "Receipt",
+          "empty": "Pick an amount on the left to see it here.",
+          "total": "Total",
+          "tendered": "Cash received",
+          "change": "Change due",
+          "missing": "Short by",
+          "shortcut": "Ctrl + Enter to take payment",
+          "exact": "Exact amount"
+        },
+        "submitAmount": "Take {amount}",
+        "done": {
+          "title": "{amount} collected",
+          "detail": "{family} · {method} · receipt {number}",
+          "view": "View and print the receipt",
+          "next": "Next family: search for it below."
+        },
+        "tuitionUpToDate": "Up to date, nothing to collect"
       },
       "childcare": {
         "title": "Childcare",
