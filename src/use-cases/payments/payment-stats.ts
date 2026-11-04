@@ -34,7 +34,7 @@ const CONTACT_RELATIONS = ['PARENT', 'TUTOR'] as const
  * Téléphone du contact de chaque famille listée : celui d'un parent, sinon d'un tuteur, sinon
  * le contact d'urgence de la fiche. Une seule requête, bornée aux familles affichées.
  */
-async function contactPhones(schoolId: string, familyIds: string[]) {
+export async function familyContactPhones(schoolId: string, familyIds: string[]) {
   if (familyIds.length === 0) return new Map<string, string>()
 
   const families = await db.family.findMany({
@@ -155,7 +155,7 @@ export async function getPaymentStats(
   const overdueFamilies = tracking
     .filter((family) => family.overdueAmount > 0)
     .slice(0, FAMILIES_LISTED)
-  const phones = await contactPhones(schoolId, [
+  const phones = await familyContactPhones(schoolId, [
     ...new Set([...outstanding, ...overdueFamilies].map((family) => family.familyId)),
   ])
 
