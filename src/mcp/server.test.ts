@@ -128,6 +128,8 @@ describe('buildMcpServer', () => {
     expect([...build().keys()]).toEqual([
       'get_meal_settings',
       'get_student_meals',
+      'get_staff_meals',
+      'list_staff_meal_subscriptions',
       'list_family_receipts',
       'set_meal_service_setting',
       'set_meal_price',
@@ -196,6 +198,8 @@ describe('buildMcpServer', () => {
     expect([...build({ paymentsEnabled: false }).keys()]).toEqual([
       'get_meal_settings',
       'get_student_meals',
+      'get_staff_meals',
+      'list_staff_meal_subscriptions',
       'list_family_receipts',
       'set_meal_service_setting',
       'set_meal_price',

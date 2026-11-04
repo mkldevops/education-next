@@ -488,17 +488,23 @@ payments are disabled. Every mutation requires the dashboard assistant's normal 
 | --- | --- |
 | `get_meal_settings` | No arguments; service settings and dated prices, including price IDs |
 | `get_student_meals` | `studentId`, optional inclusive `from`/`to`; accounts, schedules, current price, opening, coverage and calendar; at most 93 days, default 31 days from the current month's first day |
+| `get_staff_meals` | `teacherId` from `list_teachers`, optional inclusive `from`/`to`; same shape as `get_student_meals` plus `name` and `mealExempt` (exempt: nothing due); unknown, other-school or deactivated teacher: `notFound` |
+| `list_staff_meal_subscriptions` | Optional `service`, optional `date` (default today); every active teacher with `mealExempt` and accounts: segment serving `date` or the next one, all segments, `paidThrough`, `dueDays`, `dueAmount`; empty `accounts` when not subscribed |
 | `list_family_receipts` | `familyId`, optional `limit` (default 50, maximum 100); latest numbered receipts including cancelled ones, meal and childcare lines and `hasMore` |
 | `set_meal_service_setting` | `service`, `isEnabled`, `allowedWeekdays`; replaces service settings, ISO weekdays 1–7 |
 | `set_meal_price` | `service`, `amount`, `effectiveFrom`; same date replaces the price; only the first price may start in the past |
 | `remove_meal_price` | Price `id`; only before its effective day |
 | `subscribe_meal` | `studentId`, `service`, `periodId`, `weekdays`, `startOn`; opens a segment, past starts within the period allowed |
-| `change_meal_schedule` | `studentId`, `service`, `weekdays`, `effectiveFrom`; changes today or later |
-| `stop_meal` | `studentId`, `service`, `effectiveFrom`; stops today or later |
-| `record_meal_opening` | `studentId`, `service`, `paidThrough`, required `reason`; replaces historical opening coverage, creates no receipt |
-| `toggle_meal_absence` | `studentId`, `service`, `day`, `absent`; marks or removes an absence on a scheduled open day |
+| `subscribe_staff_meal` | `teacherId`, `service`, `periodId`, `weekdays`, `startOn`; same for an active staff member, billed at the student price unless exempt |
+| `change_meal_schedule` | `studentId` or `teacherId`, `service`, `weekdays`, `effectiveFrom`; changes today or later |
+| `stop_meal` | `studentId` or `teacherId`, `service`, `effectiveFrom`; stops today or later |
+| `record_meal_opening` | `studentId` or `teacherId`, `service`, `paidThrough`, required `reason`; replaces historical opening coverage, creates no receipt |
+| `toggle_meal_absence` | `studentId` or `teacherId`, `service`, `day`, `absent`; marks or removes an absence on a scheduled open day |
 | `record_receipt` | `familyId`, stable UUID `idempotencyKey`, `method`, optional `reference`, `tuition`, `meals`, optional `childcare`; returns receipt `id` |
 | `cancel_receipt` | `receiptId`, required `reason`; cancels all its meal and tuition lines, retaining its number |
+
+The four account tools above take exactly one owner, `studentId` or `teacherId`; both or neither
+returns `validationError`. Staff are the school's teachers (`list_teachers`).
 
 `service` is `CANTEEN` or `SNACK`; dates use `YYYY-MM-DD`; monetary amounts are in the school's
 currency. Resolve student and debtor-family IDs with `find_students`, period IDs with
