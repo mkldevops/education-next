@@ -708,7 +708,9 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
           "l'identifiant d'un de ses élèves (`studentId`) ou par son nom ; un nom ou un élève " +
           'qui vise plusieurs familles est un `blocker`. Valeurs par défaut : le montant est ' +
           "tout le reste à payer, le moyen `CASH`, la date aujourd'hui — ne les demander que " +
-          "si l'utilisateur veut autre chose. Le montant est réparti sur toute la famille ; " +
+          "si l'utilisateur veut autre chose. `paidAt` porte la date du versement et peut être " +
+          'passée : pour un paiement reçu un autre jour (antidater), passer cette date. ' +
+          'Le montant est réparti sur toute la famille ; ' +
           "quand l'utilisateur dit pour quel enfant la famille paie, passer `target: 'student'` " +
           'avec son `studentId` (son unique inscription payable reçoit tout, et le montant par ' +
           'défaut devient son reste) ou `enrollmentId`. Refus : `overpayment` au-delà du reste ' +
