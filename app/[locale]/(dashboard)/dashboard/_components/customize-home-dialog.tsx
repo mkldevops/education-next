@@ -33,6 +33,7 @@ export function CustomizeHomeDialog({ available, hidden }: Props) {
           type="button"
           variant="outline"
           size="icon"
+          className="size-11 shrink-0 sm:size-10"
           aria-label={t('open')}
           title={t('open')}
         >

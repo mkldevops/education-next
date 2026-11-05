@@ -17,6 +17,7 @@ import {
   Landmark,
   Plus,
   SlidersHorizontal,
+  UserPlus,
   Users,
   UtensilsCrossed,
   Wallet,
@@ -400,22 +401,35 @@ export default async function DashboardPage({ params }: Props) {
         title={greeting}
         description={subtitle}
         actions={
-          <>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <Link
               href="/dashboard/enrollments?action=create"
-              className={buttonVariants({ variant: 'outline' })}
+              aria-label={t('quickActions.newEnrollment')}
+              className={buttonVariants({
+                variant: 'outline',
+                className: 'min-h-11 min-w-0 flex-1 sm:min-h-0 sm:flex-none',
+              })}
             >
-              {t('quickActions.newEnrollment')}
+              <UserPlus size={16} aria-hidden="true" />
+              <span className="sm:hidden">{t('quickActions.newEnrollmentShort')}</span>
+              <span className="hidden sm:inline">{t('quickActions.newEnrollment')}</span>
             </Link>
-            <Link href="/dashboard/families?action=create" className={buttonVariants()}>
+            <Link
+              href="/dashboard/families?action=create"
+              aria-label={t('quickActions.newFamily')}
+              className={buttonVariants({
+                className: 'min-h-11 min-w-0 flex-1 sm:min-h-0 sm:flex-none',
+              })}
+            >
               <Plus size={16} aria-hidden="true" />
-              {t('quickActions.newFamily')}
+              <span className="sm:hidden">{t('quickActions.newFamilyShort')}</span>
+              <span className="hidden sm:inline">{t('quickActions.newFamily')}</span>
             </Link>
             <CustomizeHomeDialog
               available={available}
               hidden={available.filter((widget) => !shows(widget))}
             />
-          </>
+          </div>
         }
       />
 

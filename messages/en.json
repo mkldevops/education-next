@@ -214,6 +214,8 @@
     "quickActions": {
       "newFamily": "New family",
       "newEnrollment": "Enroll a student",
+      "newEnrollmentShort": "Enroll",
+      "newFamilyShort": "Family",
       "newPayment": "Record a payment",
       "newStudent": "Add student"
     },
