@@ -7,6 +7,7 @@ import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { UmamiScript } from '@/components/umami-script'
+import { captureInstallPromptScript } from '@/features/pwa/install-prompt'
 import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
 import { resolveBrandingSchoolId } from '@/lib/branding'
@@ -110,6 +111,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <head>
         {/* The school's manifest depends on the session and active-school cookies. */}
         <link rel="manifest" href="/manifest.webmanifest" crossOrigin="use-credentials" />
+        <script dangerouslySetInnerHTML={{ __html: captureInstallPromptScript }} />
       </head>
       <body className="flex min-h-dvh flex-col">
         <NextIntlClientProvider messages={messages}>

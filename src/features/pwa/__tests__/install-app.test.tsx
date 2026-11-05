@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { InstallApp } from '../install-app'
+import { setInstallPrompt } from '../install-prompt'
 
 const messages = {
   pwa: {
@@ -46,7 +47,10 @@ beforeEach(() => {
   Object.defineProperty(navigator, 'standalone', { configurable: true, value: false })
 })
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  setInstallPrompt(null)
+  vi.restoreAllMocks()
+})
 
 describe('InstallApp', () => {
   it('offers native installation only after an event and prompts on click', async () => {
@@ -70,6 +74,14 @@ describe('InstallApp', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Install app' }))
     await waitFor(() => expect(screen.queryByRole('button')).not.toBeInTheDocument())
     offerInstall()
+    expect(screen.getByRole('button', { name: 'Install app' })).toBeInTheDocument()
+  })
+
+  it('offers a prompt captured before it mounted, e.g. on the login page', () => {
+    const first = renderInstall()
+    offerInstall()
+    first.unmount()
+    renderInstall()
     expect(screen.getByRole('button', { name: 'Install app' })).toBeInTheDocument()
   })
 
