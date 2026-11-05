@@ -14,11 +14,12 @@ import {
   DialogTrigger,
   useDialog,
 } from '@/components/ui/dialog/dialog'
-
-interface InstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
+import {
+  getInstallPrompt,
+  INSTALL_PROMPT_READY,
+  type InstallPromptEvent,
+  setInstallPrompt,
+} from './install-prompt'
 
 function isStandalone() {
   return (
@@ -57,23 +58,33 @@ export function InstallApp({ compact = false }: { compact?: boolean }) {
     }
     updateDisplay()
     setIos(isIos())
+    const adopt = (event: InstallPromptEvent | null) => {
+      if (!event || installedRef.current || isStandalone()) return
+      promptRef.current = event
+      setAvailable(true)
+    }
+    adopt(getInstallPrompt())
     const onPrompt = (event: Event) => {
       if (installedRef.current || isStandalone()) return
       event.preventDefault()
-      promptRef.current = event as InstallPromptEvent
-      setAvailable(true)
+      setInstallPrompt(event as InstallPromptEvent)
+      adopt(event as InstallPromptEvent)
     }
+    const onReady = () => adopt(getInstallPrompt())
     const onInstalled = () => {
       installedRef.current = true
       promptRef.current = null
+      setInstallPrompt(null)
       setAvailable(false)
       setInstalled(true)
     }
     window.addEventListener('beforeinstallprompt', onPrompt)
+    window.addEventListener(INSTALL_PROMPT_READY, onReady)
     window.addEventListener('appinstalled', onInstalled)
     displayMode.addEventListener('change', updateDisplay)
     return () => {
       window.removeEventListener('beforeinstallprompt', onPrompt)
+      window.removeEventListener(INSTALL_PROMPT_READY, onReady)
       window.removeEventListener('appinstalled', onInstalled)
       displayMode.removeEventListener('change', updateDisplay)
     }
@@ -84,6 +95,7 @@ export function InstallApp({ compact = false }: { compact?: boolean }) {
     if (!prompt) return
     // An install event can only be used once, even if the user dismisses it.
     promptRef.current = null
+    setInstallPrompt(null)
     setAvailable(false)
     try {
       await prompt.prompt()
