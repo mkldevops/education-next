@@ -22,10 +22,7 @@ export function PeriodSelector({ periods, selectedPeriodId }: PeriodSelectorProp
   const now = new Date()
   const currentPeriodId = periods.find((period) => isPeriodCurrent(period, now))?.id ?? null
 
-  const periodItems = periods.map((period) => ({
-    value: period.id,
-    label: period.id === currentPeriodId ? `${period.name} — ${t('current')}` : period.name,
-  }))
+  const periodItems = periods.map((period) => ({ value: period.id, label: period.name }))
 
   const handleChange = (value: string | null) => {
     if (value === null) return
@@ -49,10 +46,13 @@ export function PeriodSelector({ periods, selectedPeriodId }: PeriodSelectorProp
         >
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent alignItemWithTrigger={false} className="w-auto">
           {periodItems.map((item) => (
             <SelectItem key={item.value} value={item.value}>
               {item.label}
+              {item.value === currentPeriodId && (
+                <span className="text-xs text-muted-foreground">{t('current')}</span>
+              )}
             </SelectItem>
           ))}
         </SelectContent>
