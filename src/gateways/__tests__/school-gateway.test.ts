@@ -152,6 +152,7 @@ describe('schoolGateway.create', () => {
     const tx = {
       school: { create: vi.fn().mockResolvedValue({ id: 'school-1' }) },
       config: { createMany: vi.fn() },
+      absenceReason: { createMany: vi.fn() },
     }
     dbMock.$transaction.mockImplementation((fn: (client: typeof tx) => unknown) => fn(tx))
 
@@ -166,6 +167,8 @@ describe('schoolGateway.create', () => {
       'events_enabled',
       'attendance_enabled',
       'attendance_frequency',
+      'attendance_entry_mode',
+      'attendance_absence_reason_required',
       'meals_enabled',
       'class_schedule_enabled',
       'class_schedule_teacher_overlap_allowed',
@@ -176,6 +179,7 @@ describe('schoolGateway.create', () => {
     ])
     // Une école neuve encaisse comme toutes les autres : le drapeau naît à `true`, et
     // aucune migration ne vient poser `false` sur une école existante.
+    expect(tx.absenceReason.createMany).toHaveBeenCalledTimes(1)
     expect(args.data).toContainEqual(
       expect.objectContaining({ name: 'payments_enabled', value: 'true' })
     )

@@ -11,6 +11,15 @@ export type AttendanceEntry = {
   status: AttendanceStatus
   lateMinutes: number | null
   message: string | null
+  absenceReasonId?: string | null
+  absenceReasonLabel?: string | null
+}
+export type AbsenceReasonOption = { id: string; label: string; justified: boolean }
+/** The school's reasons and the strings around them; absent when the school has none. */
+export type AbsenceReasonPicker = {
+  options: AbsenceReasonOption[]
+  title: string
+  missing?: string
 }
 export type StudentCardLabels = {
   present: string
@@ -97,6 +106,8 @@ export function StudentAttendanceCard({
   onFieldBlur,
   onRetry,
   footer,
+  reasonPicker,
+  onReason,
 }: {
   entry: AttendanceEntry
   labels: StudentCardLabels
@@ -112,6 +123,8 @@ export function StudentAttendanceCard({
   onFieldBlur: () => void
   onRetry: () => void
   footer?: ReactNode
+  reasonPicker?: AbsenceReasonPicker
+  onReason?: (reason: AbsenceReasonOption | null) => void
 }) {
   const initials = entry.studentName
     .split(/\s+/)
@@ -194,6 +207,14 @@ export function StudentAttendanceCard({
                 )
               })}
             </section>
+            {entry.status === 'ABSENT' && reasonPicker && onReason ? (
+              <AbsenceReasonChips
+                entry={entry}
+                picker={reasonPicker}
+                disabled={globalPending || pending}
+                onReason={onReason}
+              />
+            ) : null}
             {entry.status === 'LATE' ? (
               <label className="flex items-center gap-3 text-sm font-medium">
                 {labels.lateMinutes}
@@ -260,6 +281,9 @@ export function StudentAttendanceCard({
                 {labels.lateMinutes}: {entry.lateMinutes}
               </p>
             ) : null}
+            {entry.status === 'ABSENT' && entry.absenceReasonLabel ? (
+              <p>{entry.absenceReasonLabel}</p>
+            ) : null}
             {entry.message ? <p className="whitespace-pre-wrap">{entry.message}</p> : null}
           </div>
         )}
@@ -281,5 +305,55 @@ export function StudentAttendanceCard({
         </footer>
       ) : null}
     </article>
+  )
+}
+
+/** Tapping the selected reason clears it; a reason no longer offered stays shown until replaced. */
+export function AbsenceReasonChips({
+  entry,
+  picker,
+  disabled,
+  onReason,
+}: {
+  entry: AttendanceEntry
+  picker: AbsenceReasonPicker
+  disabled: boolean
+  onReason: (reason: AbsenceReasonOption | null) => void
+}) {
+  const selectedId = entry.absenceReasonId ?? null
+  const archived =
+    selectedId && !picker.options.some((option) => option.id === selectedId)
+      ? entry.absenceReasonLabel
+      : null
+  return (
+    <fieldset className="min-w-0 space-y-2">
+      <legend className="text-sm font-medium">{picker.title}</legend>
+      <div className="flex flex-wrap gap-2">
+        {archived ? (
+          <span className="inline-flex min-h-11 items-center rounded-full border border-red-300 bg-red-50 px-3 text-sm text-red-950">
+            {archived}
+          </span>
+        ) : null}
+        {picker.options.map((option) => {
+          const selected = option.id === selectedId
+          return (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={selected}
+              disabled={disabled}
+              onClick={() => onReason(selected ? null : option)}
+              className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors disabled:opacity-60 ${selected ? 'border-red-300 bg-red-50 font-medium text-red-950' : 'border-alabaster-700 bg-white text-graphite hover:bg-alabaster-900'}`}
+            >
+              {selected ? <Check aria-hidden="true" className="size-3.5 shrink-0" /> : null}
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+      {picker.missing && !selectedId ? (
+        <p className="text-xs font-medium text-red-700">{picker.missing}</p>
+      ) : null}
+    </fieldset>
   )
 }

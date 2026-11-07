@@ -1,7 +1,11 @@
 import type { z } from 'zod'
+import { ATTENDANCE_ENTRY_MODES } from '@/domain/attendance-entry-mode'
 import { ATTENDANCE_FREQUENCIES } from '@/domain/attendance-frequency'
 import { configGateway } from '@/gateways/config-gateway'
-import { ATTENDANCE_FREQUENCY_CONFIG_KEY } from '@/lib/attendance-config'
+import {
+  ATTENDANCE_ENTRY_MODE_CONFIG_KEY,
+  ATTENDANCE_FREQUENCY_CONFIG_KEY,
+} from '@/lib/attendance-config'
 import {
   CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
   ClassScheduleVisibility,
@@ -49,6 +53,12 @@ export async function setConfig(input: Input, configGw = configGateway) {
   if (
     name === ATTENDANCE_FREQUENCY_CONFIG_KEY &&
     !ATTENDANCE_FREQUENCIES.some((frequency) => frequency === value)
+  ) {
+    return 'invalidConfigValue' as const
+  }
+  if (
+    name === ATTENDANCE_ENTRY_MODE_CONFIG_KEY &&
+    !ATTENDANCE_ENTRY_MODES.some((mode) => mode === value)
   ) {
     return 'invalidConfigValue' as const
   }

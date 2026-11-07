@@ -1617,6 +1617,16 @@
             "description": "Internal: available to signed-in school members. Public: available from the school public page.",
             "internal": "Internal",
             "public": "Public"
+          },
+          "attendance_entry_mode": {
+            "label": "Attendance entry mode",
+            "description": "List: the whole class on one screen, best for large classes. One by one: one card per student.",
+            "list": "List",
+            "oneByOne": "One by one"
+          },
+          "attendance_absence_reason_required": {
+            "label": "Absence reason required",
+            "description": "An attendance call cannot be validated while an absence has no reason."
           }
         },
         "theme": {
@@ -1776,6 +1786,34 @@
             "copy": "Copy",
             "copied": "Webhook URL copied",
             "copyFailed": "Could not copy the URL"
+          }
+        },
+        "absenceReasons": {
+          "title": "Absence reasons",
+          "description": "Reasons offered to the teacher when marking a student absent. Archiving a reason removes it from entry without changing past calls.",
+          "empty": "No reason configured.",
+          "label": "Reason label",
+          "justified": "Excused",
+          "moveUp": "Move “{label}” up",
+          "moveDown": "Move “{label}” down",
+          "archive": "Archive",
+          "confirmArchive": {
+            "title": "Archive “{label}”?",
+            "description": "The reason will no longer be offered. Calls that use it keep it.",
+            "confirm": "Archive",
+            "cancel": "Cancel"
+          },
+          "newLabel": "New reason",
+          "placeholder": "e.g. Medical appointment",
+          "add": "Add",
+          "added": "Reason added",
+          "error": "Something went wrong",
+          "errors": {
+            "validationError": "Invalid label",
+            "tooManyReasons": "Maximum number of reasons reached",
+            "labelTaken": "This reason already exists",
+            "notFound": "Reason not found",
+            "staleOrder": "The list changed, reload the page"
           }
         }
       },
@@ -2603,7 +2641,9 @@
           "attendanceClosed": "The school is closed on this date.",
           "sessionCancelled": "This session is cancelled.",
           "unexpected": "Saving failed. Please retry.",
-          "invalidTransition": "This session changed in the meantime. Refresh the page and try again."
+          "invalidTransition": "This session changed in the meantime. Refresh the page and try again.",
+          "absenceReasonMissing": "Give a reason for every absence before validating.",
+          "absenceReasonNotFound": "This reason is no longer offered. Pick another one."
         },
         "returnTracking": "Back to attendance tracking",
         "lateMinutesInvalid": "Late minutes must be a whole number between 0 and 1440.",
@@ -2612,6 +2652,25 @@
           "description": "The session will no longer count as an expected call. You can restore it from attendance tracking.",
           "confirm": "Cancel session",
           "dismiss": "Keep session"
+        },
+        "reasons": {
+          "title": "Reason",
+          "missing": "Reason required",
+          "missingWarning": "{count} absence(s) without a reason. A reason is required to validate."
+        },
+        "list": {
+          "label": "Student list",
+          "toRecord": "To record",
+          "search": "Search a student",
+          "closeSearch": "Close search",
+          "searchPlaceholder": "First or last name…",
+          "noMatch": "No student matches.",
+          "reasonMissing": "Reason missing",
+          "lateBy": "{minutes} min late",
+          "otherMinutes": "Other…",
+          "addNote": "Add a note",
+          "markRemaining": "{count, plural, one {The remaining student is present} other {The # remaining students are present}}",
+          "finish": "Validate attendance · {absent} abs. · {late} late"
         }
       },
       "teachers": {

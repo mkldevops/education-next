@@ -121,6 +121,19 @@ describe('setConfig', () => {
     expect(gateway.setData).toBeNull()
   })
 
+  it.each(['LIST', 'ONE_BY_ONE'])('stores attendance entry mode %s', async (value) => {
+    expect(await run({ schoolId: SCHOOL_ID, name: 'attendance_entry_mode', value })).toMatchObject({
+      value,
+    })
+  })
+
+  it('rejects an unsupported attendance entry mode', async () => {
+    expect(await run({ schoolId: SCHOOL_ID, name: 'attendance_entry_mode', value: 'GRID' })).toBe(
+      'invalidConfigValue'
+    )
+    expect(gateway.setData).toBeNull()
+  })
+
   it('refuses an unknown class schedule visibility', async () => {
     const result = await run({
       schoolId: SCHOOL_ID,

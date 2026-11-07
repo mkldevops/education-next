@@ -12,10 +12,12 @@ import {
 } from '@/domain/attendance-session'
 import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
+import { absenceReasonGateway } from '@/gateways/absence-reason-gateway'
 import type { Prisma } from '@/generated/prisma/client'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { getAttendanceEntrySettings } from '@/use-cases/config/get-attendance-entry-settings'
 import { getAttendanceFrequency } from '@/use-cases/config/get-attendance-frequency'
 import { syncMealAbsencesFromAttendance } from '@/use-cases/meals/sync-meal-absences-from-attendance'
 import { requireSchoolAdmin, requireSchoolSession, requireTeacher } from './auth-helper'
@@ -41,6 +43,7 @@ const updateSchema = z.object({
   // Omitted fields preserve existing values for callers using the pre-R2 payload.
   lateMinutes: z.number().int().min(0).max(1440).nullable().optional(),
   message: z.string().max(1000).nullable().optional(),
+  absenceReasonId: z.uuid().nullable().optional(),
 })
 const sessionSchema = z.object({ sessionId: z.uuid() })
 const cancellationSchema = z.object({ sessionId: z.uuid(), cancelled: z.boolean() })
@@ -237,8 +240,15 @@ export async function updateAttendanceEntryAction(input: unknown) {
   const resolved = await resolveOperableSession(parsed.data.sessionId)
   if (typeof resolved === 'string') return resolved
   const { actor } = resolved
+  const reason = await resolveAbsenceReason(
+    actor.schoolId,
+    parsed.data.status,
+    parsed.data.absenceReasonId
+  )
+  if (reason === 'absenceReasonNotFound') return reason
   const data = {
     status: parsed.data.status,
+    ...reason,
     updatedById: actor.userId,
     ...(parsed.data.status === 'LATE'
       ? parsed.data.lateMinutes === undefined
@@ -258,6 +268,19 @@ export async function updateAttendanceEntryAction(input: unknown) {
   if (updated.count !== 1) return 'notFound' as const
   revalidateAttendance()
   return 'OK' as const
+}
+
+async function resolveAbsenceReason(
+  schoolId: string,
+  status: z.infer<typeof updateSchema>['status'],
+  absenceReasonId: string | null | undefined
+) {
+  if (status !== 'ABSENT') return { absenceReasonId: null, absenceReasonLabel: null }
+  if (absenceReasonId === undefined) return {}
+  if (absenceReasonId === null) return { absenceReasonId: null, absenceReasonLabel: null }
+  const reason = await absenceReasonGateway.findActive(schoolId, absenceReasonId)
+  if (!reason) return 'absenceReasonNotFound' as const
+  return { absenceReasonId: reason.id, absenceReasonLabel: reason.label }
 }
 
 export async function markAllPresentAction(input: unknown) {
@@ -284,6 +307,18 @@ export async function validateAttendanceAction(input: unknown) {
   const resolved = await resolveOperableSession(parsed.data.sessionId)
   if (typeof resolved === 'string') return resolved
   const { actor } = resolved
+  const { absenceReasonRequired } = await getAttendanceEntrySettings(actor.schoolId)
+  if (absenceReasonRequired) {
+    const missing = await db.attendanceEntry.count({
+      where: {
+        attendanceSessionId: parsed.data.sessionId,
+        schoolId: actor.schoolId,
+        status: 'ABSENT',
+        absenceReasonId: null,
+      },
+    })
+    if (missing > 0) return 'absenceReasonMissing' as const
+  }
   // Conditional write: a session cancelled after `resolveOperableSession` read it is refused rather
   // than silently revived. A VALIDATED session stays re-validatable after a correction.
   const updated = await db.attendanceSession.updateMany({

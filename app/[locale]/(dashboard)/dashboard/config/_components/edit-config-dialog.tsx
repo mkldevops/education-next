@@ -20,7 +20,10 @@ import { useTranslations } from 'next-intl'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import type { ConfigValueType } from '@/generated/prisma/client'
 import { useRouter } from '@/i18n/routing'
-import { ATTENDANCE_FREQUENCY_CONFIG_KEY } from '@/lib/attendance-config'
+import {
+  ATTENDANCE_ENTRY_MODE_CONFIG_KEY,
+  ATTENDANCE_FREQUENCY_CONFIG_KEY,
+} from '@/lib/attendance-config'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import {
   CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
@@ -65,6 +68,7 @@ function EditConfigForm({ config }: Pick<EditConfigDialogProps, 'config'>) {
   const t = useTranslations('dashboard.pages.config.edit')
   const tVisibility = useTranslations('dashboard.pages.config.settings.class_schedule_visibility')
   const tFrequency = useTranslations('dashboard.pages.config.settings.attendance_frequency')
+  const tEntryMode = useTranslations('dashboard.pages.config.settings.attendance_entry_mode')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const router = useRouter()
   const frequencyItems = [
@@ -75,8 +79,16 @@ function EditConfigForm({ config }: Pick<EditConfigDialogProps, 'config'>) {
     { value: ClassScheduleVisibility.Internal, label: tVisibility('internal') },
     { value: ClassScheduleVisibility.Public, label: tVisibility('public') },
   ]
+  const entryModeItems = [
+    { value: 'LIST', label: tEntryMode('list') },
+    { value: 'ONE_BY_ONE', label: tEntryMode('oneByOne') },
+  ]
   const selectItems =
-    config.name === ATTENDANCE_FREQUENCY_CONFIG_KEY ? frequencyItems : visibilityItems
+    config.name === ATTENDANCE_FREQUENCY_CONFIG_KEY
+      ? frequencyItems
+      : config.name === ATTENDANCE_ENTRY_MODE_CONFIG_KEY
+        ? entryModeItems
+        : visibilityItems
   const selectDefault =
     selectItems.find((item) => item.value === config.value)?.value ?? selectItems[0]?.value
 
@@ -103,7 +115,8 @@ function EditConfigForm({ config }: Pick<EditConfigDialogProps, 'config'>) {
                 disabled={isPending}
               />
             ) : config.name === CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY ||
-              config.name === ATTENDANCE_FREQUENCY_CONFIG_KEY ? (
+              config.name === ATTENDANCE_FREQUENCY_CONFIG_KEY ||
+              config.name === ATTENDANCE_ENTRY_MODE_CONFIG_KEY ? (
               <Select
                 name="value"
                 items={selectItems}

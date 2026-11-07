@@ -175,7 +175,8 @@ model School {
   eventImages               EventImage[]
   attendanceSessions        AttendanceSession[]
   attendanceEntries         AttendanceEntry[]
-  mealServiceSettings       MealServiceSetting[]
+  absenceReasons            AbsenceReason[]
+  mealServiceSettings      MealServiceSetting[]
   mealPrices                MealPrice[]
   mealAccounts              MealAccount[]
   mealSchedules             MealSchedule[]
@@ -758,15 +759,39 @@ model AttendanceEntry {
   status              AttendanceEntryStatus @default(NOT_RECORDED)
   lateMinutes         Int?
   message             String?               @db.VarChar(1000)
+  /// Motif d'une absence ; vidé dès que l'élève n'est plus ABSENT.
+  absenceReasonId     String?
+  /// Libellé figé à la saisie : renommer ou archiver le motif ne réécrit pas un appel passé.
+  absenceReasonLabel  String?               @db.VarChar(80)
   updatedById         String
   updatedAt           DateTime              @updatedAt
 
   school            School            @relation(fields: [schoolId], references: [id])
   attendanceSession AttendanceSession @relation(fields: [attendanceSessionId, schoolId], references: [id, schoolId], onDelete: Cascade)
   student           Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  absenceReason     AbsenceReason?    @relation(fields: [absenceReasonId, schoolId], references: [id, schoolId], onDelete: Restrict)
 
   @@unique([attendanceSessionId, studentId])
   @@index([schoolId, studentId])
+}
+
+/// Motif d'absence proposé à l'appel, géré par l'école. Archivé plutôt que supprimé : les
+/// appels passés le référencent.
+model AbsenceReason {
+  id        String   @id @default(uuid())
+  schoolId  String
+  label     String   @db.VarChar(80)
+  justified Boolean  @default(false)
+  position  Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school            School            @relation(fields: [schoolId], references: [id])
+  attendanceEntries AttendanceEntry[]
+
+  @@unique([id, schoolId])
+  @@index([schoolId, position])
 }
 
 model Payment {
