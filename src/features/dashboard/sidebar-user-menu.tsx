@@ -1,8 +1,16 @@
 'use client'
 
-import { useMenu } from '@peaklab/ui'
-import { ChevronsUpDown, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Dialog, useDialog, useMenu } from '@peaklab/ui'
+import {
+  ChevronsUpDown,
+  Download,
+  LogOut,
+  Megaphone,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { IosInstallGuide, useInstallApp } from '@/features/pwa/install-app'
 import { Link } from '@/i18n/routing'
 import { cn } from '@/lib/utils'
 import { toInitials } from './initials'
@@ -11,22 +19,42 @@ import type { NavItemConfig } from './sidebar-items'
 const itemClass =
   'flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm text-foreground transition-colors duration-(--duration-fast) hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none'
 
-export function UserMenu({
-  userName,
-  items,
-  expanded,
-  onNavigate,
-  onSignOut,
-  onToggle,
-}: {
+type UserMenuProps = {
   userName?: string
   items: NavItemConfig[]
+  /** Nouveautés non lues ; `null` quand le fil n'est pas proposé à cet utilisateur. */
+  unreadNews?: number | null
   expanded: boolean
   onNavigate: () => void
   onSignOut: () => void
   onToggle: () => void
-}) {
+}
+
+export function UserMenu(props: UserMenuProps) {
+  const { mode } = useInstallApp()
+  return (
+    <Dialog>
+      <UserMenuDropdown {...props} />
+      {mode === 'ios' && <IosInstallGuide />}
+    </Dialog>
+  )
+}
+
+function UserMenuDropdown({
+  userName,
+  items,
+  unreadNews = null,
+  expanded,
+  onNavigate,
+  onSignOut,
+  onToggle,
+}: UserMenuProps) {
   const t = useTranslations('dashboard.sidebar')
+  const tNews = useTranslations('dashboard.announcements')
+  const tInstall = useTranslations('pwa.install')
+  const { mode: installMode, install } = useInstallApp()
+  const { setOpen: openInstallGuide } = useDialog()
+  const hasUnread = unreadNews !== null && unreadNews > 0
   const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
   const label = userName ?? t('account')
 
@@ -38,7 +66,13 @@ export function UserMenu({
         onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={expanded ? undefined : label}
+        aria-label={
+          hasUnread
+            ? `${label} – ${tNews('buttonLabelUnread', { count: unreadNews })}`
+            : expanded
+              ? undefined
+              : label
+        }
         className={cn(
           'flex w-full items-center rounded-md transition-colors duration-(--duration-fast) hover:bg-surface-2',
           'focus-visible:outline-2 focus-visible:outline-ring',
@@ -47,9 +81,12 @@ export function UserMenu({
       >
         <span
           aria-hidden
-          className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2 text-[11px] font-semibold text-foreground"
+          className="relative flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2 text-[11px] font-semibold text-foreground"
         >
           {toInitials(label)}
+          {hasUnread && (
+            <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-primary ring-2 ring-background" />
+          )}
         </span>
         {expanded && (
           <>
@@ -70,6 +107,42 @@ export function UserMenu({
             expanded ? 'bottom-full left-0 right-0 mb-2' : 'bottom-0 left-full ml-2 w-56'
           )}
         >
+          {unreadNews !== null && (
+            <Link
+              href="/dashboard/news"
+              role="menuitem"
+              className={itemClass}
+              onClick={() => {
+                close(false)
+                onNavigate()
+              }}
+            >
+              <Megaphone size={16} aria-hidden className="shrink-0 text-muted-foreground" />
+              <span className="flex-1">{tNews('buttonLabel')}</span>
+              {hasUnread && (
+                <span className="rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-5 text-primary-foreground">
+                  {unreadNews}
+                </span>
+              )}
+            </Link>
+          )}
+
+          {installMode && (
+            <button
+              type="button"
+              role="menuitem"
+              className={itemClass}
+              onClick={() => {
+                close(false)
+                if (installMode === 'native') void install()
+                else openInstallGuide(true)
+              }}
+            >
+              <Download size={16} aria-hidden className="shrink-0 text-muted-foreground" />
+              {tInstall('button')}
+            </button>
+          )}
+
           {items.map(({ key, href, icon: Icon }) => (
             <Link
               key={key}
