@@ -1,3 +1,4 @@
+import { DEFAULT_ABSENCE_REASONS } from '../src/domain/absence-reason'
 import { credentialUserGateway } from '../src/gateways/credential-user-gateway'
 import { unscopedDbForDataScripts } from '../src/lib/db-unscoped'
 import {
@@ -39,6 +40,7 @@ async function purge() {
   await prisma.classScheduleSlotTeacher.deleteMany()
   await prisma.classScheduleSlot.deleteMany()
   await prisma.attendanceEntry.deleteMany()
+  await prisma.absenceReason.deleteMany()
   await prisma.attendanceSession.deleteMany()
   await prisma.classPeriodTeacher.deleteMany()
   await prisma.classAssignment.deleteMany()
@@ -101,6 +103,10 @@ type SchoolFixture = {
 /** Référentiel et dossiers d'une école. Chaque écriture porte son `schoolId`. */
 async function seedSchoolContent(fixture: SchoolFixture) {
   const { schoolId, createdById, classes, teachers: teacherFixtures, families } = fixture
+
+  await prisma.absenceReason.createMany({
+    data: DEFAULT_ABSENCE_REASONS.map((reason, position) => ({ ...reason, position, schoolId })),
+  })
 
   const levelNames = ['CP', 'CE1', 'CE2', 'CM1', 'CM2']
   const levels = []

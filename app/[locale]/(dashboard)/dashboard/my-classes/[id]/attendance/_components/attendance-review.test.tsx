@@ -117,4 +117,40 @@ describe('AttendanceReview', () => {
       '/dashboard/attendance?date=2026-09-18'
     )
   })
+  it('blocks validation while an absence has no required reason', () => {
+    render(
+      <AttendanceReview
+        entries={[
+          {
+            ...entries[0],
+            id: 'c',
+            studentName: 'Chaïma',
+            status: 'ABSENT',
+            absenceReasonId: null,
+          },
+          {
+            ...entries[0],
+            id: 'd',
+            studentName: 'Dalia',
+            status: 'ABSENT',
+            absenceReasonId: 'r',
+            absenceReasonLabel: 'Maladie',
+          },
+        ]}
+        labels={labels}
+        onReturn={vi.fn()}
+        onComplete={vi.fn()}
+        onEdit={vi.fn()}
+        onValidate={vi.fn()}
+        validating={false}
+        validated={false}
+        onCorrect={vi.fn()}
+        returnHref="/dashboard/my-classes"
+        missingReasonsWarning="{count} without reason"
+      />
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('1 without reason')
+    expect(screen.getByText('Maladie')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Validate' })).toBeDisabled()
+  })
 })

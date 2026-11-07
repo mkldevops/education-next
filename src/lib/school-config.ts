@@ -1,5 +1,10 @@
 import type { ConfigValueType } from '@/generated/prisma/client'
-import { ATTENDANCE_ENABLED_CONFIG_KEY, ATTENDANCE_FREQUENCY_CONFIG_KEY } from './attendance-config'
+import {
+  ATTENDANCE_ABSENCE_REASON_REQUIRED_CONFIG_KEY,
+  ATTENDANCE_ENABLED_CONFIG_KEY,
+  ATTENDANCE_ENTRY_MODE_CONFIG_KEY,
+  ATTENDANCE_FREQUENCY_CONFIG_KEY,
+} from './attendance-config'
 import { BRANDING_CONFIG_KEYS } from './branding-config'
 import {
   CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
@@ -37,6 +42,8 @@ export const SchoolConfigKey = {
   ClassScheduleVisibility: CLASS_SCHEDULE_VISIBILITY_CONFIG_KEY,
   AttendanceEnabled: ATTENDANCE_ENABLED_CONFIG_KEY,
   AttendanceFrequency: ATTENDANCE_FREQUENCY_CONFIG_KEY,
+  AttendanceEntryMode: ATTENDANCE_ENTRY_MODE_CONFIG_KEY,
+  AttendanceAbsenceReasonRequired: ATTENDANCE_ABSENCE_REASON_REQUIRED_CONFIG_KEY,
   MealsEnabled: MEALS_ENABLED_CONFIG_KEY,
 } as const
 
@@ -60,6 +67,8 @@ export const SCHOOL_CONFIG_VALUE_TYPES: Record<SchoolConfigKey, ConfigValueType>
   [SchoolConfigKey.ClassScheduleVisibility]: 'TEXT',
   [SchoolConfigKey.AttendanceEnabled]: 'BOOLEAN',
   [SchoolConfigKey.AttendanceFrequency]: 'TEXT',
+  [SchoolConfigKey.AttendanceEntryMode]: 'TEXT',
+  [SchoolConfigKey.AttendanceAbsenceReasonRequired]: 'BOOLEAN',
   [SchoolConfigKey.MealsEnabled]: 'BOOLEAN',
 }
 

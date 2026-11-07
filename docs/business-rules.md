@@ -31,10 +31,10 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 
 ## Multi-school
 
-Every business row belongs to exactly one `School`. Twenty-five models carry `schoolId NOT NULL`:
+Every business row belongs to exactly one `School`. Twenty-six models carry `schoolId NOT NULL`:
 `Family`, `UserFamily`, `Person`, `FamilyPerson`, `Student`, `PhoneNumber`, `Config`, `Level`,
 `Period`, `ClassPeriod`, `ClassPeriodTeacher`, `ClassScheduleSlot`, `ClassScheduleSlotTeacher`, `Enrollment`, `ClassAssignment`,
-`AttendanceSession`, `AttendanceEntry`, `Payment`, `PaymentTransaction`, `Plan`, `Invitation`,
+`AttendanceSession`, `AttendanceEntry`, `AbsenceReason`, `Payment`, `PaymentTransaction`, `Plan`, `Invitation`,
 `Teacher`, `TeacherExpense`, `Event`, `EventImage`. All of them are in the runtime guard's
 `TENANT_SCOPED_MODELS`.
 
@@ -1540,6 +1540,23 @@ Owner: `src/domain/attendance-session.ts` (roster window, transitions),
   over at most 31 days (`MCP_ATTENDANCE_RANGE_MAX_DAYS`). It publishes each call's class, slot, status
   and session id, not its students or entries, and is refused with `notConfigured` when
   `attendance_enabled` is off.
+- **The entry mode is a school setting, not a choice on the call screen.** `attendance_entry_mode`
+  is `LIST` (default for existing and new schools) or `ONE_BY_ONE` (`getAttendanceEntrySettings`,
+  `src/domain/attendance-entry-mode.ts`). `LIST` shows the whole roster on one screen with P/R/A
+  buttons, search, status filters and a "mark the rest present" action; `ONE_BY_ONE` keeps one card
+  per student. Both write the same entries through `updateAttendanceEntryAction`.
+- **Absence reasons are configured per school** (`AbsenceReason`, managed in Configuration by an
+  ADMIN through `src/use-cases/absence-reasons/`). A label is unique per school among active reasons
+  (ignoring case and extra spaces), at most 20 per school, and carries a `justified` flag and a display
+  order. A new school starts with `DEFAULT_ABSENCE_REASONS`; the migration backfilled them. Archiving
+  deactivates a reason (`isActive = false`) without touching past calls.
+- **A reason applies to an absence only.** `updateAttendanceEntryAction` accepts an active reason of
+  the caller's school (otherwise `absenceReasonNotFound`), stores its id **and a copy of its label**
+  on the entry, so an archived or renamed reason still reads as it was recorded. Any status other
+  than `ABSENT` clears both; omitting the reason keeps the current one.
+- **`attendance_absence_reason_required`** (off by default) blocks validation while an `ABSENT`
+  entry of the session has no reason → `absenceReasonMissing`; the review screen lists the count
+  and disables Validate.
 - **Attendance entries do not outlive their student.** Deleting a family for good removes its own
   students' entries, even on a validated session; the session and its other entries stay (see
   « Deleting a family for good »).

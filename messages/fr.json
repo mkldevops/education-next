@@ -1618,6 +1618,16 @@
             "description": "Interne : accessible aux membres connectés de l'école. Public : accessible depuis la page publique de l'école.",
             "internal": "Interne",
             "public": "Publique"
+          },
+          "attendance_entry_mode": {
+            "label": "Mode de saisie de l'appel",
+            "description": "Liste : toute la classe sur un écran, idéal pour les grands effectifs. Un par un : une fiche par élève.",
+            "list": "Liste",
+            "oneByOne": "Un par un"
+          },
+          "attendance_absence_reason_required": {
+            "label": "Motif d'absence obligatoire",
+            "description": "Un appel ne peut être validé tant qu'une absence n'a pas de motif."
           }
         },
         "theme": {
@@ -1777,6 +1787,34 @@
             "copy": "Copier",
             "copied": "URL du webhook copiée",
             "copyFailed": "Impossible de copier l'URL"
+          }
+        },
+        "absenceReasons": {
+          "title": "Motifs d'absence",
+          "description": "Motifs proposés à l'enseignant lorsqu'il marque un élève absent. Archiver un motif le retire de la saisie sans modifier les appels passés.",
+          "empty": "Aucun motif configuré.",
+          "label": "Libellé du motif",
+          "justified": "Justifiée",
+          "moveUp": "Monter « {label} »",
+          "moveDown": "Descendre « {label} »",
+          "archive": "Archiver",
+          "confirmArchive": {
+            "title": "Archiver « {label} » ?",
+            "description": "Le motif ne sera plus proposé. Les appels qui l'utilisent le conservent.",
+            "confirm": "Archiver",
+            "cancel": "Annuler"
+          },
+          "newLabel": "Nouveau motif",
+          "placeholder": "Ex. Rendez-vous médical",
+          "add": "Ajouter",
+          "added": "Motif ajouté",
+          "error": "Une erreur est survenue",
+          "errors": {
+            "validationError": "Libellé invalide",
+            "tooManyReasons": "Nombre maximal de motifs atteint",
+            "labelTaken": "Ce motif existe déjà",
+            "notFound": "Motif introuvable",
+            "staleOrder": "La liste a changé, rechargez la page"
           }
         }
       },
@@ -2604,7 +2642,9 @@
           "attendanceClosed": "L’école est fermée à cette date.",
           "sessionCancelled": "Cette séance est annulée.",
           "unexpected": "L’enregistrement a échoué. Réessayez.",
-          "invalidTransition": "L’état de cette séance a changé entre-temps. Actualisez la page puis réessayez."
+          "invalidTransition": "L’état de cette séance a changé entre-temps. Actualisez la page puis réessayez.",
+          "absenceReasonMissing": "Indiquez le motif de chaque absence avant de valider.",
+          "absenceReasonNotFound": "Ce motif n’est plus proposé. Choisissez-en un autre."
         },
         "returnTracking": "Retour au suivi des appels",
         "lateMinutesInvalid": "Le retard doit être un nombre entier de minutes entre 0 et 1440.",
@@ -2613,6 +2653,25 @@
           "description": "La séance ne sera plus comptée parmi les appels attendus. Vous pourrez la rétablir depuis le suivi des appels.",
           "confirm": "Annuler la séance",
           "dismiss": "Conserver la séance"
+        },
+        "reasons": {
+          "title": "Motif",
+          "missing": "Motif obligatoire",
+          "missingWarning": "{count} absence(s) sans motif. Le motif est obligatoire pour valider."
+        },
+        "list": {
+          "label": "Liste des élèves",
+          "toRecord": "À pointer",
+          "search": "Rechercher un élève",
+          "closeSearch": "Fermer la recherche",
+          "searchPlaceholder": "Nom ou prénom…",
+          "noMatch": "Aucun élève ne correspond.",
+          "reasonMissing": "Motif manquant",
+          "lateBy": "{minutes} min de retard",
+          "otherMinutes": "Autre…",
+          "addNote": "Ajouter une note",
+          "markRemaining": "{count, plural, one {L’élève restant est présent} other {Les # élèves restants sont présents}}",
+          "finish": "Valider l’appel · {absent} abs. · {late} ret."
         }
       },
       "teachers": {

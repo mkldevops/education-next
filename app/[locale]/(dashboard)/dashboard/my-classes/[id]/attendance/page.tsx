@@ -5,9 +5,11 @@ import { isAttendanceClosed } from '@/domain/attendance-closure'
 import { attendanceUtcDate } from '@/domain/attendance-date'
 import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
+import { absenceReasonGateway } from '@/gateways/absence-reason-gateway'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
+import { getAttendanceEntrySettings } from '@/use-cases/config/get-attendance-entry-settings'
 import { getAttendanceFrequency } from '@/use-cases/config/get-attendance-frequency'
 import { requireSchoolSession, requireTeacher } from '../../../../_lib/auth-helper'
 import { AttendancePanel } from './_components/attendance-panel'
@@ -94,7 +96,15 @@ export default async function AttendancePage({
           id: true,
           status: true,
           entries: {
-            select: { id: true, studentName: true, status: true, lateMinutes: true, message: true },
+            select: {
+              id: true,
+              studentName: true,
+              status: true,
+              lateMinutes: true,
+              message: true,
+              absenceReasonId: true,
+              absenceReasonLabel: true,
+            },
             orderBy: { studentName: 'asc' },
           },
         },
@@ -107,6 +117,10 @@ export default async function AttendancePage({
     notFound()
   if (attendanceClosed && (selectedSlot || daily) && !initialSession) notFound()
   const panelSlots = attendanceClosed && selectedSlot && initialSession ? [selectedSlot] : slots
+  const [entrySettings, absenceReasons] = await Promise.all([
+    getAttendanceEntrySettings(schoolId),
+    absenceReasonGateway.listActive(schoolId),
+  ])
   const t = await getTranslations('dashboard.pages.attendance')
   return (
     <AttendancePanel
@@ -120,6 +134,9 @@ export default async function AttendancePage({
       selectedSlotId={daily ? undefined : selectedSlot?.id}
       selectedOccurrence={selectedOccurrence}
       initialSession={initialSession}
+      entryMode={entrySettings.mode}
+      absenceReasons={absenceReasons.map(({ id, label, justified }) => ({ id, label, justified }))}
+      absenceReasonRequired={entrySettings.absenceReasonRequired}
       returnHref={admin ? `/dashboard/attendance?date=${date}` : '/dashboard/my-classes'}
       labels={{
         title: t('title'),
@@ -172,6 +189,8 @@ export default async function AttendancePage({
           attendanceClosed: t('errors.attendanceClosed'),
           sessionCancelled: t('sessionCancelled'),
           invalidTransition: t('errors.invalidTransition'),
+          absenceReasonMissing: t('errors.absenceReasonMissing'),
+          absenceReasonNotFound: t('errors.absenceReasonNotFound'),
           unexpected: t('errors.unexpected'),
         },
       }}

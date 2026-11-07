@@ -3,6 +3,7 @@ import type { DeactivationVerdict } from '@/domain/school-deactivation'
 import { classifySchoolDeactivation } from '@/domain/school-deactivation'
 import { db } from '@/lib/db'
 import { SCHOOL_CONFIG_DEFAULTS } from '@/lib/school-config-defaults'
+import { absenceReasonGateway } from './absence-reason-gateway'
 
 type SchoolIdentity = {
   name: string
@@ -89,6 +90,7 @@ export const schoolGateway = {
       await tx.config.createMany({
         data: SCHOOL_CONFIG_DEFAULTS.map((config) => ({ ...config, schoolId: school.id })),
       })
+      await absenceReasonGateway.createDefaults(tx, school.id)
       return school
     }),
 
