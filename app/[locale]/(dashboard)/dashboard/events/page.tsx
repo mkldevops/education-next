@@ -1,13 +1,14 @@
-import { Breadcrumbs, Card, type Column, DataTable, EmptyState } from '@peaklab/ui'
-import { CalendarHeart } from 'lucide-react'
+import { Breadcrumbs, buttonVariants, Card, type Column, DataTable, EmptyState } from '@peaklab/ui'
+import { CalendarHeart, ExternalLink } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { eventPeriodBounds, shiftEventToNextYear } from '@/domain/event'
+import { eventPeriodBounds, schoolEventsPublicPath, shiftEventToNextYear } from '@/domain/event'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { EventCategoryLabel, EventStatusBadge, EventVisibilityLabel } from '@/features/enums'
 import { schoolGateway } from '@/gateways/school-gateway'
+import { Link } from '@/i18n/routing'
 import { formatEventDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
@@ -173,7 +174,18 @@ export default async function EventsPage({ params, searchParams }: Props) {
           <h1 className="text-2xl font-bold text-graphite">{t('title')}</h1>
           <p className="text-sm text-graphite-600">{t('description')}</p>
         </div>
-        <CreateEventDialog mealsEnabled={mealsEnabled} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={schoolEventsPublicPath(school.slug)}
+            target="_blank"
+            rel="noopener"
+            className={buttonVariants({ variant: 'outline' })}
+          >
+            <ExternalLink className="h-4 w-4" />
+            {t('publicLink.calendar')}
+          </Link>
+          <CreateEventDialog mealsEnabled={mealsEnabled} />
+        </div>
       </div>
 
       <EventsFilters />

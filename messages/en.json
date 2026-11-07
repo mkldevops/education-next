@@ -2936,7 +2936,8 @@
           "copy": "Copy public link",
           "copied": "Link copied",
           "copiedPrivate": "Link copied. The page stays private until the event is public and published.",
-          "copyFailed": "Could not copy the link"
+          "copyFailed": "Could not copy the link",
+          "calendar": "Public calendar"
         }
       },
       "authSettings": {

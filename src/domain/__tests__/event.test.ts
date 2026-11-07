@@ -6,6 +6,7 @@ import {
   normalizeEventDates,
   reorderImagesForCover,
   resolveEventPageAccess,
+  schoolEventsPublicPath,
   selectAnnouncedEvent,
   shiftEventToNextYear,
   slugifyEventTitle,
@@ -294,6 +295,12 @@ describe('reorderImagesForCover', () => {
 
   it('returns null for an image outside the list', () => {
     expect(reorderImagesForCover(images, 'z')).toBeNull()
+  })
+})
+
+describe('schoolEventsPublicPath', () => {
+  it('points to the school public calendar', () => {
+    expect(schoolEventsPublicPath('ecole-du-centre')).toBe('/ecole/ecole-du-centre/evenements')
   })
 })
 
