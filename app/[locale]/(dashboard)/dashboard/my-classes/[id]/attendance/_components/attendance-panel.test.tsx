@@ -3,6 +3,8 @@ import type { ButtonHTMLAttributes, HTMLAttributes } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  toastSuccess: vi.fn(),
   update: vi.fn(),
   startAdhoc: vi.fn(),
   startScheduled: vi.fn(),
@@ -29,7 +31,9 @@ vi.mock('next-intl', () => ({
         ? `Added ${values?.count}`
         : key,
 }))
+vi.mock('@/lib/toast', () => ({ toast: { success: mocks.toastSuccess } }))
 vi.mock('@/i18n/routing', () => ({
+  useRouter: () => ({ push: mocks.push }),
   Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
     <a href={href}>{children}</a>
   ),
@@ -245,22 +249,17 @@ describe('AttendancePanel', () => {
     render(<AttendancePanel {...props} initialSession={makeSession([])} />)
     expect(screen.getByText('No students')).toBeInTheDocument()
   })
-  it('keeps the successful validation on the completion recap without a repeat validation action', async () => {
+  it('returns to the classes list after a successful validation instead of repeating the recap', async () => {
     mocks.validate.mockResolvedValue('OK')
     render(<AttendancePanel {...props} initialSession={makeSession()} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Review' }))
     fireEvent.click(screen.getByRole('button', { name: 'Validate anyway' }))
 
-    await waitFor(() =>
-      expect(mocks.validate).toHaveBeenCalledWith({
-        sessionId: 's',
-      })
-    )
-    expect(screen.getByRole('status')).toHaveTextContent('Validated')
-    expect(screen.queryByRole('button', { name: 'Validate anyway' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Edit Amina' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Correct' })).toBeInTheDocument()
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/dashboard/my-classes'))
+    expect(mocks.validate).toHaveBeenCalledWith({ sessionId: 's' })
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('Validated')
+    expect(screen.getByRole('button', { name: 'Validate anyway' })).toBeDisabled()
   })
   it('keeps the recap open with an error when validation fails', async () => {
     mocks.validate.mockResolvedValue('notFound')
@@ -310,7 +309,7 @@ describe('AttendancePanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Validate' }))
 
     await waitFor(() => expect(mocks.validate).toHaveBeenCalledTimes(1))
-    expect(screen.getByRole('status')).toHaveTextContent('Validated')
+    expect(mocks.push).toHaveBeenCalledWith('/dashboard/my-classes')
   })
 
   it('adds the students assigned since the opening while keeping the current student', async () => {

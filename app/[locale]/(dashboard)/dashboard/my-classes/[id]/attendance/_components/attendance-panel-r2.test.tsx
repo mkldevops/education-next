@@ -3,6 +3,8 @@ import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  toastSuccess: vi.fn(),
   update: vi.fn(),
   startAdhoc: vi.fn(),
   startScheduled: vi.fn(),
@@ -26,7 +28,9 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: { count?: number }) =>
     key === 'markRemainingPresent' ? `Mark ${values?.count} remaining` : key,
 }))
+vi.mock('@/lib/toast', () => ({ toast: { success: mocks.toastSuccess } }))
 vi.mock('@/i18n/routing', () => ({
+  useRouter: () => ({ push: mocks.push }),
   Link: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
   ),
