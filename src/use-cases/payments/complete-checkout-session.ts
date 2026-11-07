@@ -3,6 +3,7 @@ import { paymentGateway } from '@/gateways/payment-gateway'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 import { findPaymentTransactionByProviderSessionId } from '@/lib/db-unscoped'
+import { issueTuitionReceipt } from '@/use-cases/receipts/issue-tuition-receipt'
 import { findLatestFamilyEnrollmentId, getFamilyBalance } from './family-balance'
 
 type CheckoutSession = {
@@ -71,7 +72,8 @@ export async function completeCheckoutSession(input: Input) {
         },
       })
       if (captured.distribution.length > 0) {
-        await tx.payment.createMany({
+        const payments = await tx.payment.createManyAndReturn({
+          select: { id: true, amount: true },
           data: captured.distribution.map((allocation) => ({
             schoolId: transaction.schoolId,
             familyId: transaction.familyId,
@@ -84,6 +86,22 @@ export async function completeCheckoutSession(input: Input) {
             cashedAt: paidAt,
           })),
         })
+        // Le paiement en ligne reçoit son reçu, sans auteur : personne de l'école ne l'a saisi.
+        // Une ligne à zéro (surplus porté ailleurs) n'a rien à justifier sur le reçu.
+        const received = payments
+          .map((payment) => ({ id: payment.id, amount: Number(payment.amount) }))
+          .filter((payment) => payment.amount > 0)
+        if (received.length > 0) {
+          await issueTuitionReceipt(tx, transaction.schoolId, {
+            familyId: transaction.familyId,
+            method: 'STRIPE',
+            reference: input.session.id,
+            paidAt,
+            recordedById: null,
+            idempotencyKey: `stripe:${transaction.id}`,
+            payments: received,
+          })
+        }
       }
       // Garde conditionnelle : deux événements distincts pour la même session (`completed` puis
       // `async_payment_succeeded`, ou un rejeu manuel) ne peuvent pas écrire deux fois.

@@ -1,16 +1,6 @@
 'use client'
 
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  Input,
-  Label,
-} from '@peaklab/ui'
+import { DialogBody, DialogContent, DialogHeader, DialogTitle, Input, Label } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { useId } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
@@ -23,23 +13,16 @@ type Props = {
 }
 
 /** Annulation d'une saisie manuelle de l'historique famille, motif facultatif. */
-export function CancelPaymentDialog(props: Props) {
+export function CancelPaymentDialogContent(props: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.paymentHistory.cancel')
 
   return (
-    <Dialog>
-      <DialogTrigger>
-        <Button variant="ghost" size="sm">
-          {t('trigger')}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('title')}</DialogTitle>
-        </DialogHeader>
-        <CancelPaymentForm {...props} />
-      </DialogContent>
-    </Dialog>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{t('title')}</DialogTitle>
+      </DialogHeader>
+      <CancelPaymentForm {...props} />
+    </DialogContent>
   )
 }
 

@@ -28,6 +28,11 @@ vi.mock('@/gateways/config-gateway', () => ({
   configGateway: configGatewayMock,
 }))
 
+const issueTuitionReceiptMock = vi.fn()
+vi.mock('@/use-cases/receipts/issue-tuition-receipt', () => ({
+  issueTuitionReceipt: issueTuitionReceiptMock,
+}))
+
 vi.mock('@/lib/school-regional-settings', () => ({
   getSchoolRegionalSettings: regionalSettingsMock,
 }))
@@ -45,6 +50,7 @@ describe('recordPayment', () => {
     transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
     configGatewayMock.get = vi.fn().mockResolvedValue({ value: 'true' })
     regionalSettingsMock.mockResolvedValue({ currency: 'EUR', timeZone: 'Europe/Paris' })
+    issueTuitionReceiptMock.mockResolvedValue({ id: 'receipt-1' })
   })
 
   it('should fail validation with invalid input', async () => {
@@ -185,6 +191,75 @@ describe('recordPayment', () => {
     })
 
     expect(result).toBe('OK')
+    expect(issueTuitionReceiptMock).not.toHaveBeenCalled()
+  })
+
+  describe('with a receipt', () => {
+    const familyId = '550e8400-e29b-41d4-a716-446655440000'
+    const paidAt = new Date('2026-09-12T00:00:00.000Z')
+
+    beforeEach(() => {
+      enrollmentGatewayMock.findPayableByFamily.mockResolvedValue([
+        { id: '550e8400-e29b-41d4-a716-446655440001', totalAmount: 100, discount: 0, payments: [] },
+        { id: '550e8400-e29b-41d4-a716-446655440002', totalAmount: 100, discount: 0, payments: [] },
+      ])
+      paymentGatewayMock.createForFamily = vi.fn().mockResolvedValue(['payment-1', 'payment-2'])
+    })
+
+    it('issues one receipt for the lines it wrote, keyed by the first payment', async () => {
+      const result = await recordPayment({
+        schoolId,
+        familyId,
+        amount: 150,
+        method: 'CASH',
+        paidAt,
+        generateReceipt: true,
+        recordedById: 'user-1',
+      })
+
+      expect(result).toEqual({ receiptId: 'receipt-1' })
+      expect(issueTuitionReceiptMock).toHaveBeenCalledWith(tx, schoolId, {
+        familyId,
+        method: 'CASH',
+        reference: null,
+        paidAt,
+        recordedById: 'user-1',
+        idempotencyKey: 'payment:payment-1',
+        payments: [
+          { id: 'payment-1', amount: 75 },
+          { id: 'payment-2', amount: 75 },
+        ],
+      })
+    })
+
+    it('refuses a receipt without the author who cashed it', async () => {
+      const result = await recordPayment({
+        schoolId,
+        familyId,
+        amount: 150,
+        method: 'CASH',
+        paidAt,
+        generateReceipt: true,
+      })
+
+      expect(result).toBe('validationError')
+      expect(paymentGatewayMock.createForFamily).not.toHaveBeenCalled()
+    })
+
+    it('refuses a receipt on a refund', async () => {
+      const result = await recordPayment({
+        schoolId,
+        familyId,
+        amount: -50,
+        method: 'CASH',
+        paidAt,
+        generateReceipt: true,
+        recordedById: 'user-1',
+      })
+
+      expect(result).toBe('validationError')
+      expect(issueTuitionReceiptMock).not.toHaveBeenCalled()
+    })
   })
 
   describe('targeting one enrollment (#551)', () => {

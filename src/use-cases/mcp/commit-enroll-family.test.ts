@@ -24,6 +24,8 @@ vi.mock('@/gateways/mcp-draft-gateway', () => ({
   mcpDraftGateway: { claim, findById, reclaim, release },
 }))
 vi.mock('@/lib/db', () => ({ db: { $transaction: transaction } }))
+const issueTuitionReceipt = vi.fn()
+vi.mock('@/use-cases/receipts/issue-tuition-receipt', () => ({ issueTuitionReceipt }))
 
 const { commitEnrollFamily } = await import('./commit-enroll-family')
 
@@ -66,6 +68,7 @@ const input = { draftId: '11111111-1111-4111-8111-111111111111', checksum: 'abcd
 
 beforeEach(() => {
   vi.clearAllMocks()
+  issueTuitionReceipt.mockResolvedValue({ id: 'receipt-1' })
   claim.mockResolvedValue({ count: 1 })
   reclaim.mockResolvedValue({ count: 0 })
   findById.mockResolvedValue({
@@ -109,7 +112,18 @@ describe('commitEnrollFamily', () => {
       studentIds: ['student-1'],
       enrollmentIds: ['enrollment-1'],
       paymentIds: ['payment-1'],
+      receiptId: 'receipt-1',
     })
+    expect(issueTuitionReceipt).toHaveBeenCalledWith(
+      tx,
+      'school-1',
+      expect.objectContaining({
+        familyId: 'family-1',
+        recordedById: 'user-1',
+        idempotencyKey: `mcp:${input.draftId}`,
+        payments: [{ id: 'payment-1', amount: 100 }],
+      })
+    )
   })
 
   it('creates the enrollment active, without a separate activation step', async () => {

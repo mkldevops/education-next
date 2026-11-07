@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { allocatePayment } from '@/domain/payment'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { readLockedFamilyBalances } from '@/use-cases/payments/locked-family-balance'
+import { issueTuitionReceipt } from '@/use-cases/receipts/issue-tuition-receipt'
 import { claimResolved, commitInTransaction } from './claim-draft'
 import type { DraftScope } from './draft-scope'
 import { RECORD_PAYMENT_TOOL } from './preview-record-payment'
@@ -75,10 +76,28 @@ export async function commitRecordPayment(scope: DraftScope, input: Input) {
       }))
     )
 
+    // Un encaissement porte son reçu, comme en caisse ; un remboursement n'en a pas.
+    const receipt =
+      resolved.amount > 0
+        ? await issueTuitionReceipt(tx, schoolId, {
+            familyId: resolved.family.id,
+            method: resolved.method,
+            reference: resolved.reference ?? null,
+            paidAt: resolved.paidAt,
+            recordedById: scope.userId,
+            idempotencyKey: `mcp:${draftId}`,
+            payments: resolved.allocation.map((item, index) => ({
+              id: payments[index],
+              amount: item.amount,
+            })),
+          })
+        : null
+
     const written = {
       familyId: resolved.family.id,
       amount: resolved.amount,
       paymentIds: payments,
+      receiptId: receipt?.id ?? null,
     }
 
     return written

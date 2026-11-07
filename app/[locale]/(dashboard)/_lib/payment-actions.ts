@@ -5,16 +5,26 @@ import type { z } from 'zod'
 import { cancelPayments } from '@/use-cases/payments/cancel-payments'
 import { recordPayment } from '@/use-cases/payments/record-payment'
 import type { recordPaymentSchema } from '@/use-cases/payments/schemas'
+import { issueReceiptForPayments } from '@/use-cases/receipts/issue-receipt-for-payments'
 import { requireSchoolAdmin } from './auth-helper'
 
-type RecordPaymentInput = Omit<z.infer<typeof recordPaymentSchema>, 'schoolId'>
+type RecordPaymentInput = Omit<z.infer<typeof recordPaymentSchema>, 'schoolId' | 'recordedById'>
 
 export async function recordPaymentAction(data: RecordPaymentInput) {
-  const { schoolId } = await requireSchoolAdmin()
-  const result = await recordPayment({ ...data, schoolId })
-  if (result !== 'OK') return result
+  const { schoolId, userId } = await requireSchoolAdmin()
+  const result = await recordPayment({ ...data, schoolId, recordedById: userId })
+  if (typeof result === 'string' && result !== 'OK') return result
   revalidatePath('/dashboard/payments')
   revalidatePath(`/dashboard/families/${data.familyId}`)
+  return result
+}
+
+export async function issueReceiptForPaymentsAction(paymentIds: string[]) {
+  const { schoolId, userId } = await requireSchoolAdmin()
+  const result = await issueReceiptForPayments({ paymentIds, schoolId, recordedById: userId })
+  if (typeof result === 'string') return result
+  revalidatePath('/dashboard/payments')
+  revalidatePath('/dashboard/families/[id]', 'page')
   return result
 }
 

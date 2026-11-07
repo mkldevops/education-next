@@ -53,6 +53,23 @@ export async function requireSchoolCashier(): Promise<{
   }
 }
 
+/**
+ * Portée reçus : l'administration, qui émet les reçus d'écolage même sans module repas, ou la
+ * caisse quand elle est ouverte. `isAdmin` garde l'annulation.
+ */
+export async function requireSchoolReceipts(): Promise<{
+  schoolId: string
+  userId: string
+  isAdmin: boolean
+}> {
+  const context = await getSchoolContext()
+  if (!context) return redirectToLogin()
+  const isAdmin = isActiveSchoolAdmin(context)
+  if (!isAdmin && !(await canOpenSchoolCashier(context))) notFound()
+
+  return { schoolId: context.schoolId, userId: context.userId, isAdmin }
+}
+
 export async function canOpenSchoolCashier(context: SchoolContext): Promise<boolean> {
   if (!isActiveSchoolAdmin(context) && !hasSchoolRole(context, 'CASHIER')) return false
 

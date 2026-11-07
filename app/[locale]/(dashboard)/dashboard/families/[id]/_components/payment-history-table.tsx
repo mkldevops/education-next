@@ -3,18 +3,17 @@ import { Receipt } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { type FamilyPayment, groupFamilyPayments } from '@/domain/payment'
 import type { PaymentMethod } from '@/generated/prisma/client'
-import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import type { FamilyDetailPayment } from '../_lib/family-detail'
-import { CancelPaymentDialog } from './cancel-payment-dialog'
+import { PaymentRowMenu } from './payment-row-menu'
 
 type Props = {
   payments: FamilyDetailPayment[]
   locale: string
   currency: string
-  /** Administrateur de l'école : peut annuler une saisie manuelle. */
+  /** Administrateur de l'école : peut annuler une saisie manuelle ou lui émettre son reçu. */
   canCancel?: boolean
 }
 
@@ -65,38 +64,20 @@ function MethodBadge({ method, label }: { method: PaymentMethod; label: string }
   )
 }
 
-/**
- * Seule une saisie manuelle s'annule ici : un paiement en ligne se rembourse chez Stripe, un
- * règlement de caisse s'annule avec son reçu. Le serveur applique la même règle.
- */
-function PaymentCancellation({
+function PaymentActions({
   payment,
   locale,
   currency,
-  t,
 }: {
   payment: FamilyPayment<FamilyDetailPayment>
   locale: string
   currency: string
-  t: Awaited<ReturnType<typeof getTranslations>>
 }) {
-  if (payment.lines.some((line) => line.paymentTransactionId !== null)) {
-    return <span className="text-xs text-graphite-600">{t('cancel.onlineHint')}</span>
-  }
-  const receiptId = payment.lines.find((line) => line.receiptId !== null)?.receiptId
-  if (receiptId) {
-    return (
-      <Link
-        href={`/dashboard/cashier/receipts/${receiptId}`}
-        className="text-xs text-primary underline-offset-2 hover:underline"
-      >
-        {t('cancel.receiptHint')}
-      </Link>
-    )
-  }
   return (
-    <CancelPaymentDialog
+    <PaymentRowMenu
       paymentIds={payment.lines.map((line) => line.id)}
+      receiptId={payment.lines.find((line) => line.receiptId !== null)?.receiptId ?? null}
+      isOnline={payment.lines.some((line) => line.paymentTransactionId !== null)}
       amount={formatCurrency(Math.abs(payment.amount), locale, currency)}
       isRefund={payment.amount < 0}
     />
@@ -201,12 +182,7 @@ export async function PaymentHistoryTable({ payments, locale, currency, canCance
                 </td>
                 {canCancel && (
                   <td className="px-4 py-3 text-right">
-                    <PaymentCancellation
-                      payment={payment}
-                      locale={locale}
-                      currency={currency}
-                      t={t}
-                    />
+                    <PaymentActions payment={payment} locale={locale} currency={currency} />
                   </td>
                 )}
               </tr>
@@ -271,7 +247,7 @@ export async function PaymentHistoryTable({ payments, locale, currency, canCance
 
             {canCancel && (
               <div className="flex justify-end">
-                <PaymentCancellation payment={payment} locale={locale} currency={currency} t={t} />
+                <PaymentActions payment={payment} locale={locale} currency={currency} />
               </div>
             )}
           </li>

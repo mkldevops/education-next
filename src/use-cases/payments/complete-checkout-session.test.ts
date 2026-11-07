@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const txMock = {
   paymentProviderEvent: { create: vi.fn() },
-  payment: { createMany: vi.fn() },
+  payment: { createManyAndReturn: vi.fn() },
   paymentTransaction: { updateMany: vi.fn() },
 }
 const dbMock = {
@@ -13,6 +13,7 @@ const findPaymentTransactionByProviderSessionIdMock = vi.fn()
 const getFamilyBalanceMock = vi.fn()
 const findLatestFamilyEnrollmentIdMock = vi.fn()
 const lockFamilyForPaymentMock = vi.fn()
+const issueTuitionReceiptMock = vi.fn()
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/lib/db-unscoped', () => ({
@@ -20,6 +21,9 @@ vi.mock('@/lib/db-unscoped', () => ({
 }))
 vi.mock('@/gateways/payment-gateway', () => ({
   paymentGateway: { lockFamilyForPayment: lockFamilyForPaymentMock },
+}))
+vi.mock('@/use-cases/receipts/issue-tuition-receipt', () => ({
+  issueTuitionReceipt: issueTuitionReceiptMock,
 }))
 vi.mock('./family-balance', () => ({
   getFamilyBalance: getFamilyBalanceMock,
@@ -73,6 +77,11 @@ describe('completeCheckoutSession', () => {
     txMock.paymentTransaction.updateMany.mockResolvedValue({ count: 1 })
     findLatestFamilyEnrollmentIdMock.mockResolvedValue(null)
     lockFamilyForPaymentMock.mockResolvedValue(true)
+    txMock.payment.createManyAndReturn.mockImplementation(
+      async ({ data }: { data: Array<{ enrollmentId: string; amount: number }> }) =>
+        data.map((row) => ({ id: `payment-${row.enrollmentId}`, amount: row.amount }))
+    )
+    issueTuitionReceiptMock.mockResolvedValue({ id: 'receipt-1' })
   })
 
   it("refuses an event signed by another school's secret", async () => {
@@ -100,7 +109,20 @@ describe('completeCheckoutSession', () => {
         paymentTransactionId: 'transaction-1',
       },
     })
-    expect(txMock.payment.createMany).toHaveBeenCalledWith({
+    expect(issueTuitionReceiptMock).toHaveBeenCalledWith(txMock, 'school-1', {
+      familyId: 'family-1',
+      method: 'STRIPE',
+      reference: 'cs_1',
+      paidAt: expect.any(Date),
+      recordedById: null,
+      idempotencyKey: 'stripe:transaction-1',
+      payments: [
+        { id: 'payment-enrollment-1', amount: 60 },
+        { id: 'payment-enrollment-2', amount: 40 },
+      ],
+    })
+    expect(txMock.payment.createManyAndReturn).toHaveBeenCalledWith({
+      select: { id: true, amount: true },
       data: [
         expect.objectContaining({
           schoolId: 'school-1',
@@ -166,7 +188,8 @@ describe('completeCheckoutSession', () => {
 
     expect(await completeCheckoutSession(input)).toBe('OK')
 
-    expect(txMock.payment.createMany).toHaveBeenCalledWith({
+    expect(txMock.payment.createManyAndReturn).toHaveBeenCalledWith({
+      select: { id: true, amount: true },
       data: [
         expect.objectContaining({ enrollmentId: 'enrollment-1', amount: 100 }),
         expect.objectContaining({ enrollmentId: 'enrollment-2', amount: 0 }),
@@ -188,13 +211,19 @@ describe('completeCheckoutSession', () => {
 
     expect(await completeCheckoutSession(input)).toBe('OK')
 
-    expect(txMock.payment.createMany).toHaveBeenCalledWith({
+    expect(txMock.payment.createManyAndReturn).toHaveBeenCalledWith({
+      select: { id: true, amount: true },
       data: [
         expect.objectContaining({ enrollmentId: 'enrollment-1', amount: 100, method: 'STRIPE' }),
         expect.objectContaining({ enrollmentId: 'enrollment-2', amount: 0 }),
       ],
     })
     expect(txMock.paymentProviderEvent.create).toHaveBeenCalled()
+    expect(issueTuitionReceiptMock).toHaveBeenCalledWith(
+      txMock,
+      'school-1',
+      expect.objectContaining({ payments: [{ id: 'payment-enrollment-1', amount: 100 }] })
+    )
   })
 
   it('records the capture on the latest family enrollment when none is payable anymore', async () => {
@@ -205,7 +234,8 @@ describe('completeCheckoutSession', () => {
     expect(await completeCheckoutSession(input)).toBe('OK')
 
     expect(findLatestFamilyEnrollmentIdMock).toHaveBeenCalledWith('school-1', 'family-1', txMock)
-    expect(txMock.payment.createMany).toHaveBeenCalledWith({
+    expect(txMock.payment.createManyAndReturn).toHaveBeenCalledWith({
+      select: { id: true, amount: true },
       data: [
         expect.objectContaining({
           enrollmentId: 'enrollment-cancelled',
@@ -230,7 +260,7 @@ describe('completeCheckoutSession', () => {
 
     expect(await completeCheckoutSession(input)).toBe('unallocated')
 
-    expect(txMock.payment.createMany).not.toHaveBeenCalled()
+    expect(txMock.payment.createManyAndReturn).not.toHaveBeenCalled()
     expect(txMock.paymentProviderEvent.create).toHaveBeenCalled()
     expect(txMock.paymentTransaction.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -248,7 +278,7 @@ describe('completeCheckoutSession', () => {
     lockFamilyForPaymentMock.mockResolvedValue(false)
 
     expect(await completeCheckoutSession(input)).toBe('OK')
-    expect(txMock.payment.createMany).toHaveBeenCalledOnce()
+    expect(txMock.payment.createManyAndReturn).toHaveBeenCalledOnce()
   })
 
   it('treats a replayed event as a duplicate once the first one was recorded', async () => {
