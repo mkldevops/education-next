@@ -190,9 +190,14 @@ export function reorderImagesForCover<T extends { id: string }>(
   return [cover, ...images.filter((image) => image.id !== imageId)]
 }
 
+/** Chemin, sans préfixe de langue, du calendrier public d'une école. */
+export function schoolEventsPublicPath(schoolSlug: string): string {
+  return `/ecole/${schoolSlug}/evenements`
+}
+
 /** Chemin, sans préfixe de langue, de la page publique d'un événement. */
 export function eventPublicPath(schoolSlug: string, eventSlug: string): string {
-  return `/ecole/${schoolSlug}/evenements/${eventSlug}`
+  return `${schoolEventsPublicPath(schoolSlug)}/${eventSlug}`
 }
 
 export type EventPeriodBounds = { from: Date; until: Date }
