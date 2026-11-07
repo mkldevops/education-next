@@ -80,7 +80,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     ...(appleIcon
-      ? { icons: { apple: [{ url: appleIcon.src, sizes: '180x180', type: 'image/png' }] } }
+      ? {
+          icons: {
+            icon: [{ url: '/icon', sizes: '32x32', type: 'image/png' }],
+            apple: [{ url: appleIcon.src, sizes: '180x180', type: 'image/png' }],
+          },
+        }
       : {}),
   }
 }
