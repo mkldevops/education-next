@@ -35,7 +35,7 @@ export const receiptGateway = {
       method: PaymentMethod
       reference: string | null
       paidAt: Date
-      recordedById: string
+      recordedById: string | null
       idempotencyKey: string
       requestHash: string
     }
@@ -61,6 +61,30 @@ export const receiptGateway = {
         receiptId,
         paidThroughAtReceipt: paidThroughAtReceipt === null ? null : toDbDate(paidThroughAtReceipt),
       })),
+    }),
+
+  /** Rattache au reçu des lignes d'écolage qui n'en portent pas encore. */
+  attachPayments: (tx: Tx, schoolId: string, receiptId: string, paymentIds: string[]) =>
+    tx.payment.updateMany({
+      where: { schoolId, id: { in: paymentIds }, receiptId: null },
+      data: { receiptId },
+    }),
+
+  /** Lignes d'écolage candidates à un reçu émis après coup. */
+  findPaymentsForReceipt: (tx: Tx, schoolId: string, paymentIds: string[]) =>
+    tx.payment.findMany({
+      where: { schoolId, id: { in: paymentIds } },
+      select: {
+        id: true,
+        familyId: true,
+        amount: true,
+        method: true,
+        reference: true,
+        paidAt: true,
+        isActive: true,
+        receiptId: true,
+      },
+      orderBy: { id: 'asc' },
     }),
 
   /** Rattachements familiaux des élèves d'un encaissement, pour en vérifier la famille redevable. */
@@ -103,7 +127,12 @@ export const receiptGateway = {
   findPayer: (schoolId: string, id: string) =>
     db.receipt.findUnique({
       where: { id_schoolId: { id, schoolId } },
-      select: { familyId: true, teacherId: true },
+      select: {
+        familyId: true,
+        teacherId: true,
+        method: true,
+        _count: { select: { mealPayments: true } },
+      },
     }),
 
   /** Tient le reçu jusqu'à la fin de `tx` : deux annulations ne se croisent pas. */
@@ -136,6 +165,33 @@ export const receiptGateway = {
     }),
 
   /** Reçu à afficher ou partager, avec ses lignes. */
+  /**
+   * Jeton du lien public, créé au premier partage puis réutilisé. Un reçu annulé n'en reçoit
+   * pas : son lien est mort.
+   */
+  ensureShareToken: async (schoolId: string, id: string, candidate: string) => {
+    await db.receipt.updateMany({
+      where: { id, schoolId, shareToken: null, cancelledAt: null },
+      data: { shareToken: candidate },
+    })
+    return db.receipt.findUnique({
+      where: { id_schoolId: { id, schoolId } },
+      select: { shareToken: true, cancelledAt: true },
+    })
+  },
+
+  /** Destinataires du reçu par mail : les parents et tuteurs de la famille qui ont une adresse. */
+  findFamilyRecipients: (schoolId: string, familyId: string) =>
+    db.familyPerson.findMany({
+      where: {
+        schoolId,
+        familyId,
+        relationType: { in: ['PARENT', 'TUTOR'] },
+        person: { email: { not: null } },
+      },
+      select: { person: { select: { name: true, email: true } } },
+    }),
+
   findForDisplay: (schoolId: string, id: string) =>
     db.receipt.findUnique({
       where: { id_schoolId: { id, schoolId } },
@@ -151,6 +207,17 @@ export const receiptGateway = {
         family: { select: { id: true, name: true } },
         teacher: { select: { firstName: true, lastName: true } },
         recordedBy: { select: { name: true } },
+        payments: {
+          select: {
+            amount: true,
+            enrollment: {
+              select: {
+                student: { select: { person: { select: { name: true, lastname: true } } } },
+              },
+            },
+          },
+          orderBy: { id: 'asc' },
+        },
         mealPayments: {
           select: {
             amount: true,

@@ -5,15 +5,23 @@ import { PaymentHistoryTable } from './payment-history-table'
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
 }))
-vi.mock('@/i18n/routing', () => ({
-  Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <a href={href}>{children}</a>
-  ),
-}))
-vi.mock('./cancel-payment-dialog', () => ({
-  CancelPaymentDialog: ({ paymentIds, amount }: { paymentIds: string[]; amount: string }) => (
-    <button type="button" data-ids={paymentIds.join(',')}>
-      cancel {amount}
+vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('./payment-row-menu', () => ({
+  PaymentRowMenu: (props: {
+    paymentIds: string[]
+    receiptId: string | null
+    isOnline: boolean
+    amount: string
+    isRefund: boolean
+  }) => (
+    <button
+      type="button"
+      data-ids={props.paymentIds.join(',')}
+      data-receipt={props.receiptId ?? ''}
+      data-online={String(props.isOnline)}
+      data-refund={String(props.isRefund)}
+    >
+      actions {props.amount}
     </button>
   ),
 }))
@@ -38,38 +46,47 @@ const props = { locale: 'fr', currency: 'EUR' }
 
 const desktopTable = () => screen.getByRole('table')
 
-describe('PaymentHistoryTable cancellation', () => {
-  it('offers to cancel every line of a manual family payment together', async () => {
+describe('PaymentHistoryTable actions', () => {
+  it('gives the row menu every line of a manual family payment together', async () => {
     const payments = [
       line({ id: 'p-1' }),
       line({ id: 'p-2', enrollmentId: 'enrollment-2', amount: 50 }),
     ]
     render(await PaymentHistoryTable({ ...props, payments: payments as never, canCancel: true }))
 
-    const button = within(desktopTable()).getByRole('button')
-    expect(button).toHaveAttribute('data-ids', 'p-1,p-2')
-    expect(button).toHaveTextContent('150,00')
+    const menu = within(desktopTable()).getByRole('button', { name: /actions/ })
+    expect(menu).toHaveAttribute('data-ids', 'p-1,p-2')
+    expect(menu).toHaveAttribute('data-receipt', '')
+    expect(menu).toHaveTextContent('150,00')
   })
 
-  it('points an online payment to Stripe instead of cancelling it', async () => {
+  it('flags a refund', async () => {
+    render(
+      await PaymentHistoryTable({
+        ...props,
+        payments: [line({ amount: -50 })] as never,
+        canCancel: true,
+      })
+    )
+
+    expect(within(desktopTable()).getByRole('button')).toHaveAttribute('data-refund', 'true')
+  })
+
+  it('flags an online payment', async () => {
     const payments = [line({ method: 'STRIPE', paymentTransactionId: 'tx-1' })]
     render(await PaymentHistoryTable({ ...props, payments: payments as never, canCancel: true }))
 
-    expect(within(desktopTable()).queryByRole('button')).not.toBeInTheDocument()
-    expect(within(desktopTable()).getByText('cancel.onlineHint')).toBeInTheDocument()
+    expect(within(desktopTable()).getByRole('button')).toHaveAttribute('data-online', 'true')
   })
 
-  it('sends a cashier payment to its receipt instead of cancelling it', async () => {
+  it('passes the receipt of a payment that has one', async () => {
     const payments = [line({ receiptId: 'receipt-1' })]
     render(await PaymentHistoryTable({ ...props, payments: payments as never, canCancel: true }))
 
-    expect(within(desktopTable()).queryByRole('button')).not.toBeInTheDocument()
-    expect(
-      within(desktopTable()).getByRole('link', { name: 'cancel.receiptHint' })
-    ).toHaveAttribute('href', '/dashboard/cashier/receipts/receipt-1')
+    expect(within(desktopTable()).getByRole('button')).toHaveAttribute('data-receipt', 'receipt-1')
   })
 
-  it('shows no cancellation to a viewer who is not a school admin', async () => {
+  it('shows no actions to a viewer who is not a school admin', async () => {
     render(await PaymentHistoryTable({ ...props, payments: [line({})] as never }))
 
     expect(screen.queryByRole('button')).not.toBeInTheDocument()

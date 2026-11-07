@@ -1085,7 +1085,9 @@
             "validationError": "Check the information entered",
             "notFound": "Family not found",
             "enrollmentNotPayable": "This enrollment does not belong to the family or no longer awaits payment"
-          }
+          },
+          "generateReceipt": "Issue a receipt",
+          "generateReceiptHint": "Numbered, to print or share. Untick to issue one later from the family page."
         },
         "description": "Payments received, cheques to deposit and amounts still due."
       },
@@ -1290,7 +1292,6 @@
           "heading": "Receipt {number}",
           "back": "Back to cashier",
           "print": "Print",
-          "share": "Share",
           "family": "Family",
           "staff": "Staff",
           "method": "Payment",
@@ -1319,8 +1320,31 @@
               "notFound": "Receipt not found",
               "alreadyCancelled": "This receipt is already cancelled",
               "refundExceedsPaid": "Part of this receipt's tuition was already refunded: cancel that refund first",
-              "validationError": "Give a reason"
+              "validationError": "Give a reason",
+              "onlinePayment": "An online payment is refunded from Stripe",
+              "mealsDisabled": "The meals module is disabled: this receipt cannot be cancelled"
             }
+          },
+          "onlinePayment": "Online payment",
+          "backToFamily": "Family page",
+          "shareMenu": {
+            "whatsapp": "WhatsApp",
+            "copyLink": "Copy link",
+            "linkCopied": "Link copied",
+            "copyError": "Could not copy: select the link by hand",
+            "sendEmail": "Send by email",
+            "emailSent": "Receipt sent to the parents",
+            "error": "Error while sending",
+            "errors": {
+              "noRecipient": "No parent of this family has an email address",
+              "emailError": "The email could not be sent, try again",
+              "notFound": "Receipt not found",
+              "cancelled": "This receipt is cancelled"
+            },
+            "trigger": "Share",
+            "title": "Share the receipt",
+            "description": "The family opens the receipt with this link, no sign-in needed.",
+            "link": "Receipt link"
           }
         },
         "day": {
@@ -1940,7 +1964,7 @@
           },
           "actions": "Actions",
           "cancel": {
-            "trigger": "Cancel",
+            "trigger": "Cancel payment",
             "title": "Cancel this payment?",
             "description": "The {amount} payment leaves the history and the family's balance due rises by {amount}. It is not erased: the cancellation keeps who did it and why.",
             "refundDescription": "The {amount} refund leaves the history and the family's balance due drops by {amount}. It is not erased: the cancellation keeps who did it and why.",
@@ -1950,17 +1974,30 @@
             "success": "Payment cancelled",
             "error": "Could not cancel the payment",
             "onlineHint": "Online payment: refund it from Stripe",
-            "receiptHint": "Cashier payment: cancel the receipt",
             "errors": {
               "notFound": "This payment no longer exists or was already cancelled",
               "onlinePayment": "An online payment is refunded from Stripe",
-              "receiptPayment": "A cashier payment is cancelled with its receipt",
+              "receiptPayment": "A payment with a receipt is cancelled with its receipt",
               "mixedFamilies": "These payments do not belong to the same family",
               "refundExceedsPaid": "An active refund would exceed what remains paid: cancel that refund first",
               "paymentsDisabled": "Payments are disabled for this school",
               "validationError": "The reason must not exceed 250 characters"
             }
-          }
+          },
+          "viewReceipt": "View receipt",
+          "issueReceipt": {
+            "trigger": "Issue receipt",
+            "success": "Receipt issued",
+            "error": "Error while issuing the receipt",
+            "errors": {
+              "notFound": "This payment no longer exists or was cancelled",
+              "alreadyIssued": "This payment already has a receipt",
+              "notReceivable": "No receipt can be issued for this payment",
+              "validationError": "Invalid payment",
+              "paymentsDisabled": "Payments are disabled for this school"
+            }
+          },
+          "cancelReceipt": "Cancel receipt"
         },
         "relationType": {
           "PARENT": "Parent",
@@ -3909,6 +3946,13 @@
       "cta": "Confirm the new address",
       "notice": "After confirmation, you will sign in with {newEmail}.",
       "footer": "Automated message. If you did not request this, ignore this email and change your password."
+    },
+    "receipt": {
+      "subject": "Receipt {number} — {schoolName}",
+      "heading": "Your receipt {number}",
+      "body": "{schoolName} received your payment of {total} on {date}. The receipt is available online to view or print.",
+      "cta": "View receipt",
+      "footer": "Automatic message sent by {schoolName}. The link stays valid as long as the receipt is not cancelled."
     }
   },
   "publicEvent": {
@@ -3937,7 +3981,10 @@
       "stepSafari": "Open this page in Safari.",
       "stepShare": "Tap the Share button.",
       "stepAdd": "Choose “Add to Home Screen”, then tap Add.",
-      "close": "Close"
+      "close": "Close",
+      "popupTitle": "Install the app",
+      "popupDescription": "Open the school in one tap from your home screen, like any other app.",
+      "later": "Later"
     }
   }
 }

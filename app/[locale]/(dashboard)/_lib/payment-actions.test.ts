@@ -29,7 +29,7 @@ describe('recordPaymentAction', () => {
     vi.mocked(recordPayment).mockResolvedValue('OK')
 
     expect(await recordPaymentAction(input)).toBe('OK')
-    expect(recordPayment).toHaveBeenCalledWith({ ...input, schoolId: 's' })
+    expect(recordPayment).toHaveBeenCalledWith({ ...input, schoolId: 's', recordedById: 'u' })
     expect(revalidatePath).toHaveBeenCalledWith(`/dashboard/families/${input.familyId}`)
   })
 
@@ -38,6 +38,15 @@ describe('recordPaymentAction', () => {
 
     expect(await recordPaymentAction(input)).toBe('enrollmentNotPayable')
     expect(revalidatePath).not.toHaveBeenCalled()
+  })
+
+  it('returns the issued receipt so the dialog can open it', async () => {
+    vi.mocked(recordPayment).mockResolvedValue({ receiptId: 'receipt-1' })
+
+    expect(await recordPaymentAction({ ...input, generateReceipt: true })).toEqual({
+      receiptId: 'receipt-1',
+    })
+    expect(revalidatePath).toHaveBeenCalledWith(`/dashboard/families/${input.familyId}`)
   })
 })
 

@@ -24,7 +24,12 @@ const tx = { tx: true }
 function setup() {
   const receiptGw = {
     transaction: vi.fn(async (fn: (client: unknown) => unknown) => fn(tx)),
-    findPayer: vi.fn().mockResolvedValue({ familyId: 'family-1', teacherId: null }),
+    findPayer: vi.fn().mockResolvedValue({
+      familyId: 'family-1',
+      teacherId: null,
+      method: 'CASH',
+      _count: { mealPayments: 1 },
+    }),
     lockForCancel: vi.fn().mockResolvedValue({ familyId: 'family-1', cancelledAt: null }),
     findActivePayments: vi
       .fn()
@@ -38,7 +43,7 @@ function setup() {
       receiptGw as unknown as ReceiptGw,
       configGw as unknown as ConfigGw
     )
-  return { receiptGw, run }
+  return { receiptGw, configGw, run }
 }
 
 beforeEach(() => {
@@ -66,6 +71,27 @@ describe('cancelReceipt', () => {
 
     expect(await run()).toBe('OK')
     expect(deactivateMany).not.toHaveBeenCalled()
+  })
+
+  it('cancels a tuition-only receipt when the school has no meals module', async () => {
+    const { receiptGw, configGw, run } = setup()
+    receiptGw.findPayer.mockResolvedValue({
+      familyId: 'family-1',
+      teacherId: null,
+      _count: { mealPayments: 0 },
+    })
+    configGw.get.mockResolvedValue({ value: 'false' })
+
+    expect(await run()).toBe('OK')
+    expect(deactivateMany).toHaveBeenCalledWith(tx, schoolId, ['payment-1'])
+  })
+
+  it('refuses a receipt with meal lines when the meals module is off', async () => {
+    const { receiptGw, configGw, run } = setup()
+    configGw.get.mockResolvedValue({ value: 'false' })
+
+    expect(await run()).toBe('mealsDisabled')
+    expect(receiptGw.markCancelled).not.toHaveBeenCalled()
   })
 
   it('refuses a receipt cancelled twice', async () => {
@@ -109,7 +135,11 @@ describe('cancelReceipt', () => {
 
   it('cancels a staff receipt without locking any family', async () => {
     const { receiptGw, run } = setup()
-    receiptGw.findPayer.mockResolvedValue({ familyId: null, teacherId: 'staff-1' })
+    receiptGw.findPayer.mockResolvedValue({
+      familyId: null,
+      teacherId: 'staff-1',
+      _count: { mealPayments: 1 },
+    })
     receiptGw.lockForCancel.mockResolvedValue({ familyId: null, cancelledAt: null })
     receiptGw.findActivePayments.mockResolvedValue([])
 
@@ -122,5 +152,18 @@ describe('cancelReceipt', () => {
     const { run } = setup()
 
     expect(await run({ reason: '  ' })).toBe('validationError')
+  })
+
+  it('refuses an online payment receipt, refunded through Stripe', async () => {
+    const { receiptGw, run } = setup()
+    receiptGw.findPayer.mockResolvedValue({
+      familyId: 'family-1',
+      teacherId: null,
+      method: 'STRIPE',
+      _count: { mealPayments: 0 },
+    })
+
+    expect(await run()).toBe('onlinePayment')
+    expect(receiptGw.transaction).not.toHaveBeenCalled()
   })
 })

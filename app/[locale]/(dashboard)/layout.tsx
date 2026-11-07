@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
+import { countUnreadAnnouncements } from '@/domain/announcement'
 import {
   DashboardHeader,
   EventAnnouncementBanner,
@@ -29,9 +30,9 @@ import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assist
 import { isSchoolSwitchEnabled } from '@/use-cases/platform-settings/is-school-switch-enabled'
 import { AssistantDock } from './_components/ai-chat/assistant-dock'
 import { AnnouncementGate } from './_components/announcement-gate'
-import { AnnouncementsButton } from './_components/announcements-button'
 import { RememberActiveSchool } from './_components/remember-active-school'
 import { SignInUpgradeGate } from './_components/sign-in-upgrade-gate'
+import { getAnnouncementFeed } from './_lib/announcements'
 
 function readConfigFlag(schoolId: string, name: string) {
   return db.config
@@ -65,6 +66,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     aiAssistantEnabled,
     hasStaffAccess,
     mealsEnabled,
+    announcementFeed,
   ] = await Promise.all([
     getBrandingConfig(context.schoolId),
     auth.api.getSession({ headers: await headers() }),
@@ -82,6 +84,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     isAiAssistantEnabled(),
     hasActiveSchoolStaffAccess(context),
     isMealsEnabled(context.schoolId),
+    getAnnouncementFeed(locale),
   ])
   // La page de connexion n'a pas de session : elle s'habille de l'école désignée par ce cookie.
   const rememberSchool = cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId
@@ -109,6 +112,11 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
         attendanceEnabled={attendanceEnabled}
         aiAssistantEnabled={aiAssistantEnabled}
         mealsEnabled={mealsEnabled}
+        unreadNews={
+          announcementFeed
+            ? countUnreadAnnouncements(announcementFeed.announcements, announcementFeed.reader)
+            : null
+        }
       />
     </>
   )
@@ -141,13 +149,7 @@ export default async function DashboardLayout({ children, params }: Props) {
           </Suspense>
           <EventAnnouncementBanner />
           <Suspense fallback={<header className="h-14 border-b border-border" />}>
-            <DashboardHeader
-              news={
-                <Suspense fallback={null}>
-                  <AnnouncementsButton locale={locale} />
-                </Suspense>
-              }
-            />
+            <DashboardHeader />
           </Suspense>
         </div>
         <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">

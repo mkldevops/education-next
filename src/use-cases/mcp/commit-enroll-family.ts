@@ -4,6 +4,7 @@ import { startMonthToDate } from '@/domain/payment-schedule'
 import { reserveClassSeatsInOrder } from '@/gateways/class-seat-lock'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { lockActiveFamily } from '@/gateways/family-mutation-lock'
+import { issueTuitionReceipt } from '@/use-cases/receipts/issue-tuition-receipt'
 import { claimResolved, commitInTransaction, releaseDraft } from './claim-draft'
 import type { DraftScope } from './draft-scope'
 import { countSeatsByClass, ENROLL_FAMILY_TOOL } from './preview-enroll-family'
@@ -270,7 +271,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
       students.push({ personId: created.id, studentId: student.id, enrollmentId: enrollment.id })
     }
 
-    const payments: string[] = []
+    const payments: Array<{ id: string; amount: number }> = []
     if (resolved.payment) {
       for (const item of allocation) {
         const target = students[item.studentIndex]
@@ -288,9 +289,24 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
           },
           select: { id: true },
         })
-        payments.push(payment.id)
+        payments.push({ id: payment.id, amount: item.amount })
       }
     }
+
+    // Le premier règlement d'une inscription porte son reçu, comme un encaissement en caisse.
+    const receivable = payments.filter((payment) => payment.amount > 0)
+    const receipt =
+      resolved.payment && receivable.length > 0
+        ? await issueTuitionReceipt(tx, schoolId, {
+            familyId: family.id,
+            method: resolved.payment.method,
+            reference: resolved.payment.reference ?? null,
+            paidAt: resolved.payment.paidAt,
+            recordedById: scope.userId,
+            idempotencyKey: `mcp:${draftId}`,
+            payments: receivable,
+          })
+        : null
 
     const written = {
       familyId: family.id,
@@ -298,7 +314,8 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
       personIds: students.map((entry) => entry.personId),
       studentIds: students.map((entry) => entry.studentId),
       enrollmentIds: students.map((entry) => entry.enrollmentId),
-      paymentIds: payments,
+      paymentIds: payments.map((payment) => payment.id),
+      receiptId: receipt?.id ?? null,
     }
 
     return written

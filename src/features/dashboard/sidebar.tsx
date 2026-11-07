@@ -33,6 +33,7 @@ type SidebarProps = {
   attendanceEnabled?: boolean
   aiAssistantEnabled?: boolean
   mealsEnabled?: boolean
+  unreadNews?: number | null
 }
 
 export function Sidebar({
@@ -53,6 +54,7 @@ export function Sidebar({
   attendanceEnabled = false,
   aiAssistantEnabled = false,
   mealsEnabled = false,
+  unreadNews = null,
 }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const platform = useTranslations('metadata')
@@ -195,6 +197,7 @@ export function Sidebar({
           <UserMenu
             userName={userName}
             items={items.bottom}
+            unreadNews={unreadNews}
             expanded={showLabels}
             onNavigate={handleNavClick}
             onSignOut={handleSignOut}

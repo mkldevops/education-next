@@ -1283,18 +1283,21 @@ model Receipt {
   method         PaymentMethod
   reference      String?       @db.VarChar(250)
   paidAt         DateTime
-  recordedById   String
+  /// Nul pour un paiement en ligne : aucun membre de l'école ne l'a saisi.
+  recordedById   String?
   idempotencyKey String        @db.VarChar(64)
   requestHash    String        @db.VarChar(64)
   cancelledAt    DateTime?
   cancelledById  String?
   cancelReason   String?       @db.VarChar(250)
+  /// Jeton du lien public de lecture, créé au premier partage ; le lien meurt avec l'annulation.
+  shareToken     String?       @unique @db.VarChar(64)
   createdAt      DateTime      @default(now())
 
   school            School             @relation(fields: [schoolId], references: [id])
   family            Family?            @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
   teacher           Teacher?           @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Restrict)
-  recordedBy        User               @relation("receiptRecordedBy", fields: [recordedById], references: [id])
+  recordedBy        User?              @relation("receiptRecordedBy", fields: [recordedById], references: [id], onDelete: Restrict)
   cancelledBy       User?              @relation("receiptCancelledBy", fields: [cancelledById], references: [id])
   mealPayments      MealPayment[]
   childcarePayments ChildcarePayment[]

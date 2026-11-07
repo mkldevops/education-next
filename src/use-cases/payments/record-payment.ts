@@ -6,11 +6,16 @@ import { db } from '@/lib/db'
 import { fitsCurrencyPrecision } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { issueTuitionReceipt } from '@/use-cases/receipts/issue-tuition-receipt'
 import { readLockedFamilyBalances } from './locked-family-balance'
 import { recordPaymentSchema } from './schemas'
 
 type Input = z.infer<typeof recordPaymentSchema>
 
+/**
+ * Saisie manuelle d'un règlement d'écolage, réparti sur les inscriptions de la famille.
+ * Avec `generateReceipt`, l'encaissement reçoit un reçu numéroté : le succès porte alors son id.
+ */
 export async function recordPayment(input: Input, configGw = configGateway) {
   const parsed = recordPaymentSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
@@ -28,10 +33,11 @@ export async function recordPayment(input: Input, configGw = configGateway) {
     const distribution = allocatePayment(parsed.data.amount, balances, parsed.data.enrollmentId)
     if (distribution.result !== 'OK') return distribution.result
 
-    await paymentGateway.createForFamily(
+    const rows = distribution.distribution
+    const ids = await paymentGateway.createForFamily(
       tx,
       schoolId,
-      distribution.distribution.map((item) => ({
+      rows.map((item) => ({
         familyId,
         enrollmentId: item.enrollmentId,
         amount: item.amount,
@@ -42,6 +48,17 @@ export async function recordPayment(input: Input, configGw = configGateway) {
       }))
     )
 
-    return 'OK' as const
+    const { generateReceipt, recordedById } = parsed.data
+    if (!generateReceipt || !recordedById) return 'OK' as const
+    const receipt = await issueTuitionReceipt(tx, schoolId, {
+      familyId,
+      method: parsed.data.method,
+      reference: parsed.data.reference || null,
+      paidAt: parsed.data.paidAt,
+      recordedById,
+      idempotencyKey: `payment:${ids[0]}`,
+      payments: rows.map((row, index) => ({ id: ids[index], amount: row.amount })),
+    })
+    return { receiptId: receipt.id }
   })
 }

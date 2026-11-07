@@ -13,7 +13,9 @@
  *  4. la purge de rétention des brouillons MCP expirés — un entretien global, sans
  *     école à produire, donc sans lecture de tenant ;
  *  5. le seed, la migration legacy, l'import de listes de classe et la reprise des repas —
- *     scripts lancés à la main, qui visent une école nommée en argument.
+ *     scripts lancés à la main, qui visent une école nommée en argument ;
+ *  6. le lien public d'un reçu lu par `shareToken` — même principe que l'invitation : le
+ *     jeton aléatoire porte l'autorisation, et l'école est LUE depuis le reçu.
  *
  * Aucun autre appelant ne doit importer ce module.
  */
@@ -118,4 +120,17 @@ export async function purgeExpiredMcpDrafts(now: Date, committedBefore: Date): P
  */
 export function unscopedDbForDataScripts(): PrismaClient {
   return client()
+}
+
+/**
+ * Exception 6 — lien public d'un reçu. Ne rend que l'identité du reçu et son école ; la page
+ * relit ensuite le reçu par le gateway, scopé à cette école. Un reçu annulé n'est plus servi.
+ */
+export async function findReceiptByShareToken(
+  shareToken: string
+): Promise<{ id: string; schoolId: string } | null> {
+  return client().receipt.findFirst({
+    where: { shareToken, cancelledAt: null },
+    select: { id: true, schoolId: true },
+  })
 }

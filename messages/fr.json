@@ -1086,7 +1086,9 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Famille introuvable",
             "enrollmentNotPayable": "Cette inscription n'appartient pas à la famille ou n'attend plus de règlement"
-          }
+          },
+          "generateReceipt": "Générer un reçu",
+          "generateReceiptHint": "Numéroté, à imprimer ou partager. Décochez pour en générer un plus tard depuis la fiche famille."
         },
         "description": "Règlements reçus, chèques à encaisser et reste dû."
       },
@@ -1291,7 +1293,6 @@
           "heading": "Reçu {number}",
           "back": "Retour à la caisse",
           "print": "Imprimer",
-          "share": "Partager",
           "family": "Famille",
           "staff": "Personnel",
           "method": "Paiement",
@@ -1320,8 +1321,31 @@
               "notFound": "Reçu introuvable",
               "alreadyCancelled": "Ce reçu est déjà annulé",
               "refundExceedsPaid": "L'écolage de ce reçu a déjà été remboursé en partie : annulez d'abord ce remboursement",
-              "validationError": "Indiquez un motif"
+              "validationError": "Indiquez un motif",
+              "onlinePayment": "Un paiement en ligne se rembourse depuis Stripe",
+              "mealsDisabled": "Le module repas est désactivé : ce reçu ne peut pas être annulé"
             }
+          },
+          "onlinePayment": "Paiement en ligne",
+          "backToFamily": "Fiche famille",
+          "shareMenu": {
+            "whatsapp": "WhatsApp",
+            "copyLink": "Copier le lien",
+            "linkCopied": "Lien copié",
+            "copyError": "Copie impossible : sélectionnez le lien à la main",
+            "sendEmail": "Envoyer par e-mail",
+            "emailSent": "Reçu envoyé aux parents",
+            "error": "Erreur lors de l'envoi",
+            "errors": {
+              "noRecipient": "Aucun parent de la famille n'a d'adresse e-mail",
+              "emailError": "L'e-mail n'a pas pu partir, réessayez",
+              "notFound": "Reçu introuvable",
+              "cancelled": "Ce reçu est annulé"
+            },
+            "trigger": "Partager",
+            "title": "Partager le reçu",
+            "description": "La famille ouvre le reçu par ce lien, sans se connecter.",
+            "link": "Lien du reçu"
           }
         },
         "day": {
@@ -1941,7 +1965,7 @@
           },
           "actions": "Actions",
           "cancel": {
-            "trigger": "Annuler",
+            "trigger": "Annuler le paiement",
             "title": "Annuler ce paiement ?",
             "description": "Le paiement de {amount} sort de l'historique et le reste dû de la famille augmente de {amount}. Il n'est pas effacé : l'annulation garde son auteur et son motif.",
             "refundDescription": "Le remboursement de {amount} sort de l'historique et le reste dû de la famille diminue de {amount}. Il n'est pas effacé : l'annulation garde son auteur et son motif.",
@@ -1950,18 +1974,31 @@
             "cancel": "Retour",
             "success": "Paiement annulé",
             "error": "Erreur lors de l'annulation",
-            "onlineHint": "Paiement en ligne : remboursez-le depuis Stripe",
-            "receiptHint": "Paiement de caisse : annulez le reçu",
+            "onlineHint": "Paiement en ligne : remboursement depuis Stripe",
             "errors": {
               "notFound": "Ce paiement n'existe plus ou a déjà été annulé",
               "onlinePayment": "Un paiement en ligne se rembourse depuis Stripe",
-              "receiptPayment": "Un paiement de caisse s'annule avec son reçu",
+              "receiptPayment": "Un paiement avec reçu s'annule avec son reçu",
               "mixedFamilies": "Ces paiements n'appartiennent pas à la même famille",
               "refundExceedsPaid": "Un remboursement actif dépasserait ce qui resterait payé : annulez d'abord ce remboursement",
               "paymentsDisabled": "Les paiements sont désactivés pour cette école",
               "validationError": "Le motif ne doit pas dépasser 250 caractères"
             }
-          }
+          },
+          "viewReceipt": "Voir le reçu",
+          "issueReceipt": {
+            "trigger": "Émettre le reçu",
+            "success": "Reçu généré",
+            "error": "Erreur lors de la génération du reçu",
+            "errors": {
+              "notFound": "Ce paiement n'existe plus ou a été annulé",
+              "alreadyIssued": "Ce paiement a déjà un reçu",
+              "notReceivable": "Aucun reçu possible pour ce paiement",
+              "validationError": "Paiement invalide",
+              "paymentsDisabled": "Les paiements sont désactivés pour cette école"
+            }
+          },
+          "cancelReceipt": "Annuler le reçu"
         },
         "relationType": {
           "PARENT": "Parent",
@@ -3910,6 +3947,13 @@
       "cta": "Confirmer la nouvelle adresse",
       "notice": "Après confirmation, la connexion se fera avec l'adresse {newEmail}.",
       "footer": "Message automatique. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email et changez votre mot de passe."
+    },
+    "receipt": {
+      "subject": "Reçu {number} — {schoolName}",
+      "heading": "Votre reçu {number}",
+      "body": "{schoolName} a bien reçu votre paiement de {total} le {date}. Le reçu est disponible en ligne, à consulter ou imprimer.",
+      "cta": "Voir le reçu",
+      "footer": "Message automatique envoyé par {schoolName}. Le lien reste valable tant que le reçu n'est pas annulé."
     }
   },
   "publicEvent": {
@@ -3938,7 +3982,10 @@
       "stepSafari": "Ouvrez cette page dans Safari.",
       "stepShare": "Touchez le bouton Partager.",
       "stepAdd": "Choisissez « Sur l’écran d’accueil », puis touchez Ajouter.",
-      "close": "Fermer"
+      "close": "Fermer",
+      "popupTitle": "Installer l’application",
+      "popupDescription": "Retrouvez l’école en un geste depuis votre écran d’accueil, comme une application.",
+      "later": "Plus tard"
     }
   }
 }
