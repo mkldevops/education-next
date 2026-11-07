@@ -42,6 +42,25 @@ export const getBrandingConfig = cache(async (schoolId: string) => {
 })
 
 /**
+ * Logo de chaque école listée, pour le menu de bascule. Les identifiants viennent de
+ * `getAuthorizedSchools()` : l'appelant ne passe que des écoles déjà autorisées.
+ */
+export async function getSchoolLogoUrls(schoolIds: string[]): Promise<Record<string, string>> {
+  if (schoolIds.length === 0) return {}
+
+  const configs = await db.config.findMany({
+    where: { schoolId: { in: schoolIds }, name: BRANDING_CONFIG_KEYS.logoUrl, isActive: true },
+    select: { schoolId: true, value: true },
+  })
+
+  return Object.fromEntries(
+    configs
+      .map((config) => [config.schoolId, config.value.trim()] as const)
+      .filter(([, value]) => value)
+  )
+}
+
+/**
  * École désignée par le seul cookie, pour les surfaces qui peuvent être
  * demandées **hors session** — favicon, manifest PWA. Sans cookie valide, ou si
  * l'école qu'il désigne est désactivée, l'appelant retombe sur l'identité

@@ -12,7 +12,7 @@ import {
 import { localizedHref } from '@/i18n/localized-href'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { auth } from '@/lib/auth'
-import { getBrandingConfig } from '@/lib/branding'
+import { getBrandingConfig, getSchoolLogoUrls } from '@/lib/branding'
 import { CLASS_SCHEDULE_ENABLED_CONFIG_KEY } from '@/lib/class-schedule-config'
 import { db } from '@/lib/db'
 import { EVENTS_CONFIG_KEY } from '@/lib/events-config'
@@ -83,6 +83,10 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
     hasActiveSchoolStaffAccess(context),
     isMealsEnabled(context.schoolId),
   ])
+  const schoolLogos =
+    switchAllowed && schools.length > 1
+      ? await getSchoolLogoUrls(schools.map((school) => school.id))
+      : {}
   // La page de connexion n'a pas de session : elle s'habille de l'école désignée par ce cookie.
   const rememberSchool = cookieStore.get(ACTIVE_SCHOOL_COOKIE)?.value !== context.schoolId
 
@@ -102,6 +106,7 @@ async function DashboardSidebarServer({ locale }: { locale: string }) {
         schoolName={branding.schoolName}
         userName={userName}
         schools={schools}
+        schoolLogos={schoolLogos}
         activeSchoolId={context.schoolId}
         canSwitchSchool={switchAllowed}
         classScheduleEnabled={classScheduleEnabled}
