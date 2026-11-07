@@ -26,6 +26,7 @@ type SidebarProps = {
   schoolName?: string
   userName?: string
   schools?: AuthorizedSchool[]
+  schoolLogos?: Record<string, string>
   activeSchoolId?: string
   canSwitchSchool: boolean
   classScheduleEnabled?: boolean
@@ -47,6 +48,7 @@ export function Sidebar({
   schoolName,
   userName,
   schools = [],
+  schoolLogos,
   activeSchoolId,
   canSwitchSchool,
   classScheduleEnabled = false,
@@ -156,6 +158,7 @@ export function Sidebar({
           <div className="min-w-0 flex-1">
             <SchoolSwitcher
               schools={schools}
+              schoolLogos={schoolLogos}
               activeSchoolId={activeSchoolId}
               canSwitchSchool={canSwitchSchool}
               displayName={displayName}

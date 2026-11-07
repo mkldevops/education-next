@@ -60,7 +60,11 @@ const school = (id: string, name: string): AuthorizedSchool => ({
 
 const ADMIN: SchoolRole = 'ADMIN'
 
-const renderSwitcher = (schools: AuthorizedSchool[], canSwitchSchool = true) =>
+const renderSwitcher = (
+  schools: AuthorizedSchool[],
+  canSwitchSchool = true,
+  schoolLogos?: Record<string, string>
+) =>
   render(
     <Sidebar
       roles={[ADMIN]}
@@ -68,6 +72,7 @@ const renderSwitcher = (schools: AuthorizedSchool[], canSwitchSchool = true) =>
       paymentsEnabled
       schoolName="Al-Nour"
       schools={schools}
+      schoolLogos={schoolLogos}
       activeSchoolId="school-a"
       canSwitchSchool={canSwitchSchool}
     />
@@ -282,6 +287,21 @@ describe('Sidebar school switcher', () => {
 
     expect(screen.getByRole('menuitem', { name: /Al-Nour/ })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /Horizon/ })).toBeInTheDocument()
+  })
+
+  it('shows each school logo in the switcher menu, initials otherwise', () => {
+    renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')], true, {
+      'school-b': '/api/media/branding/school-b/logo.webp',
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Al-Nour/ }))
+
+    const horizon = screen.getByRole('menuitem', { name: /Horizon/ })
+    expect(horizon.querySelector('img')).toHaveAttribute(
+      'src',
+      '/api/media/branding/school-b/logo.webp'
+    )
+    expect(screen.getByRole('menuitem', { name: /Al-Nour/ }).querySelector('img')).toBeNull()
   })
 
   it('switches the active school and replays the layout', async () => {
