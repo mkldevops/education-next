@@ -1,6 +1,6 @@
 ---
-description: Execute the implementation plan by processing and executing all tasks defined in tasks.md
----
+
+## description: Execute the implementation plan by processing and executing all tasks defined in tasks.md
 
 ## User Input
 
@@ -105,7 +105,7 @@ Take the user input into account before proceeding (if not empty).
 
 6. Execute implementation following the task plan:
    - **Phase-by-phase execution**: Complete each phase before moving to the next
-   - **Respect dependencies**: Run sequential tasks in order, parallel tasks [P] can run together  
+   - **Respect dependencies**: Run sequential tasks in order, parallel tasks [P] can run together
    - **Follow TDD approach**: Execute test tasks before their corresponding implementation tasks
    - **File-based coordination**: Tasks affecting the same files must run sequentially
    - **Validation checkpoints**: Verify each phase completion before proceeding

@@ -1,6 +1,7 @@
 # Audit — groupe `mcp` (workflow 11, P1)
 
 Périmètre :
+
 - clés d'API MCP (création, liste, révocation, détenteurs) ;
 - route `app/api/mcp` ;
 - outils de lecture ;
@@ -14,16 +15,16 @@ contre une base réelle ni en concurrence. Les outils `mcp__education__*` n'ont 
 
 ## 1. Synthèse
 
-| Sous-workflow | Solide | Simple | UX | UI | Verdict |
-|---|---|---|---|---|---|
-| Clés : cycle de vie + UI | 4 | 4 | 3 | 4 | Hachage et plafond solides. Aucune révocation administrative ; clés orphelines quand le drapeau est coupé. |
-| Route `/api/mcp` + scope | 5 | 4 | 4 | — | Ordre des gardes exemplaire ; scope relu à chaque appel. |
-| Outils de lecture | 4 | 5 | 3 | — | Projections étroites. `list_class_periods` mélange toutes les périodes actives. |
-| `enroll_family` | 2 | 3 | 2 | — | Classes homonymes entre périodes bloquantes ; appariement des membres trop lâche ; recomptage sans verrou. |
-| `record_payment` | 3 | 4 | 3 | — | Garde `staleDraft` présente mais contournable en concurrence. |
-| `update_enrollment` | 3 | 4 | 3 | — | Update inconditionnel ; `__unpriced__` exposé ; `totalAmount` non documenté. |
-| `create_event` | 3 | 5 | 3 | — | Simple et en brouillon. Non idempotent ; la course sur le slug sort en `internalError`. |
-| Claim / purge | 4 | 3 | 4 | — | Claim conditionnel robuste. Écriture du résultat non conditionnée ; purge en mémoire. |
+| Sous-workflow            | Solide | Simple | UX  | UI  | Verdict                                                                                                    |
+| ------------------------ | ------ | ------ | --- | --- | ---------------------------------------------------------------------------------------------------------- |
+| Clés : cycle de vie + UI | 4      | 4      | 3   | 4   | Hachage et plafond solides. Aucune révocation administrative ; clés orphelines quand le drapeau est coupé. |
+| Route `/api/mcp` + scope | 5      | 4      | 4   | —   | Ordre des gardes exemplaire ; scope relu à chaque appel.                                                   |
+| Outils de lecture        | 4      | 5      | 3   | —   | Projections étroites. `list_class_periods` mélange toutes les périodes actives.                            |
+| `enroll_family`          | 2      | 3      | 2   | —   | Classes homonymes entre périodes bloquantes ; appariement des membres trop lâche ; recomptage sans verrou. |
+| `record_payment`         | 3      | 4      | 3   | —   | Garde `staleDraft` présente mais contournable en concurrence.                                              |
+| `update_enrollment`      | 3      | 4      | 3   | —   | Update inconditionnel ; `__unpriced__` exposé ; `totalAmount` non documenté.                               |
+| `create_event`           | 3      | 5      | 3   | —   | Simple et en brouillon. Non idempotent ; la course sur le slug sort en `internalError`.                    |
+| Claim / purge            | 4      | 3      | 4   | —   | Claim conditionnel robuste. Écriture du résultat non conditionnée ; purge en mémoire.                      |
 
 L'axe UI ne s'applique qu'à l'écran des clés : les outils MCP n'ont pas d'interface.
 
@@ -32,6 +33,7 @@ L'axe UI ne s'applique qu'à l'écran des clés : les outils MCP n'ont pas d'int
 ### 2.1 Clés d'API : cycle de vie et UI
 
 Points solides :
+
 - Clé `edu_mcp_` + 32 octets aléatoires, stockée seulement sous forme de SHA-256 (index unique) avec un
   préfixe de 12 caractères (`src/lib/mcp-key-crypto.ts`).
 - Plafond de 5 clés vivantes par couple (utilisateur, école), vérifié en transaction Serializable
@@ -42,6 +44,7 @@ Points solides :
 - Les traductions `settings.apiKeys` fr et en sont complètes.
 
 **Majeur — aucune révocation ni liste administrative des clés des autres.**
+
 - Où : `src/gateways/mcp-api-key-gateway.ts:41-48` (`listForUser`), `:97-101` (`revoke` filtré sur
   `userId`) et `app/[locale]/(dashboard)/dashboard/settings/_lib/mcp-api-key-actions.ts:36-44`.
 - Scénario : la clé d'un admin fuit dans un dépôt ou un poste partagé. Cet admin est absent ou
@@ -51,6 +54,7 @@ Points solides :
   super-admin), sans exposer le hash, avec la politique documentée dans `business-rules.md`.
 
 **Mineur — onglet masqué quand le drapeau est coupé : impossible de révoquer.**
+
 - Où : `app/[locale]/(dashboard)/dashboard/settings/page.tsx:98-106`.
 - Scénario : pendant un incident, le super-admin coupe `mcp_enabled`. Les admins ne peuvent plus
   révoquer leurs clés. Quand le drapeau revient, les clés non expirées redeviennent valides.
@@ -58,6 +62,7 @@ Points solides :
   bloquer que la création.
 
 **Mineur — la liste locale n'est jamais resynchronisée.**
+
 - Où : `app/[locale]/(dashboard)/dashboard/settings/_components/api-keys-section.tsx:41`, avec
   `useState(keys)`.
 - Scénario : après un `router.refresh()` ou une révocation dans un autre onglet, la liste reste figée
@@ -65,12 +70,14 @@ Points solides :
 - Correctif : dériver l'état des props, par exemple avec `key` sur la section ou un effet de resync.
 
 **Mineur — erreur de révocation générique.**
+
 - Où : `api-keys-section.tsx:80-82`, qui affiche `t('error')` quel que soit le code.
 - Scénario : l'utilisateur révoque une clé déjà révoquée ou expirée dans un autre onglet. Le code
   `notFound` s'affiche comme « erreur », et la clé `errors.notFound` n'existe pas.
 - Correctif : passer par `t.has('errors.<code>')` et ajouter `errors.notFound` en fr et en.
 
 **Mineur — la commande d'installation met la clé dans l'historique shell et ne vise que Claude.**
+
 - Où : `api-keys-section.tsx:46-48`.
 - Scénario : la commande copiée contient la clé en clair et atterrit dans `~/.zsh_history`. Aucune
   variante n'existe pour Codex ou un autre client.
@@ -87,6 +94,7 @@ placer un bouton dans un autre bouton. `@peaklab/ui` est un alias, et je n'ai pa
 ### 2.2 Route `/api/mcp` et résolution du scope
 
 Points solides :
+
 - Ordre des gardes (`app/api/mcp/route.ts:63-88`) : rate limit par adresse, drapeau, scope, rate limit
   par clé, puis `touch`.
 - Les en-têtes d'identification (`authorization`, `x-api-key`, `cookie`, `proxy-authorization`) sont
@@ -102,6 +110,7 @@ Points solides :
   `schoolId` et `keyId`.
 
 **Mineur — une clé aléatoire bien formée échappe aux deux niveaux de rate limit.**
+
 - Où : `route.ts:37-38` et `:63-82`.
 - Scénario : un attaquant envoie des clés `edu_mcp_…` aléatoires bien formées. Aucune ne passe par le
   limiteur par adresse, et comme aucune ne résout de scope, le limiteur par clé ne s'applique pas
@@ -109,6 +118,7 @@ Points solides :
 - Correctif : compter aussi les échecs de résolution dans le limiteur par adresse.
 
 **Mineur — limiteurs et purge en mémoire.**
+
 - Où : `route.ts:37-38` et `src/use-cases/mcp/purge-expired-drafts.ts`, avec `lastPurgeAt`.
 - Scénario : avec plusieurs instances, les plafonds se multiplient par le nombre d'instances et la
   purge s'exécute sur chacune. L'effet reste bénin.
@@ -118,11 +128,13 @@ Points solides :
 ### 2.3 Outils de lecture
 
 Points solides :
+
 - Les projections sont étroites : un enseignant est exposé par son id et ses noms seulement.
 - `list_plans` n'est enregistré que si les paiements sont activés, et exclut la formule UNPRICED
   (`src/gateways/mcp-read-gateway.ts:69-74`).
 
 **Majeur — `list_class_periods` mélange toutes les périodes actives, sans indiquer la courante.**
+
 - Où : `src/gateways/mcp-read-gateway.ts:44-65`.
 - Scénario : l'agent liste « CP-A » deux fois, en 2025-2026 et en 2026-2027, sans savoir laquelle
   viser. Ce défaut alimente le constat 2.4 sur les classes.
@@ -130,6 +142,7 @@ Points solides :
   trier par période.
 
 **Mineur — `describe()` expose le nom technique de formule `__unpriced__` à l'agent.**
+
 - Où : `src/use-cases/mcp/preview-update-enrollment.ts:32`.
 - Correctif : remplacer ce nom par un libellé neutre, ou par `null`.
 
@@ -137,6 +150,7 @@ Points solides :
 
 **Critique — l'inscription est bloquée quand un nom de classe existe dans plusieurs périodes, et peut
 viser la mauvaise année.**
+
 - Où :
   - `src/use-cases/mcp/preview-enroll-family.ts:132-146` : `matchByName` sur `listClassPeriods(schoolId)`,
     toutes périodes actives confondues ;
@@ -152,6 +166,7 @@ viser la mauvaise année.**
   résolution aux périodes courante et future.
 
 **Majeur — deux commits simultanés passent tous les deux le recomptage de capacité.**
+
 - Où : `src/use-cases/mcp/commit-enroll-family.ts:94-125`. Le `db.$transaction` y tourne par défaut en
   READ COMMITTED, sans verrou.
 - Contexte : le dashboard verrouille l'élève dans la période via `lockStudentInPeriod`
@@ -163,6 +178,7 @@ viser la mauvaise année.**
   les lignes `ClassPeriod` visées, et ajouter un test d'intégration concurrent.
 
 **Majeur — l'appariement d'un membre de famille existante est trop lâche.**
+
 - Où : `preview-enroll-family.ts:56-60` et `:98-120`, `src/gateways/family-gateway.ts:246-275`, avec
   `relationType: { not: 'PARENT' }` à la ligne 253.
 - Scénarios :
@@ -179,6 +195,7 @@ viser la mauvaise année.**
   - restreindre aux relations d'enfant, ou aux personnes qui ont déjà un `Student`.
 
 **Mineur — le preview et le commit ne comptent pas la capacité de la même façon.**
+
 - Où : `src/gateways/class-period-gateway.ts:96-106` compte PENDING et ACTIVE ; `commit-enroll-family.ts:116`
   compte PENDING, ACTIVE et COMPLETED.
 - Scénario : une classe contient des inscriptions COMPLETED. Le preview annonce qu'il reste une place,
@@ -186,12 +203,14 @@ viser la mauvaise année.**
 - Correctif : aligner les deux sur un seul prédicat partagé, celui du dashboard.
 
 **Mineur — le commit ne revérifie pas la formule.**
+
 - Où : `commit-enroll-family.ts:224`, avec `planId: plan.id` repris tel quel du brouillon.
 - Scénario : la formule est archivée entre le preview et le commit. L'inscription est créée sur une
   formule archivée, avec l'ancien montant.
 - Correctif : relire la formule active dans la transaction et renvoyer `staleDraft` si elle a changé.
 
 **Mineur — un élève archivé passe le preview mais échoue toujours au commit.**
+
 - Où : `family-gateway.ts:246-275`, dont le `select` de `student` ne filtre pas `isActive` ; le commit
   refuse à `commit-enroll-family.ts:155`.
 - Scénario : le preview est affiché « OK », mais le commit renvoie toujours `notFound`, qui ne se
@@ -199,11 +218,13 @@ viser la mauvaise année.**
 - Correctif : filtrer ou bloquer dès le preview avec un blocker explicite.
 
 **Mineur — la remise n'est pas validée comme un montant.**
+
 - Où : `schemas.ts:95` et `:131`, avec `z.number().min(0)` sans `isCurrencyAmount`.
 - Scénario : une remise de `10.005` est acceptée.
 - Correctif : ajouter `.refine(isCurrencyAmount)`, comme pour `totalAmount`.
 
 **Mineur — refus trompeurs.**
+
 - Avec les paiements coupés, une formule réservée non tarifée combinée à une remise renvoie
   `discountExceedsPlan` au lieu de `paymentsDisabled` (`preview-enroll-family.ts:194-200`).
 - Avec les paiements activés, un `planName` manquant renvoie un `validationError` opaque
@@ -212,10 +233,12 @@ viser la mauvaise année.**
 ### 2.5 `preview_record_payment` / `commit_record_payment`
 
 Points solides :
+
 - `paymentsDisabled` est vérifié avant le claim (`commit-record-payment.ts:35`).
 - Les soldes sont recalculés, et un `staleDraft` est renvoyé si la ventilation a changé (`:46-64`).
 
 **Majeur — deux paiements concurrents sur le même solde passent tous les deux.**
+
 - Où : `src/use-cases/mcp/commit-record-payment.ts:46-64`, en READ COMMITTED et sans verrou.
 - Scénario : il reste 100 € à payer. Deux brouillons de 100 € sont engagés en même temps. Chaque
   transaction lit 100 € restants et crée son paiement : 200 € sont encaissés et la famille se retrouve
@@ -223,6 +246,7 @@ Points solides :
 - Correctif : verrouiller la ligne `Family` avec `FOR UPDATE`, ou passer par `inSerializableTransaction`.
 
 **Mineur — la recherche de famille ne privilégie pas la correspondance exacte.**
+
 - Où : `src/use-cases/mcp/preview-record-payment.ts:31-42` et `family-gateway.ts:276-282`, avec
   `contains`, insensible à la casse, et `take: 10`.
 - Scénario : pour « Diallo », les familles « Diallo » et « Diallo-Ba » ressortent en `ambiguousFamily`
@@ -230,6 +254,7 @@ Points solides :
 - Correctif : appliquer la même préférence d'égalité que `matchByName`.
 
 **Mineur — un montant négatif (remboursement) est accepté sans règle dédiée.**
+
 - Où : `schemas.ts:62`, qui n'exige qu'un montant non nul.
 - Correctif : documenter le remboursement dans `business-rules.md`, ou l'interdire côté MCP.
 
@@ -240,6 +265,7 @@ transaction.
 ### 2.6 `preview_update_enrollment` / `commit_update_enrollment`
 
 **Mineur — la mise à jour du commit est inconditionnelle.**
+
 - Où : `src/use-cases/mcp/commit-update-enrollment.ts:49-75`.
 - Scénario : un paiement est saisi au dashboard entre la comparaison avant/après et l'`update`. Le
   nouveau total peut alors passer sous le montant déjà payé, ce que `totalBelowPaid` devait empêcher.
@@ -247,6 +273,7 @@ transaction.
   une transaction Serializable.
 
 **Mineur — l'entrée `totalAmount` n'est pas documentée.**
+
 - Où : l'entrée est acceptée par `schemas.ts:132`, mais absente de la description de l'outil
   (`src/mcp/server.ts:247-252`) et de `docs/mcp.md`.
 - Correctif : documenter l'entrée, ou la retirer.
@@ -259,10 +286,12 @@ transaction.
 ### 2.7 `create_event`
 
 Points solides :
+
 - L'événement naît en `DRAFT`.
 - Il délègue au use-case `createEvent` du dashboard, sans duplication.
 
 **Mineur — l'outil n'est pas idempotent.**
+
 - Où : `src/use-cases/mcp/create-event.ts` et la description de l'outil dans `src/mcp/server.ts`.
 - Scénario : une coupure réseau survient après l'écriture, et l'agent rejoue l'appel. Il reçoit
   `slugTaken`, et la description de l'outil lui dit de renommer : l'événement est créé en double.
@@ -270,6 +299,7 @@ Points solides :
   brouillon avec claim.
 
 **Mineur — la course sur le slug sort en `internalError`.**
+
 - Scénario : deux créations simultanées passent `findBySlug`, puis la contrainte unique `(schoolId,
   slug)` lève une exception, mappée en `internalError` par `guard()`.
 - Correctif : intercepter l'erreur P2002 et la traduire en `slugTaken`.
@@ -280,6 +310,7 @@ interdit tout décalage horaire. Correctif : supprimer la branche.
 ### 2.8 Claim et purge des brouillons
 
 Points solides :
+
 - Le claim est un `updateMany` conditionné par `id`, `schoolId`, `keyId`, `tool`, `checksum`, le statut
   `PENDING` et `expiresAt > now` (`src/gateways/mcp-draft-gateway.ts:51-55`).
 - Un rejeu renvoie le résultat stocké, et le reclaim ne s'applique qu'après 60 s sans résultat.
@@ -287,6 +318,7 @@ Points solides :
 - Le verrou est relâché en cas de refus ou d'exception.
 
 **Mineur — l'écriture du résultat n'est pas conditionnée.**
+
 - Où : `src/use-cases/mcp/claim-draft.ts:136`, un `updateMany` sur `{ id, schoolId }` seulement.
 - Scénario : un commit lent dépasse 60 s. Un second appel reprend le brouillon et l'engage. Les deux
   transactions écrivent leurs données, et le résultat du dernier écrase l'autre. Le reclaim ne protège
@@ -295,12 +327,14 @@ Points solides :
   lue, et annuler la transaction si 0 ligne est modifiée.
 
 **Mineur — `draftNotFound` est trompeur.**
+
 - Où : `claim-draft.ts:72`.
 - Scénario : un brouillon PENDING et valide perd la course contre un `release`. L'agent reçoit
   `draftNotFound` et abandonne, alors qu'un nouvel essai aboutirait.
 - Correctif : renvoyer un code réessayable, par exemple `draftBusy`.
 
 **Majeur, à vérifier — aucune trace durable de l'origine MCP des écritures.**
+
 - Où : les modèles `Payment` et `Enrollment` de `prisma/schema.prisma` n'ont aucun champ auteur ni
   origine (vérifié). Le résultat du brouillon n'est conservé que 7 jours après expiration, puis purgé
   (`src/lib/db-unscoped.ts:87-101`), et `McpDraft.keyId` n'a pas de clé étrangère.

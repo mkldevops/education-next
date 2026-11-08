@@ -45,49 +45,49 @@
 
 ## Spec Coverage Summary
 
-| Requirement | Status | Notes |
-|------------|--------|-------|
-| FR-001 | ⚠️ | Family CRUD exists but `deactivateFamilyAction` has arg mismatch bug (REVIEW-002) |
-| FR-002 | ✅ | Person-to-family with relation type works |
-| FR-003 | ⚠️ | PhoneNumber creation exists but `channels` stored as string not JSON (REVIEW-038) |
-| FR-004 | ✅ | `linkUserToFamily` use-case + action exist |
-| FR-005 | ✅ | Student created via family, inherits Person fields |
-| FR-006 | ✅ | Student model has all required fields |
-| FR-007 | ⚠️ | Soft-delete implemented but gateway list functions don't filter by isActive (REVIEW-016) |
-| FR-008 | ✅ | Period creation with name, startAt, endAt |
-| FR-009 | ❌ | Not verified — no period overlap check found in create-period use-case (need to verify) |
-| FR-010 | ✅ | Level with free-form name |
-| FR-011 | ✅ | ClassPeriod with level, period, capacity |
-| FR-012 | ✅ | Enrollment creation with plan selection + class assignment |
-| FR-013 | ⚠️ | State machine implemented correctly in domain, but no UI transition buttons (REVIEW-013), cancelEnrollment action has arg bug (REVIEW-001) |
-| FR-014 | ⚠️ | Capacity check exists in use-case but classes page count is missing status filter (REVIEW-015), no transaction (REVIEW-017) |
-| FR-015 | ❌ | Duplicate check is by student+plan, not student+period as required (REVIEW-008) |
-| FR-015b | ✅ | Reassign class use-case exists |
-| FR-015c | ✅ | Current assignment = endAt null, correctly used |
-| FR-015d | ✅ | Cancel enrollment closes current assignment |
-| FR-016 | ✅ | Apply discount use-case exists |
-| FR-017 | ✅ | canLeaveAlone field on enrollment |
-| FR-018 | ✅ | Plan creation exists |
-| FR-019 | ✅ | totalAmount snapshot from plan at creation time |
-| FR-019b | ✅ | List plans use-case exists |
-| FR-020 | ✅ | Payment with all methods (CASH, CARD, TRANSFER, CHECK, STRIPE) |
-| FR-021 | ✅ | cashedAt field on payment, shown in UI |
-| FR-022 | ❌ | Distribution includes PENDING enrollments (should be ACTIVE only), missing discount in balance calc, no transaction (REVIEW-006, 007, 010) |
-| FR-022b | ✅ | Refund distribution implemented in domain |
-| FR-023 | ✅ | Overpayment check in domain payment logic |
-| FR-024 | ✅ | Partial payments supported |
-| FR-025–028 | ⏳ | Deferred (US5 — family portal) |
-| FR-029 | ✅ | Config entity exists with key/value/type |
-| FR-030 | ⏳ | Promotion use-case not yet implemented (likely deferred) |
-| FR-030b | ✅ | Level nextLevel relation exists |
-| FR-031 | ⚠️ | Auth config exists but email+password signup is enabled (should be admin-created only per spec) |
-| FR-032 | ⚠️ | OAuth not configured — only email+password enabled in auth.ts |
-| FR-033 | ✅ | User model has roles field |
-| FR-033b | ✅ | All mutation server actions call `requireAdmin()` |
-| FR-033c | ❌ | Dashboard read pages have NO role-based filtering (REVIEW-018) |
-| FR-033d | ⏳ | Session invalidation on deactivation not implemented |
-| FR-034 | ✅ | All entities have isActive, createdAt, updatedAt |
-| FR-035 | ⚠️ | Most mutations use Zod, but `deactivateFamily` doesn't (REVIEW-030) |
-| FR-036 | ❌ | Tables not responsive — no overflow-x-auto on 10+ pages (REVIEW-011) |
-| FR-037 | ⚠️ | Decimal(10,2) in schema, but rounding uses Math.round not HALF_UP (REVIEW-039), inconsistent Decimal handling in UI (REVIEW-020) |
-| FR-038 | ⚠️ | Error codes exist with i18n keys, but `unauthorized` missing from root errors namespace (REVIEW-009), dashboard page titles use nonexistent keys (REVIEW-004) |
+| Requirement | Status | Notes                                                                                                                                                         |
+| ----------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-001      | ⚠️     | Family CRUD exists but `deactivateFamilyAction` has arg mismatch bug (REVIEW-002)                                                                             |
+| FR-002      | ✅     | Person-to-family with relation type works                                                                                                                     |
+| FR-003      | ⚠️     | PhoneNumber creation exists but `channels` stored as string not JSON (REVIEW-038)                                                                             |
+| FR-004      | ✅     | `linkUserToFamily` use-case + action exist                                                                                                                    |
+| FR-005      | ✅     | Student created via family, inherits Person fields                                                                                                            |
+| FR-006      | ✅     | Student model has all required fields                                                                                                                         |
+| FR-007      | ⚠️     | Soft-delete implemented but gateway list functions don't filter by isActive (REVIEW-016)                                                                      |
+| FR-008      | ✅     | Period creation with name, startAt, endAt                                                                                                                     |
+| FR-009      | ❌     | Not verified — no period overlap check found in create-period use-case (need to verify)                                                                       |
+| FR-010      | ✅     | Level with free-form name                                                                                                                                     |
+| FR-011      | ✅     | ClassPeriod with level, period, capacity                                                                                                                      |
+| FR-012      | ✅     | Enrollment creation with plan selection + class assignment                                                                                                    |
+| FR-013      | ⚠️     | State machine implemented correctly in domain, but no UI transition buttons (REVIEW-013), cancelEnrollment action has arg bug (REVIEW-001)                    |
+| FR-014      | ⚠️     | Capacity check exists in use-case but classes page count is missing status filter (REVIEW-015), no transaction (REVIEW-017)                                   |
+| FR-015      | ❌     | Duplicate check is by student+plan, not student+period as required (REVIEW-008)                                                                               |
+| FR-015b     | ✅     | Reassign class use-case exists                                                                                                                                |
+| FR-015c     | ✅     | Current assignment = endAt null, correctly used                                                                                                               |
+| FR-015d     | ✅     | Cancel enrollment closes current assignment                                                                                                                   |
+| FR-016      | ✅     | Apply discount use-case exists                                                                                                                                |
+| FR-017      | ✅     | canLeaveAlone field on enrollment                                                                                                                             |
+| FR-018      | ✅     | Plan creation exists                                                                                                                                          |
+| FR-019      | ✅     | totalAmount snapshot from plan at creation time                                                                                                               |
+| FR-019b     | ✅     | List plans use-case exists                                                                                                                                    |
+| FR-020      | ✅     | Payment with all methods (CASH, CARD, TRANSFER, CHECK, STRIPE)                                                                                                |
+| FR-021      | ✅     | cashedAt field on payment, shown in UI                                                                                                                        |
+| FR-022      | ❌     | Distribution includes PENDING enrollments (should be ACTIVE only), missing discount in balance calc, no transaction (REVIEW-006, 007, 010)                    |
+| FR-022b     | ✅     | Refund distribution implemented in domain                                                                                                                     |
+| FR-023      | ✅     | Overpayment check in domain payment logic                                                                                                                     |
+| FR-024      | ✅     | Partial payments supported                                                                                                                                    |
+| FR-025–028  | ⏳     | Deferred (US5 — family portal)                                                                                                                                |
+| FR-029      | ✅     | Config entity exists with key/value/type                                                                                                                      |
+| FR-030      | ⏳     | Promotion use-case not yet implemented (likely deferred)                                                                                                      |
+| FR-030b     | ✅     | Level nextLevel relation exists                                                                                                                               |
+| FR-031      | ⚠️     | Auth config exists but email+password signup is enabled (should be admin-created only per spec)                                                               |
+| FR-032      | ⚠️     | OAuth not configured — only email+password enabled in auth.ts                                                                                                 |
+| FR-033      | ✅     | User model has roles field                                                                                                                                    |
+| FR-033b     | ✅     | All mutation server actions call `requireAdmin()`                                                                                                             |
+| FR-033c     | ❌     | Dashboard read pages have NO role-based filtering (REVIEW-018)                                                                                                |
+| FR-033d     | ⏳     | Session invalidation on deactivation not implemented                                                                                                          |
+| FR-034      | ✅     | All entities have isActive, createdAt, updatedAt                                                                                                              |
+| FR-035      | ⚠️     | Most mutations use Zod, but `deactivateFamily` doesn't (REVIEW-030)                                                                                           |
+| FR-036      | ❌     | Tables not responsive — no overflow-x-auto on 10+ pages (REVIEW-011)                                                                                          |
+| FR-037      | ⚠️     | Decimal(10,2) in schema, but rounding uses Math.round not HALF_UP (REVIEW-039), inconsistent Decimal handling in UI (REVIEW-020)                              |
+| FR-038      | ⚠️     | Error codes exist with i18n keys, but `unauthorized` missing from root errors namespace (REVIEW-009), dashboard page titles use nonexistent keys (REVIEW-004) |

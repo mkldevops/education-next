@@ -8,6 +8,12 @@ const tabs = [
   { label: 'Payments', content: <div>Payments content</div> },
 ]
 
+const Icon = () => (
+  <svg data-testid="tab-icon">
+    <title>Icon title</title>
+  </svg>
+)
+
 describe('Tabs', () => {
   it('renders tablist and tab roles for each tab', () => {
     render(<Tabs tabs={tabs} />)
@@ -87,11 +93,6 @@ describe('Tabs', () => {
   })
 
   it('renders an optional icon without letting it leak into the tab accessible name', () => {
-    const Icon = () => (
-      <svg data-testid="tab-icon">
-        <title>Icon title</title>
-      </svg>
-    )
     const tabsWithIcon = [{ label: 'Overview', icon: Icon, content: <div>Overview content</div> }]
 
     render(<Tabs tabs={tabsWithIcon} />)

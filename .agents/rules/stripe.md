@@ -1,10 +1,13 @@
 ---
+
 paths:
-  - "src/lib/stripe.ts"
-  - "app/api/stripe/**"
-  - "src/use-cases/payments/**"
-  - "src/gateways/**"
-  - "prisma/schema.prisma"
+
+- "src/lib/stripe.ts"
+- "app/api/stripe/**"
+- "src/use-cases/payments/**"
+- "src/gateways/**"
+- "prisma/schema.prisma"
+
 ---
 
 # Stripe Rules

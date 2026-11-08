@@ -118,23 +118,23 @@ with limited technical resources.
 
 ## Technology Stack
 
-| Component      | Technology                             |
-| -------------- | -------------------------------------- |
-| Framework      | Next.js 16 (App Router)                |
-| Language       | TypeScript (strict)                    |
-| Styling        | Tailwind CSS v4 + shadcn/ui (new-york) |
-| Linter         | Biome                                  |
-| Tests          | Vitest + Testing Library               |
-| Validation     | Zod 4                                  |
-| i18n           | next-intl (fr, en)                     |
-| Animation      | Motion (Framer)                        |
-| ORM            | Prisma 6                               |
-| Database       | PostgreSQL 18                          |
-| Auth           | Better Auth (social login, no signup)  |
-| State          | Zustand                                |
-| Email          | Resend (Mailpit en dev)                |
-| Payments       | Cash, card (POS), bank transfer, check (with encashment date), Stripe |
-| Roles          | admin (full access), family (read + payment only) |
+| Component  | Technology                                                            |
+| ---------- | --------------------------------------------------------------------- |
+| Framework  | Next.js 16 (App Router)                                               |
+| Language   | TypeScript (strict)                                                   |
+| Styling    | Tailwind CSS v4 + shadcn/ui (new-york)                                |
+| Linter     | Biome                                                                 |
+| Tests      | Vitest + Testing Library                                              |
+| Validation | Zod 4                                                                 |
+| i18n       | next-intl (fr, en)                                                    |
+| Animation  | Motion (Framer)                                                       |
+| ORM        | Prisma 6                                                              |
+| Database   | PostgreSQL 18                                                         |
+| Auth       | Better Auth (social login, no signup)                                 |
+| State      | Zustand                                                               |
+| Email      | Resend (Mailpit en dev)                                               |
+| Payments   | Cash, card (POS), bank transfer, check (with encashment date), Stripe |
+| Roles      | admin (full access), family (read + payment only)                     |
 
 ### Docker Services (local development)
 

@@ -22,20 +22,20 @@ Always read before any change:
 
 Read when the change touches the matching area:
 
-| Rule | Read when changing | Template |
-|---|---|---|
-| [`clean-architecture.md`](.agents/rules/clean-architecture.md) | `app/**`, `src/**` layering | `patterns/clean-architecture` |
-| [`nextjs-app-router.md`](.agents/rules/nextjs-app-router.md) | pages, layouts, routes, `proxy.ts` | `frameworks/nextjs-app-router` |
-| [`prisma.md`](.agents/rules/prisma.md) | schema, migrations, queries | `data/prisma` |
-| [`zod.md`](.agents/rules/zod.md) | input schemas | `validation-auth/zod` |
-| [`next-intl.md`](.agents/rules/next-intl.md) | user-facing text, locales, navigation | `frontend/next-intl` |
-| [`tailwind-v4.md`](.agents/rules/tailwind-v4.md) | `*.tsx`, `*.css` styling | `frontend/tailwind-v4` |
-| [`shadcn-ui.md`](.agents/rules/shadcn-ui.md) | `src/components/**` | `frontend/shadcn-ui` |
-| [`zustand.md`](.agents/rules/zustand.md) | `src/features/**` client stores | `frontend/zustand` |
-| [`vitest.md`](.agents/rules/vitest.md) | tests | `testing/vitest` |
-| [`resend.md`](.agents/rules/resend.md) | email config and gateways | `data/resend` |
-| [`stripe.md`](.agents/rules/stripe.md) | online payments, Stripe webhooks | `data/stripe` |
-| [`docker.md`](.agents/rules/docker.md) | `Dockerfile`, `compose.yaml` | `infra/docker` |
+| Rule                                                           | Read when changing                    | Template                       |
+| -------------------------------------------------------------- | ------------------------------------- | ------------------------------ |
+| [`clean-architecture.md`](.agents/rules/clean-architecture.md) | `app/**`, `src/**` layering           | `patterns/clean-architecture`  |
+| [`nextjs-app-router.md`](.agents/rules/nextjs-app-router.md)   | pages, layouts, routes, `proxy.ts`    | `frameworks/nextjs-app-router` |
+| [`prisma.md`](.agents/rules/prisma.md)                         | schema, migrations, queries           | `data/prisma`                  |
+| [`zod.md`](.agents/rules/zod.md)                               | input schemas                         | `validation-auth/zod`          |
+| [`next-intl.md`](.agents/rules/next-intl.md)                   | user-facing text, locales, navigation | `frontend/next-intl`           |
+| [`tailwind-v4.md`](.agents/rules/tailwind-v4.md)               | `*.tsx`, `*.css` styling              | `frontend/tailwind-v4`         |
+| [`shadcn-ui.md`](.agents/rules/shadcn-ui.md)                   | `src/components/**`                   | `frontend/shadcn-ui`           |
+| [`zustand.md`](.agents/rules/zustand.md)                       | `src/features/**` client stores       | `frontend/zustand`             |
+| [`vitest.md`](.agents/rules/vitest.md)                         | tests                                 | `testing/vitest`               |
+| [`resend.md`](.agents/rules/resend.md)                         | email config and gateways             | `data/resend`                  |
+| [`stripe.md`](.agents/rules/stripe.md)                         | online payments, Stripe webhooks      | `data/stripe`                  |
+| [`docker.md`](.agents/rules/docker.md)                         | `Dockerfile`, `compose.yaml`          | `infra/docker`                 |
 
 Templates come from the `peaklab.sync-ai-docs` catalogue; every rule carries local adaptations, so a
 regeneration must review rather than overwrite them. Directory guides (`AGENTS.md` under `app/api/`,

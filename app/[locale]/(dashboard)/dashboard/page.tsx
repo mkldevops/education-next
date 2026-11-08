@@ -1,13 +1,4 @@
-import {
-  buttonVariants,
-  type Column,
-  DataTable,
-  EmptyState,
-  PageHeader,
-  ProgressBar,
-  StatusBadge,
-  StatusDot,
-} from '@peaklab/ui'
+import { buttonVariants, EmptyState, PageHeader, StatusBadge } from '@peaklab/ui'
 import {
   BadgeCheck,
   CalendarClock,
@@ -28,7 +19,6 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { readChartView } from '@/domain/collection-chart'
 import { readsAsOptedIn } from '@/domain/feature-flags'
-import { totalPaidAmount } from '@/domain/payment'
 import { schoolToday } from '@/domain/school-date'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { configGateway } from '@/gateways/config-gateway'
@@ -36,10 +26,8 @@ import { schoolGateway } from '@/gateways/school-gateway'
 import { Link, redirect } from '@/i18n/routing'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { auth } from '@/lib/auth'
-import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/decimal'
-import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { getSchoolContext, hasSchoolRole, isActiveSchoolAdmin } from '@/lib/school-context'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { cn } from '@/lib/utils'
@@ -63,7 +51,6 @@ import { type HomeWidget, readHiddenWidgets } from './_lib/home-widgets'
 import { getParentHome } from './_lib/parent-home'
 import { getTodayAgenda } from './_lib/today-agenda'
 import { loadMealDues } from './cashier/_lib/debtors-data'
-import { ActivateEnrollmentButton } from './families/[id]/_components/activate-enrollment-button'
 import { OnlinePaymentButton } from './families/[id]/_components/online-payment-button'
 
 type Props = {
@@ -100,7 +87,7 @@ export default async function DashboardPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations('dashboard')
-  const tStatus = await getTranslations('status')
+  const _tStatus = await getTranslations('status')
   const tAttendance = await getTranslations('dashboard.pages.attendance')
 
   const session = await auth.api.getSession({ headers: await headers() })

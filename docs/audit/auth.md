@@ -12,11 +12,11 @@ Tout point non vérifié est marqué « à vérifier ».
 
 ## 1. Synthèse
 
-| Workflow | Solide | Simple | UX | UI | Verdict |
-|---|---|---|---|---|---|
-| 6 — Connexion / reset | 2/5 | 3/5 | 3/5 | 3/5 | L'inscription publique est restée ouverte et la réinitialisation ne coupe pas les sessions existantes, ce qui permet la prise de compte. |
-| 7 — Invitations | 3/5 | 3/5 | 2/5 | 2/5 | L'acceptation est solide, mais une invitation liée à une famille ne vérifie pas l'email, et les liens d'invitation mènent à des impasses. |
-| 12 — Profil / compte | 2/5 | 3/5 | 3/5 | 3/5 | La suppression du compte est possible sans réauthentification ni garde, et le changement de mot de passe laisse les autres sessions ouvertes. |
+| Workflow              | Solide | Simple | UX  | UI  | Verdict                                                                                                                                       |
+| --------------------- | ------ | ------ | --- | --- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 6 — Connexion / reset | 2/5    | 3/5    | 3/5 | 3/5 | L'inscription publique est restée ouverte et la réinitialisation ne coupe pas les sessions existantes, ce qui permet la prise de compte.      |
+| 7 — Invitations       | 3/5    | 3/5    | 2/5 | 2/5 | L'acceptation est solide, mais une invitation liée à une famille ne vérifie pas l'email, et les liens d'invitation mènent à des impasses.     |
+| 12 — Profil / compte  | 2/5    | 3/5    | 3/5 | 3/5 | La suppression du compte est possible sans réauthentification ni garde, et le changement de mot de passe laisse les autres sessions ouvertes. |
 
 ## 2. Constats par workflow
 
@@ -218,7 +218,7 @@ Tout point non vérifié est marqué « à vérifier ».
   - Correction : ajouter une confirmation.
   - Il manque aussi « déconnecter toutes les autres sessions ».
 - **m21. Une erreur de liaison Google s'affiche aussi dans la zone de danger.**
-  - Où : `account-section.tsx:154` et `:225-229`. L'état `error` est partagé, donc `linkFailed` apparaît dans les deux cartes. En plus, `t(\`errors.${error}\`)` est appelé sans `t.has`.
+  - Où : `account-section.tsx:154` et `:225-229`. L'état `error` est partagé, donc `linkFailed` apparaît dans les deux cartes. En plus, `t(\`errors.${error}\`)`est appelé sans`t.has`.
   - Correction : séparer les états et utiliser `t.has` avec un repli.
 - **m22. Libellés codés en dur.**
   - Où : `sessions-section.tsx:25-34`, avec `'Unknown'`, `'Mobile'` et `'Desktop'`.

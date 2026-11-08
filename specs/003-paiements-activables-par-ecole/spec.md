@@ -35,16 +35,16 @@ exact : `teacher_expenses_enabled`, un booléen par école consulté par le use-
 
 Un drapeau **par école** ferme toute la gestion de l'argent. Deux états seulement :
 
-| État | Ce que voit et fait l'école |
-|---|---|
-| Activé | Le comportement actuel, sans aucun changement observable. |
+| État      | Ce que voit et fait l'école                                                                                                                                                |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Activé    | Le comportement actuel, sans aucun changement observable.                                                                                                                  |
 | Désactivé | L'inscription devient purement administrative : élève, classe, période, statut. Aucune surface d'encaissement, aucun champ monétaire, aucun choix de formule, aucun solde. |
 
 Trois propriétés tiennent l'ensemble :
 
 1. **Réversible sans perte.** Désactiver ne supprime, n'archive et ne modifie aucune donnée
    existante. Réactiver rend visible exactement ce qui était là.
-2. **Aucune école existante n'est affectée.** L'absence de réglage vaut *activé*, comme pour les
+2. **Aucune école existante n'est affectée.** L'absence de réglage vaut _activé_, comme pour les
    drapeaux plateforme déjà en place.
 3. **Aucun euro perdu par une bascule.** Un encaissement engagé chez le fournisseur avant la
    désactivation aboutit quand même en base.
@@ -204,11 +204,11 @@ promettre un encaissement impossible.
 
 - **FR-001** Le système MUST porter un réglage booléen `payments_enabled` **par école**, dans la
   table de configuration d'école, éditable par un `ADMIN` de cette école et par un super-admin.
-  *Vérification* : test du gateway de configuration ; écriture depuis l'interface puis relecture.
+  _Vérification_ : test du gateway de configuration ; écriture depuis l'interface puis relecture.
 - **FR-002** L'absence de réglage MUST valoir **activé**, et toute valeur n'exprimant pas un refus
   MUST valoir activé. Aucune migration de données n'est requise : les écoles existantes conservent
   leurs paiements sans qu'aucune ligne ne soit semée.
-  *Vérification* : test unitaire de la fonction de lecture sur `null`, `'false'`, `'0'`, `'off'`,
+  _Vérification_ : test unitaire de la fonction de lecture sur `null`, `'false'`, `'0'`, `'off'`,
   `'no'`, casse indifférente, et valeur inattendue.
 - **FR-003** Le réglage MUST figurer parmi les réglages créés avec une nouvelle école, **à `true`**,
   et MUST apparaître dans la configuration d'une école antérieure grâce au repli déjà en place pour
@@ -217,38 +217,38 @@ promettre un encaissement impossible.
   `teacher_expenses_enabled` appartient à un opt-in et MUST NOT être reprise ici. Les paiements
   fonctionnent aujourd'hui partout ; seule une désactivation explicite par un administrateur peut
   les couper.
-  *Vérification* : création d'école en test, la ligne vaut `true` ; rendu de la page de
+  _Vérification_ : création d'école en test, la ligne vaut `true` ; rendu de la page de
   configuration sur une école sans la ligne ; relecture du drapeau sur une base pré-existante après
   déploiement, qui répond activé.
 - **FR-004** La lecture MUST être mémoïsée pour la durée d'un rendu, plusieurs surfaces la
   consultant dans une même requête.
-  *Vérification* : compteur d'appels au gateway sur un rendu qui consulte le drapeau plusieurs fois.
-- **FR-005** La bascule vers *désactivé* MUST exiger une confirmation explicite nommant ce qui
+  _Vérification_ : compteur d'appels au gateway sur un rendu qui consulte le drapeau plusieurs fois.
+- **FR-005** La bascule vers _désactivé_ MUST exiger une confirmation explicite nommant ce qui
   devient invisible lorsque l'école porte au moins un paiement actif ou une transaction en attente.
-  La bascule vers *activé*, et la désactivation d'une école sans historique, restent un clic.
-  *Vérification* : test du composant de bascule, cas avec et sans historique.
+  La bascule vers _activé_, et la désactivation d'une école sans historique, restent un clic.
+  _Vérification_ : test du composant de bascule, cas avec et sans historique.
 - **FR-006** La lecture du réglage MUST être scopée par école, donc satisfaire le garde tenant.
-  *Vérification* : la suite qui rejoue les lectures du tableau de bord sous le garde en mode `throw`.
+  _Vérification_ : la suite qui rejoue les lectures du tableau de bord sous le garde en mode `throw`.
 
 ### Refus côté serveur
 
 - **FR-007** Le refus MUST appartenir à la couche use-case, qui répond par un discriminant
   `paymentsDisabled`, et non aux seules pages : l'interface reflète le verdict, elle ne le produit
   pas.
-  *Vérification* : tests unitaires des use-cases concernés avec un gateway de configuration injecté,
+  _Vérification_ : tests unitaires des use-cases concernés avec un gateway de configuration injecté,
   sur le modèle du test de `createTeacherExpense`.
 - **FR-008** Les frontières suivantes MUST refuser quand les paiements sont désactivés :
   enregistrement d'un paiement, création d'une session de paiement en ligne, application d'une
   remise, création et modification d'une formule tarifaire, archivage d'une formule, affectation
   d'une formule à une inscription.
-  *Vérification* : un test par frontière asservissant le discriminant et l'absence d'écriture.
+  _Vérification_ : un test par frontière asservissant le discriminant et l'absence d'écriture.
 - **FR-009** Le webhook du fournisseur de paiement MUST NOT consulter le drapeau, et MUST aboutir
   même si l'école a désactivé les paiements entre-temps.
-  *Vérification* : test de la route webhook, drapeau coupé, transaction en attente préexistante, les
+  _Vérification_ : test de la route webhook, drapeau coupé, transaction en attente préexistante, les
   lignes `Payment` sont créées.
 - **FR-010** Les pages `/dashboard/payments` et `/dashboard/plans` MUST répondre « introuvable »
   quand les paiements sont désactivés, et non afficher un écran vide.
-  *Vérification* : rendu de page en test, et parcours navigateur par URL directe.
+  _Vérification_ : rendu de page en test, et parcours navigateur par URL directe.
 
 ### Surfaces masquées
 
@@ -256,23 +256,23 @@ promettre un encaissement impossible.
   disparaître pour tout rôle qui les voit aujourd'hui — personnel et super-admin — quand les
   paiements sont désactivés, la résolution des entrées recevant l'état du drapeau au même titre que
   le rôle. La branche parent, qui n'offre déjà ni l'une ni l'autre, reste inchangée.
-  *Vérification* : test unitaire de la résolution des entrées, cas activé et désactivé, par rôle.
+  _Vérification_ : test unitaire de la résolution des entrées, cas activé et désactivé, par rôle.
 - **FR-012** Les indicateurs monétaires du tableau de bord — carte « Reste à encaisser » côté
   administration, carte de solde et bouton de paiement en ligne côté parent, colonne de progression
   de règlement des inscriptions récentes, statistiques d'encaissement — MUST être absents du rendu.
-  *Vérification* : rendu de la page de tableau de bord en test, pour un `ADMIN` et pour un `PARENT`.
+  _Vérification_ : rendu de la page de tableau de bord en test, pour un `ADMIN` et pour un `PARENT`.
 - **FR-013** Sur la fiche famille, l'onglet **Paiements**, le résumé financier, le solde de la
   bannière et le bouton de paiement en ligne MUST être absents, y compris lorsque l'onglet est
   demandé par la requête.
-  *Vérification* : rendu de la page avec et sans le paramètre d'onglet.
+  _Vérification_ : rendu de la page avec et sans le paramètre d'onglet.
 - **FR-014** Sur la liste des familles, la colonne de règlement MUST être absente.
-  *Vérification* : rendu de la page en test.
+  _Vérification_ : rendu de la page en test.
 - **FR-015** Sur la liste, la fiche et le tiroir d'inscription, les colonnes et champs formule,
   montant total, remise et progression de règlement MUST être absents.
-  *Vérification* : rendu des trois surfaces en test.
+  _Vérification_ : rendu des trois surfaces en test.
 - **FR-016** Aucune clé de traduction MUST rester orpheline et aucun composant MUST devenir mort :
   les deux locales restent alignées et l'analyse de code inutilisé reste verte.
-  *Vérification* : `pnpm knip` et comparaison des jeux de clés `fr` / `en`.
+  _Vérification_ : `pnpm knip` et comparaison des jeux de clés `fr` / `en`.
 
 ### Inscription sans argent
 
@@ -280,21 +280,21 @@ promettre un encaissement impossible.
   côté serveur une **formule réservée « sans tarif »** propre à l'école, de montant nul, et écrire
   `totalAmount = 0` et `discount = 0`. Le schéma d'entrée rend la formule optionnelle ; une formule
   explicite ou une remise non nulle est refusée.
-  *Vérification* : test du use-case de création, les trois cas.
+  _Vérification_ : test du use-case de création, les trois cas.
 - **FR-018** La formule réservée MUST être créée à la demande, à la première inscription posée
   pendant une coupure, et non à la création de l'école : une école qui ne désactive jamais les
   paiements n'en porte jamais la ligne.
-  *Vérification* : test du use-case, création d'école sans la ligne puis apparition à la première
+  _Vérification_ : test du use-case, création d'école sans la ligne puis apparition à la première
   inscription.
 - **FR-019** La formule réservée MUST être identifiée par un nom technique stable, traduit à
   l'affichage, et MUST NOT être proposée dans le catalogue des formules ni dans les sélecteurs de
   formule.
-  *Vérification* : test du use-case de liste des formules ; rendu du sélecteur après réactivation.
+  _Vérification_ : test du use-case de liste des formules ; rendu du sélecteur après réactivation.
 - **FR-020** Après réactivation, les inscriptions rattachées à la formule réservée MUST être
   signalées comme sans tarif dans la liste des inscriptions, et un `ADMIN` MUST pouvoir leur
   affecter une formule depuis l'interface, `totalAmount` étant recalculé sur le prix courant de la
   formule moins la remise.
-  *Vérification* : test du nouveau use-case d'affectation, dont le cas `totalBelowPaid` ; parcours
+  _Vérification_ : test du nouveau use-case d'affectation, dont le cas `totalBelowPaid` ; parcours
   navigateur de réactivation puis tarification.
 
 ### Accès machine
@@ -302,25 +302,25 @@ promettre un encaissement impossible.
 - **FR-021** L'état du drapeau MUST être résolu dans la portée MCP, aux côtés de l'école et du
   rôle, de sorte que la construction du serveur reste synchrone et que la décision soit prise une
   fois par requête.
-  *Vérification* : test de la résolution de portée.
+  _Vérification_ : test de la résolution de portée.
 - **FR-022** Les outils d'argent MUST NOT être déclarés quand les paiements sont désactivés :
   `list_plans`, `preview_record_payment`, `commit_record_payment`, `preview_update_enrollment`,
   `commit_update_enrollment`.
-  *Vérification* : test de la liste des outils, portée avec et sans paiements.
+  _Vérification_ : test de la liste des outils, portée avec et sans paiements.
 - **FR-023** `preview_enroll_family` MUST accepter une demande sans libellé de formule quand les
   paiements sont désactivés, MUST refuser un bloc de paiement joint, et son aperçu MUST NOT annoncer
   de montant.
-  *Vérification* : tests du use-case d'aperçu, les trois cas.
+  _Vérification_ : tests du use-case d'aperçu, les trois cas.
 - **FR-024** L'engagement d'un brouillon d'argent préparé avant la coupure MUST être refusé après
   la coupure.
-  *Vérification* : test du use-case d'engagement, brouillon préexistant et drapeau coupé.
+  _Vérification_ : test du use-case d'engagement, brouillon préexistant et drapeau coupé.
 
 ### Documentation
 
 - **FR-025** `docs/business-rules.md` MUST recevoir, dans le même changement, la règle du drapeau :
   sa clé, sa sémantique d'absence, la liste des frontières qui le consultent, et la raison pour
   laquelle le webhook ne le consulte pas.
-  *Vérification* : revue du changement.
+  _Vérification_ : revue du changement.
 
 ### Key Entities
 
@@ -381,18 +381,18 @@ un outil absent ne trompe pas l'agent.
 
 Les seams retenus sont les frontières publiques déjà observables ; aucune n'est créée pour le test.
 
-| Seam | Nature | Ce qu'il prouve |
-|---|---|---|
-| Fonction de lecture du drapeau | unitaire pur | FR-002 : la sémantique d'absence et de valeur inattendue. |
-| Gateway de configuration d'école | unitaire | FR-001 : écriture et relecture scopées par école. |
-| Résolution des entrées de barre latérale | unitaire pur | FR-011 : disparition par rôle et par état. |
-| Use-cases d'argent, gateway injecté | unitaire | FR-007, FR-008, FR-017, FR-020, FR-024 : discriminant et absence d'écriture. |
-| Route webhook du fournisseur | test de route | FR-009 : l'encaissement aboutit drapeau coupé. |
-| Harnais de rendu du tableau de bord sous garde tenant | rendu réel en base | FR-006, FR-010, FR-012 à FR-015 : les surfaces masquées et les lectures scopées. |
-| Liste des outils MCP par portée | unitaire | FR-021 à FR-023 : outils non déclarés. |
-| Composant de bascule | rendu | FR-005 : confirmation, optimisme et retour arrière. |
-| `pnpm knip` et alignement des locales | outillage du dépôt | FR-016 : ni code ni clé orphelins. |
-| Parcours navigateur, consigné dans les scénarios d'assurance qualité | manuel reproductible | Les récits 1 à 4 de bout en bout, dont la réactivation puis la tarification. |
+| Seam                                                                 | Nature               | Ce qu'il prouve                                                                  |
+| -------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------- |
+| Fonction de lecture du drapeau                                       | unitaire pur         | FR-002 : la sémantique d'absence et de valeur inattendue.                        |
+| Gateway de configuration d'école                                     | unitaire             | FR-001 : écriture et relecture scopées par école.                                |
+| Résolution des entrées de barre latérale                             | unitaire pur         | FR-011 : disparition par rôle et par état.                                       |
+| Use-cases d'argent, gateway injecté                                  | unitaire             | FR-007, FR-008, FR-017, FR-020, FR-024 : discriminant et absence d'écriture.     |
+| Route webhook du fournisseur                                         | test de route        | FR-009 : l'encaissement aboutit drapeau coupé.                                   |
+| Harnais de rendu du tableau de bord sous garde tenant                | rendu réel en base   | FR-006, FR-010, FR-012 à FR-015 : les surfaces masquées et les lectures scopées. |
+| Liste des outils MCP par portée                                      | unitaire             | FR-021 à FR-023 : outils non déclarés.                                           |
+| Composant de bascule                                                 | rendu                | FR-005 : confirmation, optimisme et retour arrière.                              |
+| `pnpm knip` et alignement des locales                                | outillage du dépôt   | FR-016 : ni code ni clé orphelins.                                               |
+| Parcours navigateur, consigné dans les scénarios d'assurance qualité | manuel reproductible | Les récits 1 à 4 de bout en bout, dont la réactivation puis la tarification.     |
 
 Chaque critère ci-dessus nomme son chemin d'observation ; aucun ne repose sur une inspection du
 code source. La séquence de vérification du dépôt (`lint`, `type-check`, `test`, `knip`, `build`)

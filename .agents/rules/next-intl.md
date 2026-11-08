@@ -1,11 +1,14 @@
 ---
+
 paths:
-  - "app/**"
-  - "src/i18n/**"
-  - "src/features/**/*.tsx"
-  - "messages/**"
-  - "proxy.ts"
-  - "next.config.ts"
+
+- "app/**"
+- "src/i18n/**"
+- "src/features/**/*.tsx"
+- "messages/**"
+- "proxy.ts"
+- "next.config.ts"
+
 ---
 
 # next-intl Rules

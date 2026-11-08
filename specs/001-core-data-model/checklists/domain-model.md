@@ -31,7 +31,6 @@
   > PASS: Explicitly declared out of scope in §Out of Scope (MVP). Lists return all active entities without pagination. To be added when volume requires it
 - [x] CHK010 - Is the Person-to-Config relationship specified with clear use cases for person-level vs global configs? [Completeness, data-model.md §Config]
   > PASS: data-model.md says "Config globale si personId = null, sinon rattachée à une personne"
-
 ## Requirement Clarity
 
 - [x] CHK011 - Is "répartis équitablement" (equitable distribution) precisely defined with the proportional algorithm? [Clarity, Spec §FR-022]
@@ -50,7 +49,6 @@
   > PASS: data-model has cashedAt field on Payment. "À encaisser" is derived (cashedAt is null or in future for CHECK method)
 - [x] CHK018 - Is the term "plan tarifaire" used consistently, or is it sometimes called "tarif" or "plan" ambiguously? [Clarity, Spec §FR-018/FR-019]
   > PASS: "Plan tarifaire" used consistently in spec. data-model and contracts use "Plan". No ambiguity
-
 ## Requirement Consistency
 
 - [x] CHK019 - Are the state machine transitions in spec.md §FR-013 consistent with data-model.md §EnrollmentStatus and contracts/server-actions.md enrollment actions? [Consistency]
@@ -65,7 +63,6 @@
   > PASS: FR-007 now explicitly lists all 12 entities with isActive. Fully consistent with data-model.md and FR-034
 - [x] CHK024 - Is the capacity check logic consistent between spec §FR-014, data-model.md §ClassPeriod, and contracts §updateClassPeriod (capacityBelowEnrolled)? [Consistency]
   > PASS: FR-014 specifies counting scope (non-cancelled with current assignment). contracts createEnrollment has classFull, updateClassPeriod has capacityBelowEnrolled
-
 ## Acceptance Criteria Quality
 
 - [x] CHK025 - Can SC-001 ("less than 5 minutes") be objectively measured without UI implementation details? [Measurability, Spec §SC-001]
@@ -76,7 +73,6 @@
   > PASS: SC-004 now marked as "(Deferred — US5)" — explicitly scoped out of current measurement
 - [x] CHK028 - Are acceptance scenarios for US3 (Enrollment) numbered consistently — scenarios 5 and 5b suggest insertion disorder? [Clarity, Spec §US3]
   > PASS: US3 scenarios renumbered sequentially 1-10. Cancellation scenario (formerly 5b) is now scenario 5
-
 ## Scenario Coverage
 
 - [x] CHK029 - Are requirements defined for what happens when a family has enrollments in MULTIPLE active periods simultaneously? [Coverage, Gap]
@@ -91,7 +87,6 @@
   > PASS: FR-019 updated — "Le montant du plan est copié dans totalAmount de l'inscription au moment de la création (snapshot). Modifier un plan n'affecte pas les inscriptions existantes". Edge case added
 - [x] CHK034 - Are requirements for bulk operations specified (e.g., mass enrollment for new period, mass promotion)? [Coverage, Gap]
   > PASS: Explicitly declared out of scope in §Out of Scope (MVP), except promotion (FR-030 batch). Bulk enrollment/payment are out of scope
-
 ## Edge Case Coverage
 
 - [x] CHK035 - Is the behavior specified when proportional payment distribution results in fractional centimes (rounding)? [Edge Case, Gap]
@@ -108,7 +103,6 @@
   > PASS: data-model.md FamilyPerson composite PK (familyId, personId) allows a Person in multiple families. No conflicting requirement
 - [x] CHK041 - Is the behavior specified when an enrollment's ClassAssignment points to a class that has since been deactivated? [Edge Case, Gap]
   > PASS: Edge case updated — "La désactivation de classe est interdite tant qu'elle contient des inscriptions actives (affectation courante endAt = null). Les affectations historiques (endAt renseigné) restent valides"
-
 ## Non-Functional Requirements
 
 - [x] CHK042 - Are data volume assumptions (500 families, 1000 students, 50 classes) documented in the spec, not just the plan? [Coverage, plan.md §Technical Context]
@@ -121,7 +115,6 @@
   > PASS: Explicitly declared out of scope in §Out of Scope (MVP). createdAt/updatedAt provide minimal traceability
 - [x] CHK046 - Are data retention requirements specified for soft-deleted entities? [Gap]
   > PASS: Explicitly declared out of scope in §Out of Scope (MVP). No automatic purge in MVP
-
 ## Dependencies & Assumptions
 
 - [x] CHK047 - Is the assumption "refunds as negative payments" validated against the payment distribution algorithm (negative amounts in proportional split)? [Assumption, Spec §Assumptions]
@@ -137,14 +130,14 @@
 
 ## Summary
 
-| Dimension                  | Items | Passed | Failed |
-|----------------------------|-------|--------|--------|
-| Requirement Completeness   | 10    | 10     | 0      |
-| Requirement Clarity        | 8     | 8      | 0      |
-| Requirement Consistency    | 6     | 6      | 0      |
-| Acceptance Criteria Quality| 4     | 4      | 0      |
-| Scenario Coverage          | 6     | 6      | 0      |
-| Edge Case Coverage         | 7     | 7      | 0      |
-| Non-Functional Requirements| 5     | 5      | 0      |
-| Dependencies & Assumptions | 4     | 4      | 0      |
-| **Total**                  | **50**| **50** | **0**  |
+| Dimension                   | Items  | Passed | Failed |
+| --------------------------- | ------ | ------ | ------ |
+| Requirement Completeness    | 10     | 10     | 0      |
+| Requirement Clarity         | 8      | 8      | 0      |
+| Requirement Consistency     | 6      | 6      | 0      |
+| Acceptance Criteria Quality | 4      | 4      | 0      |
+| Scenario Coverage           | 6      | 6      | 0      |
+| Edge Case Coverage          | 7      | 7      | 0      |
+| Non-Functional Requirements | 5      | 5      | 0      |
+| Dependencies & Assumptions  | 4      | 4      | 0      |
+| **Total**                   | **50** | **50** | **0**  |

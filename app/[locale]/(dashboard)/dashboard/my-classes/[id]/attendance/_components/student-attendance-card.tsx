@@ -184,7 +184,7 @@ export function StudentAttendanceCard({
                     key={status}
                     ref={index === 0 ? inputRef : undefined}
                     variant="outline"
-                    className={`h-auto min-h-14 min-w-0 flex-col gap-1 whitespace-normal border px-1 py-2 text-xs transition-[background-color,border-color,transform] duration-200 active:scale-[0.98] motion-reduce:transition-none sm:flex-row sm:text-sm ${entry.status === status ? statusStyles[status] : 'border-alabaster-700 bg-white text-graphite hover:bg-alabaster-900'}`}
+                    className={`h-auto min-h-14 min-w-0 flex-col gap-1 whitespace-normal border px-1 py-2 text-xs transition-[background-color,border-color,transform] duration-200 active:scale-98 motion-reduce:transition-none sm:flex-row sm:text-sm ${entry.status === status ? statusStyles[status] : 'border-alabaster-700 bg-white text-graphite hover:bg-alabaster-900'}`}
                     disabled={globalPending || pending}
                     aria-pressed={entry.status === status}
                     onClick={() => onStatus(status)}

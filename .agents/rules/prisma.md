@@ -1,9 +1,12 @@
 ---
+
 paths:
-  - "prisma/**"
-  - "prisma.config.ts"
-  - "app/**"
-  - "src/**"
+
+- "prisma/**"
+- "prisma.config.ts"
+- "app/**"
+- "src/**"
+
 ---
 
 # Prisma Rules

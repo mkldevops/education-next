@@ -33,16 +33,16 @@ cohérence des surfaces, puis enrichissement des vues parent et enseignant.
 
 ## Éléments déjà solides
 
-| Élément | Preuve actuelle | Conséquence |
-| --- | --- | --- |
-| Accueil parent dédié et paiement | `app/[locale]/(dashboard)/dashboard/page.tsx:156`, `:264` | Il faut enrichir le parcours existant, pas recréer un portail parent. |
-| Recherche de navigation, actions et personnes | `src/features/dashboard/search-modal.tsx:137` | Bon point d’entrée pour raccourcir les tâches. |
-| Chargement différé de la recherche | `src/features/dashboard/header-client.tsx:12` | Évite de charger systématiquement cette interaction. |
-| Sauvegarde et gestion des erreurs de l’appel | `app/[locale]/(dashboard)/dashboard/my-classes/[id]/attendance/_components/attendance-panel.tsx:173`, `:241` | Les améliorations doivent préserver la sérialisation et les erreurs par élève. |
-| Marquage des élèves restants présents | Même fichier, `:473` | L’action groupée existe déjà ; la recommandation concerne la consultation et les exceptions. |
-| Focus des dialogues et clavier des onglets | `src/components/ui/dialog/dialog.tsx:126`, `src/components/ui/tabs/tabs.tsx:28` | Des fondations réutilisables existent. |
-| Tokens, polices et réduction des animations | `src/styles/globals.css:74`, `:232`, `app/[locale]/layout.tsx:2` | Les anciens constats « aucune police/tokens » sont dépassés. |
-| Pages privées exclues du cache PWA | `public/sw.js:36` | Conserver cette séparation lors de tout travail hors connexion. |
+| Élément                                       | Preuve actuelle                                                                                              | Conséquence                                                                                  |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Accueil parent dédié et paiement              | `app/[locale]/(dashboard)/dashboard/page.tsx:156`, `:264`                                                    | Il faut enrichir le parcours existant, pas recréer un portail parent.                        |
+| Recherche de navigation, actions et personnes | `src/features/dashboard/search-modal.tsx:137`                                                                | Bon point d’entrée pour raccourcir les tâches.                                               |
+| Chargement différé de la recherche            | `src/features/dashboard/header-client.tsx:12`                                                                | Évite de charger systématiquement cette interaction.                                         |
+| Sauvegarde et gestion des erreurs de l’appel  | `app/[locale]/(dashboard)/dashboard/my-classes/[id]/attendance/_components/attendance-panel.tsx:173`, `:241` | Les améliorations doivent préserver la sérialisation et les erreurs par élève.               |
+| Marquage des élèves restants présents         | Même fichier, `:473`                                                                                         | L’action groupée existe déjà ; la recommandation concerne la consultation et les exceptions. |
+| Focus des dialogues et clavier des onglets    | `src/components/ui/dialog/dialog.tsx:126`, `src/components/ui/tabs/tabs.tsx:28`                              | Des fondations réutilisables existent.                                                       |
+| Tokens, polices et réduction des animations   | `src/styles/globals.css:74`, `:232`, `app/[locale]/layout.tsx:2`                                             | Les anciens constats « aucune police/tokens » sont dépassés.                                 |
+| Pages privées exclues du cache PWA            | `public/sw.js:36`                                                                                            | Conserver cette séparation lors de tout travail hors connexion.                              |
 
 ## Constats priorisés
 
@@ -224,28 +224,28 @@ Effort : 1–3 jours, risque moyen.
 
 Ces propositions sont des évolutions produit, pas des bugs établis.
 
-| Public | Évolution | Base observée | Bénéfice et ordre de grandeur |
-| --- | --- | --- | --- |
-| Parents | Une vue « cette semaine » par enfant : cours, événements, présences et échéances selon modules | `dashboard/page.tsx:215` et `:246` | Répondre à « que dois-je savoir et faire ? » en une visite ; 3–6 jours après validation des données disponibles. |
-| Enseignants | Basculer entre cartes individuelles et liste compacte pour corriger les exceptions | `attendance-panel.tsx:506` et `:473` | Voir la classe entière et retrouver un élève sans parcourir chaque carte ; 2–4 jours, conserver le récapitulatif et la validation. |
-| Administration | Planning hebdomadaire sur un axe horaire, avec navigation vers les créneaux | `planning/_components/schedule-grid.tsx:49` | Repérer les journées chargées et les chevauchements visuellement ; 4–7 jours, règles de conflit à cadrer séparément. |
-| Tous | Historique familial consultable et filtrable, avec « Voir plus » | `families/[id]/_components/activity-feed.tsx:81` | Le fil s’arrête aujourd’hui à 8 éléments ; rendre les événements existants explorables, puis étudier les autres types d’activité ; 2–4 jours. |
-| Parents | Notifications choisies par catégorie et destinataire, ouvrant le bon écran | `public/sw.js:49` | Une information utile au bon moment ; nécessite cadrage des abonnements, de l’émission et des préférences avant chiffrage fiable. |
-| Tous | États réseau explicites et reprise de saisie ciblée | `public/sw.js:36`, `attendance-panel.tsx:99` | La PWA actuelle fournit un écran hors connexion, pas une application métier hors ligne ; commencer par le statut de connexion et la reprise maîtrisée de l’appel. |
-| Visiteurs | Une entrée publique propre à l’école si l’acquisition et l’information des familles sont un objectif | `app/[locale]/page.tsx:15` | La racine redirige actuellement vers connexion/dashboard ; arbitrage produit nécessaire avant d’ajouter une page publique. |
+| Public         | Évolution                                                                                            | Base observée                                    | Bénéfice et ordre de grandeur                                                                                                                                     |
+| -------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Parents        | Une vue « cette semaine » par enfant : cours, événements, présences et échéances selon modules       | `dashboard/page.tsx:215` et `:246`               | Répondre à « que dois-je savoir et faire ? » en une visite ; 3–6 jours après validation des données disponibles.                                                  |
+| Enseignants    | Basculer entre cartes individuelles et liste compacte pour corriger les exceptions                   | `attendance-panel.tsx:506` et `:473`             | Voir la classe entière et retrouver un élève sans parcourir chaque carte ; 2–4 jours, conserver le récapitulatif et la validation.                                |
+| Administration | Planning hebdomadaire sur un axe horaire, avec navigation vers les créneaux                          | `planning/_components/schedule-grid.tsx:49`      | Repérer les journées chargées et les chevauchements visuellement ; 4–7 jours, règles de conflit à cadrer séparément.                                              |
+| Tous           | Historique familial consultable et filtrable, avec « Voir plus »                                     | `families/[id]/_components/activity-feed.tsx:81` | Le fil s’arrête aujourd’hui à 8 éléments ; rendre les événements existants explorables, puis étudier les autres types d’activité ; 2–4 jours.                     |
+| Parents        | Notifications choisies par catégorie et destinataire, ouvrant le bon écran                           | `public/sw.js:49`                                | Une information utile au bon moment ; nécessite cadrage des abonnements, de l’émission et des préférences avant chiffrage fiable.                                 |
+| Tous           | États réseau explicites et reprise de saisie ciblée                                                  | `public/sw.js:36`, `attendance-panel.tsx:99`     | La PWA actuelle fournit un écran hors connexion, pas une application métier hors ligne ; commencer par le statut de connexion et la reprise maîtrisée de l’appel. |
+| Visiteurs      | Une entrée publique propre à l’école si l’acquisition et l’information des familles sont un objectif | `app/[locale]/page.tsx:15`                       | La racine redirige actuellement vers connexion/dashboard ; arbitrage produit nécessaire avant d’ajouter une page publique.                                        |
 
 ## Santé frontend : appréciation qualitative du périmètre lu
 
 Les notes évaluent la structure observée, pas une campagne de mesure ni toutes les pages.
 
-| Axe | Note /10 | Motif |
-| --- | --- | --- |
-| Architecture | 7 | Frontières serveur/client et primitives partagées ; 18 TSX de plus de 300 lignes à examiner selon leur responsabilité. La longueur seule n’est pas un défaut. |
-| Patterns React | 8 | Nettoyages et sauvegardes explicites sur les composants lus ; protection de navigation et de fermeture à compléter. |
-| Performance structurelle | 6 | Chargement différé de la palette ; listes non bornées côté serveur. Performance ressentie non mesurée. |
-| Cohérence UI et accessibilité du code | 6 | Fondations sémantiques et clavier présents ; anciennes surfaces et comportement du tiroir à terminer. |
-| TypeScript | 9 | Mode strict, aucune occurrence de `: any`, `<any>` ou `as any` dans le code de production selon la recherche ; 6 doubles casts, dont plusieurs adaptateurs globaux légitimes. Pas de `@ts-ignore` ou `@ts-expect-error` détecté en production. |
-| Tests | 7 | Tests de comportement et d’intégration présents ; aucun outillage E2E navigateur repéré dans les scripts/dépendances/configurations examinés. |
+| Axe                                   | Note /10 | Motif                                                                                                                                                                                                                                          |
+| ------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture                          | 7        | Frontières serveur/client et primitives partagées ; 18 TSX de plus de 300 lignes à examiner selon leur responsabilité. La longueur seule n’est pas un défaut.                                                                                  |
+| Patterns React                        | 8        | Nettoyages et sauvegardes explicites sur les composants lus ; protection de navigation et de fermeture à compléter.                                                                                                                            |
+| Performance structurelle              | 6        | Chargement différé de la palette ; listes non bornées côté serveur. Performance ressentie non mesurée.                                                                                                                                         |
+| Cohérence UI et accessibilité du code | 6        | Fondations sémantiques et clavier présents ; anciennes surfaces et comportement du tiroir à terminer.                                                                                                                                          |
+| TypeScript                            | 9        | Mode strict, aucune occurrence de `: any`, `<any>` ou `as any` dans le code de production selon la recherche ; 6 doubles casts, dont plusieurs adaptateurs globaux légitimes. Pas de `@ts-ignore` ou `@ts-expect-error` détecté en production. |
+| Tests                                 | 7        | Tests de comportement et d’intégration présents ; aucun outillage E2E navigateur repéré dans les scripts/dépendances/configurations examinés.                                                                                                  |
 
 Moyenne indicative : **7,2/10**. La qualité perçue en situation réelle reste à mesurer.
 React Compiler est activé (`next.config.ts:17`) : l’absence de `useMemo` ou `memo` n’est pas ici
@@ -297,13 +297,13 @@ Les positions de code ci-dessous correspondent à l’état audité et pourront 
 
 ### Ordre et budget
 
-| Lot | Résultat | Dépendances | Effort indicatif |
-| --- | --- | --- | --- |
-| 1. Protéger | Saisies préservées, erreurs localisées, navigation mobile maîtrisée | Aucune ; reproduire d’abord le risque sur l’appel | 3–6 jours |
-| 2. Relier | Listes et onglets partageables, tâches préfiltrées, cartes enfants avec accès au dossier | Contrat d’état URL avant les liens préfiltrés | 3–5 jours |
-| 3. Clarifier | Surfaces cohérentes, paiement confirmé, destination des notifications conservée | Lot 1 pour les primitives partagées | 3–5 jours |
-| 4. Passer à l’échelle | Pagination serveur des familles et mesure sur données réalistes | Lot 2 | 2–4 jours |
-| 5. Enrichir | Appel en liste, historique consultable, puis planning hebdomadaire | Validation visuelle et usage des lots précédents | 4–8 jours pour appel + historique ; planning séparé |
+| Lot                   | Résultat                                                                                 | Dépendances                                       | Effort indicatif                                    |
+| --------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------- |
+| 1. Protéger           | Saisies préservées, erreurs localisées, navigation mobile maîtrisée                      | Aucune ; reproduire d’abord le risque sur l’appel | 3–6 jours                                           |
+| 2. Relier             | Listes et onglets partageables, tâches préfiltrées, cartes enfants avec accès au dossier | Contrat d’état URL avant les liens préfiltrés     | 3–5 jours                                           |
+| 3. Clarifier          | Surfaces cohérentes, paiement confirmé, destination des notifications conservée          | Lot 1 pour les primitives partagées               | 3–5 jours                                           |
+| 4. Passer à l’échelle | Pagination serveur des familles et mesure sur données réalistes                          | Lot 2                                             | 2–4 jours                                           |
+| 5. Enrichir           | Appel en liste, historique consultable, puis planning hebdomadaire                       | Validation visuelle et usage des lots précédents  | 4–8 jours pour appel + historique ; planning séparé |
 
 Première tranche : **lots 1 et 2, environ 6–11 jours**. Les deux lots suivants représentent environ
 5–9 jours supplémentaires. Ces fourchettes incluent les tests ciblés et une recette du lot,
@@ -507,18 +507,18 @@ leurs critères d’acceptation. Lire et mettre à jour `docs/business-rules.md`
 
 ### Indicateurs de réussite
 
-| Indicateur | État observé | Cible de recette |
-| --- | --- | --- |
-| Retour liste après fiche | State local non garanti au remontage | Même recherche, filtre, tri et page sur les routes migrées |
-| Action depuis l’accueil | Liens génériques pour les tâches examinées | Une ouverture mène à la vue correspondant au compteur |
-| Fermeture d’une saisie modifiée | Dialogue fermé sans garde | Aucun abandon silencieux dans le formulaire famille |
-| Appel et navigation immédiate | Risque de perte non reproduit | Toutes les sorties testées préservent la saisie ou explicitent le blocage |
-| Navigation mobile au clavier | Risque de focus hors écran | Aucun contrôle masqué atteint ; focus restauré après fermeture |
-| Carte enfant vers dossier | Aucun lien dans la carte | Un lien explicite autorisé par enfant |
-| Retour Stripe avant webhook | Message statique | Attente explicite puis confirmation serveur ou fin d’attente expliquée |
-| Notification ciblée | Reproduction : destination perdue | Destination et locale conservées, repli interne testé |
-| Familles lues par page | Toutes les familles actives | Nombre de familles borné par la taille demandée |
-| Rapidité ressentie et appel | Non mesurée | Mesure initiale puis comparaison sur mêmes données et appareil |
+| Indicateur                      | État observé                               | Cible de recette                                                          |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------- |
+| Retour liste après fiche        | State local non garanti au remontage       | Même recherche, filtre, tri et page sur les routes migrées                |
+| Action depuis l’accueil         | Liens génériques pour les tâches examinées | Une ouverture mène à la vue correspondant au compteur                     |
+| Fermeture d’une saisie modifiée | Dialogue fermé sans garde                  | Aucun abandon silencieux dans le formulaire famille                       |
+| Appel et navigation immédiate   | Risque de perte non reproduit              | Toutes les sorties testées préservent la saisie ou explicitent le blocage |
+| Navigation mobile au clavier    | Risque de focus hors écran                 | Aucun contrôle masqué atteint ; focus restauré après fermeture            |
+| Carte enfant vers dossier       | Aucun lien dans la carte                   | Un lien explicite autorisé par enfant                                     |
+| Retour Stripe avant webhook     | Message statique                           | Attente explicite puis confirmation serveur ou fin d’attente expliquée    |
+| Notification ciblée             | Reproduction : destination perdue          | Destination et locale conservées, repli interne testé                     |
+| Familles lues par page          | Toutes les familles actives                | Nombre de familles borné par la taille demandée                           |
+| Rapidité ressentie et appel     | Non mesurée                                | Mesure initiale puis comparaison sur mêmes données et appareil            |
 
 ## Synthèse finale
 

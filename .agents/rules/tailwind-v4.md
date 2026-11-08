@@ -1,13 +1,16 @@
 ---
+
 paths:
-  - "**/*.css"
-  - "**/*.tsx"
-  - "postcss.config.mjs"
+
+- "**/*.css"
+- "**/*.tsx"
+- "postcss.config.mjs"
+
 ---
 
 # Tailwind CSS 4 Rules
 
-Scope: **/*.css, **/*.tsx, postcss.config.mjs
+Scope: **/_.css, **/_.tsx, postcss.config.mjs
 
 ## Proactive Behavior
 

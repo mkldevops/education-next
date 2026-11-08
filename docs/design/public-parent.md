@@ -18,20 +18,21 @@ administratif (« Non authentifié ») et du français codé en dur au milieu de
 La base technique (next-intl, ThemeProvider, palettes AA, Stripe, ICS, passkeys) est saine : le
 problème est la mise en scène, pas la fondation.
 
-| Axe | Note /5 | Commentaire bref |
-|---|---|---|
-| Première impression | 1,5 | Pas de landing ni de page école ; police non chargée ; login daté |
-| Confiance | 2,5 | Stripe rassure, mais checkout anonyme (« Frais de scolarité »), pas de reçu, email hors charte |
-| Parcours parent | 2 | Dashboard admin recyclé, pas de présences, pas d'événements dans la nav |
-| Auth / onboarding | 2,5 | Passkey + Google présents mais relégués ; invitation muette sur l'école et le rôle |
-| Branding école | 2 | Thème appliqué sur 1 page publique sur 3 ; pas de garde de contraste runtime |
-| Ton | 2,5 | Copy fr correcte par endroits, mais générique, robotique sur les erreurs, mélange fr/en |
+| Axe                 | Note /5 | Commentaire bref                                                                               |
+| ------------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| Première impression | 1,5     | Pas de landing ni de page école ; police non chargée ; login daté                              |
+| Confiance           | 2,5     | Stripe rassure, mais checkout anonyme (« Frais de scolarité »), pas de reçu, email hors charte |
+| Parcours parent     | 2       | Dashboard admin recyclé, pas de présences, pas d'événements dans la nav                        |
+| Auth / onboarding   | 2,5     | Passkey + Google présents mais relégués ; invitation muette sur l'école et le rôle             |
+| Branding école      | 2       | Thème appliqué sur 1 page publique sur 3 ; pas de garde de contraste runtime                   |
+| Ton                 | 2,5     | Copy fr correcte par endroits, mais générique, robotique sur les erreurs, mélange fr/en        |
 
 ---
 
 ## 2. Problèmes prioritaires (classés)
 
 ### P1 — Aucune vitrine : ni landing plateforme, ni page d'accueil école
+
 - `app/[locale]/page.tsx:13-15` : `/` redirige vers `/dashboard` ou `/login`. Un parent qui tape l'URL
   tombe sur un formulaire.
 - `app/[locale]/ecole/[slug]/` ne contient que `evenements/` et `planning/`. Pas de `page.tsx`, alors
@@ -43,6 +44,7 @@ problème est la mise en scène, pas la fondation.
   WhatsApp de parents mène à une impasse ou à un login. C'est le moment de confiance n°1, et il est raté.
 
 ### P2 — Branding école incohérent et fragile
+
 - Seule la page de détail événement applique le thème : `ecole/[slug]/evenements/[eventSlug]/page.tsx:81`
   (ThemeProvider + en-tête logo aux lignes 106-116). La liste `ecole/[slug]/evenements/page.tsx:101-115`
   et le planning `ecole/[slug]/planning/page.tsx:59-65` n'ont ni thème, ni logo, ni en-tête : on change
@@ -58,6 +60,7 @@ problème est la mise en scène, pas la fondation.
   multi-école n'est pas visible.
 
 ### P3 — Le parent vit dans un tableau de bord d'administrateur
+
 - `app/[locale]/(dashboard)/dashboard/page.tsx:247-252` : `StudentTrendCard` (« élèves, 6 derniers
   mois ») affichée aux parents, sans aucun sens pour eux.
 - Même page, `:253-264` et `:311-337` : KPI « inscriptions » et DataTable « inscriptions récentes » avec
@@ -75,6 +78,7 @@ problème est la mise en scène, pas la fondation.
   que se passe-t-il cette semaine ») et reçoit des métriques d'établissement.
 
 ### P4 — Le login est un écran 2015 et relègue les méthodes modernes
+
 - `app/[locale]/(auth)/_components/auth-card.tsx:17` : `min-h-[calc(100vh-5rem)]`, résidu d'un header
   disparu. `:19` : `bg-white` codé en dur, `rounded shadow-lg`. `:20-23` : bandeau couleur primaire avec
   texte blanc.
@@ -91,6 +95,7 @@ problème est la mise en scène, pas la fondation.
   sécurité et de confort, est cachée.
 
 ### P5 — Invitation muette : on ne sait ni qui invite, ni pour quoi
+
 - `app/[locale]/invite/[token]/page.tsx:62-76` : pas de logo ni de thème école. `:73` :
   `AcceptInvitationForm` ne reçoit pas `schoolName`.
 - Même page, `:17-19` : titre de métadonnées « Créer votre compte » codé en dur en français.
@@ -105,6 +110,7 @@ problème est la mise en scène, pas la fondation.
   exactement le profil d'un hameçonnage. Le taux d'activation en pâtit directement.
 
 ### P6 — Paiement : la confiance Stripe est gâchée par le contexte
+
 - `src/use-cases/payments/create-checkout-session.ts:58` : produit « Frais de scolarité » codé en dur,
   sans nom d'école, d'enfant(s) ni de période. Pas de `locale` Stripe ni de `custom_text`.
 - Même fichier, `:67-68` : retour vers la page famille avec `?payment=`.
@@ -115,6 +121,7 @@ problème est la mise en scène, pas la fondation.
   hésite, et un paiement réussi ne laisse aucune preuve dans l'app.
 
 ### P7 — Emails hors charte et partiellement non traduits
+
 - `src/lib/email-template.ts:18` promet « la palette de l'école » mais `:20-31` utilise le teal statique
   de la plateforme. `:32-34` : Fraunces/Karla, une troisième identité. `~:130` : `<html lang="fr">` codé
   en dur. `:106` : CTA en capitales espacées.
@@ -122,6 +129,7 @@ problème est la mise en scène, pas la fondation.
 - **Impact** : l'email, principal point d'entrée des familles, ne ressemble ni à l'école ni à l'app.
 
 ### P8 — Pages publiques incomplètes (événements, planning, affiche)
+
 - `ecole/[slug]/evenements/page.tsx:127-163` : les cartes **ne pointent pas** vers la page de détail ;
   passé et futur mélangés en ordre croissant ; annulés en barré + opacité.
 - `ecole/[slug]/evenements/[eventSlug]/page.tsx` : pas de retour vers la liste, pas d'« Ajouter au
@@ -134,6 +142,7 @@ problème est la mise en scène, pas la fondation.
 - **Impact** : l'affiche, le canal le plus « communauté », ne convertit vers rien.
 
 ### P9 — Pages d'erreur techniques et ton robotique
+
 - `src/features/error-pages/error-page-shell.tsx:75-81` : dégradé plus grille. `:86-93` : pastille code
   HTTP. `:127-142` : grille décorative 4×4 dessinant les chiffres. `:97` : `text-graphite-500` sur le
   h1.
@@ -142,6 +151,7 @@ problème est la mise en scène, pas la fondation.
 - **Impact** : dans un moment d'échec, on montre la machine au lieu de rassurer.
 
 ### P10 — Chaînes codées en dur et finitions i18n
+
 - `app/[locale]/(dashboard)/layout.tsx:117` : « Loading... » en anglais.
 - `dashboard/page.tsx:106` : repli de nom `'User'`.
 - messages/en.json : « Login » comme titre (préférer « Sign in »).
@@ -160,6 +170,7 @@ de page (« Propulsé par … »), comme Uvodo sur ses reçus.
 ### 3.1 Page d'accueil école `/ecole/[slug]` (nouvelle) et landing `/`
 
 Références :
+
 - Profil organisation plus événements : Sweatpals https://mobbin.com/screens/1ce52a1f-dae0-4e8b-bf1e-d46bb799ff44,
   Posh https://mobbin.com/screens/61188f90-c79a-463a-b0b7-81871a5ba535,
   Luma https://mobbin.com/screens/9a2d1296-164e-4a8b-bbc7-ba0b3ca2ecce
@@ -168,6 +179,7 @@ Références :
   Dovetail https://mobbin.com/sites/sections/677fa46b-ca95-428a-a243-0adabff3449d
 
 Direction :
+
 - Un layout public partagé `ecole/[slug]/layout.tsx` : ThemeProvider école, en-tête (logo, nom,
   navigation Accueil · Événements · Planning, bouton « Espace parents ») et pied (adresse, contact,
   « Propulsé par »).
@@ -213,6 +225,7 @@ Direction :
 ### 3.2 Événements publics (liste, détail, affiche)
 
 Références :
+
 - Luma https://mobbin.com/screens/a02338c1-09a9-400f-a4a3-d9f52ea37820 : bloc date/lieu,
   « Add to Calendar », hôte présenté.
 - Partiful https://mobbin.com/screens/ea80ec45-c112-44fe-812d-4e253153cbc1 : menu Google, Outlook et
@@ -221,6 +234,7 @@ Références :
   « View map ».
 
 Direction :
+
 - Liste :
   - sections « À venir » puis « Passés » (repliée), en ordre chronologique
   - carte entière cliquable vers le détail
@@ -239,6 +253,7 @@ Direction :
 ### 3.3 Login et récupération de compte
 
 Références :
+
 - Split-screen marque et formulaire : Ferndesk https://mobbin.com/screens/b6867b5e-0fc3-4fa6-8eec-f39b1c1af322,
   Fabric https://mobbin.com/screens/e5a30e9f-9ba7-4b4a-b480-ae07cf8d3cbf
 - Email d'abord et fournisseur en tête, badge « Last used » : Base44
@@ -247,6 +262,7 @@ Références :
   https://mobbin.com/screens/609920e7-3191-4ed1-8e5c-090cf98d338b
 
 Direction :
+
 - Shell `(auth)/layout.tsx` en deux colonnes, le panneau école à gauche :
   - logo, nom, accroche
   - photo de couverture, sinon un aplat très léger `primary-light`
@@ -295,6 +311,7 @@ Direction :
 ### 3.4 Invitation et onboarding
 
 Références :
+
 - Clay https://mobbin.com/flows/c633c6c4-340d-4ba9-84ca-161c0d546a21 : « X vous invite à rejoindre Y »,
   expiration affichée.
 - Asana https://mobbin.com/flows/5fa91fa3-560c-4886-9ec5-a08902ef21db : « Vous rejoignez en tant que
@@ -305,6 +322,7 @@ Références :
   titre.
 
 Direction :
+
 - En-tête école (logo, thème). Titre « Rejoignez École Al-Nour » et sous-titre « <Nom> vous invite en
   tant que parent de la famille Diallo ».
 - Email en lecture seule, présenté comme du texte avec « Pas vous ? », non comme un champ grisé.
@@ -320,11 +338,13 @@ Direction :
 ### 3.5 Dashboard parent
 
 Références :
+
 - Carte par enfant avec solde et prochaine échéance : Kit https://mobbin.com/screens/ea5d92c2-73fc-4fc7-9fb6-a6d32d332097,
   Greenlight https://mobbin.com/screens/7ea82a02-193c-4a6f-ae55-3cca33efc600
 - Salut daté et liste « à faire » : Asana (écran final du flow ci-dessus).
 
 Direction : un dashboard parent dédié, sans réutiliser l'admin.
+
 - En-tête : « Bonjour Aminata » avec la date du jour, puis une ligne d'état (« Tout est en ordre » ou
   « 1 paiement en attente »).
 - Une carte par enfant, avec :
@@ -348,6 +368,7 @@ Direction : un dashboard parent dédié, sans réutiliser l'admin.
 ### 3.6 Paiement Stripe et après-paiement
 
 Références :
+
 - Stripe https://mobbin.com/screens/8379a44e-9b7e-4341-8913-9cd1a4be3fa8 : « Paiement réussi », montant
   cité, email du reçu, puis « Voir le reçu ».
 - Uvodo https://mobbin.com/screens/f47a3603-030c-4052-aba1-613439cf0bcb : marchand en tête, numéro et
@@ -355,6 +376,7 @@ Références :
 - Deel https://mobbin.com/screens/eb392439-083f-4863-b60b-baa13493780b : détail et téléchargement PDF.
 
 Direction :
+
 - Dans Checkout :
   - produit « École Al-Nour — Scolarité 2026-2027 », avec les prénoms des enfants en description
   - `locale` alignée sur la langue de l'utilisateur
@@ -367,11 +389,13 @@ Direction :
 ### 3.7 Pages d'erreur
 
 Références :
+
 - Vimeo https://mobbin.com/screens/0cf4923d-f5dd-42dc-9ddc-250fb8b91202 : titre humain et une action.
 - Squarespace https://mobbin.com/screens/6276198a-1c16-40bb-878c-256fa6d3e36d : 404 dans le shell du
   site, avec la navigation conservée.
 
 Direction :
+
 - Retirer la grille 4×4, le dégradé et la pastille code. Garder un titre humain, une phrase et deux
   actions contextuelles (« Aller à mon espace » si connecté, sinon « Page de l'école » et « Se
   connecter »).
@@ -417,53 +441,53 @@ Direction :
 
 ### Niveau 1 — Gains rapides (≤ 1 jour chacun)
 
-| # | Action | Fichiers |
-|---|---|---|
-| Q1 | Charger la police via `next/font` et l'exposer en variable CSS | `app/[locale]/layout.tsx`, `src/styles/globals.css` |
-| Q2 | États de chargement : spinner et libellé à la place de `'...'`, erreurs en `role="alert"` | `src/features/auth/login-form.tsx`, `forgot-password-form.tsx`, `reset-password-form.tsx`, `accept-invitation-form.tsx`, `join-school-form.tsx` |
-| Q3 | Toggle afficher/masquer et `autoComplete` corrects (`current-password`, `new-password`, `username webauthn`) | mêmes formulaires auth et invitation |
-| Q4 | Pluriels ICU et casse (« 1 enfant ») | `families/[id]/_components/hero-banner.tsx`, `messages/fr.json`, `messages/en.json` |
-| Q5 | Chaînes codées en dur vers next-intl : metadata, états expiré/utilisé, « Loading... », `'User'`, email reset, `lang` email | `app/[locale]/invite/[token]/page.tsx`, `app/[locale]/(dashboard)/layout.tsx`, `dashboard/page.tsx`, `src/lib/auth.ts`, `src/lib/email-template.ts` |
-| Q6 | Cartes événement cliquables vers le détail ; « À venir » séparé de « Passés » | `app/[locale]/ecole/[slug]/evenements/page.tsx` |
-| Q7 | ThemeProvider et en-tête logo sur la liste événements et le planning publics | `ecole/[slug]/evenements/page.tsx`, `ecole/[slug]/planning/page.tsx` |
-| Q8 | Transmettre `logoUrl` et le nom de l'école à l'email d'invitation ; réécrire la copy | `app/[locale]/(dashboard)/_lib/invitation-email.ts`, `messages/*.json` |
-| Q9 | Masquer `StudentTrendCard`, le KPI inscriptions et la DataTable pour le rôle parent | `app/[locale]/(dashboard)/dashboard/page.tsx` |
-| Q10 | Ajouter Événements à la nav parent | `src/features/dashboard/sidebar-items.ts` |
-| Q11 | Conserver `redirectTo` du login et de l'invitation jusqu'à la destination | `login-form.tsx`, `join-school-form.tsx`, `app/[locale]/(auth)/login/page.tsx` |
-| Q12 | Stripe : `locale`, nom produit « École — Scolarité période », prénoms, `custom_text` | `src/use-cases/payments/create-checkout-session.ts`, `messages/*.json` |
-| Q13 | Sitemap : pages publiques école, événements et planning par slug | `app/sitemap.ts` |
-| Q14 | Copy : « Sign in », « clé d'accès », erreurs humaines, suppression de `auth.register` et du point de « Aperçu. » | `messages/fr.json`, `messages/en.json` |
-| Q15 | Fil d'Ariane famille adapté au rôle parent | `app/[locale]/(dashboard)/dashboard/families/[id]/page.tsx` |
-| Q16 | Passer `schoolName` et le rôle à l'invitation, avec en-tête logo | `app/[locale]/invite/[token]/page.tsx`, `accept-invitation-form.tsx` |
+| #   | Action                                                                                                                     | Fichiers                                                                                                                                            |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q1  | Charger la police via `next/font` et l'exposer en variable CSS                                                             | `app/[locale]/layout.tsx`, `src/styles/globals.css`                                                                                                 |
+| Q2  | États de chargement : spinner et libellé à la place de `'...'`, erreurs en `role="alert"`                                  | `src/features/auth/login-form.tsx`, `forgot-password-form.tsx`, `reset-password-form.tsx`, `accept-invitation-form.tsx`, `join-school-form.tsx`     |
+| Q3  | Toggle afficher/masquer et `autoComplete` corrects (`current-password`, `new-password`, `username webauthn`)               | mêmes formulaires auth et invitation                                                                                                                |
+| Q4  | Pluriels ICU et casse (« 1 enfant »)                                                                                       | `families/[id]/_components/hero-banner.tsx`, `messages/fr.json`, `messages/en.json`                                                                 |
+| Q5  | Chaînes codées en dur vers next-intl : metadata, états expiré/utilisé, « Loading... », `'User'`, email reset, `lang` email | `app/[locale]/invite/[token]/page.tsx`, `app/[locale]/(dashboard)/layout.tsx`, `dashboard/page.tsx`, `src/lib/auth.ts`, `src/lib/email-template.ts` |
+| Q6  | Cartes événement cliquables vers le détail ; « À venir » séparé de « Passés »                                              | `app/[locale]/ecole/[slug]/evenements/page.tsx`                                                                                                     |
+| Q7  | ThemeProvider et en-tête logo sur la liste événements et le planning publics                                               | `ecole/[slug]/evenements/page.tsx`, `ecole/[slug]/planning/page.tsx`                                                                                |
+| Q8  | Transmettre `logoUrl` et le nom de l'école à l'email d'invitation ; réécrire la copy                                       | `app/[locale]/(dashboard)/_lib/invitation-email.ts`, `messages/*.json`                                                                              |
+| Q9  | Masquer `StudentTrendCard`, le KPI inscriptions et la DataTable pour le rôle parent                                        | `app/[locale]/(dashboard)/dashboard/page.tsx`                                                                                                       |
+| Q10 | Ajouter Événements à la nav parent                                                                                         | `src/features/dashboard/sidebar-items.ts`                                                                                                           |
+| Q11 | Conserver `redirectTo` du login et de l'invitation jusqu'à la destination                                                  | `login-form.tsx`, `join-school-form.tsx`, `app/[locale]/(auth)/login/page.tsx`                                                                      |
+| Q12 | Stripe : `locale`, nom produit « École — Scolarité période », prénoms, `custom_text`                                       | `src/use-cases/payments/create-checkout-session.ts`, `messages/*.json`                                                                              |
+| Q13 | Sitemap : pages publiques école, événements et planning par slug                                                           | `app/sitemap.ts`                                                                                                                                    |
+| Q14 | Copy : « Sign in », « clé d'accès », erreurs humaines, suppression de `auth.register` et du point de « Aperçu. »           | `messages/fr.json`, `messages/en.json`                                                                                                              |
+| Q15 | Fil d'Ariane famille adapté au rôle parent                                                                                 | `app/[locale]/(dashboard)/dashboard/families/[id]/page.tsx`                                                                                         |
+| Q16 | Passer `schoolName` et le rôle à l'invitation, avec en-tête logo                                                           | `app/[locale]/invite/[token]/page.tsx`, `accept-invitation-form.tsx`                                                                                |
 
 ### Niveau 2 — Structurant (1 à 5 jours chacun)
 
-| # | Action | Fichiers |
-|---|---|---|
-| S1 | Layout public école partagé (en-tête, pied, thème) et **page d'accueil école** | nouveaux `app/[locale]/ecole/[slug]/layout.tsx`, `app/[locale]/ecole/[slug]/page.tsx` ; retrait des en-têtes dupliqués dans `evenements/[eventSlug]/page.tsx` |
-| S2 | Refonte du shell auth en split-screen école, formulaire email d'abord, passkey conditionnelle, badge dernière méthode | `app/[locale]/(auth)/layout.tsx`, `_components/auth-card.tsx`, `login/page.tsx`, `src/features/auth/login-form.tsx` |
-| S3 | Parcours mot de passe oublié complet : écran de succès avec email, lien invalide menant à une nouvelle demande, auto-connexion | `forgot-password-form.tsx`, `reset-password-form.tsx`, pages `(auth)/forgot-password`, `(auth)/reset-password` |
-| S4 | Invitation brandée : titre « Rejoignez X », rôle, Google/passkey d'abord, états expirés actionnables, auto-connexion | `app/[locale]/invite/[token]/page.tsx`, `accept-invitation-form.tsx`, `join-school-form.tsx`, action de demande de nouveau lien dans `app/[locale]/(dashboard)/_lib/` |
-| S5 | **Dashboard parent dédié** : cartes enfant (prochain cours, présences), solde, événements | nouveau `app/[locale]/(dashboard)/dashboard/_components/parent-home.tsx`, `dashboard/page.tsx` (bascule par rôle), use-cases lecture famille |
-| S6 | **Vue présences parent** par enfant, avec scope famille strict | nouveau `app/[locale]/(dashboard)/dashboard/children/[id]/page.tsx` (ou onglet dans `families/[id]`), use-case lecture présences |
-| S7 | Confirmation de paiement dédiée avec montant, référence et reçu | `create-checkout-session.ts` (success_url avec `session_id`), nouvelle page `dashboard/payments/success/page.tsx`, `families/[id]/page.tsx` |
-| S8 | Tokens dérivés d'une couleur en OKLCH et foreground par contraste au runtime | `src/components/theme-provider.tsx`, `src/lib/theme-palettes.ts`, `src/styles/globals.css` |
-| S9 | Email aux couleurs de l'école, typo de l'app, CTA en casse normale, `lang` dynamique | `src/lib/email-template.ts`, `src/lib/auth.ts`, `_lib/invitation-email.ts` |
-| S10 | Pages d'erreur calmes et contextuelles (shell école sous `/ecole`) | `src/features/error-pages/error-page-shell.tsx`, `app/[locale]/not-found.tsx`, `app/[locale]/error.tsx`, `messages/*.json` |
-| S11 | Détail événement : retour, ICS unitaire, Google Calendar, partage, lien carte | `ecole/[slug]/evenements/[eventSlug]/page.tsx`, route ICS unitaire à côté de la route ICS existante |
-| S12 | Planning public mobile en vue liste par jour | `ecole/[slug]/planning/page.tsx`, nouveau composant liste (ne plus réutiliser `ScheduleGrid` admin) |
+| #   | Action                                                                                                                         | Fichiers                                                                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | Layout public école partagé (en-tête, pied, thème) et **page d'accueil école**                                                 | nouveaux `app/[locale]/ecole/[slug]/layout.tsx`, `app/[locale]/ecole/[slug]/page.tsx` ; retrait des en-têtes dupliqués dans `evenements/[eventSlug]/page.tsx`         |
+| S2  | Refonte du shell auth en split-screen école, formulaire email d'abord, passkey conditionnelle, badge dernière méthode          | `app/[locale]/(auth)/layout.tsx`, `_components/auth-card.tsx`, `login/page.tsx`, `src/features/auth/login-form.tsx`                                                   |
+| S3  | Parcours mot de passe oublié complet : écran de succès avec email, lien invalide menant à une nouvelle demande, auto-connexion | `forgot-password-form.tsx`, `reset-password-form.tsx`, pages `(auth)/forgot-password`, `(auth)/reset-password`                                                        |
+| S4  | Invitation brandée : titre « Rejoignez X », rôle, Google/passkey d'abord, états expirés actionnables, auto-connexion           | `app/[locale]/invite/[token]/page.tsx`, `accept-invitation-form.tsx`, `join-school-form.tsx`, action de demande de nouveau lien dans `app/[locale]/(dashboard)/_lib/` |
+| S5  | **Dashboard parent dédié** : cartes enfant (prochain cours, présences), solde, événements                                      | nouveau `app/[locale]/(dashboard)/dashboard/_components/parent-home.tsx`, `dashboard/page.tsx` (bascule par rôle), use-cases lecture famille                          |
+| S6  | **Vue présences parent** par enfant, avec scope famille strict                                                                 | nouveau `app/[locale]/(dashboard)/dashboard/children/[id]/page.tsx` (ou onglet dans `families/[id]`), use-case lecture présences                                      |
+| S7  | Confirmation de paiement dédiée avec montant, référence et reçu                                                                | `create-checkout-session.ts` (success_url avec `session_id`), nouvelle page `dashboard/payments/success/page.tsx`, `families/[id]/page.tsx`                           |
+| S8  | Tokens dérivés d'une couleur en OKLCH et foreground par contraste au runtime                                                   | `src/components/theme-provider.tsx`, `src/lib/theme-palettes.ts`, `src/styles/globals.css`                                                                            |
+| S9  | Email aux couleurs de l'école, typo de l'app, CTA en casse normale, `lang` dynamique                                           | `src/lib/email-template.ts`, `src/lib/auth.ts`, `_lib/invitation-email.ts`                                                                                            |
+| S10 | Pages d'erreur calmes et contextuelles (shell école sous `/ecole`)                                                             | `src/features/error-pages/error-page-shell.tsx`, `app/[locale]/not-found.tsx`, `app/[locale]/error.tsx`, `messages/*.json`                                            |
+| S11 | Détail événement : retour, ICS unitaire, Google Calendar, partage, lien carte                                                  | `ecole/[slug]/evenements/[eventSlug]/page.tsx`, route ICS unitaire à côté de la route ICS existante                                                                   |
+| S12 | Planning public mobile en vue liste par jour                                                                                   | `ecole/[slug]/planning/page.tsx`, nouveau composant liste (ne plus réutiliser `ScheduleGrid` admin)                                                                   |
 
 ### Niveau 3 — Ambitieux
 
-| # | Action | Fichiers |
-|---|---|---|
-| A1 | Landing plateforme à `/` pour les anonymes, avec annuaire « Trouver mon école » | `app/[locale]/page.tsx`, nouveau `app/[locale]/(public)/…`, `app/[locale]/evenements/page.tsx` (sélecteur au lieu de `notFound()`) |
-| A2 | Kit de marque école : accroche, couverture, contact, réseaux | `src/lib/branding-config.ts`, `src/lib/branding.ts`, écran réglages branding, `prisma/schema.prisma` si besoin de champs dédiés (migration relue) |
-| A3 | QR code sur l'affiche et logo net en en-tête | `app/[locale]/(print)/dashboard/events/[id]/affiche/page.tsx` (dépendance QR à justifier pour knip) |
-| A4 | Échéancier et paiement partiel, historique des reçus | `src/use-cases/payments/create-checkout-session.ts`, `online-payment-button.tsx`, nouvelle page `dashboard/payments/page.tsx`, `docs/business-rules.md` |
-| A5 | PWA et notifications (rappel d'événement, paiement reçu, absence) | `app/manifest.ts`, service worker, préférences dans `src/actions/` |
-| A6 | Mode sombre, après migration vers les tokens sémantiques (S8) | `src/styles/globals.css`, `app/[locale]/layout.tsx`, composants `src/components/ui` |
-| A7 | Abonnement calendrier par école (webcal) mis en avant sur la home école | route ICS école existante, `ecole/[slug]/page.tsx` |
+| #   | Action                                                                          | Fichiers                                                                                                                                                |
+| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | Landing plateforme à `/` pour les anonymes, avec annuaire « Trouver mon école » | `app/[locale]/page.tsx`, nouveau `app/[locale]/(public)/…`, `app/[locale]/evenements/page.tsx` (sélecteur au lieu de `notFound()`)                      |
+| A2  | Kit de marque école : accroche, couverture, contact, réseaux                    | `src/lib/branding-config.ts`, `src/lib/branding.ts`, écran réglages branding, `prisma/schema.prisma` si besoin de champs dédiés (migration relue)       |
+| A3  | QR code sur l'affiche et logo net en en-tête                                    | `app/[locale]/(print)/dashboard/events/[id]/affiche/page.tsx` (dépendance QR à justifier pour knip)                                                     |
+| A4  | Échéancier et paiement partiel, historique des reçus                            | `src/use-cases/payments/create-checkout-session.ts`, `online-payment-button.tsx`, nouvelle page `dashboard/payments/page.tsx`, `docs/business-rules.md` |
+| A5  | PWA et notifications (rappel d'événement, paiement reçu, absence)               | `app/manifest.ts`, service worker, préférences dans `src/actions/`                                                                                      |
+| A6  | Mode sombre, après migration vers les tokens sémantiques (S8)                   | `src/styles/globals.css`, `app/[locale]/layout.tsx`, composants `src/components/ui`                                                                     |
+| A7  | Abonnement calendrier par école (webcal) mis en avant sur la home école         | route ICS école existante, `ecole/[slug]/page.tsx`                                                                                                      |
 
 Ordre recommandé : Q1 à Q16, puis S1 et S2 (vitrine et porte d'entrée), puis S4 et S5 (activation et
 valeur parent), puis S7 à S9 (confiance paiement et email). Les items A viennent ensuite, selon

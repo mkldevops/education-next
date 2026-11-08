@@ -140,7 +140,7 @@
 
 **Independent Test**: Créer un config "automatic_promotion" boolean → le modifier → vérifier la validation de type
 
-*Note: US5 (Portail famille) est reportée car elle nécessite des routes UI et Stripe. US6 est avancée car elle ne dépend que du data model.*
+_Note: US5 (Portail famille) est reportée car elle nécessite des routes UI et Stripe. US6 est avancée car elle ne dépend que du data model._
 
 ### Implementation for User Story 6
 
