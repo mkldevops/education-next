@@ -1025,6 +1025,9 @@
           "recordFor": "Enregistrer un règlement d'écolage pour {family}",
           "callFamily": "Appeler la famille {family}",
           "noPhone": "Aucun téléphone",
+          "whatsApp": "Relancer sur WhatsApp",
+          "whatsAppFamily": "Relancer la famille {family} sur WhatsApp",
+          "whatsAppMessage": "Bonjour, sauf erreur de notre part, un montant de {amount} reste à régler pour la famille {family}. Merci de régulariser dès que possible ou de nous contacter en cas de difficulté.",
           "expectedToDate": "Attendu à ce jour",
           "overdueAmount": "Montant en retard",
           "overdueSubtitle": "Sur les forfaits suivis, après leur jour limite de paiement",
@@ -1383,7 +1386,11 @@
           "nothingPaid": "Rien de payé",
           "coveredLeft": "{days, plural, =0 {plus aucun jour couvert} one {encore # jour couvert} other {encore # jours couverts}}",
           "dueDetail": "{days, plural, one {# jour} other {# jours}} · {amount}",
-          "collect": "Encaisser"
+          "collect": "Encaisser",
+          "whatsApp": "WhatsApp",
+          "whatsAppFor": "Relancer la famille de {student} sur WhatsApp",
+          "whatsAppDue": "Bonjour, sauf erreur de notre part, {amount} reste à régler pour le service {service} de {student}. Merci de régulariser dès que possible ou de nous contacter en cas de difficulté.",
+          "whatsAppRunningOut": "Bonjour, {days, plural, =0 {les repas payés pour {student} ({service}) sont épuisés} one {les repas payés pour {student} ({service}) couvrent encore # jour} other {les repas payés pour {student} ({service}) couvrent encore # jours}}. Merci de renouveler le paiement pour la suite."
         },
         "staff": {
           "title": "Personnel",

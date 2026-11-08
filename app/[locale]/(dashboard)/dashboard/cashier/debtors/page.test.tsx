@@ -15,7 +15,8 @@ vi.mock('next/navigation', () => ({
   },
 }))
 vi.mock('next-intl/server', () => ({
-  getTranslations: async () => (key: string) => key,
+  getTranslations: async () => (key: string, values?: Record<string, unknown>) =>
+    values?.student ? [key, values.student, values.amount ?? values.days].join(':') : key,
   setRequestLocale: () => {},
 }))
 vi.mock('@/i18n/routing', () => ({
@@ -64,6 +65,7 @@ describe('MealDebtorsPage', () => {
         dueDays: 3,
         dueAmount: 1500,
         coveredLeft: 0,
+        phone: null,
       },
     ])
 
@@ -72,5 +74,41 @@ describe('MealDebtorsPage', () => {
     expect(loadMealDebtorsMock).toHaveBeenCalledWith('school-1', '2026-10-24')
     expect(html).toContain('href="/dashboard/cashier/students/student-1"')
     expect(html).toContain('href="/dashboard/cashier?familyId=family-1"')
+  })
+
+  it('prefills a WhatsApp reminder with the amount due, or the days still covered', async () => {
+    const row = {
+      studentId: 'student-1',
+      name: 'Léo Martin',
+      familyId: 'family-1',
+      service: 'CANTEEN',
+      paidThrough: '2026-10-20',
+      dueDays: 3,
+      dueAmount: 1500,
+      coveredLeft: 0,
+      phone: '06 12 34 56 78',
+    }
+    loadMealDebtorsMock.mockResolvedValue([
+      row,
+      {
+        ...row,
+        studentId: 'student-2',
+        name: 'Inès Ali',
+        dueDays: 0,
+        dueAmount: 0,
+        coveredLeft: 1,
+      },
+      { ...row, studentId: 'student-3', name: 'Sans Numéro', phone: null },
+    ])
+
+    const html = renderToStaticMarkup(await render())
+    const links = [...html.matchAll(/href="(https:\/\/wa\.me\/[^"]+)"/g)].map((match) =>
+      decodeURIComponent(match[1].replaceAll('&amp;', '&'))
+    )
+
+    expect(links).toHaveLength(2)
+    expect(links[0]).toMatch(/^https:\/\/wa\.me\/33612345678\?text=whatsAppDue:Léo Martin:/)
+    expect(links[1]).toBe('https://wa.me/33612345678?text=whatsAppRunningOut:Inès Ali:1')
+    expect(html).toContain('aria-label="whatsAppFor:Léo Martin:"')
   })
 })

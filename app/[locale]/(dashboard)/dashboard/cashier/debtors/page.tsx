@@ -1,8 +1,10 @@
 import { Breadcrumbs, Card } from '@peaklab/ui'
+import { MessageCircle } from 'lucide-react'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolToday } from '@/domain/school-date'
+import { whatsAppLink } from '@/domain/whatsapp-link'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
@@ -35,6 +37,20 @@ export default async function MealDebtorsPage({ params }: Props) {
   const formatDay = (day: string) =>
     new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, { timeZone: 'UTC' })
   const total = rows.reduce((sum, row) => sum + row.dueAmount, 0)
+  const reminderLink = (row: (typeof rows)[number]) => {
+    if (!row.phone) return null
+    const service = tServices(row.service)
+    const text =
+      row.dueDays > 0
+        ? t('whatsAppDue', {
+            student: row.name,
+            service,
+            amount: formatCurrency(row.dueAmount, locale, currency),
+          })
+        : t('whatsAppRunningOut', { student: row.name, service, days: row.coveredLeft })
+    return whatsAppLink(row.phone, text)
+  }
+  const reminders = rows.map((row) => ({ ...row, whatsApp: reminderLink(row) }))
 
   return (
     <div className="space-y-6">
@@ -69,7 +85,7 @@ export default async function MealDebtorsPage({ params }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {rows.map((row) => (
+                {reminders.map((row) => (
                   <tr key={`${row.studentId}-${row.service}`} className="text-sm">
                     <td className="py-2 pr-4">
                       <Link
@@ -101,14 +117,28 @@ export default async function MealDebtorsPage({ params }: Props) {
                       )}
                     </td>
                     <td className="py-2 text-right">
-                      {row.familyId && (
-                        <Link
-                          href={`/dashboard/cashier?familyId=${row.familyId}`}
-                          className="text-foreground hover:underline"
-                        >
-                          {t('collect')}
-                        </Link>
-                      )}
+                      <div className="flex flex-wrap items-center justify-end gap-3">
+                        {row.whatsApp && (
+                          <a
+                            href={row.whatsApp}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={t('whatsAppFor', { student: row.name })}
+                            className="flex items-center gap-1 text-foreground hover:underline"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5 shrink-0" />
+                            {t('whatsApp')}
+                          </a>
+                        )}
+                        {row.familyId && (
+                          <Link
+                            href={`/dashboard/cashier?familyId=${row.familyId}`}
+                            className="text-foreground hover:underline"
+                          >
+                            {t('collect')}
+                          </Link>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
