@@ -21,7 +21,7 @@ function setup({
   const accountGw = {
     transaction: vi.fn(async (fn: (client: unknown) => unknown) => fn(tx)),
     findSetting: vi.fn().mockResolvedValue(setting),
-    isActiveStudent: vi.fn().mockResolvedValue(true),
+    isActiveOwner: vi.fn().mockResolvedValue(true),
     findPeriod: vi.fn().mockResolvedValue({ start: '2026-09-01', end: '2027-07-03' }),
     lockAccount: vi.fn().mockResolvedValue('account-1'),
     listSegments: vi.fn().mockResolvedValue(segments),
@@ -50,7 +50,7 @@ describe('subscribeMeal', () => {
     const { accountGw, run } = setup()
 
     expect(await run()).toBe('OK')
-    expect(accountGw.lockAccount).toHaveBeenCalledWith(tx, schoolId, studentId, 'CANTEEN', true)
+    expect(accountGw.lockAccount).toHaveBeenCalledWith(tx, schoolId, { studentId }, 'CANTEEN', true)
     expect(accountGw.createSegment).toHaveBeenCalledWith(tx, schoolId, {
       accountId: 'account-1',
       periodId,
@@ -98,7 +98,7 @@ describe('subscribeMeal', () => {
 
   it('refuses an archived student', async () => {
     const { accountGw, run } = setup()
-    accountGw.isActiveStudent.mockResolvedValue(false)
+    accountGw.isActiveOwner.mockResolvedValue(false)
 
     expect(await run()).toBe('notFound')
     expect(accountGw.transaction).not.toHaveBeenCalled()

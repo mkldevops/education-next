@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
   annualPlanAmount,
+  owedPlanAmount,
   paymentInstallments,
   paymentScheduleSchema,
   paymentTracking,
   planPricingSchema,
   readPaymentSchedule,
   readPlanPricing,
+  startMonthFromDate,
+  startMonthSchema,
+  startMonthToDate,
+  validateStartMonth,
 } from '../payment-schedule'
 
 const start = new Date('2026-09-01T00:00:00Z')
@@ -166,5 +171,55 @@ describe('payment deadlines', () => {
       overdueAmount: 0,
       tracked: false,
     })
+  })
+})
+
+describe('enrollment start month', () => {
+  const monthly = { mode: 'MONTHLY', firstMonth: 9, count: 9, dueDay: 5 } as const
+  const period = { startAt: start, endAt: new Date('2027-06-30T00:00:00Z') }
+
+  it('owes only the installments from the start month: October on a September–May plan', () => {
+    expect(owedPlanAmount(144_000, monthly, start, 'XOF', '2026-10')).toBe(128_000)
+    const installments = paymentInstallments(monthly, 128_000, start, 'XOF', '2026-10')
+    expect(installments).toHaveLength(8)
+    expect(installments[0]).toEqual({ dueDate: '2026-10-05', amount: 16_000 })
+    expect(installments.every((installment) => installment.amount === 16_000)).toBe(true)
+  })
+
+  it('expects nothing for September, then October once due', () => {
+    const installments = paymentInstallments(monthly, 128_000, start, 'XOF', '2026-10')
+    expect(paymentTracking(installments, 0, '2026-10-01').overdueAmount).toBe(0)
+    expect(paymentTracking(installments, 0, '2026-10-06').overdueAmount).toBe(16_000)
+  })
+
+  it('keeps today’s schedule without a start month or from the period start', () => {
+    expect(owedPlanAmount(144_000, monthly, start, 'XOF', null)).toBe(144_000)
+    expect(owedPlanAmount(144_000, monthly, start, 'XOF', '2026-09')).toBe(144_000)
+    expect(paymentInstallments(monthly, 144_000, start, 'XOF', null)).toEqual(
+      paymentInstallments(monthly, 144_000, start, 'XOF')
+    )
+  })
+
+  it('refuses a plan without deadlines and a start after the last one', () => {
+    expect(owedPlanAmount(144_000, { mode: 'NONE' }, start, 'XOF', '2026-10')).toBe(
+      'noPaymentSchedule'
+    )
+    expect(owedPlanAmount(144_000, monthly, start, 'XOF', '2027-06')).toBe('noInstallmentDue')
+  })
+
+  it('keeps the start month inside the school period', () => {
+    expect(validateStartMonth('2026-09', period)).toBe('OK')
+    expect(validateStartMonth('2027-06', period)).toBe('OK')
+    expect(validateStartMonth('2026-08', period)).toBe('startMonthOutsidePeriod')
+    expect(validateStartMonth('2027-07', period)).toBe('startMonthOutsidePeriod')
+  })
+
+  it('reads and stores a month as its first day in UTC', () => {
+    expect(startMonthSchema.safeParse('2026-10').success).toBe(true)
+    expect(startMonthSchema.safeParse('2026-13').success).toBe(false)
+    expect(startMonthSchema.safeParse('2026-10-01').success).toBe(false)
+    expect(startMonthToDate('2026-10').toISOString()).toBe('2026-10-01T00:00:00.000Z')
+    expect(startMonthFromDate(startMonthToDate('2026-10'))).toBe('2026-10')
+    expect(startMonthFromDate(null)).toBeNull()
   })
 })

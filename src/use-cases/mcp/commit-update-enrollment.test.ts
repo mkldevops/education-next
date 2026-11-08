@@ -69,13 +69,14 @@ describe('commitUpdateEnrollment', () => {
 
     expect(tx.enrollment.update).toHaveBeenCalledWith({
       where: { id_schoolId: { id: 'enr-1', schoolId: 'school-1' } },
-      data: { planId: 'plan-grand', discount: 0, totalAmount: 90 },
+      data: { planId: 'plan-grand', discount: 0, totalAmount: 90, startMonth: null },
     })
     expect(result).toEqual({
       enrollmentId: 'enr-1',
       planId: 'plan-grand',
       discount: 0,
       totalAmount: 90,
+      startMonth: null,
       remaining: 40,
     })
     expect(tx.mcpDraft.updateMany).toHaveBeenCalledWith({
@@ -130,6 +131,42 @@ describe('commitUpdateEnrollment', () => {
     })
 
     expect(await commitUpdateEnrollment(scope, input)).toBe('totalBelowPaid')
+    expect(tx.enrollment.update).not.toHaveBeenCalled()
+  })
+
+  it('writes the start month the preview resolved', async () => {
+    findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
+      keyId: 'key-1',
+      userId: null,
+      tool: 'update_enrollment',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        after: { ...resolved.after, startMonth: '2026-10' },
+      },
+    })
+
+    const result = await commitUpdateEnrollment(scope, input)
+
+    expect(tx.enrollment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ startMonth: new Date('2026-10-01T00:00:00.000Z') }),
+      })
+    )
+    expect(result).toMatchObject({ startMonth: '2026-10' })
+  })
+
+  it('refuses an enrollment whose start month changed since the preview', async () => {
+    tx.enrollment.findFirst.mockResolvedValue({
+      planId: 'plan-basic',
+      discount: 0,
+      totalAmount: 180,
+      startMonth: new Date('2026-11-01T00:00:00Z'),
+      payments: [{ amount: 50 }],
+    })
+
+    expect(await commitUpdateEnrollment(scope, input)).toBe('staleDraft')
     expect(tx.enrollment.update).not.toHaveBeenCalled()
   })
 

@@ -22,6 +22,7 @@ const modelsWithIsActive: Record<string, true> = {
   Payment: true,
   Plan: true,
   Event: true,
+  AbsenceReason: true,
 }
 
 function hasIsActive(model: string | undefined): boolean {

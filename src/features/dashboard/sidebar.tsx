@@ -26,6 +26,7 @@ type SidebarProps = {
   schoolName?: string
   userName?: string
   schools?: AuthorizedSchool[]
+  schoolLogos?: Record<string, string>
   activeSchoolId?: string
   canSwitchSchool: boolean
   classScheduleEnabled?: boolean
@@ -33,6 +34,7 @@ type SidebarProps = {
   attendanceEnabled?: boolean
   aiAssistantEnabled?: boolean
   mealsEnabled?: boolean
+  unreadNews?: number | null
 }
 
 export function Sidebar({
@@ -46,6 +48,7 @@ export function Sidebar({
   schoolName,
   userName,
   schools = [],
+  schoolLogos,
   activeSchoolId,
   canSwitchSchool,
   classScheduleEnabled = false,
@@ -53,6 +56,7 @@ export function Sidebar({
   attendanceEnabled = false,
   aiAssistantEnabled = false,
   mealsEnabled = false,
+  unreadNews = null,
 }: SidebarProps) {
   const t = useTranslations('dashboard.sidebar')
   const platform = useTranslations('metadata')
@@ -154,6 +158,7 @@ export function Sidebar({
           <div className="min-w-0 flex-1">
             <SchoolSwitcher
               schools={schools}
+              schoolLogos={schoolLogos}
               activeSchoolId={activeSchoolId}
               canSwitchSchool={canSwitchSchool}
               displayName={displayName}
@@ -195,6 +200,7 @@ export function Sidebar({
           <UserMenu
             userName={userName}
             items={items.bottom}
+            unreadNews={unreadNews}
             expanded={showLabels}
             onNavigate={handleNavClick}
             onSignOut={handleSignOut}

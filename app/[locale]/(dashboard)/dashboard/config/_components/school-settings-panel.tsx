@@ -3,7 +3,10 @@
 import { useTranslations } from 'next-intl'
 import { Fragment } from 'react'
 import type { ConfigValueType } from '@/generated/prisma/client'
-import { ATTENDANCE_FREQUENCY_CONFIG_KEY } from '@/lib/attendance-config'
+import {
+  ATTENDANCE_ENTRY_MODE_CONFIG_KEY,
+  ATTENDANCE_FREQUENCY_CONFIG_KEY,
+} from '@/lib/attendance-config'
 import { BRANDING_CONFIG_KEYS } from '@/lib/branding-config'
 import {
   CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
@@ -176,6 +179,14 @@ function SettingValue({
   notConfigured: string
 }) {
   const tFrequency = useTranslations('dashboard.pages.config.settings.attendance_frequency')
+  const tEntryMode = useTranslations('dashboard.pages.config.settings.attendance_entry_mode')
+  if (setting.name === ATTENDANCE_ENTRY_MODE_CONFIG_KEY) {
+    return (
+      <p className="text-sm text-graphite">
+        {tEntryMode(setting.value === 'ONE_BY_ONE' ? 'oneByOne' : 'list')}
+      </p>
+    )
+  }
   if (setting.name === ATTENDANCE_FREQUENCY_CONFIG_KEY) {
     return (
       <p className="text-sm text-graphite">

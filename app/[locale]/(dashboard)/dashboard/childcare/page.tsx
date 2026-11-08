@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { chargeRemaining, formatChildcareMonth, summarizeChildcare } from '@/domain/childcare'
+import { chargeLeft, formatChildcareMonth, summarizeChildcare } from '@/domain/childcare'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { childcareGateway } from '@/gateways/childcare-gateway'
 import { formatCurrency } from '@/lib/decimal'
@@ -141,6 +141,14 @@ export default async function ChildcarePage({ params, searchParams }: Props) {
                         })
                       : t('period.open', { start: month(row.startMonth) })}
                   </p>
+                  {row.opening && (
+                    <p className="text-sm text-graphite-600">
+                      {t('opening', {
+                        month: month(row.opening.paidThrough),
+                        reason: row.opening.reason,
+                      })}
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <SubscriptionDialog
@@ -171,7 +179,7 @@ export default async function ChildcarePage({ params, searchParams }: Props) {
                             ? t('charge.cancelled')
                             : t('charge.status', {
                                 amount: money(charge.amount),
-                                remaining: money(chargeRemaining(charge.amount, charge.paid)),
+                                remaining: money(chargeLeft(charge)),
                               })}
                         </span>
                         {!charge.cancelled && charge.paid === 0 && (

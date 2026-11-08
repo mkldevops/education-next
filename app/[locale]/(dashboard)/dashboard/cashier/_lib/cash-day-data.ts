@@ -1,5 +1,6 @@
 import { summarizeCashDay } from '@/domain/cash-day'
 import { schoolDayBounds } from '@/domain/school-date'
+import { teacherName } from '@/domain/teacher'
 import { db } from '@/lib/db'
 
 const receiptSelect = {
@@ -9,7 +10,9 @@ const receiptSelect = {
   method: true,
   createdAt: true,
   cancelledAt: true,
+  familyId: true,
   family: { select: { name: true } },
+  teacher: { select: { firstName: true, lastName: true } },
   mealPayments: { select: { amount: true, account: { select: { service: true } } } },
   childcarePayments: { select: { amount: true } },
 } as const
@@ -41,7 +44,9 @@ export async function loadCashDay(schoolId: string, day: string, timeZone: strin
   const toRow = (receipt: (typeof issued)[number]) => ({
     id: receipt.id,
     number: receipt.number,
-    family: receipt.family.name,
+    familyId: receipt.familyId,
+    createdAt: receipt.createdAt,
+    family: receipt.family?.name ?? (receipt.teacher ? teacherName(receipt.teacher) : ''),
     total: Number(receipt.total),
     method: receipt.method,
     cancelled: receipt.cancelledAt !== null,

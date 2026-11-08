@@ -89,8 +89,8 @@ async function readStudents(schoolId: string, periodId: string) {
 }
 
 async function readAccounts(schoolId: string) {
-  const rows = await prisma.mealAccount.findMany({
-    where: { schoolId },
+  const accounts = await prisma.mealAccount.findMany({
+    where: { schoolId, studentId: { not: null } },
     select: {
       studentId: true,
       service: true,
@@ -106,6 +106,9 @@ async function readAccounts(schoolId: string) {
       },
     },
   })
+  const rows = accounts.flatMap(({ studentId, ...row }) =>
+    studentId ? [{ ...row, studentId }] : []
+  )
   return new Map(
     rows.map((row) => [
       mealImportAccountKey(row.studentId, row.service),

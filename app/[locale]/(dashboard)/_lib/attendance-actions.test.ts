@@ -14,7 +14,13 @@ const db = {
     updateMany: vi.fn(),
     deleteMany: vi.fn(),
   },
-  attendanceEntry: { updateMany: vi.fn(), findMany: vi.fn(), createMany: vi.fn() },
+  attendanceEntry: {
+    updateMany: vi.fn(),
+    findMany: vi.fn(),
+    createMany: vi.fn(),
+    count: vi.fn(),
+  },
+  absenceReason: { findFirst: vi.fn() },
   $transaction: vi.fn(),
 }
 vi.mock('@/lib/db', () => ({ db }))
@@ -49,6 +55,8 @@ beforeEach(() => {
   db.event.findMany.mockResolvedValue([])
   db.classScheduleSlot.findFirst.mockResolvedValue({ id })
   db.classAssignment.findMany.mockResolvedValue([])
+  db.attendanceEntry.count.mockResolvedValue(0)
+  db.absenceReason.findFirst.mockResolvedValue(null)
   db.attendanceSession.create.mockResolvedValue({ id, status: 'DRAFT', entries: [] })
   db.attendanceSession.findUnique.mockReset().mockResolvedValue(null)
   db.attendanceSession.findFirst.mockResolvedValue({
@@ -284,6 +292,8 @@ describe('attendance actions', () => {
     expect(db.attendanceEntry.updateMany.mock.calls[0][0].data).toEqual({
       status: 'PRESENT',
       lateMinutes: null,
+      absenceReasonId: null,
+      absenceReasonLabel: null,
       updatedById: 'u',
     })
   })
@@ -328,6 +338,8 @@ describe('attendance actions', () => {
       status: 'LATE',
       lateMinutes: null,
       message: null,
+      absenceReasonId: null,
+      absenceReasonLabel: null,
       updatedById: 'u',
     })
   })
@@ -746,5 +758,102 @@ describe('daily attendance identity', () => {
       })
     ).toBe('attendanceClosed')
     expect(db.attendanceSession.create).not.toHaveBeenCalled()
+  })
+})
+
+describe('absence reasons on attendance entries', () => {
+  const reasonId = '00000000-0000-4000-8000-000000000002'
+  beforeEach(() => {
+    db.attendanceSession.findUnique.mockResolvedValue({
+      schoolId: 's',
+      classPeriodId: id,
+      status: 'DRAFT',
+    })
+    db.attendanceEntry.updateMany.mockResolvedValue({ count: 1 })
+  })
+
+  it('stores the reason id and a snapshot of its label on an absence', async () => {
+    db.absenceReason.findFirst.mockResolvedValue({ id: reasonId, label: 'Maladie' })
+
+    await expect(
+      actions.updateAttendanceEntryAction({
+        sessionId: id,
+        entryId: id,
+        status: 'ABSENT',
+        absenceReasonId: reasonId,
+      })
+    ).resolves.toBe('OK')
+
+    expect(db.absenceReason.findFirst.mock.calls[0][0].where).toEqual({
+      id: reasonId,
+      schoolId: 's',
+    })
+    expect(db.attendanceEntry.updateMany.mock.calls[0][0].data).toMatchObject({
+      absenceReasonId: reasonId,
+      absenceReasonLabel: 'Maladie',
+    })
+  })
+
+  it('refuses a reason that is not an active reason of the caller school', async () => {
+    db.absenceReason.findFirst.mockResolvedValue(null)
+
+    await expect(
+      actions.updateAttendanceEntryAction({
+        sessionId: id,
+        entryId: id,
+        status: 'ABSENT',
+        absenceReasonId: reasonId,
+      })
+    ).resolves.toBe('absenceReasonNotFound')
+    expect(db.attendanceEntry.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('keeps the current reason when an absence update omits it', async () => {
+    await actions.updateAttendanceEntryAction({ sessionId: id, entryId: id, status: 'ABSENT' })
+
+    expect(db.absenceReason.findFirst).not.toHaveBeenCalled()
+    const data = db.attendanceEntry.updateMany.mock.calls[0][0].data
+    expect(data).not.toHaveProperty('absenceReasonId')
+    expect(data).not.toHaveProperty('absenceReasonLabel')
+  })
+
+  it('clears the reason with an explicit null', async () => {
+    await actions.updateAttendanceEntryAction({
+      sessionId: id,
+      entryId: id,
+      status: 'ABSENT',
+      absenceReasonId: null,
+    })
+
+    expect(db.attendanceEntry.updateMany.mock.calls[0][0].data).toMatchObject({
+      absenceReasonId: null,
+      absenceReasonLabel: null,
+    })
+  })
+
+  it('blocks validation while a school-scoped absence has no reason and one is required', async () => {
+    db.config.findFirst.mockResolvedValue({ value: 'true' })
+    db.attendanceEntry.count.mockResolvedValue(2)
+
+    await expect(actions.validateAttendanceAction({ sessionId: id })).resolves.toBe(
+      'absenceReasonMissing'
+    )
+    expect(db.attendanceEntry.count.mock.calls[0][0].where).toEqual({
+      attendanceSessionId: id,
+      schoolId: 's',
+      status: 'ABSENT',
+      absenceReasonId: null,
+    })
+    expect(db.attendanceSession.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('validates absences without reasons when the school does not require one', async () => {
+    db.config.findFirst.mockImplementation(async ({ where }) => ({
+      value: where.name === 'attendance_absence_reason_required' ? 'false' : 'true',
+    }))
+    db.attendanceSession.updateMany.mockResolvedValue({ count: 1 })
+
+    await expect(actions.validateAttendanceAction({ sessionId: id })).resolves.toBe('OK')
+    expect(db.attendanceEntry.count).not.toHaveBeenCalled()
   })
 })

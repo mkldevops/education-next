@@ -60,3 +60,9 @@ export const cancelReceiptSchema = z.object({
   receiptId: z.uuid(),
   reason: z.string().trim().min(1).max(250),
 })
+
+export const issueReceiptForPaymentsSchema = z.object({
+  schoolId: z.string().min(1),
+  recordedById: z.string().min(1),
+  paymentIds: z.array(z.uuid()).min(1).max(20),
+})

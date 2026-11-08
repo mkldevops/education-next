@@ -15,6 +15,7 @@ import { SchoolMark, SidebarBrand } from './sidebar-brand'
 
 type Props = {
   schools: AuthorizedSchool[]
+  schoolLogos?: Record<string, string>
   activeSchoolId?: string
   displayName: string
   logoUrl?: string
@@ -33,6 +34,7 @@ type Props = {
  */
 export function SchoolSwitcher({
   schools,
+  schoolLogos = {},
   activeSchoolId,
   displayName,
   logoUrl,
@@ -151,7 +153,7 @@ export function SchoolSwitcher({
               onClick={() => onSelect(school.id)}
               className="flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm text-foreground transition-colors duration-(--duration-fast) hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
             >
-              <SchoolMark displayName={school.name} size="sm" />
+              <SchoolMark displayName={school.name} logoUrl={schoolLogos[school.id]} size="sm" />
               <span className="flex-1 truncate">{school.name}</span>
               {school.id === activeSchoolId && (
                 <Check size={16} className="shrink-0 text-foreground" aria-hidden />

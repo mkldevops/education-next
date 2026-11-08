@@ -1,5 +1,6 @@
 import type { z } from 'zod'
 import { validateMealWeekdays } from '@/domain/meal-ledger'
+import { mealOwner } from '@/domain/meal-owner'
 import { overlapsAny, validateSegmentDates } from '@/domain/meal-schedule'
 import { configGateway } from '@/gateways/config-gateway'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
@@ -17,7 +18,9 @@ export async function subscribeMeal(
   const parsed = subscribeMealSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const { schoolId, studentId, service, periodId, weekdays, startOn } = parsed.data
+  const { schoolId, service, periodId, weekdays, startOn } = parsed.data
+  const owner = mealOwner(parsed.data)
+  if (!owner) return 'validationError' as const
   if (!(await isMealsEnabled(schoolId, configGw))) return 'mealsDisabled' as const
 
   const setting = await accountGw.findSetting(schoolId, service)
@@ -26,7 +29,7 @@ export async function subscribeMeal(
   const days = validateMealWeekdays(weekdays, setting.allowedWeekdays)
   if (days !== 'OK') return days
 
-  if (!(await accountGw.isActiveStudent(schoolId, studentId))) return 'notFound' as const
+  if (!(await accountGw.isActiveOwner(schoolId, owner))) return 'notFound' as const
   const period = await accountGw.findPeriod(schoolId, periodId)
   if (!period) return 'notFound' as const
 
@@ -39,7 +42,7 @@ export async function subscribeMeal(
   if (dates !== 'OK') return dates
 
   return accountGw.transaction(async (tx) => {
-    const accountId = await accountGw.lockAccount(tx, schoolId, studentId, service, true)
+    const accountId = await accountGw.lockAccount(tx, schoolId, owner, service, true)
     if (!accountId) return 'notFound' as const
 
     const segments = await accountGw.listSegments(tx, schoolId, [accountId], [periodId])

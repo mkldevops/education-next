@@ -6,6 +6,13 @@ vi.mock('@/use-cases/config/get-attendance-frequency', () => ({
   getAttendanceFrequency: frequencyMock,
 }))
 
+vi.mock('@/use-cases/config/get-attendance-entry-settings', () => ({
+  getAttendanceEntrySettings: async () => ({ mode: 'LIST', absenceReasonRequired: false }),
+}))
+vi.mock('@/gateways/absence-reason-gateway', () => ({
+  absenceReasonGateway: { listActive: async () => [] },
+}))
+
 const dbMock = {
   config: { findFirst: vi.fn() },
   classPeriod: { findFirst: vi.fn() },

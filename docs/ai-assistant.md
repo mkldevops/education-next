@@ -88,7 +88,8 @@ isolated: neither side can present the other's draft. Adding a tool to `listScho
 on both surfaces. `docs/mcp.md` covers the key-based access.
 
 Canteen and snack tools share this approval boundary. `get_meal_settings`,
-`get_student_meals` and `list_family_receipts` read the current school's meal records;
+`get_student_meals`, `get_staff_meals`, `list_staff_meal_subscriptions` and
+`list_family_receipts` read the current school's meal records;
 settings, prices, subscriptions, openings, absences and cashier receipts are writes requiring
 approval. Meal income uses `record_receipt`, with a stable idempotency key and the coverage
 last read from `get_student_meals`; it must never be entered as tuition with `record_payment`.

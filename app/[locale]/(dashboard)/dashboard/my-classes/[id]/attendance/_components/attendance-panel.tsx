@@ -4,8 +4,10 @@ import { Button, Card } from '@peaklab/ui'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
+import type { AttendanceEntryMode } from '@/domain/attendance-entry-mode'
 import type { AttendanceFrequency } from '@/domain/attendance-frequency'
-import { Link } from '@/i18n/routing'
+import { Link, useRouter } from '@/i18n/routing'
+import { toast } from '@/lib/toast'
 import {
   markAllPresentAction,
   refreshAttendanceRosterAction,
@@ -14,9 +16,11 @@ import {
   updateAttendanceEntryAction,
   validateAttendanceAction,
 } from '../../../../../_lib/attendance-actions'
+import { AttendanceList } from './attendance-list'
 import styles from './attendance-panel.module.css'
 import { AttendanceReview } from './attendance-review'
 import {
+  type AbsenceReasonOption,
   type AttendanceEntry,
   type AttendanceStatus,
   countAttendanceStatuses,
@@ -61,14 +65,19 @@ type Labels = StudentCardLabels & {
 }
 type Session = { id: string; status: string; entries: AttendanceEntry[] }
 type Slot = { id: string; startTime: string; endTime: string }
-type Payload = Pick<AttendanceEntry, 'status' | 'lateMinutes' | 'message'>
+type Payload = Pick<AttendanceEntry, 'status' | 'lateMinutes' | 'message' | 'absenceReasonId'>
+type DraftUpdate = Partial<Omit<AttendanceEntry, 'id' | 'studentName'>>
 const payload = (entry: AttendanceEntry): Payload => ({
   status: entry.status,
   lateMinutes: entry.lateMinutes,
   message: entry.message,
+  absenceReasonId: entry.absenceReasonId,
 })
 const same = (a: Payload, b: Payload) =>
-  a.status === b.status && a.lateMinutes === b.lateMinutes && a.message === b.message
+  a.status === b.status &&
+  a.lateMinutes === b.lateMinutes &&
+  a.message === b.message &&
+  (a.absenceReasonId ?? null) === (b.absenceReasonId ?? null)
 const errorFor = (result: unknown, labels: Labels) =>
   typeof result === 'string' ? (labels.errors[result] ?? labels.errors.unexpected) : null
 
@@ -84,6 +93,9 @@ export function AttendancePanel({
   initialSession,
   returnHref,
   labels,
+  entryMode = 'ONE_BY_ONE',
+  absenceReasons = [],
+  absenceReasonRequired = false,
 }: {
   frequency?: AttendanceFrequency
   classPeriodId: string
@@ -96,8 +108,12 @@ export function AttendancePanel({
   initialSession: Session | null
   returnHref: string
   labels: Labels
+  entryMode?: AttendanceEntryMode
+  absenceReasons?: AbsenceReasonOption[]
+  absenceReasonRequired?: boolean
 }) {
   const t = useTranslations('dashboard.pages.attendance')
+  const router = useRouter()
   const [session, setSession] = useState<Session | null>(initialSession)
   const [drafts, setDrafts] = useState<Record<string, AttendanceEntry>>(() =>
     Object.fromEntries(initialSession?.entries.map((entry) => [entry.id, entry]) ?? [])
@@ -115,6 +131,7 @@ export function AttendancePanel({
   const [index, setIndex] = useState(0)
   const [forward, setForward] = useState(true)
   const [globalPending, setGlobalPending] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [rosterNotice, setRosterNotice] = useState<string | null>(null)
   const [reviewing, setReviewing] = useState(initialSession?.status === 'VALIDATED')
@@ -162,11 +179,23 @@ export function AttendancePanel({
     },
     []
   )
-  const updateDraft = (id: string, update: Partial<Payload>) => {
+  const reasonPicker =
+    absenceReasons.length > 0 || absenceReasonRequired
+      ? {
+          options: absenceReasons,
+          title: t('reasons.title'),
+          missing: absenceReasonRequired ? t('reasons.missing') : undefined,
+        }
+      : undefined
+  const updateDraft = (id: string, update: DraftUpdate) => {
     const entry = draftsRef.current[id]
     if (!entry) return
     const next = { ...entry, ...update }
     if (next.status !== 'LATE') next.lateMinutes = null
+    if (next.status !== 'ABSENT' && next.absenceReasonId) {
+      next.absenceReasonId = null
+      next.absenceReasonLabel = null
+    }
     const nextDrafts = { ...draftsRef.current, [id]: next }
     draftsRef.current = nextDrafts
     setDrafts(nextDrafts)
@@ -199,7 +228,9 @@ export function AttendancePanel({
             current && {
               ...current,
               entries: current.entries.map((item) =>
-                item.id === id ? { ...item, ...payload(entry) } : item
+                item.id === id
+                  ? { ...item, ...payload(entry), absenceReasonLabel: entry.absenceReasonLabel }
+                  : item
               ),
             }
         )
@@ -330,6 +361,32 @@ export function AttendancePanel({
       setGlobalPending(false)
     }
   }
+  const markRemainingPresent = () => {
+    if (!session) return
+    void global(
+      () => markAllPresentAction({ sessionId: session.id }),
+      () => {
+        const next = Object.fromEntries(
+          entries.map((entry) => [
+            entry.id,
+            entry.status === 'NOT_RECORDED' ? { ...entry, status: 'PRESENT' as const } : entry,
+          ])
+        )
+        setDrafts(next)
+        draftsRef.current = next
+        Object.values(next).forEach((entry) => {
+          confirmed.current[entry.id] = payload(entry)
+        })
+      }
+    )
+  }
+  const chooseReason = (id: string, reason: AbsenceReasonOption | null) => {
+    updateDraft(id, {
+      absenceReasonId: reason?.id ?? null,
+      absenceReasonLabel: reason?.label ?? null,
+    })
+    void save(id)
+  }
   const position = labels.studentPosition
     .replace('{current}', String(index + 1))
     .replace('{total}', String(entries.length))
@@ -432,7 +489,24 @@ export function AttendancePanel({
         </Card>
       ) : (
         <>
-          {!reviewing ? (
+          {!reviewing && entryMode === 'LIST' && session.status === 'DRAFT' ? (
+            <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={globalPending || pendingEntries || dirty || entryErrors}
+                onClick={() => void refreshRoster()}
+              >
+                {t('refreshRoster')}
+              </Button>
+              {rosterNotice ? (
+                <p role="status" className="text-sm text-graphite-600">
+                  {rosterNotice}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {!reviewing && entryMode !== 'LIST' ? (
             <section className="mx-auto max-w-2xl space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-graphite-600">
                 <p>{session.status === 'VALIDATED' ? labels.validatedStatus : labels.draft}</p>
@@ -484,26 +558,7 @@ export function AttendancePanel({
                   variant="outline"
                   size="sm"
                   disabled={globalPending || pendingEntries || dirty || entryErrors}
-                  onClick={() =>
-                    void global(
-                      () => markAllPresentAction({ sessionId: session.id }),
-                      () => {
-                        const next = Object.fromEntries(
-                          entries.map((entry) => [
-                            entry.id,
-                            entry.status === 'NOT_RECORDED'
-                              ? { ...entry, status: 'PRESENT' as const }
-                              : entry,
-                          ])
-                        )
-                        setDrafts(next)
-                        draftsRef.current = next
-                        Object.values(next).forEach((entry) => {
-                          confirmed.current[entry.id] = payload(entry)
-                        })
-                      }
-                    )
-                  }
+                  onClick={markRemainingPresent}
                 >
                   {t('markRemainingPresent', { count: counts.NOT_RECORDED })}
                 </Button>
@@ -512,6 +567,37 @@ export function AttendancePanel({
           ) : null}
           {entries.length === 0 ? (
             <Card className="p-6 text-center text-graphite-600">{labels.noStudents}</Card>
+          ) : entryMode === 'LIST' && !reviewing ? (
+            <AttendanceList
+              entries={entries}
+              labels={labels}
+              editing={editing}
+              pending={pending}
+              globalPending={globalPending}
+              errors={errors}
+              reasonPicker={reasonPicker}
+              reasonRequired={absenceReasonRequired}
+              onStatus={(id, status) => {
+                updateDraft(id, { status })
+                void save(id)
+              }}
+              onReason={chooseReason}
+              onLateMinutes={(id, minutes) => {
+                updateDraft(id, { lateMinutes: minutes })
+                scheduleSave(id)
+              }}
+              onMessage={(id, message) => {
+                updateDraft(id, { message: message || null })
+                scheduleSave(id)
+              }}
+              onFieldBlur={saveNow}
+              onRetry={(id) => {
+                void save(id)
+              }}
+              onMarkRemaining={markRemainingPresent}
+              onReview={() => setReviewing(true)}
+              canFinish={!globalPending && !pendingEntries && !dirty && !entryErrors}
+            />
           ) : active && !reviewing ? (
             <section aria-label={position} className="mx-auto max-w-2xl">
               <div key={active.id} className={forward ? styles.enterForward : styles.enterBack}>
@@ -545,6 +631,8 @@ export function AttendancePanel({
                   onRetry={() => {
                     void save(active.id)
                   }}
+                  reasonPicker={reasonPicker}
+                  onReason={(reason) => chooseReason(active.id, reason)}
                   footer={
                     <div className="grid grid-cols-2 items-center gap-1.5 sm:grid-cols-[1fr_auto_1fr] sm:gap-2">
                       <Button
@@ -578,7 +666,7 @@ export function AttendancePanel({
               </div>
             </section>
           ) : null}
-          {!reviewing ? (
+          {!reviewing && (entryMode !== 'LIST' || !editing) ? (
             <div className="mx-auto max-w-2xl text-right">
               {session.status === 'VALIDATED' && !editing ? (
                 <Button onClick={() => setEditing(true)}>{labels.correctAttendance}</Button>
@@ -599,6 +687,9 @@ export function AttendancePanel({
                 labels={labels}
                 validated={session.status === 'VALIDATED' && !editing}
                 returnHref={returnHref}
+                missingReasonsWarning={
+                  absenceReasonRequired ? t('reasons.missingWarning') : undefined
+                }
                 onCorrect={() => {
                   setEditing(true)
                   setReviewing(false)
@@ -621,14 +712,14 @@ export function AttendancePanel({
                     focusControl()
                   }
                 }}
-                validating={globalPending || pendingEntries || entryErrors}
+                validating={leaving || globalPending || pendingEntries || entryErrors}
                 onValidate={() =>
                   void global(
                     () => validateAttendanceAction({ sessionId: session.id }),
                     () => {
-                      setSession((current) => current && { ...current, status: 'VALIDATED' })
-                      setReviewing(true)
-                      setEditing(false)
+                      setLeaving(true)
+                      toast.success(labels.validatedStatus)
+                      router.push(returnHref)
                     }
                   )
                 }

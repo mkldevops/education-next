@@ -29,14 +29,13 @@ export const receiptGateway = {
   create: (
     tx: Tx,
     schoolId: string,
-    data: {
-      familyId: string
+    data: ({ familyId: string } | { teacherId: string }) & {
       number: number
       total: number
       method: PaymentMethod
       reference: string | null
       paidAt: Date
-      recordedById: string
+      recordedById: string | null
       idempotencyKey: string
       requestHash: string
     }
@@ -62,6 +61,30 @@ export const receiptGateway = {
         receiptId,
         paidThroughAtReceipt: paidThroughAtReceipt === null ? null : toDbDate(paidThroughAtReceipt),
       })),
+    }),
+
+  /** Rattache au reçu des lignes d'écolage qui n'en portent pas encore. */
+  attachPayments: (tx: Tx, schoolId: string, receiptId: string, paymentIds: string[]) =>
+    tx.payment.updateMany({
+      where: { schoolId, id: { in: paymentIds }, receiptId: null },
+      data: { receiptId },
+    }),
+
+  /** Lignes d'écolage candidates à un reçu émis après coup. */
+  findPaymentsForReceipt: (tx: Tx, schoolId: string, paymentIds: string[]) =>
+    tx.payment.findMany({
+      where: { schoolId, id: { in: paymentIds } },
+      select: {
+        id: true,
+        familyId: true,
+        amount: true,
+        method: true,
+        reference: true,
+        paidAt: true,
+        isActive: true,
+        receiptId: true,
+      },
+      orderBy: { id: 'asc' },
     }),
 
   /** Rattachements familiaux des élèves d'un encaissement, pour en vérifier la famille redevable. */
@@ -100,18 +123,24 @@ export const receiptGateway = {
     return charges.map((charge) => charge.subscription.student)
   },
 
-  findFamilyId: async (schoolId: string, id: string) =>
-    (
-      await db.receipt.findUnique({
-        where: { id_schoolId: { id, schoolId } },
-        select: { familyId: true },
-      })
-    )?.familyId ?? null,
+  /** Payeur d'un reçu : sa famille, ou le membre du personnel dont il paie la cantine. */
+  findPayer: (schoolId: string, id: string) =>
+    db.receipt.findUnique({
+      where: { id_schoolId: { id, schoolId } },
+      select: {
+        familyId: true,
+        teacherId: true,
+        method: true,
+        _count: { select: { mealPayments: true } },
+      },
+    }),
 
   /** Tient le reçu jusqu'à la fin de `tx` : deux annulations ne se croisent pas. */
   lockForCancel: async (tx: Tx, schoolId: string, id: string) => {
-    const rows = await tx.$queryRaw<Array<{ familyId: string; cancelledAt: Date | null }>>`
-      SELECT "familyId", "cancelledAt" FROM "Receipt"
+    const rows = await tx.$queryRaw<
+      Array<{ familyId: string | null; teacherId: string | null; cancelledAt: Date | null }>
+    >`
+      SELECT "familyId", "teacherId", "cancelledAt" FROM "Receipt"
       WHERE "id" = ${id} AND "schoolId" = ${schoolId}
       FOR UPDATE`
     return rows[0] ?? null
@@ -136,6 +165,33 @@ export const receiptGateway = {
     }),
 
   /** Reçu à afficher ou partager, avec ses lignes. */
+  /**
+   * Jeton du lien public, créé au premier partage puis réutilisé. Un reçu annulé n'en reçoit
+   * pas : son lien est mort.
+   */
+  ensureShareToken: async (schoolId: string, id: string, candidate: string) => {
+    await db.receipt.updateMany({
+      where: { id, schoolId, shareToken: null, cancelledAt: null },
+      data: { shareToken: candidate },
+    })
+    return db.receipt.findUnique({
+      where: { id_schoolId: { id, schoolId } },
+      select: { shareToken: true, cancelledAt: true },
+    })
+  },
+
+  /** Destinataires du reçu par mail : les parents et tuteurs de la famille qui ont une adresse. */
+  findFamilyRecipients: (schoolId: string, familyId: string) =>
+    db.familyPerson.findMany({
+      where: {
+        schoolId,
+        familyId,
+        relationType: { in: ['PARENT', 'TUTOR'] },
+        person: { email: { not: null } },
+      },
+      select: { person: { select: { name: true, email: true } } },
+    }),
+
   findForDisplay: (schoolId: string, id: string) =>
     db.receipt.findUnique({
       where: { id_schoolId: { id, schoolId } },
@@ -149,7 +205,19 @@ export const receiptGateway = {
         cancelledAt: true,
         cancelReason: true,
         family: { select: { id: true, name: true } },
+        teacher: { select: { firstName: true, lastName: true } },
         recordedBy: { select: { name: true } },
+        payments: {
+          select: {
+            amount: true,
+            enrollment: {
+              select: {
+                student: { select: { person: { select: { name: true, lastname: true } } } },
+              },
+            },
+          },
+          orderBy: { id: 'asc' },
+        },
         mealPayments: {
           select: {
             amount: true,
@@ -159,6 +227,7 @@ export const receiptGateway = {
               select: {
                 service: true,
                 student: { select: { person: { select: { name: true, lastname: true } } } },
+                teacher: { select: { firstName: true, lastName: true } },
               },
             },
           },

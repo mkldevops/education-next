@@ -7,6 +7,7 @@ import { cache } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { totalPaidAmount } from '@/domain/payment'
+import { startMonthFromDate, startMonthToDate } from '@/domain/payment-schedule'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
@@ -141,6 +142,10 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         })
       : []
 
+  const enrollmentPeriod = (
+    enrollment.classAssignments.find((a) => !a.endAt) ?? enrollment.classAssignments.at(-1)
+  )?.classPeriod.period
+  const startMonth = startMonthFromDate(enrollment.startMonth)
   const totalAmount = Number(enrollment.totalAmount)
   const discount = Number(enrollment.discount)
   const totalPaid = totalPaidAmount(enrollment.payments)
@@ -189,6 +194,15 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           paymentsEnabled={paymentsEnabled}
           planName={enrollment.plan.name}
           availablePlans={availablePlans}
+          startMonth={
+            isAdmin
+              ? {
+                  value: startMonth,
+                  min: startMonthFromDate(enrollmentPeriod?.startAt) ?? undefined,
+                  max: startMonthFromDate(enrollmentPeriod?.endAt) ?? undefined,
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -247,6 +261,18 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 <span className="text-graphite-600">{t('discount')}</span>
                 <span className="font-medium text-graphite">
                   {formatCurrency(-discount, locale, currency)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-graphite-600">{t('startMonth')}</span>
+                <span className="font-medium text-graphite">
+                  {startMonth
+                    ? startMonthToDate(startMonth).toLocaleDateString(locale, {
+                        month: 'long',
+                        year: 'numeric',
+                        timeZone: 'UTC',
+                      })
+                    : t('startMonthDefault')}
                 </span>
               </div>
               <div className="flex justify-between text-sm">

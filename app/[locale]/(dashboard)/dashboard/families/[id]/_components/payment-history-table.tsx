@@ -7,11 +7,14 @@ import { formatDateLong } from '@/lib/date'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import type { FamilyDetailPayment } from '../_lib/family-detail'
+import { PaymentRowMenu } from './payment-row-menu'
 
 type Props = {
   payments: FamilyDetailPayment[]
   locale: string
   currency: string
+  /** Administrateur de l'école : peut annuler une saisie manuelle ou lui émettre son reçu. */
+  canCancel?: boolean
 }
 
 const METHOD_STYLES: Record<PaymentMethod, string> = {
@@ -61,7 +64,27 @@ function MethodBadge({ method, label }: { method: PaymentMethod; label: string }
   )
 }
 
-export async function PaymentHistoryTable({ payments, locale, currency }: Props) {
+function PaymentActions({
+  payment,
+  locale,
+  currency,
+}: {
+  payment: FamilyPayment<FamilyDetailPayment>
+  locale: string
+  currency: string
+}) {
+  return (
+    <PaymentRowMenu
+      paymentIds={payment.lines.map((line) => line.id)}
+      receiptId={payment.lines.find((line) => line.receiptId !== null)?.receiptId ?? null}
+      isOnline={payment.lines.some((line) => line.paymentTransactionId !== null)}
+      amount={formatCurrency(Math.abs(payment.amount), locale, currency)}
+      isRefund={payment.amount < 0}
+    />
+  )
+}
+
+export async function PaymentHistoryTable({ payments, locale, currency, canCancel }: Props) {
   const t = await getTranslations('dashboard.pages.familyDetails.paymentHistory')
 
   if (payments.length === 0) {
@@ -115,6 +138,11 @@ export async function PaymentHistoryTable({ payments, locale, currency }: Props)
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-graphite-600">
                 {t('cashedAt')}
               </th>
+              {canCancel && (
+                <th className="px-4 py-2.5">
+                  <span className="sr-only">{t('actions')}</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-alabaster-800">
@@ -152,6 +180,11 @@ export async function PaymentHistoryTable({ payments, locale, currency }: Props)
                     <span className="text-graphite-800">—</span>
                   )}
                 </td>
+                {canCancel && (
+                  <td className="px-4 py-3 text-right">
+                    <PaymentActions payment={payment} locale={locale} currency={currency} />
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -163,7 +196,7 @@ export async function PaymentHistoryTable({ payments, locale, currency }: Props)
               <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-graphite">
                 {formatCurrency(total, locale, currency)}
               </td>
-              <td colSpan={4} />
+              <td colSpan={canCancel ? 5 : 4} />
             </tr>
           </tfoot>
         </table>
@@ -211,6 +244,12 @@ export async function PaymentHistoryTable({ payments, locale, currency }: Props)
                 </div>
               )}
             </dl>
+
+            {canCancel && (
+              <div className="flex justify-end">
+                <PaymentActions payment={payment} locale={locale} currency={currency} />
+              </div>
+            )}
           </li>
         ))}
       </ul>

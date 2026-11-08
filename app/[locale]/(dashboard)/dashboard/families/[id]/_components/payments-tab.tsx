@@ -10,9 +10,10 @@ type Props = {
   locale: string
   currency: string
   tracking: FamilyPaymentTracking | null
+  canCancel?: boolean
 }
 
-export async function PaymentsTab({ payments, locale, currency, tracking }: Props) {
+export async function PaymentsTab({ payments, locale, currency, tracking, canCancel }: Props) {
   const t = await getTranslations('dashboard.pages.payments.stats')
   return (
     <div className="space-y-6">
@@ -44,7 +45,12 @@ export async function PaymentsTab({ payments, locale, currency, tracking }: Prop
           <p className="text-sm text-graphite-600">{t('overdueSubtitle')}</p>
         </Card>
       )}
-      <PaymentHistoryTable payments={payments} locale={locale} currency={currency} />
+      <PaymentHistoryTable
+        payments={payments}
+        locale={locale}
+        currency={currency}
+        canCancel={canCancel}
+      />
     </div>
   )
 }

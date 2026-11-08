@@ -23,6 +23,14 @@ vi.mock('@/lib/auth-client', () => ({
   signOut: () => signOut(),
 }))
 
+vi.mock('@/features/pwa/install-app', async () => {
+  const { useDialog } = await import('@peaklab/ui')
+  return {
+    useInstallApp: () => ({ mode: installMode, install }),
+    IosInstallGuide: () => (useDialog().open ? <div role="dialog" aria-label="ios-guide" /> : null),
+  }
+})
+
 vi.mock('@/lib/toast', () => ({
   toast: { error: (message: string) => toastError(message) },
 }))
@@ -52,7 +60,11 @@ const school = (id: string, name: string): AuthorizedSchool => ({
 
 const ADMIN: SchoolRole = 'ADMIN'
 
-const renderSwitcher = (schools: AuthorizedSchool[], canSwitchSchool = true) =>
+const renderSwitcher = (
+  schools: AuthorizedSchool[],
+  canSwitchSchool = true,
+  schoolLogos?: Record<string, string>
+) =>
   render(
     <Sidebar
       roles={[ADMIN]}
@@ -60,12 +72,15 @@ const renderSwitcher = (schools: AuthorizedSchool[], canSwitchSchool = true) =>
       paymentsEnabled
       schoolName="Al-Nour"
       schools={schools}
+      schoolLogos={schoolLogos}
       activeSchoolId="school-a"
       canSwitchSchool={canSwitchSchool}
     />
   )
 
 let pathname = '/dashboard'
+let installMode: 'native' | 'ios' | null = null
+const install = vi.fn()
 const router = { replace: vi.fn(), refresh: vi.fn() }
 const switchSchoolAction = vi.fn(async (_schoolId: string) => 'OK' as const)
 const signOut = vi.fn(async () => ({ error: null }))
@@ -126,6 +141,52 @@ describe('Sidebar accessibility', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('menuitem', { name: 'logout' })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'expand' })).toBeInTheDocument()
+  })
+
+  it('keeps news and install out of the menu when neither is offered', () => {
+    installMode = null
+    renderSidebar('ADMIN')
+
+    fireEvent.click(screen.getByRole('button', { name: 'account' }))
+
+    expect(screen.queryByRole('menuitem', { name: 'buttonLabel' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'button' })).not.toBeInTheDocument()
+  })
+
+  it('lists unread news and native install in the user menu', () => {
+    installMode = 'native'
+    install.mockClear()
+    render(
+      <Sidebar
+        roles={[ADMIN]}
+        isSuperAdmin={false}
+        paymentsEnabled
+        canSwitchSchool
+        unreadNews={3}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'account – buttonLabelUnread' }))
+    expect(screen.getByRole('menuitem', { name: /^buttonLabel\s*3$/ })).toHaveAttribute(
+      'href',
+      '/dashboard/news'
+    )
+    fireEvent.click(screen.getByRole('menuitem', { name: 'button' }))
+
+    expect(install).toHaveBeenCalledOnce()
+    installMode = null
+  })
+
+  it('opens the iOS guide from the user menu', () => {
+    installMode = 'ios'
+    renderSidebar('ADMIN')
+
+    fireEvent.click(screen.getByRole('button', { name: 'account' }))
+    expect(screen.queryByRole('dialog', { name: 'ios-guide' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('menuitem', { name: 'button' }))
+
+    expect(screen.getByRole('dialog', { name: 'ios-guide' })).toBeInTheDocument()
+    installMode = null
   })
 
   it('closes the user menu on Escape', () => {
@@ -226,6 +287,21 @@ describe('Sidebar school switcher', () => {
 
     expect(screen.getByRole('menuitem', { name: /Al-Nour/ })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /Horizon/ })).toBeInTheDocument()
+  })
+
+  it('shows each school logo in the switcher menu, initials otherwise', () => {
+    renderSwitcher([school('school-a', 'Al-Nour'), school('school-b', 'Horizon')], true, {
+      'school-b': '/api/media/branding/school-b/logo.webp',
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Al-Nour/ }))
+
+    const horizon = screen.getByRole('menuitem', { name: /Horizon/ })
+    expect(horizon.querySelector('img')).toHaveAttribute(
+      'src',
+      '/api/media/branding/school-b/logo.webp'
+    )
+    expect(screen.getByRole('menuitem', { name: /Al-Nour/ }).querySelector('img')).toBeNull()
   })
 
   it('switches the active school and replays the layout', async () => {

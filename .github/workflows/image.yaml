@@ -69,9 +69,11 @@ jobs:
             -e DATABASE_URL=postgresql://app:password@localhost:5432/app \
             -e BETTER_AUTH_SECRET=ci-smoke-secret-not-for-production \
             -e NEXT_PUBLIC_APP_URL=https://smoke.example.test \
+            -e HOSTNAME=0.0.0.0 \
             "$IMAGE:${{ github.sha }}"
           for i in $(seq 1 30); do
-            curl -fsS http://localhost:3000/robots.txt | grep -q "smoke.example.test/sitemap.xml" && exit 0
+            curl -fsS http://localhost:3000/robots.txt | grep -q "smoke.example.test/sitemap.xml" \
+              && docker exec app wget -qO /dev/null http://localhost:3000/robots.txt && exit 0
             sleep 2
           done
           docker logs app
@@ -119,4 +121,4 @@ jobs:
               -H "Authorization: Bearer $COOLIFY_TOKEN" -H 'Content-Type: application/json' \
               -d "{\"docker_registry_image_tag\":\"${{ github.sha }}\"}" > /dev/null
           done
-          curl -fsS "$COOLIFY_URL/api/v1/deploy?uuid=$APP_UUIDS" -H "Authorization: Bearer $COOLIFY_TOKEN"
+          curl -fsS -X POST "$COOLIFY_URL/api/v1/deploy?uuid=$APP_UUIDS" -H "Authorization: Bearer $COOLIFY_TOKEN"

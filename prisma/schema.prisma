@@ -175,7 +175,8 @@ model School {
   eventImages               EventImage[]
   attendanceSessions        AttendanceSession[]
   attendanceEntries         AttendanceEntry[]
-  mealServiceSettings       MealServiceSetting[]
+  absenceReasons            AbsenceReason[]
+  mealServiceSettings      MealServiceSetting[]
   mealPrices                MealPrice[]
   mealAccounts              MealAccount[]
   mealSchedules             MealSchedule[]
@@ -184,7 +185,6 @@ model School {
   receipts                  Receipt[]
   receiptCounter            ReceiptCounter?
   mealPayments              MealPayment[]
-  staffMeals                StaffMeal[]
   childcareSubscriptions    ChildcareSubscription[]
   childcareCharges          ChildcareCharge[]
   childcarePayments         ChildcarePayment[]
@@ -232,7 +232,7 @@ model User {
 
   /// Blocs de l'accueil admin masqués par l'utilisateur (clés de `HOME_WIDGETS`). En base pour
   /// suivre l'utilisateur sur tous ses appareils.
-  dashboardHiddenWidgets String[] @default([])
+  dashboardHiddenWidgets    String[] @default([])
   /// Vue du graphique d'encaissements de l'accueil admin (`day`, `month`, `year`) et sa période
   /// (`7d`, `30d`, `3m`, `6m`, `12m`). Nulle : vue par défaut, mois sur douze mois.
   dashboardChartGranularity String?
@@ -241,23 +241,25 @@ model User {
   sessions                  Session[]
   accounts                  Account[]
   families                  UserFamily[]
-  createdFamilies           Family[]             @relation("createdBy")
+  createdFamilies           Family[]                @relation("createdBy")
   createdInvitations        Invitation[]
-  paymentTransactions       PaymentTransaction[] @relation("paymentInitiatedBy")
+  paymentTransactions       PaymentTransaction[]    @relation("paymentInitiatedBy")
   passkeys                  Passkey[]
   schoolMemberships         SchoolMember[]
   mcpApiKeys                McpApiKey[]
   mcpOAuthGrants            McpOAuthGrant[]
   aiConversations           AiConversation[]
   teacherProfiles           Teacher[]
-  createdAttendanceSessions AttendanceSession[]  @relation("attendanceCreatedBy")
-  updatedAttendanceSessions AttendanceSession[]  @relation("attendanceUpdatedBy")
-  recordedMealAdjustments   MealAdjustment[]     @relation("mealAdjustmentRecordedBy")
-  recordedMealAbsences      MealAbsence[]        @relation("mealAbsenceRecordedBy")
-  recordedReceipts          Receipt[]            @relation("receiptRecordedBy")
-  cancelledReceipts         Receipt[]            @relation("receiptCancelledBy")
-  recordedChildcareCharges  ChildcareCharge[]    @relation("childcareChargeRecordedBy")
-  cancelledChildcareCharges ChildcareCharge[]    @relation("childcareChargeCancelledBy")
+  createdAttendanceSessions AttendanceSession[]     @relation("attendanceCreatedBy")
+  updatedAttendanceSessions AttendanceSession[]     @relation("attendanceUpdatedBy")
+  recordedMealAdjustments   MealAdjustment[]        @relation("mealAdjustmentRecordedBy")
+  recordedMealAbsences      MealAbsence[]           @relation("mealAbsenceRecordedBy")
+  recordedReceipts          Receipt[]               @relation("receiptRecordedBy")
+  cancelledReceipts         Receipt[]               @relation("receiptCancelledBy")
+  recordedChildcareCharges  ChildcareCharge[]       @relation("childcareChargeRecordedBy")
+  cancelledChildcareCharges ChildcareCharge[]       @relation("childcareChargeCancelledBy")
+  childcareOpenings         ChildcareSubscription[] @relation("childcareOpeningRecordedBy")
+  cancelledPayments         Payment[]               @relation("paymentCancelledBy")
 }
 
 model Session {
@@ -569,16 +571,17 @@ model ClassPeriod {
 }
 
 model Teacher {
-  id        String   @id @default(uuid())
-  schoolId  String
-  userId    String?
-  firstName String   @db.VarChar(250)
-  lastName  String   @db.VarChar(250)
-  email     String?  @db.VarChar(250)
-  phone     String?  @db.VarChar(20)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  schoolId   String
+  userId     String?
+  firstName  String   @db.VarChar(250)
+  lastName   String   @db.VarChar(250)
+  email      String?  @db.VarChar(250)
+  phone      String?  @db.VarChar(20)
+  isActive   Boolean  @default(true)
+  mealExempt Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   school        School                     @relation(fields: [schoolId], references: [id])
   user          User?                      @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -586,7 +589,8 @@ model Teacher {
   scheduleSlots ClassScheduleSlotTeacher[]
   expenses      TeacherExpense[]
   invitations   Invitation[]
-  staffMeals    StaffMeal[]
+  mealAccounts  MealAccount[]
+  receipts      Receipt[]
 
   @@unique([id, schoolId])
   @@unique([userId, schoolId])
@@ -680,6 +684,8 @@ model Enrollment {
   totalAmount   Decimal          @db.Decimal(10, 2)
   discount      Decimal          @default(0) @db.Decimal(10, 2)
   registeredAt  DateTime         @default(now())
+  /// First month the enrollment owes installments (first day, UTC). Null: the period start.
+  startMonth    DateTime?        @db.Date
   canLeaveAlone Boolean          @default(false)
   isActive      Boolean          @default(true)
   createdAt     DateTime         @default(now())
@@ -753,15 +759,39 @@ model AttendanceEntry {
   status              AttendanceEntryStatus @default(NOT_RECORDED)
   lateMinutes         Int?
   message             String?               @db.VarChar(1000)
+  /// Motif d'une absence ; vidé dès que l'élève n'est plus ABSENT.
+  absenceReasonId     String?
+  /// Libellé figé à la saisie : renommer ou archiver le motif ne réécrit pas un appel passé.
+  absenceReasonLabel  String?               @db.VarChar(80)
   updatedById         String
   updatedAt           DateTime              @updatedAt
 
   school            School            @relation(fields: [schoolId], references: [id])
   attendanceSession AttendanceSession @relation(fields: [attendanceSessionId, schoolId], references: [id, schoolId], onDelete: Cascade)
   student           Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  absenceReason     AbsenceReason?    @relation(fields: [absenceReasonId, schoolId], references: [id, schoolId], onDelete: Restrict)
 
   @@unique([attendanceSessionId, studentId])
   @@index([schoolId, studentId])
+}
+
+/// Motif d'absence proposé à l'appel, géré par l'école. Archivé plutôt que supprimé : les
+/// appels passés le référencent.
+model AbsenceReason {
+  id        String   @id @default(uuid())
+  schoolId  String
+  label     String   @db.VarChar(80)
+  justified Boolean  @default(false)
+  position  Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school            School            @relation(fields: [schoolId], references: [id])
+  attendanceEntries AttendanceEntry[]
+
+  @@unique([id, schoolId])
+  @@index([schoolId, position])
 }
 
 model Payment {
@@ -777,10 +807,16 @@ model Payment {
   paidAt               DateTime
   cashedAt             DateTime?
   isActive             Boolean       @default(true)
+  /// Annulation d'une saisie manuelle (`cancelPayments`) : qui, quand et pourquoi. Un règlement
+  /// désactivé par l'annulation de son reçu ne la porte pas : le reçu garde la sienne.
+  cancelledAt          DateTime?
+  cancelledById        String?
+  cancelReason         String?       @db.VarChar(250)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
   school             School              @relation(fields: [schoolId], references: [id])
+  cancelledBy        User?               @relation("paymentCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
   family             Family              @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
   enrollment         Enrollment          @relation(fields: [enrollmentId, schoolId], references: [id, schoolId], onDelete: Restrict)
   paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId, schoolId], references: [id, schoolId], onDelete: Restrict)
@@ -1172,17 +1208,22 @@ model EventImage {
   @@index([schoolId])
 }
 
-/// Inscription d'un élève à un service repas. Ligne verrouillée par toute mutation du compte.
+/// Membre du personnel qui mange à la cantine (#545). Liste propre à l'école, distincte des
+/// enseignants. `mealExempt` : ses repas sont comptés mais jamais facturés.
+/// Inscription d'un élève ou d'un membre du personnel à un service repas : exactement l'un des
+/// deux (contrainte `MealAccount_owner_check`). Ligne verrouillée par toute mutation du compte.
 model MealAccount {
   id        String      @id @default(uuid())
   schoolId  String
-  studentId String
+  studentId String?
+  teacherId String?
   service   MealService
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
   school      School           @relation(fields: [schoolId], references: [id])
-  student     Student          @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  student     Student?         @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  teacher     Teacher?         @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Restrict)
   schedules   MealSchedule[]
   adjustments MealAdjustment[]
   payments    MealPayment[]
@@ -1190,25 +1231,6 @@ model MealAccount {
 
   @@unique([id, schoolId])
   @@unique([schoolId, studentId, service])
-  @@index([schoolId])
-}
-
-/// Repas du personnel (#545) : comptés dans les effectifs du jour, jamais facturés. Une ligne
-/// par membre et service ; la retirer arrête ses repas. `isFree` marque une gratuité accordée.
-model StaffMeal {
-  id        String      @id @default(uuid())
-  schoolId  String
-  teacherId String
-  service   MealService
-  weekdays  Int[]
-  isFree    Boolean     @default(false)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  school  School  @relation(fields: [schoolId], references: [id])
-  teacher Teacher @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Cascade)
-
-  @@unique([id, schoolId])
   @@unique([schoolId, teacherId, service])
   @@index([schoolId])
 }
@@ -1274,27 +1296,33 @@ model MealAbsence {
 }
 
 /// Un versement au guichet : un numéro, un mode, un total, N lignes repas et écolage d'une même
-/// famille (§14). La clé d'idempotence rend un double envoi inoffensif.
+/// famille (§14), ou la cantine d'un membre du personnel : exactement l'un des deux payeurs
+/// (contrainte `Receipt_payer_check`). La clé d'idempotence rend un double envoi inoffensif.
 model Receipt {
   id             String        @id @default(uuid())
   schoolId       String
-  familyId       String
+  familyId       String?
+  teacherId      String?
   number         Int
   total          Decimal       @db.Decimal(10, 2)
   method         PaymentMethod
   reference      String?       @db.VarChar(250)
   paidAt         DateTime
-  recordedById   String
+  /// Nul pour un paiement en ligne : aucun membre de l'école ne l'a saisi.
+  recordedById   String?
   idempotencyKey String        @db.VarChar(64)
   requestHash    String        @db.VarChar(64)
   cancelledAt    DateTime?
   cancelledById  String?
   cancelReason   String?       @db.VarChar(250)
+  /// Jeton du lien public de lecture, créé au premier partage ; le lien meurt avec l'annulation.
+  shareToken     String?       @unique @db.VarChar(64)
   createdAt      DateTime      @default(now())
 
   school            School             @relation(fields: [schoolId], references: [id])
-  family            Family             @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
-  recordedBy        User               @relation("receiptRecordedBy", fields: [recordedById], references: [id])
+  family            Family?            @relation(fields: [familyId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  teacher           Teacher?           @relation(fields: [teacherId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  recordedBy        User?              @relation("receiptRecordedBy", fields: [recordedById], references: [id], onDelete: Restrict)
   cancelledBy       User?              @relation("receiptCancelledBy", fields: [cancelledById], references: [id])
   mealPayments      MealPayment[]
   childcarePayments ChildcarePayment[]
@@ -1304,6 +1332,7 @@ model Receipt {
   @@unique([schoolId, number])
   @@unique([schoolId, idempotencyKey])
   @@index([familyId])
+  @@index([teacherId])
 }
 
 /// Prochain numéro de reçu de l'école, jamais remis à zéro.
@@ -1340,18 +1369,24 @@ model MealPayment {
 /// Garderie d'un enfant (#534) : un forfait mensuel, indépendant des comptes repas et de
 /// l'inscription scolaire. `startMonth` et `endMonth` sont le 1er du mois ; `endMonth` nul : ouvert.
 model ChildcareSubscription {
-  id            String    @id @default(uuid())
-  schoolId      String
-  studentId     String
-  monthlyAmount Decimal   @db.Decimal(10, 2)
-  startMonth    DateTime  @db.Date
-  endMonth      DateTime? @db.Date
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(uuid())
+  schoolId            String
+  studentId           String
+  monthlyAmount       Decimal   @db.Decimal(10, 2)
+  startMonth          DateTime  @db.Date
+  endMonth            DateTime? @db.Date
+  /// Reprise : mois réglés avant l'application, jusqu'à ce mois inclus. Aucun reçu ni encaissement.
+  openingPaidThrough  DateTime? @db.Date
+  openingReason       String?   @db.VarChar(250)
+  openingRecordedById String?
+  openingRecordedAt   DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  school  School            @relation(fields: [schoolId], references: [id])
-  student Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
-  charges ChildcareCharge[]
+  school            School            @relation(fields: [schoolId], references: [id])
+  student           Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Cascade)
+  openingRecordedBy User?             @relation("childcareOpeningRecordedBy", fields: [openingRecordedById], references: [id], onDelete: SetNull)
+  charges           ChildcareCharge[]
 
   @@unique([id, schoolId])
   @@unique([schoolId, studentId])

@@ -214,6 +214,8 @@
     "quickActions": {
       "newFamily": "New family",
       "newEnrollment": "Enroll a student",
+      "newEnrollmentShort": "Enroll",
+      "newFamilyShort": "Family",
       "newPayment": "Record a payment",
       "newStudent": "Add student"
     },
@@ -956,7 +958,11 @@
             "paymentsDisabled": "Payment management is turned off for this school.",
             "validationError": "Check the submitted details.",
             "notFound": "Enrollment or plan not found.",
-            "unpricedPlan": "That plan is reserved for enrollments without a price."
+            "unpricedPlan": "That plan is reserved for enrollments without a price.",
+            "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
+            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noInstallmentDue": "No installment of the plan falls on or after that month",
+            "discountExceedsPlan": "The discount exceeds the part of the plan that is due"
           }
         },
         "description": "This period's enrollments, to follow and settle.",
@@ -1079,7 +1085,9 @@
             "validationError": "Check the information entered",
             "notFound": "Family not found",
             "enrollmentNotPayable": "This enrollment does not belong to the family or no longer awaits payment"
-          }
+          },
+          "generateReceipt": "Issue a receipt",
+          "generateReceiptHint": "Numbered, to print or share. Untick to issue one later from the family page."
         },
         "description": "Payments received, cheques to deposit and amounts still due."
       },
@@ -1217,47 +1225,12 @@
         },
         "debtorsLink": "Unpaid and reminders",
         "headcount": {
-          "today": "Today: {students, plural, =0 {no students} one {# student} other {# students}} · {staff, plural, =0 {no staff} one {# staff member} other {# staff members}}{free, plural, =0 {} other { (# free)}}"
+          "today": "Today: {students, plural, =0 {no students} one {# student} other {# students}} · {staff, plural, =0 {no staff} one {# staff member} other {# staff members}}{free, plural, =0 {} other { (# exempt)}}"
         },
         "staff": {
           "title": "Staff canteen",
-          "intro": "Meals counted in the day's headcount, apart from students. Nothing is billed.",
-          "empty": "No staff member signed up.",
-          "free": "Free",
-          "add": {
-            "title": "Sign up a staff member",
-            "teacher": "Staff member",
-            "teacherPlaceholder": "Choose…",
-            "teacherHint": "Staff come from the teacher list. Signing a member up again replaces their days.",
-            "service": "Service",
-            "weekdays": "Meal days",
-            "isFree": "Free meals",
-            "isFreeHint": "Granted by the school, counted apart.",
-            "cancel": "Cancel",
-            "submit": "Save",
-            "success": "Staff meals saved",
-            "error": "Could not save",
-            "errors": {
-              "validationError": "Choose a member and at least one day",
-              "invalidWeekdays": "Tick at least one day the service offers",
-              "serviceDisabled": "This service is not offered",
-              "notFound": "Staff member not found",
-              "mealsDisabled": "Canteen and snack are disabled for this school"
-            }
-          },
-          "remove": {
-            "trigger": "Remove",
-            "title": "Remove {name}?",
-            "description": "Their meals will no longer be counted from today.",
-            "confirm": "Remove",
-            "cancel": "Cancel",
-            "success": "Staff meals removed",
-            "error": "Could not remove",
-            "errors": {
-              "notSubscribed": "This member does not eat at this service",
-              "mealsDisabled": "Canteen and snack are disabled for this school"
-            }
-          }
+          "intro": "Staff eat at the student canteen price and pay at the cashier. Exempt members are counted but never billed.",
+          "open": "Manage staff canteen"
         }
       },
       "cashier": {
@@ -1269,8 +1242,6 @@
         },
         "intro": "Collect canteen, snack, childcare and tuition for a family in one go, with a numbered receipt.",
         "search": "Family or child's name",
-        "searchSubmit": "Search",
-        "noResult": "No family found",
         "noFamily": "Family not found",
         "viewFamily": "View family",
         "noLines": "No child in this family has canteen, snack or childcare to collect.",
@@ -1321,8 +1292,8 @@
           "heading": "Receipt {number}",
           "back": "Back to cashier",
           "print": "Print",
-          "share": "Share",
           "family": "Family",
+          "staff": "Staff",
           "method": "Payment",
           "recordedBy": "Taken by",
           "tuition": "Tuition",
@@ -1334,7 +1305,7 @@
           "cancelled": "Cancelled",
           "cancelledReason": "Cancelled: {reason}",
           "shareHeader": "{school} — receipt {number}",
-          "shareFamily": "Family {family}, {date}",
+          "sharePayer": "{label} {payer}, {date}",
           "shareTotal": "Total: {amount} ({method})",
           "cancel": {
             "trigger": "Cancel receipt",
@@ -1349,8 +1320,31 @@
               "notFound": "Receipt not found",
               "alreadyCancelled": "This receipt is already cancelled",
               "refundExceedsPaid": "Part of this receipt's tuition was already refunded: cancel that refund first",
-              "validationError": "Give a reason"
+              "validationError": "Give a reason",
+              "onlinePayment": "An online payment is refunded from Stripe",
+              "mealsDisabled": "The meals module is disabled: this receipt cannot be cancelled"
             }
+          },
+          "onlinePayment": "Online payment",
+          "backToFamily": "Family page",
+          "shareMenu": {
+            "whatsapp": "WhatsApp",
+            "copyLink": "Copy link",
+            "linkCopied": "Link copied",
+            "copyError": "Could not copy: select the link by hand",
+            "sendEmail": "Send by email",
+            "emailSent": "Receipt sent to the parents",
+            "error": "Error while sending",
+            "errors": {
+              "noRecipient": "No parent of this family has an email address",
+              "emailError": "The email could not be sent, try again",
+              "notFound": "Receipt not found",
+              "cancelled": "This receipt is cancelled"
+            },
+            "trigger": "Share",
+            "title": "Share the receipt",
+            "description": "The family opens the receipt with this link, no sign-in needed.",
+            "link": "Receipt link"
           }
         },
         "day": {
@@ -1389,7 +1383,93 @@
           "coveredLeft": "{days, plural, =0 {no covered day left} one {# covered day left} other {# covered days left}}",
           "dueDetail": "{days, plural, one {# day} other {# days}} · {amount}",
           "collect": "Collect"
-        }
+        },
+        "staff": {
+          "title": "Staff",
+          "sheetTitle": "Staff canteen",
+          "intro": "Canteen for teachers and staff: days, payments and today's meals. Exempt staff eat without being billed.",
+          "counts": {
+            "subscribed": "Subscribed",
+            "exempt": "Exempt",
+            "eatsToday": "Eating today"
+          },
+          "empty": "No teachers yet. Add staff under Teachers to subscribe them to the canteen.",
+          "exemptBadge": "Exempt",
+          "inactiveBadge": "Deactivated",
+          "noCanteen": "Not subscribed to the canteen",
+          "paidThrough": "Paid through {date}",
+          "nothingPaid": "Nothing paid",
+          "due": "{days, plural, one {# day due} other {# days due}} ({amount})",
+          "exemptHint": "Exempt: meals are counted but never billed.",
+          "inactiveHint": "Deactivated teacher: can no longer be subscribed or charged.",
+          "collect": "Collect canteen payment",
+          "amount": "Amount",
+          "error": "Error while recording the payment",
+          "errors": {
+            "validationError": "Check the amount entered",
+            "mealsDisabled": "Canteen and snack are disabled for this school",
+            "notFound": "Teacher not found",
+            "exempt": "This staff member is exempt: their canteen is not paid",
+            "notSubscribed": "This staff member is not subscribed to the canteen",
+            "noPrice": "No canteen price in effect today",
+            "staleState": "Another payment just went through: amounts were refreshed, check before confirming",
+            "idempotencyConflict": "A receipt was already issued for a previous payment: check it before trying again"
+          },
+          "dialog": {
+            "editTitle": "Exemption",
+            "mealExempt": "Exempt from payment",
+            "mealExemptHint": "Meals are counted but never billed.",
+            "cancel": "Cancel",
+            "submit": "Save",
+            "success": "Exemption saved",
+            "error": "Error while saving",
+            "errors": {
+              "validationError": "Check the information entered",
+              "notFound": "Teacher not found"
+            }
+          }
+        },
+        "searchPrompt": "Which family is paying?",
+        "searchHelp": "Type the family's or a child's name: results show up as you type.",
+        "searchHint": "↑ ↓ to choose, Enter to open, / to come back to search.",
+        "noResultFor": "No family for “{query}”",
+        "noResultTips": {
+          "child": "Try a child's first or last name.",
+          "active": "Only active families are listed.",
+          "families": "Search the family list"
+        },
+        "today": "Today · {count, plural, =0 {no receipts} one {# receipt} other {# receipts}}",
+        "recent": "Served today",
+        "recentEmpty": "No family served today.",
+        "changeFamily": "Change family",
+        "tabs": {
+          "collect": "Collect"
+        },
+        "groups": {
+          "meals": "Canteen and snack",
+          "due": "Due: {amount}"
+        },
+        "previewShift": "Paid through {from} → {to}",
+        "previewFirst": "Paid through {to}",
+        "previewDays": "+{days, plural, one {# day} other {# days}}",
+        "panel": {
+          "title": "Receipt",
+          "empty": "Pick an amount on the left to see it here.",
+          "total": "Total",
+          "tendered": "Cash received",
+          "change": "Change due",
+          "missing": "Short by",
+          "shortcut": "Ctrl + Enter to take payment",
+          "exact": "Exact amount"
+        },
+        "submitAmount": "Take {amount}",
+        "done": {
+          "title": "{amount} collected",
+          "detail": "{family} · {method} · receipt {number}",
+          "view": "View and print the receipt",
+          "next": "Next family: search for it below."
+        },
+        "tuitionUpToDate": "Up to date, nothing to collect"
       },
       "childcare": {
         "title": "Childcare",
@@ -1402,6 +1482,7 @@
         "empty": "No child in childcare. Search for a student to add them.",
         "archived": "archived",
         "noFamily": "No debtor family",
+        "opening": "Paid before the application through {month} ({reason})",
         "perMonth": "{amount} per month",
         "period": {
           "open": "since {start}",
@@ -1536,6 +1617,16 @@
             "description": "Internal: available to signed-in school members. Public: available from the school public page.",
             "internal": "Internal",
             "public": "Public"
+          },
+          "attendance_entry_mode": {
+            "label": "Attendance entry mode",
+            "description": "List: the whole class on one screen, best for large classes. One by one: one card per student.",
+            "list": "List",
+            "oneByOne": "One by one"
+          },
+          "attendance_absence_reason_required": {
+            "label": "Absence reason required",
+            "description": "An attendance call cannot be validated while an absence has no reason."
           }
         },
         "theme": {
@@ -1695,6 +1786,34 @@
             "copy": "Copy",
             "copied": "Webhook URL copied",
             "copyFailed": "Could not copy the URL"
+          }
+        },
+        "absenceReasons": {
+          "title": "Absence reasons",
+          "description": "Reasons offered to the teacher when marking a student absent. Archiving a reason removes it from entry without changing past calls.",
+          "empty": "No reason configured.",
+          "label": "Reason label",
+          "justified": "Excused",
+          "moveUp": "Move “{label}” up",
+          "moveDown": "Move “{label}” down",
+          "archive": "Archive",
+          "confirmArchive": {
+            "title": "Archive “{label}”?",
+            "description": "The reason will no longer be offered. Calls that use it keep it.",
+            "confirm": "Archive",
+            "cancel": "Cancel"
+          },
+          "newLabel": "New reason",
+          "placeholder": "e.g. Medical appointment",
+          "add": "Add",
+          "added": "Reason added",
+          "error": "Something went wrong",
+          "errors": {
+            "validationError": "Invalid label",
+            "tooManyReasons": "Maximum number of reasons reached",
+            "labelTaken": "This reason already exists",
+            "notFound": "Reason not found",
+            "staleOrder": "The list changed, reload the page"
           }
         }
       },
@@ -1880,7 +1999,43 @@
             "CHECK": "Check",
             "MOBILE_MONEY": "Mobile money",
             "STRIPE": "Stripe"
-          }
+          },
+          "actions": "Actions",
+          "cancel": {
+            "trigger": "Cancel payment",
+            "title": "Cancel this payment?",
+            "description": "The {amount} payment leaves the history and the family's balance due rises by {amount}. It is not erased: the cancellation keeps who did it and why.",
+            "refundDescription": "The {amount} refund leaves the history and the family's balance due drops by {amount}. It is not erased: the cancellation keeps who did it and why.",
+            "reason": "Reason (optional)",
+            "submit": "Cancel payment",
+            "cancel": "Back",
+            "success": "Payment cancelled",
+            "error": "Could not cancel the payment",
+            "onlineHint": "Online payment: refund it from Stripe",
+            "errors": {
+              "notFound": "This payment no longer exists or was already cancelled",
+              "onlinePayment": "An online payment is refunded from Stripe",
+              "receiptPayment": "A payment with a receipt is cancelled with its receipt",
+              "mixedFamilies": "These payments do not belong to the same family",
+              "refundExceedsPaid": "An active refund would exceed what remains paid: cancel that refund first",
+              "paymentsDisabled": "Payments are disabled for this school",
+              "validationError": "The reason must not exceed 250 characters"
+            }
+          },
+          "viewReceipt": "View receipt",
+          "issueReceipt": {
+            "trigger": "Issue receipt",
+            "success": "Receipt issued",
+            "error": "Error while issuing the receipt",
+            "errors": {
+              "notFound": "This payment no longer exists or was cancelled",
+              "alreadyIssued": "This payment already has a receipt",
+              "notReceivable": "No receipt can be issued for this payment",
+              "validationError": "Invalid payment",
+              "paymentsDisabled": "Payments are disabled for this school"
+            }
+          },
+          "cancelReceipt": "Cancel receipt"
         },
         "relationType": {
           "PARENT": "Parent",
@@ -2026,6 +2181,8 @@
         "pricing": "Pricing",
         "totalAmount": "Total Amount",
         "discount": "Discount",
+        "startMonth": "Installments start",
+        "startMonthDefault": "Start of the period",
         "totalPaid": "Total Paid",
         "remaining": "Remaining",
         "balanceBadge": "{amount} due",
@@ -2090,9 +2247,31 @@
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimal places",
             "totalBelowPaid": "The amount due would fall below what has already been paid on this enrollment",
-            "paymentsDisabled": "Payment management is turned off for this school"
+            "paymentsDisabled": "Payment management is turned off for this school",
+            "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
+            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noInstallmentDue": "No installment of the plan falls on or after that month"
           },
           "totalAmount": "Final amount due ({currency})"
+        },
+        "setStartMonth": {
+          "title": "Start month",
+          "label": "First month due",
+          "hint": "Earlier installments are neither expected nor counted in the total. Leave empty to start with the period.",
+          "cancel": "Cancel",
+          "submit": "Save",
+          "success": "Start month saved",
+          "error": "Error saving the start month",
+          "errors": {
+            "discountExceedsPlan": "The discount exceeds the part of the plan that is due",
+            "notFound": "Enrollment not found",
+            "validationError": "Check the month you entered",
+            "totalBelowPaid": "The new total would fall below what has already been paid on this enrollment",
+            "paymentsDisabled": "Payment management is turned off for this school",
+            "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
+            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noInstallmentDue": "No installment of the plan falls on or after that month"
+          }
         }
       },
       "users": {
@@ -2462,7 +2641,9 @@
           "attendanceClosed": "The school is closed on this date.",
           "sessionCancelled": "This session is cancelled.",
           "unexpected": "Saving failed. Please retry.",
-          "invalidTransition": "This session changed in the meantime. Refresh the page and try again."
+          "invalidTransition": "This session changed in the meantime. Refresh the page and try again.",
+          "absenceReasonMissing": "Give a reason for every absence before validating.",
+          "absenceReasonNotFound": "This reason is no longer offered. Pick another one."
         },
         "returnTracking": "Back to attendance tracking",
         "lateMinutesInvalid": "Late minutes must be a whole number between 0 and 1440.",
@@ -2471,6 +2652,25 @@
           "description": "The session will no longer count as an expected call. You can restore it from attendance tracking.",
           "confirm": "Cancel session",
           "dismiss": "Keep session"
+        },
+        "reasons": {
+          "title": "Reason",
+          "missing": "Reason required",
+          "missingWarning": "{count} absence(s) without a reason. A reason is required to validate."
+        },
+        "list": {
+          "label": "Student list",
+          "toRecord": "To record",
+          "search": "Search a student",
+          "closeSearch": "Close search",
+          "searchPlaceholder": "First or last name…",
+          "noMatch": "No student matches.",
+          "reasonMissing": "Reason missing",
+          "lateBy": "{minutes} min late",
+          "otherMinutes": "Other…",
+          "addNote": "Add a note",
+          "markRemaining": "{count, plural, one {The remaining student is present} other {The # remaining students are present}}",
+          "finish": "Validate attendance · {absent} abs. · {late} late"
         }
       },
       "teachers": {
@@ -2795,7 +2995,8 @@
           "copy": "Copy public link",
           "copied": "Link copied",
           "copiedPrivate": "Link copied. The page stays private until the event is public and published.",
-          "copyFailed": "Could not copy the link"
+          "copyFailed": "Could not copy the link",
+          "calendar": "Public calendar"
         }
       },
       "authSettings": {
@@ -3805,6 +4006,13 @@
       "cta": "Confirm the new address",
       "notice": "After confirmation, you will sign in with {newEmail}.",
       "footer": "Automated message. If you did not request this, ignore this email and change your password."
+    },
+    "receipt": {
+      "subject": "Receipt {number} — {schoolName}",
+      "heading": "Your receipt {number}",
+      "body": "{schoolName} received your payment of {total} on {date}. The receipt is available online to view or print.",
+      "cta": "View receipt",
+      "footer": "Automatic message sent by {schoolName}. The link stays valid as long as the receipt is not cancelled."
     }
   },
   "publicEvent": {
@@ -3833,7 +4041,10 @@
       "stepSafari": "Open this page in Safari.",
       "stepShare": "Tap the Share button.",
       "stepAdd": "Choose “Add to Home Screen”, then tap Add.",
-      "close": "Close"
+      "close": "Close",
+      "popupTitle": "Install the app",
+      "popupDescription": "Open the school in one tap from your home screen, like any other app.",
+      "later": "Later"
     }
   }
 }

@@ -136,8 +136,17 @@ function RecordPaymentForm({
           method === 'CHECK' && formData.get('cashedAt')
             ? new Date(formData.get('cashedAt') as string)
             : undefined,
+        generateReceipt: formData.get('generateReceipt') === 'on',
       }),
-    { onSuccess: () => router.refresh() }
+    {
+      onSuccess: (result) => {
+        if (typeof result === 'object') {
+          router.push(`/dashboard/cashier/receipts/${result.receiptId}`)
+          return
+        }
+        router.refresh()
+      },
+    }
   )
 
   return (
@@ -306,6 +315,20 @@ function RecordPaymentForm({
               </div>
             )}
           </div>
+
+          <label className="flex items-start gap-2 text-sm text-graphite">
+            <input
+              type="checkbox"
+              name="generateReceipt"
+              defaultChecked
+              className="mt-0.5 rounded"
+              disabled={isPending}
+            />
+            <span>
+              {t('generateReceipt')}
+              <span className="block text-xs text-graphite-600">{t('generateReceiptHint')}</span>
+            </span>
+          </label>
         </div>
       </DialogBody>
       <DialogFormActions t={t} isPending={isPending} onCancel={close} />

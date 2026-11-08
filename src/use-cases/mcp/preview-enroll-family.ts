@@ -4,6 +4,7 @@ import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { validateFamilyName } from '@/domain/family'
 import type { McpFinding } from '@/domain/mcp-draft'
 import { distributePayment } from '@/domain/payment'
+import { validateStartMonth } from '@/domain/payment-schedule'
 import { validateStudentBirthday } from '@/domain/student'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
@@ -11,6 +12,7 @@ import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { personGateway } from '@/gateways/person-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
+import { owedForPeriod } from '@/use-cases/enrollments/pricing'
 import { blockedPreview, saveDraftPreview } from './draft-response'
 import type { DraftScope } from './draft-scope'
 import { matchByName } from './match-by-name'
@@ -35,6 +37,7 @@ type ResolvedStudent = {
   studentId?: string
   classPeriod: { id: string; name: string }
   plan: { id: string; name: string; amount: number }
+  startMonth: string | null
   totalAmount: number
 }
 
@@ -151,9 +154,11 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
   // chaque élève prend la formule réservée « sans tarif » de l'école, créée à la demande,
   // jamais catalogable ni sélectionnable.
   let studentPlans: Array<{ id: string; name: string; amount: number } | null>
+  const scheduleByPlan = new Map<string, unknown>()
 
   if (paymentsEnabled) {
     const plans = await mcpReadGateway.listPlans(schoolId)
+    for (const plan of plans) scheduleByPlan.set(plan.id, plan.paymentSchedule)
     const planByLabel = new Map<string, { id: string; name: string; amount: number } | null>()
 
     studentPlans = data.students.map((student, index) => {
@@ -185,13 +190,53 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
     studentPlans = data.students.map(() => reserved)
   }
 
-  const studentTotals = studentPlans.map((plan) =>
-    calculateTotalAmount(plan ? plan.amount : 0, data.discount)
+  // Un élève arrivé en cours d'année ne doit que les échéances de sa formule à partir de
+  // son mois de début : c'est cette part, et non le prix entier, qui porte la remise et
+  // fait le total. Sans mois de début, la part due est le prix de la formule.
+  const studentStartMonths = data.students.map(
+    (student) => student.startMonth ?? data.startMonth ?? null
   )
+  const planAmountsDue: number[] = []
+  for (const [index, plan] of studentPlans.entries()) {
+    const startMonth = studentStartMonths[index]
+    const classPeriod = studentClasses[index]
+    planAmountsDue.push(plan ? plan.amount : 0)
+    if (!plan || !startMonth || !classPeriod) continue
+
+    const field = data.students[index].startMonth ? `students.${index}.startMonth` : 'startMonth'
+    const period = await classPeriodGateway.findPeriodBounds(schoolId, classPeriod.id)
+    if (!period) {
+      blockers.push({ field, value: startMonth, reason: 'notFound' })
+      continue
+    }
+    // Paiements coupés : rien à proratiser sur la formule réservée, mais le mois reste
+    // tenu dans la période pour le jour où les échéances seront suivies.
+    const due = paymentsEnabled
+      ? await owedForPeriod(
+          schoolId,
+          { amount: plan.amount, paymentSchedule: scheduleByPlan.get(plan.id) },
+          period,
+          startMonth
+        )
+      : validateStartMonth(startMonth, period) === 'OK'
+        ? plan.amount
+        : ('startMonthOutsidePeriod' as const)
+    if (typeof due === 'string') {
+      blockers.push({ field, value: startMonth, reason: due })
+      continue
+    }
+    planAmountsDue[index] = due
+  }
+
+  const studentTotals = planAmountsDue.map((amount) => calculateTotalAmount(amount, data.discount))
 
   // La remise vaut pour chaque inscription : elle doit tenir dans la formule la moins chère
   // de la fratrie, et un seul blocage suffit à la corriger.
-  if (studentPlans.some((plan) => plan && validateDiscount(plan.amount, data.discount) !== 'OK')) {
+  if (
+    studentPlans.some(
+      (plan, index) => plan && validateDiscount(planAmountsDue[index], data.discount) !== 'OK'
+    )
+  ) {
     blockers.push({
       field: 'discount',
       value: String(data.discount),
@@ -312,7 +357,7 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
   // Chaque élève emporte sa classe et sa formule dans le même élément : un filtre suivi d'un
   // accès par index désalignerait élèves, classes et formules au premier élève non résolu.
   const students = data.students.flatMap<ResolvedStudent>(
-    ({ className, planName, ...student }, index) => {
+    ({ className, planName, startMonth: _startMonth, ...student }, index) => {
       const classPeriod = studentClasses[index]
       const plan = studentPlans[index]
       if (!classPeriod || !plan) return []
@@ -320,6 +365,7 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
       const enrollment = {
         classPeriod: { id: classPeriod.id, name: classPeriod.name },
         plan: { id: plan.id, name: plan.name, amount: plan.amount },
+        startMonth: studentStartMonths[index],
         totalAmount: studentTotals[index],
       }
 

@@ -28,3 +28,11 @@ export const cancelChildcareChargeSchema = z.object({
   chargeId: z.uuid(),
   reason: z.string().trim().min(1).max(250),
 })
+
+export const recordChildcareOpeningSchema = z.object({
+  schoolId: z.string().min(1),
+  recordedById: z.string().min(1),
+  studentId: z.uuid(),
+  paidThrough: monthSchema,
+  reason: z.string().trim().min(1).max(250),
+})

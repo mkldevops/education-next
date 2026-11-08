@@ -31,10 +31,10 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 
 ## Multi-school
 
-Every business row belongs to exactly one `School`. Twenty-five models carry `schoolId NOT NULL`:
+Every business row belongs to exactly one `School`. Twenty-six models carry `schoolId NOT NULL`:
 `Family`, `UserFamily`, `Person`, `FamilyPerson`, `Student`, `PhoneNumber`, `Config`, `Level`,
 `Period`, `ClassPeriod`, `ClassPeriodTeacher`, `ClassScheduleSlot`, `ClassScheduleSlotTeacher`, `Enrollment`, `ClassAssignment`,
-`AttendanceSession`, `AttendanceEntry`, `Payment`, `PaymentTransaction`, `Plan`, `Invitation`,
+`AttendanceSession`, `AttendanceEntry`, `AbsenceReason`, `Payment`, `PaymentTransaction`, `Plan`, `Invitation`,
 `Teacher`, `TeacherExpense`, `Event`, `EventImage`. All of them are in the runtime guard's
 `TENANT_SCOPED_MODELS`.
 
@@ -1011,8 +1011,13 @@ stay where they are. **The new total never falls below what the enrollment alrea
 `totalBelowPaid`, since a balance never goes negative and an overpayment nobody decided to refund
 must not appear. A request that changes nothing → `noChange`; several open enrollments for the
 student → `ambiguousEnrollment`, listed so the caller retries with `enrollmentId`. The commit
-compares the enrollment's current plan, discount and total to the validated `before`, and the target
-plan's price to the validated `after` → `staleDraft` when either moved.
+compares the enrollment's current plan, discount, total and start month to the validated `before`,
+and the target plan's price to the validated `after` → `staleDraft` when either moved. `startMonth`
+(`YYYY-MM`) sets or, with `null`, clears the enrollment's start month (Enrollments, Money); absent,
+the current one is kept, so a plan or discount change keeps the proration already decided. The
+preview shows it before → after, with the part of the plan due (`planAmountDue`).
+`preview_enroll_family` takes the same `startMonth`, for the family or per student (the student's
+wins), checked against the class period.
 
 **An existing family is named by `familyId`, instead of `familyName`.** A child entered on the
 dashboard without an enrollment — a sibling added to the family, never enrolled — must not come back
@@ -1197,7 +1202,9 @@ that one instead of asking.
 **Undoing a manual payment.** `cancel_payments` (write, approval required) deactivates payments by id
 — the soft deletion every payment read already respects, so balances fall back at once. All ids must
 be active manual payments of one family: missing → `notFound`, a Stripe payment → `onlinePayment`,
-two families → `mixedFamilies`. It takes the family payment lock, rereads the payments under it
+a cashier payment → `receiptPayment`, two families → `mixedFamilies`. It runs `cancelPayments()`,
+shared with the family page (Payments, Cancelling a manual payment), and records the caller and an
+optional `reason`. It takes the family payment lock, rereads the payments under it
 (`notFound` if one vanished meanwhile), then deactivates them in the same transaction.
 **The amount paid on an enrollment never goes negative** (`paymentGateway.sumActiveByEnrollment`):
 under the same lock, the tool recomputes what each touched enrollment would still hold once the
@@ -1533,6 +1540,23 @@ Owner: `src/domain/attendance-session.ts` (roster window, transitions),
   over at most 31 days (`MCP_ATTENDANCE_RANGE_MAX_DAYS`). It publishes each call's class, slot, status
   and session id, not its students or entries, and is refused with `notConfigured` when
   `attendance_enabled` is off.
+- **The entry mode is a school setting, not a choice on the call screen.** `attendance_entry_mode`
+  is `LIST` (default for existing and new schools) or `ONE_BY_ONE` (`getAttendanceEntrySettings`,
+  `src/domain/attendance-entry-mode.ts`). `LIST` shows the whole roster on one screen with P/R/A
+  buttons, search, status filters and a "mark the rest present" action; `ONE_BY_ONE` keeps one card
+  per student. Both write the same entries through `updateAttendanceEntryAction`.
+- **Absence reasons are configured per school** (`AbsenceReason`, managed in Configuration by an
+  ADMIN through `src/use-cases/absence-reasons/`). A label is unique per school among active reasons
+  (ignoring case and extra spaces), at most 20 per school, and carries a `justified` flag and a display
+  order. A new school starts with `DEFAULT_ABSENCE_REASONS`; the migration backfilled them. Archiving
+  deactivates a reason (`isActive = false`) without touching past calls.
+- **A reason applies to an absence only.** `updateAttendanceEntryAction` accepts an active reason of
+  the caller's school (otherwise `absenceReasonNotFound`), stores its id **and a copy of its label**
+  on the entry, so an archived or renamed reason still reads as it was recorded. Any status other
+  than `ABSENT` clears both; omitting the reason keeps the current one.
+- **`attendance_absence_reason_required`** (off by default) blocks validation while an `ABSENT`
+  entry of the session has no reason → `absenceReasonMissing`; the review screen lists the count
+  and disables Validate.
 - **Attendance entries do not outlive their student.** Deleting a family for good removes its own
   students' entries, even on a validated session; the session and its other entries stay (see
   « Deleting a family for good »).
@@ -1650,6 +1674,9 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
 - **Already in the target class** → `OK` without writing, so a double submit is harmless.
 - The current assignment is closed (`endAt`) and the new one created in the same transaction: a
   failure leaves the student in the old class, never in none.
+- The MCP `move_student_to_class` tool (`src/use-cases/mcp/move-student-to-class.ts`) calls the same
+  use case with the key's `schoolId`: same rules, same refusals. Named by the student, the
+  enrollment must be the only open one matching, else `ambiguousEnrollment`.
 
 ### Money
 
@@ -1668,6 +1695,18 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
   « Payé 180 € / Reste 0 € » while the family balance already shows 180 € owed.
 - Changing a plan's price does not retroactively change existing enrollments. Applying a discount
   does, because it recomputes from the plan.
+- **An enrollment may carry a start month** (`Enrollment.startMonth`, the first day of a month,
+  null by default) for a student who joins during the year. Only the plan's installments due from
+  that month are owed: `plan.amount` above becomes that **part due** (`owedPlanAmount` in
+  `src/domain/payment-schedule.ts`, `resolveOwedPlanAmount` in
+  `src/use-cases/enrollments/pricing.ts`) in every total rule — discount, typed final amount, plan
+  change. A Sept–May monthly plan of 9 × 16 000 joined in October owes 8 × 16 000 = 128 000.
+- The start month must fall within the enrollment's period (latest class assignment) →
+  `startMonthOutsidePeriod`; the plan needs a schedule → `noPaymentSchedule`; a month after its
+  last installment → `noInstallmentDue`. A new total below what the enrollment already banked →
+  `totalBelowPaid`, read under the family lock like a discount (#425). Clearing it restores
+  `plan.amount - discount`. An enrollment without one behaves exactly as before, with no extra read.
+- Set from the enrollment page (admins, payments enabled), `update_enrollment` and `enroll_family`.
 
 ## Plans
 
@@ -1742,7 +1781,9 @@ Owner: `src/domain/payment-schedule.ts`, `src/use-cases/payments/payment-trackin
 - Each enrollment uses its plan's current schedule and its stored `totalAmount`, already net of
   discount. Editing a schedule changes tracking for existing enrollments too; it does not reprice
   their debt. A late enrollment follows the same deadlines as the other subscribers, without
-  automatic proration.
+  automatic proration — unless it carries a start month (Enrollments, Money): installments before
+  that month are then neither expected nor counted, and its stored total is split over the
+  remaining deadlines only. No September arrears for a student who joined in October.
 - Month/day settings are anchored to the enrollment's school period, from its latest class
   assignment. A month before the period start month falls in the following calendar year. They
   never restart on the current year. Short months clamp a due day of 29–31 to their last day.
@@ -1827,6 +1868,31 @@ Screens show what the family handed over instead: `groupFamilyPayments()` in
   latest rows of each enrollment for the preview — the latest payments of a family are always
   among the latest of its enrollments. `calculateFamilyBalance()` accepts that aggregated `paid`
   total in place of the payment rows.
+
+### Cancelling a manual payment
+
+`cancelPayments()` (`src/use-cases/payments/cancel-payments.ts`) undoes a payment entered by mistake.
+The dashboard and the MCP `cancel_payments` tool both call it: same rules, same typed refusals.
+
+- **Who.** A school admin: `cancelPaymentsAction` (`app/[locale]/(dashboard)/_lib/payment-actions.ts`)
+  is guarded by `requireSchoolAdmin()` and scoped to the active school; the MCP tool runs under the
+  key's school. Payments disabled for the school → `paymentsDisabled`.
+- **Deactivated, not erased.** The rows go `isActive = false` — the soft deletion every payment read
+  already respects, so the balance and arrears fall back at once — and keep `cancelledAt`,
+  `cancelledById` and an optional `cancelReason` (≤ 250 characters, blank stored as none). A user
+  who cancelled a payment cannot be deleted for good (`countRowsBlockingUserDeletion`), like a
+  receipt's author.
+- **Manual payments only.** A Stripe payment → `onlinePayment` (refund it from Stripe); a cashier
+  receipt payment → `receiptPayment` (cancel the receipt). Missing, inactive or another school's id
+  → `notFound`; ids spanning two families → `mixedFamilies`. All or nothing, at most 20 ids.
+- **Under the family payment lock.** The ids are reread under the lock (`notFound` if one vanished
+  meanwhile) and deactivated in the same transaction.
+- **The amount paid on an enrollment never goes negative**: the refusal `refundExceedsPaid` applies
+  when an active refund would exceed what remains paid (see Undoing a manual payment, AI assistant).
+- **The family page cancels one history line.** In the payment history, an admin sees "Cancel" on a
+  manual payment; it cancels every row of that line (one per enrollment) after a confirmation stating
+  the amount and its effect on the balance due. An online payment shows a Stripe hint instead, a
+  cashier payment a link to its receipt. Parents and staff without admin access see no action.
 
 ### Collection statistics
 
@@ -2071,10 +2137,12 @@ answers `notFound()`, the sidebar entry disappears, and every meal use case refu
 `mealsDisabled`. The page and its actions are `requireSchoolAdmin()`.
 
 **MCP and assistant.** The shared catalog (`src/mcp/meal-tools.ts`, registered by
-`listSchoolTools`) exposes `get_meal_settings`, `get_student_meals` and
-`list_family_receipts`, plus `set_meal_service_setting`, `set_meal_price`,
-`remove_meal_price`, `subscribe_meal`, `change_meal_schedule`, `stop_meal`,
-`record_meal_opening`, `toggle_meal_absence`, `record_receipt` and `cancel_receipt`.
+`listSchoolTools`) exposes `get_meal_settings`, `get_student_meals`, `get_staff_meals`,
+`list_staff_meal_subscriptions` and `list_family_receipts`, plus `set_meal_service_setting`,
+`set_meal_price`, `remove_meal_price`, `subscribe_meal`, `subscribe_staff_meal`,
+`change_meal_schedule`, `stop_meal`,
+`record_meal_opening`, `toggle_meal_absence`, `record_receipt` and `cancel_receipt`; the
+childcare tools sit beside them (see [Childcare](#childcare)).
 These tools stay discoverable with meals disabled and return `mealsDisabled`; they are
 independent of `payments_enabled` except for the tuition portion of a receipt. School and
 recording/cancelling user come only from the authenticated admin scope, never tool arguments.
@@ -2085,6 +2153,17 @@ published. The student calendar defaults to 31 days from the current month's fir
 accepts an inclusive `from`/`to` window of at most 93 days. Family receipt reads return the latest
 50 receipts by default (100 maximum), including cancelled receipts, with `hasMore` when truncated.
 An unknown/archived student or family in that school returns `notFound`.
+
+Staff meals (#569) go through the same use cases as the staff meal sheet. `get_staff_meals`
+(`teacherId`, same window) returns the student shape plus `name` and `mealExempt`; an unknown,
+other-school or deactivated teacher returns `notFound`. `list_staff_meal_subscriptions` (optional
+`service` and `date`) lists every active teacher with their accounts: the segment serving `date`
+(default today, else the next one), all segments, `paidThrough`, `dueDays` and `dueAmount`; a teacher
+without an account comes back with no accounts. An exempt member owes nothing on both reads and on
+the cashier staff list (`staffMealDue()` in `src/domain/teacher.ts`). `change_meal_schedule`,
+`stop_meal`, `record_meal_opening` and `toggle_meal_absence` take exactly one of `studentId` or
+`teacherId` (`mealOwner()`), as the dashboard meal panel does; both or neither returns
+`validationError`.
 
 `record_receipt` preserves the cashier's idempotency key and `expectedPaidThrough` contract.
 Its meal amounts create meal payments, never tuition payments through `record_payment`.
@@ -2211,7 +2290,7 @@ balance. Each billed childcare month still open adds a line (see [Childcare](#ch
   because the ledger skips cancelled receipts, like its childcare payments. The billed month stays
   and owes that amount again. `alreadyCancelled` on a second try, `refundExceedsPaid`
   when a refund already consumed that tuition.
-- **A receipt payment is cancelled with its receipt only.** The MCP `cancel_payments` tool refuses a
+- **A receipt payment is cancelled with its receipt only.** `cancelPayments()` (app and MCP) refuses a
   payment that has a `receiptId` (`receiptPayment`): cancelling one line would leave a printed
   receipt wrong.
 - A user who took or cancelled a receipt cannot be deleted for good: receipts are counted in
@@ -2251,23 +2330,34 @@ called from `attendance-actions.ts`):
 - with `meals_enabled` off nothing is written (`mealsDisabled`). Column added by migration
   `20261030090000_meal_absence_from_attendance`.
 
-**Staff canteen (#545).** Staff meals are **counted, never billed**: no price, payment, receipt,
-debt or revenue is attached to them, and nothing will be until the school validates a billing model
-(billing the staff, a payroll deduction, and the staff price). A staff member is an active `Teacher`
-of the school — non-teaching staff are recorded as `Teacher` too. `StaffMeal` holds one row per
-member and service: the ISO weekdays they eat and `isFree`, a free meal granted by the school,
-counted apart and never valued. On `/dashboard/meals` (`requireSchoolAdmin()`),
-`setStaffMeal()` signs a member up or replaces their days, among the service's `allowedWeekdays`
-(`invalidWeekdays`), refusing a disabled service (`serviceDisabled`) and an unknown or inactive
-member (`notFound`); `removeStaffMeal()` deletes the row (`notSubscribed` without one). A « yes »
-without named days takes every allowed day of the service, which the dialog ticks by default. A
-deactivated teacher drops out of the list and the counts; the migration repeats the weekday `CHECK`
-of `MealSchedule`.
+**Staff canteen (#545).** Staff eat and pay like students. The staff are the school's `Teacher`
+records (non-teaching staff are recorded there too), with `Teacher.mealExempt`. A meal account belongs
+to a student or a teacher, never both (`MealOwner`, `CHECK` in migration
+`20261103100000_staff_canteen`), so subscriptions, schedule changes, absences, closures and the ledger
+are shared. Staff pay the school's `CANTEEN` price; no staff price exists. `/dashboard/cashier/staff`
+(`requireSchoolCashier()`, `notFound()` when `meals_enabled` is off) lists the active teachers, and
+deactivated ones that keep a meal account, with their days, coverage, amount due and whether they eat
+today; admins set or lift the exemption there (`setStaffMealExempt()`). Each teacher has a meal sheet at
+`/dashboard/cashier/staff/[id]`.
+
+- `recordStaffReceipt()` (`src/use-cases/staff/record-staff-receipt.ts`) records a numbered receipt
+  with no family (`Receipt.teacherId`; `CHECK` that exactly one payer is set) and one meal line
+  for the service. It re-reads the member under the account lock and refuses an inactive or unknown
+  member (`notFound`), an exempt one (`exempt`), a member without served days (`notSubscribed`), a
+  missing price (`noPrice`) and a coverage that moved (`staleState`). It is idempotent like
+  `recordReceipt()`.
+- **An exempt member is never billed**: amount due 0, no receipt form, `exempt` from the use case.
+  Their meals still count in the day's headcount.
+- Deactivating a teacher keeps their accounts and receipts and drops them from the counts. A
+  deactivated teacher cannot be subscribed or charged, and a teacher with a meal account or a
+  receipt cannot be deleted (`teacherInUse`).
+- Cancelling a staff receipt locks no family.
+- The migration drops the `StaffMeal` table of #547 (count only). It was empty in production.
 
 **Day's headcount.** Each service card on `/dashboard/meals` shows today's meals in the school's time
 zone, students and staff apart (`dailyMealHeadcount()`, `mealHeadcount()` in
-`src/domain/meal-headcount.ts`): a student counts once per account whose segment serves the day,
-unless marked absent; a staff member counts when the day is one of theirs, the free ones repeated in
+`src/domain/meal-headcount.ts`), from the active accounts' segments (`listDay()`). An owner counts
+once per account whose segment serves the day, unless marked absent. Exempt staff are repeated in
 brackets. A published closure or holiday serves nobody. Coverage plays no part: an unpaid day is still
 served.
 
@@ -2333,7 +2423,23 @@ is read or created: a child who brings a lunch box is billed the same, and no da
   the child's debtor family (`resolveDebtorFamily()`), on one receipt with its other lines.
 - **Cancelling a billed month** (`cancelChildcareCharge()`) needs a reason, keeps the row and is
   refused while an active receipt pays it (`hasPayments`): cancel that receipt first.
+- **Opening** (`recordChildcareOpening()`, `src/use-cases/childcare/record-childcare-opening.ts`).
+  A front-desk paper list saying a child is « à jour » sets `openingPaidThrough` and a required
+  `openingReason` on the subscription (one per child, recording again replaces it; the migration
+  checks both are set together). Every month up to it is settled (`settledByOpening()`): nothing
+  is left on it, billed before or after the opening, whatever its receipts paid. It creates no
+  receipt and no `ChildcarePayment`, so the day's takings never show money nobody handed over —
+  the meal opening's choice. `paidByReceipts` and `hasPayments` still count receipts only: a
+  settled month without a receipt can be cancelled. `futureMonth` past the school's current
+  month, `invalidPeriod` before `startMonth`, `notSubscribed` without childcare, `notFound` for an
+  archived student. A receipt line on a settled month is `childcareOverpayment`. The opening is
+  set through the MCP only; the childcare screen shows it read-only.
 - **Rights.** The screen and its actions need an admin; a cashier only collects what is billed.
+- **MCP.** `get_student_childcare`, `save_childcare_subscription`, `bill_childcare_month`,
+  `record_childcare_opening` and `cancel_childcare_charge` (`src/mcp/childcare-tools.ts`) call the
+  same use cases with the school and actor from the admin scope; `record_receipt` carries
+  `childcare` lines (`chargeId`, `amount`) under the cashier's locks. `bill_childcare_month` bills
+  the whole school, as the screen does. See `docs/mcp.md`, Childcare.
 - **Tenancy.** The three tables are listed in the tenant guard and every foreign key is composite on
   `schoolId`.
 

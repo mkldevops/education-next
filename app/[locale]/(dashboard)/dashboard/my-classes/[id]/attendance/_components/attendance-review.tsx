@@ -3,6 +3,7 @@
 import { Button } from '@peaklab/ui'
 import { MessageSquare } from 'lucide-react'
 import { useState } from 'react'
+import { countMissingAbsenceReasons } from '@/domain/absence-reason'
 import { Link } from '@/i18n/routing'
 import {
   type AttendanceEntry,
@@ -58,6 +59,7 @@ export function AttendanceReview({
   validated,
   onCorrect,
   returnHref,
+  missingReasonsWarning,
 }: {
   entries: AttendanceEntry[]
   labels: ReviewLabels
@@ -70,9 +72,16 @@ export function AttendanceReview({
   onCorrect: () => void
   /** Écran de retour accessible au rôle courant : suivi des appels (admin) ou « Mes classes ». */
   returnHref: string
+  /** Set when the school requires a reason per absence; `{count}` is replaced. */
+  missingReasonsWarning?: string
 }) {
   const [filter, setFilter] = useState<AttendanceStatus | 'ALL'>('ALL')
   const counts = countAttendanceStatuses(entries)
+  const missingReasons = missingReasonsWarning
+    ? countMissingAbsenceReasons(
+        entries.map((entry) => ({ ...entry, absenceReasonId: entry.absenceReasonId ?? null }))
+      )
+    : 0
   const rows = filter === 'ALL' ? entries : entries.filter((entry) => entry.status === filter)
   return (
     <section
@@ -133,6 +142,22 @@ export function AttendanceReview({
           ) : null}
         </div>
       ) : null}
+      {missingReasons > 0 && missingReasonsWarning && !validated ? (
+        <div
+          role="alert"
+          className="mx-5 mt-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-950 sm:mx-7"
+        >
+          <strong>{missingReasonsWarning.replace('{count}', String(missingReasons))}</strong>
+          <button
+            type="button"
+            disabled={validating}
+            className="ml-2 underline underline-offset-4"
+            onClick={() => setFilter('ABSENT')}
+          >
+            {labels.absent}
+          </button>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 sm:px-7">
         <div className="flex gap-1">
           <button
@@ -164,6 +189,9 @@ export function AttendanceReview({
                   <span className="ml-1 whitespace-nowrap text-xs text-amber-800">
                     {entry.lateMinutes} min
                   </span>
+                ) : null}
+                {entry.status === 'ABSENT' && entry.absenceReasonLabel ? (
+                  <span className="ml-1 text-xs text-red-800">{entry.absenceReasonLabel}</span>
                 ) : null}
               </p>
               {entry.message ? (
@@ -204,7 +232,7 @@ export function AttendanceReview({
             <Button onClick={onCorrect}>{labels.correctAttendance}</Button>
           </>
         ) : (
-          <Button disabled={validating} onClick={onValidate}>
+          <Button disabled={validating || missingReasons > 0} onClick={onValidate}>
             {counts.NOT_RECORDED > 0 ? labels.validatePartial : labels.validate}
           </Button>
         )}

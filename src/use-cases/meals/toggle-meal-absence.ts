@@ -1,5 +1,6 @@
 import type { z } from 'zod'
 import { servedDays } from '@/domain/meal-ledger'
+import { mealOwner } from '@/domain/meal-owner'
 import { isSchoolClosed } from '@/domain/school-closure'
 import { configGateway } from '@/gateways/config-gateway'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
@@ -20,11 +21,13 @@ export async function toggleMealAbsence(
   const parsed = toggleMealAbsenceSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
 
-  const { schoolId, studentId, service, day, absent, recordedById } = parsed.data
+  const { schoolId, service, day, absent, recordedById } = parsed.data
+  const owner = mealOwner(parsed.data)
+  if (!owner) return 'validationError' as const
   if (!(await isMealsEnabled(schoolId, configGw))) return 'mealsDisabled' as const
 
   return accountGw.transaction(async (tx) => {
-    const accountId = await accountGw.lockAccount(tx, schoolId, studentId, service, false)
+    const accountId = await accountGw.lockAccount(tx, schoolId, owner, service, false)
     if (!accountId) return 'notSubscribed' as const
 
     if (!absent) {

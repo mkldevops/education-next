@@ -488,17 +488,23 @@ payments are disabled. Every mutation requires the dashboard assistant's normal 
 | --- | --- |
 | `get_meal_settings` | No arguments; service settings and dated prices, including price IDs |
 | `get_student_meals` | `studentId`, optional inclusive `from`/`to`; accounts, schedules, current price, opening, coverage and calendar; at most 93 days, default 31 days from the current month's first day |
-| `list_family_receipts` | `familyId`, optional `limit` (default 50, maximum 100); latest numbered receipts including cancelled ones, meal lines and `hasMore` |
+| `get_staff_meals` | `teacherId` from `list_teachers`, optional inclusive `from`/`to`; same shape as `get_student_meals` plus `name` and `mealExempt` (exempt: nothing due); unknown, other-school or deactivated teacher: `notFound` |
+| `list_staff_meal_subscriptions` | Optional `service`, optional `date` (default today); every active teacher with `mealExempt` and accounts: segment serving `date` or the next one, all segments, `paidThrough`, `dueDays`, `dueAmount`; empty `accounts` when not subscribed |
+| `list_family_receipts` | `familyId`, optional `limit` (default 50, maximum 100); latest numbered receipts including cancelled ones, meal and childcare lines and `hasMore` |
 | `set_meal_service_setting` | `service`, `isEnabled`, `allowedWeekdays`; replaces service settings, ISO weekdays 1–7 |
 | `set_meal_price` | `service`, `amount`, `effectiveFrom`; same date replaces the price; only the first price may start in the past |
 | `remove_meal_price` | Price `id`; only before its effective day |
 | `subscribe_meal` | `studentId`, `service`, `periodId`, `weekdays`, `startOn`; opens a segment, past starts within the period allowed |
-| `change_meal_schedule` | `studentId`, `service`, `weekdays`, `effectiveFrom`; changes today or later |
-| `stop_meal` | `studentId`, `service`, `effectiveFrom`; stops today or later |
-| `record_meal_opening` | `studentId`, `service`, `paidThrough`, required `reason`; replaces historical opening coverage, creates no receipt |
-| `toggle_meal_absence` | `studentId`, `service`, `day`, `absent`; marks or removes an absence on a scheduled open day |
-| `record_receipt` | `familyId`, stable UUID `idempotencyKey`, `method`, optional `reference`, `tuition`, `meals`; returns receipt `id` |
+| `subscribe_staff_meal` | `teacherId`, `service`, `periodId`, `weekdays`, `startOn`; same for an active staff member, billed at the student price unless exempt |
+| `change_meal_schedule` | `studentId` or `teacherId`, `service`, `weekdays`, `effectiveFrom`; changes today or later |
+| `stop_meal` | `studentId` or `teacherId`, `service`, `effectiveFrom`; stops today or later |
+| `record_meal_opening` | `studentId` or `teacherId`, `service`, `paidThrough`, required `reason`; replaces historical opening coverage, creates no receipt |
+| `toggle_meal_absence` | `studentId` or `teacherId`, `service`, `day`, `absent`; marks or removes an absence on a scheduled open day |
+| `record_receipt` | `familyId`, stable UUID `idempotencyKey`, `method`, optional `reference`, `tuition`, `meals`, optional `childcare`; returns receipt `id` |
 | `cancel_receipt` | `receiptId`, required `reason`; cancels all its meal and tuition lines, retaining its number |
+
+The four account tools above take exactly one owner, `studentId` or `teacherId`; both or neither
+returns `validationError`. Staff are the school's teachers (`list_teachers`).
 
 `service` is `CANTEEN` or `SNACK`; dates use `YYYY-MM-DD`; monetary amounts are in the school's
 currency. Resolve student and debtor-family IDs with `find_students`, period IDs with
@@ -518,6 +524,29 @@ For a paper-ledger takeover, first verify subscriptions and published closures, 
 `record_meal_opening` with the source payment reference/date/amount in its reason. This preserves
 coverage without creating historical cash revenue or inventing a numbered receipt. A second
 opening replaces the first. The calendar reflects published closures and meal absences.
+
+## Childcare
+
+Monthly childcare (see `docs/business-rules.md`, Childcare) reuses the dashboard's use cases, under
+the same `meals_enabled` gate, scope injection and approval rules as the meal tools.
+
+| Tool | Input and behavior |
+| --- | --- |
+| `get_student_childcare` | `studentId`; subscription (`monthlyAmount`, `startMonth`, `endMonth`, `opening`), billed months with `chargeId`, `amount`, `paidByReceipts`, `settledByOpening`, `remaining`, `cancelled`, totals, `debtorFamilyId` and the school's `currentMonth` |
+| `save_childcare_subscription` | `studentId`, `monthlyAmount`, `startMonth`, `endMonth` (`YYYY-MM` or `null`); creates or replaces the subscription |
+| `bill_childcare_month` | `month`; bills that month for **every** active subscription of the school covering it; a replay bills nothing twice |
+| `record_childcare_opening` | `studentId`, `paidThrough`, required `reason`; months through `paidThrough` owe nothing, no receipt is created; replaces the previous opening |
+| `cancel_childcare_charge` | `chargeId`, required `reason`; refused while a receipt pays it (`hasPayments`) |
+
+Months use `YYYY-MM`. A billed month is paid through `record_receipt`: each `childcare` line names a
+`chargeId` and an `amount` up to its `remaining` (`childcareOverpayment` beyond it); pass the child's
+`debtorFamilyId` as `familyId`, `meals: []` and `tuition: 0` for a childcare-only receipt.
+
+**A paper list saying a child is up to date is an opening, not a receipt.** Subscribe the child with
+its own rate and explicit start month, then call `record_childcare_opening` with the last month
+the list says is paid and the list as reason. Recording money today would add it to today's
+takings although nobody handed it over. Billing those months before or after the opening makes no
+difference: they show as billed and settled.
 
 ## Writing: the preview/commit pairs
 
@@ -655,6 +684,16 @@ Its commit refuses with `staleDraft` when the enrollment or the target plan's pr
 preview, `notFound` when the enrollment is no longer open or the plan no longer active, and
 `totalBelowPaid` when a payment banked in between now exceeds the new total.
 
+`move_student_to_class` (`enrollmentId`, or `studentName` and `studentLastname`, plus
+`classPeriodId` from `list_class_periods`) is a direct write, not a pair: it runs the dashboard's
+`reassignClass()` use case, which closes the enrollment's current class assignment and opens one in
+the target class of the same period. Plan, discount, payments and meals are untouched; a student
+already in the target class writes nothing. It is declared whether payments are enabled or not. It
+answers `{ enrollmentId, classPeriodId }`. Refusals: `notFound` (no open enrollment, or the class is
+missing, archived or another school's), `ambiguousEnrollment` (several open enrollments match the
+name: pass the `enrollmentId` read from `find_students`), `periodMismatch`, `classFull`,
+`duplicateEnrollment`, `invalidStatusTransition`, `validationError`.
+
 `class_schedule` enters a whole weekly planning in one transaction, or nothing. `periodId` comes
 from `list_periods`; each line of `slots` carries `className`, `weekday`, `startTime`, `endTime`,
 an optional `description` and `teacherNames` — labels, resolved by the preview against the classes
@@ -710,9 +749,10 @@ A family owes one balance across its children and may settle it in several payme
 `preview_record_payment` defaults what a receipt often omits: the whole remaining balance
 (`nothingDue` when there is none), `CASH`, today. The family may be named by `studentId`.
 
-`cancel_payments` (`paymentIds`) is a direct write, not a pair: it deactivates active manual payments
-of one family, under the family payment lock. Refusals: `notFound`, `onlinePayment` (Stripe),
-`mixedFamilies`.
+`cancel_payments` (`paymentIds`, optional `reason`) is a direct write, not a pair: it runs the
+dashboard's `cancelPayments()` use case, which deactivates active manual payments of one family under
+the family payment lock and records who cancelled and why. Refusals: `notFound`, `onlinePayment`
+(Stripe), `receiptPayment` (use `cancel_receipt`), `mixedFamilies`, `refundExceedsPaid`.
 
 ## The dashboard assistant shares the tools and the drafts
 

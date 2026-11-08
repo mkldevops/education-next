@@ -33,6 +33,7 @@ import { findStudentsFromMcp } from '@/use-cases/mcp/find-students'
 import { getEventFromMcp } from '@/use-cases/mcp/get-event'
 import { listAttendanceCallsFromMcp } from '@/use-cases/mcp/list-attendance-calls'
 import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
+import { moveStudentToClassFromMcp } from '@/use-cases/mcp/move-student-to-class'
 import { createPlanFromMcp, updatePlanFromMcp } from '@/use-cases/mcp/plan-configuration'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
 import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
@@ -64,6 +65,7 @@ import {
   mcpListAttendanceCallsSchema,
   mcpListClassScheduleSlotsSchema,
   mcpListEventsSchema,
+  mcpMoveStudentToClassSchema,
   mcpResourceIdSchema,
   mcpUpdateClassScheduleSlotSchema,
   mcpUpdateEventSchema,
@@ -76,6 +78,7 @@ import {
   previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
 import { updateEventFromMcp } from '@/use-cases/mcp/update-event'
+import { listChildcareTools } from './childcare-tools'
 import { listMealTools } from './meal-tools'
 
 const NO_ARGS = z.object({})
@@ -161,6 +164,7 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
 
   const tools: SchoolTool[] = [
     ...listMealTools(scope),
+    ...listChildcareTools(scope),
     define({
       name: 'describe_school',
       title: 'École courante',
@@ -580,7 +584,11 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         'existante : un élève déjà membre reçoit son inscription sans être recréé. Rend un ' +
         '`draftId`, un `checksum`, le plan résolu, les ' +
         'homonymes trouvés, des avertissements et des `blockers`. Un `blockers` non vide ' +
-        'nomme le champ à corriger et interdit le commit.',
+        'nomme le champ à corriger et interdit le commit. `startMonth` (`YYYY-MM`, pour la ' +
+        "famille ou par élève) inscrit un élève arrivé en cours d'année : seules les " +
+        'échéances de la formule à partir de ce mois sont dues et font le total. Il doit ' +
+        'tomber dans la période de la classe (`startMonthOutsidePeriod`) et la formule ' +
+        'avoir un échéancier (`noPaymentSchedule`).',
       inputSchema: previewEnrollFamilySchema,
       annotations: NON_IDEMPOTENT_WRITE,
       kind: 'draft',
@@ -597,6 +605,25 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       annotations: IDEMPOTENT_COMMIT,
       kind: 'write',
       run: (args) => commitEnrollFamily(scope, args),
+    }),
+    define({
+      name: 'move_student_to_class',
+      title: 'Changer un élève de classe',
+      description:
+        'Déplace une inscription en attente ou active vers une autre classe de la même période, ' +
+        "comme le changement de classe du tableau de bord. L'inscription se désigne par " +
+        "`enrollmentId`, ou par le prénom et le nom de l'élève (`studentName`, " +
+        '`studentLastname`) ; `classPeriodId` vient de `list_class_periods`. La formule, la ' +
+        'remise, les paiements et les repas ne bougent pas. Rend `enrollmentId` et ' +
+        "`classPeriodId` ; un élève déjà dans la classe visée n'écrit rien. Refus : `notFound` " +
+        '(inscription ou classe absente, archivée ou d’une autre école), `ambiguousEnrollment` ' +
+        '(plusieurs inscriptions ouvertes pour ce nom : passer l’`enrollmentId` lu dans ' +
+        '`find_students`), `periodMismatch` (classe d’une autre période), `classFull`, ' +
+        '`duplicateEnrollment`, `invalidStatusTransition`, `validationError`.',
+      inputSchema: mcpMoveStudentToClassSchema,
+      annotations: IDEMPOTENT_OVERWRITE,
+      kind: 'write',
+      run: (args) => moveStudentToClassFromMcp(scope, args),
     }),
     // Déclarés même quand `events_enabled` est éteint, à l'inverse des outils d'argent : le
     // refus `notConfigured` de `createEvent` est ici le contrat, identique à celui de l'action
@@ -681,7 +708,9 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
           "l'identifiant d'un de ses élèves (`studentId`) ou par son nom ; un nom ou un élève " +
           'qui vise plusieurs familles est un `blocker`. Valeurs par défaut : le montant est ' +
           "tout le reste à payer, le moyen `CASH`, la date aujourd'hui — ne les demander que " +
-          "si l'utilisateur veut autre chose. Le montant est réparti sur toute la famille ; " +
+          "si l'utilisateur veut autre chose. `paidAt` porte la date du versement et peut être " +
+          'passée : pour un paiement reçu un autre jour (antidater), passer cette date. ' +
+          'Le montant est réparti sur toute la famille ; ' +
           "quand l'utilisateur dit pour quel enfant la famille paie, passer `target: 'student'` " +
           'avec son `studentId` (son unique inscription payable reçoit tout, et le montant par ' +
           'défaut devient son reste) ou `enrollmentId`. Refus : `overpayment` au-delà du reste ' +
@@ -708,11 +737,16 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'preview_update_enrollment',
         title: "Préparer la modification d'une inscription",
         description:
-          "Change la formule et/ou la remise d'une inscription en attente ou active, sans rien " +
+          "Change la formule, la remise et/ou le mois de début d'une inscription en attente " +
+          'ou active, sans rien ' +
           "écrire. L'inscription se désigne par son identifiant, ou par le prénom et le nom de " +
           "l'élève ; la formule est attendue en libellé. Sans remise, l'inscription garde la " +
           'sienne. Rend le passage « avant → après », le total recalculé et le reste à payer ; ' +
-          'plusieurs inscriptions candidates sont un `blocker` qui les liste.',
+          'plusieurs inscriptions candidates sont un `blocker` qui les liste. `startMonth` ' +
+          '(`YYYY-MM`) fixe le premier mois dû : les échéances antérieures ne sont plus ' +
+          'attendues et sortent du total ; `null` le retire, absent il est gardé. Refusé hors ' +
+          'de la période (`startMonthOutsidePeriod`), sans échéancier (`noPaymentSchedule`), ' +
+          'ou sous le déjà-payé (`totalBelowPaid`).',
         inputSchema: previewUpdateEnrollmentSchema,
         annotations: NON_IDEMPOTENT_WRITE,
         kind: 'draft',
@@ -722,7 +756,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'commit_update_enrollment',
         title: "Engager la modification d'une inscription",
         description:
-          'Applique la formule, la remise et le total déjà prévisualisés. Les paiements ' +
+          'Applique la formule, la remise, le mois de début et le total déjà prévisualisés. ' +
+          'Les paiements ' +
           "restent sur l'inscription. Rejouer le même `draftId` rend le résultat enregistré.",
         inputSchema: commitDraftSchema,
         annotations: IDEMPOTENT_COMMIT,
@@ -747,9 +782,10 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         title: 'Annuler des paiements',
         description:
           "Annule des paiements saisis par erreur : ils sortent des soldes et de l'historique, " +
-          'sans être effacés. Tous doivent appartenir à la même famille ; un paiement en ligne ' +
-          '(Stripe) est refusé, il se rembourse depuis Stripe ; un paiement de caisse aussi, ' +
-          "il s'annule avec son reçu depuis l'écran du reçu.",
+          'sans être effacés. Les identifiants se trouvent avec `get_family_payments`. Tous ' +
+          'doivent appartenir à la même famille ; un paiement en ligne (Stripe) est refusé, il ' +
+          'se rembourse depuis Stripe ; un paiement de caisse aussi, il s’annule avec son reçu ' +
+          '(`cancel_receipt`). `reason`, facultatif, est conservé avec l’auteur de l’annulation.',
         inputSchema: mcpCancelPaymentsSchema,
         annotations: DESTRUCTIVE_WRITE,
         kind: 'write',

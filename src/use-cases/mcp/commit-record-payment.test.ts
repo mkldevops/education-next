@@ -17,6 +17,8 @@ vi.mock('@/gateways/mcp-draft-gateway', () => ({
   mcpDraftGateway: { claim, findById, reclaim, release },
 }))
 vi.mock('@/lib/db', () => ({ db: { $transaction: transaction } }))
+const issueTuitionReceipt = vi.fn()
+vi.mock('@/use-cases/receipts/issue-tuition-receipt', () => ({ issueTuitionReceipt }))
 
 const { commitRecordPayment } = await import('./commit-record-payment')
 
@@ -57,6 +59,7 @@ function enrollment(id: string, totalAmount: number, paid: number[] = []) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  issueTuitionReceipt.mockResolvedValue({ id: 'receipt-1' })
   claim.mockResolvedValue({ count: 1 })
   findById.mockResolvedValue({
     ownerKind: 'MCP_KEY',
@@ -97,7 +100,20 @@ describe('commitRecordPayment', () => {
       familyId: 'family-1',
       amount: 180,
       paymentIds: ['payment-1', 'payment-2'],
+      receiptId: 'receipt-1',
     })
+    expect(issueTuitionReceipt).toHaveBeenCalledWith(
+      tx,
+      'school-1',
+      expect.objectContaining({
+        recordedById: 'user-1',
+        idempotencyKey: `mcp:${input.draftId}`,
+        payments: [
+          { id: 'payment-1', amount: 90 },
+          { id: 'payment-2', amount: 90 },
+        ],
+      })
+    )
   })
 
   it('refuses without claiming the draft when payments are disabled, even a pre-cutoff one', async () => {
@@ -290,7 +306,12 @@ describe('commitRecordPayment', () => {
         enrollmentId: 'enr-1',
         amount: 60,
       })
-      expect(result).toEqual({ familyId: 'family-1', amount: 60, paymentIds: ['payment-1'] })
+      expect(result).toEqual({
+        familyId: 'family-1',
+        amount: 60,
+        paymentIds: ['payment-1'],
+        receiptId: 'receipt-1',
+      })
     })
 
     it('refuses once the targeted enrollment no longer owes the amount', async () => {

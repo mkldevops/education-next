@@ -24,13 +24,19 @@ export async function cancelReceipt(
   const parsed = cancelReceiptSchema.safeParse(input)
   if (!parsed.success) return 'validationError' as const
   const { schoolId, receiptId } = parsed.data
-  if (!(await isMealsEnabled(schoolId, configGw))) return 'mealsDisabled' as const
 
-  const familyId = await receiptGw.findFamilyId(schoolId, receiptId)
-  if (!familyId) return 'notFound' as const
+  const payer = await receiptGw.findPayer(schoolId, receiptId)
+  if (!payer) return 'notFound' as const
+  const { familyId } = payer
+  // Un paiement en ligne se rembourse chez Stripe : son reçu suit le remboursement.
+  if (payer.method === 'STRIPE') return 'onlinePayment' as const
+  // Un reçu d'écolage seul (saisie, assistant, paiement en ligne) s'annule sans le module repas.
+  const hasMeals = payer._count.mealPayments > 0
+  if (hasMeals && !(await isMealsEnabled(schoolId, configGw))) return 'mealsDisabled' as const
 
   return receiptGw.transaction(async (tx) => {
-    if (!(await paymentGateway.lockFamilyForPayment(tx, schoolId, familyId))) {
+    // Un reçu du personnel ne porte que de la cantine : aucune famille à tenir.
+    if (familyId && !(await paymentGateway.lockFamilyForPayment(tx, schoolId, familyId))) {
       return 'notFound' as const
     }
     const receipt = await receiptGw.lockForCancel(tx, schoolId, receiptId)

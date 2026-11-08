@@ -5,7 +5,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { childcareGateway } from '@/gateways/childcare-gateway'
 import type { PrismaClient } from '@/generated/prisma/client'
 import { createUnguardedArchivedClient, db } from '@/lib/db'
+import { listChildcareTools } from '@/mcp/childcare-tools'
 import { billChildcareMonth } from '@/use-cases/childcare/bill-childcare-month'
+import { cancelChildcareCharge } from '@/use-cases/childcare/cancel-childcare-charge'
 import { saveChildcareSubscription } from '@/use-cases/childcare/save-childcare-subscription'
 import { loadMealAccountSummaries } from '@/use-cases/meals/meal-account-summaries'
 import { cancelReceipt } from '@/use-cases/receipts/cancel-receipt'
@@ -14,6 +16,11 @@ import { recordReceipt } from '@/use-cases/receipts/record-receipt'
 const databaseUrl = process.env.DATABASE_URL
 const MONTH = new Date().toISOString().slice(0, 7)
 const TODAY = new Date().toISOString().slice(0, 10)
+const PREVIOUS_MONTH = (() => {
+  const date = new Date(`${MONTH}-01T00:00:00.000Z`)
+  date.setUTCMonth(date.getUTCMonth() - 1)
+  return date.toISOString().slice(0, 7)
+})()
 
 let raw: PrismaClient
 const schools: string[] = []
@@ -290,6 +297,65 @@ describe.skipIf(!databaseUrl)('garderie sur une vraie base', () => {
         await s.pay(family.id, { childcare: [{ chargeId, amount: 1000 }], meals: [meal] })
       ).toBe('notInFamily')
       expect(await raw.receipt.count({ where: { schoolId: s.schoolId } })).toBe(0)
+    }, 30_000)
+
+    it('settles billed months through the MCP opening without any receipt', async () => {
+      const s = await seedSchool()
+      const family = await s.addFamily('A')
+      const child = await s.addChild(family.id, 'Ichat')
+      const tools = listChildcareTools({
+        schoolId: s.schoolId,
+        userId: s.userId,
+        paymentsEnabled: false,
+        owner: { kind: 'MCP_KEY', keyId: 'key-a' },
+      })
+      const call = (name: string, args: unknown) => {
+        const entry = tools.find((tool) => tool.name === name)
+        if (!entry) throw new Error(`Missing tool ${name}`)
+        return entry.run(args)
+      }
+
+      expect(
+        await call('save_childcare_subscription', {
+          studentId: child.id,
+          monthlyAmount: 6000,
+          startMonth: PREVIOUS_MONTH,
+          endMonth: null,
+        })
+      ).toEqual({ success: true })
+      expect(await call('bill_childcare_month', { month: PREVIOUS_MONTH })).toMatchObject({
+        billed: 1,
+      })
+      expect(await call('bill_childcare_month', { month: MONTH })).toMatchObject({ billed: 1 })
+      expect(
+        await call('record_childcare_opening', {
+          studentId: child.id,
+          paidThrough: MONTH,
+          reason: 'Liste papier',
+        })
+      ).toEqual({ success: true })
+
+      const [row] = await childcareGateway.listSubscriptions(s.schoolId, child.id)
+      expect(row.opening).toEqual({ paidThrough: MONTH, reason: 'Liste papier' })
+      expect(row.charges.map((charge) => [charge.month, charge.settled, charge.paid])).toEqual([
+        [PREVIOUS_MONTH, true, 0],
+        [MONTH, true, 0],
+      ])
+      expect(await childcareGateway.listOpenCharges(s.schoolId, [child.id])).toEqual([])
+      expect(await raw.receipt.count({ where: { schoolId: s.schoolId } })).toBe(0)
+
+      const chargeId = row.charges[1].id
+      expect(await s.pay(family.id, { childcare: [{ chargeId, amount: 1000 }] })).toBe(
+        'childcareOverpayment'
+      )
+      expect(
+        await cancelChildcareCharge({
+          schoolId: s.schoolId,
+          cancelledById: s.userId,
+          chargeId,
+          reason: 'erreur',
+        })
+      ).toBe('OK')
     }, 30_000)
 
     it('keeps refusing a new childcare subscription for an archived child', async () => {

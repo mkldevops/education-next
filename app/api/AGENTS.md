@@ -35,6 +35,21 @@ written directly to `better-auth.session_token` is rejected by `auth.api.getSess
 Catch unexpected failures without exposing implementation details. Public passkey authentication is
 not a precedent for making user-data endpoints unauthenticated.
 
+## Other Boundaries
+
+Each route below owns a different authentication model; do not copy one onto another.
+
+- `mcp/route.ts`: bearer credential only (MCP key or OAuth access token), never cookies or
+  `auth.api.getSession()`, so it carries no ambient authority. Keep the address rate limit before any
+  database read, the `isMcpEnabled()` flag, `resolveMcpScope()`, and the per-credential rate limit.
+  `mcp/oauth/*` implements the OAuth registration, token and revoke endpoints.
+- `ai/assistant/route.ts`: same-origin JSON check, session context, then active school admin only.
+- `stripe/webhook/**`: authenticated by the Stripe signature, not a session. Read
+  [`stripe.md`](../../.agents/rules/stripe.md) before changing it.
+- `media/[...key]` and `schools/[slug]/events.ics`: intentionally public. They allow only a fixed key
+  pattern or published data, and answer `404` for an unknown or disabled school rather than revealing
+  its state.
+
 ## Runtime
 
 Keep auth and database routes on the default Node.js runtime. Better Auth, `@prisma/adapter-pg`,

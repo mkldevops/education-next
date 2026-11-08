@@ -78,7 +78,7 @@ export default async function CashierStudentPage({ params }: Props) {
       <div className="max-w-xl">
         <MealPanel
           schoolId={schoolId}
-          studentId={student.id}
+          owner={{ studentId: student.id }}
           locale={locale}
           selectedPeriodId={selectedPeriodId}
           canRecordOpening={isAdmin}

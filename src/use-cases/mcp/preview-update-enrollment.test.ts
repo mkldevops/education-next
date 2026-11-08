@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const findOpenForMcp = vi.fn()
+const findPeriodBounds = vi.fn()
 const listPlans = vi.fn()
 const createDraft = vi.fn()
 
-vi.mock('@/gateways/enrollment-gateway', () => ({ enrollmentGateway: { findOpenForMcp } }))
+vi.mock('@/gateways/enrollment-gateway', () => ({
+  enrollmentGateway: { findOpenForMcp, findPeriodBounds },
+}))
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: vi.fn().mockResolvedValue({ currency: 'XOF' }),
+}))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway: { listPlans } }))
 vi.mock('@/gateways/mcp-draft-gateway', () => ({ mcpDraftGateway: { create: createDraft } }))
 
@@ -23,6 +29,16 @@ const scope = {
 const basic = { id: 'plan-basic', name: 'Forfait Basic 2026/2027', amount: '180' }
 const legacy = { id: 'plan-legacy', name: 'Forfait Basic (2026/2027)', amount: '180' }
 const grand = { id: 'plan-grand', name: 'Forfait Grand élèves 2026/2027', amount: '90' }
+const monthly = {
+  id: 'plan-monthly',
+  name: 'Mensuel 2026/2027',
+  amount: '144000',
+  paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 9, dueDay: 5 },
+}
+const period = {
+  startAt: new Date('2026-09-01T00:00:00Z'),
+  endAt: new Date('2027-06-30T00:00:00Z'),
+}
 
 const enrollment = (overrides: Record<string, unknown> = {}) => ({
   id: 'enr-1',
@@ -45,7 +61,8 @@ const input = {
 beforeEach(() => {
   vi.clearAllMocks()
   findOpenForMcp.mockResolvedValue([enrollment()])
-  listPlans.mockResolvedValue([basic, legacy, grand])
+  findPeriodBounds.mockResolvedValue(period)
+  listPlans.mockResolvedValue([basic, legacy, grand, monthly])
   createDraft.mockResolvedValue({ id: 'draft-3' })
 })
 
@@ -106,6 +123,8 @@ describe('previewUpdateEnrollment', () => {
       plan: { id: 'plan-grand', name: grand.name, amount: 90 },
       discount: 20,
       totalAmount: 70,
+      startMonth: null,
+      planAmountDue: 90,
     })
   })
 
@@ -213,5 +232,89 @@ describe('previewUpdateEnrollment', () => {
     expect(
       await previewUpdateEnrollment(scope, { studentName: 'Nour', studentLastname: 'Mlinde' })
     ).toBe('validationError')
+  })
+})
+
+describe('previewUpdateEnrollment with a start month', () => {
+  const late = (overrides: Record<string, unknown> = {}) =>
+    enrollment({ plan: monthly, totalAmount: 144_000, ...overrides })
+  const { planName: _planName, ...byName } = input
+
+  it('owes only the installments from the start month, showing the total before and after', async () => {
+    findOpenForMcp.mockResolvedValue([late({ payments: [{ amount: 16_000 }] })])
+
+    const result = await previewUpdateEnrollment(scope, { ...byName, startMonth: '2026-10' })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.plan).toMatchObject({
+      before: { totalAmount: 144_000, startMonth: null },
+      after: { totalAmount: 128_000, startMonth: '2026-10', planAmountDue: 128_000 },
+      paid: 16_000,
+      remaining: 112_000,
+    })
+  })
+
+  it('keeps the start month when only the discount changes', async () => {
+    findOpenForMcp.mockResolvedValue([
+      late({ startMonth: new Date('2026-10-01T00:00:00Z'), totalAmount: 128_000 }),
+    ])
+
+    const result = await previewUpdateEnrollment(scope, { ...byName, discount: 8_000 })
+    assertPreview(result)
+
+    expect(result.plan?.after).toMatchObject({ startMonth: '2026-10', totalAmount: 120_000 })
+  })
+
+  it('clears the start month back to the full plan', async () => {
+    findOpenForMcp.mockResolvedValue([
+      late({ startMonth: new Date('2026-10-01T00:00:00Z'), totalAmount: 128_000 }),
+    ])
+
+    const result = await previewUpdateEnrollment(scope, { ...byName, startMonth: null })
+    assertPreview(result)
+
+    expect(result.plan?.after).toMatchObject({ startMonth: null, totalAmount: 144_000 })
+    expect(findPeriodBounds).not.toHaveBeenCalled()
+  })
+
+  it('blocks a month outside the period', async () => {
+    findOpenForMcp.mockResolvedValue([late()])
+
+    const result = await previewUpdateEnrollment(scope, { ...byName, startMonth: '2027-08' })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'startMonth', value: '2027-08', reason: 'startMonthOutsidePeriod' },
+    ])
+    expect(createDraft).not.toHaveBeenCalled()
+  })
+
+  it('blocks a start month that would bring the total below what was paid', async () => {
+    findOpenForMcp.mockResolvedValue([late({ payments: [{ amount: 140_000 }] })])
+
+    const result = await previewUpdateEnrollment(scope, { ...byName, startMonth: '2026-10' })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'startMonth', value: '2026-10', reason: 'totalBelowPaid' },
+    ])
+  })
+
+  it('blocks the same month as a no-op', async () => {
+    findOpenForMcp.mockResolvedValue([
+      late({ startMonth: new Date('2026-10-01T00:00:00Z'), totalAmount: 128_000 }),
+    ])
+
+    const result = await previewUpdateEnrollment(scope, { ...byName, startMonth: '2026-10' })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([{ field: 'startMonth', value: '2026-10', reason: 'noChange' }])
+  })
+
+  it('rejects a malformed month', async () => {
+    expect(await previewUpdateEnrollment(scope, { ...byName, startMonth: '2026-13' })).toBe(
+      'validationError'
+    )
   })
 })

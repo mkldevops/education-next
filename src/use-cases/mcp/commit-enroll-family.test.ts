@@ -24,6 +24,8 @@ vi.mock('@/gateways/mcp-draft-gateway', () => ({
   mcpDraftGateway: { claim, findById, reclaim, release },
 }))
 vi.mock('@/lib/db', () => ({ db: { $transaction: transaction } }))
+const issueTuitionReceipt = vi.fn()
+vi.mock('@/use-cases/receipts/issue-tuition-receipt', () => ({ issueTuitionReceipt }))
 
 const { commitEnrollFamily } = await import('./commit-enroll-family')
 
@@ -66,6 +68,7 @@ const input = { draftId: '11111111-1111-4111-8111-111111111111', checksum: 'abcd
 
 beforeEach(() => {
   vi.clearAllMocks()
+  issueTuitionReceipt.mockResolvedValue({ id: 'receipt-1' })
   claim.mockResolvedValue({ count: 1 })
   reclaim.mockResolvedValue({ count: 0 })
   findById.mockResolvedValue({
@@ -109,7 +112,18 @@ describe('commitEnrollFamily', () => {
       studentIds: ['student-1'],
       enrollmentIds: ['enrollment-1'],
       paymentIds: ['payment-1'],
+      receiptId: 'receipt-1',
     })
+    expect(issueTuitionReceipt).toHaveBeenCalledWith(
+      tx,
+      'school-1',
+      expect.objectContaining({
+        familyId: 'family-1',
+        recordedById: 'user-1',
+        idempotencyKey: `mcp:${input.draftId}`,
+        payments: [{ id: 'payment-1', amount: 100 }],
+      })
+    )
   })
 
   it('creates the enrollment active, without a separate activation step', async () => {
@@ -117,6 +131,38 @@ describe('commitEnrollFamily', () => {
 
     expect(tx.enrollment.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: 'ACTIVE' }) })
+    )
+  })
+
+  it('writes the start month the preview resolved, and none for an older draft', async () => {
+    await commitEnrollFamily(scope, input)
+    expect(tx.enrollment.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ startMonth: null }) })
+    )
+
+    vi.clearAllMocks()
+    transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
+    claim.mockResolvedValue({ count: 1 })
+    tx.person.create
+      .mockResolvedValueOnce({ id: 'person-parent' })
+      .mockResolvedValueOnce({ id: 'person-student' })
+    findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
+      keyId: 'key-1',
+      userId: null,
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [{ ...resolved.students[0], startMonth: '2026-10' }],
+      },
+    })
+
+    await commitEnrollFamily(scope, input)
+    expect(tx.enrollment.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ startMonth: new Date('2026-10-01T00:00:00.000Z') }),
+      })
     )
   })
 

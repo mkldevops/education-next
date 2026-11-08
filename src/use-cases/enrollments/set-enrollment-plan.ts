@@ -1,11 +1,12 @@
 import type { z } from 'zod'
-import { calculateTotalAmount } from '@/domain/enrollment'
+import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { planGateway } from '@/gateways/plan-gateway'
 import { db } from '@/lib/db'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { readLockedPaidAmount } from './locked-paid-amount'
+import { resolveOwedPlanAmount } from './pricing'
 import { setEnrollmentPlanSchema } from './schemas'
 
 type Input = z.infer<typeof setEnrollmentPlanSchema>
@@ -35,7 +36,19 @@ export async function setEnrollmentPlan(input: Input) {
   if (!plan) return 'notFound' as const
   if (plan.name === UNPRICED_PLAN_NAME) return 'unpricedPlan' as const
 
-  const totalAmount = calculateTotalAmount(Number(plan.amount), Number(enrollment.discount))
+  // Le mois de début suit l'inscription : la nouvelle formule se tarife aussi sur ses
+  // seules échéances dues à partir de ce mois.
+  const planAmount = await resolveOwedPlanAmount(
+    schoolId,
+    enrollmentId,
+    plan,
+    enrollment.startMonth
+  )
+  if (typeof planAmount === 'string') return planAmount
+  if (enrollment.startMonth && validateDiscount(planAmount, Number(enrollment.discount)) !== 'OK') {
+    return 'discountExceedsPlan' as const
+  }
+  const totalAmount = calculateTotalAmount(planAmount, Number(enrollment.discount))
 
   // Le solde ne descend jamais sous zéro : un total inférieur à ce qui est déjà encaissé
   // ferait disparaître un trop-perçu que personne n'a décidé de rembourser — même règle

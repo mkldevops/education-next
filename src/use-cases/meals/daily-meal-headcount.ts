@@ -3,7 +3,6 @@ import { type MealHeadcount, mealHeadcount } from '@/domain/meal-headcount'
 import { isSchoolClosed } from '@/domain/school-closure'
 import { configGateway } from '@/gateways/config-gateway'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
-import { staffMealGateway } from '@/gateways/staff-meal-gateway'
 import { MealService } from '@/generated/prisma/enums'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { dailyMealHeadcountSchema } from './schemas'
@@ -13,7 +12,6 @@ type Input = z.infer<typeof dailyMealHeadcountSchema>
 /** Repas servis un jour, par service : élèves et personnel comptés à part (#545). */
 export async function dailyMealHeadcount(
   input: Input,
-  staffGw = staffMealGateway,
   accountGw = mealAccountGateway,
   configGw = configGateway
 ) {
@@ -28,11 +26,8 @@ export async function dailyMealHeadcount(
 
   const counts = {} as Record<MealService, MealHeadcount>
   for (const service of Object.values(MealService)) {
-    const [{ segments, absentAccountIds }, staff] = await Promise.all([
-      accountGw.listStudentDay(schoolId, service, day),
-      staffGw.listRhythms(schoolId, service),
-    ])
-    counts[service] = mealHeadcount({ day, isClosed, segments, absentAccountIds, staff })
+    const { segments, absentAccountIds } = await accountGw.listDay(schoolId, service, day)
+    counts[service] = mealHeadcount({ day, isClosed, segments, absentAccountIds })
   }
   return counts
 }

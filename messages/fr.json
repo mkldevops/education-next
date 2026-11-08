@@ -214,6 +214,8 @@
     "quickActions": {
       "newFamily": "Nouvelle famille",
       "newEnrollment": "Inscrire un élève",
+      "newEnrollmentShort": "Inscrire",
+      "newFamilyShort": "Famille",
       "newPayment": "Saisir un paiement",
       "newStudent": "Ajouter un élève"
     },
@@ -957,7 +959,11 @@
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école.",
             "validationError": "Vérifiez les informations saisies.",
             "notFound": "Inscription ou formule introuvable.",
-            "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif."
+            "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif.",
+            "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "discountExceedsPlan": "La réduction dépasse la part due de la formule"
           }
         },
         "description": "Inscriptions de la période, à suivre et régler.",
@@ -1080,7 +1086,9 @@
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Famille introuvable",
             "enrollmentNotPayable": "Cette inscription n'appartient pas à la famille ou n'attend plus de règlement"
-          }
+          },
+          "generateReceipt": "Générer un reçu",
+          "generateReceiptHint": "Numéroté, à imprimer ou partager. Décochez pour en générer un plus tard depuis la fiche famille."
         },
         "description": "Règlements reçus, chèques à encaisser et reste dû."
       },
@@ -1218,47 +1226,12 @@
         },
         "debtorsLink": "Impayés et relances",
         "headcount": {
-          "today": "Aujourd'hui : {students, plural, =0 {aucun élève} one {# élève} other {# élèves}} · {staff, plural, =0 {aucun membre du personnel} one {# membre du personnel} other {# membres du personnel}}{free, plural, =0 {} other { (dont # gratuit{free, plural, one {} other {s}})}}"
+          "today": "Aujourd'hui : {students, plural, =0 {aucun élève} one {# élève} other {# élèves}} · {staff, plural, =0 {aucun membre du personnel} one {# membre du personnel} other {# membres du personnel}}{free, plural, =0 {} other { (dont # exonéré{free, plural, one {} other {s}})}}"
         },
         "staff": {
           "title": "Cantine du personnel",
-          "intro": "Repas comptés dans les effectifs du jour, à part des élèves. Rien n'est facturé.",
-          "empty": "Aucun membre du personnel inscrit.",
-          "free": "Gratuit",
-          "add": {
-            "title": "Inscrire un membre du personnel",
-            "teacher": "Membre du personnel",
-            "teacherPlaceholder": "Choisir…",
-            "teacherHint": "Le personnel vient de la liste des enseignants. Inscrire de nouveau un membre remplace ses jours.",
-            "service": "Service",
-            "weekdays": "Jours de repas",
-            "isFree": "Repas gratuits",
-            "isFreeHint": "Gratuité accordée par l'école, comptée à part.",
-            "cancel": "Annuler",
-            "submit": "Enregistrer",
-            "success": "Repas du personnel enregistrés",
-            "error": "Erreur lors de l'enregistrement",
-            "errors": {
-              "validationError": "Choisissez un membre et au moins un jour",
-              "invalidWeekdays": "Cochez au moins un jour proposé par le service",
-              "serviceDisabled": "Ce service n'est pas proposé",
-              "notFound": "Membre du personnel introuvable",
-              "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
-            }
-          },
-          "remove": {
-            "trigger": "Retirer",
-            "title": "Retirer {name} ?",
-            "description": "Ses repas ne seront plus comptés à partir d'aujourd'hui.",
-            "confirm": "Retirer",
-            "cancel": "Annuler",
-            "success": "Repas du personnel retirés",
-            "error": "Erreur lors du retrait",
-            "errors": {
-              "notSubscribed": "Ce membre ne mange pas à ce service",
-              "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école"
-            }
-          }
+          "intro": "Le personnel mange au tarif cantine des élèves et paie en caisse. Les membres exonérés sont comptés sans être facturés.",
+          "open": "Gérer la cantine du personnel"
         }
       },
       "cashier": {
@@ -1270,8 +1243,6 @@
         },
         "intro": "Encaissez la cantine, le goûter, la garderie et l'écolage d'une famille en une fois, avec un reçu numéroté.",
         "search": "Nom de la famille ou d’un enfant",
-        "searchSubmit": "Rechercher",
-        "noResult": "Aucune famille trouvée",
         "noFamily": "Famille introuvable",
         "viewFamily": "Voir la famille",
         "noLines": "Aucun enfant de cette famille n'a de cantine, de goûter ou de garderie à encaisser.",
@@ -1322,8 +1293,8 @@
           "heading": "Reçu {number}",
           "back": "Retour à la caisse",
           "print": "Imprimer",
-          "share": "Partager",
           "family": "Famille",
+          "staff": "Personnel",
           "method": "Paiement",
           "recordedBy": "Encaissé par",
           "tuition": "Écolage",
@@ -1335,7 +1306,7 @@
           "cancelled": "Annulé",
           "cancelledReason": "Annulé : {reason}",
           "shareHeader": "{school} — reçu {number}",
-          "shareFamily": "Famille {family}, le {date}",
+          "sharePayer": "{label} {payer}, le {date}",
           "shareTotal": "Total : {amount} ({method})",
           "cancel": {
             "trigger": "Annuler le reçu",
@@ -1350,8 +1321,31 @@
               "notFound": "Reçu introuvable",
               "alreadyCancelled": "Ce reçu est déjà annulé",
               "refundExceedsPaid": "L'écolage de ce reçu a déjà été remboursé en partie : annulez d'abord ce remboursement",
-              "validationError": "Indiquez un motif"
+              "validationError": "Indiquez un motif",
+              "onlinePayment": "Un paiement en ligne se rembourse depuis Stripe",
+              "mealsDisabled": "Le module repas est désactivé : ce reçu ne peut pas être annulé"
             }
+          },
+          "onlinePayment": "Paiement en ligne",
+          "backToFamily": "Fiche famille",
+          "shareMenu": {
+            "whatsapp": "WhatsApp",
+            "copyLink": "Copier le lien",
+            "linkCopied": "Lien copié",
+            "copyError": "Copie impossible : sélectionnez le lien à la main",
+            "sendEmail": "Envoyer par e-mail",
+            "emailSent": "Reçu envoyé aux parents",
+            "error": "Erreur lors de l'envoi",
+            "errors": {
+              "noRecipient": "Aucun parent de la famille n'a d'adresse e-mail",
+              "emailError": "L'e-mail n'a pas pu partir, réessayez",
+              "notFound": "Reçu introuvable",
+              "cancelled": "Ce reçu est annulé"
+            },
+            "trigger": "Partager",
+            "title": "Partager le reçu",
+            "description": "La famille ouvre le reçu par ce lien, sans se connecter.",
+            "link": "Lien du reçu"
           }
         },
         "day": {
@@ -1390,7 +1384,93 @@
           "coveredLeft": "{days, plural, =0 {plus aucun jour couvert} one {encore # jour couvert} other {encore # jours couverts}}",
           "dueDetail": "{days, plural, one {# jour} other {# jours}} · {amount}",
           "collect": "Encaisser"
-        }
+        },
+        "staff": {
+          "title": "Personnel",
+          "sheetTitle": "Cantine du personnel",
+          "intro": "Cantine des enseignants et du personnel : jours, encaissements et repas du jour. Les exemptés mangent sans être facturés.",
+          "counts": {
+            "subscribed": "Inscrits",
+            "exempt": "Exemptés",
+            "eatsToday": "Mangent aujourd'hui"
+          },
+          "empty": "Aucun enseignant. Ajoutez le personnel dans Enseignants pour l'inscrire à la cantine.",
+          "exemptBadge": "Exempté",
+          "inactiveBadge": "Désactivé",
+          "noCanteen": "Pas inscrit à la cantine",
+          "paidThrough": "Payé jusqu'au {date}",
+          "nothingPaid": "Rien de payé",
+          "due": "{days, plural, one {# jour dû} other {# jours dus}} ({amount})",
+          "exemptHint": "Exempté : ses repas sont comptés mais jamais facturés.",
+          "inactiveHint": "Enseignant désactivé : il ne peut plus être inscrit ni encaissé.",
+          "collect": "Encaisser la cantine",
+          "amount": "Montant",
+          "error": "Erreur lors de l'encaissement",
+          "errors": {
+            "validationError": "Vérifiez le montant saisi",
+            "mealsDisabled": "La cantine et le goûter sont désactivés pour cette école",
+            "notFound": "Enseignant introuvable",
+            "exempt": "Ce membre du personnel est exempté : sa cantine ne se paie pas",
+            "notSubscribed": "Ce membre du personnel n'est pas inscrit à la cantine",
+            "noPrice": "Aucun tarif cantine en vigueur aujourd'hui",
+            "staleState": "Un autre encaissement vient de passer : les montants ont été actualisés, vérifiez avant de valider",
+            "idempotencyConflict": "Un reçu a déjà été émis pour un encaissement précédent : vérifiez-le avant de recommencer"
+          },
+          "dialog": {
+            "editTitle": "Exonération",
+            "mealExempt": "Exempté de paiement",
+            "mealExemptHint": "Ses repas sont comptés mais jamais facturés.",
+            "cancel": "Annuler",
+            "submit": "Enregistrer",
+            "success": "Exonération enregistrée",
+            "error": "Erreur lors de l'enregistrement",
+            "errors": {
+              "validationError": "Vérifiez les informations saisies",
+              "notFound": "Enseignant introuvable"
+            }
+          }
+        },
+        "searchPrompt": "Quelle famille vient payer ?",
+        "searchHelp": "Tapez le nom de la famille ou d'un enfant : les résultats s'affichent pendant la saisie.",
+        "searchHint": "↑ ↓ pour choisir, Entrée pour ouvrir, / pour revenir à la recherche.",
+        "noResultFor": "Aucune famille pour « {query} »",
+        "noResultTips": {
+          "child": "Essayez le prénom ou le nom d'un enfant.",
+          "active": "Seules les familles actives apparaissent.",
+          "families": "Chercher dans la liste des familles"
+        },
+        "today": "Aujourd'hui · {count, plural, =0 {aucun reçu} one {# reçu} other {# reçus}}",
+        "recent": "Servies aujourd’hui",
+        "recentEmpty": "Aucune famille servie aujourd'hui.",
+        "changeFamily": "Changer de famille",
+        "tabs": {
+          "collect": "Encaisser"
+        },
+        "groups": {
+          "meals": "Cantine et goûter",
+          "due": "Dû : {amount}"
+        },
+        "previewShift": "Payé jusqu'au {from} → {to}",
+        "previewFirst": "Payé jusqu'au {to}",
+        "previewDays": "+{days, plural, one {# jour} other {# jours}}",
+        "panel": {
+          "title": "Reçu",
+          "empty": "Choisissez un montant à gauche pour le voir ici.",
+          "total": "Total",
+          "tendered": "Montant reçu",
+          "change": "À rendre",
+          "missing": "Manque",
+          "shortcut": "Ctrl + Entrée pour encaisser",
+          "exact": "Montant exact"
+        },
+        "submitAmount": "Encaisser {amount}",
+        "done": {
+          "title": "{amount} encaissés",
+          "detail": "{family} · {method} · reçu {number}",
+          "view": "Voir et imprimer le reçu",
+          "next": "Famille suivante : cherchez-la ci-dessous."
+        },
+        "tuitionUpToDate": "À jour, rien à encaisser"
       },
       "childcare": {
         "title": "Garderie",
@@ -1403,6 +1483,7 @@
         "empty": "Aucun enfant en garderie. Recherchez un élève pour l'ajouter.",
         "archived": "archivé",
         "noFamily": "Sans famille redevable",
+        "opening": "Réglé avant l’application jusqu’à {month} inclus ({reason})",
         "perMonth": "{amount} par mois",
         "period": {
           "open": "depuis {start}",
@@ -1537,6 +1618,16 @@
             "description": "Interne : accessible aux membres connectés de l'école. Public : accessible depuis la page publique de l'école.",
             "internal": "Interne",
             "public": "Publique"
+          },
+          "attendance_entry_mode": {
+            "label": "Mode de saisie de l'appel",
+            "description": "Liste : toute la classe sur un écran, idéal pour les grands effectifs. Un par un : une fiche par élève.",
+            "list": "Liste",
+            "oneByOne": "Un par un"
+          },
+          "attendance_absence_reason_required": {
+            "label": "Motif d'absence obligatoire",
+            "description": "Un appel ne peut être validé tant qu'une absence n'a pas de motif."
           }
         },
         "theme": {
@@ -1696,6 +1787,34 @@
             "copy": "Copier",
             "copied": "URL du webhook copiée",
             "copyFailed": "Impossible de copier l'URL"
+          }
+        },
+        "absenceReasons": {
+          "title": "Motifs d'absence",
+          "description": "Motifs proposés à l'enseignant lorsqu'il marque un élève absent. Archiver un motif le retire de la saisie sans modifier les appels passés.",
+          "empty": "Aucun motif configuré.",
+          "label": "Libellé du motif",
+          "justified": "Justifiée",
+          "moveUp": "Monter « {label} »",
+          "moveDown": "Descendre « {label} »",
+          "archive": "Archiver",
+          "confirmArchive": {
+            "title": "Archiver « {label} » ?",
+            "description": "Le motif ne sera plus proposé. Les appels qui l'utilisent le conservent.",
+            "confirm": "Archiver",
+            "cancel": "Annuler"
+          },
+          "newLabel": "Nouveau motif",
+          "placeholder": "Ex. Rendez-vous médical",
+          "add": "Ajouter",
+          "added": "Motif ajouté",
+          "error": "Une erreur est survenue",
+          "errors": {
+            "validationError": "Libellé invalide",
+            "tooManyReasons": "Nombre maximal de motifs atteint",
+            "labelTaken": "Ce motif existe déjà",
+            "notFound": "Motif introuvable",
+            "staleOrder": "La liste a changé, rechargez la page"
           }
         }
       },
@@ -1881,7 +2000,43 @@
             "CHECK": "Chèque",
             "MOBILE_MONEY": "Mobile money",
             "STRIPE": "Stripe"
-          }
+          },
+          "actions": "Actions",
+          "cancel": {
+            "trigger": "Annuler le paiement",
+            "title": "Annuler ce paiement ?",
+            "description": "Le paiement de {amount} sort de l'historique et le reste dû de la famille augmente de {amount}. Il n'est pas effacé : l'annulation garde son auteur et son motif.",
+            "refundDescription": "Le remboursement de {amount} sort de l'historique et le reste dû de la famille diminue de {amount}. Il n'est pas effacé : l'annulation garde son auteur et son motif.",
+            "reason": "Motif (facultatif)",
+            "submit": "Annuler le paiement",
+            "cancel": "Retour",
+            "success": "Paiement annulé",
+            "error": "Erreur lors de l'annulation",
+            "onlineHint": "Paiement en ligne : remboursement depuis Stripe",
+            "errors": {
+              "notFound": "Ce paiement n'existe plus ou a déjà été annulé",
+              "onlinePayment": "Un paiement en ligne se rembourse depuis Stripe",
+              "receiptPayment": "Un paiement avec reçu s'annule avec son reçu",
+              "mixedFamilies": "Ces paiements n'appartiennent pas à la même famille",
+              "refundExceedsPaid": "Un remboursement actif dépasserait ce qui resterait payé : annulez d'abord ce remboursement",
+              "paymentsDisabled": "Les paiements sont désactivés pour cette école",
+              "validationError": "Le motif ne doit pas dépasser 250 caractères"
+            }
+          },
+          "viewReceipt": "Voir le reçu",
+          "issueReceipt": {
+            "trigger": "Émettre le reçu",
+            "success": "Reçu généré",
+            "error": "Erreur lors de la génération du reçu",
+            "errors": {
+              "notFound": "Ce paiement n'existe plus ou a été annulé",
+              "alreadyIssued": "Ce paiement a déjà un reçu",
+              "notReceivable": "Aucun reçu possible pour ce paiement",
+              "validationError": "Paiement invalide",
+              "paymentsDisabled": "Les paiements sont désactivés pour cette école"
+            }
+          },
+          "cancelReceipt": "Annuler le reçu"
         },
         "relationType": {
           "PARENT": "Parent",
@@ -2027,6 +2182,8 @@
         "pricing": "Tarification",
         "totalAmount": "Montant total",
         "discount": "Réduction",
+        "startMonth": "Début des échéances",
+        "startMonthDefault": "Début de la période",
         "totalPaid": "Total payé",
         "remaining": "Restant dû",
         "balanceBadge": "{amount} restant",
@@ -2091,9 +2248,31 @@
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
             "totalBelowPaid": "Le montant dû serait inférieur à ce qui a déjà été payé sur cette inscription",
-            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois"
           },
           "totalAmount": "Montant final dû ({currency})"
+        },
+        "setStartMonth": {
+          "title": "Mois de début",
+          "label": "Premier mois dû",
+          "hint": "Les échéances antérieures ne sont ni attendues ni comptées dans le total. Laissez vide pour un début avec la période.",
+          "cancel": "Annuler",
+          "submit": "Enregistrer",
+          "success": "Mois de début enregistré",
+          "error": "Erreur lors de l'enregistrement",
+          "errors": {
+            "discountExceedsPlan": "La réduction dépasse la part due de la formule",
+            "notFound": "Inscription introuvable",
+            "validationError": "Vérifiez le mois saisi",
+            "totalBelowPaid": "Le nouveau total serait inférieur à ce qui a déjà été payé sur cette inscription",
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois"
+          }
         }
       },
       "users": {
@@ -2463,7 +2642,9 @@
           "attendanceClosed": "L’école est fermée à cette date.",
           "sessionCancelled": "Cette séance est annulée.",
           "unexpected": "L’enregistrement a échoué. Réessayez.",
-          "invalidTransition": "L’état de cette séance a changé entre-temps. Actualisez la page puis réessayez."
+          "invalidTransition": "L’état de cette séance a changé entre-temps. Actualisez la page puis réessayez.",
+          "absenceReasonMissing": "Indiquez le motif de chaque absence avant de valider.",
+          "absenceReasonNotFound": "Ce motif n’est plus proposé. Choisissez-en un autre."
         },
         "returnTracking": "Retour au suivi des appels",
         "lateMinutesInvalid": "Le retard doit être un nombre entier de minutes entre 0 et 1440.",
@@ -2472,6 +2653,25 @@
           "description": "La séance ne sera plus comptée parmi les appels attendus. Vous pourrez la rétablir depuis le suivi des appels.",
           "confirm": "Annuler la séance",
           "dismiss": "Conserver la séance"
+        },
+        "reasons": {
+          "title": "Motif",
+          "missing": "Motif obligatoire",
+          "missingWarning": "{count} absence(s) sans motif. Le motif est obligatoire pour valider."
+        },
+        "list": {
+          "label": "Liste des élèves",
+          "toRecord": "À pointer",
+          "search": "Rechercher un élève",
+          "closeSearch": "Fermer la recherche",
+          "searchPlaceholder": "Nom ou prénom…",
+          "noMatch": "Aucun élève ne correspond.",
+          "reasonMissing": "Motif manquant",
+          "lateBy": "{minutes} min de retard",
+          "otherMinutes": "Autre…",
+          "addNote": "Ajouter une note",
+          "markRemaining": "{count, plural, one {L’élève restant est présent} other {Les # élèves restants sont présents}}",
+          "finish": "Valider l’appel · {absent} abs. · {late} ret."
         }
       },
       "teachers": {
@@ -2796,7 +2996,8 @@
           "copy": "Copier le lien public",
           "copied": "Lien copié",
           "copiedPrivate": "Lien copié. La page reste privée tant que l'événement n'est pas public et publié.",
-          "copyFailed": "Impossible de copier le lien"
+          "copyFailed": "Impossible de copier le lien",
+          "calendar": "Calendrier public"
         }
       },
       "authSettings": {
@@ -3806,6 +4007,13 @@
       "cta": "Confirmer la nouvelle adresse",
       "notice": "Après confirmation, la connexion se fera avec l'adresse {newEmail}.",
       "footer": "Message automatique. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email et changez votre mot de passe."
+    },
+    "receipt": {
+      "subject": "Reçu {number} — {schoolName}",
+      "heading": "Votre reçu {number}",
+      "body": "{schoolName} a bien reçu votre paiement de {total} le {date}. Le reçu est disponible en ligne, à consulter ou imprimer.",
+      "cta": "Voir le reçu",
+      "footer": "Message automatique envoyé par {schoolName}. Le lien reste valable tant que le reçu n'est pas annulé."
     }
   },
   "publicEvent": {
@@ -3834,7 +4042,10 @@
       "stepSafari": "Ouvrez cette page dans Safari.",
       "stepShare": "Touchez le bouton Partager.",
       "stepAdd": "Choisissez « Sur l’écran d’accueil », puis touchez Ajouter.",
-      "close": "Fermer"
+      "close": "Fermer",
+      "popupTitle": "Installer l’application",
+      "popupDescription": "Retrouvez l’école en un geste depuis votre écran d’accueil, comme une application.",
+      "later": "Plus tard"
     }
   }
 }

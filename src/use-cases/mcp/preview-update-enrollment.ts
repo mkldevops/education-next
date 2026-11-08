@@ -1,9 +1,11 @@
 import type { z } from 'zod'
 import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import type { McpFinding } from '@/domain/mcp-draft'
+import { startMonthFromDate } from '@/domain/payment-schedule'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { roundHalfUp } from '@/lib/decimal'
+import { resolveOwedPlanAmount } from '@/use-cases/enrollments/pricing'
 import { blockedPreview, saveDraftPreview } from './draft-response'
 import type { DraftScope } from './draft-scope'
 import { matchByName } from './match-by-name'
@@ -72,9 +74,11 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
     },
     discount: Number(enrollment.discount),
     totalAmount: Number(enrollment.totalAmount),
+    startMonth: startMonthFromDate(enrollment.startMonth),
   }
 
   let plan = before.plan
+  let paymentSchedule: unknown = enrollment.plan.paymentSchedule
   if (data.planName) {
     const found = matchByName(await mcpReadGateway.listPlans(schoolId), data.planName)
     if (found.length !== 1) {
@@ -86,26 +90,51 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
       return nothing
     }
     plan = { id: found[0].id, name: found[0].name, amount: Number(found[0].amount) }
+    paymentSchedule = found[0].paymentSchedule
   }
+
+  // Le mois de début suit l'inscription quand il n'est pas fourni : changer de formule ou
+  // de remise garde le prorata déjà décidé.
+  const startMonth = data.startMonth === undefined ? before.startMonth : data.startMonth
 
   // Sans remise lue, celle de l'inscription suit la nouvelle formule : changer de forfait
   // ne doit pas effacer en silence une remise accordée.
   let discount = data.discount ?? before.discount
-  let changedField: 'totalAmount' | 'planName' | 'discount'
+  let changedField: 'totalAmount' | 'planName' | 'discount' | 'startMonth'
   let changedValue: string
   if (data.totalAmount !== undefined) {
     changedField = 'totalAmount'
     changedValue = String(data.totalAmount)
-  } else if (data.discount === undefined) {
+  } else if (data.discount !== undefined) {
+    changedField = 'discount'
+    changedValue = String(discount)
+  } else if (data.planName !== undefined) {
     changedField = 'planName'
     changedValue = plan.name
   } else {
-    changedField = 'discount'
-    changedValue = String(discount)
+    changedField = 'startMonth'
+    changedValue = String(startMonth)
+  }
+
+  // La part de la formule due à partir du mois de début remplace son prix dans les règles
+  // de total ci-dessous ; sans mois de début, c'est le prix de la formule.
+  const planAmountDue = await resolveOwedPlanAmount(
+    schoolId,
+    enrollment.id,
+    { amount: plan.amount, paymentSchedule },
+    startMonth
+  )
+  if (typeof planAmountDue === 'string') {
+    blockers.push({
+      field: data.startMonth === undefined ? changedField : 'startMonth',
+      value: data.startMonth === undefined ? changedValue : String(startMonth),
+      reason: planAmountDue,
+    })
+    return nothing
   }
 
   if (data.totalAmount !== undefined) {
-    const pricing = pricingFromTotalAmount(plan.amount, data.totalAmount)
+    const pricing = pricingFromTotalAmount(planAmountDue, data.totalAmount)
     if (typeof pricing === 'string') {
       blockers.push({
         field: 'totalAmount',
@@ -117,12 +146,12 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
     discount = pricing.discount
   }
 
-  if (validateDiscount(plan.amount, discount) !== 'OK') {
+  if (validateDiscount(planAmountDue, discount) !== 'OK') {
     blockers.push({ field: 'discount', value: String(discount), reason: 'discountExceedsPlan' })
     return nothing
   }
 
-  const totalAmount = data.totalAmount ?? calculateTotalAmount(plan.amount, discount)
+  const totalAmount = data.totalAmount ?? calculateTotalAmount(planAmountDue, discount)
   const paid = paidAmount(enrollment.payments)
 
   // Un total recalculé ne se compare pas au total stocké seul : une formule dont le prix a
@@ -130,7 +159,8 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
   if (
     plan.id === before.plan.id &&
     discount === before.discount &&
-    totalAmount === before.totalAmount
+    totalAmount === before.totalAmount &&
+    startMonth === before.startMonth
   ) {
     blockers.push({ field: changedField, value: changedValue, reason: 'noChange' })
     return nothing
@@ -147,7 +177,7 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
     tool: UPDATE_ENROLLMENT_TOOL,
     enrollment: describe(enrollment),
     before,
-    after: { plan, discount, totalAmount },
+    after: { plan, discount, totalAmount, startMonth, planAmountDue },
     paid,
     remaining: roundHalfUp(totalAmount - paid),
   }

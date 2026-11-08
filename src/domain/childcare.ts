@@ -36,6 +36,23 @@ export function chargeRemaining(amount: number, paid: number) {
   return Math.max(0, roundCents(amount - paid))
 }
 
+/** Un mois au plus tard égal à la reprise a été réglé avant l'application. */
+export function settledByOpening(month: string, openingPaidThrough: string | null) {
+  return openingPaidThrough !== null && month <= openingPaidThrough
+}
+
+type ChargeState = { amount: number; paid: number; settled?: boolean }
+
+/** Reste dû d'un mois : rien sur un mois réglé par la reprise, quoi qu'aient payé ses reçus. */
+export function chargeLeft(charge: ChargeState) {
+  return charge.settled ? 0 : chargeRemaining(charge.amount, charge.paid)
+}
+
+/** Réglé sur un mois : la reprise le solde entier, sans créer d'encaissement. */
+function chargeSettled(charge: ChargeState) {
+  return charge.settled ? Math.max(charge.amount, charge.paid) : charge.paid
+}
+
 /** Une ligne de reçu ne peut pas dépasser ce qui reste dû sur son mois. */
 export function exceedsCharge(amount: number, remaining: number) {
   return Math.round(amount * 100) > Math.round(remaining * 100)
@@ -74,15 +91,11 @@ export function planChildcareBilling<
 }
 
 /** Totaux d'un enfant : un mois annulé ne compte plus. */
-export function summarizeChildcare(
-  charges: ReadonlyArray<{ amount: number; paid: number; cancelled: boolean }>
-) {
+export function summarizeChildcare(charges: ReadonlyArray<ChargeState & { cancelled: boolean }>) {
   const live = charges.filter((charge) => !charge.cancelled)
   return {
     billed: roundCents(live.reduce((sum, charge) => sum + charge.amount, 0)),
-    paid: roundCents(live.reduce((sum, charge) => sum + charge.paid, 0)),
-    remaining: roundCents(
-      live.reduce((sum, charge) => sum + chargeRemaining(charge.amount, charge.paid), 0)
-    ),
+    paid: roundCents(live.reduce((sum, charge) => sum + chargeSettled(charge), 0)),
+    remaining: roundCents(live.reduce((sum, charge) => sum + chargeLeft(charge), 0)),
   }
 }

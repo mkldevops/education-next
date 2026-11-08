@@ -47,7 +47,13 @@ describe('toggleMealAbsence', () => {
     const { accountGw, run } = setup()
 
     expect(await run('2026-10-26')).toBe('OK')
-    expect(accountGw.lockAccount).toHaveBeenCalledWith(tx, schoolId, studentId, 'CANTEEN', false)
+    expect(accountGw.lockAccount).toHaveBeenCalledWith(
+      tx,
+      schoolId,
+      { studentId },
+      'CANTEEN',
+      false
+    )
     expect(accountGw.addAbsence).toHaveBeenCalledWith(tx, schoolId, {
       accountId: 'account-1',
       day: '2026-10-26',

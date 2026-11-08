@@ -4,6 +4,7 @@ const listClassPeriods = vi.fn()
 const listPlans = vi.fn()
 const mcpReadGateway = { listClassPeriods, listPlans }
 const countEnrolled = vi.fn()
+const findPeriodBounds = vi.fn()
 const searchFamilies = vi.fn()
 const findMembers = vi.fn()
 const searchPersons = vi.fn()
@@ -12,7 +13,12 @@ const createDraft = vi.fn()
 const ensureUnpriced = vi.fn()
 
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
-vi.mock('@/gateways/class-period-gateway', () => ({ classPeriodGateway: { countEnrolled } }))
+vi.mock('@/gateways/class-period-gateway', () => ({
+  classPeriodGateway: { countEnrolled, findPeriodBounds },
+}))
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: vi.fn().mockResolvedValue({ currency: 'XOF' }),
+}))
 vi.mock('@/gateways/family-gateway', () => ({
   familyGateway: { searchByName: searchFamilies, findMembersForMcp: findMembers },
 }))
@@ -65,6 +71,10 @@ beforeEach(() => {
   ])
   listPlans.mockResolvedValue([{ id: 'plan-1', name: 'Tarif annuel', amount: 100 }])
   countEnrolled.mockResolvedValue(3)
+  findPeriodBounds.mockResolvedValue({
+    startAt: new Date('2026-09-01T00:00:00Z'),
+    endAt: new Date('2027-06-30T00:00:00Z'),
+  })
   searchFamilies.mockResolvedValue([])
   findMembers.mockResolvedValue(null)
   searchPersons.mockResolvedValue([])
@@ -645,6 +655,77 @@ describe('previewEnrollFamily', () => {
       ])
       expect(result.draftId).toBeNull()
       expect(createDraft).not.toHaveBeenCalled()
+    })
+  })
+})
+
+describe('previewEnrollFamily with a start month', () => {
+  const monthly = {
+    id: 'plan-m',
+    name: 'Mensuel',
+    amount: 144_000,
+    paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 9, dueDay: 5 },
+  }
+  const { payment: _payment, ...unpaid } = input
+
+  beforeEach(() => {
+    listPlans.mockResolvedValue([monthly])
+  })
+
+  it('totals only the installments from the start month', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      startMonth: '2026-10',
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.plan?.students[0]).toMatchObject({ startMonth: '2026-10', totalAmount: 128_000 })
+    expect(findPeriodBounds).toHaveBeenCalledWith('school-1', 'class-1')
+  })
+
+  it('lets a student override the family start month, and keeps the full plan without one', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      students: [{ ...input.students[0], startMonth: '2026-11' }, sibling],
+    })
+    assertPreview(result)
+
+    expect(
+      result.plan?.students.map((student) => [student.startMonth, student.totalAmount])
+    ).toEqual([
+      ['2026-11', 112_000],
+      [null, 144_000],
+    ])
+  })
+
+  it('blocks a month outside the class period', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      startMonth: '2026-07',
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toContainEqual({
+      field: 'startMonth',
+      value: '2026-07',
+      reason: 'startMonthOutsidePeriod',
+    })
+    expect(createDraft).not.toHaveBeenCalled()
+  })
+
+  it('blocks a plan without a schedule', async () => {
+    listPlans.mockResolvedValue([{ id: 'plan-1', name: 'Tarif annuel', amount: 100 }])
+    const annual = await previewEnrollFamily(scope, { ...unpaid, startMonth: '2026-10' })
+    assertPreview(annual)
+
+    expect(annual.blockers).toContainEqual({
+      field: 'startMonth',
+      value: '2026-10',
+      reason: 'noPaymentSchedule',
     })
   })
 })
