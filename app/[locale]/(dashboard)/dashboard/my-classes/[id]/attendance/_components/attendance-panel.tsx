@@ -6,7 +6,8 @@ import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 import type { AttendanceEntryMode } from '@/domain/attendance-entry-mode'
 import type { AttendanceFrequency } from '@/domain/attendance-frequency'
-import { Link } from '@/i18n/routing'
+import { Link, useRouter } from '@/i18n/routing'
+import { toast } from '@/lib/toast'
 import {
   markAllPresentAction,
   refreshAttendanceRosterAction,
@@ -112,6 +113,7 @@ export function AttendancePanel({
   absenceReasonRequired?: boolean
 }) {
   const t = useTranslations('dashboard.pages.attendance')
+  const router = useRouter()
   const [session, setSession] = useState<Session | null>(initialSession)
   const [drafts, setDrafts] = useState<Record<string, AttendanceEntry>>(() =>
     Object.fromEntries(initialSession?.entries.map((entry) => [entry.id, entry]) ?? [])
@@ -129,6 +131,7 @@ export function AttendancePanel({
   const [index, setIndex] = useState(0)
   const [forward, setForward] = useState(true)
   const [globalPending, setGlobalPending] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [rosterNotice, setRosterNotice] = useState<string | null>(null)
   const [reviewing, setReviewing] = useState(initialSession?.status === 'VALIDATED')
@@ -709,14 +712,14 @@ export function AttendancePanel({
                     focusControl()
                   }
                 }}
-                validating={globalPending || pendingEntries || entryErrors}
+                validating={leaving || globalPending || pendingEntries || entryErrors}
                 onValidate={() =>
                   void global(
                     () => validateAttendanceAction({ sessionId: session.id }),
                     () => {
-                      setSession((current) => current && { ...current, status: 'VALIDATED' })
-                      setReviewing(true)
-                      setEditing(false)
+                      setLeaving(true)
+                      toast.success(labels.validatedStatus)
+                      router.push(returnHref)
                     }
                   )
                 }
