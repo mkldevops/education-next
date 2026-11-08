@@ -134,13 +134,14 @@ export function AttendancePanel({
   const [leaving, setLeaving] = useState(false)
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [rosterNotice, setRosterNotice] = useState<string | null>(null)
-  const [reviewing, setReviewing] = useState(initialSession?.status === 'VALIDATED')
+  const [reviewing, setReviewing] = useState(false)
   const [showDateForm, setShowDateForm] = useState(!initialSession)
   const [editing, setEditing] = useState(initialSession?.status !== 'VALIDATED')
   const control = useRef<HTMLButtonElement>(null)
   const review = useRef<HTMLDivElement>(null)
   const entries = session?.entries.map((entry) => drafts[entry.id] ?? entry) ?? []
   const active = entries[index]
+  const listView = entryMode === 'LIST' || (session?.status === 'VALIDATED' && !editing)
   const counts = countAttendanceStatuses(entries)
   const recorded = counts.PRESENT + counts.LATE + counts.ABSENT
   const isUnsaved = (entry: AttendanceEntry) =>
@@ -506,7 +507,7 @@ export function AttendancePanel({
               ) : null}
             </div>
           ) : null}
-          {!reviewing && entryMode !== 'LIST' ? (
+          {!reviewing && !listView ? (
             <section className="mx-auto max-w-2xl space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-graphite-600">
                 <p>{session.status === 'VALIDATED' ? labels.validatedStatus : labels.draft}</p>
@@ -567,7 +568,7 @@ export function AttendancePanel({
           ) : null}
           {entries.length === 0 ? (
             <Card className="p-6 text-center text-graphite-600">{labels.noStudents}</Card>
-          ) : entryMode === 'LIST' && !reviewing ? (
+          ) : listView && !reviewing ? (
             <AttendanceList
               entries={entries}
               labels={labels}
@@ -666,10 +667,17 @@ export function AttendancePanel({
               </div>
             </section>
           ) : null}
-          {!reviewing && (entryMode !== 'LIST' || !editing) ? (
+          {!reviewing && (!listView || !editing) ? (
             <div className="mx-auto max-w-2xl text-right">
               {session.status === 'VALIDATED' && !editing ? (
-                <Button onClick={() => setEditing(true)}>{labels.correctAttendance}</Button>
+                <div className="flex items-center justify-end gap-3">
+                  {listView ? (
+                    <p role="status" className="text-sm font-medium text-emerald-800">
+                      {labels.validatedStatus}
+                    </p>
+                  ) : null}
+                  <Button onClick={() => setEditing(true)}>{labels.correctAttendance}</Button>
+                </div>
               ) : (
                 <Button
                   disabled={globalPending || pendingEntries || entryErrors}
