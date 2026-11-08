@@ -143,8 +143,8 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
       dotenv-expand:
-        specifier: ^12.0.3
-        version: 12.0.3
+        specifier: ^1000.0.0
+        version: 1000.0.0
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -2636,6 +2636,10 @@ packages:
   dotenv-cli@11.1.0:
     resolution: {integrity: sha512-YUBODAS0puvSc9bGdu07o1GSouVn63xDazqZqvT99Hta4nPqZ1jTdBcz12dDdxSC9jYbVlpWlnu0IJaMR8TIEQ==}
     hasBin: true
+
+  dotenv-expand@1000.0.0:
+    resolution: {integrity: sha512-3T4TtUjXm5iGKFEirqKjcDJ0EheFJbv9peb5xytC+HNu3l5Ygnu4dYE8yeqkppHMsh1If9C/A//EJu7IPtNu+A==}
+    engines: {node: '>=16'}
 
   dotenv-expand@12.0.3:
     resolution: {integrity: sha512-uc47g4b+4k/M/SeaW1y4OApx+mtLWl92l5LMPP0GNXctZqELk+YGgOPIIC5elYmUH4OuoK3JLhuRUYegeySiFA==}
@@ -6121,6 +6125,8 @@ snapshots:
       dotenv: 17.4.2
       dotenv-expand: 12.0.3
       minimist: 1.2.8
+
+  dotenv-expand@1000.0.0: {}
 
   dotenv-expand@12.0.3:
     dependencies:
