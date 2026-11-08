@@ -21,7 +21,6 @@
   > PASS: FR-033d added — "La session utilisateur DOIT être invalidée lorsque le compte est désactivé (isActive = false)"
 - [x] CHK005 - Is the relationship between Better Auth user model and the extended User model (roles, isActive) clearly specified? [Clarity, data-model.md §User]
   > PASS: data-model.md §User explicitly shows "Compte utilisateur Better Auth étendu avec rôles", adds roles Json and isActive to BA model
-
 ## Authorization & Role-Based Access
 
 - [x] CHK006 - Are role definitions ("admin", "family") exhaustively documented with their permission boundaries? [Completeness, Spec §FR-031/033]
@@ -38,7 +37,6 @@
   > PASS: FR-033 updated — "admin ou family (mutuellement exclusifs, un utilisateur a exactement un rôle)". Assumptions confirm
 - [x] CHK012 - Are requirements defined for role changes on existing users (admin to family, or vice versa)? [Gap]
   > PASS: FR-033 specifies admin creates accounts with a role. Role change is an admin mutation on User (covered by general update capability). The mutual exclusivity constraint (FR-033) applies on write
-
 ## Data Isolation & Multi-Tenancy
 
 - [x] CHK013 - Are data isolation requirements specified at the query level (gateway filtering by family)? [Gap]
@@ -49,7 +47,6 @@
   > PASS: contracts list actions specify "admin/family" auth with notes explaining filtering (e.g., listFamilies: all for admin, own for family)
 - [x] CHK016 - Is the multi-tenant deployment model clearly specified — shared database with logical isolation, or separate databases? [Ambiguity, Spec §US6]
   > PASS: Assumptions updated — "Déploiement mono-école : une instance = une base de données = une école. Le multi-tenant est géré par instances séparées"
-
 ## Sensitive Data Protection
 
 - [x] CHK017 - Are data classification requirements defined for sensitive fields (health notes, allergies, emergency contacts)? [Gap]
@@ -62,7 +59,6 @@
   > PASS: Out of Scope (MVP) explicitly declares audit logging deferred. createdAt/updatedAt provide minimal traceability
 - [x] CHK021 - Is the soft-delete approach sufficient for data retention compliance, or are hard-delete requirements needed for right-to-erasure? [Ambiguity, Spec §FR-007]
   > PASS: Out of Scope (MVP) explicitly acknowledges the gap and defers hard-delete mechanism to a future iteration if required by regulation
-
 ## Input Validation & Injection Prevention
 
 - [x] CHK022 - Are server-side validation requirements specified for ALL input fields, not just "validated with Zod"? [Clarity, Spec §FR-035]
@@ -73,7 +69,6 @@
   > PASS: FR-035 mandates server-side validation via Zod. Free-text fields are validated for max length (data-model.md). XSS prevention is handled by React's default escaping (no dangerouslySetInnerHTML). Additional sanitization is an implementation concern
 - [x] CHK025 - Are requirements defined for JSON field validation (roles, channels, languagesAtHome)? [Gap, data-model.md]
   > PASS: FR-035 updated — "Les champs Json (roles, channels, languagesAtHome) DOIVENT avoir un schéma de validation explicite" with specific allowed values documented
-
 ## Financial Data Security
 
 - [x] CHK026 - Are requirements defined for preventing payment amount tampering between client and server? [Gap]
@@ -84,7 +79,6 @@
   > PASS: FR-035 mandates Zod validation. data-model.md specifies reference as String max 250. React escaping prevents XSS. Additional sanitization is implementation-level
 - [x] CHK029 - Are transaction atomicity requirements specified for payment distribution across multiple enrollments? [Completeness, research.md §4]
   > PASS: research.md §4 specifies Prisma $transaction with PostgreSQL READ COMMITTED isolation. FR-022 algorithm step specifies "transaction atomique"
-
 ## Error Handling & Information Disclosure
 
 - [x] CHK030 - Are error response requirements specified to prevent information leakage (e.g., "notFound" vs detailed entity info)? [Gap]
@@ -93,7 +87,6 @@
   > PASS: Error codes are generic ('notFound', 'validationError', 'classFull', 'unauthorized') — no internal state leakage
 - [x] CHK032 - Is it specified what information is returned to family-role users vs admin-role users in error scenarios? [Gap]
   > PASS: contracts specify 'unauthorized' for role violations. The Result type pattern returns the same error codes regardless of role — no information differential needed since unauthorized access is blocked before business logic runs
-
 ## Assumptions & Dependencies
 
 - [x] CHK033 - Is the dependency on Better Auth for password hashing and session management documented with security expectations? [Dependency, Spec §FR-031]
@@ -107,14 +100,14 @@
 
 ## Summary
 
-| Dimension                      | Items | Passed | Failed |
-|--------------------------------|-------|--------|--------|
-| Authentication Requirements    | 5     | 5      | 0      |
-| Authorization & Role-Based Access | 7  | 7      | 0      |
-| Data Isolation & Multi-Tenancy | 4     | 4      | 0      |
-| Sensitive Data Protection      | 5     | 5      | 0      |
-| Input Validation               | 4     | 4      | 0      |
-| Financial Data Security        | 4     | 4      | 0      |
-| Error Handling & Disclosure    | 3     | 3      | 0      |
-| Assumptions & Dependencies     | 3     | 3      | 0      |
-| **Total**                      | **35**| **35** | **0**  |
+| Dimension                         | Items  | Passed | Failed |
+| --------------------------------- | ------ | ------ | ------ |
+| Authentication Requirements       | 5      | 5      | 0      |
+| Authorization & Role-Based Access | 7      | 7      | 0      |
+| Data Isolation & Multi-Tenancy    | 4      | 4      | 0      |
+| Sensitive Data Protection         | 5      | 5      | 0      |
+| Input Validation                  | 4      | 4      | 0      |
+| Financial Data Security           | 4      | 4      | 0      |
+| Error Handling & Disclosure       | 3      | 3      | 0      |
+| Assumptions & Dependencies        | 3      | 3      | 0      |
+| **Total**                         | **35** | **35** | **0**  |

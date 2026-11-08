@@ -21,15 +21,15 @@ Implémenter le modèle de données complet de l'application de gestion d'inscri
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Status | Evidence |
-|-----------|--------|----------|
-| I. Mobile-First | PASS | FR-036 requires 375px usability. UI work deferred to feature stories |
-| II. Multi-Tenant Ready | PASS | Period entity has configurable dates (FR-008), Level names are free-form (FR-010), Config entity for deployment settings (FR-029) |
-| III. Data Integrity | PASS | State machine on Enrollment (FR-013), anti-overpayment (FR-023), soft-delete (FR-007), isActive/createdAt/updatedAt on all entities (FR-034), server-side validation (FR-035) |
-| IV. Family-Centric | PASS | Student requires Family (FR-005), payments at Family level (FR-022), family portal read-only (FR-025/027) |
-| V. Simplicity | PASS | No speculative features. Direct Prisma access for single-use operations. Domain entities only where business rules exist |
+| Principle              | Status | Evidence                                                                                                                                                                      |
+| ---------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I. Mobile-First        | PASS   | FR-036 requires 375px usability. UI work deferred to feature stories                                                                                                          |
+| II. Multi-Tenant Ready | PASS   | Period entity has configurable dates (FR-008), Level names are free-form (FR-010), Config entity for deployment settings (FR-029)                                             |
+| III. Data Integrity    | PASS   | State machine on Enrollment (FR-013), anti-overpayment (FR-023), soft-delete (FR-007), isActive/createdAt/updatedAt on all entities (FR-034), server-side validation (FR-035) |
+| IV. Family-Centric     | PASS   | Student requires Family (FR-005), payments at Family level (FR-022), family portal read-only (FR-025/027)                                                                     |
+| V. Simplicity          | PASS   | No speculative features. Direct Prisma access for single-use operations. Domain entities only where business rules exist                                                      |
 
 All gates pass. Proceeding to Phase 0.
 

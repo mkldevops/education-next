@@ -1,17 +1,20 @@
 ---
+
 paths:
-  - ".env.example"
-  - "src/config/email.ts"
-  - "src/lib/email.ts"
-  - "src/gateways/email/**"
-  - "src/types/email.ts"
-  - "src/lib/auth.ts"
+
+- ".env.example"
+- "src/config/email.ts"
+- "src/lib/email.ts"
+- "src/gateways/email/**"
+- "src/types/email.ts"
+- "src/lib/auth.ts"
+
 ---
 
 # Email and Resend Rules
 
 Scope: .env.example, src/config/email.ts, src/lib/email.ts, src/gateways/email/**,
-  src/types/email.ts, src/lib/auth.ts
+src/types/email.ts, src/lib/auth.ts
 
 ## Proactive Behavior
 

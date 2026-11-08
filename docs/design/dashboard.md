@@ -17,14 +17,14 @@ Le shell n'a pas de titre de page, de fil d'Ariane ni d'action principale ; la h
 Les listes sont 100 % client (état hors URL, pas de filtres, pas d'actions groupées), et l'appel sur mobile coûte ~50 taps pour 25 élèves.
 Direction : chrome neutre + accent, file d'actions du jour, tables pilotées par l'URL, appel en liste « présent par défaut ».
 
-| Axe | Note /5 | Justification courte |
-|---|---|---|
-| Navigation | 2.5 | 2 groupes fourre-tout, icônes dupliquées, ⌘K sans navigation clavier, pas de home enseignant |
-| Densité / lisibilité | 2.5 | Gradients partout, 3 implémentations de KPI, rayons incohérents, montants non tabulaires |
-| Tableaux | 2 | Tout client, état en `useState`, pas de filtres/bulk/sticky, en-tête gradient |
-| Formulaires | 3 | Dialogues pilotés par `?action=` (bien), mais ConfirmDialog anglais et fermeture sur échec, pas de sheet mobile |
-| États (vide/chargement/erreur) | 2.5 | `EmptyState` existe mais sous-utilisé, fallback « Loading... » anglais, `error.tsx` correct |
-| Mobile | 2 | Débordement du hero, pas de recherche, tables `min-w-[600px]`, appel en carrousel |
+| Axe                            | Note /5 | Justification courte                                                                                            |
+| ------------------------------ | ------- | --------------------------------------------------------------------------------------------------------------- |
+| Navigation                     | 2.5     | 2 groupes fourre-tout, icônes dupliquées, ⌘K sans navigation clavier, pas de home enseignant                    |
+| Densité / lisibilité           | 2.5     | Gradients partout, 3 implémentations de KPI, rayons incohérents, montants non tabulaires                        |
+| Tableaux                       | 2       | Tout client, état en `useState`, pas de filtres/bulk/sticky, en-tête gradient                                   |
+| Formulaires                    | 3       | Dialogues pilotés par `?action=` (bien), mais ConfirmDialog anglais et fermeture sur échec, pas de sheet mobile |
+| États (vide/chargement/erreur) | 2.5     | `EmptyState` existe mais sous-utilisé, fallback « Loading... » anglais, `error.tsx` correct                     |
+| Mobile                         | 2       | Débordement du hero, pas de recherche, tables `min-w-[600px]`, appel en carrousel                               |
 
 ## 2. Problèmes prioritaires (classés)
 
@@ -332,42 +332,42 @@ Références Mobbin :
 
 ### Quick wins (≤ 1 jour chacun)
 
-| # | Changement | Fichiers |
-|---|---|---|
-| Q1 | Item actif neutre + barre d'accent, sans gradient ni ombre | `src/features/dashboard/sidebar-nav-item.tsx` |
-| Q2 | En-têtes de tables neutres et sticky, `aria-sort`, lien sur la cellule nom | `src/components/ui/rich-data-table/rich-data-table.tsx`, `src/components/ui/data-table/data-table.tsx` |
-| Q3 | Supprimer le hero gradient et les marges négatives (corrige le débordement mobile) | `app/[locale]/(dashboard)/dashboard/page.tsx`, `app/[locale]/(dashboard)/dashboard/loading.tsx` |
-| Q4 | Retirer la tendance élèves trompeuse, ou la libeller « inscriptions créées » | `app/[locale]/(dashboard)/dashboard/page.tsx`, `app/[locale]/(dashboard)/dashboard/_components/student-trend-card.tsx` |
-| Q5 | Localiser `Cancel`, `...`, `Loading...`, `User` ; garder le ConfirmDialog ouvert en cas d'échec | `src/components/ui/confirm-dialog.tsx`, `app/[locale]/(dashboard)/layout.tsx`, `app/[locale]/(dashboard)/dashboard/page.tsx`, `messages/*` |
-| Q6 | ⌘K : `Command.Item`, groupes « Aller à » et « Actions », raccourci selon l'OS, icône de recherche sur mobile | `src/features/dashboard/search-modal.tsx`, `src/features/dashboard/header-client.tsx` |
-| Q7 | Icônes uniques et regroupement de la nav (Aujourd'hui / Scolarité / Finances / Paramètres / Plateforme) | `src/features/dashboard/sidebar-items.ts`, `src/features/dashboard/sidebar.tsx` |
-| Q8 | Montants en `tabular-nums` alignés à droite ; devise tirée de la config école | `app/[locale]/(dashboard)/dashboard/families/_components/families-data-table.tsx`, `.../payments/_components/payments-table.tsx`, `.../_components/school-insights.tsx`, `.../payments/_components/payments-overview.tsx` |
-| Q9 | CTA « Enregistrer un paiement » sur la page Paiements | `app/[locale]/(dashboard)/dashboard/payments/page.tsx` |
-| Q10 | Appel : « Tout le monde présent » en bouton, avance auto après un tap, libellés ICU | `app/[locale]/(dashboard)/dashboard/my-classes/[id]/attendance/_components/attendance-panel.tsx` |
-| Q11 | `EmptyState` dans les tables et la home | `src/components/ui/rich-data-table/rich-data-table.tsx`, `src/components/ui/data-table/data-table.tsx`, `app/[locale]/(dashboard)/dashboard/page.tsx` |
+| #   | Changement                                                                                                   | Fichiers                                                                                                                                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q1  | Item actif neutre + barre d'accent, sans gradient ni ombre                                                   | `src/features/dashboard/sidebar-nav-item.tsx`                                                                                                                                                                             |
+| Q2  | En-têtes de tables neutres et sticky, `aria-sort`, lien sur la cellule nom                                   | `src/components/ui/rich-data-table/rich-data-table.tsx`, `src/components/ui/data-table/data-table.tsx`                                                                                                                    |
+| Q3  | Supprimer le hero gradient et les marges négatives (corrige le débordement mobile)                           | `app/[locale]/(dashboard)/dashboard/page.tsx`, `app/[locale]/(dashboard)/dashboard/loading.tsx`                                                                                                                           |
+| Q4  | Retirer la tendance élèves trompeuse, ou la libeller « inscriptions créées »                                 | `app/[locale]/(dashboard)/dashboard/page.tsx`, `app/[locale]/(dashboard)/dashboard/_components/student-trend-card.tsx`                                                                                                    |
+| Q5  | Localiser `Cancel`, `...`, `Loading...`, `User` ; garder le ConfirmDialog ouvert en cas d'échec              | `src/components/ui/confirm-dialog.tsx`, `app/[locale]/(dashboard)/layout.tsx`, `app/[locale]/(dashboard)/dashboard/page.tsx`, `messages/*`                                                                                |
+| Q6  | ⌘K : `Command.Item`, groupes « Aller à » et « Actions », raccourci selon l'OS, icône de recherche sur mobile | `src/features/dashboard/search-modal.tsx`, `src/features/dashboard/header-client.tsx`                                                                                                                                     |
+| Q7  | Icônes uniques et regroupement de la nav (Aujourd'hui / Scolarité / Finances / Paramètres / Plateforme)      | `src/features/dashboard/sidebar-items.ts`, `src/features/dashboard/sidebar.tsx`                                                                                                                                           |
+| Q8  | Montants en `tabular-nums` alignés à droite ; devise tirée de la config école                                | `app/[locale]/(dashboard)/dashboard/families/_components/families-data-table.tsx`, `.../payments/_components/payments-table.tsx`, `.../_components/school-insights.tsx`, `.../payments/_components/payments-overview.tsx` |
+| Q9  | CTA « Enregistrer un paiement » sur la page Paiements                                                        | `app/[locale]/(dashboard)/dashboard/payments/page.tsx`                                                                                                                                                                    |
+| Q10 | Appel : « Tout le monde présent » en bouton, avance auto après un tap, libellés ICU                          | `app/[locale]/(dashboard)/dashboard/my-classes/[id]/attendance/_components/attendance-panel.tsx`                                                                                                                          |
+| Q11 | `EmptyState` dans les tables et la home                                                                      | `src/components/ui/rich-data-table/rich-data-table.tsx`, `src/components/ui/data-table/data-table.tsx`, `app/[locale]/(dashboard)/dashboard/page.tsx`                                                                     |
 
 ### Structurel (1 à 2 semaines)
 
-| # | Changement | Fichiers |
-|---|---|---|
-| S1 | Slot `PageHeader` (fil d'Ariane, titre, actions, chip de période) dans le header ; supprimer le motif répété dans les pages | `src/features/dashboard/header-client.tsx`, `src/features/dashboard/period-selector.tsx`, `src/components/ui/breadcrumbs.tsx`, nouvelle `src/components/ui/page-header.tsx`, toutes les `app/[locale]/(dashboard)/dashboard/*/page.tsx` |
-| S2 | Tables pilotées par l'URL et paginées côté serveur ; selects Prisma allégés | `src/components/ui/rich-data-table/rich-data-table.tsx`, `.../families/page.tsx`, `.../payments/page.tsx`, `.../enrollments/page.tsx`, `.../students/page.tsx`, gateways Prisma associées |
-| S3 | Vues en onglets avec compteurs + chips de filtres (statut, méthode, non encaissé, avec solde) | `.../enrollments/_components/enrollments-table.tsx`, `.../payments/_components/payments-table.tsx`, `.../families/_components/families-data-table.tsx` |
-| S4 | Home « À faire aujourd'hui » + « Cours du jour » ; variante enseignant ; suppression de la redirection | `app/[locale]/(dashboard)/dashboard/page.tsx`, `.../_components/school-insights.tsx`, `.../_components/upcoming-events-card.tsx`, `src/features/dashboard/sidebar-items.ts` |
-| S5 | Primitive unique `StatCard` cliquable, qui remplace les 3 KPI | nouvelle `src/components/ui/stat-card.tsx`, `.../dashboard/page.tsx`, `.../payments/_components/payments-overview.tsx`, `.../families/[id]/_components/kpi-card.tsx` |
-| S6 | Appel en liste « présent par défaut » + CTA collant | `.../my-classes/[id]/attendance/_components/attendance-panel.tsx`, `.../student-attendance-card.tsx` |
-| S7 | Tokens de design : `--radius-*`, surfaces, `--accent` distinct de la marque ; purge des 75 `bg-white` | `src/styles/globals.css`, `src/components/ui/card.tsx`, `src/components/ui/button.tsx`, `src/components/ui/status-badge.tsx`, `src/components/ui/balance-badge.tsx`, `src/components/ui/data-table/cells.tsx` |
-| S8 | Dialogue → bottom sheet sous `md` ; focus trap sur la sidebar mobile et la palette | `src/components/ui/dialog.tsx`, `src/components/ui/drawer.tsx`, `src/features/dashboard/sidebar.tsx`, `src/features/dashboard/search-modal.tsx` |
-| S9 | Switcher d'école : logos, recherche, pas d'overlay plein écran ; repli de la sidebar sorti du menu utilisateur | `src/features/dashboard/school-switcher.tsx`, `src/features/dashboard/sidebar-user-menu.tsx`, `src/features/dashboard/sidebar-store.ts` |
+| #   | Changement                                                                                                                  | Fichiers                                                                                                                                                                                                                                |
+| --- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | Slot `PageHeader` (fil d'Ariane, titre, actions, chip de période) dans le header ; supprimer le motif répété dans les pages | `src/features/dashboard/header-client.tsx`, `src/features/dashboard/period-selector.tsx`, `src/components/ui/breadcrumbs.tsx`, nouvelle `src/components/ui/page-header.tsx`, toutes les `app/[locale]/(dashboard)/dashboard/*/page.tsx` |
+| S2  | Tables pilotées par l'URL et paginées côté serveur ; selects Prisma allégés                                                 | `src/components/ui/rich-data-table/rich-data-table.tsx`, `.../families/page.tsx`, `.../payments/page.tsx`, `.../enrollments/page.tsx`, `.../students/page.tsx`, gateways Prisma associées                                               |
+| S3  | Vues en onglets avec compteurs + chips de filtres (statut, méthode, non encaissé, avec solde)                               | `.../enrollments/_components/enrollments-table.tsx`, `.../payments/_components/payments-table.tsx`, `.../families/_components/families-data-table.tsx`                                                                                  |
+| S4  | Home « À faire aujourd'hui » + « Cours du jour » ; variante enseignant ; suppression de la redirection                      | `app/[locale]/(dashboard)/dashboard/page.tsx`, `.../_components/school-insights.tsx`, `.../_components/upcoming-events-card.tsx`, `src/features/dashboard/sidebar-items.ts`                                                             |
+| S5  | Primitive unique `StatCard` cliquable, qui remplace les 3 KPI                                                               | nouvelle `src/components/ui/stat-card.tsx`, `.../dashboard/page.tsx`, `.../payments/_components/payments-overview.tsx`, `.../families/[id]/_components/kpi-card.tsx`                                                                    |
+| S6  | Appel en liste « présent par défaut » + CTA collant                                                                         | `.../my-classes/[id]/attendance/_components/attendance-panel.tsx`, `.../student-attendance-card.tsx`                                                                                                                                    |
+| S7  | Tokens de design : `--radius-*`, surfaces, `--accent` distinct de la marque ; purge des 75 `bg-white`                       | `src/styles/globals.css`, `src/components/ui/card.tsx`, `src/components/ui/button.tsx`, `src/components/ui/status-badge.tsx`, `src/components/ui/balance-badge.tsx`, `src/components/ui/data-table/cells.tsx`                           |
+| S8  | Dialogue → bottom sheet sous `md` ; focus trap sur la sidebar mobile et la palette                                          | `src/components/ui/dialog.tsx`, `src/components/ui/drawer.tsx`, `src/features/dashboard/sidebar.tsx`, `src/features/dashboard/search-modal.tsx`                                                                                         |
+| S9  | Switcher d'école : logos, recherche, pas d'overlay plein écran ; repli de la sidebar sorti du menu utilisateur              | `src/features/dashboard/school-switcher.tsx`, `src/features/dashboard/sidebar-user-menu.tsx`, `src/features/dashboard/sidebar-store.ts`                                                                                                 |
 
 ### Ambitieux (trimestre)
 
-| # | Changement | Fichiers |
-|---|---|---|
-| A1 | Planning en calendrier semaine/jour sur axe horaire, avec détection de conflits | `.../planning/_components/schedule-grid.tsx` (remplacé), `.../planning/page.tsx`, use case de conflits dans `src/` domaine planning |
-| A2 | Sélection multiple + barre d'actions groupées (relance de solde, export, marquer encaissé) | `src/components/ui/rich-data-table/rich-data-table.tsx`, actions dans `app/[locale]/(dashboard)/_lib/` |
-| A3 | Vues sauvegardées par utilisateur (filtres nommés) | `src/components/ui/rich-data-table/*`, `prisma/schema.prisma` (préférences), `src/actions/` |
-| A4 | Palette ⌘K complète : récents, actions contextuelles, recherche paiements et inscriptions | `src/features/dashboard/search-modal.tsx`, route de recherche serveur |
-| A5 | Mode sombre, rendu possible par les tokens S7 | `src/styles/globals.css`, primitives `src/components/ui/*` |
-| A6 | Navigation mobile basse + home enseignant « Mes cours du jour » en PWA | `app/[locale]/(dashboard)/layout.tsx`, `src/features/dashboard/*`, `.../my-classes/page.tsx` |
-| A7 | Historisation des effectifs pour une vraie tendance élèves | `prisma/schema.prisma`, job de snapshot, `.../_components/student-trend-card.tsx` |
+| #   | Changement                                                                                 | Fichiers                                                                                                                            |
+| --- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | Planning en calendrier semaine/jour sur axe horaire, avec détection de conflits            | `.../planning/_components/schedule-grid.tsx` (remplacé), `.../planning/page.tsx`, use case de conflits dans `src/` domaine planning |
+| A2  | Sélection multiple + barre d'actions groupées (relance de solde, export, marquer encaissé) | `src/components/ui/rich-data-table/rich-data-table.tsx`, actions dans `app/[locale]/(dashboard)/_lib/`                              |
+| A3  | Vues sauvegardées par utilisateur (filtres nommés)                                         | `src/components/ui/rich-data-table/*`, `prisma/schema.prisma` (préférences), `src/actions/`                                         |
+| A4  | Palette ⌘K complète : récents, actions contextuelles, recherche paiements et inscriptions  | `src/features/dashboard/search-modal.tsx`, route de recherche serveur                                                               |
+| A5  | Mode sombre, rendu possible par les tokens S7                                              | `src/styles/globals.css`, primitives `src/components/ui/*`                                                                          |
+| A6  | Navigation mobile basse + home enseignant « Mes cours du jour » en PWA                     | `app/[locale]/(dashboard)/layout.tsx`, `src/features/dashboard/*`, `.../my-classes/page.tsx`                                        |
+| A7  | Historisation des effectifs pour une vraie tendance élèves                                 | `prisma/schema.prisma`, job de snapshot, `.../_components/student-trend-card.tsx`                                                   |

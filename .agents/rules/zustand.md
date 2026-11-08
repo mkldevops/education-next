@@ -1,7 +1,10 @@
 ---
+
 paths:
-  - "src/features/**/*store.ts"
-  - "src/features/**/*.tsx"
+
+- "src/features/**/*store.ts"
+- "src/features/**/*.tsx"
+
 ---
 
 # Zustand Rules

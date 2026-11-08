@@ -1,12 +1,15 @@
 ---
+
 paths:
-  - "**/*.ts"
-  - "**/*.tsx"
+
+- "**/*.ts"
+- "**/*.tsx"
+
 ---
 
 # Zod Rules
 
-Scope: **/*.ts, **/*.tsx
+Scope: **/_.ts, **/_.tsx
 
 ## Proactive Behavior
 

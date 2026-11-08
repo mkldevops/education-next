@@ -4,21 +4,21 @@ SaaS starter built with Next.js 16, TypeScript, and Clean Architecture.
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript (strict) |
-| Styling | Tailwind CSS v4 + shadcn/ui |
-| Linter | Biome |
-| Tests | Vitest + Testing Library |
-| Validation | Zod 4 |
-| i18n | next-intl (fr, en) |
-| Animation | Motion |
-| ORM | Prisma 6 |
-| Database | PostgreSQL 18 |
-| Auth | Better Auth |
-| State | Zustand |
-| Email | Resend (Mailpit in dev) |
+| Component  | Technology                  |
+| ---------- | --------------------------- |
+| Framework  | Next.js 16 (App Router)     |
+| Language   | TypeScript (strict)         |
+| Styling    | Tailwind CSS v4 + shadcn/ui |
+| Linter     | Biome                       |
+| Tests      | Vitest + Testing Library    |
+| Validation | Zod 4                       |
+| i18n       | next-intl (fr, en)          |
+| Animation  | Motion                      |
+| ORM        | Prisma 6                    |
+| Database   | PostgreSQL 18               |
+| Auth       | Better Auth                 |
+| State      | Zustand                     |
+| Email      | Resend (Mailpit in dev)     |
 
 ## Getting Started
 
@@ -50,12 +50,12 @@ pnpm dev
 
 ### Docker Services
 
-| Service | Port | URL |
-|---------|------|-----|
-| App | ${PORT} | http://localhost:8550 |
-| PostgreSQL | ${PORT_POSTGRES} | — |
-| Mailpit SMTP | ${PORT_MAILPIT_SMTP} | — |
-| Mailpit Web | ${PORT_MAILPIT_WEB} | http://localhost:8553 |
+| Service      | Port                 | URL                   |
+| ------------ | -------------------- | --------------------- |
+| App          | ${PORT}              | http://localhost:8550 |
+| PostgreSQL   | ${PORT_POSTGRES}     | —                     |
+| Mailpit SMTP | ${PORT_MAILPIT_SMTP} | —                     |
+| Mailpit Web  | ${PORT_MAILPIT_WEB}  | http://localhost:8553 |
 
 ## Scripts
 

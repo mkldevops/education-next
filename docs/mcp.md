@@ -58,12 +58,12 @@ served from: the URL is `<origin>/api/mcp`, and the server name carries the host
 same machine stay distinct. The key appears only in the Claude Code command and the Codex variable,
 and disappears with the panel on reload or revocation.
 
-| Client | Status | Route |
-|---|---|---|
-| Claude Code | available with a key | local command |
-| Codex (CLI, IDE extension, desktop app) | available with a key | `~/.codex/config.toml` + environment variable |
-| Claude Web (claude.ai, Claude Desktop connectors) | request headers (beta, some accounts) or OAuth | custom connector |
-| ChatGPT | available through OAuth, no key | personal plugin in developer mode |
+| Client                                            | Status                                         | Route                                         |
+| ------------------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
+| Claude Code                                       | available with a key                           | local command                                 |
+| Codex (CLI, IDE extension, desktop app)           | available with a key                           | `~/.codex/config.toml` + environment variable |
+| Claude Web (claude.ai, Claude Desktop connectors) | request headers (beta, some accounts) or OAuth | custom connector                              |
+| ChatGPT                                           | available through OAuth, no key                | personal plugin in developer mode             |
 
 Claude Code, one command:
 
@@ -107,9 +107,11 @@ A client that only speaks stdio goes through `mcp-remote`:
     "education": {
       "command": "npx",
       "args": [
-        "-y", "mcp-remote",
+        "-y",
+        "mcp-remote",
         "https://your-instance.example/api/mcp",
-        "--header", "Authorization: Bearer edu_mcp_…"
+        "--header",
+        "Authorization: Bearer edu_mcp_…"
       ]
     }
   }
@@ -184,11 +186,11 @@ call, without waiting for the token to expire.
 
 ### Tokens
 
-| Secret | Prefix | Lifetime | Use |
-|---|---|---|---|
-| authorization code | `edu_oac_` | 5 minutes, one exchange | returned to ChatGPT's callback |
-| access token | `edu_oat_` | 1 hour | `Authorization: Bearer` on `/api/mcp` |
-| refresh token | `edu_ort_` | 30 days, rotated at each use | `grant_type=refresh_token` on the token endpoint |
+| Secret             | Prefix     | Lifetime                     | Use                                              |
+| ------------------ | ---------- | ---------------------------- | ------------------------------------------------ |
+| authorization code | `edu_oac_` | 5 minutes, one exchange      | returned to ChatGPT's callback                   |
+| access token       | `edu_oat_` | 1 hour                       | `Authorization: Bearer` on `/api/mcp`            |
+| refresh token      | `edu_ort_` | 30 days, rotated at each use | `grant_type=refresh_token` on the token endpoint |
 
 Only the SHA-256 of each secret is stored. A code or a refresh token presented twice revokes the
 whole connection: a replay means the secret leaked, and the legitimate client reconnects with one
@@ -211,14 +213,14 @@ like a key does (`hasRelatedRecords`).
 
 ### Endpoints
 
-| Path | Standard | Role |
-|---|---|---|
-| `/.well-known/oauth-protected-resource` and `…/api/mcp` | RFC 9728 | names `/api/mcp` as the resource and this origin as its authorization server |
-| `/.well-known/oauth-authorization-server` | RFC 8414 | authorization, token, registration and revocation endpoints; `S256` only; public clients only |
-| `POST /api/mcp/oauth/register` | RFC 7591 | dynamic registration: `client_name`, HTTPS `redirect_uris` (or loopback `http://localhost`), `token_endpoint_auth_method: none` |
-| `GET /oauth/authorize` | RFC 6749 §3.1, PKCE (RFC 7636) | consent page, `response_type=code`, `code_challenge_method=S256`, optional `resource` (RFC 8707) that must be this site's `/api/mcp` |
-| `POST /api/mcp/oauth/token` | RFC 6749 §4.1.3, §6 | code exchange (`code_verifier`, `redirect_uri`, `client_id`) and refresh rotation |
-| `POST /api/mcp/oauth/revoke` | RFC 7009 | `token` + `client_id`: revokes the connection behind the token, only for the client it was issued to |
+| Path                                                    | Standard                       | Role                                                                                                                                 |
+| ------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `/.well-known/oauth-protected-resource` and `…/api/mcp` | RFC 9728                       | names `/api/mcp` as the resource and this origin as its authorization server                                                         |
+| `/.well-known/oauth-authorization-server`               | RFC 8414                       | authorization, token, registration and revocation endpoints; `S256` only; public clients only                                        |
+| `POST /api/mcp/oauth/register`                          | RFC 7591                       | dynamic registration: `client_name`, HTTPS `redirect_uris` (or loopback `http://localhost`), `token_endpoint_auth_method: none`      |
+| `GET /oauth/authorize`                                  | RFC 6749 §3.1, PKCE (RFC 7636) | consent page, `response_type=code`, `code_challenge_method=S256`, optional `resource` (RFC 8707) that must be this site's `/api/mcp` |
+| `POST /api/mcp/oauth/token`                             | RFC 6749 §4.1.3, §6            | code exchange (`code_verifier`, `redirect_uri`, `client_id`) and refresh rotation                                                    |
+| `POST /api/mcp/oauth/revoke`                            | RFC 7009                       | `token` + `client_id`: revokes the connection behind the token, only for the client it was issued to                                 |
 
 An unauthenticated `POST /api/mcp` answers `401` with
 `WWW-Authenticate: Bearer resource_metadata="<origin>/.well-known/oauth-protected-resource"`, and
@@ -230,14 +232,14 @@ client finds the authorization server. The origin comes from `NEXT_PUBLIC_APP_UR
 
 On the consent page:
 
-| Message | Cause |
-|---|---|
-| The application asking for access is not registered on this site | unknown `client_id` — registration happened on another site, the flag was off when ChatGPT tried, or the client was purged after a day without any connection (reconnect from ChatGPT to register again) |
-| The application's return address does not match its registration | `redirect_uri` outside the registered list |
-| The authorization request is incomplete or altered | missing `client_id` or `redirect_uri`; or missing PKCE, a method other than `S256`, a scope other than `school:admin`, a `resource` naming another site — then a **Return to** link carries the OAuth error back to the application, and nothing redirects on its own |
-| You administer no school on this site | the signed-in account is not `ADMIN` anywhere on this site |
-| The MCP server is disabled on this instance | flag off |
-| Unavailable while signed in as another user | a super-admin impersonating cannot grant on behalf of the target |
+| Message                                                          | Cause                                                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The application asking for access is not registered on this site | unknown `client_id` — registration happened on another site, the flag was off when ChatGPT tried, or the client was purged after a day without any connection (reconnect from ChatGPT to register again)                                                              |
+| The application's return address does not match its registration | `redirect_uri` outside the registered list                                                                                                                                                                                                                            |
+| The authorization request is incomplete or altered               | missing `client_id` or `redirect_uri`; or missing PKCE, a method other than `S256`, a scope other than `school:admin`, a `resource` naming another site — then a **Return to** link carries the OAuth error back to the application, and nothing redirects on its own |
+| You administer no school on this site                            | the signed-in account is not `ADMIN` anywhere on this site                                                                                                                                                                                                            |
+| The MCP server is disabled on this instance                      | flag off                                                                                                                                                                                                                                                              |
+| Unavailable while signed in as another user                      | a super-admin impersonating cannot grant on behalf of the target                                                                                                                                                                                                      |
 
 On the token endpoint, RFC 6749 §5.2 bodies: `invalid_grant` (unknown, expired, consumed or
 mismatched code or refresh token, wrong `code_verifier`, wrong `redirect_uri`), `invalid_client`
@@ -311,16 +313,16 @@ tracking never labels an annual balance as overdue. Typed refusals include `vali
 
 Every one of them works in the key's school. Only the last three take arguments.
 
-| Tool | Publishes |
-|---|---|
-| `describe_school` | `id`, `name`, `slug` |
-| `list_levels` | `id`, `name`, `nextLevels [{ id, name }]` |
-| `list_periods` | `id`, `name`, `startAt`, `endAt` |
-| `list_class_periods` | `id`, `name`, `capacity`, `level { id, name }`, `period { id, name }`, `teachers[].teacher { id, firstName, lastName }` |
-| `list_plans` | `id`, `name`, `amount` (annual total, decimal string, not cents), `pricing`, `paymentSchedule` |
-| `list_teachers` | `id`, `firstName`, `lastName` |
-| `find_students` (`query`, `limit?`) | `id`, `name`, `lastname`, `families[] { id, name }`, open `enrollments[]` with `plan` and `classes` |
-| `get_family_payments` (`familyId`) | `family`, `remainingBalance`, `paidAmount`, `tracking` (`expectedToDate`, `overdueAmount`, `paidToDate`, `tracked`), per-enrollment balances, and the 20 latest active payments with `id`, `amount`, `method`, `paidAt`, `online` (money tools only) |
+| Tool                                | Publishes                                                                                                                                                                                                                                            |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `describe_school`                   | `id`, `name`, `slug`                                                                                                                                                                                                                                 |
+| `list_levels`                       | `id`, `name`, `nextLevels [{ id, name }]`                                                                                                                                                                                                            |
+| `list_periods`                      | `id`, `name`, `startAt`, `endAt`                                                                                                                                                                                                                     |
+| `list_class_periods`                | `id`, `name`, `capacity`, `level { id, name }`, `period { id, name }`, `teachers[].teacher { id, firstName, lastName }`                                                                                                                              |
+| `list_plans`                        | `id`, `name`, `amount` (annual total, decimal string, not cents), `pricing`, `paymentSchedule`                                                                                                                                                       |
+| `list_teachers`                     | `id`, `firstName`, `lastName`                                                                                                                                                                                                                        |
+| `find_students` (`query`, `limit?`) | `id`, `name`, `lastname`, `families[] { id, name }`, open `enrollments[]` with `plan` and `classes`                                                                                                                                                  |
+| `get_family_payments` (`familyId`)  | `family`, `remainingBalance`, `paidAmount`, `tracking` (`expectedToDate`, `overdueAmount`, `paidToDate`, `tracked`), per-enrollment balances, and the 20 latest active payments with `id`, `amount`, `method`, `paidAt`, `online` (money tools only) |
 
 They are the resolution layer: a label read on paper — "CE1 / 2026-2027", the name of a plan —
 becomes an identifier through these lists, before any write is attempted. That is also why the
@@ -366,12 +368,12 @@ network result, re-read the family instead of deleting a replacement or retrying
 The following tools take `{ id }` and return `{ id, archived: true }`. They archive rather than
 permanently deleting records, reusing the dashboard protections:
 
-| Tool | Refuses |
-|---|---|
-| `archive_student` | An active or pending enrollment (`hasActiveEnrollments`); stops meal services on success |
-| `archive_class_period` | Any student/teacher assignment, schedule slot or attendance session (`classInUse`) |
-| `archive_level` | Any active class (`levelInUse`); removes progression links on success |
-| `archive_plan` | An open enrollment (`planInUse`), the reserved unpriced plan (`unpricedPlan`), or disabled payments (`paymentsDisabled`) |
+| Tool                   | Refuses                                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `archive_student`      | An active or pending enrollment (`hasActiveEnrollments`); stops meal services on success                                 |
+| `archive_class_period` | Any student/teacher assignment, schedule slot or attendance session (`classInUse`)                                       |
+| `archive_level`        | Any active class (`levelInUse`); removes progression links on success                                                    |
+| `archive_plan`         | An open enrollment (`planInUse`), the reserved unpriced plan (`unpricedPlan`), or disabled payments (`paymentsDisabled`) |
 
 Missing or foreign resources return `notFound`; malformed input returns `validationError`.
 All deletion and archive tools are immediate destructive writes in the shared catalogue, so the
@@ -384,12 +386,12 @@ The MCP can read and maintain the same recurring class slots as `/dashboard/plan
 accepts a school identifier: the API key selects the school. Planning must be enabled for that
 school (`class_schedule_enabled`), otherwise these tools return `notConfigured`.
 
-| Tool | Input | Result |
-|---|---|---|
-| `list_class_schedule_slots` | `periodId` from `list_periods` | Slots with `id`, weekday, times, description, class identity and active teacher identities |
-| `create_class_schedule_slot` | `classPeriodId` from `list_class_periods`, weekday, times, `teacherIds`, optional description | New slot `id` and overlap warnings |
-| `update_class_schedule_slot` | Slot `id`, weekday, times, `teacherIds`, optional description; the class stays fixed | Slot `id` and overlap warnings |
-| `delete_class_schedule_slot` | Slot `id` | `{ "deleted": true }` |
+| Tool                         | Input                                                                                         | Result                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `list_class_schedule_slots`  | `periodId` from `list_periods`                                                                | Slots with `id`, weekday, times, description, class identity and active teacher identities |
+| `create_class_schedule_slot` | `classPeriodId` from `list_class_periods`, weekday, times, `teacherIds`, optional description | New slot `id` and overlap warnings                                                         |
+| `update_class_schedule_slot` | Slot `id`, weekday, times, `teacherIds`, optional description; the class stays fixed          | Slot `id` and overlap warnings                                                             |
+| `delete_class_schedule_slot` | Slot `id`                                                                                     | `{ "deleted": true }`                                                                      |
 
 `weekday` follows ISO order: Monday is 1, Saturday 6 and Sunday 7. Times use 24-hour `HH:mm`
 without a date or timezone. A slot repeats every week of its class period; its end time is excluded,
@@ -415,13 +417,13 @@ would otherwise leave a half-written weekend.
 preview/commit pair, because the event is born `DRAFT` and nobody sees it until an admin publishes it
 from `/dashboard/events`. The tool accepts no `status`.
 
-| Field | Shape |
-|---|---|
-| `title`, `category` | required; `category` is `MEETING`, `TERM_START`, `OUTING`, `HOLIDAY`, `CLOSURE`, `CELEBRATION` or `OTHER` |
-| `startAt`, `endAt` | a day, `2026-12-03`, or a wall-clock time **without zone**, `2026-12-03T18:00` |
-| `allDay` | optional; absent, a day-only `startAt` means all day and a time does not |
-| `visibility` | optional, `PUBLIC`, `MEMBERS` (default) or `STAFF` |
-| `summary`, `description`, `location`, `announceDaysBefore` | optional |
+| Field                                                      | Shape                                                                                                     |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `title`, `category`                                        | required; `category` is `MEETING`, `TERM_START`, `OUTING`, `HOLIDAY`, `CLOSURE`, `CELEBRATION` or `OTHER` |
+| `startAt`, `endAt`                                         | a day, `2026-12-03`, or a wall-clock time **without zone**, `2026-12-03T18:00`                            |
+| `allDay`                                                   | optional; absent, a day-only `startAt` means all day and a time does not                                  |
+| `visibility`                                               | optional, `PUBLIC`, `MEMBERS` (default) or `STAFF`                                                        |
+| `summary`, `description`, `location`, `announceDaysBefore` | optional                                                                                                  |
 
 It runs the dashboard's own `createEvent`, so refusals are the dashboard's: `notConfigured` when the
 school has not enabled events, `slugTaken` when an active event already has that title,
@@ -434,12 +436,12 @@ Four tools let an agent reread and fix what it dictated. They run the dashboard'
 `events_enabled`, the date bounds and `slugTaken` behave exactly as on screen; a disabled school
 gets `notConfigured` from each of them.
 
-| Tool | Arguments | Publishes |
-|---|---|---|
-| `list_events` | optional `from`, `to` (inclusive days bounding `startAt`), `status`, `limit` (default 50, at most 100) | `events[]` with the columns of `create_event`'s result, `hasMore` |
-| `get_event` | `id` | the same columns plus `summary`, `description`, `announceDaysBefore` |
-| `update_event` | `id` and any field of `create_event`; `null` clears an optional one | the updated event |
-| `duplicate_event` | `id`, a new `title` | the copy, one year later |
+| Tool              | Arguments                                                                                              | Publishes                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `list_events`     | optional `from`, `to` (inclusive days bounding `startAt`), `status`, `limit` (default 50, at most 100) | `events[]` with the columns of `create_event`'s result, `hasMore`    |
+| `get_event`       | `id`                                                                                                   | the same columns plus `summary`, `description`, `announceDaysBefore` |
+| `update_event`    | `id` and any field of `create_event`; `null` clears an optional one                                    | the updated event                                                    |
+| `duplicate_event` | `id`, a new `title`                                                                                    | the copy, one year later                                             |
 
 - `list_events` covers every status, so a draft created earlier is found with `status: "DRAFT"`.
   Archived events never appear. `to` before `from` is `invalidDateRange`.
@@ -464,11 +466,11 @@ even when its timetable contains several lessons; its `slotId`, `startTime` and 
 The existing `PER_SLOT` behavior remains the default. Earlier recorded calls remain visible
 after a frequency change and are never silently merged or deleted.
 
-| Argument | Shape |
-|---|---|
-| `periodId` | required, from `list_periods`; another school's period is `notFound` |
-| `classPeriodId` | optional, from `list_class_periods` |
-| `from`, `to` | inclusive UTC days, `2026-09-26`; `to` defaults to `from`, 31 days at most |
+| Argument        | Shape                                                                      |
+| --------------- | -------------------------------------------------------------------------- |
+| `periodId`      | required, from `list_periods`; another school's period is `notFound`       |
+| `classPeriodId` | optional, from `list_class_periods`                                        |
+| `from`, `to`    | inclusive UTC days, `2026-09-26`; `to` defaults to `from`, 31 days at most |
 
 The result is `days[]` with `date`, `closed` and `calls[]`; a day without any call is omitted. A call
 publishes `classPeriod { id, name }`, `slotId`, `startTime`, `endTime`, `status`, `sessionId` and
@@ -484,24 +486,24 @@ school or actor argument; those come from the authenticated scope. They remain d
 with `meals_enabled` off and return `mealsDisabled`. Meal-only receipts work even when tuition
 payments are disabled. Every mutation requires the dashboard assistant's normal approval.
 
-| Tool | Input and behavior |
-| --- | --- |
-| `get_meal_settings` | No arguments; service settings and dated prices, including price IDs |
-| `get_student_meals` | `studentId`, optional inclusive `from`/`to`; accounts, schedules, current price, opening, coverage and calendar; at most 93 days, default 31 days from the current month's first day |
-| `get_staff_meals` | `teacherId` from `list_teachers`, optional inclusive `from`/`to`; same shape as `get_student_meals` plus `name` and `mealExempt` (exempt: nothing due); unknown, other-school or deactivated teacher: `notFound` |
+| Tool                            | Input and behavior                                                                                                                                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_meal_settings`             | No arguments; service settings and dated prices, including price IDs                                                                                                                                                                        |
+| `get_student_meals`             | `studentId`, optional inclusive `from`/`to`; accounts, schedules, current price, opening, coverage and calendar; at most 93 days, default 31 days from the current month's first day                                                        |
+| `get_staff_meals`               | `teacherId` from `list_teachers`, optional inclusive `from`/`to`; same shape as `get_student_meals` plus `name` and `mealExempt` (exempt: nothing due); unknown, other-school or deactivated teacher: `notFound`                            |
 | `list_staff_meal_subscriptions` | Optional `service`, optional `date` (default today); every active teacher with `mealExempt` and accounts: segment serving `date` or the next one, all segments, `paidThrough`, `dueDays`, `dueAmount`; empty `accounts` when not subscribed |
-| `list_family_receipts` | `familyId`, optional `limit` (default 50, maximum 100); latest numbered receipts including cancelled ones, meal and childcare lines and `hasMore` |
-| `set_meal_service_setting` | `service`, `isEnabled`, `allowedWeekdays`; replaces service settings, ISO weekdays 1–7 |
-| `set_meal_price` | `service`, `amount`, `effectiveFrom`; same date replaces the price; only the first price may start in the past |
-| `remove_meal_price` | Price `id`; only before its effective day |
-| `subscribe_meal` | `studentId`, `service`, `periodId`, `weekdays`, `startOn`; opens a segment, past starts within the period allowed |
-| `subscribe_staff_meal` | `teacherId`, `service`, `periodId`, `weekdays`, `startOn`; same for an active staff member, billed at the student price unless exempt |
-| `change_meal_schedule` | `studentId` or `teacherId`, `service`, `weekdays`, `effectiveFrom`; changes today or later |
-| `stop_meal` | `studentId` or `teacherId`, `service`, `effectiveFrom`; stops today or later |
-| `record_meal_opening` | `studentId` or `teacherId`, `service`, `paidThrough`, required `reason`; replaces historical opening coverage, creates no receipt |
-| `toggle_meal_absence` | `studentId` or `teacherId`, `service`, `day`, `absent`; marks or removes an absence on a scheduled open day |
-| `record_receipt` | `familyId`, stable UUID `idempotencyKey`, `method`, optional `reference`, `tuition`, `meals`, optional `childcare`; returns receipt `id` |
-| `cancel_receipt` | `receiptId`, required `reason`; cancels all its meal and tuition lines, retaining its number |
+| `list_family_receipts`          | `familyId`, optional `limit` (default 50, maximum 100); latest numbered receipts including cancelled ones, meal and childcare lines and `hasMore`                                                                                           |
+| `set_meal_service_setting`      | `service`, `isEnabled`, `allowedWeekdays`; replaces service settings, ISO weekdays 1–7                                                                                                                                                      |
+| `set_meal_price`                | `service`, `amount`, `effectiveFrom`; same date replaces the price; only the first price may start in the past                                                                                                                              |
+| `remove_meal_price`             | Price `id`; only before its effective day                                                                                                                                                                                                   |
+| `subscribe_meal`                | `studentId`, `service`, `periodId`, `weekdays`, `startOn`; opens a segment, past starts within the period allowed                                                                                                                           |
+| `subscribe_staff_meal`          | `teacherId`, `service`, `periodId`, `weekdays`, `startOn`; same for an active staff member, billed at the student price unless exempt                                                                                                       |
+| `change_meal_schedule`          | `studentId` or `teacherId`, `service`, `weekdays`, `effectiveFrom`; changes today or later                                                                                                                                                  |
+| `stop_meal`                     | `studentId` or `teacherId`, `service`, `effectiveFrom`; stops today or later                                                                                                                                                                |
+| `record_meal_opening`           | `studentId` or `teacherId`, `service`, `paidThrough`, required `reason`; replaces historical opening coverage, creates no receipt                                                                                                           |
+| `toggle_meal_absence`           | `studentId` or `teacherId`, `service`, `day`, `absent`; marks or removes an absence on a scheduled open day                                                                                                                                 |
+| `record_receipt`                | `familyId`, stable UUID `idempotencyKey`, `method`, optional `reference`, `tuition`, `meals`, optional `childcare`; returns receipt `id`                                                                                                    |
+| `cancel_receipt`                | `receiptId`, required `reason`; cancels all its meal and tuition lines, retaining its number                                                                                                                                                |
 
 The four account tools above take exactly one owner, `studentId` or `teacherId`; both or neither
 returns `validationError`. Staff are the school's teachers (`list_teachers`).
@@ -530,13 +532,13 @@ opening replaces the first. The calendar reflects published closures and meal ab
 Monthly childcare (see `docs/business-rules.md`, Childcare) reuses the dashboard's use cases, under
 the same `meals_enabled` gate, scope injection and approval rules as the meal tools.
 
-| Tool | Input and behavior |
-| --- | --- |
-| `get_student_childcare` | `studentId`; subscription (`monthlyAmount`, `startMonth`, `endMonth`, `opening`), billed months with `chargeId`, `amount`, `paidByReceipts`, `settledByOpening`, `remaining`, `cancelled`, totals, `debtorFamilyId` and the school's `currentMonth` |
-| `save_childcare_subscription` | `studentId`, `monthlyAmount`, `startMonth`, `endMonth` (`YYYY-MM` or `null`); creates or replaces the subscription |
-| `bill_childcare_month` | `month`; bills that month for **every** active subscription of the school covering it; a replay bills nothing twice |
-| `record_childcare_opening` | `studentId`, `paidThrough`, required `reason`; months through `paidThrough` owe nothing, no receipt is created; replaces the previous opening |
-| `cancel_childcare_charge` | `chargeId`, required `reason`; refused while a receipt pays it (`hasPayments`) |
+| Tool                          | Input and behavior                                                                                                                                                                                                                                  |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_student_childcare`       | `studentId`; subscription (`monthlyAmount`, `startMonth`, `endMonth`, `opening`), billed months with `chargeId`, `amount`, `paidByReceipts`, `settledByOpening`, `remaining`, `cancelled`, totals, `debtorFamilyId` and the school's `currentMonth` |
+| `save_childcare_subscription` | `studentId`, `monthlyAmount`, `startMonth`, `endMonth` (`YYYY-MM` or `null`); creates or replaces the subscription                                                                                                                                  |
+| `bill_childcare_month`        | `month`; bills that month for **every** active subscription of the school covering it; a replay bills nothing twice                                                                                                                                 |
+| `record_childcare_opening`    | `studentId`, `paidThrough`, required `reason`; months through `paidThrough` owe nothing, no receipt is created; replaces the previous opening                                                                                                       |
+| `cancel_childcare_charge`     | `chargeId`, required `reason`; refused while a receipt pays it (`hasPayments`)                                                                                                                                                                      |
 
 Months use `YYYY-MM`. A billed month is paid through `record_receipt`: each `childcare` line names a
 `chargeId` and an `amount` up to its `remaining` (`childcareOverpayment` beyond it); pass the child's
@@ -557,15 +559,15 @@ creation: the tool answers `{ "created": false, "reason": "possibleDuplicate", "
 with the identity of each match and writes nothing. Send `allowDuplicate: true` to create the
 homonym anyway, once the human confirms it is someone else.
 
-| Tool | Paper it matches | State |
-|---|---|---|
-| `enroll_family` | a full enrollment form: family, parents, students, enrollment, deposit — or, by `familyId`, children of a family already entered | shipped |
-| `merge_families` | merge a source family into a retained target | shipped |
-| `record_payment` | a receipt or payment slip | shipped |
-| `update_enrollment` | a correction: a child moved to another plan, a discount granted | shipped |
-| `class_schedule` | a whole weekly planning: every class, day, time and teacher of a period | shipped |
-| `create_teacher` | a teacher sheet | shipped, single write (no preview) |
-| `record_teacher_expense` | a teacher expense note: a receipt for snacks, supplies, goods | shipped |
+| Tool                     | Paper it matches                                                                                                                 | State                              |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `enroll_family`          | a full enrollment form: family, parents, students, enrollment, deposit — or, by `familyId`, children of a family already entered | shipped                            |
+| `merge_families`         | merge a source family into a retained target                                                                                     | shipped                            |
+| `record_payment`         | a receipt or payment slip                                                                                                        | shipped                            |
+| `update_enrollment`      | a correction: a child moved to another plan, a discount granted                                                                  | shipped                            |
+| `class_schedule`         | a whole weekly planning: every class, day, time and teacher of a period                                                          | shipped                            |
+| `create_teacher`         | a teacher sheet                                                                                                                  | shipped, single write (no preview) |
+| `record_teacher_expense` | a teacher expense note: a receipt for snacks, supplies, goods                                                                    | shipped                            |
 
 For a family merge, `preview_merge_families` accepts `sourceId` and `targetId` and shows
 both families' members and accounts, blockers, and the `expandedFamilyAccess` warning. The
@@ -647,23 +649,23 @@ same outstanding balance, cannot both land.
 
 Refusals a commit can return, as `{ "error": … }` with `isError`:
 
-| Body | Cause |
-|---|---|
-| `validationError` | malformed `draftId` or `checksum`, or a stored plan of an older shape |
-| `draftNotFound` | unknown draft, a draft belonging to the other tool, or one proposed by another key |
-| `draftExpired` | the thirty minutes ran out; run the preview again |
-| `checksumMismatch` | the checksum does not match the plan that was shown |
-| `commitInProgress` | a concurrent commit is still inside its transaction; retry |
-| `notFound` | the class resolved by the preview no longer exists, or the enrollment or plan it targets |
-| `teacherNotFound` | a teacher of the planning is no longer assigned to its class |
-| `classOverlap` / `teacherOverlap` | a slot of the planning now overlaps one written since the preview; nothing was written |
-| `classFull` | the class filled up between the preview and the commit |
-| `overpayment` | the amount now exceeds what the family still owes |
-| `noPayableEnrollments` | the family has no `PENDING` or `ACTIVE` enrollment left to pay |
-| `refundExceedsPaid` | the refund now exceeds what was banked |
-| `staleDraft` | the split no longer matches the fresh balances, or the enrollment or plan changed; preview again |
-| `totalBelowPaid` | a payment banked since the preview exceeds the enrollment's new total |
-| `internalError` | anything unexpected, with the detail kept server-side |
+| Body                              | Cause                                                                                            |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `validationError`                 | malformed `draftId` or `checksum`, or a stored plan of an older shape                            |
+| `draftNotFound`                   | unknown draft, a draft belonging to the other tool, or one proposed by another key               |
+| `draftExpired`                    | the thirty minutes ran out; run the preview again                                                |
+| `checksumMismatch`                | the checksum does not match the plan that was shown                                              |
+| `commitInProgress`                | a concurrent commit is still inside its transaction; retry                                       |
+| `notFound`                        | the class resolved by the preview no longer exists, or the enrollment or plan it targets         |
+| `teacherNotFound`                 | a teacher of the planning is no longer assigned to its class                                     |
+| `classOverlap` / `teacherOverlap` | a slot of the planning now overlaps one written since the preview; nothing was written           |
+| `classFull`                       | the class filled up between the preview and the commit                                           |
+| `overpayment`                     | the amount now exceeds what the family still owes                                                |
+| `noPayableEnrollments`            | the family has no `PENDING` or `ACTIVE` enrollment left to pay                                   |
+| `refundExceedsPaid`               | the refund now exceeds what was banked                                                           |
+| `staleDraft`                      | the split no longer matches the fresh balances, or the enrollment or plan changed; preview again |
+| `totalBelowPaid`                  | a payment banked since the preview exceeds the enrollment's new total                            |
+| `internalError`                   | anything unexpected, with the detail kept server-side                                            |
 
 `update_enrollment` changes the plan, the discount, or both, on one `PENDING` or `ACTIVE`
 enrollment. The enrollment is named by `enrollmentId`, or by `studentName` and `studentLastname`;
@@ -672,13 +674,13 @@ moving to another plan never silently erases a discount already granted. The tot
 from the target plan's current price, and payments stay on the enrollment. The plan shows
 `before`, `after`, what was already `paid` and what `remaining` is left. Its blockers:
 
-| Reason | Cause |
-|---|---|
+| Reason                             | Cause                                                                            |
+| ---------------------------------- | -------------------------------------------------------------------------------- |
 | `notFound` / `ambiguousEnrollment` | no open enrollment, or several; `matches.enrollments` lists them with their `id` |
-| `unknownPlan` / `ambiguousPlan` | the plan label resolves to no plan, or several |
-| `discountExceedsPlan` | the discount is above the target plan |
-| `totalBelowPaid` | the new total is below what was already banked on the enrollment |
-| `noChange` | plan, discount and total are already those |
+| `unknownPlan` / `ambiguousPlan`    | the plan label resolves to no plan, or several                                   |
+| `discountExceedsPlan`              | the discount is above the target plan                                            |
+| `totalBelowPaid`                   | the new total is below what was already banked on the enrollment                 |
+| `noChange`                         | plan, discount and total are already those                                       |
 
 Its commit refuses with `staleDraft` when the enrollment or the target plan's price moved since the
 preview, `notFound` when the enrollment is no longer open or the plan no longer active, and
@@ -702,16 +704,16 @@ last name. Up to one hundred lines. The plan lists each slot with its resolved c
 and `matches` returns the candidates of an ambiguous label and the existing slots in conflict. Its
 blockers name the line: `slots.3.className`, `slots.3.teacherNames.0`, `slots.3.startTime`.
 
-| Reason | Cause |
-|---|---|
-| `notFound` | on `periodId`, an unknown period; on a class label, no class of the period; on a teacher label, no teacher of the school |
-| `ambiguousClass` / `ambiguousTeacher` | the label resolves to several; `matches` lists them |
-| `teacherNotAssigned` | the teacher exists in the school but is not assigned to that class |
-| `invalidTimeRange` | the slot ends before it starts |
-| `duplicateSlot` | an earlier line of the batch (`slots.1`) already holds that class, day and times |
-| `alreadyExists` | a slot of the period already holds that class, day and times; its `id` is the value |
-| `classOverlap` | the slot overlaps an earlier line or an existing slot of the same class |
-| `teacherOverlap` | a teacher is booked twice, in the batch or anywhere else in the school; a warning unless the school forbids it |
+| Reason                                | Cause                                                                                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `notFound`                            | on `periodId`, an unknown period; on a class label, no class of the period; on a teacher label, no teacher of the school |
+| `ambiguousClass` / `ambiguousTeacher` | the label resolves to several; `matches` lists them                                                                      |
+| `teacherNotAssigned`                  | the teacher exists in the school but is not assigned to that class                                                       |
+| `invalidTimeRange`                    | the slot ends before it starts                                                                                           |
+| `duplicateSlot`                       | an earlier line of the batch (`slots.1`) already holds that class, day and times                                         |
+| `alreadyExists`                       | a slot of the period already holds that class, day and times; its `id` is the value                                      |
+| `classOverlap`                        | the slot overlaps an earlier line or an existing slot of the same class                                                  |
+| `teacherOverlap`                      | a teacher is booked twice, in the batch or anywhere else in the school; a warning unless the school forbids it           |
 
 The commit rereads the classes and their teacher assignments, takes every class and teacher lock
 of the batch at once, then writes the slots one by one with the dashboard's overlap checks — a slot
@@ -728,12 +730,12 @@ the school's currency with at most two decimals; `category` and `description` ar
 like the dashboard form; `requestedAt` defaults to today. The plan shows the resolved teacher, the
 amount, both dates and the texts.
 
-| Finding | Kind | Cause |
-|---|---|---|
-| `notFound` | blocker | no active teacher of the school matches the name or the id |
-| `ambiguousTeacher` | blocker | the name matches several teachers; `matches.teachers` lists them |
+| Finding                    | Kind    | Cause                                                                            |
+| -------------------------- | ------- | -------------------------------------------------------------------------------- |
+| `notFound`                 | blocker | no active teacher of the school matches the name or the id                       |
+| `ambiguousTeacher`         | blocker | the name matches several teachers; `matches.teachers` lists them                 |
 | `possibleDuplicateExpense` | warning | an active note of the same teacher, amount and day exists; its `id` is the value |
-| `paidBeforeRequested` | warning | `paidAt` is before `requestedAt`, which the dashboard accepts too |
+| `paidBeforeRequested`      | warning | `paidAt` is before `requestedAt`, which the dashboard accepts too                |
 
 The commit rereads the teacher in its transaction (`notFound` when archived since the preview) and
 creates the note; the result is `id`, `teacherId`, `amount`, `requestedAt`, `paidAt`, and a replay

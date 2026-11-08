@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
   "assist": {
     "actions": {
       "source": {
@@ -10,7 +10,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "complexity": {
         "noForEach": "off"
       },
@@ -64,7 +64,13 @@
   },
   "overrides": [
     {
-      "includes": ["prisma/seed.ts", "prisma/import-roster.ts", "scripts/**"],
+      "includes": [
+        "prisma/seed.ts",
+        "prisma/seed-demo.ts",
+        "prisma/import-roster.ts",
+        "prisma/import-meals.ts",
+        "scripts/**"
+      ],
       "linter": {
         "rules": {
           "suspicious": {

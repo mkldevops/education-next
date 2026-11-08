@@ -10,11 +10,11 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
 
 ## 1. Synthèse
 
-| Workflow | Solide | Simple | UX | UI | Verdict |
-|---|---|---|---|---|---|
-| 13 — Familles, personnes, élèves | 2/5 | 3/5 | 3/5 | 3/5 | Écriture inter-écoles possible via l'ordre du spread, suppression définitive cassée dès qu'un appel a eu lieu. |
-| 14 — Périodes, niveaux, classes | 3/5 | 3/5 | 3/5 | 3/5 | Structure saine (cycles, pointeurs nettoyés), mais chevauchement et capacité divergent de la règle et plusieurs P2002 non gérés. |
-| 15 — Promotion de fin d'année | 2/5 | 3/5 | 3/5 | 3/5 | Bon parcours aperçu → confirmation → rapport, mais classe source erronée possible et exécution non idempotente. |
+| Workflow                         | Solide | Simple | UX  | UI  | Verdict                                                                                                                          |
+| -------------------------------- | ------ | ------ | --- | --- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 13 — Familles, personnes, élèves | 2/5    | 3/5    | 3/5 | 3/5 | Écriture inter-écoles possible via l'ordre du spread, suppression définitive cassée dès qu'un appel a eu lieu.                   |
+| 14 — Périodes, niveaux, classes  | 3/5    | 3/5    | 3/5 | 3/5 | Structure saine (cycles, pointeurs nettoyés), mais chevauchement et capacité divergent de la règle et plusieurs P2002 non gérés. |
+| 15 — Promotion de fin d'année    | 2/5    | 3/5    | 3/5 | 3/5 | Bon parcours aperçu → confirmation → rapport, mais classe source erronée possible et exécution non idempotente.                  |
 
 ## 2. Constats par workflow
 
@@ -23,6 +23,7 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
 #### Critique
 
 **C13-1 — Écriture inter-écoles (IDOR) par ordre du spread.**
+
 - `(dashboard)/_lib/family-actions.ts:44` : `updateFamily({ schoolId, id, ...data })`.
 - `(dashboard)/_lib/student-actions.ts:56` : `updateStudent({ schoolId, id, ...data })`.
 - Les schémas Zod acceptent `schoolId` (`src/features/families/schemas.ts:42-50`,
@@ -37,6 +38,7 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
   ajouter un test qui injecte un `schoolId` étranger.
 
 **C13-2 — La suppression définitive d'une famille plante dès qu'un élève a été pointé.**
+
 - `src/gateways/family-gateway.ts:177-223` (`deleteWithRelated`) ne supprime pas les
   `AttendanceEntry`.
 - `AttendanceEntry.student` est en `onDelete: Restrict` (`prisma/schema.prisma:656`, migration
@@ -53,6 +55,7 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
 #### Majeur
 
 **M13-1 — Une famille archivée est inaccessible et ne peut pas être restaurée.**
+
 - La liste filtre sur `isActive` (`dashboard/families/page.tsx:52-53`), et `resolveFamily`
   (`dashboard/families/[id]/_lib/family-detail.ts:14-22`) lit via `db` soft-delete, ce qui donne
   une 404 pour une famille archivée.
@@ -63,6 +66,7 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
   supprimer.
 
 **M13-2 — L'archivage d'une famille ne masque pas ses membres, contrairement au texte du dialogue.**
+
 - Le dialogue annonce « masquera la famille et ses membres ». Or `familyGateway.deactivate`
   (`src/gateways/family-gateway.ts:117-121`) n'archive que la ligne `Family`.
 - Scénario : après archivage, les enfants restent listés dans `dashboard/students/page.tsx:40-55`.
@@ -71,6 +75,7 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
   texte et masquer le lien quand la famille est archivée.
 
 **M13-3 — `createStudent` n'est pas transactionnel.**
+
 - `src/use-cases/students/create-student.ts:28-34` crée la personne, puis l'élève, puis le lien
   `FamilyPerson`, en trois écritures séparées.
 - Scénario : l'écriture du lien échoue (famille archivée entre-temps, FK composite). Il reste une
@@ -79,6 +84,7 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
 - Correctif : envelopper les trois écritures dans `db.$transaction`.
 
 **M13-4 — Course sur la dernière place lors d'un ajout d'élève inscrit.**
+
 - `src/use-cases/students/create-enrolled-student.ts:85-87` affirme que deux ajouts concurrents ne
   peuvent pas passer tous les deux. Pourtant le comptage (lignes 88-96) s'exécute en READ
   COMMITTED, sans verrou sur la classe.
@@ -90,18 +96,21 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
 #### Mineur
 
 **m13-1 — `addPhoneAction` ne vérifie pas la personne.**
+
 - `(dashboard)/_lib/family-actions.ts:102-115`.
 - Scénario : avec un `personId` inconnu, la FK composite lève P2003, non interceptée. La clé
   `addPhone.notFound` n'est jamais produite. Une personne archivée peut aussi recevoir un numéro.
 - Correctif : charger la personne active de l'école avant l'insertion et renvoyer `'notFound'`.
 
 **m13-2 — `linkUserToFamily` ne valide pas l'utilisateur et plante sur un doublon.**
+
 - `src/use-cases/families/link-user-to-family.ts` et `src/gateways/family-gateway.ts:304-311`.
 - Scénario : un `userId` qui n'est pas membre de l'école est accepté. Un lien déjà existant lève
   P2002, non interceptée.
 - Correctif : vérifier l'appartenance à l'école et mapper P2002 vers `'alreadyLinked'`.
 
 **m13-3 — Le dialogue de suppression définitive est incomplet.**
+
 - `dashboard/families/_components/delete-family-dialog.tsx` : la saisie du nom, la liste d'impact
   et le bouton désactivé tant que le nom ne correspond pas sont bien faits.
 - Manques : les présences ne sont pas comptées (voir C13-2), et l'état en cours affiche `'...'`
@@ -109,6 +118,7 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
 - Correctif : ajouter le compteur de présences et un libellé « Suppression… » avec `aria-busy`.
 
 **m13-4 — L'enfant est lié avec `relationType: 'OTHER'`.**
+
 - `src/use-cases/students/create-student.ts:34`.
 - Scénario : un élève créé depuis la fiche famille apparaît comme « Autre » et non comme enfant
   dans les listes de membres.
@@ -116,6 +126,7 @@ Chemins abrégés : `(dashboard)/` = `app/[locale]/(dashboard)/`, `dashboard/` =
   `schema.prisma`).
 
 **m13-5 — Tests de suppression faibles.**
+
 - `src/use-cases/families/__tests__/delete-family.test.ts` ne fait que mocker le gateway.
 - `family-cascade-delete.test.ts` est ignoré sans base (`describe.skipIf`), donc la CI peut ne
   jamais l'exécuter (à vérifier dans la configuration CI).
@@ -131,6 +142,7 @@ détail.
 #### Majeur
 
 **M14-1 — Le chevauchement de périodes utilise des bornes fermées, contrairement à la règle.**
+
 - `src/gateways/period-gateway.ts:26-35` compare avec `lte` / `gte`. `docs/business-rules.md`
   définit des intervalles semi-ouverts.
 - La fonction pure `src/domain/period.ts:29-43` (`checkOverlap`) respecte la règle, mais elle n'est
@@ -141,6 +153,7 @@ détail.
   propriétaire de la règle.
 
 **M14-2 — Un nom de période en double fait planter l'action.**
+
 - L'index unique partiel `Period(schoolId, name) WHERE isActive` existe (`prisma/schema.prisma`,
   modèle `Period`). Pourtant `src/use-cases/periods/create-period.ts:20` et
   `update-period.ts:28` n'interceptent pas P2002.
@@ -151,6 +164,7 @@ détail.
 - Correctif : mapper P2002 vers `'nameTaken'` (avec sa clé fr/en) et appliquer `.trim()` au nom.
 
 **M14-3 — Le contrôle de réduction de capacité ne compte pas comme la règle d'occupation.**
+
 - `src/gateways/class-period-gateway.ts:96-106` (`countEnrolled`) utilise
   `OPEN_ENROLLMENT_STATUSES` (PENDING et ACTIVE). La règle d'occupation et `checkCapacity` comptent
   aussi COMPLETED.
@@ -161,6 +175,7 @@ détail.
 #### Mineur
 
 **m14-1 — `setNextLevel` n'est pas atomique.**
+
 - `src/use-cases/levels/set-next-level.ts:23-38` : la vérification `alreadyLinked` et la mise à
   jour sont séparées.
 - Scénario : deux admins pointent deux niveaux vers le même successeur en même temps. La contrainte
@@ -169,6 +184,7 @@ détail.
 - Correctif : intercepter P2002 et renvoyer `'alreadyLinked'`.
 
 **m14-2 — Le dialogue d'édition de niveau enchaîne deux actions et supprime sans confirmation.**
+
 - `dashboard/levels/_components/edit-level-dialog.tsx:93-106` appelle le renommage puis le
   chaînage, hors transaction. Si le second échoue, le nom est déjà changé et le dialogue reste
   ouvert sans l'indiquer.
@@ -180,6 +196,7 @@ détail.
   signaler un succès partiel.
 
 **m14-3 — Des codes d'erreur de classe ne sont pas traduits.**
+
 - `src/use-cases/class-periods/create-class-period.ts:23,26` renvoie `levelNotFound` et
   `periodNotFound`. Ces clés n'existent pas dans `classes.create.errors` (`messages/fr.json`,
   `en.json`), donc l'utilisateur voit l'erreur générique.
@@ -187,6 +204,7 @@ détail.
 - Correctif : ajouter les clés manquantes et supprimer la clé morte.
 
 **m14-4 — Changer le niveau d'une classe déjà remplie ne déclenche aucun avertissement.**
+
 - `src/use-cases/class-periods/update-class-period.ts:24-34`.
 - Scénario : changer CP en CE1 sur une classe qui a des élèves déplace silencieusement toute la
   classe de niveau, ce qui fausse la promotion suivante. Le comportement côté UI est à vérifier.
@@ -194,6 +212,7 @@ détail.
   demander une confirmation explicite.
 
 **m14-5 — Les actions désactivées ne s'expliquent que par `title` (accessibilité).**
+
 - `dashboard/periods/_components/period-row-actions.tsx` (vers les lignes 83-100) et
   `edit-level-dialog.tsx:157-158`.
 - Scénario : un utilisateur au clavier ou avec un lecteur d'écran ne sait pas pourquoi
@@ -201,6 +220,7 @@ détail.
 - Correctif : afficher la raison en texte visible ou via `aria-describedby`.
 
 **m14-6 — Noms de niveaux non nettoyés côté serveur.**
+
 - `src/features/levels/schemas.ts:5,17` n'applique pas `.trim()`. Le dialogue le fait, mais pas
   les autres appelants (MCP par exemple).
 - Correctif : ajouter `.trim()` dans le schéma.
@@ -211,6 +231,7 @@ détail.
 
 **M15-1 — La promotion peut partir d'une affectation de classe terminée et promouvoir un élève
 archivé.**
+
 - `src/gateways/enrollment-gateway.ts:257-290` (`findCompletedByPeriod`) filtre `classAssignments`
   par période, mais ni par `endAt: null` ni avec un `orderBy`.
 - `src/use-cases/enrollments/promote-students.ts:69,142` prend ensuite `classAssignments[0]`.
@@ -223,6 +244,7 @@ archivé.**
   `student: { isActive: true }`.
 
 **M15-2 — L'exécution n'est ni idempotente ni sûre en concurrence.**
+
 - `src/use-cases/enrollments/promote-students.ts:60-64` lit `alreadyPromoted` une seule fois,
   avant la boucle.
 - La transaction par élève (lignes 202-247) n'appelle pas `lockStudentInPeriod`, ne revérifie pas
@@ -235,6 +257,7 @@ archivé.**
 #### Mineur
 
 **m15-1 — La formule de la période source est recopiée sans contrôle.**
+
 - `src/use-cases/enrollments/promote-students.ts:217-220` copie `planId` et `totalAmount`, même si
   la formule est archivée ou si son prix a changé.
 - Scénario : la nouvelle année est facturée à l'ancien tarif, ou rattachée à une formule archivée.
@@ -243,6 +266,7 @@ archivé.**
   qu'elle soit choisie à la validation.
 
 **m15-2 — Règle métier dupliquée dans du code mort.**
+
 - `src/domain/promotion.ts` (`isEligibleForPromotion`) n'est utilisé que par
   `src/domain/__tests__/promotion.test.ts`, alors que `docs/business-rules.md` le désigne comme
   propriétaire de la règle. Le use case réimplémente l'éligibilité.
@@ -250,12 +274,14 @@ archivé.**
   doc à jour.
 
 **m15-3 — La revalidation après promotion est trop étroite.**
+
 - `(dashboard)/_lib/enrollment-actions.ts:92-98` ne revalide que `/dashboard/enrollments`.
 - Scénario : après une promotion, les effectifs des pages classes et périodes restent périmés
   jusqu'à la prochaine navigation dynamique (à vérifier selon le cache de ces pages).
 - Correctif : revalider aussi `/dashboard/classes`, `/dashboard/periods` et `/dashboard/students`.
 
 **m15-4 — Dialogue de promotion : rapport peu lisible et aperçu trop opaque.**
+
 - Fichier : `dashboard/periods/_components/promote-period-dialog.tsx`. Le parcours
   aperçu → confirmation → rapport est bien fait, avec un try/catch.
 - Ligne 184 : le rapport affiche l'UUID brut `{studentId}` pour les erreurs. La répartition des
@@ -267,12 +293,14 @@ archivé.**
   désactiver la confirmation quand il n'y a rien à promouvoir.
 
 **m15-5 — La cible de promotion n'est filtrée que dans l'UI.**
+
 - `dashboard/periods/page.tsx` ne propose que les périodes postérieures (`startAt >`), mais le
   serveur ne vérifie pas cet ordre.
 - Scénario : un appel direct à l'action (ou via MCP) promeut vers une période antérieure.
 - Correctif : refuser côté use case une période cible qui ne commence pas après la source.
 
 **m15-6 — Des cas ne sont pas testés.**
+
 - `promote-students.test.ts` couvre l'éligibilité, la parité aperçu/exécution et une transaction
   par élève.
 - Il ne couvre ni la réaffectation en cours d'année (M15-1) ni la double exécution (M15-2).

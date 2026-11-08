@@ -309,7 +309,7 @@ export function MultiSelect({
               width: position.width,
               maxHeight: position.maxHeight,
             }}
-            className="fixed z-[60] overflow-y-auto rounded border border-alabaster-700 bg-white py-1 shadow-lg"
+            className="fixed z-60 overflow-y-auto rounded border border-alabaster-700 bg-white py-1 shadow-lg"
           >
             {results.length === 0 && !canCreate && (
               <p className="px-3 py-2 text-sm text-graphite-600">{noResultsMessage}</p>

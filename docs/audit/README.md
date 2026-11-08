@@ -8,31 +8,31 @@ confirmer avant correction.
 
 ## Notes (Solide / Simple / UX / UI, sur 5)
 
-| Groupe | Workflow | S | Si | UX | UI | Rapport |
-|---|---|---|---|---|---|---|
-| money | Paiement manuel | 2 | 3 | 2 | 3 | [money.md](money.md) |
-| money | Stripe | 2 | 4 | 3 | 3 | |
-| money | Cycle d'inscription | 3 | 3 | 2 | 3 | |
-| money | `payments_enabled` | 4 | 4 | 3 | 4 | |
-| money | Plans | 3 | 4 | 2 | 3 | |
-| auth | Connexion / reset | 2 | 3 | 3 | 3 | [auth.md](auth.md) |
-| auth | Invitations | 3 | 3 | 2 | 2 | |
-| auth | Profil / compte | 2 | 3 | 3 | 3 | |
-| access | Rôles et scope | 4 | 4 | 3 | 3 | [access.md](access.md) |
-| access | Multi-école | 4 | 3 | 3 | 4 | |
-| access | Utilisateurs, impersonation | 2 | 3 | 2 | 3 | |
-| mcp | Clés API | 4 | 4 | 3 | 4 | [mcp.md](mcp.md) |
-| mcp | enroll_family | 2 | 3 | 2 | — | |
-| mcp | record_payment | 3 | 4 | 3 | — | |
-| school-records | Familles, élèves | 2 | 3 | 3 | 3 | [school-records.md](school-records.md) |
-| school-records | Périodes, niveaux, classes | 3 | 3 | 3 | 3 | |
-| school-records | Promotion | 2 | 3 | 3 | 3 | |
-| teaching | Emploi du temps | 3 | 3 | 3 | 3 | [teaching.md](teaching.md) |
-| teaching | Présences | 2 | 2 | 3 | 4 | |
-| teaching | Enseignants | 3 | 4 | 3 | 3 | |
-| content-config | Événements, ICS | 2 | 4 | 3 | 4 | [content-config.md](content-config.md) |
-| content-config | Config, branding, médias | 3 | 4 | 4 | 4 | |
-| content-config | Écoles, import legacy | 3 | 4 | 3 | 4 | |
+| Groupe         | Workflow                    | S   | Si  | UX  | UI  | Rapport                                |
+| -------------- | --------------------------- | --- | --- | --- | --- | -------------------------------------- |
+| money          | Paiement manuel             | 2   | 3   | 2   | 3   | [money.md](money.md)                   |
+| money          | Stripe                      | 2   | 4   | 3   | 3   |                                        |
+| money          | Cycle d'inscription         | 3   | 3   | 2   | 3   |                                        |
+| money          | `payments_enabled`          | 4   | 4   | 3   | 4   |                                        |
+| money          | Plans                       | 3   | 4   | 2   | 3   |                                        |
+| auth           | Connexion / reset           | 2   | 3   | 3   | 3   | [auth.md](auth.md)                     |
+| auth           | Invitations                 | 3   | 3   | 2   | 2   |                                        |
+| auth           | Profil / compte             | 2   | 3   | 3   | 3   |                                        |
+| access         | Rôles et scope              | 4   | 4   | 3   | 3   | [access.md](access.md)                 |
+| access         | Multi-école                 | 4   | 3   | 3   | 4   |                                        |
+| access         | Utilisateurs, impersonation | 2   | 3   | 2   | 3   |                                        |
+| mcp            | Clés API                    | 4   | 4   | 3   | 4   | [mcp.md](mcp.md)                       |
+| mcp            | enroll_family               | 2   | 3   | 2   | —   |                                        |
+| mcp            | record_payment              | 3   | 4   | 3   | —   |                                        |
+| school-records | Familles, élèves            | 2   | 3   | 3   | 3   | [school-records.md](school-records.md) |
+| school-records | Périodes, niveaux, classes  | 3   | 3   | 3   | 3   |                                        |
+| school-records | Promotion                   | 2   | 3   | 3   | 3   |                                        |
+| teaching       | Emploi du temps             | 3   | 3   | 3   | 3   | [teaching.md](teaching.md)             |
+| teaching       | Présences                   | 2   | 2   | 3   | 4   |                                        |
+| teaching       | Enseignants                 | 3   | 4   | 3   | 3   |                                        |
+| content-config | Événements, ICS             | 2   | 4   | 3   | 4   | [content-config.md](content-config.md) |
+| content-config | Config, branding, médias    | 3   | 4   | 4   | 4   |                                        |
+| content-config | Écoles, import legacy       | 3   | 4   | 3   | 4   |                                        |
 
 ## Priorités transverses
 

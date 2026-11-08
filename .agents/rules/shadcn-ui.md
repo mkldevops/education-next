@@ -1,8 +1,11 @@
 ---
+
 paths:
-  - "src/components/**"
-  - "**/*.tsx"
-  - "components.json"
+
+- "src/components/**"
+- "**/*.tsx"
+- "components.json"
+
 ---
 
 # UI Primitive Rules

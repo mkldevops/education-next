@@ -147,13 +147,13 @@ propres enfants. `/dashboard/families` doit ouvrir directement sa famille liée.
 
 ## Distinction nécessaire des paiements
 
-| Administration | Parent |
-|---|---|
-| « Enregistrer un règlement » | « Payer en ligne » |
-| Espèces, chèque, virement, carte TPE | Checkout hébergé par le prestataire |
-| Montant et date contrôlés par l'opérateur | Famille dérivée de la session |
-| Création comptable immédiate | Confirmation uniquement par webhook signé |
-| Remboursement administratif | Aucun montant négatif saisi par le parent |
+| Administration                            | Parent                                    |
+| ----------------------------------------- | ----------------------------------------- |
+| « Enregistrer un règlement »              | « Payer en ligne »                        |
+| Espèces, chèque, virement, carte TPE      | Checkout hébergé par le prestataire       |
+| Montant et date contrôlés par l'opérateur | Famille dérivée de la session             |
+| Création comptable immédiate              | Confirmation uniquement par webhook signé |
+| Remboursement administratif               | Aucun montant négatif saisi par le parent |
 
 Le paiement parent ne doit pas réutiliser `recordPaymentAction`. L'option `STRIPE` actuelle est
 seulement une valeur de formulaire ; il n'existe pas encore de Checkout ni de webhook.

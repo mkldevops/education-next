@@ -76,14 +76,14 @@ name paired with an unusable number is not. A candidate name must contain a lett
 holding only numbers (`"0611223344 / 0698765432"`) is kept whole instead of filing one of the numbers
 as somebody's name.
 
-| Original | Name | Phone |
-|---|---|---|
-| `Fahari` | `Fahari` | — |
-| `06 12 34 56 78` | — | `06 12 34 56 78` |
-| `Marie QA2 - 06 11 22 33 44` | `Marie QA2` | `06 11 22 33 44` |
-| `06 11 22 33 44 Marie` | `Marie` | `06 11 22 33 44` |
-| `Marie QA2 06 11 22 33 44` | *(kept whole)* | — |
-| `0611223344 / 0698765432` | *(kept whole)* | — |
+| Original                     | Name           | Phone            |
+| ---------------------------- | -------------- | ---------------- |
+| `Fahari`                     | `Fahari`       | —                |
+| `06 12 34 56 78`             | —              | `06 12 34 56 78` |
+| `Marie QA2 - 06 11 22 33 44` | `Marie QA2`    | `06 11 22 33 44` |
+| `06 11 22 33 44 Marie`       | `Marie`        | `06 11 22 33 44` |
+| `Marie QA2 06 11 22 33 44`   | _(kept whole)_ | —                |
+| `0611223344 / 0698765432`    | _(kept whole)_ | —                |
 
 The same rules are implemented in JavaScript in `scripts/lib/emergency-contact.mjs` for the legacy
 MySQL import, and both are exercised against one shared fixture table. Keep them in step.
