@@ -1,13 +1,16 @@
 ---
+
 description: Execute the implementation planning workflow using the plan template to generate design artifacts.
-handoffs: 
-  - label: Create Tasks
-    agent: speckit.tasks
-    prompt: Break the plan into tasks
-    send: true
-  - label: Create Checklist
-    agent: speckit.checklist
-    prompt: Create a checklist for the following domain...
+handoffs:
+
+- label: Create Tasks
+  agent: speckit.tasks
+  prompt: Break the plan into tasks
+  send: true
+- label: Create Checklist
+  agent: speckit.checklist
+  prompt: Create a checklist for the following domain...
+
 ---
 
 ## User Input
@@ -73,7 +76,6 @@ Take the user input into account before proceeding (if not empty).
    - Document the contract format appropriate for the project type
    - Examples: public APIs for libraries, command schemas for CLI tools, endpoints for web services, grammars for parsers, UI contracts for applications
    - Skip if project is purely internal (build scripts, one-off tools, etc.)
-
 
 **Output**: data-model.md, /contracts/*, quickstart.md
 

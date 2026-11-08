@@ -148,7 +148,7 @@ export function Sidebar({
           'fixed top-(--safe-area-top) bottom-(--safe-area-bottom) left-(--safe-area-left) z-50 flex flex-col border-r border-border bg-surface',
           'transition-[width,translate] duration-(--duration-base) ease-out',
           'md:sticky md:top-0 md:z-30 md:bg-background',
-          expanded ? 'w-72 md:w-60' : 'w-72 md:w-[68px]',
+          expanded ? 'w-72 md:w-60' : 'w-72 md:w-17',
           mobileOpen
             ? 'translate-x-0 shadow-lg md:shadow-none'
             : '-translate-x-full md:translate-x-0'

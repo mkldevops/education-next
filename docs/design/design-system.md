@@ -11,13 +11,13 @@ recompose ses couleurs à la main (plus de 60 fichiers utilisent `red-*`/`amber-
 effets « premium » (dégradés sur l'en-tête de tableau et la navigation active, ombre colorée) datent de 2019,
 pas de 2026. La base (Tailwind v4, CVA, primitives locales, thème par école) est saine et se refond vite.
 
-| Axe | Note | Pourquoi, en une ligne |
-|---|---|---|
-| Modernité | 2/5 | Rayon 4px partout, dégradés primaires, `font-bold` généreux, aucune typo chargée |
-| Cohérence | 1.5/5 | Trois langages coexistent (`rounded` 4px / `rounded-xl` / `rounded-3xl`), couleurs d'état ad hoc |
-| Lisibilité | 3/5 | Hiérarchie correcte, mais montants non tabulaires et gris secondaires trop pâles |
-| Accessibilité | 2/5 | Anneau de focus invisible sur le bouton primaire, bordures d'input à 1,4:1, gris à 3,6:1 |
-| Mode sombre | 0/5 | Inexistant : aucune variante `dark:`, 69 `bg-white` codés en dur |
+| Axe           | Note  | Pourquoi, en une ligne                                                                           |
+| ------------- | ----- | ------------------------------------------------------------------------------------------------ |
+| Modernité     | 2/5   | Rayon 4px partout, dégradés primaires, `font-bold` généreux, aucune typo chargée                 |
+| Cohérence     | 1.5/5 | Trois langages coexistent (`rounded` 4px / `rounded-xl` / `rounded-3xl`), couleurs d'état ad hoc |
+| Lisibilité    | 3/5   | Hiérarchie correcte, mais montants non tabulaires et gris secondaires trop pâles                 |
+| Accessibilité | 2/5   | Anneau de focus invisible sur le bouton primaire, bordures d'input à 1,4:1, gris à 3,6:1         |
+| Mode sombre   | 0/5   | Inexistant : aucune variante `dark:`, 69 `bg-white` codés en dur                                 |
 
 ## 2. Problèmes, par ordre d'impact
 
@@ -116,25 +116,25 @@ portent le métier (payé, partiel, en retard, info). C'est la grammaire de Stri
 Couche sémantique à exposer via `@theme inline` (noms alignés sur shadcn pour que les composants du registre
 fonctionnent sans adaptation). Contrastes calculés sur `surface`.
 
-| Token | Clair | Sombre | Usage / contraste |
-|---|---|---|---|
-| `--background` | `oklch(0.985 0.002 250)` | `oklch(0.16 0.005 260)` | Canevas de l'app |
-| `--surface` (`card`, `popover`) | `oklch(1 0 0)` | `oklch(0.195 0.006 260)` | Cartes, tableaux, dialogues |
-| `--surface-2` (`accent`, `muted`) | `oklch(0.97 0.003 250)` | `oklch(0.235 0.007 260)` | Survol, zones en retrait, `thead` |
-| `--foreground` | `oklch(0.21 0.01 260)` | `oklch(0.96 0.003 260)` | Texte, environ 16:1 |
-| `--muted-foreground` | `oklch(0.50 0.012 260)` | `oklch(0.71 0.01 260)` | Libellés, méta ; ≥ 5,5:1 (remplace `graphite-600/700`) |
-| `--placeholder` | `oklch(0.55 0.01 260)` | `oklch(0.64 0.01 260)` | ≥ 4,5:1 |
-| `--border` | `oklch(0.92 0.004 260)` | `oklch(1 0 0 / 0.08)` | Séparateurs, contours de carte |
-| `--input` | `oklch(0.66 0.008 260)` | `oklch(0.49 0.01 260)` | Contour de champ, 3:1 (WCAG 1.4.11) |
-| `--primary` (défaut école) | `oklch(0.47 0.075 195)` | `oklch(0.74 0.09 195)` | Teal historique, plus dense ; blanc dessus 6,8:1 |
-| `--primary-foreground` | `oklch(0.99 0 0)` | `oklch(0.18 0.03 195)` | Calculé, pas codé en dur (voir plus bas) |
-| `--primary-subtle` | `oklch(from var(--primary) 0.96 0.02 h)` | `oklch(from var(--primary) 0.28 0.04 h)` | Sélection, survol ghost ; **dérivé**, plus saisi |
-| `--ring` | `oklch(from var(--primary) l c h / 0.55)` | idem | Anneau 2px + offset 2px `--background` |
-| `--success` / `-subtle` | `oklch(0.50 0.12 155)` / `oklch(0.965 0.03 155)` | `oklch(0.78 0.13 155)` / `oklch(0.27 0.045 155)` | Payé, présent, actif |
-| `--warning` / `-subtle` | `oklch(0.52 0.11 65)` / `oklch(0.965 0.04 85)` | `oklch(0.82 0.12 80)` / `oklch(0.28 0.05 75)` | Partiel, en retard, solde dû |
-| `--danger` / `-subtle` | `oklch(0.53 0.19 25)` / `oklch(0.965 0.02 25)` | `oklch(0.72 0.16 25)` / `oklch(0.27 0.06 25)` | Impayé, absent, annulé, destructif |
-| `--info` / `-subtle` | `oklch(0.52 0.13 250)` / `oklch(0.965 0.02 250)` | `oklch(0.75 0.11 250)` / `oklch(0.27 0.05 250)` | Terminé, informatif |
-| `--chart-1…5` | primary, info, success, warning, `oklch(0.60 0.10 300)` | versions `L+0.2` | Graphiques (`bar-chart`, courbes) |
+| Token                             | Clair                                                   | Sombre                                           | Usage / contraste                                      |
+| --------------------------------- | ------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------ |
+| `--background`                    | `oklch(0.985 0.002 250)`                                | `oklch(0.16 0.005 260)`                          | Canevas de l'app                                       |
+| `--surface` (`card`, `popover`)   | `oklch(1 0 0)`                                          | `oklch(0.195 0.006 260)`                         | Cartes, tableaux, dialogues                            |
+| `--surface-2` (`accent`, `muted`) | `oklch(0.97 0.003 250)`                                 | `oklch(0.235 0.007 260)`                         | Survol, zones en retrait, `thead`                      |
+| `--foreground`                    | `oklch(0.21 0.01 260)`                                  | `oklch(0.96 0.003 260)`                          | Texte, environ 16:1                                    |
+| `--muted-foreground`              | `oklch(0.50 0.012 260)`                                 | `oklch(0.71 0.01 260)`                           | Libellés, méta ; ≥ 5,5:1 (remplace `graphite-600/700`) |
+| `--placeholder`                   | `oklch(0.55 0.01 260)`                                  | `oklch(0.64 0.01 260)`                           | ≥ 4,5:1                                                |
+| `--border`                        | `oklch(0.92 0.004 260)`                                 | `oklch(1 0 0 / 0.08)`                            | Séparateurs, contours de carte                         |
+| `--input`                         | `oklch(0.66 0.008 260)`                                 | `oklch(0.49 0.01 260)`                           | Contour de champ, 3:1 (WCAG 1.4.11)                    |
+| `--primary` (défaut école)        | `oklch(0.47 0.075 195)`                                 | `oklch(0.74 0.09 195)`                           | Teal historique, plus dense ; blanc dessus 6,8:1       |
+| `--primary-foreground`            | `oklch(0.99 0 0)`                                       | `oklch(0.18 0.03 195)`                           | Calculé, pas codé en dur (voir plus bas)               |
+| `--primary-subtle`                | `oklch(from var(--primary) 0.96 0.02 h)`                | `oklch(from var(--primary) 0.28 0.04 h)`         | Sélection, survol ghost ; **dérivé**, plus saisi       |
+| `--ring`                          | `oklch(from var(--primary) l c h / 0.55)`               | idem                                             | Anneau 2px + offset 2px `--background`                 |
+| `--success` / `-subtle`           | `oklch(0.50 0.12 155)` / `oklch(0.965 0.03 155)`        | `oklch(0.78 0.13 155)` / `oklch(0.27 0.045 155)` | Payé, présent, actif                                   |
+| `--warning` / `-subtle`           | `oklch(0.52 0.11 65)` / `oklch(0.965 0.04 85)`          | `oklch(0.82 0.12 80)` / `oklch(0.28 0.05 75)`    | Partiel, en retard, solde dû                           |
+| `--danger` / `-subtle`            | `oklch(0.53 0.19 25)` / `oklch(0.965 0.02 25)`          | `oklch(0.72 0.16 25)` / `oklch(0.27 0.06 25)`    | Impayé, absent, annulé, destructif                     |
+| `--info` / `-subtle`              | `oklch(0.52 0.13 250)` / `oklch(0.965 0.02 250)`        | `oklch(0.75 0.11 250)` / `oklch(0.27 0.05 250)`  | Terminé, informatif                                    |
+| `--chart-1…5`                     | primary, info, success, warning, `oklch(0.60 0.10 300)` | versions `L+0.2`                                 | Graphiques (`bar-chart`, courbes)                      |
 
 **Thème d'école :** garder `theme_primary` comme **seule** entrée utilisateur et en dériver le reste avec la
 syntaxe de couleur relative OKLCH (`oklch(from …)`). `theme_primary_hover` et `theme_primary_light`
@@ -185,18 +185,18 @@ est refusé si aucun des deux n'atteint 4,5:1.
 
 ### Quick wins (< 1h chacun)
 
-| # | Action | Fichiers |
-|---|---|---|
-| Q1 | Charger Inter via `next/font`, brancher `--font-sans` | `app/[locale]/layout.tsx`, `src/styles/globals.css` |
-| Q2 | Anneau de focus coloré (`ring-[--color-primary]/55 ring-offset-background`) + focus des items de nav et des lignes de tableau | `src/components/ui/button/button.tsx:6`, `rich-data-table/rich-data-table.tsx:208`, `src/features/dashboard/sidebar-nav-item.tsx:68` |
-| Q3 | `thead` neutre : `bg-surface-2`, texte `muted-foreground`, bordure basse ; retirer le dégradé | `src/components/ui/data-table/data-table.tsx:38-45` |
-| Q4 | Nav active sobre : `bg-primary-subtle text-primary font-medium` + barre 2px ; retirer le dégradé et l'ombre colorée | `sidebar-nav-item.tsx:72` |
-| Q5 | `tabular-nums` + alignement à droite sur tous les montants | `payments-table.tsx:69`, `dashboard/page.tsx:234-284`, `kpi-card.tsx`, `financial-summary.tsx`, `families-data-table.tsx`, `enrollments-table.tsx` |
-| Q6 | Remplacer `text-graphite-700` et `text-graphite/60` par `graphite-600` en attendant `muted-foreground` | 31 occurrences (`input.tsx:12`, `header-client.tsx:48,56`, `payments-table.tsx:71`…) |
-| Q7 | Bannir `text-[10px]` (monter à `text-xs`) | `circle-progress.tsx:68`, `enrollment-menu.tsx:84`, `student-trend-card.tsx:59`, `event-images-dialog.tsx:175`, `header-client.tsx:56` |
-| Q8 | Retirer le hero en dégradé à marges négatives ; salutation + date sur fond neutre (modèle Jobber) | `app/[locale]/(dashboard)/dashboard/page.tsx:209` |
-| Q9 | Un seul voile de fond `bg-foreground/40 backdrop-blur-[2px]` | `dialog.tsx:194`, `sidebar.tsx:106`, `drawer/drawer.tsx` |
-| Q10 | Squelette traduit à la place de `Loading...` | `app/[locale]/(dashboard)/layout.tsx:117` |
+| #   | Action                                                                                                                        | Fichiers                                                                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q1  | Charger Inter via `next/font`, brancher `--font-sans`                                                                         | `app/[locale]/layout.tsx`, `src/styles/globals.css`                                                                                                |
+| Q2  | Anneau de focus coloré (`ring-[--color-primary]/55 ring-offset-background`) + focus des items de nav et des lignes de tableau | `src/components/ui/button/button.tsx:6`, `rich-data-table/rich-data-table.tsx:208`, `src/features/dashboard/sidebar-nav-item.tsx:68`               |
+| Q3  | `thead` neutre : `bg-surface-2`, texte `muted-foreground`, bordure basse ; retirer le dégradé                                 | `src/components/ui/data-table/data-table.tsx:38-45`                                                                                                |
+| Q4  | Nav active sobre : `bg-primary-subtle text-primary font-medium` + barre 2px ; retirer le dégradé et l'ombre colorée           | `sidebar-nav-item.tsx:72`                                                                                                                          |
+| Q5  | `tabular-nums` + alignement à droite sur tous les montants                                                                    | `payments-table.tsx:69`, `dashboard/page.tsx:234-284`, `kpi-card.tsx`, `financial-summary.tsx`, `families-data-table.tsx`, `enrollments-table.tsx` |
+| Q6  | Remplacer `text-graphite-700` et `text-graphite/60` par `graphite-600` en attendant `muted-foreground`                        | 31 occurrences (`input.tsx:12`, `header-client.tsx:48,56`, `payments-table.tsx:71`…)                                                               |
+| Q7  | Bannir `text-[10px]` (monter à `text-xs`)                                                                                     | `circle-progress.tsx:68`, `enrollment-menu.tsx:84`, `student-trend-card.tsx:59`, `event-images-dialog.tsx:175`, `header-client.tsx:56`             |
+| Q8  | Retirer le hero en dégradé à marges négatives ; salutation + date sur fond neutre (modèle Jobber)                             | `app/[locale]/(dashboard)/dashboard/page.tsx:209`                                                                                                  |
+| Q9  | Un seul voile de fond `bg-foreground/40 backdrop-blur-[2px]`                                                                  | `dialog.tsx:194`, `sidebar.tsx:106`, `drawer/drawer.tsx`                                                                                           |
+| Q10 | Squelette traduit à la place de `Loading...`                                                                                  | `app/[locale]/(dashboard)/layout.tsx:117`                                                                                                          |
 
 ### Structurel (tokens et primitives)
 
@@ -208,9 +208,9 @@ est refusé si aucun des deux n'atteint 4,5:1.
    interrupteur dans le menu utilisateur (`sidebar-user-menu.tsx`) et `settings`. Pré-requis : zéro `bg-white`
    hors primitives (69 occurrences). — `app/[locale]/layout.tsx`, `src/features/dashboard/*`, `app/**`
 3. **Primitive `Badge` / `StatusBadge` unique**, avec variantes sémantiques (`success|warning|danger|info|neutral`)
-   + icône optionnelle 12px (modèle Stripe), et mapping métier centralisé (`paymentStatusTone`,
-   `attendanceStatusTone`, `enrollmentStatusTone`). Fusionner `BalanceBadge` et `StatusDot`.
-   — `src/components/ui/status-badge`, `balance-badge`, `data-table/cells.tsx`, nouveau `src/lib/status-tones.ts`
+   - icône optionnelle 12px (modèle Stripe), et mapping métier centralisé (`paymentStatusTone`,
+     `attendanceStatusTone`, `enrollmentStatusTone`). Fusionner `BalanceBadge` et `StatusDot`.
+     — `src/components/ui/status-badge`, `balance-badge`, `data-table/cells.tsx`, nouveau `src/lib/status-tones.ts`
 4. **Primitive `Stat`** (libellé, valeur tabulaire, delta, icône neutre 16px) ; supprimer les palettes locales
    de `kpi-card.tsx:9-37` et les 21 `<Card className="rounded border … bg-white">`.
    — `src/components/ui/stat` (nouveau), `families/[id]/_components/kpi-card.tsx`, `dashboard/page.tsx`,

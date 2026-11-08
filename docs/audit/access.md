@@ -8,11 +8,11 @@ Les constats marqués « à vérifier » n'ont pas été reproduits à l'exécut
 
 ## 1. Synthèse
 
-| Workflow | Solide | Simple | UX | UI | Verdict |
-|---|---|---|---|---|---|
-| W8 Rôles et scope | 4/5 | 4/5 | 3/5 | 3/5 | Gardes centralisées et appliquées avant la première requête ; le rôle TEACHER est à moitié intégré et la doc diverge du code. |
-| W9 Multi-école | 4/5 | 3/5 | 3/5 | 4/5 | Contexte relu en base et liens profonds scopés en une requête ; deux modèles scopés échappent au tenant guard. |
-| W10 Utilisateurs et impersonation | 2/5 | 3/5 | 2/5 | 3/5 | Impersonation sans audit ni restriction, invariant du dernier super-admin non atomique, inscription publique probablement ouverte. |
+| Workflow                          | Solide | Simple | UX  | UI  | Verdict                                                                                                                            |
+| --------------------------------- | ------ | ------ | --- | --- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| W8 Rôles et scope                 | 4/5    | 4/5    | 3/5 | 3/5 | Gardes centralisées et appliquées avant la première requête ; le rôle TEACHER est à moitié intégré et la doc diverge du code.      |
+| W9 Multi-école                    | 4/5    | 3/5    | 3/5 | 4/5 | Contexte relu en base et liens profonds scopés en une requête ; deux modèles scopés échappent au tenant guard.                     |
+| W10 Utilisateurs et impersonation | 2/5    | 3/5    | 2/5 | 3/5 | Impersonation sans audit ni restriction, invariant du dernier super-admin non atomique, inscription publique probablement ouverte. |
 
 Points solides à préserver :
 

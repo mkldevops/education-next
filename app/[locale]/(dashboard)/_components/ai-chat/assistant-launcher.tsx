@@ -41,7 +41,7 @@ export function AssistantLauncher({ model }: Props) {
       <aside
         aria-label={t('title')}
         hidden={!open}
-        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-border bg-background shadow-xl sm:w-[28rem]"
+        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-border bg-background shadow-xl sm:w-112"
       >
         <header className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
           <Sparkles className="h-4 w-4 text-foreground" aria-hidden />

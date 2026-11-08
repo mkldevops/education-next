@@ -125,7 +125,7 @@ export default async function PublicEventPage({ params }: Props) {
               height={630}
               sizes="(min-width: 768px) 768px, 100vw"
               priority
-              className={`aspect-[1200/630] w-full object-cover ${isCancelled ? 'grayscale' : ''}`}
+              className={`aspect-1200/630 w-full object-cover ${isCancelled ? 'grayscale' : ''}`}
             />
           )}
 
@@ -188,7 +188,7 @@ export default async function PublicEventPage({ params }: Props) {
                         width={400}
                         height={300}
                         sizes="(min-width: 640px) 240px, 50vw"
-                        className="aspect-[4/3] w-full rounded border border-alabaster-700 object-cover"
+                        className="aspect-4/3 w-full rounded border border-alabaster-700 object-cover"
                       />
                     </li>
                   ))}

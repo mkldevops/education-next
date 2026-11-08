@@ -13,6 +13,16 @@ const families = [
   { id: 'family-3', name: 'Lefèvre' },
 ]
 
+function Target({ id }: { id: string }) {
+  const [open, setOpen] = useState(true)
+  if (!open) return null
+  return (
+    <button type="button" onClick={() => setOpen(false)}>
+      {`close:${id}`}
+    </button>
+  )
+}
+
 function renderPicker() {
   return render(
     <FamilyPickerDialog
@@ -49,15 +59,6 @@ describe('FamilyPickerDialog', () => {
   })
 
   it('reopens the target dialog when the same family is picked again after closing it', () => {
-    function Target({ id }: { id: string }) {
-      const [open, setOpen] = useState(true)
-      if (!open) return null
-      return (
-        <button type="button" onClick={() => setOpen(false)}>
-          {`close:${id}`}
-        </button>
-      )
-    }
     render(
       <FamilyPickerDialog
         families={families}

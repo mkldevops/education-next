@@ -6,29 +6,29 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: '06:00'
+      time: "06:00"
       timezone: Europe/Paris
     open-pull-requests-limit: 10
     versioning-strategy: increase
     commit-message:
-      prefix: 'chore(deps)'
-      prefix-development: 'chore(deps-dev)'
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
     groups:
       next:
         patterns:
           - next
-          - '@next/*'
+          - "@next/*"
           - eslint-config-next
       react:
         patterns:
           - react
           - react-dom
-          - '@types/react'
-          - '@types/react-dom'
+          - "@types/react"
+          - "@types/react-dom"
       prisma:
         patterns:
           - prisma
-          - '@prisma/*'
+          - "@prisma/*"
       production-minor:
         dependency-type: production
         update-types:
@@ -45,18 +45,18 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: '06:00'
+      time: "06:00"
       timezone: Europe/Paris
     commit-message:
-      prefix: 'ci(deps)'
+      prefix: "ci(deps)"
     groups:
       actions:
         patterns:
-          - '*'
+          - "*"
 
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: monthly
     commit-message:
-      prefix: 'chore(docker)'
+      prefix: "chore(docker)"

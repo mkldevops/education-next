@@ -87,14 +87,14 @@ Garanties :
 
 ## Navigation finale
 
-| Administrateur | Parent |
-|---|---|
-| Tableau de bord | Tableau de bord |
-| Familles | Ma famille |
-| Élèves, consultation | Profil |
-| Inscriptions, consultation et suivi |  |
-| Encaissements, registre |  |
-| Configuration |  |
+| Administrateur                      | Parent          |
+| ----------------------------------- | --------------- |
+| Tableau de bord                     | Tableau de bord |
+| Familles                            | Ma famille      |
+| Élèves, consultation                | Profil          |
+| Inscriptions, consultation et suivi |                 |
+| Encaissements, registre             |                 |
+| Configuration                       |                 |
 
 ## Validation locale
 
@@ -106,4 +106,3 @@ Garanties :
 - bouton de paiement et état « Stripe non configuré » validés ;
 - webhook sans signature rejeté avec le statut HTTP 400 ;
 - génération Prisma, lint, typage, 385 tests, Knip et build Next.js validés.
-

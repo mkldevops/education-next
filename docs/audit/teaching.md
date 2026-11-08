@@ -12,11 +12,11 @@ Les numéros de ligne correspondent à l'état du dépôt au moment de l'audit (
 
 ## 1. Synthèse
 
-| Workflow | Solide | Simple | UX | UI | Verdict |
-|---|---|---|---|---|---|
-| 16 Emploi du temps | 3/5 | 3/5 | 3/5 | 3/5 | Concurrence bien verrouillée, mais modifier ou supprimer un créneau casse l'historique (présences, enseignants archivés). |
-| 17 Présences | 2/5 | 2/5 | 3/5 | 4/5 | UI soignée et accessible, mais l'appel du jour exclut les nouveaux élèves et les transitions d'annulation perdent des validations. |
-| 18 Enseignants | 3/5 | 4/5 | 3/5 | 3/5 | Archivage transactionnel correct, mais on peut inviter un profil archivé et saisir des montants hors bornes Decimal. |
+| Workflow           | Solide | Simple | UX  | UI  | Verdict                                                                                                                            |
+| ------------------ | ------ | ------ | --- | --- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 16 Emploi du temps | 3/5    | 3/5    | 3/5 | 3/5 | Concurrence bien verrouillée, mais modifier ou supprimer un créneau casse l'historique (présences, enseignants archivés).          |
+| 17 Présences       | 2/5    | 2/5    | 3/5 | 4/5 | UI soignée et accessible, mais l'appel du jour exclut les nouveaux élèves et les transitions d'annulation perdent des validations. |
+| 18 Enseignants     | 3/5    | 4/5    | 3/5 | 3/5 | Archivage transactionnel correct, mais on peut inviter un profil archivé et saisir des montants hors bornes Decimal.               |
 
 ## 2. Constats par workflow
 

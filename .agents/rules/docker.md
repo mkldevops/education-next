@@ -1,10 +1,13 @@
 ---
+
 paths:
-  - "Dockerfile"
-  - ".dockerignore"
-  - "compose*.yaml"
-  - "package.json"
-  - ".github/workflows/**"
+
+- "Dockerfile"
+- ".dockerignore"
+- "compose*.yaml"
+- "package.json"
+- ".github/workflows/**"
+
 ---
 
 # Docker and Runtime Rules

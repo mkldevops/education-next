@@ -9,25 +9,25 @@ that ought to exist does not, it is listed under [Known gaps](#known-gaps).
 
 ## Vocabulary
 
-| Term | Model | Meaning |
-|---|---|---|
-| School | `School` | A school. The tenant: every business row belongs to exactly one. |
-| Membership | `SchoolMember` | A user's role inside one school. A user may hold several. |
-| Family | `Family` | The billing unit. Owns people, and every payment is attached to one. |
-| Person | `Person` | A human. A parent, a tutor, or the person record behind a student. |
-| Student | `Student` | The `Person` who attends. One `Person` maps to at most one `Student`. |
-| Period | `Period` | A school year. Dated, and the scope of most dashboard reads. |
-| Level | `Level` | A grade (CP, CE1…). Levels chain through `LevelProgression` edges, within one school. |
-| Class | `ClassPeriod` | One level taught during one period, with a capacity. |
-| Assignment | `ClassAssignment` | A student's seat in a class, `endAt: null` while it holds. |
-| Enrollment | `Enrollment` | A student registered on a plan. Carries the money. |
-| Plan | `Plan` | A price list entry (Mi-temps, Temps plein…), priced per school. |
-| Teacher | `Teacher` | A teacher available to one school. |
-| Class teacher | `ClassPeriodTeacher` | A teacher assigned to one class for one period. |
-| Teacher expense | `TeacherExpense` | A generic expense note for a teacher, such as food, snacks, supplies, goods purchases, or another reimbursable item. |
-| Payment | `Payment` | Money received, always attached to one enrollment. |
-| Class schedule slot | `ClassScheduleSlot` | A recurring weekly time slot for one class. |
-| Slot teacher | `ClassScheduleSlotTeacher` | An active class teacher assigned to one schedule slot. |
+| Term                | Model                      | Meaning                                                                                                              |
+| ------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| School              | `School`                   | A school. The tenant: every business row belongs to exactly one.                                                     |
+| Membership          | `SchoolMember`             | A user's role inside one school. A user may hold several.                                                            |
+| Family              | `Family`                   | The billing unit. Owns people, and every payment is attached to one.                                                 |
+| Person              | `Person`                   | A human. A parent, a tutor, or the person record behind a student.                                                   |
+| Student             | `Student`                  | The `Person` who attends. One `Person` maps to at most one `Student`.                                                |
+| Period              | `Period`                   | A school year. Dated, and the scope of most dashboard reads.                                                         |
+| Level               | `Level`                    | A grade (CP, CE1…). Levels chain through `LevelProgression` edges, within one school.                                |
+| Class               | `ClassPeriod`              | One level taught during one period, with a capacity.                                                                 |
+| Assignment          | `ClassAssignment`          | A student's seat in a class, `endAt: null` while it holds.                                                           |
+| Enrollment          | `Enrollment`               | A student registered on a plan. Carries the money.                                                                   |
+| Plan                | `Plan`                     | A price list entry (Mi-temps, Temps plein…), priced per school.                                                      |
+| Teacher             | `Teacher`                  | A teacher available to one school.                                                                                   |
+| Class teacher       | `ClassPeriodTeacher`       | A teacher assigned to one class for one period.                                                                      |
+| Teacher expense     | `TeacherExpense`           | A generic expense note for a teacher, such as food, snacks, supplies, goods purchases, or another reimbursable item. |
+| Payment             | `Payment`                  | Money received, always attached to one enrollment.                                                                   |
+| Class schedule slot | `ClassScheduleSlot`        | A recurring weekly time slot for one class.                                                                          |
+| Slot teacher        | `ClassScheduleSlotTeacher` | An active class teacher assigned to one schedule slot.                                                               |
 
 ## Multi-school
 
@@ -83,12 +83,12 @@ data **first** and write the session `schoolId` (and the `id` argument, `created
 
 `SchoolMember` sits outside the guard by construction — the context must read memberships by
 `userId` before any school is known. All access goes through `src/gateways/school-member-gateway.ts`,
-which is the single read *and* write boundary for that model.
+which is the single read _and_ write boundary for that model.
 
 Five named exceptions live in `src/lib/db-unscoped.ts`, each authorised by something other than a
 school: the invitation read by its unique token (public flow), the Stripe webhook finding its
 transaction by `providerSessionId` (signed request, no session), the reference count before a
-definitive account deletion (a platform question, detailed under *Soft deletion*), the retention
+definitive account deletion (a platform question, detailed under _Soft deletion_), the retention
 purge of expired `McpDraft` rows (an instance-wide sweep, not a tenant read), and the seed and data
 scripts, which create the schools themselves.
 
@@ -484,7 +484,7 @@ gate has nothing left to offer, so no refusal needs recording.
 Google linking reuses `linkSocial` from `@/lib/auth-client`, the same call as the account section of
 `/dashboard/settings`. Note that `src/lib/auth.ts` sets `account.accountLinking.allowDifferentEmails:
 true`, so Better Auth does **not** require the Google e-mail to match the account's e-mail during
-linking. The Gmail-only offer therefore narrows *who is invited*, not what linking accepts; the
+linking. The Gmail-only offer therefore narrows _who is invited_, not what linking accepts; the
 linking policy itself is an authentication boundary outside this feature.
 
 ## Roles and scope
@@ -557,7 +557,7 @@ unrepresentable in the database as well as in the types.
   tenant guard cannot catch it, because it only inspects the root of a query. `Session`, `Account`
   and `Passkey` stay global: they belong to no school.
 - **Creating a school user does not need a role-escalation check.** The removed `canAssignRole`
-  existed to stop a school `ADMIN` from minting a *global* `ADMIN`. With the role carried by
+  existed to stop a school `ADMIN` from minting a _global_ `ADMIN`. With the role carried by
   `SchoolMember`, an admin naming another admin only ever affects its own school, and the
   anti-lockout invariant covers the rest.
 - **`User.id` comes from Better Auth, not from Prisma.** The `@default(cuid())` in the schema never
@@ -609,6 +609,7 @@ Classes resolve with `requireAdmin: true`: a parent is never offered a switch to
 
 `src/lib/__tests__/school-isolation.test.ts` pins this against a real database, one case per
 tenant-scoped resource. Written with `db` mocked they would only test the mock.
+
 - **There is no public sign-up.** `/register` was removed and the Better Auth endpoint is closed on
   the server (see **Sign-in methods**). An account is born from an accepted invitation or from
   `createUserAction`, nothing else.
@@ -713,7 +714,7 @@ space, `0x10`, `5` — falls back to that default): the last hops were appended 
 while everything before them was sent by the client. Reading the first entry let a caller rotate a
 forged prefix and mint one counter per imagined address, so the only pre-auth brake was optional.
 
-The guarantee holds **only if the count is exact**, and each counted proxy must *append* the peer
+The guarantee holds **only if the count is exact**, and each counted proxy must _append_ the peer
 address (nginx `$proxy_add_x_forwarded_for`). Declaring too few hops buckets every caller behind the
 outermost proxy together. Declaring too many is narrowed, not closed: a chain **shorter** than the
 declared hops did not traverse the announced proxies, so its entries are unattributable and the
@@ -723,7 +724,7 @@ moves the read index back into the part it writes itself. There is no safe direc
 There is also **no `x-real-ip` fallback**: that scalar carries no hop count, and `next start` fills
 `x-forwarded-for` from the socket address when the header is absent
 (`next/dist/server/base-server.js`, `??=`), so the fallback would only ever have served a caller who
-sends an *empty* `x-forwarded-for` — the one case worth refusing.
+sends an _empty_ `x-forwarded-for` — the one case worth refusing.
 
 `TRUSTED_PROXY_HOPS=0` declares that no forwarding header is verifiable: every pre-auth request then
 shares one counter, so the passkey tier becomes 10 authentications per minute for the whole instance.
@@ -746,25 +747,25 @@ runtime `406`, not a compile error.
 
 ### Refusals
 
-| Body | Status | Cause |
-|---|---|---|
-| `mcpDisabled` | 503 | `mcp_enabled` absent or not affirmative |
-| `unauthorized` | 401 | no credential, malformed, unknown, revoked or expired key or access token, revoked connection, token issued for another site |
-| `forbidden` | 403 | deactivated account, deactivated school, non-`ADMIN` membership |
-| `tooManyRequests` | 429 | address tier exhausted by traffic without a well-formed credential, or credential tier exhausted |
-| `methodNotAllowed` | 405 | `GET` or `DELETE` |
+| Body               | Status | Cause                                                                                                                        |
+| ------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `mcpDisabled`      | 503    | `mcp_enabled` absent or not affirmative                                                                                      |
+| `unauthorized`     | 401    | no credential, malformed, unknown, revoked or expired key or access token, revoked connection, token issued for another site |
+| `forbidden`        | 403    | deactivated account, deactivated school, non-`ADMIN` membership                                                              |
+| `tooManyRequests`  | 429    | address tier exhausted by traffic without a well-formed credential, or credential tier exhausted                             |
+| `methodNotAllowed` | 405    | `GET` or `DELETE`                                                                                                            |
 
 Every `401` carries `WWW-Authenticate: Bearer resource_metadata="<origin>/.well-known/oauth-protected-resource"`
 (RFC 9728), with `error="invalid_token"` when a well-formed but refused credential was presented:
 that header is how an OAuth client discovers the authorization server this application operates
-(*OAuth connections* below). The origin is `NEXT_PUBLIC_APP_URL`, never the request's `Host`, so a
+(_OAuth connections_ below). The origin is `NEXT_PUBLIC_APP_URL`, never the request's `Host`, so a
 forged host cannot point a client at another authorization server. The header names the flow, not
 the cause: a bad key and a revoked connection are told apart by nothing a client can see.
 
 ### OAuth connections
 
 ChatGPT, and any client that cannot hold a pasted key, authenticates through OAuth 2.1 against an
-authorization server the application operates itself (`docs/mcp.md`, *Personal ChatGPT connection*).
+authorization server the application operates itself (`docs/mcp.md`, _Personal ChatGPT connection_).
 Better Auth 1.7 ships no provider plugin for this, and an external identity provider would put the
 list of who may administer which school outside the database that enforces it. The pieces are the
 domain module `src/domain/mcp-oauth.ts`, the use cases under `src/use-cases/mcp/oauth/`, the routes
@@ -817,7 +818,7 @@ under `app/api/mcp/oauth/` and `app/.well-known/`, and the consent page
   endpoint enumerates nothing; the public client identifies itself by `client_id` and only revokes
   its own tokens, otherwise `401 invalid_client`). Expired tokens are swept from `/api/mcp` in `after()` like drafts,
   at most once per interval; the grant row survives as the trace the panel shows, and its `userId`
-  foreign key is `Restrict` for the reason written under *Key lifecycle* — counted before a
+  foreign key is `Restrict` for the reason written under _Key lifecycle_ — counted before a
   permanent account deletion by `countRowsBlockingUserDeletion`, the platform-wide exception to the
   tenant guard, since the question has no school.
 - **Discovery is served, not configured.** `/.well-known/oauth-protected-resource` (also under
@@ -928,7 +929,7 @@ connection, or the same person through another access mode is refused as `draftN
 than as forbidden. A bare identifier would not do: a `userId`, a `keyId` and a `grantId` never
 collide by construction today, but a key revoked and its user's session are still two distinct
 authorities, and a plan validated under one must not be engaged under the other. The AI assistant
-(*AI assistant* below) is the `ADMIN_SESSION` owner; it calls the MCP's preview and commit use cases
+(_AI assistant_ below) is the `ADMIN_SESSION` owner; it calls the MCP's preview and commit use cases
 with the same `DraftScope`, so the checksum, the expiry, the lock and every
 commit-time re-check are the MCP's. The resolved plan freezes the proposing user in `createdById`:
 without that binding, a revoked key's plan would still land, signed by its owner.
@@ -983,21 +984,21 @@ no open enrollment carries it, and the one being committed does not exist yet, s
 since the preview → `notFound`, and a price that moved → `staleDraft`. The enrollment is written
 with the draft's `planId` and `totalAmount` only once the database confirms them.
 
-| Body | Cause |
-|---|---|
-| `validationError` | malformed `draftId`/`checksum`, or a stored plan of an older shape |
-| `draftNotFound` | unknown draft, one belonging to the other tool, or one proposed by another owner (key, administrator, or access mode) |
-| `draftExpired` | past the thirty minutes |
-| `checksumMismatch` | the checksum does not match the plan that was shown |
-| `commitInProgress` | a concurrent commit is still inside its transaction, and under 60 s old |
-| `notFound` | the class the preview resolved no longer exists, or the family, member, enrollment or plan it targets |
-| `classFull` | the class filled up between the preview and the commit, counted under the class row lock |
-| `duplicateEnrollment` | a member of the existing family was enrolled between the preview and the commit |
-| `overpayment` / `noPayableEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount |
-| `staleDraft` | the recomputed split no longer matches the validated one, the enrollment or plan changed, or a member became a student |
-| `totalBelowPaid` | a payment banked since the preview exceeds the enrollment's new total |
-| `teacherNotFound` | a teacher of a planning is no longer assigned to its class |
-| `classOverlap` / `teacherOverlap` | a slot of a planning now overlaps one written since the preview |
+| Body                                                         | Cause                                                                                                                  |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `validationError`                                            | malformed `draftId`/`checksum`, or a stored plan of an older shape                                                     |
+| `draftNotFound`                                              | unknown draft, one belonging to the other tool, or one proposed by another owner (key, administrator, or access mode)  |
+| `draftExpired`                                               | past the thirty minutes                                                                                                |
+| `checksumMismatch`                                           | the checksum does not match the plan that was shown                                                                    |
+| `commitInProgress`                                           | a concurrent commit is still inside its transaction, and under 60 s old                                                |
+| `notFound`                                                   | the class the preview resolved no longer exists, or the family, member, enrollment or plan it targets                  |
+| `classFull`                                                  | the class filled up between the preview and the commit, counted under the class row lock                               |
+| `duplicateEnrollment`                                        | a member of the existing family was enrolled between the preview and the commit                                        |
+| `overpayment` / `noPayableEnrollments` / `refundExceedsPaid` | the fresh balances refuse the amount                                                                                   |
+| `staleDraft`                                                 | the recomputed split no longer matches the validated one, the enrollment or plan changed, or a member became a student |
+| `totalBelowPaid`                                             | a payment banked since the preview exceeds the enrollment's new total                                                  |
+| `teacherNotFound`                                            | a teacher of a planning is no longer assigned to its class                                                             |
+| `classOverlap` / `teacherOverlap`                            | a slot of a planning now overlaps one written since the preview                                                        |
 
 A refusal writes nothing and unlocks the draft, so the caller may fix the cause or preview again
 without waiting out the timeout.
@@ -1135,7 +1136,7 @@ nothing and a save on it fails instead of overwriting. The history lists the 30 
 is no automatic purge, and deleting a school or a user cascades. A failed save is logged and never
 breaks the answer already streamed.
 
-**Dictation stays a browser feature.** The panel's *Dicter* button drives the browser's Web Speech
+**Dictation stays a browser feature.** The panel's _Dicter_ button drives the browser's Web Speech
 API (`useDictation`) and only fills the input; nothing is sent until the administrator sends it.
 The audio goes to the browser vendor's speech service, not to this server or to OpenRouter, and the
 button is absent where the API is (Firefox). The locale picks `fr-FR` or `en-US`.
@@ -1169,7 +1170,7 @@ when the administrator validates. Because the browser resends the whole conversa
 is HMAC-signed by the server (`experimental_toolApprovalSecret`, derived from `BETTER_AUTH_SECRET`)
 and the signature is verified when it comes back; a client cannot forge an approval. Without
 `BETTER_AUTH_SECRET` the write tools are denied outright (`approvalUnavailable`) rather than trusted.
-A refused write is not retried by the model. The panel labels the refusal *Annuler*.
+A refused write is not retried by the model. The panel labels the refusal _Annuler_.
 
 **Payments default, then ask nothing.** `preview_record_payment` takes the family as `familyId`,
 `studentId` (the student's families; several → `ambiguousFamily`) or `familyName`. Without an
@@ -1381,7 +1382,7 @@ Owner: `src/domain/period.ts`, `src/use-cases/periods/`.
 - **Dates must be ordered.** `endAt <= startAt` → `invalidDates`.
 - **Periods may not overlap.** Half-open comparison `startAt < other.endAt && endAt > other.startAt`
   → `overlappingPeriod`. Enforced on create and on update.
-- **A period is current** when `startAt <= now <= endAt`. Between two school years, *no* period is
+- **A period is current** when `startAt <= now <= endAt`. Between two school years, _no_ period is
   current — the application says so rather than guessing.
 - **Default period selection**, in order: the current period; else the most recent period that has
   at least one class; else the most recent period; else none. Sorted by `startAt` descending.
@@ -1389,7 +1390,7 @@ Owner: `src/domain/period.ts`, `src/use-cases/periods/`.
   (`isActive: false`).
 - **Overlap is checked within one school.** `checkOverlap` is a pure function; the rows it compares
   come from `periodGateway.checkOverlap(schoolId, …)`, so two schools may hold the same school year.
-- **The selected period is validated for existence *and* membership.** `selected_period` is a cookie
+- **The selected period is validated for existence _and_ membership.** `selected_period` is a cookie
   and survives a school switch, so `getSelectedPeriod(schoolId)` constrains both queries by
   `schoolId` (`src/features/dashboard/period.ts`). A cookie naming another school's period is
   treated as absent and the default selection applies — otherwise a period of school A would filter
@@ -1746,11 +1747,11 @@ Owner: `src/domain/payment.ts`, `src/use-cases/payments/`.
 many payments as the family wants. `calculateFamilyBalance()` in
 `src/use-cases/payments/family-balance.ts` computes that single figure:
 
-| Figure | Covers |
-|---|---|
-| `totalAmount` / `totalDiscount` / `remainingBalance` | `PENDING` + `ACTIVE` enrollments, across every period |
-| `remainingAmountInCents` | the same remaining figure, as the integer Stripe charges |
-| `totalPaid` | every active payment of the family, including those recorded on a `CANCELLED` or `COMPLETED` enrollment |
+| Figure                                               | Covers                                                                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `totalAmount` / `totalDiscount` / `remainingBalance` | `PENDING` + `ACTIVE` enrollments, across every period                                                   |
+| `remainingAmountInCents`                             | the same remaining figure, as the integer Stripe charges                                                |
+| `totalPaid`                                          | every active payment of the family, including those recorded on a `CANCELLED` or `COMPLETED` enrollment |
 
 An enrollment awaiting validation is owed and payable: the money is collected when the family hands
 it over, not when an admin gets to the enrollment. `CANCELLED` and `COMPLETED` enrollments no longer
@@ -1900,12 +1901,12 @@ The dashboard and the MCP `cancel_payments` tool both call it: same rules, same 
 family balance** — `PENDING` and `ACTIVE` enrollments, scoped to the selected period — so the
 announced figures cannot drift from what a family is asked to pay.
 
-| Figure | Rule |
-|---|---|
-| Due | Σ `totalAmount`, already net of discount |
-| Collected | Σ active payments of those enrollments |
-| Remaining | Σ `max(0, totalAmount - paid)`, floored per enrollment |
-| Collection rate | `(due - remaining) / due`, capped at 100 % |
+| Figure          | Rule                                                                      |
+| --------------- | ------------------------------------------------------------------------- |
+| Due             | Σ `totalAmount`, already net of discount                                  |
+| Collected       | Σ active payments of those enrollments                                    |
+| Remaining       | Σ `max(0, totalAmount - paid)`, floored per enrollment                    |
+| Collection rate | `(due - remaining) / due`, capped at 100 %                                |
 | Cheques to cash | `CHECK` payments without `cashedAt`; other methods are cashed on handover |
 
 - **A trend chart ends on the last payment**, not on today: a closed school year would otherwise be
@@ -2107,7 +2108,7 @@ one `Plan` row named `__unpriced__` at `amount: 0`, created **on demand** by
 never carries the row. `totalAmount` and `discount` are written at zero, an explicit `planId` or a
 non-zero discount is refused, and `createEnrollmentSchema.planId` is optional for that reason.
 
-**Three write paths, one rule.** `createEnrollment`, `createEnrolledStudent` (the *Add a student*
+**Three write paths, one rule.** `createEnrollment`, `createEnrolledStudent` (the _Add a student_
 dialog of the family page, which enrolls in the same gesture) and the MCP `enroll_family` commit all
 refuse an explicit `planId` or a non-zero discount while payments are off, and all resolve the
 reserved plan **inside** their transaction so a full class rolls it back. `commitEnrollFamily`
@@ -2122,7 +2123,7 @@ way back, and let `ensureUnpriced` adopt its amount, so an enrollment meant to b
 born priced; renaming the reserved row out would have a second one created at the next cut.
 **The stored name never reaches a screen**: the displayed label comes from `messages/*.json`.
 
-Re-enabling exposes those enrollments as *needing a plan*, and `setEnrollmentPlan`
+Re-enabling exposes those enrollments as _needing a plan_, and `setEnrollmentPlan`
 (`src/use-cases/enrollments/set-enrollment-plan.ts`) prices them against the plan's **current**
 amount minus the discount they already carry, refusing `totalBelowPaid` on the same rule as the
 MCP `update_enrollment` path — decided under the family lock, like `applyDiscount` (see
@@ -2452,15 +2453,15 @@ the same eligibility function, so the announced numbers cannot drift from the ap
 
 A student is **skipped**, with the reason reported, when:
 
-| Reason | Meaning |
-|---|---|
-| `alreadyPromoted` | Already enrolled in the target period. |
-| `planArchived` | The source plan is archived, so the `PENDING` copy would carry a plan it cannot select. |
-| `noClassAssignment` | No class in the source period, so no level to move from. |
-| `noNextLevel` | The level has no active successor. |
-| `nextLevelNotChosen` | The level has several active successors and none was chosen for the student. |
-| `noTargetClass` | No active class for that successor in the target period. |
-| `targetClassFull` | The target class is at capacity. |
+| Reason               | Meaning                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| `alreadyPromoted`    | Already enrolled in the target period.                                                  |
+| `planArchived`       | The source plan is archived, so the `PENDING` copy would carry a plan it cannot select. |
+| `noClassAssignment`  | No class in the source period, so no level to move from.                                |
+| `noNextLevel`        | The level has no active successor.                                                      |
+| `nextLevelNotChosen` | The level has several active successors and none was chosen for the student.            |
+| `noTargetClass`      | No active class for that successor in the target period.                                |
+| `targetClassFull`    | The target class is at capacity.                                                        |
 
 - **Orientation.** One active successor applies automatically. With several, the preview lists the
   students concerned (`orientations`) and the dialog asks one choice each; the choices travel as
@@ -2610,10 +2611,10 @@ one school**.
   hex color (it is injected into the layout `<style>`), otherwise → `invalidConfigValue`. `TEXT`
   accepts anything.
 - The screen shows one row per key, in declaration order: a toggle for a `BOOLEAN`, an edit dialog
-  otherwise. A key without a row shows its `SCHOOL_CONFIG_DEFAULTS` value, else *not configured*.
+  otherwise. A key without a row shows its `SCHOOL_CONFIG_DEFAULTS` value, else _not configured_.
 - **The four theme colors share one palette editor** (`THEME_COLOR_KEYS`, `src/lib/theme-palettes.ts`)
   instead of four rows. Each swatch opens a picker; ten ready-made palettes fill all four at once.
-  Nothing is written before *Save*, which calls `setThemeColorsAction` → `setThemeColors` with **only
+  Nothing is written before _Save_, which calls `setThemeColorsAction` → `setThemeColors` with **only
   the changed colors**, so a derived token never set keeps following the primary color. The colors
   are validated together and written in one transaction (`configGateway.setMany`): one invalid hex
   writes nothing. Every preset keeps white text at AA (4.5:1) on primary and hover, and 3:1 between
@@ -2629,7 +2630,7 @@ one school**.
   entry therefore never reserves its name, and `configGateway.get` is deterministic.
 - **A partial unique cannot be used as a write selector.** Prisma emits the `schoolId_name` selector
   without the index predicate, so an archived homonym makes two rows match and the query fails with
-  *Expected zero or one element, got 2* — verified against PostgreSQL 18. `configGateway.set`
+  _Expected zero or one element, got 2_ — verified against PostgreSQL 18. `configGateway.set`
   resolves the active row with `findFirst`, then updates it by **primary key**, keeping `schoolId` in
   the filter for the tenant guard. The other partial uniques (`Level`, `Period`, `Plan`) are never
   written through: those gateways address rows by `id_schoolId`, which is a total unique.
@@ -2637,7 +2638,7 @@ one school**.
   `teacher_expenses_enabled` (enables generic teacher expense notes,
   `src/lib/teacher-expense-config.ts`), `events_enabled` (enables the Events feature, off by
   default, `src/lib/events-config.ts`), `payments_enabled` (governs every money surface of the
-  school, `src/lib/payment-config.ts`, detailed under *Activating payments per school*),
+  school, `src/lib/payment-config.ts`, detailed under _Activating payments per school_),
   `logo_url` (`src/lib/branding-config.ts`), and `theme_primary`, `theme_primary_hover`,
   `theme_primary_light`, `theme_background` (`src/components/theme-provider.tsx`).
 - **The school name is no longer a `Config` entry.** It lives on `School.name`, the single source of
@@ -2897,12 +2898,12 @@ Owner: `src/domain/event.ts`, `src/domain/event-ics.ts`, `src/use-cases/events/`
     status and visibility, and `robots: noindex` with no Open Graph data.
   - `hidden` — anything else, for everyone else: `notFound()`, exactly like an inactive school, a
     disabled `events_enabled`, an archived event or an unknown slug. The page never says why.
-  The session is only read when the event is not public, so an anonymous visitor costs no role
-  resolution. A public page exposes `generateMetadata` Open Graph data (title, summary, cover). It is
-  themed with **the event's school**, not the visitor's: the root layout themes from the session or
-  the `active_school` cookie, often absent here, so the page renders its own `ThemeProvider` after it.
-  The « Copier le lien public » menu entry copies the absolute URL whatever the status, but warns
-  when the page is not public yet, since the link would 404 for its recipients.
+    The session is only read when the event is not public, so an anonymous visitor costs no role
+    resolution. A public page exposes `generateMetadata` Open Graph data (title, summary, cover). It is
+    themed with **the event's school**, not the visitor's: the root layout themes from the session or
+    the `active_school` cookie, often absent here, so the page renders its own `ThemeProvider` after it.
+    The « Copier le lien public » menu entry copies the absolute URL whatever the status, but warns
+    when the page is not public yet, since the link would 404 for its recipients.
 - **`create_event` on the MCP server is an adapter of `createEvent`**
   (`src/use-cases/mcp/create-event.ts`), not a second implementation. The tool is declared whether or
   not `events_enabled` is on, and a disabled school gets the server action's own `'notConfigured'`.

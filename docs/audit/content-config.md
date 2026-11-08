@@ -11,11 +11,11 @@ Aucune exécution en navigateur. Ce qui n'a pas pu être confirmé est marqué �
 
 ## 1. Synthèse
 
-| Workflow | Solide | Simple | UX | UI | Verdict |
-| --- | --- | --- | --- | --- | --- |
-| W19 Événements, public, affiche, ICS | 2/5 | 4/5 | 3/5 | 4/5 | Autorisations saines, mais l'heure est fausse dans l'ICS et le slug peut être vide |
-| W20 Config, branding, S3, média | 3/5 | 4/5 | 4/5 | 4/5 | Validation correcte sauf `logo_url` : SSRF via `/icon` et objets S3 orphelins |
-| W21 Écoles et import legacy | 3/5 | 4/5 | 3/5 | 4/5 | Désactivation bien verrouillée, mais l'import n'est pas atomique et le changement de slug casse les liens |
+| Workflow                             | Solide | Simple | UX  | UI  | Verdict                                                                                                   |
+| ------------------------------------ | ------ | ------ | --- | --- | --------------------------------------------------------------------------------------------------------- |
+| W19 Événements, public, affiche, ICS | 2/5    | 4/5    | 3/5 | 4/5 | Autorisations saines, mais l'heure est fausse dans l'ICS et le slug peut être vide                        |
+| W20 Config, branding, S3, média      | 3/5    | 4/5    | 4/5 | 4/5 | Validation correcte sauf `logo_url` : SSRF via `/icon` et objets S3 orphelins                             |
+| W21 Écoles et import legacy          | 3/5    | 4/5    | 3/5 | 4/5 | Désactivation bien verrouillée, mais l'import n'est pas atomique et le changement de slug casse les liens |
 
 Points solides sur les trois workflows :
 

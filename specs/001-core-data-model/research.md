@@ -10,6 +10,7 @@
 **Rationale**: Prisma n'a pas de STI natif. Des tables séparées offrent un typage fort, des requêtes indépendantes par type, et une meilleure séparation des domaines. Student a une relation `@unique` vers Person.
 
 **Alternatives rejetées**:
+
 - Table unique avec discriminateur : perte de type safety, tous les champs optionnels
 - Relations polymorphiques : complexité inutile pour un seul sous-type
 
@@ -20,6 +21,7 @@
 **Rationale**: Les extensions Prisma 6 interceptent les requêtes au niveau client de manière transparente. Plus propre que le middleware `$use` (pattern legacy). Le code métier n'a pas besoin de filtrer manuellement.
 
 **Alternatives rejetées**:
+
 - `where: { isActive: true }` manuel partout : violation DRY, risque d'oubli
 - Middleware `$use` : ancien pattern, extensions préférées en Prisma 6
 
@@ -30,6 +32,7 @@
 **Rationale**: Conforme à la Clean Architecture du projet. Les transitions sont validées dans `src/domain/enrollment.ts` avec le Result type pattern (`'OK'` | error code). Testable unitairement sans base de données.
 
 **Transitions autorisées**:
+
 ```
 pending → active
 pending → cancelled
@@ -38,6 +41,7 @@ active → cancelled
 ```
 
 **Alternatives rejetées**:
+
 - Middleware Prisma : logique dispersée, difficile à tester
 - Bibliothèque externe (xstate) : over-engineering pour 4 états
 
@@ -48,6 +52,7 @@ active → cancelled
 **Rationale**: La distribution se fait au prorata du solde restant de chaque inscription active. L'atomicité est garantie par `$transaction`. Le type `Decimal` natif de Prisma 6 assure la précision financière.
 
 **Algorithme**:
+
 1. Charger les inscriptions actives (status = ACTIVE) avec solde > 0
 2. Calculer le total restant dû
 3. Pour chaque inscription : `part = (solde_inscription / total_restant) * montant_paiement`
@@ -57,11 +62,13 @@ active → cancelled
 7. Appliquer dans une transaction atomique (isolation par défaut PostgreSQL = READ COMMITTED, suffisant car $transaction sérialise les écritures)
 
 **Remboursements (montant négatif)** :
+
 - Même algorithme inversé : charger les inscriptions actives ayant des paiements > 0
 - Distribution proportionnelle du montant négatif
 - Empêcher que le total payé d'une inscription devienne négatif (erreur `refundExceedsPaid`)
 
 **Alternatives rejetées**:
+
 - Distribution égale : injuste si les montants diffèrent
 - Ordre FIFO (première inscription d'abord) : ne correspond pas au besoin "répartition équitable"
 
@@ -72,6 +79,7 @@ active → cancelled
 **Rationale**: Pattern simple et natif Prisma. `nextLevelId = null` indique un niveau terminal (fin de cursus). Navigation type-safe avec `level.nextLevel?.name`.
 
 **Schema Prisma**:
+
 ```prisma
 model Level {
   id          String  @id @default(uuid())
@@ -83,5 +91,6 @@ model Level {
 ```
 
 **Alternatives rejetées**:
+
 - Champ `order` (entier) : ne définit pas explicitement la chaîne de succession
 - Table de mapping séparée : over-engineering pour une relation 1:1

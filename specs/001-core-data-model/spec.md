@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: my_specs.md + mcd.png
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 — Gestion des familles et élèves (Priority: P1)
 
@@ -133,28 +133,32 @@ En tant qu'administrateur, je veux configurer les paramètres de l'application (
 - Que se passe-t-il si le montant d'un Plan est modifié après des inscriptions ? L'Enrollment stocke le totalAmount au moment de la création (snapshot). Modifier le Plan n'affecte pas les inscriptions existantes.
 - Que se passe-t-il en cas d'inscriptions concurrentes dans une classe proche de sa capacité ? La vérification de capacité et la création d'inscription sont exécutées dans une transaction atomique pour éviter les race conditions.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
 **Familles & Personnes**
+
 - **FR-001**: Le système DOIT permettre de créer, modifier et désactiver des familles (nom, contact d'urgence, pickup autorisé)
 - **FR-002**: Le système DOIT permettre de rattacher des personnes à une famille avec un type de relation (parent, tuteur, grand-parent, etc.)
 - **FR-003**: Le système DOIT permettre d'ajouter des numéros de téléphone à une personne avec les canaux de communication associés (SMS, WhatsApp, appel)
 - **FR-004**: Le système DOIT permettre de lier un ou plusieurs utilisateurs à une famille (relation "link" entre User et Family)
 
 **Élèves**
+
 - **FR-005**: Le système DOIT permettre de créer un élève uniquement via une fiche famille
 - **FR-006**: L'élève DOIT hériter des champs de Person (nom, prénom, sexe, email, adresse) et ajouter : date de naissance, lieu de naissance, école précédente, notes de santé, langues parlées à la maison, autorisation goûter, allergies
 - **FR-007**: Le système DOIT utiliser le soft-delete (champ isActive) pour toutes les entités. La désactivation (isActive = false) masque l'entité des requêtes par défaut tout en conservant les données en base. Les entités concernées : User, Family, Person, Student, PhoneNumber, Config, Level, Period, ClassPeriod, Enrollment, Payment, Plan
 
 **Périodes & Niveaux**
+
 - **FR-008**: Le système DOIT permettre de créer des périodes avec un nom, une date de début et une date de fin
 - **FR-009**: Le système DOIT interdire les périodes qui se chevauchent
 - **FR-010**: Le système DOIT permettre de créer des niveaux avec un nom libre défini par l'utilisateur
 - **FR-011**: Le système DOIT permettre de créer des classes périodiques rattachées à un niveau et une période, avec un nom et une capacité maximale
 
 **Inscriptions**
+
 - **FR-012**: Le système DOIT permettre d'inscrire un élève pour une période en sélectionnant un plan tarifaire, puis de l'affecter à une classe périodique
 - **FR-013**: L'inscription DOIT suivre une machine à états : pending → active → completed, avec annulation possible (pending → cancelled, active → cancelled). Aucun retour en arrière ni saut de statut autorisé
 - **FR-014**: Le système DOIT empêcher l'inscription si la classe a atteint sa capacité maximale. La capacité occupée est calculée en comptant les inscriptions non-annulées (PENDING, ACTIVE, COMPLETED) ayant une affectation courante (endAt = null) dans cette classe
@@ -166,11 +170,13 @@ En tant qu'administrateur, je veux configurer les paramètres de l'application (
 - **FR-017**: Le système DOIT permettre d'enregistrer si l'élève peut partir seul (canLeaveAlone)
 
 **Plans tarifaires**
+
 - **FR-018**: Le système DOIT permettre de créer des plans tarifaires avec un nom et un montant
 - **FR-019**: Un plan DOIT être associable à une ou plusieurs inscriptions. Le montant du plan est copié dans totalAmount de l'inscription au moment de la création (snapshot). Modifier un plan n'affecte pas les inscriptions existantes
 - **FR-019b**: Le système DOIT permettre de lister les plans tarifaires actifs
 
 **Paiements**
+
 - **FR-020**: Le système DOIT permettre d'enregistrer des paiements sur une famille avec les méthodes : espèces, carte bleue, virement, chèque, Stripe
 - **FR-021**: Les paiements par chèque DOIVENT enregistrer une date d'encaissement (cashedAt) distincte de la date de paiement (paidAt)
 - **FR-022**: Les paiements DOIVENT être répartis au prorata du solde restant sur les inscriptions actives (status = ACTIVE) de la famille. L'algorithme : (1) charger les inscriptions actives avec solde > 0, (2) calculer le total restant dû, (3) pour chaque inscription : part = (solde_inscription / total_restant) × montant_paiement, (4) plafonner à solde_inscription, (5) appliquer dans une transaction atomique. L'arrondi HALF_UP à 2 décimales est appliqué, le dernier centime de différence est attribué à la première inscription
@@ -179,17 +185,20 @@ En tant qu'administrateur, je veux configurer les paramètres de l'application (
 - **FR-024**: Le système DOIT permettre les paiements partiels et suivre le solde restant
 
 **Portail famille**
+
 - **FR-025**: Les utilisateurs avec le rôle "family" DOIVENT pouvoir consulter les informations de leurs élèves et inscriptions en lecture seule
 - **FR-026**: Les utilisateurs family DOIVENT pouvoir effectuer des paiements Stripe en ligne
 - **FR-027**: Les utilisateurs family NE DOIVENT PAS pouvoir modifier les informations des élèves ou le statut des inscriptions
 - **FR-028**: L'accès DOIT être restreint à la famille liée à l'utilisateur
 
 **Configuration**
+
 - **FR-029**: Le système DOIT fournir une entité Config permettant de stocker des paramètres clé/valeur typés (texte, nombre, booléen)
 - **FR-030**: Le système DOIT supporter la promotion automatique des élèves vers le niveau suivant lors du changement de période (opt-in via Config). Le niveau suivant est déterminé par la relation "nextLevel" définie sur chaque Level. La promotion est déclenchée manuellement par l'admin sur une période cible, en batch pour tous les élèves inscrits. Les inscriptions créées par promotion ont le statut PENDING et DOIVENT être validées par l'admin. Si le nextLevel est désactivé, la chaîne cherche le prochain Level actif ; s'il n'existe pas, l'élève est traité comme en niveau terminal
 - **FR-030b**: L'admin DOIT pouvoir définir la chaîne de promotion en liant chaque Level à son Level suivant (relation optionnelle). Un Level sans nextLevel est un niveau terminal (pas de promotion)
 
 **Authentification & Autorisation**
+
 - **FR-031**: Le système NE DOIT PAS permettre l'auto-inscription des utilisateurs
 - **FR-032**: Les utilisateurs DOIVENT pouvoir se connecter via OAuth. Les fournisseurs (Google, etc.) sont configurables via Better Auth au niveau du déploiement
 - **FR-033**: Les comptes utilisateurs DOIVENT être créés par un administrateur avec un rôle assigné : admin ou family (mutuellement exclusifs, un utilisateur a exactement un rôle)
@@ -198,6 +207,7 @@ En tant qu'administrateur, je veux configurer les paramètres de l'application (
 - **FR-033d**: La session utilisateur DOIT être invalidée lorsque le compte est désactivé (isActive = false). La gestion des sessions est déléguée à Better Auth
 
 **Transversal**
+
 - **FR-034**: Toutes les entités DOIVENT inclure les champs isActive, createdAt, updatedAt
 - **FR-035**: Toutes les mutations de données DOIVENT être validées côté serveur avec Zod. Les champs Json (roles, channels, languagesAtHome) DOIVENT avoir un schéma de validation explicite (ex: roles = tableau de "admin" | "family", channels = tableau de "sms" | "whatsapp" | "call")
 - **FR-036**: Toutes les interfaces DOIVENT être utilisables sur un écran de 375px sans scroll horizontal
@@ -267,14 +277,14 @@ Les éléments suivants sont explicitement hors du périmètre du MVP et pourron
 - Q: OAuth : quels fournisseurs ? → A: Configurables via Better Auth au niveau du déploiement (FR-032)
 - Q: Les Json fields sont-ils validés ? → A: Oui, schéma Zod explicite pour roles, channels, languagesAtHome (FR-035)
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
 - **SC-001**: Un administrateur peut créer une famille, y ajouter un élève et l'inscrire dans une classe en moins de 5 minutes
 - **SC-002**: La fiche famille affiche le solde total dû, payé et restant avec une précision de 2 décimales (type Decimal, arrondi HALF_UP). Les données reflètent le dernier état persisté (pas de cache applicatif)
 - **SC-003**: 100% des transitions d'inscription respectent la machine à états (aucun saut de statut possible)
-- **SC-004**: *(Deferred — US5)* Un utilisateur family peut consulter les informations de ses enfants et initier un paiement en moins de 3 clics depuis la page d'accueil
+- **SC-004**: _(Deferred — US5)_ Un utilisateur family peut consulter les informations de ses enfants et initier un paiement en moins de 3 clics depuis la page d'accueil
 - **SC-005**: L'application est entièrement utilisable sur un écran de 375px de large sans scroll horizontal
 - **SC-006**: Le système supporte des déploiements avec des périodes scolaires différentes (sept-août, oct-sept) sans modification de code
 - **SC-007**: Aucune donnée sensible (élève, famille, inscription) ne peut être supprimée définitivement — seul le soft-delete est disponible

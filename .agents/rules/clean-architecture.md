@@ -1,7 +1,10 @@
 ---
+
 paths:
-  - "app/**"
-  - "src/**"
+
+- "app/**"
+- "src/**"
+
 ---
 
 # Hybrid Clean Architecture Rules

@@ -1,11 +1,14 @@
 ---
+
 paths:
-  - "app/**"
-  - "src/actions/**"
-  - "src/features/**"
-  - "src/services/**"
-  - "proxy.ts"
-  - "next.config.ts"
+
+- "app/**"
+- "src/actions/**"
+- "src/features/**"
+- "src/services/**"
+- "proxy.ts"
+- "next.config.ts"
+
 ---
 
 # Next.js App Router Rules
