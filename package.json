@@ -100,7 +100,7 @@
     "dotenv-cli": "^11.1.0",
     "dotenv-expand": "^12.0.3",
     "husky": "^9.1.7",
-    "jsdom": "^29.1.1",
+    "jsdom": "^31.0.0",
     "knip": "^6.44.1",
     "lint-staged": "^17.6.0",
     "mysql2": "^3.24.6",
