@@ -1,6 +1,12 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["app/**/*.{ts,tsx}", "src/features/**/index.ts", "src/i18n/*.ts", "src/lib/auth.ts"],
+  "entry": [
+    "app/**/*.{ts,tsx}",
+    "src/features/**/index.ts",
+    "src/i18n/*.ts",
+    "src/lib/auth.ts",
+    "prisma/{seed,seed-demo,import-roster,import-meals}.ts"
+  ],
   "project": ["src/**/*.{ts,tsx}"],
   "ignore": [
     "src/components/ui/**",

@@ -22,6 +22,8 @@ vi.mock('lucide-react', () => ({
   ChevronLeft: () => <svg />,
   ChevronRight: () => <svg />,
   MessageSquare: () => <svg />,
+  Search: () => <svg />,
+  X: () => <svg />,
 }))
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: { count?: number }) =>
@@ -272,7 +274,7 @@ describe('AttendancePanel', () => {
     expect(screen.getByRole('button', { name: 'Validate anyway' })).toBeInTheDocument()
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
-  it('opens an already validated session directly on the read-only completion recap', () => {
+  it('opens an already validated session directly on the read-only list without a recap', () => {
     render(
       <AttendancePanel
         {...props}
@@ -286,8 +288,10 @@ describe('AttendancePanel', () => {
     )
 
     expect(screen.getByRole('status')).toHaveTextContent('Validated')
-    expect(screen.getByRole('link', { name: 'Return to classes' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Edit Amina' })).not.toBeInTheDocument()
+    expect(screen.getByText('Amina')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Validate' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Present' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Correct' })).toBeInTheDocument()
   })
   it('allows correction from a validated recap and a subsequent validation', async () => {
     mocks.validate.mockResolvedValue('OK')

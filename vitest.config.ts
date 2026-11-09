@@ -20,10 +20,11 @@ export default defineConfig({
     // Depuis Node 25, le `localStorage` natif de Node masque celui de jsdom et vaut
     // `undefined` sans `--localstorage-file` : le store persisté de zustand casse.
     execArgv: ['--no-experimental-webstorage'],
-    // `.worktrees` est ignoré par git mais reste sur le disque : sans exclusion,
-    // chaque test d'un worktree est collecté en double, avec les dépendances de
-    // l'autre arbre, et le hook de pre-push échoue sur des fichiers hors branche.
-    exclude: [...configDefaults.exclude, '**/.worktrees/**'],
+    // `.worktrees` et `.claude/worktrees` (worktrees des agents) sont ignorés par git
+    // mais restent sur le disque : sans exclusion, chaque test d'un worktree est collecté
+    // en double, avec les dépendances de l'autre arbre, et le hook de pre-push échoue
+    // sur des fichiers hors branche.
+    exclude: [...configDefaults.exclude, '**/.worktrees/**', '**/.claude/worktrees/**'],
   },
   resolve: {
     alias: {

@@ -168,6 +168,7 @@ export async function PaymentsOverview({
                   <OutstandingFamilyActions
                     family={{ id: family.familyId, name: family.familyName }}
                     phone={family.contactPhone}
+                    overdueAmount={formatCurrency(family.overdueAmount, locale, currency)}
                     currency={currency}
                     canOpenCashier={canOpenCashier}
                   />

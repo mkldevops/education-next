@@ -23,6 +23,8 @@ vi.mock('lucide-react', () => ({
   ChevronLeft: () => <svg />,
   ChevronRight: () => <svg />,
   MessageSquare: () => <svg />,
+  Search: () => <svg />,
+  X: () => <svg />,
 }))
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: { count?: number }) =>

@@ -6,6 +6,7 @@ const gatewayMock = {
   transaction: vi.fn((run: (tx: unknown) => unknown) => run({})),
 }
 const loadSummariesMock = vi.fn()
+const familyContactPhonesMock = vi.fn()
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/gateways/meal-account-gateway', () => ({ mealAccountGateway: gatewayMock }))
@@ -13,7 +14,11 @@ vi.mock('@/use-cases/meals/meal-account-summaries', () => ({
   loadMealAccountSummaries: loadSummariesMock,
 }))
 
-const { loadMealDues } = await import('./debtors-data')
+vi.mock('@/use-cases/payments/payment-stats', () => ({
+  familyContactPhones: familyContactPhonesMock,
+}))
+
+const { loadMealDebtors, loadMealDues } = await import('./debtors-data')
 
 const TODAY = '2026-11-02'
 
@@ -92,5 +97,40 @@ describe('loadMealDues', () => {
 
     expect(dues.toRemind).toBe(1)
     expect(dues.dueAmount).toBe(0)
+  })
+})
+
+describe('loadMealDebtors', () => {
+  it('carries the debtor family phone, none for a student without family', async () => {
+    dbMock.student.findMany.mockResolvedValue([
+      {
+        id: 's1',
+        person: {
+          name: 'Léo',
+          lastname: 'Martin',
+          families: [{ familyId: 'f1', relationType: 'PARENT' }],
+        },
+      },
+      { id: 's2', person: { name: 'Inès', lastname: 'Ali', families: [] } },
+    ])
+    gatewayMock.findStudentAccounts.mockResolvedValue([
+      { id: 'a1', studentId: 's1', service: 'CANTEEN' },
+      { id: 'a2', studentId: 's2', service: 'CANTEEN' },
+    ])
+    loadSummariesMock.mockResolvedValue(
+      new Map([
+        ['a1', summary({ dueDays: 2, dueAmount: 1000, served: ['2026-10-30'] })],
+        ['a2', summary({ dueDays: 1, dueAmount: 500, served: ['2026-10-30'] })],
+      ])
+    )
+    familyContactPhonesMock.mockResolvedValue(new Map([['f1', '06 12 34 56 78']]))
+
+    const rows = await loadMealDebtors('school-1', TODAY)
+
+    expect(familyContactPhonesMock).toHaveBeenCalledWith('school-1', ['f1'])
+    expect(rows.map((row) => [row.name, row.phone])).toEqual([
+      ['Léo Martin', '06 12 34 56 78'],
+      ['Inès Ali', null],
+    ])
   })
 })
