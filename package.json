@@ -109,7 +109,7 @@
     "tailwind-canonical": "^0.10.0",
     "tailwindcss": "^4.3.4",
     "tsx": "^4.23.15",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }
 }
