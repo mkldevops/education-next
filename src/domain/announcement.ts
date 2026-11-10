@@ -7,6 +7,8 @@ import type { SchoolRole } from '@/types/enums'
 export type Announcement = {
   id: string
   publishedAt: Date
+  /** Fin de mise en avant choisie dans le CMS ; à défaut, `publishedAt` + 15 jours. */
+  expiresAt: Date | null
   highlight: boolean
   audience: SchoolRole[]
   link: string | null
@@ -45,24 +47,51 @@ export function isAnnouncementUnread(announcement: Announcement, reader: Announc
   return announcement.publishedAt.getTime() > reader.seenAt.getTime()
 }
 
-export function countUnreadAnnouncements(
-  announcements: Announcement[],
-  reader: AnnouncementReader
-) {
-  return visibleAnnouncements(announcements, reader).filter((a) => isAnnouncementUnread(a, reader))
-    .length
+export const ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS = 15
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+export function announcementExpiresAt(announcement: Announcement) {
+  return (
+    announcement.expiresAt ??
+    new Date(announcement.publishedAt.getTime() + ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS * DAY_MS)
+  )
 }
 
-/** La plus récente annonce mise en avant et pas encore vue, sinon rien. */
-export function resolvePopupAnnouncement(
+/**
+ * Une nouveauté expirée reste dans l'historique de `/dashboard/news`, mais ne compte plus comme
+ * non lue et ne déclenche plus la pop-up.
+ */
+export function isAnnouncementActive(announcement: Announcement, now: Date = new Date()) {
+  return announcementExpiresAt(announcement).getTime() > now.getTime()
+}
+
+export function countUnreadAnnouncements(
   announcements: Announcement[],
-  reader: AnnouncementReader
-): Announcement | null {
-  return (
-    visibleAnnouncements(announcements, reader).find(
-      (announcement) => announcement.highlight && isAnnouncementUnread(announcement, reader)
-    ) ?? null
-  )
+  reader: AnnouncementReader,
+  now: Date = new Date()
+) {
+  return visibleAnnouncements(announcements, reader).filter(
+    (a) => isAnnouncementActive(a, now) && isAnnouncementUnread(a, reader)
+  ).length
+}
+
+export const MAX_POPUP_ANNOUNCEMENTS = 5
+
+/** Annonces mises en avant, actives et pas encore vues, de la plus récente à la plus ancienne. */
+export function resolvePopupAnnouncements(
+  announcements: Announcement[],
+  reader: AnnouncementReader,
+  { now = new Date(), limit = MAX_POPUP_ANNOUNCEMENTS }: { now?: Date; limit?: number } = {}
+): Announcement[] {
+  return visibleAnnouncements(announcements, reader)
+    .filter(
+      (announcement) =>
+        announcement.highlight &&
+        isAnnouncementActive(announcement, now) &&
+        isAnnouncementUnread(announcement, reader)
+    )
+    .slice(0, limit)
 }
 
 /**
