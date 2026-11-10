@@ -2059,6 +2059,47 @@
           "GRANDPARENT": "Grandparent",
           "SIBLING": "Sibling",
           "OTHER": "Other"
+        },
+        "paymentTracking": {
+          "title": "Payment tracking",
+          "status": {
+            "ahead": "{amount} ahead",
+            "upToDate": "Up to date",
+            "late": "{amount} overdue",
+            "settled": "Year paid in full",
+            "untracked": "No payment schedule"
+          },
+          "dueLabel": "Due by the end of {month}",
+          "nothingDue": "Nothing due",
+          "nothingDueYear": "Nothing left to pay this year",
+          "detail": {
+            "ahead": "Payments exceed past deadlines by {amount}.",
+            "upToDate": "Payments cover the past deadlines.",
+            "dueNotLate": "This month's installment, not overdue yet.",
+            "lateOnly": "<late>{overdue} overdue</late>.",
+            "lateAndMonth": "<late>{overdue} overdue</late> + {month} for this month's installment.",
+            "settled": "The full tuition for the year has been paid.",
+            "untracked": "None of this family's plans has deadlines: overdue amounts are not computed."
+          },
+          "year": {
+            "label": "School year",
+            "progress": "{paid} paid of {total}",
+            "barLabel": "{paid} paid of {total}. Expected to date: {expected}.",
+            "barLabelLate": "{paid} paid of {total}. Expected to date: {expected}. Overdue: {overdue}.",
+            "barLabelSimple": "{paid} paid of {total}."
+          },
+          "figures": {
+            "paid": "Paid",
+            "expectedToDate": "Expected to date",
+            "remaining": "Left this year",
+            "total": "Year total"
+          },
+          "how": {
+            "summary": "How is this computed?",
+            "ahead": "Expected to date = installments whose deadline has passed ({expected}). Paid {paid}, i.e. {amount} ahead.",
+            "upToDate": "Expected to date = installments whose deadline has passed ({expected}). Paid {paid}: nothing overdue.",
+            "late": "Expected to date = installments whose deadline has passed ({expected}). Paid {paid}, i.e. {amount} overdue."
+          }
         }
       },
       "studentDetails": {

@@ -11,7 +11,8 @@ vi.mock('@/lib/school-regional-settings', () => ({
   getSchoolRegionalSettings: regionalSettingsMock,
 }))
 
-const { getFamilyPaymentTracking, getPaymentTrackingByFamily } = await import('./payment-tracking')
+const { getFamilyPaymentTracking, getFamilyPaymentTrackingDetail, getPaymentTrackingByFamily } =
+  await import('./payment-tracking')
 
 const reference = new Date('2026-11-11T12:00:00.000Z')
 const monthlySchedule = { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 10 }
@@ -404,5 +405,35 @@ describe('payment tracking reads', () => {
       ['family-late', 250],
       ['family-ahead', 0],
     ])
+  })
+
+  it('frames the year on the same enrollments as the deadlines, each capped at its own price', async () => {
+    dbMock.payment.groupBy.mockResolvedValue([paid(1200)])
+
+    expect(await getFamilyPaymentTrackingDetail('school-1', 'family-1', reference)).toEqual({
+      expectedToDate: 300,
+      overdueAmount: 0,
+      dueThisMonth: 0,
+      paidToDate: 1200,
+      tracked: true,
+      annualAmount: 1000,
+      creditedPaid: 1000,
+      fullyScheduled: true,
+    })
+  })
+
+  it('flags a family mixing scheduled and unscheduled enrollments', async () => {
+    dbMock.enrollment.findMany.mockResolvedValue([
+      enrollment({ id: 'monthly' }),
+      enrollment({ id: 'untracked', totalAmount: 500, schedule: { mode: 'NONE' } }),
+    ])
+    dbMock.payment.groupBy.mockResolvedValue([paid(200, 'monthly'), paid(100, 'untracked')])
+
+    expect(await getFamilyPaymentTrackingDetail('school-1', 'family-1', reference)).toMatchObject({
+      annualAmount: 1500,
+      creditedPaid: 300,
+      fullyScheduled: false,
+      tracked: true,
+    })
   })
 })

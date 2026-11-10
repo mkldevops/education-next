@@ -2060,6 +2060,47 @@
           "GRANDPARENT": "Grand-parent",
           "SIBLING": "Frère / Sœur",
           "OTHER": "Autre"
+        },
+        "paymentTracking": {
+          "title": "Suivi des paiements",
+          "status": {
+            "ahead": "En avance de {amount}",
+            "upToDate": "À jour",
+            "late": "En retard de {amount}",
+            "settled": "Année soldée",
+            "untracked": "Sans échéancier"
+          },
+          "dueLabel": "À régler d'ici fin {month}",
+          "nothingDue": "Rien à régler",
+          "nothingDueYear": "Plus rien à régler cette année",
+          "detail": {
+            "ahead": "Les versements dépassent de {amount} les échéances déjà passées.",
+            "upToDate": "Les versements couvrent les échéances déjà passées.",
+            "dueNotLate": "Échéance du mois, pas encore en retard.",
+            "lateOnly": "<late>{overdue} en retard</late>.",
+            "lateAndMonth": "<late>{overdue} en retard</late> + {month} pour l'échéance du mois.",
+            "settled": "La totalité de l'écolage de l'année est versée.",
+            "untracked": "Aucun forfait de cette famille n'a de dates limites : le retard n'est pas calculé."
+          },
+          "year": {
+            "label": "Année scolaire",
+            "progress": "{paid} versés sur {total}",
+            "barLabel": "{paid} versés sur {total}. Attendu à ce jour : {expected}.",
+            "barLabelLate": "{paid} versés sur {total}. Attendu à ce jour : {expected}. Retard : {overdue}.",
+            "barLabelSimple": "{paid} versés sur {total}."
+          },
+          "figures": {
+            "paid": "Versé",
+            "expectedToDate": "Attendu à ce jour",
+            "remaining": "Reste sur l'année",
+            "total": "Total de l'année"
+          },
+          "how": {
+            "summary": "Comment c'est calculé ?",
+            "ahead": "Attendu à ce jour = échéances dont la date limite est passée ({expected}). Versé {paid}, soit {amount} d'avance.",
+            "upToDate": "Attendu à ce jour = échéances dont la date limite est passée ({expected}). Versé {paid} : aucun retard.",
+            "late": "Attendu à ce jour = échéances dont la date limite est passée ({expected}). Versé {paid}, soit {amount} de retard."
+          }
         }
       },
       "studentDetails": {

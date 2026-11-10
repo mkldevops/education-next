@@ -23,11 +23,32 @@ export type FamilyPaymentTracking = {
 export type TrackedFamily = FamilyPaymentTracking & { familyId: string; familyName: string }
 
 /**
+ * Annual frame of the same enrollments the deadlines are computed on, so a progress bar and its
+ * "expected" marker share one scope. `creditedPaid` caps each enrollment at its own price.
+ */
+export type FamilyPaymentTrackingDetail = FamilyPaymentTracking & {
+  annualAmount: number
+  creditedPaid: number
+  /** Every payable enrollment has a schedule: the annual frame and the deadlines coincide. */
+  fullyScheduled: boolean
+}
+
+type TrackedFamilyDetail = TrackedFamily & FamilyPaymentTrackingDetail
+
+/**
  * Date-dependent reads share one calculation for the dashboard, family and MCP surfaces.
  * Future-dated payments cannot settle today's deadlines. Amounts remain aggregated in SQL.
  * The last assignment identifies the enrollment's period, including when its seat is closed.
  */
 export async function getPaymentTrackingByFamily(
+  ...args: Parameters<typeof collectFamilyTracking>
+): Promise<TrackedFamily[]> {
+  return (await collectFamilyTracking(...args)).map(
+    ({ annualAmount: _annual, creditedPaid: _credited, fullyScheduled: _full, ...family }) => family
+  )
+}
+
+async function collectFamilyTracking(
   schoolId: string,
   {
     familyId,
@@ -38,7 +59,7 @@ export async function getPaymentTrackingByFamily(
     periodId?: string | null
     reference?: Date
   } = {}
-): Promise<TrackedFamily[]> {
+): Promise<TrackedFamilyDetail[]> {
   const { currency, timeZone } = await getSchoolRegionalSettings(schoolId)
   const today = schoolToday(timeZone, reference)
   const { end } = schoolDayBounds(today, timeZone)
@@ -87,10 +108,7 @@ export async function getPaymentTrackingByFamily(
     }),
   ])
   const paidByEnrollment = new Map(payments.map((row) => [row.enrollmentId, row._sum.amount]))
-  const families = new Map<
-    string,
-    TrackedFamily & { creditedPaid: number; expectedByMonthEnd: number }
-  >()
+  const families = new Map<string, TrackedFamilyDetail & { expectedByMonthEnd: number }>()
   for (const enrollment of enrollments) {
     const debtor = resolveDebtorFamily(enrollment.student.person.families)
     if (!debtor || (familyId && debtor.familyId !== familyId)) continue
@@ -116,7 +134,9 @@ export async function getPaymentTrackingByFamily(
       overdueAmount: 0,
       dueThisMonth: 0,
       tracked: false,
+      annualAmount: 0,
       creditedPaid: 0,
+      fullyScheduled: true,
       expectedByMonthEnd: 0,
     }
     family.expectedToDate = roundHalfUp(family.expectedToDate + tracking.expectedToDate)
@@ -125,7 +145,9 @@ export async function getPaymentTrackingByFamily(
     family.creditedPaid = roundHalfUp(
       family.creditedPaid + Math.min(paid, toNumber(enrollment.totalAmount))
     )
+    family.annualAmount = roundHalfUp(family.annualAmount + toNumber(enrollment.totalAmount))
     family.tracked ||= tracking.tracked
+    family.fullyScheduled &&= tracking.tracked
     families.set(debtor.familyId, family)
   }
   // Family payments are allocated proportionally, so an advance on one enrollment
@@ -135,10 +157,7 @@ export async function getPaymentTrackingByFamily(
     family.dueThisMonth = Math.max(0, roundHalfUp(family.expectedByMonthEnd - family.creditedPaid))
   }
   return [...families.values()]
-    .map(
-      ({ creditedPaid: _creditedPaid, expectedByMonthEnd: _expectedByMonthEnd, ...family }) =>
-        family
-    )
+    .map(({ expectedByMonthEnd: _expectedByMonthEnd, ...family }) => family)
     .sort((a, b) => b.overdueAmount - a.overdueAmount || a.familyName.localeCompare(b.familyName))
 }
 
@@ -147,15 +166,29 @@ export async function getFamilyPaymentTracking(
   familyId: string,
   reference?: Date
 ): Promise<FamilyPaymentTracking> {
-  const rows = await getPaymentTrackingByFamily(schoolId, { familyId, reference })
-  const row = rows[0]
-  return row
-    ? {
-        expectedToDate: row.expectedToDate,
-        overdueAmount: row.overdueAmount,
-        dueThisMonth: row.dueThisMonth,
-        paidToDate: row.paidToDate,
-        tracked: row.tracked,
-      }
-    : { expectedToDate: 0, overdueAmount: 0, dueThisMonth: 0, paidToDate: 0, tracked: false }
+  const { expectedToDate, overdueAmount, dueThisMonth, paidToDate, tracked } =
+    await getFamilyPaymentTrackingDetail(schoolId, familyId, reference)
+  return { expectedToDate, overdueAmount, dueThisMonth, paidToDate, tracked }
+}
+
+export async function getFamilyPaymentTrackingDetail(
+  schoolId: string,
+  familyId: string,
+  reference?: Date
+): Promise<FamilyPaymentTrackingDetail> {
+  const [row] = await collectFamilyTracking(schoolId, { familyId, reference })
+  if (!row) {
+    return {
+      expectedToDate: 0,
+      overdueAmount: 0,
+      dueThisMonth: 0,
+      paidToDate: 0,
+      tracked: false,
+      annualAmount: 0,
+      creditedPaid: 0,
+      fullyScheduled: false,
+    }
+  }
+  const { familyId: _familyId, familyName: _familyName, ...tracking } = row
+  return tracking
 }

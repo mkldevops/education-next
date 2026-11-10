@@ -61,7 +61,7 @@ vi.mock('@/use-cases/payments/payable-enrollment-choices', () => ({
   listPayableEnrollmentChoices: async () => [],
 }))
 vi.mock('@/use-cases/payments/payment-tracking', () => ({
-  getFamilyPaymentTracking: getFamilyPaymentTrackingMock,
+  getFamilyPaymentTrackingDetail: getFamilyPaymentTrackingMock,
 }))
 vi.mock('@/use-cases/payments/stripe-settings', () => ({
   isOnlinePaymentAvailable: async () => false,
@@ -235,6 +235,7 @@ describe('FamilyDetailPage, payments enabled', () => {
       expect.objectContaining({
         tracking: trackingFixture,
         currency: 'EUR',
+        timeZone: 'Europe/Paris',
       })
     )
   })
