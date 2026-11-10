@@ -26,6 +26,8 @@ const mcpReadGateway = {
 
 const previewMergeFamilies = vi.fn()
 const commitMergeFamilies = vi.fn()
+const previewSplitFamily = vi.fn()
+const commitSplitFamily = vi.fn()
 const previewEnrollFamily = vi.fn()
 const commitEnrollFamily = vi.fn()
 const previewRecordPayment = vi.fn()
@@ -60,6 +62,8 @@ vi.mock('@modelcontextprotocol/server', () => ({ McpServer: FakeMcpServer }))
 vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway }))
 vi.mock('@/use-cases/mcp/preview-merge-families', () => ({ previewMergeFamilies }))
 vi.mock('@/use-cases/mcp/commit-merge-families', () => ({ commitMergeFamilies }))
+vi.mock('@/use-cases/mcp/preview-split-family', () => ({ previewSplitFamily }))
+vi.mock('@/use-cases/mcp/commit-split-family', () => ({ commitSplitFamily }))
 vi.mock('@/use-cases/mcp/preview-enroll-family', () => ({ previewEnrollFamily }))
 vi.mock('@/use-cases/mcp/commit-enroll-family', () => ({ commitEnrollFamily }))
 vi.mock('@/use-cases/mcp/preview-record-payment', () => ({ previewRecordPayment }))
@@ -171,6 +175,8 @@ describe('buildMcpServer', () => {
       'find_students',
       'preview_merge_families',
       'commit_merge_families',
+      'preview_split_family',
+      'commit_split_family',
       'get_family_deletion_impact',
       'delete_family',
       'archive_student',
@@ -238,6 +244,8 @@ describe('buildMcpServer', () => {
       'find_students',
       'preview_merge_families',
       'commit_merge_families',
+      'preview_split_family',
+      'commit_split_family',
       'get_family_deletion_impact',
       'delete_family',
       'archive_student',
@@ -261,6 +269,7 @@ describe('buildMcpServer', () => {
     for (const name of [
       'preview_enroll_family',
       'preview_merge_families',
+      'preview_split_family',
       'preview_class_schedule',
       'preview_record_teacher_expense',
       'preview_record_payment',
@@ -271,11 +280,13 @@ describe('buildMcpServer', () => {
         idempotentHint: false,
       })
     }
-    expect(tools.get('commit_merge_families')?.config.annotations).toMatchObject({
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-    })
+    for (const name of ['commit_merge_families', 'commit_split_family']) {
+      expect(tools.get(name)?.config.annotations).toMatchObject({
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+      })
+    }
     for (const name of [
       'commit_enroll_family',
       'commit_class_schedule',

@@ -13,6 +13,7 @@ import { commitEnrollFamily } from '@/use-cases/mcp/commit-enroll-family'
 import { commitMergeFamilies } from '@/use-cases/mcp/commit-merge-families'
 import { commitRecordPayment } from '@/use-cases/mcp/commit-record-payment'
 import { commitRecordTeacherExpense } from '@/use-cases/mcp/commit-record-teacher-expense'
+import { commitSplitFamily } from '@/use-cases/mcp/commit-split-family'
 import { commitUpdateEnrollment } from '@/use-cases/mcp/commit-update-enrollment'
 import { createClassPeriodFromMcp } from '@/use-cases/mcp/create-class-period'
 import { createEventFromMcp } from '@/use-cases/mcp/create-event'
@@ -40,6 +41,7 @@ import { previewEnrollFamily } from '@/use-cases/mcp/preview-enroll-family'
 import { previewMergeFamilies } from '@/use-cases/mcp/preview-merge-families'
 import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
 import { previewRecordTeacherExpense } from '@/use-cases/mcp/preview-record-teacher-expense'
+import { previewSplitFamily } from '@/use-cases/mcp/preview-split-family'
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
 import {
   commitDraftSchema,
@@ -75,6 +77,7 @@ import {
   previewMergeFamiliesSchema,
   previewRecordPaymentSchema,
   previewRecordTeacherExpenseSchema,
+  previewSplitFamilySchema,
   previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
 import { updateEventFromMcp } from '@/use-cases/mcp/update-event'
@@ -493,6 +496,41 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       },
       kind: 'write',
       run: (args) => commitMergeFamilies(scope, args),
+    }),
+    define({
+      name: 'preview_split_family',
+      title: 'Préparer la séparation d’une famille',
+      description:
+        'Prépare la sortie de membres (`personIds`, issus de `find_students` ou de la fiche) ' +
+        'de la famille `sourceId` vers une nouvelle famille nommée `name`, par exemple deux ' +
+        'familles homonymes saisies ensemble. Suivent ces membres les paiements de leurs ' +
+        'inscriptions, leurs reçus, paiements en ligne et invitations ; les comptes parents ' +
+        'restent sur la famille source. Rend un brouillon, son `checksum`, le plan et les ' +
+        '`blockers` : `memberNotFound`, `nothingRemains` (déplacer tout le monde n’est pas ' +
+        'une séparation), `sharedMember`, `sharedReceipt` ou `sharedTransaction` (une pièce ' +
+        'couvre des élèves des deux côtés), `pendingPayment`.',
+      inputSchema: previewSplitFamilySchema,
+      annotations: NON_IDEMPOTENT_WRITE,
+      kind: 'draft',
+      run: (args) => previewSplitFamily(scope, args),
+    }),
+    define({
+      name: 'commit_split_family',
+      title: 'Séparer la famille',
+      description:
+        'Engage la séparation prévisualisée après validation humaine avec `draftId` et ' +
+        '`checksum`. Crée la nouvelle famille et y déplace les membres et leur historique. ' +
+        'Un plan modifié depuis sa validation est refusé avec `staleDraft`. Le brouillon ' +
+        'expire après trente minutes et son rejeu rend le résultat enregistré.',
+      inputSchema: commitDraftSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+      kind: 'write',
+      run: (args) => commitSplitFamily(scope, args),
     }),
     define({
       name: 'get_family_deletion_impact',

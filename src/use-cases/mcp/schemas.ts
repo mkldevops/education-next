@@ -10,6 +10,7 @@ import {
   updateClassScheduleSlotSchema,
 } from '@/use-cases/class-schedules/schemas'
 import { EVENT_CATEGORIES, EVENT_STATUSES, EVENT_VISIBILITIES } from '@/use-cases/events/schemas'
+import { splitFamilyFieldsSchema } from '@/use-cases/families/split-family'
 import { createLevelSchema } from '@/use-cases/levels/schemas'
 import { cancelPaymentsSchema } from '@/use-cases/payments/schemas'
 import { createPlanSchema, updatePlanSchema } from '@/use-cases/plans/schemas'
@@ -45,6 +46,8 @@ export const previewMergeFamiliesSchema = z.object({
   sourceId: z.uuid(),
   targetId: z.uuid(),
 })
+
+export const previewSplitFamilySchema = splitFamilyFieldsSchema
 
 export const mcpDeleteFamilySchema = mcpResourceIdSchema.extend({
   confirmation: z.string().trim().min(1).max(50),

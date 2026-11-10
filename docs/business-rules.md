@@ -173,6 +173,11 @@ The caller confirms the resolved plan using its owner-scoped draft and checksum 
 replay returns the recorded result. The commit rechecks the confirmed content under locks and
 refuses `staleDraft` if it changed, rather than merging a different plan.
 
+`preview_split_family` and `commit_split_family` do the reverse for homonym families entered
+together: selected members leave for a new family with the payments, receipts, online payments
+and invitations that concern only them. A record covering students on both sides blocks the
+split rather than staying with the wrong debtor; parent accounts stay with the source family.
+
 ### Importing canteen and snack subscriptions
 
 `pnpm db:import-meals <slug> <file.json> --period <period> --canteen-days 1,2,3,4,5 --report <file.json>
