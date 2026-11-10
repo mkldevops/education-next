@@ -16,9 +16,10 @@ pnpm format
 pnpm type-check
 ```
 
-The pre-commit hook runs `pnpm exec lint-staged`. Its glob includes JavaScript, TypeScript, JSON, CSS,
-and Markdown, but Biome ignores file types excluded or unsupported by the current configuration;
-notably, `biome.json` excludes CSS. The pre-push hook runs `pnpm test`.
+Git hooks are managed by Lefthook (`lefthook.yml`, installed on `pnpm install`). Pre-commit runs
+`tailwind-canonical --fix` on staged JSX/TSX, then `biome check --write` on staged files, and re-stages
+the fixes; Biome skips files `biome.json` excludes, notably CSS. Pre-push runs `pnpm type-check` and
+`pnpm test` in parallel. Personal overrides go in the gitignored `lefthook-local.yml`.
 
 ## Formatting and Types
 

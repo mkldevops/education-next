@@ -51,3 +51,6 @@ src/generated/
 graphify-out/
 
 .agents/tasks
+
+# lefthook
+lefthook-local.yml

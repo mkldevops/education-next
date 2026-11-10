@@ -3,6 +3,7 @@ allowBuilds:
   "@prisma/engines": true
   "@swc/core": true
   esbuild: true
+  lefthook: true
   prisma: true
   sharp: true
 overrides:
