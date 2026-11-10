@@ -553,7 +553,7 @@ difference: they show as billed and settled.
 
 ## Writing: the preview/commit pairs
 
-Six pairs are shipped. `create_teacher` is shipped as a single write, without preview: it takes a
+Seven pairs are shipped. `create_teacher` is shipped as a single write, without preview: it takes a
 first and last name (email and phone optional) and creates the teacher with no class, as the dashboard
 form does. An active teacher of the same name, in either order, or of the same email suspends the
 creation: the tool answers `{ "created": false, "reason": "possibleDuplicate", "matches": [...] }`
@@ -564,6 +564,7 @@ homonym anyway, once the human confirms it is someone else.
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
 | `enroll_family`          | a full enrollment form: family, parents, students, enrollment, deposit — or, by `familyId`, children of a family already entered | shipped                            |
 | `merge_families`         | merge a source family into a retained target                                                                                     | shipped                            |
+| `split_family`           | separate homonym families entered together: some members leave for a new family                                                  | shipped                            |
 | `record_payment`         | a receipt or payment slip                                                                                                        | shipped                            |
 | `update_enrollment`      | a correction: a child moved to another plan, a discount granted                                                                  | shipped                            |
 | `class_schedule`         | a whole weekly planning: every class, day, time and teacher of a period                                                          | shipped                            |
@@ -577,6 +578,16 @@ The draft belongs to its caller, expires after 30 minutes and is committed with 
 a replay returns the recorded result. The commit rechecks the confirmed content under locks
 and returns `staleDraft` if it changed. The same restrictions as the dashboard merge apply.
 This pair is available whether payments are enabled or disabled.
+
+For a family split, `preview_split_family` accepts `sourceId`, the `personIds` that leave and
+the `name` of the new family. The members follow with the payments of their enrollments and the
+receipts, online payments and invitations that concern only them; parent accounts stay with the
+source. A receipt or online payment covering students on both sides blocks the split
+(`sharedReceipt`, `sharedTransaction`), as do a member also linked to another family
+(`sharedMember`), a pending online payment (`pendingPayment`) and moving every member
+(`nothingRemains`). `commit_split_family` creates the family and moves them under the source
+lock, and returns `staleDraft` if the plan changed. This pair is available whether payments are
+enabled or disabled.
 
 The shape, and the reason for it:
 
