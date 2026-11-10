@@ -1477,7 +1477,12 @@
           "view": "Voir et imprimer le reçu",
           "next": "Famille suivante : cherchez-la ci-dessous."
         },
-        "tuitionUpToDate": "À jour, rien à encaisser"
+        "tuitionUpToDate": "À jour, rien à encaisser",
+        "split": {
+          "title": "Répartir un montant · {service}",
+          "children": "Enfants concernés",
+          "apply": "{count, plural, =0 {Répartir} one {Attribuer à # enfant} other {Répartir sur # enfants}}"
+        }
       },
       "childcare": {
         "title": "Garderie",

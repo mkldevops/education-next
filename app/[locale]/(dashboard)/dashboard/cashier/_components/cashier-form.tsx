@@ -19,6 +19,7 @@ import {
   targetEnrollmentId,
 } from '../../payments/_components/tuition-target-field'
 import { suggestTenders } from '../_lib/cash-tender'
+import { splitAmount } from '../_lib/split-amount'
 
 export type CashierLine = {
   studentId: string
@@ -111,6 +112,92 @@ function Chip({
   )
 }
 
+function SplitRow({
+  lines,
+  title,
+  step,
+  fractionDigits,
+  disabled,
+  onSplit,
+}: {
+  lines: CashierLine[]
+  title: string
+  step: number
+  fractionDigits: number
+  disabled: boolean
+  onSplit: (shares: { line: CashierLine; amount: number }[]) => void
+}) {
+  const t = useTranslations('dashboard.pages.cashier.split')
+  const [amount, setAmount] = useState('')
+  const [excluded, setExcluded] = useState<string[]>([])
+  const selected = lines.filter((line) => !excluded.includes(line.studentId))
+  const value = toAmount(amount)
+  const id = `cashier-split-${lines[0]?.service}`
+
+  const split = () => {
+    const shares = splitAmount(value, selected.length, fractionDigits)
+    if (shares.length === 0) return
+    onSplit(selected.map((line, index) => ({ line, amount: shares[index] ?? 0 })))
+    setAmount('')
+  }
+
+  return (
+    <li className="space-y-2 bg-primary/5 px-4 py-3">
+      <Label htmlFor={id} className="text-sm font-semibold text-graphite">
+        {title}
+      </Label>
+      <fieldset disabled={disabled} className="flex flex-wrap gap-x-4 gap-y-1">
+        <legend className="sr-only">{t('children')}</legend>
+        {lines.map((line) => (
+          <label key={line.studentId} className="flex items-center gap-1.5 text-sm text-graphite">
+            <input
+              type="checkbox"
+              checked={!excluded.includes(line.studentId)}
+              onChange={(event) =>
+                setExcluded((current) =>
+                  event.target.checked
+                    ? current.filter((studentId) => studentId !== line.studentId)
+                    : [...current, line.studentId]
+                )
+              }
+              className="size-4 accent-primary"
+            />
+            {line.name}
+          </label>
+        ))}
+      </fieldset>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Input
+          id={id}
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step={step}
+          value={amount}
+          onChange={(event) => setAmount(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey) {
+              event.preventDefault()
+              split()
+            }
+          }}
+          disabled={disabled}
+          className="w-32 text-right tabular-nums"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled || value <= 0 || selected.length === 0}
+          onClick={split}
+        >
+          {t('apply', { count: selected.length })}
+        </Button>
+      </div>
+    </li>
+  )
+}
+
 export function CashierForm({
   familyId,
   lines,
@@ -135,7 +222,8 @@ export function CashierForm({
   const [reference, setReference] = useState('')
   const [tendered, setTendered] = useState('')
 
-  const step = 1 / 10 ** currencyFractionDigits(currency)
+  const fractionDigits = currencyFractionDigits(currency)
+  const step = 1 / 10 ** fractionDigits
   const money = (value: number) => formatCurrency(value, locale, currency)
   const formatDay = (day: string) =>
     new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, {
@@ -202,6 +290,13 @@ export function CashierForm({
   const setAmount = (line: CashierLine, value: number) =>
     setAmounts((current) => ({ ...current, [lineKey(line)]: String(value) }))
 
+  const splitGroups = (['CANTEEN', 'SNACK'] as const)
+    .map((service) => ({
+      service,
+      lines: lines.filter((line) => line.service === service && line.unitPrice !== null),
+    }))
+    .filter((group) => group.lines.length > 1)
+
   const submit = () => {
     if (isPending || total <= 0) return
     startTransition(async () => {
@@ -261,6 +356,24 @@ export function CashierForm({
             title={t('groups.meals')}
             due={mealsDue > 0 ? t('groups.due', { amount: money(mealsDue) }) : undefined}
           >
+            {splitGroups.map((group) => (
+              <SplitRow
+                key={group.service}
+                lines={group.lines}
+                title={t('split.title', { service: tServices(group.service) })}
+                step={step}
+                fractionDigits={fractionDigits}
+                disabled={isPending}
+                onSplit={(shares) =>
+                  setAmounts((current) => ({
+                    ...current,
+                    ...Object.fromEntries(
+                      shares.map((share) => [lineKey(share.line), String(share.amount)])
+                    ),
+                  }))
+                }
+              />
+            ))}
             {lines.map((line) => {
               const amount = toAmount(amounts[lineKey(line)])
               const preview =
