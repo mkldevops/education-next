@@ -15,7 +15,13 @@ const { getFamilyPaymentTracking, getPaymentTrackingByFamily } = await import('.
 
 const reference = new Date('2026-11-11T12:00:00.000Z')
 const monthlySchedule = { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 10 }
-const noTracking = { expectedToDate: 0, overdueAmount: 0, paidToDate: 0, tracked: false }
+const noTracking = {
+  expectedToDate: 0,
+  overdueAmount: 0,
+  dueThisMonth: 0,
+  paidToDate: 0,
+  tracked: false,
+}
 
 type FamilyLink = {
   familyId: string
@@ -70,11 +76,27 @@ describe('payment tracking reads', () => {
     dbMock.payment.groupBy.mockResolvedValue([paid(250)])
   })
 
+  it('owes this month the arrears plus the deadlines still to come before the month ends', async () => {
+    dbMock.payment.groupBy.mockResolvedValue([paid(150)])
+
+    // Nov 5: Sep and Oct elapsed (200), Nov 10 still ahead (100); 150 paid, 50 late, 150 owed this month.
+    expect(
+      await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-11-05T12:00:00Z'))
+    ).toEqual({
+      expectedToDate: 200,
+      overdueAmount: 50,
+      dueThisMonth: 150,
+      paidToDate: 150,
+      tracked: true,
+    })
+  })
+
   it('distinguishes annual balance from the amount overdue across elapsed monthly deadlines', async () => {
     // Annual balance is 750; only three 100-euro installments have elapsed, so 50 is late.
     expect(await getFamilyPaymentTracking('school-1', 'family-1', reference)).toEqual({
       expectedToDate: 300,
       overdueAmount: 50,
+      dueThisMonth: 50,
       paidToDate: 250,
       tracked: true,
     })
@@ -88,6 +110,7 @@ describe('payment tracking reads', () => {
     expect(await getFamilyPaymentTracking('school-1', 'family-1', reference)).toEqual({
       expectedToDate: 240,
       overdueAmount: 40,
+      dueThisMonth: 40,
       paidToDate: 200,
       tracked: true,
     })
@@ -105,6 +128,7 @@ describe('payment tracking reads', () => {
       expectedToDate: 300,
       paidToDate: 150,
       overdueAmount: 150,
+      dueThisMonth: 150,
     })
   })
 
@@ -128,6 +152,7 @@ describe('payment tracking reads', () => {
       tracked: false,
       expectedToDate: 0,
       overdueAmount: 0,
+      dueThisMonth: 0,
       paidToDate: 250,
     })
   })
@@ -155,6 +180,7 @@ describe('payment tracking reads', () => {
         familyName: 'family-parent',
         expectedToDate: 300,
         overdueAmount: 50,
+        dueThisMonth: 50,
         paidToDate: 250,
         tracked: true,
       },
@@ -171,6 +197,7 @@ describe('payment tracking reads', () => {
     expect(await getFamilyPaymentTracking('school-1', 'family-1', reference)).toEqual({
       expectedToDate: 600,
       overdueAmount: 0,
+      dueThisMonth: 0,
       paidToDate: 600,
       tracked: true,
     })
@@ -189,7 +216,13 @@ describe('payment tracking reads', () => {
 
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-09-11T12:00:00Z'))
-    ).toEqual({ expectedToDate: 100, overdueAmount: 0, paidToDate: 100, tracked: true })
+    ).toEqual({
+      expectedToDate: 100,
+      overdueAmount: 0,
+      dueThisMonth: 0,
+      paidToDate: 100,
+      tracked: true,
+    })
   })
 
   it('counts the part allocated to an untracked enrollment when settling family deadlines', async () => {
@@ -201,7 +234,13 @@ describe('payment tracking reads', () => {
 
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-09-11T12:00:00Z'))
-    ).toEqual({ expectedToDate: 100, overdueAmount: 0, paidToDate: 100, tracked: true })
+    ).toEqual({
+      expectedToDate: 100,
+      overdueAmount: 0,
+      dueThisMonth: 0,
+      paidToDate: 100,
+      tracked: true,
+    })
   })
 
   it('never uses another family advance to cover the debtor family shortfall', async () => {
@@ -219,6 +258,7 @@ describe('payment tracking reads', () => {
         expectedToDate: 300,
         paidToDate: 200,
         overdueAmount: 100,
+        dueThisMonth: 100,
         tracked: true,
       },
       {
@@ -227,6 +267,7 @@ describe('payment tracking reads', () => {
         expectedToDate: 300,
         paidToDate: 500,
         overdueAmount: 0,
+        dueThisMonth: 0,
         tracked: true,
       },
     ])
@@ -241,7 +282,13 @@ describe('payment tracking reads', () => {
 
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2028-01-01T12:00:00Z'))
-    ).toEqual({ expectedToDate: 1100, paidToDate: 1200, overdueAmount: 100, tracked: true })
+    ).toEqual({
+      expectedToDate: 1100,
+      paidToDate: 1200,
+      overdueAmount: 100,
+      dueThisMonth: 100,
+      tracked: true,
+    })
   })
 
   it('scopes active enrollment and payment reads to the school, period and debtor family', async () => {
@@ -293,7 +340,13 @@ describe('payment tracking reads', () => {
     // At 21:30 UTC the school's day has advanced to November 11, after the November 10 deadline.
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-11-10T21:30:00Z'))
-    ).toEqual({ expectedToDate: 300, overdueAmount: 50, paidToDate: 250, tracked: true })
+    ).toEqual({
+      expectedToDate: 300,
+      overdueAmount: 50,
+      dueThisMonth: 50,
+      paidToDate: 250,
+      tracked: true,
+    })
     expect(dbMock.payment.groupBy).toHaveBeenLastCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ paidAt: { lt: new Date('2026-11-11T21:00:00Z') } }),
@@ -302,7 +355,13 @@ describe('payment tracking reads', () => {
 
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-11-10T20:30:00Z'))
-    ).toEqual({ expectedToDate: 200, overdueAmount: 0, paidToDate: 250, tracked: true })
+    ).toEqual({
+      expectedToDate: 200,
+      overdueAmount: 0,
+      dueThisMonth: 50,
+      paidToDate: 250,
+      tracked: true,
+    })
   })
 
   it('keeps deadlines anchored to the enrollment period rather than restarting the current year', async () => {
@@ -313,6 +372,7 @@ describe('payment tracking reads', () => {
     expect(await getFamilyPaymentTracking('school-1', 'family-1', reference)).toEqual({
       expectedToDate: 1000,
       overdueAmount: 750,
+      dueThisMonth: 750,
       paidToDate: 250,
       tracked: true,
     })

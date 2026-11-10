@@ -1032,13 +1032,13 @@
           "whatsApp": "Relancer sur WhatsApp",
           "whatsAppFamily": "Relancer la famille {family} sur WhatsApp",
           "whatsAppMessage": "Bonjour, sauf erreur de notre part, un montant de {amount} reste à régler pour la famille {family}. Merci de régulariser dès que possible ou de nous contacter en cas de difficulté.",
-          "expectedToDate": "Attendu à ce jour",
           "overdueAmount": "Montant en retard",
+          "overdueBadge": "dont {amount} en retard",
           "overdueSubtitle": "Sur les forfaits suivis, après leur jour limite de paiement",
           "annualRemaining": "Solde annuel restant",
           "upToDate": "À jour",
-          "trackingDisabled": "Suivi des échéances désactivé",
-          "paidToDate": "Versé à ce jour"
+          "paidToDate": "Versé à ce jour",
+          "dueThisMonthFamilies": "{count, plural, =0 {aucune famille à relancer ce mois} one {# famille à relancer ce mois} other {# familles à relancer ce mois}}"
         },
         "summary": {
           "remaining": "Solde restant",
@@ -3281,7 +3281,10 @@
         "legendMeals": "Cantine et goûter",
         "tuition": "Écolage",
         "tuitionHint": "{rate} % encaissé · {count, plural, =0 {tout est réglé} one {# inscription avec un solde} other {# inscriptions avec un solde}}",
-        "mealHint": "{upToDate} sur {subscribed} à jour"
+        "mealHint": "{upToDate} sur {subscribed} à jour",
+        "outstandingMonth": "Reste à encaisser ce mois",
+        "outstandingYear": "Reste à encaisser sur l'année",
+        "tuitionMonthHint": "{upToDate} sur {tracked} familles à jour ce mois"
       },
       "headcount": {
         "label": "Effectifs"
@@ -3492,6 +3495,11 @@
       "searchPlaceholder": "Nom de la famille",
       "noResults": "Aucune famille ne correspond à cette recherche.",
       "noFamilies": "Aucune famille active. Créez d'abord une famille."
+    },
+    "remainingHorizon": {
+      "label": "Horizon du reste à encaisser",
+      "month": "Ce mois",
+      "year": "Année"
     }
   },
   "schools": {

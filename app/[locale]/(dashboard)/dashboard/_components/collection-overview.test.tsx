@@ -1,10 +1,11 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string, values?: Record<string, unknown>) =>
     values ? `${key}:${JSON.stringify(values)}` : key,
 }))
+vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
 vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
     <a href={href} {...props}>
@@ -29,7 +30,15 @@ const payments = {
     uncashedAmount: 0,
     uncashedCount: 0,
   },
-  tracking: { expectedToDate: 900, overdueAmount: 300, paidToDate: 600, tracked: true },
+  tracking: {
+    expectedToDate: 900,
+    overdueAmount: 300,
+    paidToDate: 600,
+    dueThisMonth: 350,
+    dueThisMonthCount: 2,
+    trackedCount: 5,
+    tracked: true,
+  },
 }
 
 const meals = {
@@ -51,9 +60,20 @@ const renderOverview = async (props: Partial<Parameters<typeof CollectionOvervie
   )
 
 describe('CollectionOverview', () => {
-  it('adds tuition and meal dues into one amount left to collect', async () => {
+  it('opens on what is left to collect this month, tuition and meals together', async () => {
     await renderOverview({ payments, meals })
 
+    expect(screen.getByText('outstandingMonth')).toBeInTheDocument()
+    expect(screen.getByText('¤600')).toBeInTheDocument()
+    expect(screen.getByText('tuitionMonthHint:{"upToDate":3,"tracked":5}')).toBeInTheDocument()
+  })
+
+  it('switches to the amount left for the whole year', async () => {
+    await renderOverview({ payments, meals })
+    fireEvent.click(screen.getByRole('button', { name: 'year' }))
+
+    expect(screen.getByRole('button', { name: 'year' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('outstandingYear')).toBeInTheDocument()
     expect(screen.getByText('¤650')).toBeInTheDocument()
     expect(screen.getByText('overdue:{"amount":"¤300"}')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /tuition/ })).toHaveAttribute(
@@ -74,11 +94,14 @@ describe('CollectionOverview', () => {
     expect(screen.getByRole('link', { name: /CANTEEN/ })).toBeInTheDocument()
   })
 
-  it('hides the overdue chip when no schedule is tracked', async () => {
+  it('shows only the yearly amount, without switch, when no schedule is tracked', async () => {
     await renderOverview({
       payments: { ...payments, tracking: { ...payments.tracking, tracked: false } },
     })
 
     expect(screen.queryByText(/^overdue/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'month' })).not.toBeInTheDocument()
+    expect(screen.getByText('outstanding')).toBeInTheDocument()
+    expect(screen.getAllByText('¤400')).toHaveLength(2)
   })
 })

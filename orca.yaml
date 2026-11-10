@@ -1,1 +1,15 @@
-issueCommand: /route-issue {{artifact_url}}
+scripts:
+  setup: |
+    set -euo pipefail
+    MAIN="$(cd "$(dirname "$(git rev-parse --git-common-dir)")" && pwd)"
+    for f in .env; do
+      if [ -f "$MAIN/$f" ] && [ ! -e "$f" ]; then
+        cp "$MAIN/$f" "$f"
+        chmod 600 "$f"
+        echo "env copied: $f"
+      fi
+    done
+    pnpm install --frozen-lockfile
+
+issueCommand: |
+  /route-issue {{artifact_url}}

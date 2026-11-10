@@ -9,7 +9,7 @@ export type OverdueStudent = {
   name: string
   lastname: string
   classes: { id: string; name: string }[]
-  family: Omit<TrackedFamily, 'familyId' | 'familyName' | 'tracked'> & {
+  family: Omit<TrackedFamily, 'familyId' | 'familyName' | 'tracked' | 'dueThisMonth'> & {
     id: string
     name: string
   }

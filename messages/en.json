@@ -1031,13 +1031,13 @@
           "whatsApp": "Remind on WhatsApp",
           "whatsAppFamily": "Remind the {family} family on WhatsApp",
           "whatsAppMessage": "Hello, unless we are mistaken, {amount} remains to be paid for the {family} family. Please settle it as soon as possible or contact us if you have any difficulty.",
-          "expectedToDate": "Expected to date",
           "overdueAmount": "Overdue amount",
+          "overdueBadge": "{amount} of it overdue",
           "overdueSubtitle": "Tracked plans only, after their payment deadline",
           "annualRemaining": "Remaining annual balance",
           "upToDate": "Up to date",
-          "trackingDisabled": "Due-date tracking disabled",
-          "paidToDate": "Paid to date"
+          "paidToDate": "Paid to date",
+          "dueThisMonthFamilies": "{count, plural, =0 {no family to remind this month} one {# family to remind this month} other {# families to remind this month}}"
         },
         "summary": {
           "remaining": "Remaining balance",
@@ -3280,7 +3280,10 @@
         "legendMeals": "Canteen and snack",
         "tuition": "Tuition",
         "tuitionHint": "{rate}% collected · {count, plural, =0 {all settled} one {# enrollment with a balance} other {# enrollments with a balance}}",
-        "mealHint": "{upToDate} of {subscribed} up to date"
+        "mealHint": "{upToDate} of {subscribed} up to date",
+        "outstandingMonth": "Outstanding this month",
+        "outstandingYear": "Outstanding for the year",
+        "tuitionMonthHint": "{upToDate} of {tracked} families up to date this month"
       },
       "headcount": {
         "label": "Headcount"
@@ -3491,6 +3494,11 @@
       "searchPlaceholder": "Family name",
       "noResults": "No family matches this search.",
       "noFamilies": "No active family. Create a family first."
+    },
+    "remainingHorizon": {
+      "label": "Outstanding horizon",
+      "month": "This month",
+      "year": "Year"
     }
   },
   "schools": {

@@ -26,6 +26,7 @@ describe('PaymentsTab tracking', () => {
       expectedToDate: 0,
       paidToDate: 0,
       overdueAmount: 0,
+      dueThisMonth: 0,
     },
   ])('hides the tracking card when tracking is disabled (%j)', async (tracking) => {
     render(await PaymentsTab({ ...baseProps, tracking }))
@@ -44,6 +45,7 @@ describe('PaymentsTab tracking', () => {
           expectedToDate: 300,
           paidToDate: 400,
           overdueAmount: 0,
+          dueThisMonth: 0,
         },
       })
     )
@@ -63,6 +65,7 @@ describe('PaymentsTab tracking', () => {
           expectedToDate: 300,
           paidToDate: 250,
           overdueAmount: 50,
+          dueThisMonth: 50,
         },
       })
     )

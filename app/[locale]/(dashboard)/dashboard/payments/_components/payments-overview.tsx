@@ -8,6 +8,7 @@ import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import type { PaymentStats } from '@/use-cases/payments/payment-stats'
+import { RemainingHorizonSwitch } from '../../_components/remaining-horizon-switch'
 import { OutstandingFamilyActions } from './outstanding-family-actions'
 
 const KPI_TONES = {
@@ -39,6 +40,23 @@ export async function PaymentsOverview({
   const { totals, methods, overdueFamilies: families, tracking } = stats
 
   const scope = periodName ? tScope('scopePeriod', { period: periodName }) : tScope('scopeAll')
+  const overdue =
+    tracking.tracked && tracking.overdueAmount > 0
+      ? t('overdueBadge', { amount: formatCurrency(tracking.overdueAmount, locale, currency) })
+      : undefined
+  const yearRemaining = {
+    value: formatCurrency(totals.remaining, locale, currency),
+    alert: overdue,
+    caption: t('outstandingEnrollments', {
+      outstanding: totals.outstandingCount,
+      total: totals.enrollmentCount,
+    }),
+  }
+  const monthRemaining = {
+    value: formatCurrency(tracking.dueThisMonth, locale, currency),
+    alert: overdue,
+    caption: t('dueThisMonthFamilies', { count: tracking.dueThisMonthCount }),
+  }
   return (
     <div className="space-y-6">
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -63,11 +81,18 @@ export async function PaymentsOverview({
         </KpiCard>
         <KpiCard
           label={t('remaining')}
-          value={formatCurrency(totals.remaining, locale, currency)}
-          caption={t('outstandingEnrollments', {
-            outstanding: totals.outstandingCount,
-            total: totals.enrollmentCount,
-          })}
+          value={yearRemaining.value}
+          caption={yearRemaining.caption}
+          alert={yearRemaining.alert}
+          body={
+            tracking.tracked ? (
+              <RemainingHorizonSwitch
+                className="mt-2 space-y-2"
+                month={<KpiValue {...monthRemaining} />}
+                year={<KpiValue {...yearRemaining} />}
+              />
+            ) : undefined
+          }
           icon={Wallet}
           tone="amber"
           className="border-amber-200"
@@ -78,23 +103,6 @@ export async function PaymentsOverview({
           caption={t('uncashedCount', { count: totals.uncashedCount })}
           icon={Banknote}
           tone="blue"
-        />
-      </div>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <KpiCard
-          label={t('expectedToDate')}
-          value={formatCurrency(tracking.expectedToDate, locale, currency)}
-          caption={tracking.tracked ? t('overdueSubtitle') : t('trackingDisabled')}
-          icon={Landmark}
-          tone="primary"
-        />
-        <KpiCard
-          label={t('overdueAmount')}
-          value={formatCurrency(tracking.overdueAmount, locale, currency)}
-          caption={tracking.tracked ? t('overdueSubtitle') : t('trackingDisabled')}
-          icon={Wallet}
-          tone="amber"
         />
       </div>
 
@@ -188,12 +196,16 @@ function KpiCard({
   caption,
   icon: Icon,
   tone,
+  alert,
+  body,
   className,
   children,
 }: {
   label: string
   value: string
   caption: ReactNode
+  alert?: string
+  body?: ReactNode
   icon: LucideIcon
   tone: keyof typeof KPI_TONES
   className?: string
@@ -207,9 +219,34 @@ function KpiCard({
           <Icon className={cn('h-6 w-6', KPI_TONES[tone].icon)} />
         </div>
       </div>
-      <p className="mt-2 wrap-anywhere text-3xl font-bold text-graphite">{value}</p>
-      <p className="mt-1 text-xs text-graphite-600">{caption}</p>
+      {body ?? (
+        <div className="mt-2">
+          <KpiValue value={value} caption={caption} alert={alert} />
+        </div>
+      )}
       {children}
     </Card>
+  )
+}
+
+function KpiValue({
+  value,
+  caption,
+  alert,
+}: {
+  value: string
+  caption: ReactNode
+  alert?: string
+}) {
+  return (
+    <>
+      <p className="wrap-anywhere text-3xl font-bold text-graphite">{value}</p>
+      {alert && (
+        <p className="mt-1 inline-flex rounded-md bg-danger-subtle px-2 py-0.5 text-xs font-medium text-danger">
+          {alert}
+        </p>
+      )}
+      <p className="mt-1 text-xs text-graphite-600">{caption}</p>
+    </>
   )
 }

@@ -21,7 +21,7 @@ export type PaymentStats = {
   totals: PaymentTotals
   methods: MethodCollection[]
   families: FamilyToFollowUp[]
-  tracking: FamilyPaymentTracking
+  tracking: FamilyPaymentTracking & { dueThisMonthCount: number; trackedCount: number }
   overdueFamilies: Array<TrackedFamily & { contactPhone: string | null }>
 }
 
@@ -172,6 +172,9 @@ export async function getPaymentStats(
     tracking: {
       expectedToDate: roundHalfUp(tracking.reduce((sum, family) => sum + family.expectedToDate, 0)),
       overdueAmount: roundHalfUp(tracking.reduce((sum, family) => sum + family.overdueAmount, 0)),
+      dueThisMonth: roundHalfUp(tracking.reduce((sum, family) => sum + family.dueThisMonth, 0)),
+      dueThisMonthCount: tracking.filter((family) => family.dueThisMonth > 0).length,
+      trackedCount: tracking.filter((family) => family.tracked).length,
       paidToDate: roundHalfUp(tracking.reduce((sum, family) => sum + family.paidToDate, 0)),
       tracked: tracking.some((family) => family.tracked),
     },
