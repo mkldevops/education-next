@@ -183,7 +183,7 @@ export function paymentTracking(
   }
 }
 
-export type InstallmentCoverageStatus = 'PAID' | 'PARTIAL' | 'UNPAID'
+type InstallmentCoverageStatus = 'PAID' | 'PARTIAL' | 'UNPAID'
 
 export type InstallmentCoverage = PaymentInstallment & {
   paidAmount: number
