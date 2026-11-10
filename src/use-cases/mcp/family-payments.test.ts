@@ -4,11 +4,17 @@ const findById = vi.fn()
 const findPayableByFamily = vi.fn()
 const listFamilyPayments = vi.fn()
 const getFamilyPaymentTracking = vi.fn()
+const listEnrollmentSchedules = vi.fn()
 
 vi.mock('@/use-cases/payments/payment-tracking', () => ({ getFamilyPaymentTracking }))
 vi.mock('@/gateways/family-gateway', () => ({ familyGateway: { findById } }))
 vi.mock('@/gateways/enrollment-gateway', () => ({ enrollmentGateway: { findPayableByFamily } }))
-vi.mock('@/gateways/mcp-read-gateway', () => ({ mcpReadGateway: { listFamilyPayments } }))
+vi.mock('@/gateways/mcp-read-gateway', () => ({
+  mcpReadGateway: { listFamilyPayments, listEnrollmentSchedules },
+}))
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: vi.fn().mockResolvedValue({ currency: 'EUR', timeZone: 'UTC' }),
+}))
 
 const { familyPaymentsFromMcp } = await import('./family-payments')
 
@@ -30,7 +36,24 @@ beforeEach(() => {
   })
   findById.mockResolvedValue({ id: familyId, name: 'Madi' })
   findPayableByFamily.mockResolvedValue([
-    { id: 'enr-1', totalAmount: 100, discount: 0, payments: [{ amount: 40 }] },
+    {
+      id: 'enr-1',
+      totalAmount: 100,
+      discount: 0,
+      payments: [{ amount: 40 }],
+      studentName: 'Ali Madi',
+    },
+  ])
+  listEnrollmentSchedules.mockResolvedValue([
+    {
+      id: 'enr-1',
+      totalAmount: 100,
+      startMonth: null,
+      plan: { paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 4, dueDay: 10 } },
+      classAssignments: [
+        { classPeriod: { period: { startAt: new Date('2026-09-01T00:00:00Z') } } },
+      ],
+    },
   ])
   listFamilyPayments.mockResolvedValue([
     {
@@ -67,6 +90,27 @@ describe('familyPaymentsFromMcp', () => {
     })
     expect(listFamilyPayments).toHaveBeenCalledWith('school-1', familyId, 20)
     expect(getFamilyPaymentTracking).toHaveBeenCalledWith('school-1', familyId)
+  })
+
+  it('tells which installments the payments received cover', async () => {
+    const result = await familyPaymentsFromMcp(scope as never, { familyId })
+
+    expect(result).toMatchObject({
+      enrollments: [
+        {
+          enrollmentId: 'enr-1',
+          student: 'Ali Madi',
+          paidAmount: 40,
+          installments: [
+            { dueDate: '2026-09-10', amount: 25, paidAmount: 25, status: 'PAID' },
+            { dueDate: '2026-10-10', amount: 25, paidAmount: 15, status: 'PARTIAL' },
+            { dueDate: '2026-11-10', amount: 25, paidAmount: 0, status: 'UNPAID' },
+            { dueDate: '2026-12-10', amount: 25, paidAmount: 0, status: 'UNPAID' },
+          ],
+        },
+      ],
+    })
+    expect(listEnrollmentSchedules).toHaveBeenCalledWith('school-1', ['enr-1'])
   })
 
   it('answers notFound for a family outside the school', async () => {

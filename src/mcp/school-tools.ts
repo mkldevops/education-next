@@ -33,6 +33,7 @@ import { findStudentsFromMcp } from '@/use-cases/mcp/find-students'
 import { getEventFromMcp } from '@/use-cases/mcp/get-event'
 import { listAttendanceCallsFromMcp } from '@/use-cases/mcp/list-attendance-calls'
 import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
+import { listFamiliesFromMcp } from '@/use-cases/mcp/list-families'
 import { moveStudentToClassFromMcp } from '@/use-cases/mcp/move-student-to-class'
 import { createPlanFromMcp, updatePlanFromMcp } from '@/use-cases/mcp/plan-configuration'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
@@ -47,6 +48,7 @@ import {
   MCP_CLASS_SCHEDULE_BATCH_MAX,
   MCP_EVENT_LIST_DEFAULT,
   MCP_EVENT_LIST_MAX,
+  MCP_FAMILY_LIST_MAX,
   MCP_STUDENT_SEARCH_MAX,
   mcpAssignTeacherSchema,
   mcpCancelPaymentsSchema,
@@ -65,6 +67,7 @@ import {
   mcpListAttendanceCallsSchema,
   mcpListClassScheduleSlotsSchema,
   mcpListEventsSchema,
+  mcpListFamiliesSchema,
   mcpMoveStudentToClassSchema,
   mcpResourceIdSchema,
   mcpUpdateClassScheduleSlotSchema,
@@ -465,6 +468,22 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       run: (args) => findStudentsFromMcp(scope, args),
     }),
     define({
+      name: 'list_families',
+      title: 'Lister toutes les familles',
+      description:
+        "Liste exhaustive des familles de l'école, par ordre alphabétique, avec leurs enfants " +
+        'et la classe de leurs inscriptions ouvertes. Paginée : `total` donne le nombre de ' +
+        `familles, \`nextOffset\` la page suivante (au plus ${MCP_FAMILY_LIST_MAX} par page). ` +
+        'À utiliser pour un recensement complet (effectifs par classe, familles qui doivent de ' +
+        "l'argent) plutôt que `find_students`. Avec les paiements actifs, `payments` donne le " +
+        'montant reçu, attendu à ce jour et en retard ; `overdueOnly` ne garde que les familles ' +
+        'en retard. Le détail des mois couverts se lit avec `get_family_payments`.',
+      inputSchema: mcpListFamiliesSchema,
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      kind: 'read',
+      run: (args) => listFamiliesFromMcp(scope, args),
+    }),
+    define({
       name: 'preview_merge_families',
       title: 'Préparer la fusion de familles',
       description:
@@ -771,7 +790,10 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
           "Reste à payer d'une famille, par inscription, et ses 20 derniers paiements actifs " +
           'avec leur identifiant. `tracking` distingue montant attendu à ce jour, retard et suivi actif ; ' +
           '`paidAmount` donne le montant reçu sur les inscriptions ouvertes. Sans suivi, le solde ' +
-          'annuel restant n’est pas un retard. Sert aussi à retrouver un paiement avant de l’annuler.',
+          'annuel restant n’est pas un retard. Chaque inscription rend `installments` : ses ' +
+          'échéances (mois, montant) et leur statut PAID, PARTIAL ou UNPAID selon le montant reçu, ' +
+          'imputé dans l’ordre des dates — c’est la liste des mois couverts. Sert aussi à ' +
+          'retrouver un paiement avant de l’annuler.',
         inputSchema: mcpFamilyPaymentsSchema,
         annotations: { readOnlyHint: true, openWorldHint: false },
         kind: 'read',

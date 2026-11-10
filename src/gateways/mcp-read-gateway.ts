@@ -263,6 +263,71 @@ export const mcpReadGateway = {
       take,
     }),
 
+  // Annuaire des familles : nom, enfants et leur classe, sans aucune coordonnée.
+  listFamilies: async (
+    schoolId: string,
+    { skip, take, familyIds }: { skip: number; take: number; familyIds?: string[] }
+  ) => {
+    const where = { schoolId, ...(familyIds ? { id: { in: familyIds } } : {}) }
+    const [total, rows] = await Promise.all([
+      db.family.count({ where }),
+      db.family.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          persons: {
+            where: { person: { student: { isNot: null } } },
+            select: {
+              person: {
+                select: {
+                  name: true,
+                  lastname: true,
+                  student: {
+                    select: {
+                      id: true,
+                      enrollments: {
+                        where: { status: { in: [...OPEN_ENROLLMENT_STATUSES] } },
+                        select: {
+                          status: true,
+                          classAssignments: {
+                            where: { endAt: null },
+                            select: { classPeriod: { select: namedRef } },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: [{ name: 'asc' }, { id: 'asc' }],
+        skip,
+        take,
+      }),
+    ])
+    return { total, rows }
+  },
+
+  // Échéancier d'une inscription : formule, mois de départ et rentrée de la dernière classe.
+  listEnrollmentSchedules: (schoolId: string, enrollmentIds: string[]) =>
+    db.enrollment.findMany({
+      where: { schoolId, id: { in: enrollmentIds } },
+      select: {
+        id: true,
+        totalAmount: true,
+        startMonth: true,
+        plan: { select: { paymentSchedule: true } },
+        classAssignments: {
+          orderBy: { startAt: 'desc' },
+          take: 1,
+          select: { classPeriod: { select: { period: { select: { startAt: true } } } } },
+        },
+      },
+    }),
+
   // `online` plutôt que l'identifiant de transaction : l'agent a besoin de savoir qu'un
   // paiement Stripe ne s'annule pas ici, pas de la référence du prestataire.
   listFamilyPayments: (schoolId: string, familyId: string, take: number) =>

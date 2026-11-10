@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   annualPlanAmount,
+  installmentCoverage,
   owedPlanAmount,
   paymentInstallments,
   paymentScheduleSchema,
@@ -221,5 +222,35 @@ describe('enrollment start month', () => {
     expect(startMonthToDate('2026-10').toISOString()).toBe('2026-10-01T00:00:00.000Z')
     expect(startMonthFromDate(startMonthToDate('2026-10'))).toBe('2026-10')
     expect(startMonthFromDate(null)).toBeNull()
+  })
+})
+
+describe('installment coverage', () => {
+  const installments = paymentInstallments(
+    { mode: 'MONTHLY', firstMonth: 9, count: 9, dueDay: 10 },
+    144000,
+    start,
+    'KMF'
+  )
+
+  it('settles the deadlines in date order and flags the partial one', () => {
+    const coverage = installmentCoverage(installments, 88000)
+
+    expect(coverage.slice(0, 6).map((row) => [row.dueDate, row.status, row.paidAmount])).toEqual([
+      ['2026-09-10', 'PAID', 16000],
+      ['2026-10-10', 'PAID', 16000],
+      ['2026-11-10', 'PAID', 16000],
+      ['2026-12-10', 'PAID', 16000],
+      ['2027-01-10', 'PAID', 16000],
+      ['2027-02-10', 'PARTIAL', 8000],
+    ])
+    expect(coverage.slice(6).every((row) => row.status === 'UNPAID')).toBe(true)
+  })
+
+  it('leaves every deadline unpaid without payment and caps an overpayment', () => {
+    expect(installmentCoverage(installments, 0).every((row) => row.status === 'UNPAID')).toBe(true)
+    expect(installmentCoverage(installments, 200000).every((row) => row.status === 'PAID')).toBe(
+      true
+    )
   })
 })

@@ -196,6 +196,15 @@ export const mcpFindStudentsSchema = z.object({
 
 export const mcpFamilyPaymentsSchema = z.object({ familyId: z.uuid() })
 
+export const MCP_FAMILY_LIST_DEFAULT = 100
+export const MCP_FAMILY_LIST_MAX = 200
+
+export const mcpListFamiliesSchema = z.object({
+  offset: z.number().int().min(0).optional(),
+  limit: z.number().int().min(1).max(MCP_FAMILY_LIST_MAX).optional(),
+  overdueOnly: z.boolean().optional(),
+})
+
 export const mcpCancelPaymentsSchema = cancelPaymentsSchema.pick({ paymentIds: true, reason: true })
 
 /**

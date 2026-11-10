@@ -182,3 +182,28 @@ export function paymentTracking(
     tracked: installments.length > 0,
   }
 }
+
+export type InstallmentCoverageStatus = 'PAID' | 'PARTIAL' | 'UNPAID'
+
+export type InstallmentCoverage = PaymentInstallment & {
+  paidAmount: number
+  status: InstallmentCoverageStatus
+}
+
+/**
+ * Which deadlines the payments received so far settle: the amount paid covers the
+ * installments in date order, the first one it cannot fully cover is partial.
+ */
+export function installmentCoverage(
+  installments: PaymentInstallment[],
+  paid: number
+): InstallmentCoverage[] {
+  let left = Math.max(0, roundHalfUp(paid))
+  return installments.map((installment) => {
+    const paidAmount = roundHalfUp(Math.min(left, installment.amount))
+    left = roundHalfUp(left - paidAmount)
+    const status: InstallmentCoverageStatus =
+      paidAmount >= installment.amount ? 'PAID' : paidAmount > 0 ? 'PARTIAL' : 'UNPAID'
+    return { ...installment, paidAmount, status }
+  })
+}
