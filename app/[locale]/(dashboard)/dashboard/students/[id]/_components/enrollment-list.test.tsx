@@ -80,3 +80,42 @@ describe('EnrollmentList with payments disabled', () => {
     expect(screen.queryByText('enrollmentList.settled')).not.toBeInTheDocument()
   })
 })
+
+describe('EnrollmentList covered months', () => {
+  it('marks each monthly deadline paid, partly paid or unpaid from the amount received', async () => {
+    const monthly = {
+      ...enrollment('Forfait Maternelle'),
+      status: 'ACTIVE',
+      totalAmount: 48000,
+      startMonth: null,
+      plan: {
+        name: 'Forfait Maternelle',
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 3, dueDay: 10 },
+      },
+      payments: [{ amount: 24000 }],
+      classAssignments: [
+        {
+          classPeriod: {
+            name: 'MS',
+            level: { name: 'Maternelle' },
+            period: { name: '2026-2027', startAt: new Date('2026-09-01T00:00:00Z') },
+          },
+        },
+      ],
+    } as unknown as EnrollmentWithRelation
+
+    render(
+      await EnrollmentList({
+        enrollments: [monthly],
+        locale: 'fr',
+        currency: 'EUR',
+        paymentsEnabled: true,
+      })
+    )
+
+    expect(screen.getByText('enrollmentList.coveredMonths')).toBeInTheDocument()
+    expect(screen.getAllByLabelText('enrollmentList.installmentStatus.PAID')).toHaveLength(1)
+    expect(screen.getAllByLabelText('enrollmentList.installmentStatus.PARTIAL')).toHaveLength(1)
+    expect(screen.getAllByLabelText('enrollmentList.installmentStatus.UNPAID')).toHaveLength(1)
+  })
+})

@@ -2089,6 +2089,12 @@
           "emptyHint": "Les inscriptions de cet élève apparaîtront ici.",
           "remaining": "{amount} restant",
           "settled": "Soldé",
+          "coveredMonths": "Mois couverts",
+          "installmentStatus": {
+            "PAID": "{month} : payé",
+            "PARTIAL": "{month} : payé en partie ({paid} / {amount})",
+            "UNPAID": "{month} : non payé"
+          },
           "registeredOn": "Inscrit le {date}"
         },
         "enrollmentTable": {
