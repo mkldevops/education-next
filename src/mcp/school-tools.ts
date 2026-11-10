@@ -35,6 +35,7 @@ import { getEventFromMcp } from '@/use-cases/mcp/get-event'
 import { listAttendanceCallsFromMcp } from '@/use-cases/mcp/list-attendance-calls'
 import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
 import { listFamiliesFromMcp } from '@/use-cases/mcp/list-families'
+import { listOverdueStudentsFromMcp } from '@/use-cases/mcp/list-overdue-students'
 import { moveStudentToClassFromMcp } from '@/use-cases/mcp/move-student-to-class'
 import { createPlanFromMcp, updatePlanFromMcp } from '@/use-cases/mcp/plan-configuration'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
@@ -820,6 +821,21 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         annotations: IDEMPOTENT_COMMIT,
         kind: 'write',
         run: (args) => commitUpdateEnrollment(scope, args),
+      }),
+      define({
+        name: 'list_overdue_students',
+        title: 'Lister les élèves en retard de paiement',
+        description:
+          'Liste complète des élèves en retard de paiement (impayés), sans pagination ni ' +
+          'recherche par nom : pour « quels enfants sont en retard ? », appeler cet outil plutôt ' +
+          'que `list_families` ou `find_students`. Le retard se mesure par famille redevable ' +
+          '(versements répartis entre frères et sœurs) : chaque élève porte sa classe et le ' +
+          '`family.overdueAmount` de sa famille, échu et non réglé à ce jour. Tri par retard ' +
+          'décroissant. Le détail des mois couverts se lit avec `get_family_payments`.',
+        inputSchema: NO_ARGS,
+        annotations: { readOnlyHint: true, openWorldHint: false },
+        kind: 'read',
+        run: () => listOverdueStudentsFromMcp(scope),
       }),
       define({
         name: 'get_family_payments',

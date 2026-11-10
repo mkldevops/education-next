@@ -586,6 +586,10 @@
         "healthNotes": "Notes de santé",
         "snackAuthorization": "Autorisation goûter",
         "noStudents": "Aucun élève enregistré",
+        "noOverdueStudents": "Aucun élève en retard de paiement",
+        "overdue": "Retard",
+        "filterAll": "Tous",
+        "filterOverdue": "En retard de paiement",
         "create": {
           "title": "Ajouter un élève",
           "selectFamily": "Famille",

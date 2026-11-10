@@ -7,6 +7,7 @@ import { useTableLabels } from '@/features/tables'
 import type { Family, FamilyPerson, Person, Student } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { calculateAge, formatDate } from '@/lib/date'
+import { formatCurrency } from '@/lib/decimal'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
 import { StudentActionsMenu } from './student-actions-menu'
 
@@ -36,6 +37,9 @@ type Props = {
   currency: string
   /** Date de référence de l'âge, fixée par le serveur pour que le rendu client lui soit identique. */
   today: Date
+  /** Retard de la famille redevable par élève ; `null` quand les paiements sont masqués. */
+  overdueAmounts?: Record<string, number> | null
+  initialOverdueOnly?: boolean
 }
 
 /**
@@ -94,8 +98,18 @@ export function StudentsDataTable({
   paymentsEnabled,
   currency,
   today,
+  overdueAmounts = null,
+  initialOverdueOnly = false,
 }: Props) {
   const t = useTranslations('dashboard.pages.students')
+  const [overdueOnly, setOverdueOnly] = useState(initialOverdueOnly)
+  const overdueCount = overdueAmounts
+    ? data.filter((row) => overdueAmounts[row.id] !== undefined).length
+    : 0
+  const rows =
+    overdueAmounts && overdueOnly
+      ? data.filter((row) => overdueAmounts[row.id] !== undefined)
+      : data
   // Un seul dialogue pour toute la table : `key` le remonte à chaque demande d'inscription, ce qui
   // le rouvre et réinitialise le formulaire sans le dupliquer sur chaque ligne. La clé est un
   // compteur et non l'id de l'élève : refermé par « Annuler », le dialogue ne prévient pas la
@@ -176,6 +190,27 @@ export function StudentsDataTable({
       cell: ({ getValue }) => <span className="text-graphite">{getValue() as string}</span>,
       enableSorting: true,
     },
+    ...(overdueAmounts
+      ? [
+          {
+            id: 'overdue',
+            header: t('overdue'),
+            accessorFn: (row) => overdueAmounts[row.id],
+            sortUndefined: 'last',
+            cell: ({ row }) => {
+              const amount = overdueAmounts[row.original.id]
+              return amount === undefined ? (
+                <span className="text-graphite-600">—</span>
+              ) : (
+                <span className="font-medium text-graphite tabular-nums">
+                  {formatCurrency(amount, locale, currency)}
+                </span>
+              )
+            },
+            enableSorting: true,
+          } satisfies RichDataTableColumnDef<StudentRow>,
+        ]
+      : []),
     ...(isStaff ? [actionsColumn] : []),
   ]
 
@@ -183,11 +218,27 @@ export function StudentsDataTable({
 
   return (
     <>
+      {overdueAmounts && (
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+          {([false, true] as const).map((value) => (
+            <button
+              key={String(value)}
+              type="button"
+              aria-pressed={overdueOnly === value}
+              onClick={() => setOverdueOnly(value)}
+              className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm ${overdueOnly === value ? 'border-graphite bg-graphite text-white' : 'border-alabaster-700 bg-white text-graphite'}`}
+            >
+              {value ? t('filterOverdue') : t('filterAll')}
+              <span className="tabular-nums opacity-70">{value ? overdueCount : data.length}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <RichDataTable
-        data={data}
+        data={rows}
         columns={columns}
         labels={labels}
-        emptyMessage={t('noStudents')}
+        emptyMessage={overdueAmounts && overdueOnly ? t('noOverdueStudents') : t('noStudents')}
         enableSearch={isStaff}
         enableColumnVisibility={isStaff}
         enablePagination={isStaff}

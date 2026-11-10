@@ -1812,6 +1812,11 @@ Owner: `src/domain/payment-schedule.ts`, `src/use-cases/payments/payment-trackin
 - The payments dashboard keeps full annual totals separate from expected-to-date and arrears. Its
   follow-up list includes only overdue families, ordered by arrears. The family payments tab and MCP
   `get_family_payments` expose the same calculation; no automatic notification or debit is created.
+- **A student is overdue when its debtor family is overdue** (`getOverdueStudents()`): arrears stay
+  measured per family, and each child carrying a payable enrollment whose debt resolves to that family
+  reports the family's `overdueAmount`. The students page (admins with payments enabled) shows that
+  amount and an "overdue only" filter (`?filter=overdue`) scoped to the selected period; MCP and the
+  in-app assistant read the whole school through `list_overdue_students`.
 
 ### Recording a payment
 

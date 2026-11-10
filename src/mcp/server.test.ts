@@ -196,6 +196,7 @@ describe('buildMcpServer', () => {
       'commit_record_payment',
       'preview_update_enrollment',
       'commit_update_enrollment',
+      'list_overdue_students',
       'get_family_payments',
       'cancel_payments',
     ])
