@@ -463,8 +463,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       title: 'Chercher un élève',
       description:
         'Cherche des élèves par leur nom : chaque mot doit figurer dans le prénom ou le nom. ' +
-        'Rend leur identifiant, leurs familles et leurs inscriptions ouvertes avec leur ' +
-        `classe. Au plus ${MCP_STUDENT_SEARCH_MAX} résultats.`,
+        'Rend leur identifiant d’élève (`id`), leur `personId`, leurs familles et leurs ' +
+        `inscriptions ouvertes avec leur classe. Au plus ${MCP_STUDENT_SEARCH_MAX} résultats.`,
       inputSchema: mcpFindStudentsSchema,
       annotations: { readOnlyHint: true, openWorldHint: false },
       kind: 'read',
@@ -520,7 +520,7 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       name: 'preview_split_family',
       title: 'Préparer la séparation d’une famille',
       description:
-        'Prépare la sortie de membres (`personIds`, issus de `find_students` ou de la fiche) ' +
+        'Prépare la sortie de membres (`personIds` : le `personId` rendu par `find_students`) ' +
         'de la famille `sourceId` vers une nouvelle famille nommée `name`, par exemple deux ' +
         'familles homonymes saisies ensemble. Suivent ces membres les paiements de leurs ' +
         'inscriptions, leurs reçus, paiements en ligne et invitations ; les comptes parents ' +

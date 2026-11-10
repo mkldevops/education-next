@@ -20,6 +20,7 @@ export async function findStudentsFromMcp(
   const rows = await readGw.findStudents(scope.schoolId, query, limit)
   return rows.map((row) => ({
     id: row.id,
+    personId: row.person.id,
     name: row.person.name,
     lastname: row.person.lastname,
     families: row.person.families.map((link) => link.family),

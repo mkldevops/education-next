@@ -4,6 +4,7 @@ import { findStudentsFromMcp } from './find-students'
 const row = {
   id: 'student-1',
   person: {
+    id: 'person-1',
     name: 'Ali',
     lastname: 'Madi',
     families: [{ family: { id: 'family-1', name: 'Madi' } }],
@@ -30,6 +31,7 @@ describe('findStudentsFromMcp', () => {
     expect(result).toEqual([
       {
         id: 'student-1',
+        personId: 'person-1',
         name: 'Ali',
         lastname: 'Madi',
         families: [{ id: 'family-1', name: 'Madi' }],
