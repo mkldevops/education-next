@@ -17,7 +17,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "knip": "knip",
-    "prepare": "husky",
     "db:start": "docker compose up -d",
     "db:stop": "docker compose down",
     "db:generate": "prisma generate",
@@ -39,17 +38,9 @@
       "@prisma/engines",
       "@swc/core",
       "esbuild",
+      "lefthook",
       "prisma",
       "sharp"
-    ]
-  },
-  "lint-staged": {
-    "*.{js,ts,json,css,md}": [
-      "biome check --write --no-errors-on-unmatched"
-    ],
-    "*.{jsx,tsx}": [
-      "tailwind-canonical --fix",
-      "biome check --write --no-errors-on-unmatched"
     ]
   },
   "dependencies": {
@@ -99,10 +90,9 @@
     "dotenv": "18.0.9",
     "dotenv-cli": "^11.1.0",
     "dotenv-expand": "^1000.0.0",
-    "husky": "^9.1.7",
     "jsdom": "^31.0.0",
     "knip": "^6.44.1",
-    "lint-staged": "^17.6.0",
+    "lefthook": "^2.2.2",
     "mysql2": "^3.24.6",
     "postcss": "^8.5.30",
     "prisma": "^7.10.1",
