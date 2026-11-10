@@ -1,6 +1,13 @@
 import { EmptyState, StatusBadge } from '@peaklab/ui'
-import { CalendarDays, ChevronRight, GraduationCap } from 'lucide-react'
+import { CalendarDays, Check, ChevronRight, GraduationCap } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
+import {
+  type InstallmentCoverage,
+  installmentCoverage,
+  paymentInstallments,
+  readPaymentSchedule,
+  startMonthFromDate,
+} from '@/domain/payment-schedule'
 import { EnrollmentStatusBadge } from '@/features/enums'
 import type {
   ClassAssignment,
@@ -33,9 +40,39 @@ type Props = {
   paymentsEnabled: boolean
 }
 
+const COVERAGE_TONE: Record<InstallmentCoverage['status'], string> = {
+  PAID: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  PARTIAL: 'border-amber-200 bg-amber-50 text-amber-700',
+  UNPAID: 'border-alabaster-700 bg-white text-graphite-700',
+}
+
+function coverageOf(enrollment: EnrollmentWithRelation, paid: number, currency: string) {
+  const period = enrollment.classAssignments.reduce<Period | null>(
+    (latest, row) =>
+      !latest || row.classPeriod.period.startAt > latest.startAt ? row.classPeriod.period : latest,
+    null
+  )
+  if (!period) return []
+  return installmentCoverage(
+    paymentInstallments(
+      readPaymentSchedule(enrollment.plan.paymentSchedule),
+      Number(enrollment.totalAmount),
+      period.startAt,
+      currency,
+      startMonthFromDate(enrollment.startMonth)
+    ),
+    paid
+  )
+}
+
 export async function EnrollmentList({ enrollments, locale, currency, paymentsEnabled }: Props) {
   const t = await getTranslations('dashboard.pages.studentDetails')
   const tEnrollments = await getTranslations('dashboard.pages.enrollments')
+  const monthFormat = new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    year: '2-digit',
+    timeZone: 'UTC',
+  })
 
   if (enrollments.length === 0) {
     return (
@@ -55,6 +92,7 @@ export async function EnrollmentList({ enrollments, locale, currency, paymentsEn
         const remaining = Math.max(0, total - paid)
         const progress = total > 0 ? Math.min((paid / total) * 100, 100) : 0
         const assignment = enrollment.classAssignments[0]?.classPeriod
+        const coverage = paymentsEnabled ? coverageOf(enrollment, paid, currency) : []
 
         return (
           <li key={enrollment.id}>
@@ -112,6 +150,39 @@ export async function EnrollmentList({ enrollments, locale, currency, paymentsEn
                       </span>
                     )}
                   </div>
+                  {coverage.length > 0 && (
+                    <div className="pt-1">
+                      <p className="mb-1 text-xs text-graphite-600">
+                        {t('enrollmentList.coveredMonths')}
+                      </p>
+                      <ul className="flex flex-wrap gap-1">
+                        {coverage.map((installment) => {
+                          const month = monthFormat.format(new Date(installment.dueDate))
+                          const label = t(
+                            `enrollmentList.installmentStatus.${installment.status}`,
+                            {
+                              month,
+                              paid: formatCurrency(installment.paidAmount, locale, currency),
+                              amount: formatCurrency(installment.amount, locale, currency),
+                            }
+                          )
+                          return (
+                            <li
+                              key={installment.dueDate}
+                              title={label}
+                              aria-label={label}
+                              className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs capitalize ${COVERAGE_TONE[installment.status]}`}
+                            >
+                              {installment.status === 'PAID' && (
+                                <Check aria-hidden className="h-3 w-3" />
+                              )}
+                              {month}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
 

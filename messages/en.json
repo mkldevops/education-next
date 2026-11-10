@@ -2088,6 +2088,12 @@
           "emptyHint": "This student's enrollments will appear here.",
           "remaining": "{amount} remaining",
           "settled": "Settled",
+          "coveredMonths": "Months covered",
+          "installmentStatus": {
+            "PAID": "{month}: paid",
+            "PARTIAL": "{month}: partly paid ({paid} / {amount})",
+            "UNPAID": "{month}: unpaid"
+          },
           "registeredOn": "Registered on {date}"
         },
         "enrollmentTable": {
