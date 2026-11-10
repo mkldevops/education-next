@@ -1,12 +1,12 @@
 import { headers } from 'next/headers'
-import { resolvePopupAnnouncement, safeAnnouncementLink } from '@/domain/announcement'
+import { resolvePopupAnnouncements, safeAnnouncementLink } from '@/domain/announcement'
 import { isImpersonating } from '@/domain/user'
 import { auth } from '@/lib/auth'
 import { getAnnouncementFeed } from '../_lib/announcements'
 import { AnnouncementDialog } from './announcement-dialog'
 
 /**
- * Affiche la dernière nouveauté mise en avant que l'utilisateur n'a pas encore vue. Rien pendant
+ * Affiche les nouveautés mises en avant, actives et non vues. Rien pendant
  * un emprunt d'identité : la fermeture marquerait les nouveautés comme vues pour la cible.
  */
 export async function AnnouncementGate({ locale }: { locale: string }) {
@@ -16,20 +16,21 @@ export async function AnnouncementGate({ locale }: { locale: string }) {
   const feed = await getAnnouncementFeed(locale)
   if (!feed) return null
 
-  const announcement = resolvePopupAnnouncement(feed.announcements, feed.reader)
-  if (!announcement) return null
+  const announcements = resolvePopupAnnouncements(feed.announcements, feed.reader)
+  if (announcements.length === 0) return null
 
   return (
     <AnnouncementDialog
-      key={announcement.id}
-      announcement={{
+      key={announcements.map((announcement) => announcement.id).join(',')}
+      announcements={announcements.map((announcement) => ({
+        id: announcement.id,
         title: announcement.title,
         summary: announcement.summary,
         body: announcement.body,
         imageUrl: announcement.imageUrl,
         videoUrl: announcement.videoUrl,
         link: safeAnnouncementLink(announcement.link),
-      }}
+      }))}
     />
   )
 }
