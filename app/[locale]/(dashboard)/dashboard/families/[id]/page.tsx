@@ -11,7 +11,7 @@ import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { listPayableEnrollmentChoices } from '@/use-cases/payments/payable-enrollment-choices'
-import { getFamilyPaymentTracking } from '@/use-cases/payments/payment-tracking'
+import { getFamilyPaymentTrackingDetail } from '@/use-cases/payments/payment-tracking'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { canOpenSchoolCashier, requireSchoolSession } from '../../../_lib/auth-helper'
@@ -94,7 +94,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     familyBalance,
     deletionImpact,
     onlinePaymentAvailable,
-    { currency },
+    { currency, timeZone },
     paymentTracking,
     payableEnrollments,
   ] = await Promise.all([
@@ -103,7 +103,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
     isStaff ? false : isOnlinePaymentAvailable(family.schoolId),
     getSchoolRegionalSettings(family.schoolId),
-    paymentsEnabled ? getFamilyPaymentTracking(family.schoolId, family.id) : null,
+    paymentsEnabled ? getFamilyPaymentTrackingDetail(family.schoolId, family.id) : null,
     paymentsEnabled && isStaff ? listPayableEnrollmentChoices(family.schoolId, family.id) : [],
   ])
 
@@ -335,6 +335,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
                       payments={payments}
                       locale={locale}
                       currency={currency}
+                      timeZone={timeZone}
                       tracking={paymentTracking}
                       canCancel={isAdmin}
                     />
