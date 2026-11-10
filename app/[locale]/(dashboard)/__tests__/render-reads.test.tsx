@@ -463,7 +463,7 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
 
     it('students', async () => {
       const { default: Page } = await import('../dashboard/students/page')
-      await Page({ params: params() })
+      await Page({ params: params(), searchParams: Promise.resolve({}) })
     })
 
     it('enrollments', async () => {
@@ -573,7 +573,7 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
 
     it('students', async () => {
       const { default: Page } = await import('../dashboard/students/page')
-      await Page({ params: params() })
+      await Page({ params: params(), searchParams: Promise.resolve({}) })
     })
 
     it('enrollments', async () => {

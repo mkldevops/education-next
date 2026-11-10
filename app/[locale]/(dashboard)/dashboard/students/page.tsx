@@ -6,6 +6,7 @@ import { getSelectedPeriod } from '@/features/dashboard/period'
 import { db } from '@/lib/db'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { getOverdueStudents } from '@/use-cases/payments/overdue-students'
 import { requireSchoolRecordsScope } from '../../_lib/auth-helper'
 import { AddStudentButton } from './_components/add-student-button'
 import { StudentsDataTable } from './_components/students-data-table'
@@ -13,6 +14,7 @@ import { getStudentDialogData } from './[id]/_lib/student-detail'
 
 type Props = {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ filter?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -24,9 +26,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function StudentsPage({ params }: Props) {
+export default async function StudentsPage({ params, searchParams }: Props) {
   await connection()
   const { locale } = await params
+  const { filter } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.students')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -41,6 +44,16 @@ export default async function StudentsPage({ params }: Props) {
   // inscrit sans formule et l'administration tarife ensuite.
   const paymentsEnabled = scope.isAdmin && (await isPaymentsEnabled(scope.schoolId))
   const { currency } = await getSchoolRegionalSettings(scope.schoolId)
+  // Même calcul que « Familles en retard » des paiements : la période sélectionnée, le retard
+  // de la famille redevable reporté sur chacun de ses enfants.
+  const overdueAmounts: Record<string, number> = paymentsEnabled
+    ? Object.fromEntries(
+        (await getOverdueStudents(scope.schoolId, { periodId: selectedPeriod?.id })).map((row) => [
+          row.studentId,
+          row.family.overdueAmount,
+        ])
+      )
+    : {}
 
   const students = await db.student.findMany({
     where: {
@@ -130,6 +143,8 @@ export default async function StudentsPage({ params }: Props) {
         paymentsEnabled={paymentsEnabled}
         currency={currency}
         today={new Date()}
+        overdueAmounts={paymentsEnabled ? overdueAmounts : null}
+        initialOverdueOnly={paymentsEnabled && filter === 'overdue'}
       />
     </div>
   )

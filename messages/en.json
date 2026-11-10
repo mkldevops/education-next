@@ -585,6 +585,10 @@
         "healthNotes": "Health Notes",
         "snackAuthorization": "Snack Authorization",
         "noStudents": "No students registered",
+        "noOverdueStudents": "No student behind on payments",
+        "overdue": "Overdue",
+        "filterAll": "All",
+        "filterOverdue": "Behind on payments",
         "create": {
           "title": "Add Student",
           "selectFamily": "Family",

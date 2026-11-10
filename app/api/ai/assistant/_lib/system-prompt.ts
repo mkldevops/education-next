@@ -95,6 +95,9 @@ export function buildAssistantSystemPrompt({
     '  name the teacher as written on the receipt. Without a date it is requested today.',
     ...(paymentsEnabled
       ? [
+          '- For students or families behind on payments (late, unpaid, overdue), call',
+          '  `list_overdue_students` once: it already lists every late student with its class',
+          '  and its family overdue amount. Never page through `list_families` for that.',
           '- Recording a payment: without other instructions it pays the whole remaining',
           '  balance, in cash, today. Pass `studentId` or `familyId` and go straight to',
           '  `preview_record_payment` without asking first: the approval card is the',

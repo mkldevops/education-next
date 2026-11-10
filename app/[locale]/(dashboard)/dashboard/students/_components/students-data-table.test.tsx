@@ -130,4 +130,44 @@ describe('StudentsDataTable', () => {
 
     expect(screen.getByText('05/03/2018')).toBeInTheDocument()
   })
+  it('filters on overdue students and shows their family arrears', () => {
+    render(
+      <StudentsDataTable
+        data={[studentA, studentB]}
+        locale="fr"
+        isStaff={false}
+        plans={[]}
+        classes={[]}
+        paymentsEnabled={true}
+        currency="EUR"
+        today={new Date('2026-06-01T00:00:00Z')}
+        overdueAmounts={{ 'student-b': 120 }}
+      />
+    )
+
+    expect(screen.getAllByRole('row')).toHaveLength(3)
+    fireEvent.click(screen.getByRole('button', { name: /filterOverdue/ }))
+
+    const rows = screen.getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(1)
+    expect(within(rows[0]).getByText(/Bob/)).toBeInTheDocument()
+    expect(within(rows[0]).getByText(/120,00/)).toBeInTheDocument()
+  })
+
+  it('hides the overdue filter when payments are not shown', () => {
+    render(
+      <StudentsDataTable
+        data={[studentA]}
+        locale="fr"
+        isStaff={false}
+        plans={[]}
+        classes={[]}
+        paymentsEnabled={false}
+        currency="EUR"
+        today={new Date('2026-06-01T00:00:00Z')}
+      />
+    )
+
+    expect(screen.queryByRole('button', { name: /filterOverdue/ })).not.toBeInTheDocument()
+  })
 })
