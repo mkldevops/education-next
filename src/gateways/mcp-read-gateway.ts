@@ -238,6 +238,7 @@ export const mcpReadGateway = {
         id: true,
         person: {
           select: {
+            id: true,
             name: true,
             lastname: true,
             families: {
