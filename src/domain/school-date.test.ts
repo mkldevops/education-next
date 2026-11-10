@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { schoolDayBounds, schoolToday } from './school-date'
+import { nextMonthStart, schoolDayBounds, schoolToday } from './school-date'
 
 describe('schoolToday', () => {
   it('switches day at local midnight in Indian/Comoro (UTC+3)', () => {
@@ -28,5 +28,12 @@ describe('schoolDayBounds', () => {
       start: new Date('2027-03-27T23:00:00.000Z'),
       end: new Date('2027-03-28T22:00:00.000Z'),
     })
+  })
+})
+
+describe('nextMonthStart', () => {
+  it('returns the first day of the following month, across a year end', () => {
+    expect(nextMonthStart('2026-11-10')).toBe('2026-12-01')
+    expect(nextMonthStart('2026-12-31')).toBe('2027-01-01')
   })
 })

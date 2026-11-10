@@ -5,7 +5,7 @@ import {
   readPaymentSchedule,
   startMonthFromDate,
 } from '@/domain/payment-schedule'
-import { schoolDayBounds, schoolToday } from '@/domain/school-date'
+import { nextMonthStart, schoolDayBounds, schoolToday } from '@/domain/school-date'
 import { db } from '@/lib/db'
 import { roundHalfUp, toNumber } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
@@ -14,6 +14,8 @@ import { PAYABLE_ENROLLMENT_STATUSES } from './family-balance'
 export type FamilyPaymentTracking = {
   expectedToDate: number
   overdueAmount: number
+  /** Unpaid installments due by the end of the current month, arrears included. */
+  dueThisMonth: number
   paidToDate: number
   tracked: boolean
 }
@@ -40,6 +42,7 @@ export async function getPaymentTrackingByFamily(
   const { currency, timeZone } = await getSchoolRegionalSettings(schoolId)
   const today = schoolToday(timeZone, reference)
   const { end } = schoolDayBounds(today, timeZone)
+  const monthEnd = nextMonthStart(today)
   const enrollmentWhere = {
     schoolId,
     isActive: true,
@@ -84,36 +87,40 @@ export async function getPaymentTrackingByFamily(
     }),
   ])
   const paidByEnrollment = new Map(payments.map((row) => [row.enrollmentId, row._sum.amount]))
-  const families = new Map<string, TrackedFamily & { creditedPaid: number }>()
+  const families = new Map<
+    string,
+    TrackedFamily & { creditedPaid: number; expectedByMonthEnd: number }
+  >()
   for (const enrollment of enrollments) {
     const debtor = resolveDebtorFamily(enrollment.student.person.families)
     if (!debtor || (familyId && debtor.familyId !== familyId)) continue
     const period = enrollment.classAssignments[0]?.classPeriod.period
     const schedule = readPaymentSchedule(enrollment.plan.paymentSchedule)
     const paid = toNumber(paidByEnrollment.get(enrollment.id) ?? 0)
-    const tracking = paymentTracking(
-      period
-        ? paymentInstallments(
-            schedule,
-            toNumber(enrollment.totalAmount),
-            period.startAt,
-            currency,
-            startMonthFromDate(enrollment.startMonth)
-          )
-        : [],
-      paid,
-      today
-    )
+    const installments = period
+      ? paymentInstallments(
+          schedule,
+          toNumber(enrollment.totalAmount),
+          period.startAt,
+          currency,
+          startMonthFromDate(enrollment.startMonth)
+        )
+      : []
+    const tracking = paymentTracking(installments, paid, today)
+    const byMonthEnd = paymentTracking(installments, paid, monthEnd)
     const family = families.get(debtor.familyId) ?? {
       familyId: debtor.familyId,
       familyName: debtor.family.name,
       expectedToDate: 0,
       paidToDate: 0,
       overdueAmount: 0,
+      dueThisMonth: 0,
       tracked: false,
       creditedPaid: 0,
+      expectedByMonthEnd: 0,
     }
     family.expectedToDate = roundHalfUp(family.expectedToDate + tracking.expectedToDate)
+    family.expectedByMonthEnd = roundHalfUp(family.expectedByMonthEnd + byMonthEnd.expectedToDate)
     family.paidToDate = roundHalfUp(family.paidToDate + paid)
     family.creditedPaid = roundHalfUp(
       family.creditedPaid + Math.min(paid, toNumber(enrollment.totalAmount))
@@ -125,9 +132,13 @@ export async function getPaymentTrackingByFamily(
   // must also cover another enrollment's elapsed deadlines.
   for (const family of families.values()) {
     family.overdueAmount = Math.max(0, roundHalfUp(family.expectedToDate - family.creditedPaid))
+    family.dueThisMonth = Math.max(0, roundHalfUp(family.expectedByMonthEnd - family.creditedPaid))
   }
   return [...families.values()]
-    .map(({ creditedPaid: _creditedPaid, ...family }) => family)
+    .map(
+      ({ creditedPaid: _creditedPaid, expectedByMonthEnd: _expectedByMonthEnd, ...family }) =>
+        family
+    )
     .sort((a, b) => b.overdueAmount - a.overdueAmount || a.familyName.localeCompare(b.familyName))
 }
 
@@ -142,8 +153,9 @@ export async function getFamilyPaymentTracking(
     ? {
         expectedToDate: row.expectedToDate,
         overdueAmount: row.overdueAmount,
+        dueThisMonth: row.dueThisMonth,
         paidToDate: row.paidToDate,
         tracked: row.tracked,
       }
-    : { expectedToDate: 0, overdueAmount: 0, paidToDate: 0, tracked: false }
+    : { expectedToDate: 0, overdueAmount: 0, dueThisMonth: 0, paidToDate: 0, tracked: false }
 }

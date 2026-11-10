@@ -121,6 +121,7 @@ describe('getPaymentStats', () => {
         expectedToDate: 100,
         paidToDate: 60,
         overdueAmount: 40,
+        dueThisMonth: 70,
         tracked: true,
       },
       {
@@ -129,6 +130,7 @@ describe('getPaymentStats', () => {
         expectedToDate: 50,
         paidToDate: 100,
         overdueAmount: 0,
+        dueThisMonth: 0,
         tracked: true,
       },
     ])
@@ -140,6 +142,9 @@ describe('getPaymentStats', () => {
       expectedToDate: 150,
       paidToDate: 160,
       overdueAmount: 40,
+      dueThisMonth: 70,
+      dueThisMonthCount: 1,
+      trackedCount: 2,
       tracked: true,
     })
     expect(stats.overdueFamilies).toEqual([
