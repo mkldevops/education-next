@@ -54,3 +54,6 @@ graphify-out/
 
 # lefthook
 lefthook-local.yml
+
+# Vitest JSON reporter output
+.vitest/json/output.json
