@@ -53,7 +53,7 @@ export async function CollectionOverview({ payments, meals, locale, currency }: 
         ? [
             {
               key: 'tuition',
-              href: '/dashboard/payments',
+              href: '/dashboard/payments?horizon=year',
               tone: yearTuition > 0 ? 'bg-warning' : 'bg-success',
               label: t('tuition'),
               amount: yearTuition,
@@ -97,7 +97,7 @@ export async function CollectionOverview({ payments, meals, locale, currency }: 
     rows: [
       {
         key: 'tuition',
-        href: '/dashboard/payments',
+        href: '/dashboard/payments?horizon=month',
         tone: monthTuition > 0 ? 'bg-warning' : 'bg-success',
         label: t('tuition'),
         amount: monthTuition,

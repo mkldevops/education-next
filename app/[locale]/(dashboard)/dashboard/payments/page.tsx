@@ -1,4 +1,4 @@
-import { PageHeader } from '@peaklab/ui'
+import { PageHeader, Tabs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
@@ -15,12 +15,14 @@ import { listSchoolPayments } from '@/use-cases/payments/list-school-payments'
 import { getPaymentStats } from '@/use-cases/payments/payment-stats'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { CollectionChartCard } from '../_components/collection-chart-card'
-import { PaymentsOverview } from './_components/payments-overview'
+import { PaymentTrackingBoard } from './_components/payment-tracking-board'
+import { PaymentMethodsCard, PaymentsOverview } from './_components/payments-overview'
 import { PaymentsTable } from './_components/payments-table'
 import { RecordPaymentButton } from './_components/record-payment-button'
 
 type Props = {
   params: Promise<{ locale: string }>
+  searchParams?: Promise<{ tab?: string | string[] }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -32,9 +34,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function PaymentsPage({ params }: Props) {
+export default async function PaymentsPage({ params, searchParams }: Props) {
   await connection()
   const { locale } = await params
+  const { tab } = (await searchParams) ?? {}
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.payments')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
@@ -112,7 +115,6 @@ export default async function PaymentsPage({ params }: Props) {
         locale={locale}
         currency={currency}
         periodName={selectedPeriod?.name ?? null}
-        canOpenCashier={canOpenCashier}
         chart={
           <CollectionChartCard
             series={series}
@@ -123,11 +125,36 @@ export default async function PaymentsPage({ params }: Props) {
           />
         }
       />
-      <PaymentsTable
-        currency={currency}
-        payments={paymentRows}
-        locale={locale}
-        periodName={selectedPeriod?.name ?? null}
+      <Tabs
+        ariaLabel={t('title')}
+        defaultIndex={tab === 'history' ? 1 : 0}
+        tabs={[
+          {
+            label: t('tabs.tracking'),
+            content: (
+              <PaymentTrackingBoard
+                families={stats.familyTracking}
+                locale={locale}
+                currency={currency}
+                canOpenCashier={canOpenCashier}
+              />
+            ),
+          },
+          {
+            label: t('tabs.history'),
+            content: (
+              <div className="space-y-6">
+                <PaymentMethodsCard methods={stats.methods} locale={locale} currency={currency} />
+                <PaymentsTable
+                  currency={currency}
+                  payments={paymentRows}
+                  locale={locale}
+                  periodName={selectedPeriod?.name ?? null}
+                />
+              </div>
+            ),
+          },
+        ]}
       />
     </div>
   )

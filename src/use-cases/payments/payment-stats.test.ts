@@ -8,7 +8,7 @@ const dbMock = {
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 const trackingMock = vi.fn()
-vi.mock('./payment-tracking', () => ({ getPaymentTrackingByFamily: trackingMock }))
+vi.mock('./payment-tracking', () => ({ getPaymentTrackingDetailByFamily: trackingMock }))
 
 const { getPaymentStats } = await import('./payment-stats')
 
@@ -123,6 +123,9 @@ describe('getPaymentStats', () => {
         overdueAmount: 40,
         dueThisMonth: 70,
         tracked: true,
+        annualAmount: 300,
+        creditedPaid: 60,
+        fullyScheduled: true,
       },
       {
         familyId: 'family-2',
@@ -132,6 +135,9 @@ describe('getPaymentStats', () => {
         overdueAmount: 0,
         dueThisMonth: 0,
         tracked: true,
+        annualAmount: 100,
+        creditedPaid: 100,
+        fullyScheduled: true,
       },
     ])
 
@@ -147,9 +153,13 @@ describe('getPaymentStats', () => {
       trackedCount: 2,
       tracked: true,
     })
-    expect(stats.overdueFamilies).toEqual([
-      expect.objectContaining({ familyId: 'family-1', overdueAmount: 40 }),
+    expect(stats.familyTracking).toEqual([
+      expect.objectContaining({ familyId: 'family-1', contactPhone: null }),
+      expect.objectContaining({ familyId: 'family-2', contactPhone: null }),
     ])
+    expect(dbMock.family.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { schoolId: 'school-1', id: { in: ['family-1'] } } })
+    )
     expect(trackingMock).toHaveBeenCalledWith('school-1', { periodId: 'period-1', reference })
   })
 

@@ -78,7 +78,7 @@ describe('CollectionOverview', () => {
     expect(screen.getByText('overdue:{"amount":"¤300"}')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /tuition/ })).toHaveAttribute(
       'href',
-      '/dashboard/payments'
+      '/dashboard/payments?horizon=year'
     )
     expect(screen.getByRole('link', { name: /CANTEEN/ })).toHaveAttribute(
       'href',

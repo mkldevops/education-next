@@ -33,7 +33,7 @@ export type FamilyPaymentTrackingDetail = FamilyPaymentTracking & {
   fullyScheduled: boolean
 }
 
-type TrackedFamilyDetail = TrackedFamily & FamilyPaymentTrackingDetail
+export type TrackedFamilyDetail = TrackedFamily & FamilyPaymentTrackingDetail
 
 /**
  * Date-dependent reads share one calculation for the dashboard, family and MCP surfaces.
@@ -46,6 +46,13 @@ export async function getPaymentTrackingByFamily(
   return (await collectFamilyTracking(...args)).map(
     ({ annualAmount: _annual, creditedPaid: _credited, fullyScheduled: _full, ...family }) => family
   )
+}
+
+/** Suivi de chaque famille avec son cadre annuel, pour le tableau de suivi de l'école. */
+export async function getPaymentTrackingDetailByFamily(
+  ...args: Parameters<typeof collectFamilyTracking>
+): Promise<TrackedFamilyDetail[]> {
+  return collectFamilyTracking(...args)
 }
 
 async function collectFamilyTracking(

@@ -2,6 +2,7 @@ import { Card, cn } from '@peaklab/ui'
 import { AlertTriangle, CheckCircle2, MinusCircle } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import type { ReactNode } from 'react'
+import { type PaymentTrackingState, paymentTrackingState } from '@/domain/payment-tracking-state'
 import { formatCurrency } from '@/lib/decimal'
 import type { FamilyPaymentTrackingDetail } from '@/use-cases/payments/payment-tracking'
 
@@ -13,16 +14,9 @@ type Props = {
   reference?: Date
 }
 
-type State = 'untracked' | 'settled' | 'late' | 'due' | 'ahead' | 'upToDate'
+type State = PaymentTrackingState
 
-export function paymentTrackingState(tracking: FamilyPaymentTrackingDetail): State {
-  if (!tracking.tracked) return 'untracked'
-  if (tracking.annualAmount > 0 && tracking.creditedPaid >= tracking.annualAmount) return 'settled'
-  if (tracking.overdueAmount > 0) return 'late'
-  if (tracking.dueThisMonth > 0) return 'due'
-  if (tracking.creditedPaid > tracking.expectedToDate) return 'ahead'
-  return 'upToDate'
-}
+export { paymentTrackingState }
 
 const accent: Record<State, string> = {
   untracked: 'border-l-alabaster-400',

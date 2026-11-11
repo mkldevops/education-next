@@ -1021,11 +1021,7 @@
           "outstandingEnrollments": "{outstanding, plural, =0 {aucune inscription non soldée} one {# inscription non soldée} other {# inscriptions non soldées}} sur {total}",
           "uncashedCount": "{count, plural, =0 {aucun chèque en attente} one {# chèque remis} other {# chèques remis}}",
           "methodsTitle": "Répartition par mode de paiement",
-          "outstandingTitle": "Familles en retard",
-          "outstandingSubtitle": "Retard décroissant selon les échéances",
-          "outOf": "sur {amount}",
           "noCollection": "Aucun encaissement sur ce périmètre",
-          "noOutstanding": "Aucune famille en retard sur les forfaits suivis",
           "recordFor": "Enregistrer un règlement d'écolage pour {family}",
           "callFamily": "Appeler la famille {family}",
           "noPhone": "Aucun téléphone",
@@ -1097,7 +1093,51 @@
           "generateReceipt": "Générer un reçu",
           "generateReceiptHint": "Numéroté, à imprimer ou partager. Décochez pour en générer un plus tard depuis la fiche famille."
         },
-        "description": "Règlements reçus, chèques à encaisser et reste dû."
+        "description": "Règlements reçus, chèques à encaisser et reste dû.",
+        "tabs": {
+          "tracking": "Suivi",
+          "history": "Historique"
+        },
+        "tracking": {
+          "search": "Rechercher une famille",
+          "summary": {
+            "month": "Reste à encaisser ce mois",
+            "year": "Reste à encaisser sur l'année",
+            "upToDate": "Familles à jour",
+            "settled": "Familles soldées"
+          },
+          "groups": {
+            "late": "En retard",
+            "due": "À régler ce mois",
+            "clear": "À jour ou en avance",
+            "remaining": "Reste à payer sur l'année",
+            "settled": "Année soldée"
+          },
+          "familyCount": "{count, plural, =0 {aucune famille} one {# famille} other {# familles}}",
+          "columns": {
+            "family": "Famille",
+            "status": "Statut",
+            "dueThisMonth": "À régler ce mois",
+            "remainingYear": "Reste sur l'année",
+            "paid": "Versé",
+            "expectedToDate": "Attendu à ce jour"
+          },
+          "status": {
+            "late": "Retard de {amount}",
+            "due": "À régler",
+            "ahead": "Avance de {amount}",
+            "upToDate": "À jour",
+            "settled": "Année soldée",
+            "untracked": "Sans échéancier"
+          },
+          "showMore": "{count, plural, one {Afficher l'autre famille} other {Afficher les # autres familles}}",
+          "empty": "Aucune famille dans ce groupe",
+          "noMatch": "Aucune famille ne correspond à « {query} »",
+          "noTracking": "Aucune famille n'a d'inscription à suivre sur cette période",
+          "yearProgress": "Année scolaire · {paid} versés sur {total}",
+          "openFamily": "Voir la fiche",
+          "toggleFamily": "Afficher le détail de la famille {family}"
+        }
       },
       "plans": {
         "title": "Plans tarifaires",
