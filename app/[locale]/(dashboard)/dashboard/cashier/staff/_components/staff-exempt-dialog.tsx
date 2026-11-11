@@ -16,14 +16,19 @@ import { setStaffMealExemptAction } from '../../../../_lib/staff-actions'
 
 type Props = { member: { id: string; mealExempt: boolean } }
 
+type DialogProps = Props & {
+  triggerRole?: React.AriaRole
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
+}
+
 /** Exonère un enseignant de la cantine, ou lève l'exonération. */
-export function StaffExemptDialog({ member }: Props) {
+export function StaffExemptDialog({ member, triggerRole, restoreFocusRef }: DialogProps) {
   const t = useTranslations('dashboard.pages.cashier.staff.dialog')
 
   return (
-    <Dialog>
+    <Dialog restoreFocusRef={restoreFocusRef}>
       <DialogTrigger>
-        <Button variant="outline" size="sm">
+        <Button variant={triggerRole ? 'ghost' : 'outline'} size="sm" role={triggerRole}>
           <Pencil className="h-4 w-4" />
           {t('editTitle')}
         </Button>

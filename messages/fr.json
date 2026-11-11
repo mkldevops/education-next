@@ -1429,7 +1429,7 @@
           "counts": {
             "subscribed": "Inscrits",
             "exempt": "Exemptés",
-            "eatsToday": "Mangent aujourd'hui"
+            "due": "Reste à encaisser"
           },
           "empty": "Aucun enseignant. Ajoutez le personnel dans Enseignants pour l'inscrire à la cantine.",
           "exemptBadge": "Exempté",
@@ -1465,7 +1465,19 @@
               "validationError": "Vérifiez les informations saisies",
               "notFound": "Enseignant introuvable"
             }
-          }
+          },
+          "todayTitle": "Aujourd'hui, {date} · {count, plural, =0 {aucun repas} one {# repas} other {# repas}}",
+          "allStaff": "Tout le personnel",
+          "todayEmpty": "Personne n'est prévu aujourd'hui.",
+          "absentToday": "ne mange pas",
+          "eatsTodayToggle": "{name} mange aujourd'hui",
+          "collectShort": "Encaisser",
+          "collectFor": "Encaisser la cantine de {name}",
+          "actions": "Actions",
+          "openSheet": "Voir la fiche",
+          "canteenClosed": "La cantine n'est pas ouverte pour cette école : impossible d'inscrire le personnel.",
+          "canteenSettings": "Configurer la cantine",
+          "selectPeriod": "Choisissez une période en haut de page pour inscrire le personnel."
         },
         "searchPrompt": "Quelle famille vient payer ?",
         "searchHelp": "Tapez le nom de la famille ou d'un enfant : les résultats s'affichent pendant la saisie.",

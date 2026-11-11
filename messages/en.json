@@ -1428,7 +1428,7 @@
           "counts": {
             "subscribed": "Subscribed",
             "exempt": "Exempt",
-            "eatsToday": "Eating today"
+            "due": "Left to collect"
           },
           "empty": "No teachers yet. Add staff under Teachers to subscribe them to the canteen.",
           "exemptBadge": "Exempt",
@@ -1464,7 +1464,19 @@
               "validationError": "Check the information entered",
               "notFound": "Teacher not found"
             }
-          }
+          },
+          "todayTitle": "Today, {date} · {count, plural, =0 {no meals} one {# meal} other {# meals}}",
+          "allStaff": "All staff",
+          "todayEmpty": "Nobody is expected today.",
+          "absentToday": "not eating",
+          "eatsTodayToggle": "{name} eats today",
+          "collectShort": "Collect",
+          "collectFor": "Collect canteen for {name}",
+          "actions": "Actions",
+          "openSheet": "Open sheet",
+          "canteenClosed": "The canteen is not open for this school: staff cannot be enrolled.",
+          "canteenSettings": "Set up the canteen",
+          "selectPeriod": "Pick a period at the top of the page to enroll staff."
         },
         "searchPrompt": "Which family is paying?",
         "searchHelp": "Type the family's or a child's name: results show up as you type.",

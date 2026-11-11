@@ -36,6 +36,10 @@ type Props = {
   today: string
   /** Période sélectionnée, pour une inscription. */
   period: { id: string; start: string; end: string } | null
+  /** Dans un menu d'actions : bouton discret, rôle `menuitem` et focus rendu au déclencheur. */
+  triggerRole?: React.AriaRole
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
+  triggerVariant?: 'default' | 'outline' | 'ghost'
 }
 
 const TRIGGER_VARIANT = {
@@ -45,13 +49,17 @@ const TRIGGER_VARIANT = {
   opening: 'ghost',
 } as const
 
-export function MealDialog(props: Props) {
+export function MealDialog({ triggerRole, restoreFocusRef, triggerVariant, ...props }: Props) {
   const t = useTranslations('dashboard.pages.studentDetails.meals.dialog')
 
   return (
-    <Dialog>
+    <Dialog restoreFocusRef={restoreFocusRef}>
       <DialogTrigger>
-        <Button variant={TRIGGER_VARIANT[props.kind]} size="sm">
+        <Button
+          variant={triggerVariant ?? TRIGGER_VARIANT[props.kind]}
+          size="sm"
+          role={triggerRole}
+        >
           {t(`${props.kind}.trigger`)}
         </Button>
       </DialogTrigger>
