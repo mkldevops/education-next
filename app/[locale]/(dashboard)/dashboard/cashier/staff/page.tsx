@@ -4,14 +4,20 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { schoolToday } from '@/domain/school-date'
+import { getSelectedPeriodId } from '@/features/dashboard/period'
+import { mealAccountGateway } from '@/gateways/meal-account-gateway'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { requireSchoolCashier } from '../../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../../_lib/page-metadata'
+import { YearProgress } from '../../payments/_components/year-progress'
+import { MealDialog } from '../../students/[id]/_components/meal-dialogs'
 import { loadStaffRows } from '../_lib/staff-data'
-import { StaffExemptDialog } from './_components/staff-exempt-dialog'
+import { StaffCollectDialog } from './_components/staff-collect-dialog'
+import { StaffRowActions } from './_components/staff-row-actions'
+import { StaffToday } from './_components/staff-today'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -33,23 +39,46 @@ export default async function CashierStaffPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.cashier.staff')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
   const tWeekdays = await getTranslations('dashboard.pages.meals.weekdays')
+  const tProgress = await getTranslations('dashboard.pages.cashier.staff.progress')
 
   const { schoolId, isAdmin } = await requireSchoolCashier()
   if (!(await isMealsEnabled(schoolId))) notFound()
 
   const { currency, timeZone } = await getSchoolRegionalSettings(schoolId)
   const today = schoolToday(timeZone)
-  const rows = await loadStaffRows(schoolId, today)
+  const [rows, setting, selectedPeriodId] = await Promise.all([
+    loadStaffRows(schoolId, today),
+    mealAccountGateway.findSetting(schoolId, 'CANTEEN'),
+    getSelectedPeriodId(schoolId),
+  ])
+  const periodDates = selectedPeriodId
+    ? await mealAccountGateway.findPeriod(schoolId, selectedPeriodId)
+    : null
+  const period = periodDates && selectedPeriodId ? { id: selectedPeriodId, ...periodDates } : null
+  const canteenEnabled = setting?.isEnabled ?? false
+  const allowedWeekdays = setting?.allowedWeekdays ?? []
   const active = rows.filter((row) => row.isActive)
   const subscribed = active.filter((row) => row.weekdays.length > 0)
+  const todayMembers = active.flatMap((row) =>
+    row.today ? [{ id: row.id, name: row.name, mealExempt: row.mealExempt, today: row.today }] : []
+  )
+  const eatsToday = todayMembers.filter((member) => member.today === 'eats').length
+  const totalDue = active.reduce((sum, row) => sum + row.dueAmount, 0)
+  const todayLabel = new Date(`${today}T00:00:00.000Z`).toLocaleDateString(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+  })
 
+  const money = (amount: number) => formatCurrency(amount, locale, currency)
   const formatDay = (day: string) =>
     new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, { timeZone: 'UTC' })
 
   const counts = [
     { key: 'subscribed', value: subscribed.length },
     { key: 'exempt', value: subscribed.filter((row) => row.mealExempt).length },
-    { key: 'eatsToday', value: active.filter((row) => row.eatsToday).length },
+    { key: 'due', value: formatCurrency(totalDue, locale, currency) },
   ] as const
 
   return (
@@ -68,7 +97,7 @@ export default async function CashierStaffPage({ params }: Props) {
         </div>
       </div>
 
-      <dl className="grid max-w-xl grid-cols-3 gap-3">
+      <dl className="grid grid-cols-3 gap-3">
         {counts.map(({ key, value }) => (
           <Card key={key} className="p-4">
             <dt className="text-xs text-graphite-600">{t(`counts.${key}`)}</dt>
@@ -77,59 +106,127 @@ export default async function CashierStaffPage({ params }: Props) {
         ))}
       </dl>
 
+      {!canteenEnabled && (
+        <p className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {t('canteenClosed')}{' '}
+          <Link href="/dashboard/meals" className="font-medium underline">
+            {t('canteenSettings')}
+          </Link>
+        </p>
+      )}
+      {canteenEnabled && !period && (
+        <p className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {t('selectPeriod')}
+        </p>
+      )}
+
+      {todayMembers.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-base font-semibold text-graphite">
+            {t('todayTitle', { date: todayLabel, count: eatsToday })}
+          </h2>
+          <StaffToday members={todayMembers} today={today} />
+        </section>
+      )}
+
       {rows.length === 0 ? (
         <p className="text-sm text-graphite-600">{t('empty')}</p>
       ) : (
-        <ul className="max-w-3xl divide-y divide-alabaster-700 rounded border border-alabaster-700">
-          {rows.map((row) => (
-            <li
-              key={row.id}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-            >
-              <div className="min-w-0 space-y-0.5">
-                <Link
-                  href={`/dashboard/cashier/staff/${row.id}`}
-                  className="text-sm font-medium text-graphite hover:underline"
-                >
-                  {row.name}
-                </Link>
-                {row.mealExempt && (
-                  <span className="ml-2 rounded bg-alabaster-900 px-1.5 py-0.5 text-xs text-graphite-600">
-                    {t('exemptBadge')}
-                  </span>
-                )}
-                {!row.isActive && (
-                  <span className="ml-2 rounded bg-alabaster-900 px-1.5 py-0.5 text-xs text-graphite-600">
-                    {t('inactiveBadge')}
-                  </span>
-                )}
-                <p className="text-xs text-graphite-600">
-                  {row.weekdays.length > 0
-                    ? row.weekdays.map((day) => tWeekdays(String(day))).join(', ')
-                    : t('noCanteen')}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 text-right text-xs">
-                {row.weekdays.length > 0 && !row.mealExempt && (
-                  <span className="text-graphite-600">
-                    {row.paidThrough
-                      ? t('paidThrough', { date: formatDay(row.paidThrough) })
-                      : t('nothingPaid')}
-                    {row.dueDays > 0 && (
-                      <span className="block text-amber-600">
-                        {t('due', {
-                          days: row.dueDays,
-                          amount: formatCurrency(row.dueAmount, locale, currency),
-                        })}
-                      </span>
-                    )}
-                  </span>
-                )}
-                {isAdmin && <StaffExemptDialog member={row} />}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <section className="space-y-2">
+          {todayMembers.length > 0 && (
+            <h2 className="text-base font-semibold text-graphite">{t('allStaff')}</h2>
+          )}
+          <ul className="divide-y divide-alabaster-700 rounded border border-alabaster-700">
+            {rows.map((row) => (
+              <li
+                key={row.id}
+                className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto] md:items-center"
+              >
+                <div className="min-w-0 space-y-0.5">
+                  <Link
+                    href={`/dashboard/cashier/staff/${row.id}`}
+                    className="text-sm font-medium text-graphite hover:underline"
+                  >
+                    {row.name}
+                  </Link>
+                  {row.mealExempt && (
+                    <span className="ml-2 rounded bg-alabaster-900 px-1.5 py-0.5 text-xs text-graphite-600">
+                      {t('exemptBadge')}
+                    </span>
+                  )}
+                  {!row.isActive && (
+                    <span className="ml-2 rounded bg-alabaster-900 px-1.5 py-0.5 text-xs text-graphite-600">
+                      {t('inactiveBadge')}
+                    </span>
+                  )}
+                  <p className="text-xs text-graphite-600">
+                    {row.weekdays.length > 0
+                      ? row.weekdays.map((day) => tWeekdays(String(day))).join(', ')
+                      : t('noCanteen')}
+                  </p>
+                  {row.weekdays.length > 0 && !row.mealExempt && (
+                    <p className="text-xs text-graphite-600">
+                      {row.paidThrough
+                        ? t('paidThrough', { date: formatDay(row.paidThrough) })
+                        : t('nothingPaid')}
+                    </p>
+                  )}
+                  {row.dueDays > 0 && (
+                    <p className="text-sm font-semibold tabular-nums text-red-600">
+                      {t('due', { days: row.dueDays, amount: money(row.dueAmount) })}
+                    </p>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  {row.progress && (
+                    <YearProgress
+                      t={tProgress}
+                      money={money}
+                      paid={row.progress.paid}
+                      total={row.progress.total}
+                      overdue={row.progress.overdue}
+                      expected={row.progress.expected}
+                      scheduled
+                      showExpected
+                    />
+                  )}
+                </div>
+                <div className="flex items-center gap-3 md:justify-end">
+                  {row.isActive && row.weekdays.length === 0 && canteenEnabled && period && (
+                    <MealDialog
+                      kind="subscribe"
+                      owner={{ teacherId: row.id }}
+                      service="CANTEEN"
+                      allowedWeekdays={allowedWeekdays}
+                      weekdays={[]}
+                      today={today}
+                      period={period}
+                      triggerVariant="outline"
+                    />
+                  )}
+                  {row.isActive && !row.mealExempt && row.receipt && (
+                    <StaffCollectDialog
+                      member={row}
+                      receipt={row.receipt}
+                      highlight={row.dueDays > 0}
+                      currency={currency}
+                      locale={locale}
+                    />
+                  )}
+                  {row.isActive && (
+                    <StaffRowActions
+                      member={row}
+                      allowedWeekdays={allowedWeekdays}
+                      canteenEnabled={canteenEnabled}
+                      today={today}
+                      isAdmin={isAdmin}
+                    />
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   )
