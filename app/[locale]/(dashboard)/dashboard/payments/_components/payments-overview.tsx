@@ -1,252 +1,105 @@
-import { Card, ProgressBar } from '@peaklab/ui'
-import type { LucideIcon } from 'lucide-react'
-import { Banknote, HandCoins, Landmark, Wallet } from 'lucide-react'
+import { Card } from '@peaklab/ui'
 import { getTranslations } from 'next-intl/server'
-import type { ReactNode } from 'react'
 import type { PaymentMethod } from '@/generated/prisma/client'
-import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
 import type { PaymentStats } from '@/use-cases/payments/payment-stats'
-import { RemainingHorizonSwitch } from '../../_components/remaining-horizon-switch'
-import { OutstandingFamilyActions } from './outstanding-family-actions'
 
-const KPI_TONES = {
-  primary: { tile: 'bg-primary-subtle', icon: 'text-foreground' },
-  amber: { tile: 'bg-amber-100', icon: 'text-amber-600' },
-  blue: { tile: 'bg-blue-100', icon: 'text-blue-600' },
-} as const
-
-interface Props {
-  stats: PaymentStats
-  locale: string
-  currency: string
-  periodName: string | null
-  canOpenCashier?: boolean
-  chart?: ReactNode
+const METHOD_TONE: Record<PaymentMethod, { stroke: string; swatch: string }> = {
+  CASH: { stroke: 'stroke-emerald-600', swatch: 'bg-emerald-600' },
+  CHECK: { stroke: 'stroke-primary', swatch: 'bg-primary' },
+  TRANSFER: { stroke: 'stroke-sky-600', swatch: 'bg-sky-600' },
+  CARD: { stroke: 'stroke-amber-500', swatch: 'bg-amber-500' },
+  STRIPE: { stroke: 'stroke-violet-500', swatch: 'bg-violet-500' },
+  MOBILE_MONEY: { stroke: 'stroke-orange-600', swatch: 'bg-orange-600' },
 }
 
-export async function PaymentsOverview({
-  stats,
+const RADIUS = 15.9155
+
+export async function PaymentMethodsCard({
+  methods,
   locale,
   currency,
-  periodName,
-  canOpenCashier = false,
-  chart,
-}: Props) {
-  const t = await getTranslations('dashboard.pages.payments.stats')
-  const tScope = await getTranslations('dashboard.stats')
-  const tMethod = await getTranslations('paymentMethod')
-  const { totals, methods, overdueFamilies: families, tracking } = stats
-
-  const scope = periodName ? tScope('scopePeriod', { period: periodName }) : tScope('scopeAll')
-  const overdue =
-    tracking.tracked && tracking.overdueAmount > 0
-      ? t('overdueBadge', { amount: formatCurrency(tracking.overdueAmount, locale, currency) })
-      : undefined
-  const yearRemaining = {
-    value: formatCurrency(totals.remaining, locale, currency),
-    alert: overdue,
-    caption: t('outstandingEnrollments', {
-      outstanding: totals.outstandingCount,
-      total: totals.enrollmentCount,
-    }),
-  }
-  const monthRemaining = {
-    value: formatCurrency(tracking.dueThisMonth, locale, currency),
-    alert: overdue,
-    caption: t('dueThisMonthFamilies', { count: tracking.dueThisMonthCount }),
-  }
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          label={t('due')}
-          value={formatCurrency(totals.due, locale, currency)}
-          caption={scope}
-          icon={Landmark}
-          tone="primary"
-        />
-        <KpiCard
-          label={t('collected')}
-          value={formatCurrency(totals.collected, locale, currency)}
-          caption={t('paymentsCount', { count: totals.paymentCount })}
-          icon={HandCoins}
-          tone="primary"
-        >
-          <div className="mt-4">
-            <ProgressBar value={totals.collectionRate} />
-            <p className="mt-1 text-xs text-graphite-600">{t('collectionRate')}</p>
-          </div>
-        </KpiCard>
-        <KpiCard
-          label={t('remaining')}
-          value={yearRemaining.value}
-          caption={yearRemaining.caption}
-          alert={yearRemaining.alert}
-          body={
-            tracking.tracked ? (
-              <RemainingHorizonSwitch
-                className="mt-2 space-y-2"
-                month={<KpiValue {...monthRemaining} />}
-                year={<KpiValue {...yearRemaining} />}
-              />
-            ) : undefined
-          }
-          icon={Wallet}
-          tone="amber"
-          className="border-amber-200"
-        />
-        <KpiCard
-          label={t('uncashed')}
-          value={formatCurrency(totals.uncashedAmount, locale, currency)}
-          caption={t('uncashedCount', { count: totals.uncashedCount })}
-          icon={Banknote}
-          tone="blue"
-        />
-      </div>
-
-      {chart}
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-graphite">{t('methodsTitle')}</h2>
-          {methods.length === 0 ? (
-            <p className="mt-4 text-graphite-600">{t('noCollection')}</p>
-          ) : (
-            <ul className="mt-4 space-y-4">
-              {methods.map((method) => (
-                <li key={method.method}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-sm font-medium text-graphite">
-                      {tMethod(method.method as PaymentMethod)}
-                    </span>
-                    <span className="text-sm text-graphite">
-                      {formatCurrency(method.amount, locale, currency)}
-                      <span className="ml-2 text-xs text-graphite-600">
-                        {t('paymentsCount', { count: method.count })}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="mt-2">
-                    <ProgressBar value={method.share} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold text-graphite">{t('outstandingTitle')}</h2>
-            <p className="text-sm text-graphite-600">{t('outstandingSubtitle')}</p>
-          </div>
-          {families.length === 0 ? (
-            <p className="mt-4 text-graphite-600">{t('noOutstanding')}</p>
-          ) : (
-            <ul className="mt-4 space-y-4">
-              {families.map((family) => (
-                <li key={family.familyId}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <Link
-                      href={`/dashboard/families/${family.familyId}`}
-                      className="text-sm font-medium text-foreground hover:underline"
-                    >
-                      {family.familyName}
-                    </Link>
-                    <span className="text-sm font-medium text-graphite">
-                      {formatCurrency(family.overdueAmount, locale, currency)}
-                      <span className="ml-2 text-xs text-graphite-600">
-                        {t('outOf', {
-                          amount: formatCurrency(family.expectedToDate, locale, currency),
-                        })}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="mt-2">
-                    <ProgressBar
-                      value={
-                        family.expectedToDate > 0
-                          ? Math.max(0, 100 * (1 - family.overdueAmount / family.expectedToDate))
-                          : 0
-                      }
-                    />
-                  </div>
-                  <OutstandingFamilyActions
-                    family={{ id: family.familyId, name: family.familyName }}
-                    phone={family.contactPhone}
-                    overdueAmount={formatCurrency(family.overdueAmount, locale, currency)}
-                    currency={currency}
-                    canOpenCashier={canOpenCashier}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
-    </div>
-  )
-}
-
-function KpiCard({
-  label,
-  value,
-  caption,
-  icon: Icon,
-  tone,
-  alert,
-  body,
   className,
-  children,
 }: {
-  label: string
-  value: string
-  caption: ReactNode
-  alert?: string
-  body?: ReactNode
-  icon: LucideIcon
-  tone: keyof typeof KPI_TONES
+  methods: PaymentStats['methods']
+  locale: string
+  currency: string
   className?: string
-  children?: ReactNode
 }) {
-  return (
-    <Card className={cn('min-w-0 p-5', className)}>
-      <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 text-sm font-medium text-graphite-600">{label}</p>
-        <div className={cn('shrink-0 rounded p-3', KPI_TONES[tone].tile)}>
-          <Icon className={cn('h-6 w-6', KPI_TONES[tone].icon)} />
-        </div>
-      </div>
-      {body ?? (
-        <div className="mt-2">
-          <KpiValue value={value} caption={caption} alert={alert} />
-        </div>
-      )}
-      {children}
-    </Card>
-  )
-}
+  const t = await getTranslations('dashboard.pages.payments.stats')
+  const tMethod = await getTranslations('paymentMethod')
+  const total = methods.reduce((sum, method) => sum + method.amount, 0)
+  const percent = new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 })
 
-function KpiValue({
-  value,
-  caption,
-  alert,
-}: {
-  value: string
-  caption: ReactNode
-  alert?: string
-}) {
+  let offset = 0
+  const slices = methods.map((method) => {
+    const share = total > 0 ? (100 * method.amount) / total : 0
+    const slice = { ...method, share, start: offset }
+    offset += share
+    return slice
+  })
+
   return (
-    <>
-      <p className="wrap-anywhere text-3xl font-bold text-graphite">{value}</p>
-      {alert && (
-        <p className="mt-1 inline-flex rounded-md bg-danger-subtle px-2 py-0.5 text-xs font-medium text-danger">
-          {alert}
-        </p>
+    <Card className={cn('p-4 sm:p-5', className)}>
+      <h2 className="text-sm font-semibold text-foreground">{t('methodsTitle')}</h2>
+      {total === 0 ? (
+        <p className="mt-4 text-sm text-graphite-600">{t('noCollection')}</p>
+      ) : (
+        <div className="mt-4 flex flex-col items-center gap-4">
+          <div className="relative size-36 shrink-0">
+            <svg viewBox="0 0 42 42" className="size-full -rotate-90" aria-hidden="true">
+              <circle
+                cx="21"
+                cy="21"
+                r={RADIUS}
+                fill="none"
+                strokeWidth="6"
+                className="stroke-alabaster-700"
+              />
+              {slices.map((slice) => (
+                <circle
+                  key={slice.method}
+                  cx="21"
+                  cy="21"
+                  r={RADIUS}
+                  fill="none"
+                  strokeWidth="6"
+                  pathLength={100}
+                  strokeDasharray={`${slice.share} ${100 - slice.share}`}
+                  strokeDashoffset={-slice.start}
+                  className={METHOD_TONE[slice.method as PaymentMethod].stroke}
+                />
+              ))}
+            </svg>
+            <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm font-semibold tabular-nums text-graphite">
+              {formatCurrency(total, locale, currency)}
+            </p>
+          </div>
+          <ul className="w-full space-y-2">
+            {slices.map((slice) => (
+              <li key={slice.method} className="flex items-baseline gap-2 text-sm">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'size-2.5 shrink-0 self-center rounded-xs',
+                    METHOD_TONE[slice.method as PaymentMethod].swatch
+                  )}
+                />
+                <span className="min-w-0 flex-1 truncate text-graphite">
+                  {tMethod(slice.method as PaymentMethod)}
+                </span>
+                <span className="tabular-nums text-graphite">
+                  {formatCurrency(slice.amount, locale, currency)}
+                </span>
+                <span className="w-10 text-right text-xs tabular-nums text-graphite-600">
+                  {percent.format(slice.share / 100)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
-      <p className="mt-1 text-xs text-graphite-600">{caption}</p>
-    </>
+    </Card>
   )
 }

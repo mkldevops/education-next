@@ -11,8 +11,8 @@ import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
 import {
   type FamilyPaymentTracking,
-  getPaymentTrackingByFamily,
-  type TrackedFamily,
+  getPaymentTrackingDetailByFamily,
+  type TrackedFamilyDetail,
 } from './payment-tracking'
 
 const FAMILIES_LISTED = 6
@@ -22,7 +22,8 @@ export type PaymentStats = {
   methods: MethodCollection[]
   families: FamilyToFollowUp[]
   tracking: FamilyPaymentTracking & { dueThisMonthCount: number; trackedCount: number }
-  overdueFamilies: Array<TrackedFamily & { contactPhone: string | null }>
+  /** Chaque famille couverte par le suivi, avec le téléphone à composer pour la relancer. */
+  familyTracking: Array<TrackedFamilyDetail & { contactPhone: string | null }>
 }
 
 /** Famille à relancer, avec le téléphone à composer pour la joindre. */
@@ -136,7 +137,7 @@ export async function getPaymentStats(
       _sum: { amount: true },
       _count: { _all: true },
     }),
-    getPaymentTrackingByFamily(schoolId, { periodId, reference }),
+    getPaymentTrackingDetailByFamily(schoolId, { periodId, reference }),
   ])
 
   const paid = new Map(paidByEnrollment.map((row) => [row.enrollmentId, row._sum.amount]))
@@ -152,11 +153,9 @@ export async function getPaymentStats(
   }))
 
   const outstanding = familiesOutstanding(enrollments, FAMILIES_LISTED)
-  const overdueFamilies = tracking
-    .filter((family) => family.overdueAmount > 0)
-    .slice(0, FAMILIES_LISTED)
+  const owing = tracking.filter((family) => family.creditedPaid < family.annualAmount)
   const phones = await familyContactPhones(schoolId, [
-    ...new Set([...outstanding, ...overdueFamilies].map((family) => family.familyId)),
+    ...new Set([...outstanding, ...owing].map((family) => family.familyId)),
   ])
 
   return {
@@ -178,7 +177,7 @@ export async function getPaymentStats(
       paidToDate: roundHalfUp(tracking.reduce((sum, family) => sum + family.paidToDate, 0)),
       tracked: tracking.some((family) => family.tracked),
     },
-    overdueFamilies: overdueFamilies.map((family) => ({
+    familyTracking: tracking.map((family) => ({
       ...family,
       contactPhone: phones.get(family.familyId) ?? null,
     })),

@@ -1011,33 +1011,14 @@
         "noPaymentsInPeriod": "No payment in period {period}. Record a payment or switch period.",
         "periodShare": "incl. {amount} for {period}",
         "stats": {
-          "due": "Total due",
-          "collected": "Collected",
-          "remaining": "Remaining",
-          "uncashed": "Cheques to cash",
-          "collectionRate": "Collection rate",
-          "paymentsCount": "{count, plural, =0 {no payment} one {# payment} other {# payments}}",
-          "outstandingEnrollments": "{outstanding, plural, =0 {no unsettled enrollment} one {# unsettled enrollment} other {# unsettled enrollments}} of {total}",
-          "uncashedCount": "{count, plural, =0 {no pending cheque} one {# cheque handed over} other {# cheques handed over}}",
           "methodsTitle": "Breakdown by payment method",
-          "outstandingTitle": "Overdue families",
-          "outstandingSubtitle": "Largest overdue amount first",
-          "outOf": "of {amount}",
           "noCollection": "No payment collected in this scope",
-          "noOutstanding": "No overdue families on tracked plans",
           "recordFor": "Record a tuition payment for {family}",
           "callFamily": "Call the {family} family",
           "noPhone": "No phone number",
           "whatsApp": "Remind on WhatsApp",
           "whatsAppFamily": "Remind the {family} family on WhatsApp",
-          "whatsAppMessage": "Hello, unless we are mistaken, {amount} remains to be paid for the {family} family. Please settle it as soon as possible or contact us if you have any difficulty.",
-          "overdueAmount": "Overdue amount",
-          "overdueBadge": "{amount} of it overdue",
-          "overdueSubtitle": "Tracked plans only, after their payment deadline",
-          "annualRemaining": "Remaining annual balance",
-          "upToDate": "Up to date",
-          "paidToDate": "Paid to date",
-          "dueThisMonthFamilies": "{count, plural, =0 {no family to remind this month} one {# family to remind this month} other {# families to remind this month}}"
+          "whatsAppMessage": "Hello, unless we are mistaken, {amount} remains to be paid for the {family} family. Please settle it as soon as possible or contact us if you have any difficulty."
         },
         "summary": {
           "remaining": "Remaining balance",
@@ -1096,7 +1077,52 @@
           "generateReceipt": "Issue a receipt",
           "generateReceiptHint": "Numbered, to print or share. Untick to issue one later from the family page."
         },
-        "description": "Payments received, cheques to deposit and amounts still due."
+        "description": "Payments received, cheques to deposit and amounts still due.",
+        "tabs": {
+          "tracking": "Tracking",
+          "history": "History"
+        },
+        "tracking": {
+          "search": "Search a family",
+          "summary": {
+            "month": "Left to collect this month",
+            "year": "Left to collect this year",
+            "overdue": "including {amount} overdue",
+            "upToDateCount": "{count} / {total} families up to date",
+            "settledCount": "{count} / {total} families settled",
+            "uncashed": "{count, plural, =0 {no cheque to deposit} one {# cheque to deposit} other {# cheques to deposit}}"
+          },
+          "groups": {
+            "late": "Overdue",
+            "due": "Due this month",
+            "clear": "Up to date or ahead",
+            "remaining": "Left to pay this year",
+            "settled": "Year settled"
+          },
+          "familyCount": "{count, plural, =0 {no family} one {# family} other {# families}}",
+          "columns": {
+            "family": "Family",
+            "status": "Status",
+            "dueThisMonth": "Due this month",
+            "remainingYear": "Left this year",
+            "paid": "Paid",
+            "expectedToDate": "Expected to date"
+          },
+          "status": {
+            "late": "{amount} overdue",
+            "due": "Due",
+            "ahead": "{amount} ahead",
+            "upToDate": "Up to date",
+            "settled": "Year settled",
+            "untracked": "No schedule"
+          },
+          "showMore": "{count, plural, one {Show the other family} other {Show the # other families}}",
+          "empty": "No family in this group",
+          "noMatch": "No family matches “{query}”",
+          "noTracking": "No family has an enrollment to track for this period",
+          "openFamily": "Open family",
+          "toggleFamily": "Show details for the {family} family"
+        }
       },
       "plans": {
         "title": "Plans",
