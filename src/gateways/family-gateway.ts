@@ -356,6 +356,65 @@ export const familyGateway = {
       return tx.familyPerson.create({ data: { schoolId, familyId, personId, relationType } })
     }),
 
+  /**
+   * Rattache un élève actif sans famille à une famille active, comme enfant (`OTHER`). Un élève
+   * déjà rattaché ailleurs est refusé : la famille redevable de ses inscriptions changerait.
+   */
+  attachStudent: (schoolId: string, familyId: string, studentId: string) =>
+    db.$transaction(async (tx) => {
+      if (!(await lockActiveFamily(tx, schoolId, familyId))) return 'notFound' as const
+      const student = await tx.student.findFirst({
+        where: { id: studentId, schoolId, isActive: true },
+        select: { personId: true, person: { select: { _count: { select: { families: true } } } } },
+      })
+      if (!student) return 'notFound' as const
+      if (student.person._count.families > 0) return 'hasFamily' as const
+      await tx.familyPerson.create({
+        data: { schoolId, familyId, personId: student.personId, relationType: 'OTHER' },
+      })
+      return 'OK' as const
+    }),
+
+  /**
+   * Crée une famille autour d'un élève actif sans famille, qui y entre comme enfant (`OTHER`).
+   * La ligne `Person` est verrouillée : deux créations simultanées ne rattachent pas l'élève deux fois.
+   */
+  createForStudent: (
+    schoolId: string,
+    studentId: string,
+    data: {
+      name: string
+      emergencyContactName?: string
+      emergencyContactPhone?: string
+      createdById: string
+    }
+  ) =>
+    db.$transaction(async (tx) => {
+      const student = await tx.student.findFirst({
+        where: { id: studentId, schoolId, isActive: true },
+        select: { personId: true },
+      })
+      if (!student) return 'notFound' as const
+      await tx.$queryRaw`
+        SELECT "id" FROM "Person"
+        WHERE "id" = ${student.personId} AND "schoolId" = ${schoolId}
+        FOR UPDATE`
+      const linked = await tx.familyPerson.count({
+        where: { schoolId, personId: student.personId },
+      })
+      if (linked > 0) return 'hasFamily' as const
+      const family = await tx.family.create({ data: { ...data, schoolId } })
+      await tx.familyPerson.create({
+        data: {
+          schoolId,
+          familyId: family.id,
+          personId: student.personId,
+          relationType: 'OTHER',
+        },
+      })
+      return { id: family.id, name: family.name }
+    }),
+
   findPerson: (schoolId: string, familyId: string, personId: string) =>
     db.familyPerson.findFirst({
       where: { schoolId, familyId, personId },

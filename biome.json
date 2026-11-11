@@ -67,6 +67,7 @@
       "includes": [
         "prisma/seed.ts",
         "prisma/seed-demo.ts",
+        "prisma/seed-childcare.ts",
         "prisma/import-roster.ts",
         "prisma/import-meals.ts",
         "scripts/**"
