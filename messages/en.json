@@ -1516,12 +1516,12 @@
       "childcare": {
         "title": "Childcare",
         "intro": "Monthly rate per child, independent from canteen and snack. A debt only exists once you bill a month.",
-        "search": "Student first or last name",
+        "search": "Child or family",
         "searchSubmit": "Search",
         "noResult": "No student found",
         "noClass": "No class",
         "alreadySubscribed": "Already in childcare",
-        "empty": "No child in childcare. Search for a student to add them.",
+        "empty": "No child in childcare. Add one with “Add a child”.",
         "archived": "archived",
         "noFamily": "No debtor family",
         "opening": "Paid before the application through {month} ({reason})",
@@ -1533,7 +1533,10 @@
         "totals": "Billed {billed} · Paid {paid} · Left {remaining}",
         "charge": {
           "status": "{amount} · {remaining} left",
-          "cancelled": "Cancelled"
+          "cancelled": "Cancelled",
+          "paid": "Paid",
+          "settled": "Settled before the app",
+          "due": "{amount} due"
         },
         "form": {
           "add": "Add",
@@ -1541,10 +1544,13 @@
           "monthlyAmount": "Monthly rate",
           "startMonth": "First month",
           "endMonth": "Last month (optional)",
-          "success": "Childcare saved"
+          "success": "Childcare saved",
+          "editTitle": "Edit childcare for {name}",
+          "knownRates": "Rates in use:",
+          "rateHint": "The new rate applies to the next billed months; billed months keep their amount."
         },
         "bill": {
-          "trigger": "Bill a month",
+          "trigger": "Bill {month}",
           "title": "Bill a childcare month",
           "description": "Every child whose period covers this month is billed at their rate. Repeating it never bills twice.",
           "month": "Month",
@@ -1557,7 +1563,8 @@
           "description": "This month will no longer be due. You can bill it again.",
           "reason": "Reason",
           "submit": "Cancel this month",
-          "success": "Month cancelled"
+          "success": "Month cancelled",
+          "label": "Cancel {month}"
         },
         "remove": {
           "trigger": "Remove",
@@ -1578,7 +1585,101 @@
           "hasCharges": "A month is billed or paid on this childcare",
           "futureMonth": "A future month cannot be billed",
           "alreadyCancelled": "This month is already cancelled",
-          "hasPayments": "This month has payments: cancel the receipt first"
+          "hasPayments": "This month has payments: cancel the receipt first",
+          "hasFamily": "This student already belongs to a family"
+        },
+        "summary": "{count, plural, =0 {No active child} one {# active child} other {# active children}} · {owing, plural, =0 {nothing to collect} one {{remaining} due from # child} other {{remaining} due from # children}}",
+        "noMatch": "No child matches “{query}”",
+        "toggleChild": "Details for {name}",
+        "add": {
+          "trigger": "Add a child",
+          "title": "Add a child to childcare",
+          "student": "Student",
+          "searchPlaceholder": "First or last name (2+ letters)",
+          "searchSubmit": "Search",
+          "hint": "Nothing is due until you bill a month.",
+          "submit": "Add",
+          "success": "{name} added to childcare"
+        },
+        "stop": {
+          "trigger": "Stop",
+          "title": "Stop childcare for {name}",
+          "lastMonth": "Last childcare month",
+          "lastBilled": "Last billed month: {month}. You cannot stop before it.",
+          "noBill": "No month billed.",
+          "stillDue": "{amount} remain due after stopping and still need to be collected.",
+          "resumeHint": "You can resume childcare later.",
+          "submit": "Stop",
+          "success": "Childcare stopped"
+        },
+        "resume": {
+          "trigger": "Resume",
+          "title": "Resume childcare for {name}",
+          "description": "The end month is removed: the child will be billed every month at their rate again.",
+          "submit": "Resume",
+          "success": "Childcare resumed"
+        },
+        "family": {
+          "none": "No family",
+          "label": "Family",
+          "missingHint": "This student has no family: link one so childcare can be collected.",
+          "attach": "Link to a family",
+          "attachTitle": "Link {name} to a family",
+          "attachDescription": "This child's childcare will be owed by this family and collected at its cashier.",
+          "submit": "Link",
+          "success": "Child linked to the family",
+          "create": "New family",
+          "createNamed": "Create the “{name}” family",
+          "backToList": "Pick an existing family",
+          "newName": "Family name",
+          "contactName": "Emergency contact (optional)",
+          "contactPhone": "Phone (optional)",
+          "createHint": "The child is attached right away; add parents later from the family page.",
+          "createSubmit": "Create and attach",
+          "created": "Family created, child attached",
+          "placeholder": "Search or create a family",
+          "open": "Show families",
+          "empty": "No family",
+          "willCreate": "“{name}” family created on save",
+          "change": "Change"
+        },
+        "filters": {
+          "label": "Filter children",
+          "active": "Active",
+          "owing": "Owing",
+          "upToDate": "Up to date",
+          "stopped": "Stopped"
+        },
+        "emptyFilter": {
+          "active": "No active child",
+          "owing": "No child owes childcare",
+          "upToDate": "No child up to date",
+          "stopped": "No stopped child"
+        },
+        "columns": {
+          "child": "Child",
+          "rate": "Rate / month",
+          "status": "Status",
+          "remaining": "Remaining"
+        },
+        "status": {
+          "late": "{count} months due",
+          "due": "1 month due",
+          "upToDate": "Up to date",
+          "new": "Not billed yet",
+          "stopped": "Stopped"
+        },
+        "detail": {
+          "period": "Period",
+          "family": "Family",
+          "cashier": "Collect",
+          "noCharge": "No month billed yet."
+        },
+        "progress": {
+          "title": "{month} collection",
+          "amounts": "{paid} collected out of {billed} billed",
+          "notBilled": "{month} is not billed yet",
+          "left": "{amount} left to collect"
         }
       },
       "config": {

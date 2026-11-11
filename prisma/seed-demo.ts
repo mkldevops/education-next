@@ -1,5 +1,6 @@
 import { credentialUserGateway } from '../src/gateways/credential-user-gateway'
 import { unscopedDbForDataScripts } from '../src/lib/db-unscoped'
+import { seedChildcare } from './childcare-fixtures'
 
 /**
  * École de démonstration, à côté des écoles réelles d'une instance.
@@ -331,6 +332,19 @@ async function removeDemo() {
     await prisma.eventImage.deleteMany({ where })
     await prisma.event.deleteMany({ where })
     await prisma.payment.deleteMany({ where })
+    await prisma.mealPayment.deleteMany({ where })
+    await prisma.childcarePayment.deleteMany({ where })
+    await prisma.childcareCharge.deleteMany({ where })
+    await prisma.childcareSubscription.deleteMany({ where })
+    await prisma.receipt.deleteMany({ where })
+    await prisma.receiptCounter.deleteMany({ where })
+    await prisma.mealAbsence.deleteMany({ where })
+    await prisma.mealAdjustment.deleteMany({ where })
+    await prisma.mealSchedule.deleteMany({ where })
+    await prisma.mealAccount.deleteMany({ where })
+    await prisma.mealPrice.deleteMany({ where })
+    await prisma.mealServiceSetting.deleteMany({ where })
+    await prisma.absenceReason.deleteMany({ where })
     await prisma.paymentTransaction.deleteMany({ where })
     await prisma.invitation.deleteMany({ where })
     await prisma.teacherExpense.deleteMany({ where })
@@ -810,8 +824,11 @@ async function createDemo() {
     }),
   })
 
+  const childcare = await seedChildcare(prisma, { schoolId, recordedById: adminId, today })
+
   console.log(`École de démo créée : ${FAMILY_NAMES.length} familles, ${studentCount} élèves,`)
   console.log(`  ${classes.length} classes, ${teachers.length} enseignants, ${sessionCount} appels`)
+  console.log(`  garderie : ${childcare.subscriptions} enfants, ${childcare.receipts} reçus`)
   for (const account of Object.values(DEMO_ACCOUNTS)) {
     console.log(`  ${account.email} / ${account.password}`)
   }

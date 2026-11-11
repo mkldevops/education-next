@@ -25,6 +25,7 @@
     "db:studio": "prisma studio",
     "db:seed": "dotenv-cli -- tsx prisma/seed.ts",
     "db:seed:demo": "dotenv-cli -- tsx prisma/seed-demo.ts",
+    "db:seed:childcare": "dotenv-cli -- tsx prisma/seed-childcare.ts",
     "db:import-roster": "dotenv-cli -- tsx prisma/import-roster.ts",
     "db:import-meals": "dotenv-cli -- tsx prisma/import-meals.ts",
     "postinstall": "prisma generate",

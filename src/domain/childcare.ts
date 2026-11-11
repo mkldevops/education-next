@@ -99,3 +99,36 @@ export function summarizeChildcare(charges: ReadonlyArray<ChargeState & { cancel
     remaining: roundCents(live.reduce((sum, charge) => sum + chargeLeft(charge), 0)),
   }
 }
+
+export type ChildcareStatus = 'stopped' | 'late' | 'due' | 'new' | 'upToDate'
+
+/**
+ * État d'un enfant à l'écran : arrêté quand sa période finit avant le mois courant, sinon
+ * selon ses mois encore dus. Un enfant jamais facturé est nouveau.
+ */
+export function childcareStatus(
+  row: {
+    endMonth: string | null
+    charges: ReadonlyArray<ChargeState & { cancelled: boolean }>
+  },
+  currentMonth: string
+): { status: ChildcareStatus; dueMonths: number } {
+  const live = row.charges.filter((charge) => !charge.cancelled)
+  const dueMonths = live.filter((charge) => chargeLeft(charge) > 0).length
+  if (row.endMonth !== null && row.endMonth < currentMonth) return { status: 'stopped', dueMonths }
+  if (dueMonths >= 2) return { status: 'late', dueMonths }
+  if (dueMonths === 1) return { status: 'due', dueMonths }
+  if (live.length === 0) return { status: 'new', dueMonths }
+  return { status: 'upToDate', dueMonths }
+}
+
+/** Dernier mois qu'un arrêt peut retenir sans exclure un mois facturé. */
+export function earliestEndMonth(
+  charges: ReadonlyArray<{ month: string; cancelled: boolean }>,
+  startMonth: string
+) {
+  return charges.reduce(
+    (latest, charge) => (!charge.cancelled && charge.month > latest ? charge.month : latest),
+    startMonth
+  )
+}

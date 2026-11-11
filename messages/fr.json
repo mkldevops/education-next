@@ -1517,12 +1517,12 @@
       "childcare": {
         "title": "Garderie",
         "intro": "Tarif mensuel par enfant, indépendant de la cantine et du goûter. Une dette naît seulement quand vous facturez un mois.",
-        "search": "Nom ou prénom de l'élève",
+        "search": "Enfant ou famille",
         "searchSubmit": "Rechercher",
         "noResult": "Aucun élève trouvé",
         "noClass": "Sans classe",
         "alreadySubscribed": "Déjà en garderie",
-        "empty": "Aucun enfant en garderie. Recherchez un élève pour l'ajouter.",
+        "empty": "Aucun enfant en garderie. Ajoutez-en un avec « Ajouter un enfant ».",
         "archived": "archivé",
         "noFamily": "Sans famille redevable",
         "opening": "Réglé avant l’application jusqu’à {month} inclus ({reason})",
@@ -1534,7 +1534,10 @@
         "totals": "Facturé {billed} · Payé {paid} · Reste {remaining}",
         "charge": {
           "status": "{amount} · reste {remaining}",
-          "cancelled": "Annulé"
+          "cancelled": "Annulé",
+          "paid": "Payé",
+          "settled": "Réglé avant l'appli",
+          "due": "Dû {amount}"
         },
         "form": {
           "add": "Ajouter",
@@ -1542,10 +1545,13 @@
           "monthlyAmount": "Tarif mensuel",
           "startMonth": "Premier mois",
           "endMonth": "Dernier mois (facultatif)",
-          "success": "Garderie enregistrée"
+          "success": "Garderie enregistrée",
+          "editTitle": "Modifier la garderie de {name}",
+          "knownRates": "Tarifs utilisés :",
+          "rateHint": "Le nouveau tarif s'applique aux prochains mois facturés ; les mois déjà facturés gardent leur montant."
         },
         "bill": {
-          "trigger": "Facturer un mois",
+          "trigger": "Facturer {month}",
           "title": "Facturer un mois de garderie",
           "description": "Chaque enfant dont la période couvre ce mois est facturé à son tarif. Refaire l'opération ne facture rien deux fois.",
           "month": "Mois",
@@ -1558,7 +1564,8 @@
           "description": "Le mois ne sera plus dû. Vous pourrez le facturer à nouveau.",
           "reason": "Motif",
           "submit": "Annuler ce mois",
-          "success": "Mois annulé"
+          "success": "Mois annulé",
+          "label": "Annuler {month}"
         },
         "remove": {
           "trigger": "Retirer",
@@ -1579,7 +1586,101 @@
           "hasCharges": "Un mois est facturé ou encaissé sur cette garderie",
           "futureMonth": "Un mois à venir ne se facture pas",
           "alreadyCancelled": "Ce mois est déjà annulé",
-          "hasPayments": "Ce mois a des encaissements : annulez d'abord le reçu"
+          "hasPayments": "Ce mois a des encaissements : annulez d'abord le reçu",
+          "hasFamily": "Cet élève est déjà rattaché à une famille"
+        },
+        "summary": "{count, plural, =0 {Aucun enfant actif} one {# enfant actif} other {# enfants actifs}} · {owing, plural, =0 {rien à encaisser} one {reste dû {remaining} sur # enfant} other {reste dû {remaining} sur # enfants}}",
+        "noMatch": "Aucun enfant ne correspond à « {query} »",
+        "toggleChild": "Détail de {name}",
+        "add": {
+          "trigger": "Ajouter un enfant",
+          "title": "Ajouter un enfant à la garderie",
+          "student": "Élève",
+          "searchPlaceholder": "Nom ou prénom (2 lettres min.)",
+          "searchSubmit": "Rechercher",
+          "hint": "Rien n'est dû avant de facturer un mois.",
+          "submit": "Ajouter",
+          "success": "{name} ajouté à la garderie"
+        },
+        "stop": {
+          "trigger": "Arrêter",
+          "title": "Arrêter la garderie de {name}",
+          "lastMonth": "Dernier mois de garderie",
+          "lastBilled": "Dernier mois facturé : {month}. On ne peut pas arrêter avant.",
+          "noBill": "Aucun mois facturé.",
+          "stillDue": "{amount} restent dus après l’arrêt : ils restent à encaisser.",
+          "resumeHint": "Vous pourrez reprendre la garderie plus tard.",
+          "submit": "Arrêter",
+          "success": "Garderie arrêtée"
+        },
+        "resume": {
+          "trigger": "Reprendre",
+          "title": "Reprendre la garderie de {name}",
+          "description": "La date de fin est retirée : l'enfant sera de nouveau facturé chaque mois à son tarif.",
+          "submit": "Reprendre",
+          "success": "Garderie reprise"
+        },
+        "family": {
+          "none": "Sans famille",
+          "label": "Famille",
+          "missingHint": "Cet élève n'a pas de famille : rattachez-le pour que la garderie soit encaissable.",
+          "attach": "Rattacher à une famille",
+          "attachTitle": "Rattacher {name} à une famille",
+          "attachDescription": "La garderie de cet enfant sera due par cette famille et encaissée à sa caisse.",
+          "submit": "Rattacher",
+          "success": "Enfant rattaché à la famille",
+          "create": "Nouvelle famille",
+          "createNamed": "Créer la famille « {name} »",
+          "backToList": "Choisir une famille existante",
+          "newName": "Nom de la famille",
+          "contactName": "Contact d'urgence (facultatif)",
+          "contactPhone": "Téléphone (facultatif)",
+          "createHint": "L'enfant y est rattaché tout de suite ; les parents se complètent depuis la fiche famille.",
+          "createSubmit": "Créer et rattacher",
+          "created": "Famille créée, enfant rattaché",
+          "placeholder": "Rechercher ou créer une famille",
+          "open": "Afficher les familles",
+          "empty": "Aucune famille",
+          "willCreate": "Famille « {name} » créée à l'enregistrement",
+          "change": "Changer"
+        },
+        "filters": {
+          "label": "Filtrer les enfants",
+          "active": "Actifs",
+          "owing": "Doivent",
+          "upToDate": "À jour",
+          "stopped": "Arrêtés"
+        },
+        "emptyFilter": {
+          "active": "Aucun enfant actif",
+          "owing": "Aucun enfant ne doit de garderie",
+          "upToDate": "Aucun enfant à jour",
+          "stopped": "Aucun enfant arrêté"
+        },
+        "columns": {
+          "child": "Enfant",
+          "rate": "Tarif / mois",
+          "status": "Statut",
+          "remaining": "Reste dû"
+        },
+        "status": {
+          "late": "{count} mois dus",
+          "due": "1 mois dû",
+          "upToDate": "À jour",
+          "new": "Pas encore facturé",
+          "stopped": "Arrêté"
+        },
+        "detail": {
+          "period": "Période",
+          "family": "Famille",
+          "cashier": "Encaisser",
+          "noCharge": "Aucun mois facturé pour le moment."
+        },
+        "progress": {
+          "title": "Encaissement de {month}",
+          "amounts": "{paid} encaissés sur {billed} facturés",
+          "notBilled": "{month} n'est pas encore facturé",
+          "left": "{amount} à encaisser"
         }
       },
       "config": {
