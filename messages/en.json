@@ -2097,7 +2097,7 @@
           },
           "dueLabel": "Due by the end of {month}",
           "nothingDue": "Up to date",
-          "nothingDueYear": "Nothing left to pay this year",
+          "nothingDueYear": "Year paid in full",
           "detail": {
             "ahead": "Payments exceed past deadlines by {amount}.",
             "upToDate": "Payments cover the past deadlines.",

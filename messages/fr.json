@@ -2098,7 +2098,7 @@
           },
           "dueLabel": "À régler d'ici fin {month}",
           "nothingDue": "À jour",
-          "nothingDueYear": "Plus rien à régler cette année",
+          "nothingDueYear": "Année soldée",
           "detail": {
             "ahead": "Les versements dépassent de {amount} les échéances déjà passées.",
             "upToDate": "Les versements couvrent les échéances déjà passées.",
