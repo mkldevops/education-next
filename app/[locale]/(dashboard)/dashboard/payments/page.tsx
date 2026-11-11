@@ -16,7 +16,8 @@ import { getPaymentStats } from '@/use-cases/payments/payment-stats'
 import { requireSchoolScope } from '../../_lib/auth-helper'
 import { CollectionChartCard } from '../_components/collection-chart-card'
 import { PaymentTrackingBoard } from './_components/payment-tracking-board'
-import { PaymentMethodsCard, PaymentsOverview } from './_components/payments-overview'
+import { PaymentMethodsCard } from './_components/payments-overview'
+import { PaymentsSummary } from './_components/payments-summary'
 import { PaymentsTable } from './_components/payments-table'
 import { RecordPaymentButton } from './_components/record-payment-button'
 
@@ -110,20 +111,11 @@ export default async function PaymentsPage({ params, searchParams }: Props) {
           />
         }
       />
-      <PaymentsOverview
-        stats={stats}
+      <PaymentsSummary
+        families={stats.familyTracking}
+        uncashedCount={stats.totals.uncashedCount}
         locale={locale}
         currency={currency}
-        periodName={selectedPeriod?.name ?? null}
-        chart={
-          <CollectionChartCard
-            series={series}
-            view={chartView}
-            locale={locale}
-            currency={currency}
-            showPaymentsLink={false}
-          />
-        }
       />
       <Tabs
         ariaLabel={t('title')}
@@ -144,7 +136,16 @@ export default async function PaymentsPage({ params, searchParams }: Props) {
             label: t('tabs.history'),
             content: (
               <div className="space-y-6">
-                <PaymentMethodsCard methods={stats.methods} locale={locale} currency={currency} />
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                  <CollectionChartCard
+                    series={series}
+                    view={chartView}
+                    locale={locale}
+                    currency={currency}
+                    showPaymentsLink={false}
+                  />
+                  <PaymentMethodsCard methods={stats.methods} locale={locale} currency={currency} />
+                </div>
                 <PaymentsTable
                   currency={currency}
                   payments={paymentRows}

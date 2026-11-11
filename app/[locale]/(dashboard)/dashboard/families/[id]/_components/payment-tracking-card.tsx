@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { type PaymentTrackingState, paymentTrackingState } from '@/domain/payment-tracking-state'
 import { formatCurrency } from '@/lib/decimal'
 import type { FamilyPaymentTrackingDetail } from '@/use-cases/payments/payment-tracking'
+import { YearProgress } from '../../../payments/_components/year-progress'
 
 type Props = {
   tracking: FamilyPaymentTrackingDetail
@@ -27,9 +28,6 @@ const accent: Record<State, string> = {
   upToDate: 'border-l-emerald-600',
 }
 
-const percent = (part: number, total: number) =>
-  `${Math.min(100, Math.max(0, (100 * part) / total))}%`
-
 export async function PaymentTrackingCard({
   tracking,
   locale,
@@ -42,7 +40,6 @@ export async function PaymentTrackingCard({
   const state = paymentTrackingState(tracking)
   const { annualAmount, creditedPaid, expectedToDate, overdueAmount, dueThisMonth } = tracking
   const advance = Math.max(0, creditedPaid - expectedToDate)
-  const remainingYear = Math.max(0, annualAmount - creditedPaid)
   const monthName = new Intl.DateTimeFormat(locale, { month: 'long', timeZone }).format(reference)
   const scheduled = tracking.tracked && state !== 'settled'
   const showMarker = scheduled && tracking.fullyScheduled
@@ -99,12 +96,6 @@ export async function PaymentTrackingCard({
       : state === 'ahead'
         ? t('how.ahead', { ...amounts, amount: money(advance) })
         : t('how.upToDate', amounts)
-  const barLabel = !showMarker
-    ? t('year.barLabelSimple', amounts)
-    : overdueAmount > 0
-      ? t('year.barLabelLate', amounts)
-      : t('year.barLabel', amounts)
-
   return (
     <Card
       role="region"
@@ -133,66 +124,17 @@ export async function PaymentTrackingCard({
       <p className="text-sm text-graphite-600">{detail}</p>
 
       {annualAmount > 0 && (
-        <div className="space-y-2 border-t border-alabaster-700 pt-3">
-          <div className="flex flex-wrap justify-between gap-2 text-xs text-graphite-600">
-            <span>{t('year.label')}</span>
-            <span className="tabular-nums">{t('year.progress', amounts)}</span>
-          </div>
-          <div
-            role="img"
-            aria-label={barLabel}
-            className="relative h-2.5 rounded-full bg-alabaster-700"
-          >
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-emerald-600"
-              style={{ width: percent(creditedPaid, annualAmount) }}
-            />
-            {showMarker && overdueAmount > 0 && (
-              <div
-                className="absolute inset-y-0 rounded-r-full bg-[repeating-linear-gradient(135deg,var(--color-red-600)_0_3px,white_3px_6px)] outline outline-1 -outline-offset-1 outline-red-600"
-                style={{
-                  left: percent(creditedPaid, annualAmount),
-                  width: percent(overdueAmount, annualAmount),
-                }}
-              />
-            )}
-            {showMarker && (
-              <div
-                className="absolute -inset-y-1 -ml-px w-0.5 rounded-xs bg-graphite ring-[1.5px] ring-white"
-                style={{ left: percent(expectedToDate, annualAmount) }}
-              />
-            )}
-          </div>
-          <dl className="grid grid-cols-3 gap-2">
-            <div>
-              <dt className="flex items-center gap-1.5 text-xs text-graphite-600">
-                <span aria-hidden="true" className="size-2.5 shrink-0 rounded-xs bg-emerald-600" />
-                {t('figures.paid')}
-              </dt>
-              <dd className="font-semibold tabular-nums text-graphite">{amounts.paid}</dd>
-            </div>
-            {scheduled ? (
-              <div>
-                <dt className="flex items-center gap-1.5 text-xs text-graphite-600">
-                  {showMarker && (
-                    <span aria-hidden="true" className="h-3 w-0.5 shrink-0 bg-graphite" />
-                  )}
-                  {t('figures.expectedToDate')}
-                </dt>
-                <dd className="font-semibold tabular-nums text-graphite">{amounts.expected}</dd>
-              </div>
-            ) : (
-              <div>
-                <dt className="text-xs text-graphite-600">{t('figures.total')}</dt>
-                <dd className="font-semibold tabular-nums text-graphite">{amounts.total}</dd>
-              </div>
-            )}
-            <div>
-              <dt className="text-xs text-graphite-600">{t('figures.remaining')}</dt>
-              <dd className="font-semibold tabular-nums text-graphite">{money(remainingYear)}</dd>
-            </div>
-          </dl>
-        </div>
+        <YearProgress
+          t={t}
+          money={money}
+          paid={creditedPaid}
+          total={annualAmount}
+          overdue={overdueAmount}
+          expected={expectedToDate}
+          scheduled={scheduled}
+          showExpected={showMarker}
+          className="border-t border-alabaster-700 pt-3"
+        />
       )}
 
       {scheduled && (

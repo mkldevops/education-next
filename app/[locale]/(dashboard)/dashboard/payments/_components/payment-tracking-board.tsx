@@ -8,11 +8,7 @@ import { type PaymentTrackingState, paymentTrackingState } from '@/domain/paymen
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
-import {
-  type Horizon,
-  HorizonSegmented,
-  useUrlHorizon,
-} from '../../_components/remaining-horizon-switch'
+import { type Horizon, useUrlHorizon } from '../../_components/remaining-horizon-switch'
 import { OutstandingFamilyActions } from './outstanding-family-actions'
 import {
   type BoardFamily,
@@ -20,6 +16,7 @@ import {
   groupFamilies,
   type TrackingFamily,
 } from './payment-tracking-groups'
+import { YearProgress } from './year-progress'
 
 const PAGE_SIZE = 10
 
@@ -54,18 +51,17 @@ export function PaymentTrackingBoard({
   canOpenCashier = false,
 }: Props) {
   const t = useTranslations('dashboard.pages.payments.tracking')
-  const [horizon, setHorizon] = useUrlHorizon()
+  const [horizon] = useUrlHorizon()
   const [query, setQuery] = useState('')
   const money = (amount: number) => formatCurrency(amount, locale, currency)
 
-  const { groups, total, settledCount, scopeCount } = groupFamilies(families, horizon, query)
+  const { groups, scopeCount } = groupFamilies(families, horizon, query)
   const searching = query.trim().length > 0
   const matches = groups.reduce((sum, group) => sum + group.families.length, 0)
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <HorizonSegmented value={horizon} onSelect={setHorizon} />
+      <div className="flex justify-end">
         <div className="relative w-full sm:w-72">
           <Search
             aria-hidden="true"
@@ -81,21 +77,6 @@ export function PaymentTrackingBoard({
           />
         </div>
       </div>
-
-      <dl className={cn('flex flex-wrap gap-x-8 gap-y-2', scopeCount === 0 && 'hidden')}>
-        <div>
-          <dt className="text-xs text-graphite-600">{t(`summary.${horizon}`)}</dt>
-          <dd className="text-xl font-semibold tabular-nums text-graphite">{money(total)}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-graphite-600">
-            {horizon === 'month' ? t('summary.upToDate') : t('summary.settled')}
-          </dt>
-          <dd className="text-xl font-semibold tabular-nums text-graphite">
-            {settledCount} / {scopeCount}
-          </dd>
-        </div>
-      </dl>
 
       {scopeCount === 0 ? (
         <Card className="p-6 text-sm text-graphite-600">{t('noTracking')}</Card>
@@ -304,9 +285,6 @@ function FamilyRow({
   )
 }
 
-const percent = (part: number, total: number) =>
-  `${Math.min(100, Math.max(0, (100 * part) / total))}%`
-
 function FamilyCard({
   id,
   family,
@@ -321,8 +299,9 @@ function FamilyCard({
   canOpenCashier: boolean
 }) {
   const t = useTranslations('dashboard.pages.payments.tracking')
+  const tYear = useTranslations('dashboard.pages.familyDetails.paymentTracking')
   const { annualAmount, creditedPaid, expectedToDate, overdueAmount, remainingYear } = family
-  const showMarker = family.tracked && family.fullyScheduled && remainingYear > 0
+  const scheduled = family.tracked && remainingYear > 0
 
   return (
     <div
@@ -330,49 +309,17 @@ function FamilyCard({
       className="mx-4 mb-3 space-y-3 rounded-lg border border-alabaster-700 bg-alabaster-900 p-3"
     >
       {annualAmount > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs text-graphite-600">
-            {t('yearProgress', { paid: money(creditedPaid), total: money(annualAmount) })}
-          </p>
-          <div aria-hidden="true" className="relative h-2.5 rounded-full bg-alabaster-700">
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-emerald-600"
-              style={{ width: percent(creditedPaid, annualAmount) }}
-            />
-            {showMarker && overdueAmount > 0 && (
-              <div
-                className="absolute inset-y-0 rounded-r-full bg-[repeating-linear-gradient(135deg,var(--color-red-600)_0_3px,white_3px_6px)] outline outline-1 -outline-offset-1 outline-red-600"
-                style={{
-                  left: percent(creditedPaid, annualAmount),
-                  width: percent(overdueAmount, annualAmount),
-                }}
-              />
-            )}
-            {showMarker && (
-              <div
-                className="absolute -inset-y-1 -ml-px w-0.5 rounded-xs bg-graphite ring-[1.5px] ring-white"
-                style={{ left: percent(expectedToDate, annualAmount) }}
-              />
-            )}
-          </div>
-        </div>
+        <YearProgress
+          t={tYear}
+          money={money}
+          paid={creditedPaid}
+          total={annualAmount}
+          overdue={overdueAmount}
+          expected={expectedToDate}
+          scheduled={scheduled}
+          showExpected={scheduled && family.fullyScheduled}
+        />
       )}
-      <dl className="grid grid-cols-3 gap-2">
-        <div>
-          <dt className="text-xs text-graphite-600">{t('columns.paid')}</dt>
-          <dd className="font-semibold tabular-nums text-graphite">{money(creditedPaid)}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-graphite-600">{t('columns.expectedToDate')}</dt>
-          <dd className="font-semibold tabular-nums text-graphite">
-            {family.tracked ? money(expectedToDate) : '—'}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-graphite-600">{t('columns.remainingYear')}</dt>
-          <dd className="font-semibold tabular-nums text-graphite">{money(remainingYear)}</dd>
-        </div>
-      </dl>
       {family.amount > 0 && (
         <OutstandingFamilyActions
           family={{ id: family.familyId, name: family.familyName }}

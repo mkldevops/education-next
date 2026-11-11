@@ -1012,14 +1012,6 @@
         "noPaymentsInPeriod": "Aucun paiement sur la période {period}. Enregistrez un paiement ou changez de période.",
         "periodShare": "dont {amount} sur {period}",
         "stats": {
-          "due": "Total dû",
-          "collected": "Encaissé",
-          "remaining": "Reste à payer",
-          "uncashed": "Chèques à encaisser",
-          "collectionRate": "Taux de recouvrement",
-          "paymentsCount": "{count, plural, =0 {aucun paiement} one {# paiement} other {# paiements}}",
-          "outstandingEnrollments": "{outstanding, plural, =0 {aucune inscription non soldée} one {# inscription non soldée} other {# inscriptions non soldées}} sur {total}",
-          "uncashedCount": "{count, plural, =0 {aucun chèque en attente} one {# chèque remis} other {# chèques remis}}",
           "methodsTitle": "Répartition par mode de paiement",
           "noCollection": "Aucun encaissement sur ce périmètre",
           "recordFor": "Enregistrer un règlement d'écolage pour {family}",
@@ -1027,14 +1019,7 @@
           "noPhone": "Aucun téléphone",
           "whatsApp": "Relancer sur WhatsApp",
           "whatsAppFamily": "Relancer la famille {family} sur WhatsApp",
-          "whatsAppMessage": "Bonjour, sauf erreur de notre part, un montant de {amount} reste à régler pour la famille {family}. Merci de régulariser dès que possible ou de nous contacter en cas de difficulté.",
-          "overdueAmount": "Montant en retard",
-          "overdueBadge": "dont {amount} en retard",
-          "overdueSubtitle": "Sur les forfaits suivis, après leur jour limite de paiement",
-          "annualRemaining": "Solde annuel restant",
-          "upToDate": "À jour",
-          "paidToDate": "Versé à ce jour",
-          "dueThisMonthFamilies": "{count, plural, =0 {aucune famille à relancer ce mois} one {# famille à relancer ce mois} other {# familles à relancer ce mois}}"
+          "whatsAppMessage": "Bonjour, sauf erreur de notre part, un montant de {amount} reste à régler pour la famille {family}. Merci de régulariser dès que possible ou de nous contacter en cas de difficulté."
         },
         "summary": {
           "remaining": "Solde restant",
@@ -1103,8 +1088,10 @@
           "summary": {
             "month": "Reste à encaisser ce mois",
             "year": "Reste à encaisser sur l'année",
-            "upToDate": "Familles à jour",
-            "settled": "Familles soldées"
+            "overdue": "dont {amount} en retard",
+            "upToDateCount": "{count} / {total} familles à jour",
+            "settledCount": "{count} / {total} familles soldées",
+            "uncashed": "{count, plural, =0 {aucun chèque à encaisser} one {# chèque à encaisser} other {# chèques à encaisser}}"
           },
           "groups": {
             "late": "En retard",
@@ -1134,7 +1121,6 @@
           "empty": "Aucune famille dans ce groupe",
           "noMatch": "Aucune famille ne correspond à « {query} »",
           "noTracking": "Aucune famille n'a d'inscription à suivre sur cette période",
-          "yearProgress": "Année scolaire · {paid} versés sur {total}",
           "openFamily": "Voir la fiche",
           "toggleFamily": "Afficher le détail de la famille {family}"
         }

@@ -1011,14 +1011,6 @@
         "noPaymentsInPeriod": "No payment in period {period}. Record a payment or switch period.",
         "periodShare": "incl. {amount} for {period}",
         "stats": {
-          "due": "Total due",
-          "collected": "Collected",
-          "remaining": "Remaining",
-          "uncashed": "Cheques to cash",
-          "collectionRate": "Collection rate",
-          "paymentsCount": "{count, plural, =0 {no payment} one {# payment} other {# payments}}",
-          "outstandingEnrollments": "{outstanding, plural, =0 {no unsettled enrollment} one {# unsettled enrollment} other {# unsettled enrollments}} of {total}",
-          "uncashedCount": "{count, plural, =0 {no pending cheque} one {# cheque handed over} other {# cheques handed over}}",
           "methodsTitle": "Breakdown by payment method",
           "noCollection": "No payment collected in this scope",
           "recordFor": "Record a tuition payment for {family}",
@@ -1026,14 +1018,7 @@
           "noPhone": "No phone number",
           "whatsApp": "Remind on WhatsApp",
           "whatsAppFamily": "Remind the {family} family on WhatsApp",
-          "whatsAppMessage": "Hello, unless we are mistaken, {amount} remains to be paid for the {family} family. Please settle it as soon as possible or contact us if you have any difficulty.",
-          "overdueAmount": "Overdue amount",
-          "overdueBadge": "{amount} of it overdue",
-          "overdueSubtitle": "Tracked plans only, after their payment deadline",
-          "annualRemaining": "Remaining annual balance",
-          "upToDate": "Up to date",
-          "paidToDate": "Paid to date",
-          "dueThisMonthFamilies": "{count, plural, =0 {no family to remind this month} one {# family to remind this month} other {# families to remind this month}}"
+          "whatsAppMessage": "Hello, unless we are mistaken, {amount} remains to be paid for the {family} family. Please settle it as soon as possible or contact us if you have any difficulty."
         },
         "summary": {
           "remaining": "Remaining balance",
@@ -1102,8 +1087,10 @@
           "summary": {
             "month": "Left to collect this month",
             "year": "Left to collect this year",
-            "upToDate": "Families up to date",
-            "settled": "Families settled"
+            "overdue": "including {amount} overdue",
+            "upToDateCount": "{count} / {total} families up to date",
+            "settledCount": "{count} / {total} families settled",
+            "uncashed": "{count, plural, =0 {no cheque to deposit} one {# cheque to deposit} other {# cheques to deposit}}"
           },
           "groups": {
             "late": "Overdue",
@@ -1133,7 +1120,6 @@
           "empty": "No family in this group",
           "noMatch": "No family matches “{query}”",
           "noTracking": "No family has an enrollment to track for this period",
-          "yearProgress": "School year · {paid} paid out of {total}",
           "openFamily": "Open family",
           "toggleFamily": "Show details for the {family} family"
         }

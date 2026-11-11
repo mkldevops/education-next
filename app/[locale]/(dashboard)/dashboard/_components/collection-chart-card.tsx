@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import type { ChartGranularity, ChartView, CollectionPoint } from '@/domain/collection-chart'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
+import { cn } from '@/lib/utils'
 import { CollectionChartControls } from './collection-chart-controls'
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
   view: ChartView
   locale: string
   currency: string
+  className?: string
 }
 
 const TOOLTIP_FORMAT: Record<ChartGranularity, Intl.DateTimeFormatOptions> = {
@@ -32,6 +34,7 @@ export async function CollectionChartCard({
   currency,
   title,
   showPaymentsLink = true,
+  className,
 }: Props) {
   const t = await getTranslations('dashboard.insights')
   const day = new Intl.DateTimeFormat(locale, { day: 'numeric', timeZone: 'UTC' })
@@ -58,7 +61,7 @@ export async function CollectionChartCard({
   })
 
   return (
-    <Card className="p-4 sm:p-5">
+    <Card className={cn('p-4 sm:p-5', className)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold text-foreground">{title ?? t('collectionTitle')}</h2>
         {showPaymentsLink && (
