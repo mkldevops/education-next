@@ -2097,7 +2097,7 @@
             "untracked": "Sans échéancier"
           },
           "dueLabel": "À régler d'ici fin {month}",
-          "nothingDue": "Rien à régler",
+          "nothingDue": "À jour",
           "nothingDueYear": "Plus rien à régler cette année",
           "detail": {
             "ahead": "Les versements dépassent de {amount} les échéances déjà passées.",

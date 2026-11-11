@@ -2096,7 +2096,7 @@
             "untracked": "No payment schedule"
           },
           "dueLabel": "Due by the end of {month}",
-          "nothingDue": "Nothing due",
+          "nothingDue": "Up to date",
           "nothingDueYear": "Nothing left to pay this year",
           "detail": {
             "ahead": "Payments exceed past deadlines by {amount}.",
