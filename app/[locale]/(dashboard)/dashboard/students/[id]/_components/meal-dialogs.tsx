@@ -11,6 +11,7 @@ import {
   Input,
   Label,
 } from '@peaklab/ui'
+import { CalendarDays, CalendarPlus, CircleStop, History } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { MealOwner } from '@/domain/meal-owner'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
@@ -42,6 +43,13 @@ type Props = {
   triggerVariant?: 'default' | 'outline' | 'ghost'
 }
 
+const MENU_ICON = {
+  subscribe: CalendarPlus,
+  change: CalendarDays,
+  stop: CircleStop,
+  opening: History,
+} as const
+
 const TRIGGER_VARIANT = {
   subscribe: 'default',
   change: 'outline',
@@ -51,6 +59,7 @@ const TRIGGER_VARIANT = {
 
 export function MealDialog({ triggerRole, restoreFocusRef, triggerVariant, ...props }: Props) {
   const t = useTranslations('dashboard.pages.studentDetails.meals.dialog')
+  const MenuIcon = triggerRole === 'menuitem' ? MENU_ICON[props.kind] : null
 
   return (
     <Dialog restoreFocusRef={restoreFocusRef}>
@@ -59,7 +68,9 @@ export function MealDialog({ triggerRole, restoreFocusRef, triggerVariant, ...pr
           variant={triggerVariant ?? TRIGGER_VARIANT[props.kind]}
           size="sm"
           role={triggerRole}
+          data-kind={triggerRole ? props.kind : undefined}
         >
+          {MenuIcon && <MenuIcon className="h-4 w-4" />}
           {t(`${props.kind}.trigger`)}
         </Button>
       </DialogTrigger>

@@ -15,12 +15,14 @@ export function StaffToday({ members, today }: Props) {
   const t = useTranslations('dashboard.pages.cashier.staff')
 
   return (
-    <ul className="max-w-3xl divide-y divide-alabaster-700 rounded border border-alabaster-700">
+    <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
       {members.map((member) => (
         <StaffTodayRow key={member.id} member={member} today={today} />
       ))}
       {members.length === 0 && (
-        <li className="px-4 py-3 text-sm text-graphite-600">{t('todayEmpty')}</li>
+        <li className="rounded border border-alabaster-700 px-4 py-3 text-sm text-graphite-600">
+          {t('todayEmpty')}
+        </li>
       )}
     </ul>
   )
@@ -45,7 +47,7 @@ function StaffTodayRow({ member, today }: { member: Member; today: string }) {
   }
 
   return (
-    <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+    <li className="flex items-center justify-between gap-3 rounded border border-alabaster-700 px-4 py-2.5">
       <span className="text-sm">
         <span className={eats ? 'text-graphite' : 'text-graphite-600 line-through'}>
           {member.name}

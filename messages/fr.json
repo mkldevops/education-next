@@ -1477,7 +1477,22 @@
           "openSheet": "Voir la fiche",
           "canteenClosed": "La cantine n'est pas ouverte pour cette école : impossible d'inscrire le personnel.",
           "canteenSettings": "Configurer la cantine",
-          "selectPeriod": "Choisissez une période en haut de page pour inscrire le personnel."
+          "selectPeriod": "Choisissez une période en haut de page pour inscrire le personnel.",
+          "progress": {
+            "year": {
+              "label": "Repas de la période",
+              "progress": "{paid} versés sur {total}",
+              "barLabel": "{paid} versés sur {total}. Consommé à ce jour : {expected}.",
+              "barLabelLate": "{paid} versés sur {total}. Consommé à ce jour : {expected}. Dû : {overdue}.",
+              "barLabelSimple": "{paid} versés sur {total}."
+            },
+            "figures": {
+              "paid": "Versé",
+              "expectedToDate": "Consommé à ce jour",
+              "remaining": "Reste sur la période",
+              "total": "Total de la période"
+            }
+          }
         },
         "searchPrompt": "Quelle famille vient payer ?",
         "searchHelp": "Tapez le nom de la famille ou d'un enfant : les résultats s'affichent pendant la saisie.",

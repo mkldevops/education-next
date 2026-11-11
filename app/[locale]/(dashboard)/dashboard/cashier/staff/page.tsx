@@ -12,6 +12,7 @@ import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { requireSchoolCashier } from '../../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../../_lib/page-metadata'
+import { YearProgress } from '../../payments/_components/year-progress'
 import { MealDialog } from '../../students/[id]/_components/meal-dialogs'
 import { loadStaffRows } from '../_lib/staff-data'
 import { StaffCollectDialog } from './_components/staff-collect-dialog'
@@ -38,6 +39,7 @@ export default async function CashierStaffPage({ params }: Props) {
   const t = await getTranslations('dashboard.pages.cashier.staff')
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
   const tWeekdays = await getTranslations('dashboard.pages.meals.weekdays')
+  const tProgress = await getTranslations('dashboard.pages.cashier.staff.progress')
 
   const { schoolId, isAdmin } = await requireSchoolCashier()
   if (!(await isMealsEnabled(schoolId))) notFound()
@@ -69,6 +71,7 @@ export default async function CashierStaffPage({ params }: Props) {
     timeZone: 'UTC',
   })
 
+  const money = (amount: number) => formatCurrency(amount, locale, currency)
   const formatDay = (day: string) =>
     new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, { timeZone: 'UTC' })
 
@@ -94,7 +97,7 @@ export default async function CashierStaffPage({ params }: Props) {
         </div>
       </div>
 
-      <dl className="grid max-w-2xl grid-cols-3 gap-3">
+      <dl className="grid grid-cols-3 gap-3">
         {counts.map(({ key, value }) => (
           <Card key={key} className="p-4">
             <dt className="text-xs text-graphite-600">{t(`counts.${key}`)}</dt>
@@ -104,7 +107,7 @@ export default async function CashierStaffPage({ params }: Props) {
       </dl>
 
       {!canteenEnabled && (
-        <p className="max-w-3xl rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           {t('canteenClosed')}{' '}
           <Link href="/dashboard/meals" className="font-medium underline">
             {t('canteenSettings')}
@@ -112,7 +115,7 @@ export default async function CashierStaffPage({ params }: Props) {
         </p>
       )}
       {canteenEnabled && !period && (
-        <p className="max-w-3xl rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           {t('selectPeriod')}
         </p>
       )}
@@ -133,11 +136,11 @@ export default async function CashierStaffPage({ params }: Props) {
           {todayMembers.length > 0 && (
             <h2 className="text-base font-semibold text-graphite">{t('allStaff')}</h2>
           )}
-          <ul className="max-w-3xl divide-y divide-alabaster-700 rounded border border-alabaster-700">
+          <ul className="divide-y divide-alabaster-700 rounded border border-alabaster-700">
             {rows.map((row) => (
               <li
                 key={row.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto] md:items-center"
               >
                 <div className="min-w-0 space-y-0.5">
                   <Link
@@ -161,23 +164,34 @@ export default async function CashierStaffPage({ params }: Props) {
                       ? row.weekdays.map((day) => tWeekdays(String(day))).join(', ')
                       : t('noCanteen')}
                   </p>
-                </div>
-                <div className="flex items-center gap-3 text-right text-xs">
                   {row.weekdays.length > 0 && !row.mealExempt && (
-                    <span className="text-graphite-600">
+                    <p className="text-xs text-graphite-600">
                       {row.paidThrough
                         ? t('paidThrough', { date: formatDay(row.paidThrough) })
                         : t('nothingPaid')}
-                      {row.dueDays > 0 && (
-                        <span className="block text-amber-600">
-                          {t('due', {
-                            days: row.dueDays,
-                            amount: formatCurrency(row.dueAmount, locale, currency),
-                          })}
-                        </span>
-                      )}
-                    </span>
+                    </p>
                   )}
+                  {row.dueDays > 0 && (
+                    <p className="text-sm font-semibold tabular-nums text-red-600">
+                      {t('due', { days: row.dueDays, amount: money(row.dueAmount) })}
+                    </p>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  {row.progress && (
+                    <YearProgress
+                      t={tProgress}
+                      money={money}
+                      paid={row.progress.paid}
+                      total={row.progress.total}
+                      overdue={row.progress.overdue}
+                      expected={row.progress.expected}
+                      scheduled
+                      showExpected
+                    />
+                  )}
+                </div>
+                <div className="flex items-center gap-3 md:justify-end">
                   {row.isActive && row.weekdays.length === 0 && canteenEnabled && period && (
                     <MealDialog
                       kind="subscribe"

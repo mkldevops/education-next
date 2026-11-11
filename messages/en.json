@@ -1476,7 +1476,22 @@
           "openSheet": "Open sheet",
           "canteenClosed": "The canteen is not open for this school: staff cannot be enrolled.",
           "canteenSettings": "Set up the canteen",
-          "selectPeriod": "Pick a period at the top of the page to enroll staff."
+          "selectPeriod": "Pick a period at the top of the page to enroll staff.",
+          "progress": {
+            "year": {
+              "label": "Meals this period",
+              "progress": "{paid} paid of {total}",
+              "barLabel": "{paid} paid of {total}. Eaten to date: {expected}.",
+              "barLabelLate": "{paid} paid of {total}. Eaten to date: {expected}. Due: {overdue}.",
+              "barLabelSimple": "{paid} paid of {total}."
+            },
+            "figures": {
+              "paid": "Paid",
+              "expectedToDate": "Eaten to date",
+              "remaining": "Left this period",
+              "total": "Period total"
+            }
+          }
         },
         "searchPrompt": "Which family is paying?",
         "searchHelp": "Type the family's or a child's name: results show up as you type.",

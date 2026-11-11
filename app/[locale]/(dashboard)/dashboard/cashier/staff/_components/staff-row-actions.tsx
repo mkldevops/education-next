@@ -1,7 +1,7 @@
 'use client'
 
-import { useMenu } from '@peaklab/ui'
-import { MoreHorizontal } from 'lucide-react'
+import { cn, useMenu } from '@peaklab/ui'
+import { FileText, MoreHorizontal } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { type CSSProperties, useEffect, useState } from 'react'
 import { Link } from '@/i18n/routing'
@@ -17,6 +17,18 @@ type Props = {
 }
 
 const MENU_WIDTH = 224
+
+const ITEM_CLASSES = [
+  '[&_[role=menuitem][data-kind=stop]]:text-red-600 [&_[role=menuitem][data-kind=stop]_svg]:text-red-600',
+  '[&_[role=menuitem][data-kind=stop]:hover]:bg-red-50',
+  '[&_[role=menuitem]]:flex [&_[role=menuitem]]:h-auto [&_[role=menuitem]]:w-full',
+  '[&_[role=menuitem]]:items-center [&_[role=menuitem]]:justify-start [&_[role=menuitem]]:gap-3',
+  '[&_[role=menuitem]]:rounded-none [&_[role=menuitem]]:border-0 [&_[role=menuitem]]:px-4',
+  '[&_[role=menuitem]]:py-2.5 [&_[role=menuitem]]:text-sm [&_[role=menuitem]]:font-normal',
+  '[&_[role=menuitem]]:text-graphite [&_[role=menuitem]]:shadow-none [&_[role=menuitem]]:ring-0',
+  '[&_[role=menuitem]:hover]:bg-alabaster-900 [&_[role=menuitem]:focus-visible]:bg-alabaster-900',
+  '[&_[role=menuitem]:focus-visible]:outline-none [&_[role=menuitem]_svg]:text-graphite-700',
+].join(' ')
 
 /** Actions secondaires d'une ligne du personnel : jours, arrêt, fiche, exonération. */
 export function StaffRowActions({
@@ -61,7 +73,7 @@ export function StaffRowActions({
   }
 
   return (
-    <div className="relative z-10 flex justify-end" ref={containerRef}>
+    <div className="relative flex justify-end" ref={containerRef}>
       <button
         type="button"
         ref={triggerRef}
@@ -77,12 +89,15 @@ export function StaffRowActions({
         ref={menuRef}
         role="menu"
         style={anchor}
-        className={`fixed z-40 flex w-56 flex-col gap-1 rounded border border-alabaster-700 bg-white p-1 text-left shadow-lg [&_a]:rounded [&_a]:px-3 [&_a]:py-1.5 [&_a]:text-sm [&_a]:text-graphite [&_a:hover]:bg-alabaster-800 [&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:shadow-none ${
-          open ? '' : 'hidden'
-        }`}
+        className={cn(
+          'fixed z-40 w-56 rounded border border-alabaster-700 bg-white py-1 text-left shadow-lg',
+          ITEM_CLASSES,
+          !open && 'hidden'
+        )}
       >
         {subscribed && canteenEnabled && <MealDialog kind="change" {...dialog} />}
         <Link href={`/dashboard/cashier/staff/${member.id}`} role="menuitem">
+          <FileText className="h-4 w-4" />
           {t('openSheet')}
         </Link>
         {isAdmin && (
