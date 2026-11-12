@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { Tabs } from '../tabs'
 
 const tabs = [
@@ -107,5 +107,53 @@ describe('Tabs', () => {
 
     const tablist = screen.getByRole('tablist')
     expect(tablist.parentElement).toHaveClass('overflow-x-auto')
+  })
+
+  describe('URL anchors', () => {
+    const anchoredTabs = [
+      { id: 'overview', label: 'Overview', content: <div>Overview content</div> },
+      {
+        id: 'payments',
+        anchors: ['stripe'],
+        label: 'Payments',
+        content: <div>Payments content</div>,
+      },
+    ]
+
+    afterEach(() => window.history.replaceState(null, '', '/'))
+
+    it('opens the tab named by the URL hash', () => {
+      window.history.replaceState(null, '', '/#payments')
+      render(<Tabs tabs={anchoredTabs} />)
+
+      expect(screen.getByRole('tab', { name: 'Payments' })).toHaveAttribute('aria-selected', 'true')
+    })
+
+    it('opens the tab holding an extra anchor', () => {
+      window.history.replaceState(null, '', '/#stripe')
+      render(<Tabs tabs={anchoredTabs} />)
+
+      expect(screen.getByText('Payments content')).toBeInTheDocument()
+    })
+
+    it('writes the selected tab id to the hash and follows later hash changes', () => {
+      render(<Tabs tabs={anchoredTabs} />)
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Payments' }))
+      expect(window.location.hash).toBe('#payments')
+
+      window.history.replaceState(null, '', '/#overview')
+      fireEvent(window, new HashChangeEvent('hashchange'))
+      expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+    })
+
+    it('ignores an unknown hash and leaves the hash alone for tabs without an id', () => {
+      window.history.replaceState(null, '', '/#elsewhere')
+      render(<Tabs tabs={tabs} />)
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Payments' }))
+      expect(screen.getByRole('tab', { name: 'Payments' })).toHaveAttribute('aria-selected', 'true')
+      expect(window.location.hash).toBe('#elsewhere')
+    })
   })
 })

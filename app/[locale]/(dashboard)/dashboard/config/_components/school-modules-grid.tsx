@@ -1,7 +1,6 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import type { ReactNode } from 'react'
 import { SchoolConfigKey } from '@/lib/school-config'
 import { FlagToggle } from '../../../_components/flag-toggle'
 import { setConfigAction } from '../../../_lib/config-actions'
@@ -15,8 +14,6 @@ type Props = {
   absenceReasons: AbsenceReasonSetting[]
   /** Notes de frais déjà saisies, que la coupure rendrait inatteignables. */
   teacherExpenseCount: number
-  /** Carte Paiements, construite côté serveur avec ses identifiants Stripe. */
-  payments: ReactNode
 }
 
 async function saveFlag(name: SchoolConfigKey, enabled: boolean) {
@@ -30,12 +27,7 @@ async function saveFlag(name: SchoolConfigKey, enabled: boolean) {
  *
  * `automatic_promotion` n'y figure pas : aucun traitement ne lit ce réglage.
  */
-export function SchoolModulesGrid({
-  settings,
-  absenceReasons,
-  teacherExpenseCount,
-  payments,
-}: Props) {
+export function SchoolModulesGrid({ settings, absenceReasons, teacherExpenseCount }: Props) {
   const t = useTranslations('dashboard.pages.config')
   const value = (name: SchoolConfigKey) => settingValue(settings, name)
   const isOn = (name: SchoolConfigKey) => value(name) === 'true'
@@ -112,8 +104,6 @@ export function SchoolModulesGrid({
         />
         {optionToggle(SchoolConfigKey.ClassScheduleTeacherOverlapAllowed)}
       </ModuleCard>
-
-      {payments}
 
       <ModuleCard {...moduleProps(SchoolConfigKey.MealsEnabled)} />
       <ModuleCard {...moduleProps(SchoolConfigKey.EventsEnabled)} />

@@ -1715,9 +1715,7 @@
         "sections": {
           "schools": "Schools",
           "schoolsDescription": "Settings governing every school on this instance.",
-          "identity": "School identity",
           "identityDescription": "Logo, colours and class capacity.",
-          "modules": "Modules",
           "modulesDescription": "Turn on the features the school uses; “Configure” opens the options of an active module."
         },
         "notConfigured": "Not configured",
@@ -2002,6 +2000,13 @@
             "stripeOn": "Stripe on",
             "stripeOff": "No online payment"
           }
+        },
+        "tabs": {
+          "label": "Configuration areas",
+          "identity": "Identity",
+          "modules": "Modules",
+          "payments": "Payments",
+          "platform": "Platform"
         }
       },
       "familyDetails": {

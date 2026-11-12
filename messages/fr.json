@@ -1716,9 +1716,7 @@
         "sections": {
           "schools": "Écoles",
           "schoolsDescription": "Réglages qui gouvernent toutes les écoles de l'instance.",
-          "identity": "Identité de l'école",
           "identityDescription": "Logo, couleurs et capacité des classes.",
-          "modules": "Modules",
           "modulesDescription": "Activez les fonctions utilisées par l'école ; « Configurer » ouvre les options d'un module actif."
         },
         "notConfigured": "Non configuré",
@@ -2003,6 +2001,13 @@
             "stripeOn": "Stripe actif",
             "stripeOff": "Sans paiement en ligne"
           }
+        },
+        "tabs": {
+          "label": "Domaines de configuration",
+          "identity": "Identité",
+          "modules": "Modules",
+          "payments": "Paiements",
+          "platform": "Plateforme"
         }
       },
       "familyDetails": {
