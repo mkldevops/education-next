@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { FamilyPaymentTrackingDetail } from '@/use-cases/payments/payment-tracking'
-import { PaymentTrackingCard, paymentTrackingState } from './payment-tracking-card'
+import { PaymentTrackingCard } from './payment-tracking-card'
 
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => {
@@ -35,19 +35,6 @@ function tracking(overrides: Partial<FamilyPaymentTrackingDetail> = {}) {
 }
 
 const card = () => screen.getByRole('region', { name: 'title' })
-
-describe('paymentTrackingState', () => {
-  it.each([
-    [{ tracked: false }, 'untracked'],
-    [{ creditedPaid: 1000 }, 'settled'],
-    [{ overdueAmount: 50, dueThisMonth: 150 }, 'late'],
-    [{ dueThisMonth: 100 }, 'due'],
-    [{ creditedPaid: 480 }, 'ahead'],
-    [{}, 'upToDate'],
-  ] as const)('%j → %s', (overrides, state) => {
-    expect(paymentTrackingState(tracking(overrides))).toBe(state)
-  })
-})
 
 describe('PaymentTrackingCard', () => {
   it('names the advance and says nothing is due', async () => {

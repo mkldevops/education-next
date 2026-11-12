@@ -4,8 +4,8 @@ import { Card } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
 import { formatCurrency } from '@/lib/decimal'
 import { HorizonSegmented, useUrlHorizon } from '../../_components/remaining-horizon-switch'
+import { YearProgress } from '../../_components/year-progress'
 import { groupFamilies, type TrackingFamily } from './payment-tracking-groups'
-import { YearProgress } from './year-progress'
 
 interface Props {
   families: TrackingFamily[]
