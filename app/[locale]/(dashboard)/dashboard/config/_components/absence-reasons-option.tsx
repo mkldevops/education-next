@@ -13,15 +13,55 @@ import {
   reorderAbsenceReasonsAction,
   updateAbsenceReasonAction,
 } from '../../../_lib/absence-reason-actions'
-import { SettingsSection } from './settings-section'
+import { OptionRow } from './option-row'
 
 export type AbsenceReasonSetting = { id: string; label: string; justified: boolean }
+
+/**
+ * Option « Motifs d'absence » du module Appel : les premiers motifs en aperçu, et la liste
+ * dépliée sur place par « Gérer » pour ne pas empiler un second dialogue sur celui du module.
+ */
+export function AbsenceReasonsOption({ reasons }: { reasons: AbsenceReasonSetting[] }) {
+  const t = useTranslations('dashboard.pages.config.absenceReasons')
+  const [open, setOpen] = useState(false)
+  const panelId = useId()
+  const preview = reasons.slice(0, 3).map((reason) => reason.label)
+
+  return (
+    <div>
+      <OptionRow
+        label={t('title')}
+        description={
+          preview.length === 0
+            ? t('empty')
+            : `${preview.join(', ')}${reasons.length > preview.length ? '…' : ''}`
+        }
+      >
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {open ? t('hide') : t('manage', { count: reasons.length })}
+        </Button>
+      </OptionRow>
+      {open && (
+        <div id={panelId} className="divide-y divide-alabaster-700 bg-alabaster-900">
+          <AbsenceReasonsEditor reasons={reasons} />
+        </div>
+      )}
+    </div>
+  )
+}
 
 /**
  * Motifs proposés sur une absence pendant l'appel. Archiver retire un motif de la saisie sans
  * toucher aux appels passés, qui gardent le libellé enregistré.
  */
-export function AbsenceReasonsSection({ reasons }: { reasons: AbsenceReasonSetting[] }) {
+function AbsenceReasonsEditor({ reasons }: { reasons: AbsenceReasonSetting[] }) {
   const t = useTranslations('dashboard.pages.config.absenceReasons')
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -65,7 +105,7 @@ export function AbsenceReasonsSection({ reasons }: { reasons: AbsenceReasonSetti
   }
 
   return (
-    <SettingsSection id="absence-reasons" title={t('title')} description={t('description')}>
+    <>
       {reasons.length === 0 ? (
         <p className="px-6 py-5 text-sm text-graphite-600">{t('empty')}</p>
       ) : (
@@ -169,6 +209,6 @@ export function AbsenceReasonsSection({ reasons }: { reasons: AbsenceReasonSetti
           {t('add')}
         </Button>
       </form>
-    </SettingsSection>
+    </>
   )
 }

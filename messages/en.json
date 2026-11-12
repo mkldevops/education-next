@@ -1713,10 +1713,12 @@
         "title": "Configuration",
         "description": "Settings for the active school and, for a super-admin, for the instance.",
         "sections": {
-          "school": "School settings",
-          "schoolDescription": "Settings specific to the active school.",
           "schools": "Schools",
-          "schoolsDescription": "Settings governing every school on this instance."
+          "schoolsDescription": "Settings governing every school on this instance.",
+          "identity": "School identity",
+          "identityDescription": "Logo, colours and class capacity.",
+          "modules": "Modules",
+          "modulesDescription": "Turn on the features the school uses; “Configure” opens the options of an active module."
         },
         "notConfigured": "Not configured",
         "settings": {
@@ -1984,6 +1986,21 @@
             "labelTaken": "This reason already exists",
             "notFound": "Reason not found",
             "staleOrder": "The list changed, reload the page"
+          },
+          "manage": "Manage ({count})",
+          "hide": "Hide"
+        },
+        "modules": {
+          "configure": "Configure",
+          "close": "Close",
+          "dialogTitle": "Configure — {module}",
+          "toComplete": "Needs setup",
+          "summary": {
+            "reasons": "{count, plural, =0 {no reasons} one {# reason} other {# reasons}}",
+            "overlapAllowed": "Overlaps allowed",
+            "overlapForbidden": "No overlaps",
+            "stripeOn": "Stripe on",
+            "stripeOff": "No online payment"
           }
         }
       },

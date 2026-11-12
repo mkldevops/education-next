@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { toastSuccessMock } = vi.hoisted(() => ({ toastSuccessMock: vi.fn() }))
@@ -20,7 +20,7 @@ vi.mock('../../../_lib/stripe-settings-actions', () => ({
 import type { StripeSettings } from '@/use-cases/payments/stripe-settings'
 import { setConfigAction } from '../../../_lib/config-actions'
 import { setStripeEnabledAction } from '../../../_lib/stripe-settings-actions'
-import { StripeSettingsSection } from './stripe-settings-section'
+import { PaymentsModule } from './payments-module'
 
 const configured: StripeSettings = {
   enabled: true,
@@ -42,6 +42,12 @@ const webhookUrl = 'https://school.test/api/stripe/webhook/school-1'
 
 const paymentsLabel = 'config.settings.payments_enabled.label'
 
+/** Ouvre le dialogue du module et y borne les requêtes. */
+function openDialog() {
+  fireEvent.click(screen.getByRole('button', { name: 'config.modules.configure' }))
+  return within(screen.getByRole('dialog'))
+}
+
 function renderSection(
   settings: StripeSettings,
   {
@@ -53,7 +59,7 @@ function renderSection(
   } = {}
 ) {
   return render(
-    <StripeSettingsSection
+    <PaymentsModule
       paymentsEnabled={paymentsEnabled}
       paymentFootprint={paymentFootprint}
       settings={settings}
@@ -64,7 +70,7 @@ function renderSection(
   )
 }
 
-describe('StripeSettingsSection', () => {
+describe('PaymentsModule', () => {
   const writeTextMock = vi.fn()
 
   beforeEach(() => {
@@ -80,18 +86,22 @@ describe('StripeSettingsSection', () => {
   it('keeps the stored flag and explains what is missing while the configuration is incomplete', () => {
     renderSection(incomplete)
 
-    expect(screen.getByLabelText('stripe.toggle.label')).toBeEnabled()
-    expect(screen.getByLabelText('stripe.toggle.label')).toBeChecked()
-    expect(screen.getByText('stripe.toggle.incomplete')).toBeInTheDocument()
-    expect(screen.getByText(webhookUrl)).toBeInTheDocument()
+    expect(screen.getByText('config.modules.toComplete')).toBeInTheDocument()
+    const dialog = openDialog()
+    expect(dialog.getByLabelText('stripe.toggle.label')).toBeEnabled()
+    expect(dialog.getByLabelText('stripe.toggle.label')).toBeChecked()
+    expect(dialog.getByText('stripe.toggle.incomplete')).toBeInTheDocument()
+    expect(dialog.getByText(webhookUrl)).toBeInTheDocument()
   })
 
   it('shows Stripe enabled once configured', () => {
     renderSection(configured)
 
-    expect(screen.getByLabelText('stripe.toggle.label')).toBeEnabled()
-    expect(screen.getByLabelText('stripe.toggle.label')).toBeChecked()
-    expect(screen.queryByText('stripe.toggle.incomplete')).not.toBeInTheDocument()
+    expect(screen.queryByText('config.modules.toComplete')).not.toBeInTheDocument()
+    const dialog = openDialog()
+    expect(dialog.getByLabelText('stripe.toggle.label')).toBeEnabled()
+    expect(dialog.getByLabelText('stripe.toggle.label')).toBeChecked()
+    expect(dialog.queryByText('stripe.toggle.incomplete')).not.toBeInTheDocument()
   })
 
   it('says when the instance credentials are used', () => {
@@ -103,22 +113,24 @@ describe('StripeSettingsSection', () => {
       available: true,
     })
 
-    expect(screen.getByText('stripe.toggle.envFallback')).toBeInTheDocument()
+    expect(openDialog().getByText('stripe.toggle.envFallback')).toBeInTheDocument()
   })
 
   it('shows stored secrets masked, with replace and delete', () => {
     renderSection(configured)
 
-    expect(screen.getByText('stripe.secretKey.masked')).toBeInTheDocument()
-    expect(screen.getByText('stripe.webhookSecret.masked')).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'stripe.replace' })).toHaveLength(2)
-    expect(screen.getAllByRole('button', { name: 'stripe.delete' })).toHaveLength(2)
+    const dialog = openDialog()
+    expect(dialog.getByText('stripe.secretKey.masked')).toBeInTheDocument()
+    expect(dialog.getByText('stripe.webhookSecret.masked')).toBeInTheDocument()
+    expect(dialog.getAllByRole('button', { name: 'stripe.replace' })).toHaveLength(2)
+    expect(dialog.getAllByRole('button', { name: 'stripe.delete' })).toHaveLength(2)
   })
 
   it('never prefills a secret input', () => {
-    const { container } = renderSection(configured)
+    renderSection(configured)
+    openDialog()
 
-    for (const input of container.querySelectorAll('input[type="password"]')) {
+    for (const input of screen.getByRole('dialog').querySelectorAll('input[type="password"]')) {
       expect(input).toHaveValue('')
     }
   })
@@ -126,8 +138,9 @@ describe('StripeSettingsSection', () => {
   it('displays the webhook URL and copies it', async () => {
     renderSection(configured)
 
-    expect(screen.getByText(webhookUrl)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'stripe.webhookUrl.copy' }))
+    const dialog = openDialog()
+    expect(dialog.getByText(webhookUrl)).toBeInTheDocument()
+    fireEvent.click(dialog.getByRole('button', { name: 'stripe.webhookUrl.copy' }))
 
     await waitFor(() => expect(writeTextMock).toHaveBeenCalledWith(webhookUrl))
     expect(toastSuccessMock).toHaveBeenCalledWith('stripe.webhookUrl.copied')
@@ -137,23 +150,27 @@ describe('StripeSettingsSection', () => {
     renderSection(configured, { paymentsEnabled: false })
 
     expect(screen.getByLabelText(paymentsLabel)).not.toBeChecked()
-    expect(screen.queryByLabelText('stripe.toggle.label')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'config.modules.configure' })
+    ).not.toBeInTheDocument()
   })
 
   it('folds the Stripe credentials while Stripe is off', () => {
     renderSection({ ...configured, enabled: false, available: false })
 
-    expect(screen.getByLabelText('stripe.toggle.label')).not.toBeChecked()
-    expect(screen.queryByText(webhookUrl)).not.toBeInTheDocument()
+    const dialog = openDialog()
+    expect(dialog.getByLabelText('stripe.toggle.label')).not.toBeChecked()
+    expect(dialog.queryByText(webhookUrl)).not.toBeInTheDocument()
   })
 
   it('unfolds the Stripe credentials as soon as Stripe is switched on', async () => {
     vi.mocked(setStripeEnabledAction).mockResolvedValue('OK')
     renderSection({ ...incomplete, enabled: false })
 
-    fireEvent.click(screen.getByLabelText('stripe.toggle.label'))
+    const dialog = openDialog()
+    fireEvent.click(dialog.getByLabelText('stripe.toggle.label'))
 
-    expect(screen.getByText(webhookUrl)).toBeInTheDocument()
+    expect(dialog.getByText(webhookUrl)).toBeInTheDocument()
     await waitFor(() => expect(setStripeEnabledAction).toHaveBeenCalledWith(true))
   })
 
@@ -177,5 +194,17 @@ describe('StripeSettingsSection', () => {
     await waitFor(() =>
       expect(setConfigAction).toHaveBeenCalledWith({ name: 'payments_enabled', value: 'false' })
     )
+  })
+})
+
+describe('PaymentsModule dialog', () => {
+  it('repeats the payments switch above its options, as the module card does', () => {
+    renderSection(configured)
+
+    const dialog = openDialog()
+    expect(dialog.getByLabelText(paymentsLabel)).toBeChecked()
+    expect(dialog.getByText('config.modules.dialogTitle')).toBeInTheDocument()
+    fireEvent.click(dialog.getByRole('button', { name: 'config.modules.close' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

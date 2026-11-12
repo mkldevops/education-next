@@ -11,8 +11,8 @@ import type { SchoolCurrencySettings } from '@/use-cases/schools/school-currency
 import { FlagToggle } from '../../../_components/flag-toggle'
 import { setConfigAction } from '../../../_lib/config-actions'
 import { setStripeEnabledAction } from '../../../_lib/stripe-settings-actions'
+import { ModuleCard } from './module-card'
 import { SchoolCurrencyField } from './school-currency-field'
-import { SettingsSection } from './settings-section'
 import { StripeSecretForm } from './stripe-secret-form'
 
 type Props = {
@@ -34,7 +34,7 @@ async function savePaymentsEnabled(enabled: boolean) {
 }
 
 /**
- * Paiements de l'école active, en deux replis emboîtés. Coupée, la gestion des paiements replie
+ * Module Paiements de l'école active, en deux replis emboîtés. Coupée, la gestion des paiements replie
  * le paiement en ligne, comme côté serveur où `payments_enabled` l'emporte sur `stripe_enabled` ;
  * sa coupure demande confirmation dès qu'un paiement ou une transaction en attente deviendrait
  * invisible. Coupé, Stripe replie ses identifiants et son webhook.
@@ -43,7 +43,7 @@ async function savePaymentsEnabled(enabled: boolean) {
  * identifiants ouvre leur saisie, et l'avertissement dit que le bouton parent attend encore
  * un jeu complet.
  */
-export function StripeSettingsSection({
+export function PaymentsModule({
   paymentsEnabled,
   paymentFootprint,
   settings,
@@ -53,6 +53,7 @@ export function StripeSettingsSection({
 }: Props) {
   const t = useTranslations('dashboard.pages.config.stripe')
   const tConfig = useTranslations('dashboard.pages.config')
+  const tCurrency = useTranslations('dashboard.pages.config.currency')
   const { payments, pendingTransactions } = paymentFootprint
   const paymentsKey = `settings.${PAYMENTS_ENABLED_CONFIG_KEY}`
   const confirmPaymentsDisable =
@@ -84,57 +85,61 @@ export function StripeSettingsSection({
   }
 
   return (
-    <SettingsSection title={t('title')} description={t('description')}>
+    <ModuleCard
+      title={tConfig(`${paymentsKey}.label`)}
+      description={tConfig(`${paymentsKey}.description`)}
+      enabled={paymentsEnabled}
+      onSave={savePaymentsEnabled}
+      confirmDisable={confirmPaymentsDisable}
+      summary={`${tCurrency(`options.${currency.currency}`)} · ${tConfig(
+        settings.enabled ? 'modules.summary.stripeOn' : 'modules.summary.stripeOff'
+      )}`}
+      attention={
+        settings.enabled && !settings.configured ? tConfig('modules.toComplete') : undefined
+      }
+    >
       <SchoolCurrencyField settings={currency} />
       <FlagToggle
-        title={tConfig(`${paymentsKey}.label`)}
-        description={tConfig(`${paymentsKey}.description`)}
-        enabled={paymentsEnabled}
-        onSave={savePaymentsEnabled}
-        confirmDisable={confirmPaymentsDisable}
+        // Remonte l'interrupteur quand le drapeau enregistré change : son état local ne suit
+        // pas les props après `router.refresh()`.
+        key={String(settings.enabled)}
+        title={t('toggle.label')}
+        description={t('toggle.description')}
+        hint={hint}
+        enabled={settings.enabled}
+        onSave={setStripeEnabledAction}
       >
-        <FlagToggle
-          // Remonte l'interrupteur quand le drapeau enregistré change : son état local ne suit
-          // pas les props après `router.refresh()`.
-          key={String(settings.enabled)}
-          title={t('toggle.label')}
-          description={t('toggle.description')}
-          hint={hint}
-          enabled={settings.enabled}
-          onSave={setStripeEnabledAction}
-        >
-          <div className="divide-y divide-alabaster-700">
-            {!secretStorageConfigured && (
-              <p className="px-6 py-4 text-xs text-orange-600">{t('secretStorageHint')}</p>
-            )}
-            <StripeSecretForm
-              kind={StripeSecretKind.SecretKey}
-              status={settings.secretKey}
-              secretStorageConfigured={secretStorageConfigured}
-            />
-            <StripeSecretForm
-              kind={StripeSecretKind.WebhookSecret}
-              status={settings.webhookSecret}
-              secretStorageConfigured={secretStorageConfigured}
-            />
-            <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 space-y-2">
-                <div>
-                  <h3 className="text-sm font-semibold text-graphite">{t('webhookUrl.label')}</h3>
-                  <p className="mt-1 text-sm text-graphite-600">{t('webhookUrl.description')}</p>
-                </div>
-                <code className="block min-w-0 break-all font-mono text-xs text-graphite">
-                  {webhookUrl}
-                </code>
+        <div className="divide-y divide-alabaster-700">
+          {!secretStorageConfigured && (
+            <p className="px-6 py-4 text-xs text-orange-600">{t('secretStorageHint')}</p>
+          )}
+          <StripeSecretForm
+            kind={StripeSecretKind.SecretKey}
+            status={settings.secretKey}
+            secretStorageConfigured={secretStorageConfigured}
+          />
+          <StripeSecretForm
+            kind={StripeSecretKind.WebhookSecret}
+            status={settings.webhookSecret}
+            secretStorageConfigured={secretStorageConfigured}
+          />
+          <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-2">
+              <div>
+                <h3 className="text-sm font-semibold text-graphite">{t('webhookUrl.label')}</h3>
+                <p className="mt-1 text-sm text-graphite-600">{t('webhookUrl.description')}</p>
               </div>
-              <Button type="button" variant="outline" className="shrink-0" onClick={copyWebhookUrl}>
-                <Copy className="h-4 w-4" aria-hidden="true" />
-                {t('webhookUrl.copy')}
-              </Button>
+              <code className="block min-w-0 break-all font-mono text-xs text-graphite">
+                {webhookUrl}
+              </code>
             </div>
+            <Button type="button" variant="outline" className="shrink-0" onClick={copyWebhookUrl}>
+              <Copy className="h-4 w-4" aria-hidden="true" />
+              {t('webhookUrl.copy')}
+            </Button>
           </div>
-        </FlagToggle>
+        </div>
       </FlagToggle>
-    </SettingsSection>
+    </ModuleCard>
   )
 }
