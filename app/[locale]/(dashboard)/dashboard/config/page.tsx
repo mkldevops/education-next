@@ -25,10 +25,11 @@ import { getSchoolCurrencySettings } from '@/use-cases/schools/school-currency'
 import { countGoogleOnlyAccounts } from '@/use-cases/users/count-google-only-accounts'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
-import { AbsenceReasonsSection } from './_components/absence-reasons-section'
+import { PaymentsModule } from './_components/payments-module'
 import { PlatformSettingsPanel } from './_components/platform-settings-panel'
-import { type SchoolSetting, SchoolSettingsPanel } from './_components/school-settings-panel'
-import { StripeSettingsSection } from './_components/stripe-settings-section'
+import { SchoolIdentityCard } from './_components/school-identity-card'
+import { SchoolModulesGrid } from './_components/school-modules-grid'
+import type { SchoolSetting } from './_components/school-setting'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -124,20 +125,39 @@ export default async function ConfigPage({ params }: Props) {
         <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
       </div>
 
-      <SchoolSettingsPanel settings={settings} teacherExpenseCount={teacherExpenseCount} />
+      <section className="space-y-3">
+        <SectionHeading
+          title={t('sections.identity')}
+          description={t('sections.identityDescription')}
+        />
+        <SchoolIdentityCard settings={settings} />
+      </section>
 
-      <AbsenceReasonsSection
-        reasons={absenceReasons.map(({ id, label, justified }) => ({ id, label, justified }))}
-      />
-
-      <StripeSettingsSection
-        paymentsEnabled={readsAsEnabled(storedValues.get(PAYMENTS_ENABLED_CONFIG_KEY))}
-        paymentFootprint={paymentFootprint}
-        settings={stripeSettings}
-        currency={currencySettings}
-        webhookUrl={`${appUrl}${stripeWebhookPath(schoolId)}`}
-        secretStorageConfigured={isSecretEncryptionConfigured()}
-      />
+      <section className="space-y-3">
+        <SectionHeading
+          title={t('sections.modules')}
+          description={t('sections.modulesDescription')}
+        />
+        <SchoolModulesGrid
+          settings={settings}
+          absenceReasons={absenceReasons.map(({ id, label, justified }) => ({
+            id,
+            label,
+            justified,
+          }))}
+          teacherExpenseCount={teacherExpenseCount}
+          payments={
+            <PaymentsModule
+              paymentsEnabled={readsAsEnabled(storedValues.get(PAYMENTS_ENABLED_CONFIG_KEY))}
+              paymentFootprint={paymentFootprint}
+              settings={stripeSettings}
+              currency={currencySettings}
+              webhookUrl={`${appUrl}${stripeWebhookPath(schoolId)}`}
+              secretStorageConfigured={isSecretEncryptionConfigured()}
+            />
+          }
+        />
+      </section>
 
       {isSuperAdmin && (
         <PlatformSettingsPanel
@@ -155,6 +175,15 @@ export default async function ConfigPage({ params }: Props) {
           googleOnlyAccountCount={googleOnlyAccountCount}
         />
       )}
+    </div>
+  )
+}
+
+function SectionHeading({ title, description }: { title: string; description: string }) {
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-graphite">{title}</h2>
+      <p className="mt-1 text-sm text-graphite-600">{description}</p>
     </div>
   )
 }
