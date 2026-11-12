@@ -141,6 +141,10 @@ export function DialogContent({ children, className }: DialogContentProps) {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return
+      // Chaque dialogue ouvert écoute le document : seul celui du dessus, porté en dernier dans
+      // le body, répond, sans quoi Échap dans une confirmation fermerait aussi son parent.
+      const modals = document.querySelectorAll('[role="dialog"][aria-modal="true"]')
+      if (modals[modals.length - 1] !== panelRef.current) return
 
       if (e.key === 'Escape') {
         setOpen(false)
