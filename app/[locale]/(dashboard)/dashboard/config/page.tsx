@@ -2,6 +2,7 @@ import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import type { ReactNode } from 'react'
 import { readsAsEnabled } from '@/domain/feature-flags'
 import { absenceReasonGateway } from '@/gateways/absence-reason-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
@@ -25,6 +26,7 @@ import { getSchoolCurrencySettings } from '@/use-cases/schools/school-currency'
 import { countGoogleOnlyAccounts } from '@/use-cases/users/count-google-only-accounts'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
+import { ConfigTabs } from './_components/config-tabs'
 import { PaymentsModule } from './_components/payments-module'
 import { PlatformSettingsPanel } from './_components/platform-settings-panel'
 import { SchoolIdentityCard } from './_components/school-identity-card'
@@ -125,65 +127,67 @@ export default async function ConfigPage({ params }: Props) {
         <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
       </div>
 
-      <section className="space-y-3">
-        <SectionHeading
-          title={t('sections.identity')}
-          description={t('sections.identityDescription')}
-        />
-        <SchoolIdentityCard settings={settings} />
-      </section>
-
-      <section className="space-y-3">
-        <SectionHeading
-          title={t('sections.modules')}
-          description={t('sections.modulesDescription')}
-        />
-        <SchoolModulesGrid
-          settings={settings}
-          absenceReasons={absenceReasons.map(({ id, label, justified }) => ({
-            id,
-            label,
-            justified,
-          }))}
-          teacherExpenseCount={teacherExpenseCount}
-          payments={
-            <PaymentsModule
-              paymentsEnabled={readsAsEnabled(storedValues.get(PAYMENTS_ENABLED_CONFIG_KEY))}
-              paymentFootprint={paymentFootprint}
-              settings={stripeSettings}
-              currency={currencySettings}
-              webhookUrl={`${appUrl}${stripeWebhookPath(schoolId)}`}
-              secretStorageConfigured={isSecretEncryptionConfigured()}
+      <ConfigTabs
+        identity={
+          <TabSection description={t('sections.identityDescription')}>
+            <SchoolIdentityCard settings={settings} />
+          </TabSection>
+        }
+        modules={
+          <TabSection description={t('sections.modulesDescription')}>
+            <SchoolModulesGrid
+              settings={settings}
+              absenceReasons={absenceReasons.map(({ id, label, justified }) => ({
+                id,
+                label,
+                justified,
+              }))}
+              teacherExpenseCount={teacherExpenseCount}
             />
-          }
-        />
-      </section>
-
-      {isSuperAdmin && (
-        <PlatformSettingsPanel
-          googleEnabled={googleEnabled}
-          googleConfigured={isGoogleConfigured}
-          passkeyEnabled={passkeyEnabled}
-          mcpEnabled={mcpEnabled}
-          aiAssistantEnabled={aiAssistantEnabled}
-          openRouterKey={{
-            ...openRouterKey,
-            savedAt: openRouterKey.savedAt ? formatDateTime(openRouterKey.savedAt, locale) : null,
-          }}
-          secretStorageConfigured={isSecretEncryptionConfigured()}
-          schoolSwitchEnabled={schoolSwitchEnabled}
-          googleOnlyAccountCount={googleOnlyAccountCount}
-        />
-      )}
+          </TabSection>
+        }
+        payments={
+          <PaymentsModule
+            paymentsEnabled={readsAsEnabled(storedValues.get(PAYMENTS_ENABLED_CONFIG_KEY))}
+            paymentFootprint={paymentFootprint}
+            settings={stripeSettings}
+            currency={currencySettings}
+            webhookUrl={`${appUrl}${stripeWebhookPath(schoolId)}`}
+            secretStorageConfigured={isSecretEncryptionConfigured()}
+          />
+        }
+        platform={
+          isSuperAdmin ? (
+            <div className="space-y-8">
+              <PlatformSettingsPanel
+                googleEnabled={googleEnabled}
+                googleConfigured={isGoogleConfigured}
+                passkeyEnabled={passkeyEnabled}
+                mcpEnabled={mcpEnabled}
+                aiAssistantEnabled={aiAssistantEnabled}
+                openRouterKey={{
+                  ...openRouterKey,
+                  savedAt: openRouterKey.savedAt
+                    ? formatDateTime(openRouterKey.savedAt, locale)
+                    : null,
+                }}
+                secretStorageConfigured={isSecretEncryptionConfigured()}
+                schoolSwitchEnabled={schoolSwitchEnabled}
+                googleOnlyAccountCount={googleOnlyAccountCount}
+              />
+            </div>
+          ) : undefined
+        }
+      />
     </div>
   )
 }
 
-function SectionHeading({ title, description }: { title: string; description: string }) {
+function TabSection({ description, children }: { description: string; children: ReactNode }) {
   return (
-    <div>
-      <h2 className="text-lg font-semibold text-graphite">{title}</h2>
-      <p className="mt-1 text-sm text-graphite-600">{description}</p>
+    <div className="space-y-4">
+      <p className="text-sm text-graphite-600">{description}</p>
+      {children}
     </div>
   )
 }

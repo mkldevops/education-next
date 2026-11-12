@@ -46,7 +46,6 @@ const Grid = (props: Partial<Parameters<typeof SchoolModulesGrid>[0]> = {}) => (
     settings={settings}
     absenceReasons={reasons}
     teacherExpenseCount={0}
-    payments={null}
     {...props}
   />
 )
