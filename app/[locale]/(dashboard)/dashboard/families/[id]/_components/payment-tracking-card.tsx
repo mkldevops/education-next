@@ -5,7 +5,8 @@ import type { ReactNode } from 'react'
 import { type PaymentTrackingState, paymentTrackingState } from '@/domain/payment-tracking-state'
 import { formatCurrency } from '@/lib/decimal'
 import type { FamilyPaymentTrackingDetail } from '@/use-cases/payments/payment-tracking'
-import { YearProgress } from '../../../payments/_components/year-progress'
+import { PAYMENT_TRACKING_BADGE_TONE } from '../../../_components/payment-tracking-tone'
+import { YearProgress } from '../../../_components/year-progress'
 
 type Props = {
   tracking: FamilyPaymentTrackingDetail
@@ -15,11 +16,7 @@ type Props = {
   reference?: Date
 }
 
-type State = PaymentTrackingState
-
-export { paymentTrackingState }
-
-const accent: Record<State, string> = {
+const accent: Record<PaymentTrackingState, string> = {
   untracked: 'border-l-alabaster-400',
   settled: 'border-l-emerald-600',
   late: 'border-l-red-600',
@@ -50,18 +47,14 @@ export async function PaymentTrackingCard({
     overdue: money(overdueAmount),
   }
 
-  const badge = {
-    untracked: {
-      icon: MinusCircle,
-      tone: 'border-alabaster-500 bg-alabaster-900 text-graphite-600',
-    },
-    settled: { icon: CheckCircle2, tone: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
-    late: { icon: AlertTriangle, tone: 'border-red-200 bg-red-50 text-red-800' },
-    due: { icon: CheckCircle2, tone: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
-    ahead: { icon: CheckCircle2, tone: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
-    upToDate: { icon: CheckCircle2, tone: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
+  const BadgeIcon = {
+    untracked: MinusCircle,
+    settled: CheckCircle2,
+    late: AlertTriangle,
+    due: CheckCircle2,
+    ahead: CheckCircle2,
+    upToDate: CheckCircle2,
   }[state]
-  const BadgeIcon = badge.icon
   const badgeLabel = {
     ahead: t('status.ahead', { amount: money(advance) }),
     late: t('status.late', { amount: amounts.overdue }),
@@ -106,7 +99,7 @@ export async function PaymentTrackingCard({
       <span
         className={cn(
           'inline-flex items-center gap-1.5 rounded-full border py-0.5 pr-2.5 pl-1.5 text-sm font-semibold',
-          badge.tone
+          PAYMENT_TRACKING_BADGE_TONE[state]
         )}
       >
         <BadgeIcon aria-hidden="true" className="size-4 shrink-0" />

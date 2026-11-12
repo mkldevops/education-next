@@ -4,11 +4,13 @@ import { Card, Input } from '@peaklab/ui'
 import { ChevronRight, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
-import { type PaymentTrackingState, paymentTrackingState } from '@/domain/payment-tracking-state'
+import { paymentTrackingState } from '@/domain/payment-tracking-state'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
+import { PAYMENT_TRACKING_BADGE_TONE } from '../../_components/payment-tracking-tone'
 import { type Horizon, useUrlHorizon } from '../../_components/remaining-horizon-switch'
+import { YearProgress } from '../../_components/year-progress'
 import { OutstandingFamilyActions } from './outstanding-family-actions'
 import {
   type BoardFamily,
@@ -16,7 +18,6 @@ import {
   groupFamilies,
   type TrackingFamily,
 } from './payment-tracking-groups'
-import { YearProgress } from './year-progress'
 
 const PAGE_SIZE = 10
 
@@ -26,15 +27,6 @@ const GROUP_TONE: Record<GroupKey, string> = {
   clear: 'border-l-emerald-600',
   remaining: 'border-l-sky-600',
   settled: 'border-l-emerald-600',
-}
-
-const BADGE_TONE: Record<PaymentTrackingState, string> = {
-  late: 'border-red-200 bg-red-50 text-red-800',
-  due: 'border-sky-200 bg-sky-50 text-sky-800',
-  ahead: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  upToDate: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  settled: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  untracked: 'border-alabaster-500 bg-alabaster-900 text-graphite-600',
 }
 
 interface Props {
@@ -249,7 +241,7 @@ function FamilyRow({
           <span
             className={cn(
               'inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap',
-              BADGE_TONE[state]
+              PAYMENT_TRACKING_BADGE_TONE[state]
             )}
           >
             {badge}
