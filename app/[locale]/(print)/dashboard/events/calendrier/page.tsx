@@ -98,7 +98,7 @@ export default async function EventsCalendarPrintPage({ params, searchParams }: 
         </div>
 
         <div className="w-full max-w-full overflow-x-auto print:overflow-visible">
-          <article className="calendar-sheet mx-auto flex h-[210mm] w-[297mm] flex-col overflow-hidden bg-white px-[12mm] py-[10mm] text-graphite shadow-lg print:m-0 print:shadow-none">
+          <article className="calendar-sheet mx-auto flex min-h-[210mm] w-[297mm] flex-col print:h-[210mm] print:overflow-hidden bg-white px-[12mm] py-[10mm] text-graphite shadow-lg print:m-0 print:shadow-none">
             <header className="flex items-center gap-[5mm] border-b-2 border-primary pb-[4mm]">
               {logoUrl && (
                 // biome-ignore lint/performance/noImgElement: dynamic logo URL from config

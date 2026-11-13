@@ -55,6 +55,24 @@ describe('buildEventCalendar', () => {
     expect(dayOf(months, 0, 10)?.categories).toEqual(['CLOSURE', 'OUTING'])
   })
 
+  it('leaves the days outside the range uncoloured', () => {
+    const months = buildEventCalendar(
+      [
+        {
+          title: 'Stage',
+          category: 'OUTING',
+          startAt: utc('2026-09-01'),
+          endAt: utc('2026-10-31'),
+        },
+      ],
+      { from: utc('2026-09-15'), until: utc('2026-10-16') }
+    )
+    expect(dayOf(months, 0, 14)?.categories).toEqual([])
+    expect(dayOf(months, 0, 15)?.categories).toEqual(['OUTING'])
+    expect(dayOf(months, 1, 15)?.categories).toEqual(['OUTING'])
+    expect(dayOf(months, 1, 16)?.categories).toEqual([])
+  })
+
   it('caps the view at twelve months', () => {
     const months = buildEventCalendar([], { from: utc('2026-01-01'), until: utc('2028-01-01') })
     expect(months).toHaveLength(MAX_EVENT_CALENDAR_MONTHS)

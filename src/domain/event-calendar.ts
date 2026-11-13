@@ -26,7 +26,7 @@ export type EventCalendarInput = {
   endAt: Date | null
 }
 
-export type EventCalendarDay = {
+type EventCalendarDay = {
   day: number
   /** Catégories du jour, sans doublon, dans l'ordre de `EVENT_CALENDAR_CATEGORIES`. */
   categories: EventCategory[]
@@ -66,10 +66,15 @@ export function buildEventCalendar(
   events: readonly EventCalendarInput[],
   range: { from: Date; until: Date }
 ): EventCalendarMonth[] {
+  const firstDay = dayIndex(range.from)
+  const lastDay = dayIndex(range.until) - 1
+  if (lastDay < firstDay) return []
+
   const byDay = new Map<number, EventCalendarInput[]>()
   for (const event of events) {
-    const start = dayIndex(event.startAt)
-    const end = Math.max(start, dayIndex(event.endAt ?? event.startAt))
+    const eventStart = dayIndex(event.startAt)
+    const start = Math.max(firstDay, eventStart)
+    const end = Math.min(lastDay, Math.max(eventStart, dayIndex(event.endAt ?? event.startAt)))
     for (let index = start; index <= end; index++) {
       const list = byDay.get(index)
       if (list) list.push(event)
@@ -77,8 +82,6 @@ export function buildEventCalendar(
     }
   }
 
-  const lastDay = dayIndex(range.until) - 1
-  if (lastDay < dayIndex(range.from)) return []
   const last = new Date(lastDay * DAY_MS)
 
   const months: EventCalendarMonth[] = []
