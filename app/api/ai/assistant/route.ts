@@ -16,7 +16,7 @@ import { readOpenRouterApiKey } from '@/use-cases/platform-settings/openrouter-a
 import { toProviderErrorCode } from '../_lib/provider-error'
 import { isSameOriginJsonRequest } from '../_lib/same-origin'
 import { buildAssistantTools, toolApprovalSecret } from './_lib/assistant-tools'
-import { commitAfterPreview } from './_lib/commit-after-preview'
+import { prepareAssistantStep } from './_lib/commit-after-preview'
 import { buildAssistantSystemPrompt } from './_lib/system-prompt'
 
 export const runtime = 'nodejs'
@@ -135,7 +135,8 @@ export async function POST(request: Request) {
       toolApproval,
       ...(approvalSecret ? { experimental_toolApprovalSecret: approvalSecret } : {}),
       stopWhen: stepCountIs(AI_ASSISTANT_LIMITS.maxAgentSteps),
-      prepareStep: ({ steps }) => commitAfterPreview(steps, toolNames),
+      prepareStep: ({ steps }) =>
+        prepareAssistantStep(steps, toolNames, AI_ASSISTANT_LIMITS.maxAgentSteps),
       maxOutputTokens: AI_ASSISTANT_LIMITS.maxOutputTokens,
       abortSignal: AbortSignal.timeout(AI_ASSISTANT_LIMITS.agentTimeoutMs),
       onError: ({ error }) => {

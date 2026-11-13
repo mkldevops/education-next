@@ -29,3 +29,19 @@ export function commitAfterPreview(
   }
   return undefined
 }
+
+/**
+ * Pilote chaque étape de l'assistant. Un aperçu propre enchaîne sur son commit ; sinon la
+ * dernière étape permise est réservée au texte : un tour coupé par la limite d'étapes doit
+ * dire ce qui a été fait et ce qui reste, plutôt que s'arrêter sur un appel d'outil muet.
+ */
+export function prepareAssistantStep(
+  steps: ReadonlyArray<{ toolResults: ReadonlyArray<StepToolResult> }>,
+  toolNames: ReadonlySet<string>,
+  maxSteps: number
+) {
+  const commit = commitAfterPreview(steps, toolNames)
+  if (commit) return commit
+  if (steps.length >= maxSteps - 1) return { toolChoice: 'none' as const }
+  return undefined
+}

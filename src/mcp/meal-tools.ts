@@ -6,7 +6,9 @@ import {
   getStaffMealsFromMcp,
   getStudentMealsFromMcp,
   listFamilyReceiptsFromMcp,
+  listMealDebtorsFromMcp,
   listStaffMealSubscriptionsFromMcp,
+  mealDebtorsSchema,
   staffMealSubscriptionsSchema,
   staffMealsSchema,
   studentMealsSchema,
@@ -75,6 +77,14 @@ export function listMealTools(scope: DraftScope): SchoolTool[] {
       staffMealSubscriptionsSchema,
       read,
       (args) => listStaffMealSubscriptionsFromMcp(scope, args)
+    ),
+    tool(
+      'list_meal_debtors',
+      'Élèves en retard de cantine ou de goûter',
+      'Tous les élèves actifs à relancer en un appel, comme l’écran « impayés » de la caisse : jours servis non payés (dueDays, dueAmount) ou au plus 2 jours payés restants (coveredLeft). Chaque ligne : studentId, name, familyId, phone, service, paidThrough. Tri par montant dû décroissant. service CANTEEN ou SNACK filtre. Pour « qui n’est pas à jour en cantine/goûter », appeler cet outil plutôt que get_student_meals élève par élève. Refus mealsDisabled.',
+      mealDebtorsSchema,
+      read,
+      (args) => listMealDebtorsFromMcp(scope, args)
     ),
     tool(
       'list_family_receipts',

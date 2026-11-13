@@ -183,13 +183,16 @@ export const previewRecordPaymentSchema = z
   })
   .refine(
     (data) =>
-      data.familyId !== undefined || data.familyName !== undefined || data.studentId !== undefined
+      data.familyId !== undefined || data.familyName !== undefined || data.studentId !== undefined,
+    { message: 'Pass familyId, familyName or studentId to name the paying family.' }
   )
   .refine((data) => data.method === 'CHECK' || data.cashedAt === undefined, {
     path: ['cashedAt'],
+    message: 'cashedAt is only for a CHECK payment: omit it otherwise.',
   })
   .refine((data) => data.target !== 'student' || data.studentId !== undefined, {
     path: ['target'],
+    message: "target: 'student' needs studentId.",
   })
 
 export const mcpFindStudentsSchema = z.object({

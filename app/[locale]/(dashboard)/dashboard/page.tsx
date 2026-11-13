@@ -35,6 +35,7 @@ import { isClassScheduleEnabled } from '@/use-cases/class-schedules/is-class-sch
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { isEventsEnabled } from '@/use-cases/events/is-events-enabled'
+import { loadMealDues } from '@/use-cases/meals/meal-debtors'
 import { getCollectionSeries } from '@/use-cases/payments/collection-series'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { requireSchoolScope } from '../_lib/auth-helper'
@@ -50,7 +51,6 @@ import { getDashboardOverview } from './_lib/dashboard-overview'
 import { type HomeWidget, readHiddenWidgets } from './_lib/home-widgets'
 import { getParentHome } from './_lib/parent-home'
 import { getTodayAgenda } from './_lib/today-agenda'
-import { loadMealDues } from './cashier/_lib/debtors-data'
 import { OnlinePaymentButton } from './families/[id]/_components/online-payment-button'
 
 type Props = {

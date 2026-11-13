@@ -18,7 +18,7 @@ vi.mock('@/use-cases/payments/payment-stats', () => ({
   familyContactPhones: familyContactPhonesMock,
 }))
 
-const { loadMealDebtors, loadMealDues } = await import('./debtors-data')
+const { loadMealDebtors, loadMealDues } = await import('./meal-debtors')
 
 const TODAY = '2026-11-02'
 

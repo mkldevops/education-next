@@ -20,6 +20,7 @@ import { ConversationHistory } from './conversation-history'
 import { draftIdOf, draftPlans } from './draft-plans'
 import { type ChatFamily, FamilyPicker } from './family-picker'
 import { ToolPart } from './tool-part'
+import { endedWithoutAnswer } from './unfinished-turn'
 
 const CHAT_NAMESPACE = 'dashboard.assistant.chat'
 
@@ -144,7 +145,9 @@ function ChatSession({ session, model, listClassName, onNew }: SessionProps) {
         const code = chatErrorCode(error)
         return t.has(`chat.errors.${code}`) ? t(`chat.errors.${code}`) : t('chat.errors.error')
       })()
-    : null
+    : status === 'ready' && endedWithoutAnswer(messages)
+      ? t('chat.errors.unfinished')
+      : null
 
   const plans = draftPlans(messages)
   const renderToolPart: ChatPartRenderer = (part, key) =>

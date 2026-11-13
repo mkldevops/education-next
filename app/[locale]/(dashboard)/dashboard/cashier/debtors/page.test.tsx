@@ -27,7 +27,7 @@ vi.mock('@/i18n/routing', () => ({
   ),
 }))
 vi.mock('../../../_lib/auth-helper', () => ({ requireSchoolCashier: requireSchoolCashierMock }))
-vi.mock('../_lib/debtors-data', () => ({
+vi.mock('@/use-cases/meals/meal-debtors', () => ({
   loadMealDebtors: loadMealDebtorsMock,
   REMIND_WITHIN_DAYS: 2,
 }))
