@@ -3237,6 +3237,17 @@
           "copiedPrivate": "Lien copié. La page reste privée tant que l'événement n'est pas public et publié.",
           "copyFailed": "Impossible de copier le lien",
           "calendar": "Calendrier public"
+        },
+        "calendar": {
+          "title": "Vue d'ensemble",
+          "titleInPeriod": "Vue d'ensemble {period}",
+          "print": "Imprimer le calendrier",
+          "printTitle": "Calendrier des événements",
+          "back": "Retour aux événements",
+          "hint": "Format A4 paysage — Ctrl+P produit la même page.",
+          "heading": "Année scolaire {period}",
+          "subtitle": "Vue d'ensemble des événements",
+          "empty": "Aucun événement à afficher sur cette période."
         }
       },
       "authSettings": {
