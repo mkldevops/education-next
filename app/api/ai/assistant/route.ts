@@ -1,4 +1,5 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import * as Sentry from '@sentry/nextjs'
 import { convertToModelMessages, generateId, stepCountIs, streamText } from 'ai'
 import { after, NextResponse } from 'next/server'
 import { AI_ASSISTANT_LIMITS, resolveAiAssistantModel } from '@/domain/ai-assistant'
@@ -140,7 +141,24 @@ export async function POST(request: Request) {
       maxOutputTokens: AI_ASSISTANT_LIMITS.maxOutputTokens,
       abortSignal: AbortSignal.timeout(AI_ASSISTANT_LIMITS.agentTimeoutMs),
       onError: ({ error }) => {
-        console.error('[api/ai/assistant] provider error:', toProviderErrorCode(error))
+        const code = toProviderErrorCode(error)
+        console.error('[api/ai/assistant] provider error:', code)
+        Sentry.captureException(error, { tags: { feature: 'ai-assistant', code } })
+      },
+      onAbort: ({ steps }) => {
+        Sentry.captureMessage('AI assistant turn aborted', {
+          level: 'warning',
+          tags: { feature: 'ai-assistant' },
+          extra: { steps: steps.length },
+        })
+      },
+      onFinish: ({ finishReason, steps }) => {
+        if (finishReason === 'stop' || finishReason === 'tool-calls') return
+        Sentry.captureMessage(`AI assistant turn ended: ${finishReason}`, {
+          level: 'warning',
+          tags: { feature: 'ai-assistant', finishReason },
+          extra: { steps: steps.length },
+        })
       },
     })
 
@@ -159,6 +177,7 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('[api/ai/assistant] unexpected error:', error)
+    Sentry.captureException(error, { tags: { feature: 'ai-assistant' } })
     return denied('serverError', 500)
   }
 }
