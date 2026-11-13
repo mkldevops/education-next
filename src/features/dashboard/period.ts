@@ -32,6 +32,14 @@ export async function getSelectedPeriod(schoolId: string): Promise<SelectedPerio
     if (period) return period
   }
 
+  return getDefaultPeriod(schoolId)
+}
+
+/**
+ * Période courante d'une école selon la date seule, sans le cookie du tableau de bord :
+ * les pages publiques n'ont pas de sélecteur pour corriger un choix hérité.
+ */
+export async function getDefaultPeriod(schoolId: string): Promise<SelectedPeriod | null> {
   const periods = await db.period.findMany({
     where: { schoolId, isActive: true },
     orderBy: { startAt: 'desc' },

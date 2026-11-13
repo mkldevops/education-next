@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const listPublicEventsMock = vi.fn()
 const getThemeConfigsMock = vi.fn()
-const getSelectedPeriodMock = vi.fn()
+const getDefaultPeriodMock = vi.fn()
 
 class NotFoundSignal extends Error {
   constructor() {
@@ -32,7 +32,7 @@ vi.mock('@/use-cases/events/list-public-events', () => ({
   listPublicEvents: listPublicEventsMock,
 }))
 vi.mock('@/lib/theme-configs', () => ({ getThemeConfigs: getThemeConfigsMock }))
-vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriod: getSelectedPeriodMock }))
+vi.mock('@/features/dashboard/period', () => ({ getDefaultPeriod: getDefaultPeriodMock }))
 
 const { default: PublicEventsPage } = await import('./page')
 
@@ -43,7 +43,7 @@ describe('PublicEventsPage', () => {
     vi.clearAllMocks()
     listPublicEventsMock.mockResolvedValue({ school, events: [] })
     getThemeConfigsMock.mockResolvedValue([{ name: 'theme_primary', value: '#b91c1c' }])
-    getSelectedPeriodMock.mockResolvedValue(null)
+    getDefaultPeriodMock.mockResolvedValue(null)
   })
 
   it("applies the theme of the school named by the slug, not the visitor's", async () => {
@@ -53,7 +53,7 @@ describe('PublicEventsPage', () => {
     const { container } = render(page)
 
     expect(getThemeConfigsMock).toHaveBeenCalledWith('school-b')
-    expect(getSelectedPeriodMock).toHaveBeenCalledWith('school-b')
+    expect(getDefaultPeriodMock).toHaveBeenCalledWith('school-b')
     expect(container.querySelector('style')?.textContent).toContain('--theme-primary: #b91c1c')
   })
 

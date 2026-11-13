@@ -8,7 +8,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { ThemeProvider } from '@/components/theme-provider'
 import { eventPeriodBounds } from '@/domain/event'
 import { buildEventCalendar, eventCalendarRange } from '@/domain/event-calendar'
-import { getSelectedPeriod } from '@/features/dashboard/period'
+import { getDefaultPeriod } from '@/features/dashboard/period'
 import { EventCategoryLabel, EventStatusBadge } from '@/features/enums'
 import { EventsOverviewCalendar } from '@/features/events'
 import { formatEventDate } from '@/lib/date'
@@ -104,7 +104,7 @@ export default async function PublicEventsPage({ params }: Props) {
   const [themeConfigs, t, period] = await Promise.all([
     getThemeConfigs(school.id),
     getTranslations('publicEvents'),
-    getSelectedPeriod(school.id),
+    getDefaultPeriod(school.id),
   ])
   const groups = groupByMonth(events, locale)
 
