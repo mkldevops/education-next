@@ -3236,6 +3236,17 @@
           "copiedPrivate": "Link copied. The page stays private until the event is public and published.",
           "copyFailed": "Could not copy the link",
           "calendar": "Public calendar"
+        },
+        "calendar": {
+          "title": "Overview",
+          "titleInPeriod": "Overview {period}",
+          "print": "Print calendar",
+          "printTitle": "Events calendar",
+          "back": "Back to events",
+          "hint": "A4 landscape — Ctrl+P produces the same page.",
+          "heading": "School year {period}",
+          "subtitle": "Events overview",
+          "empty": "No events to show for this period."
         }
       },
       "authSettings": {

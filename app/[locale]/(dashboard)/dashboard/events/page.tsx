@@ -1,10 +1,11 @@
 import { Breadcrumbs, buttonVariants, Card, type Column, DataTable, EmptyState } from '@peaklab/ui'
-import { CalendarHeart, ExternalLink } from 'lucide-react'
+import { CalendarHeart, ChevronDown, ExternalLink, Printer } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { eventPeriodBounds, schoolEventsPublicPath, shiftEventToNextYear } from '@/domain/event'
+import { buildEventCalendar, eventCalendarRange } from '@/domain/event-calendar'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { EventCategoryLabel, EventStatusBadge, EventVisibilityLabel } from '@/features/enums'
 import { schoolGateway } from '@/gateways/school-gateway'
@@ -19,6 +20,7 @@ import { CreateEventDialog } from './_components/create-event-dialog'
 import { EventActionsMenu } from './_components/event-actions-menu'
 import { isEventCategory } from './_components/event-enum-values'
 import { EventsFilters } from './_components/events-filters'
+import { EventsOverviewCalendar } from './_components/events-overview-calendar'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -100,6 +102,14 @@ export default async function EventsPage({ params, searchParams }: Props) {
       events: [event],
     })
   }
+
+  // Un événement annulé reste barré dans la liste, mais ne colore aucun jour du calendrier.
+  const calendarEvents = events.filter((event) => event.status !== 'CANCELLED')
+  const calendarRange = eventCalendarRange(calendarEvents, bounds)
+  const calendarMonths = calendarRange ? buildEventCalendar(calendarEvents, calendarRange) : []
+  const printHref = selectedCategory
+    ? `/dashboard/events/calendrier?category=${selectedCategory}`
+    : '/dashboard/events/calendrier'
 
   const columns: Column<(typeof events)[0]>[] = [
     {
@@ -184,6 +194,10 @@ export default async function EventsPage({ params, searchParams }: Props) {
             <ExternalLink className="h-4 w-4" />
             {t('publicLink.calendar')}
           </Link>
+          <Link href={printHref} className={buttonVariants({ variant: 'outline' })}>
+            <Printer className="h-4 w-4" />
+            {t('calendar.print')}
+          </Link>
           <CreateEventDialog mealsEnabled={mealsEnabled} />
         </div>
       </div>
@@ -197,6 +211,21 @@ export default async function EventsPage({ params, searchParams }: Props) {
         />
       ) : (
         <div className="space-y-6">
+          {calendarMonths.length > 0 && (
+            <Card className="overflow-hidden rounded border border-alabaster-700">
+              <details open className="group">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 border-b border-alabaster-700 bg-alabaster-900 px-4 py-3 group-not-open:border-b-0 [&::-webkit-details-marker]:hidden">
+                  <h2 className="text-sm font-semibold text-graphite">
+                    {selectedPeriod
+                      ? t('calendar.titleInPeriod', { period: selectedPeriod.name })
+                      : t('calendar.title')}
+                  </h2>
+                  <ChevronDown className="h-4 w-4 text-graphite-600 transition-transform group-open:rotate-180" />
+                </summary>
+                <EventsOverviewCalendar months={calendarMonths} locale={locale} className="p-4" />
+              </details>
+            </Card>
+          )}
           {groups.map((group) => (
             <Card key={group.key} className="overflow-hidden rounded border border-alabaster-700">
               <div className="border-b border-alabaster-700 bg-alabaster-900 px-4 py-3">
