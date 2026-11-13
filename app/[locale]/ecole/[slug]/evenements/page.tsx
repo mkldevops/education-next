@@ -6,7 +6,11 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { ThemeProvider } from '@/components/theme-provider'
+import { eventPeriodBounds } from '@/domain/event'
+import { buildEventCalendar, eventCalendarRange } from '@/domain/event-calendar'
+import { getDefaultPeriod } from '@/features/dashboard/period'
 import { EventCategoryLabel, EventStatusBadge } from '@/features/enums'
+import { EventsOverviewCalendar } from '@/features/events'
 import { formatEventDate } from '@/lib/date'
 import { getThemeConfigs } from '@/lib/theme-configs'
 import { cn } from '@/lib/utils'
@@ -97,18 +101,30 @@ export default async function PublicEventsPage({ params }: Props) {
   if (result === 'notFound' || result === 'notConfigured') notFound()
 
   const { school, events } = result
-  const [themeConfigs, t] = await Promise.all([
+  const [themeConfigs, t, period] = await Promise.all([
     getThemeConfigs(school.id),
     getTranslations('publicEvents'),
+    getDefaultPeriod(school.id),
   ])
   const groups = groupByMonth(events, locale)
+
+  // La vue d'ensemble couvre l'année scolaire en cours : la liste, elle, garde tout
+  // l'historique public, qui déborderait les douze mois d'une grille.
+  const calendarEvents = events.filter((event) => event.status !== 'CANCELLED')
+  const calendarRange = period
+    ? eventCalendarRange(calendarEvents, eventPeriodBounds(period))
+    : null
+  const calendarMonths = calendarRange ? buildEventCalendar(calendarEvents, calendarRange) : []
+  const hasCalendarEvents = calendarMonths.some((month) =>
+    month.weeks.some((week) => week.some((day) => (day?.categories.length ?? 0) > 0))
+  )
 
   return (
     <div className="min-h-screen bg-alabaster-900">
       {/* Le layout habille la page avec l'école du visiteur (souvent aucune) : celle du
           `slug` prime ici, déclarée après et donc gagnante sur `:root`. */}
       <ThemeProvider configs={themeConfigs} />
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         <header className="mb-8">
           <p className="text-sm font-medium text-foreground">{school.name}</p>
           <h1 className="mt-1 text-3xl font-bold text-graphite">{t('title')}</h1>
@@ -121,6 +137,15 @@ export default async function PublicEventsPage({ params }: Props) {
             {t('subscribe')}
           </a>
         </header>
+
+        {period && hasCalendarEvents && (
+          <Card className="mb-8 rounded border border-alabaster-700 bg-white p-4">
+            <h2 className="mb-4 text-sm font-semibold text-graphite">
+              {t('overview', { period: period.name })}
+            </h2>
+            <EventsOverviewCalendar months={calendarMonths} locale={locale} />
+          </Card>
+        )}
 
         {events.length === 0 ? (
           <EmptyState icon={CalendarHeart} title={t('empty')} />

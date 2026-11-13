@@ -3833,7 +3833,8 @@
     "title": "Événements",
     "subtitle": "Les événements publics de {schoolName}.",
     "empty": "Aucun événement public pour le moment.",
-    "subscribe": "Ajouter au calendrier"
+    "subscribe": "Ajouter au calendrier",
+    "overview": "Vue d'ensemble {period}"
   },
   "publicSchedule": {
     "metadata": {
