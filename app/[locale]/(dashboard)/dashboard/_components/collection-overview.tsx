@@ -4,8 +4,8 @@ import type { ReactNode } from 'react'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { cn } from '@/lib/utils'
+import type { MealServiceDues } from '@/use-cases/meals/meal-debtors'
 import type { PaymentStats } from '@/use-cases/payments/payment-stats'
-import type { MealServiceDues } from '../cashier/_lib/debtors-data'
 import { RemainingHorizonSwitch } from './remaining-horizon-switch'
 
 interface Props {

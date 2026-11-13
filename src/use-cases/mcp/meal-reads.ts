@@ -10,6 +10,7 @@ import { db } from '@/lib/db'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { loadMealAccountSummaries } from '@/use-cases/meals/meal-account-summaries'
+import { loadMealDebtors } from '@/use-cases/meals/meal-debtors'
 import type { DraftScope } from './draft-scope'
 
 export const studentMealsSchema = z.object({
@@ -26,6 +27,7 @@ export const staffMealSubscriptionsSchema = z.object({
   service: z.enum(MealService).optional(),
   date: z.iso.date().optional(),
 })
+export const mealDebtorsSchema = z.object({ service: z.enum(MealService).optional() })
 export const familyReceiptsSchema = z.object({
   familyId: z.uuid(),
   limit: z.number().int().min(1).max(100).default(50),
@@ -145,6 +147,32 @@ export async function getStaffMealsFromMcp(
  * Personnel actif de l'école et ses comptes repas : segment qui sert `date` (ou le prochain),
  * tous les segments, payé jusqu'au et reste dû au jour de l'école. Sans compte : `accounts` vide.
  */
+/**
+ * Élèves à relancer pour la cantine ou le goûter, au même calcul que l'écran « impayés » de
+ * la caisse : jours dus, ou presque plus aucun jour payé devant soi.
+ */
+export async function listMealDebtorsFromMcp(
+  scope: DraftScope,
+  input: z.infer<typeof mealDebtorsSchema>,
+  loadDebtors = loadMealDebtors
+) {
+  const parsed = mealDebtorsSchema.safeParse(input)
+  if (!parsed.success) return 'validationError' as const
+  const { schoolId } = scope
+  if (!(await isMealsEnabled(schoolId))) return 'mealsDisabled' as const
+  const { timeZone } = await getSchoolRegionalSettings(schoolId)
+  const today = schoolToday(timeZone)
+  const { service } = parsed.data
+  const rows = await loadDebtors(schoolId, today)
+  const debtors = service ? rows.filter((row) => row.service === service) : rows
+  return {
+    today,
+    count: debtors.length,
+    dueAmount: debtors.reduce((sum, row) => sum + row.dueAmount, 0),
+    debtors,
+  }
+}
+
 export async function listStaffMealSubscriptionsFromMcp(
   scope: DraftScope,
   input: z.infer<typeof staffMealSubscriptionsSchema>

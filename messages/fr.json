@@ -3590,6 +3590,7 @@
         "errors": {
           "unauthorized": "Session expirée : reconnectez-vous.",
           "forbidden": "Cette action est réservée aux administrateurs de l'école.",
+          "unfinished": "Je me suis arrêté avant de terminer : rien n'a été enregistré après la dernière action affichée. Renvoyez la demande ou reformulez-la.",
           "aiAssistantDisabled": "L'assistant a été désactivé par un super-administrateur.",
           "aiAssistantNotConfigured": "Aucune clé OpenRouter n'est configurée : l'assistant est indisponible.",
           "tooManyRequests": "Trop de demandes : patientez une minute.",

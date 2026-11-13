@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { commitAfterPreview } from './commit-after-preview'
+import { commitAfterPreview, prepareAssistantStep } from './commit-after-preview'
 
 const tools = new Set(['preview_record_payment', 'commit_record_payment', 'list_plans'])
 const clean = { draftId: 'd1', checksum: 'c1', plan: {}, warnings: [], blockers: [] }
@@ -43,5 +43,21 @@ describe('commitAfterPreview', () => {
     ]
     expect(commitAfterPreview(steps, tools)).toBeUndefined()
     expect(commitAfterPreview([], tools)).toBeUndefined()
+  })
+})
+
+describe('prepareAssistantStep', () => {
+  const idle = { toolResults: [] }
+
+  it('reserves the last allowed step for a text answer', () => {
+    expect(prepareAssistantStep([idle, idle], tools, 3)).toEqual({ toolChoice: 'none' })
+    expect(prepareAssistantStep([idle], tools, 3)).toBeUndefined()
+  })
+
+  it('still forces the commit of a clean preview on the last step', () => {
+    const steps = [idle, { toolResults: [{ toolName: 'preview_record_payment', output: clean }] }]
+    expect(prepareAssistantStep(steps, tools, 3)).toEqual({
+      toolChoice: { type: 'tool', toolName: 'commit_record_payment' },
+    })
   })
 })

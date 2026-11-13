@@ -8,9 +8,9 @@ import { whatsAppLink } from '@/domain/whatsapp-link'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
+import { loadMealDebtors, REMIND_WITHIN_DAYS } from '@/use-cases/meals/meal-debtors'
 import { requireSchoolCashier } from '../../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../../_lib/page-metadata'
-import { loadMealDebtors, REMIND_WITHIN_DAYS } from '../_lib/debtors-data'
 
 type Props = {
   params: Promise<{ locale: string }>

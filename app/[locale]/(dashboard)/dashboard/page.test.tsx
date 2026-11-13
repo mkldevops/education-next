@@ -62,7 +62,7 @@ vi.mock('@/use-cases/class-schedules/is-class-schedule-enabled', () => ({
   isClassScheduleEnabled: isClassScheduleEnabledMock,
 }))
 vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
-vi.mock('./cashier/_lib/debtors-data', () => ({ loadMealDues: loadMealDuesMock }))
+vi.mock('@/use-cases/meals/meal-debtors', () => ({ loadMealDues: loadMealDuesMock }))
 vi.mock('./_components/collection-overview', () => ({
   CollectionOverview: ({
     payments,
