@@ -8,6 +8,7 @@ import { eventPeriodBounds, schoolEventsPublicPath, shiftEventToNextYear } from 
 import { buildEventCalendar, eventCalendarRange } from '@/domain/event-calendar'
 import { getSelectedPeriod } from '@/features/dashboard/period'
 import { EventCategoryLabel, EventStatusBadge, EventVisibilityLabel } from '@/features/enums'
+import { EventsOverviewCalendar } from '@/features/events'
 import { schoolGateway } from '@/gateways/school-gateway'
 import { Link } from '@/i18n/routing'
 import { formatEventDate } from '@/lib/date'
@@ -20,7 +21,6 @@ import { CreateEventDialog } from './_components/create-event-dialog'
 import { EventActionsMenu } from './_components/event-actions-menu'
 import { isEventCategory } from './_components/event-enum-values'
 import { EventsFilters } from './_components/events-filters'
-import { EventsOverviewCalendar } from './_components/events-overview-calendar'
 
 type Props = {
   params: Promise<{ locale: string }>

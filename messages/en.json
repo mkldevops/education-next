@@ -3832,7 +3832,8 @@
     "title": "Events",
     "subtitle": "Public events at {schoolName}.",
     "empty": "No public event yet.",
-    "subscribe": "Add to calendar"
+    "subscribe": "Add to calendar",
+    "overview": "Overview {period}"
   },
   "publicSchedule": {
     "metadata": {
