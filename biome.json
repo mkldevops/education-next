@@ -64,6 +64,15 @@
   },
   "overrides": [
     {
+      "includes": ["src/components/ui/**"],
+      "linter": {
+        "domains": {
+          "next": "recommended",
+          "react": "recommended"
+        }
+      }
+    },
+    {
       "includes": [
         "prisma/seed.ts",
         "prisma/seed-demo.ts",
