@@ -3833,7 +3833,18 @@
     "subtitle": "Public events at {schoolName}.",
     "empty": "No public event yet.",
     "subscribe": "Add to calendar",
-    "overview": "Overview {period}"
+    "overview": "Overview {period}",
+    "print": "Print / PDF",
+    "showPastMonths": "Show past months",
+    "archives": "Archives ({count, plural, one {# event} other {# events}})",
+    "archivesTitle": "Archives",
+    "backToCurrent": "Current year",
+    "printTitle": "Events calendar — {schoolName}",
+    "printHeading": "Calendar {period}",
+    "printSubtitle": "The school year's events.",
+    "printHint": "Choose “Save as PDF” in the print dialog to keep a copy.",
+    "back": "Back to events",
+    "printEmpty": "No public events for this school year."
   },
   "publicSchedule": {
     "metadata": {

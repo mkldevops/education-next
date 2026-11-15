@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildEventCalendar, eventCalendarRange, MAX_EVENT_CALENDAR_MONTHS } from './event-calendar'
+import {
+  buildEventCalendar,
+  eventCalendarRange,
+  isPastEventCalendarMonth,
+  MAX_EVENT_CALENDAR_MONTHS,
+} from './event-calendar'
 
 const utc = (value: string) => new Date(`${value}T00:00:00.000Z`)
 
@@ -17,7 +22,10 @@ describe('buildEventCalendar', () => {
       [2026, 9],
       [2026, 10],
     ])
-    expect(months[0]?.weeks[0]?.slice(0, 2)).toEqual([null, { day: 1, categories: [], titles: [] }])
+    expect(months[0]?.weeks[0]?.slice(0, 2)).toEqual([
+      null,
+      { day: 1, categories: [], titles: [], eventId: null },
+    ])
     expect(months.every((m) => m.weeks.every((week) => week.length === 7))).toBe(true)
   })
 
@@ -96,5 +104,40 @@ describe('eventCalendarRange', () => {
         null
       )
     ).toEqual({ from: utc('2026-10-02'), until: utc('2026-11-09') })
+  })
+})
+
+describe('event links and past months', () => {
+  it('links a day to its first event carrying an id', () => {
+    const months = buildEventCalendar(
+      [
+        { title: 'Sans id', category: 'OTHER', startAt: utc('2026-09-03'), endAt: null },
+        {
+          id: 'evt-1',
+          title: 'Réunion',
+          category: 'MEETING',
+          startAt: utc('2026-09-03'),
+          endAt: null,
+        },
+        {
+          id: 'evt-2',
+          title: 'Sortie',
+          category: 'OUTING',
+          startAt: utc('2026-09-03'),
+          endAt: null,
+        },
+      ],
+      { from: utc('2026-09-01'), until: utc('2026-10-01') }
+    )
+    expect(dayOf(months, 0, 3)?.eventId).toBe('evt-1')
+    expect(dayOf(months, 0, 4)?.eventId).toBeNull()
+  })
+
+  it('tells past months from the current and upcoming ones', () => {
+    const today = utc('2026-11-15')
+    expect(isPastEventCalendarMonth({ year: 2026, month: 9 }, today)).toBe(true)
+    expect(isPastEventCalendarMonth({ year: 2025, month: 11 }, today)).toBe(true)
+    expect(isPastEventCalendarMonth({ year: 2026, month: 10 }, today)).toBe(false)
+    expect(isPastEventCalendarMonth({ year: 2027, month: 0 }, today)).toBe(false)
   })
 })

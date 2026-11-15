@@ -20,6 +20,8 @@ export const MAX_EVENT_CALENDAR_MONTHS = 12
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export type EventCalendarInput = {
+  /** Fourni, il fait du jour un lien vers l'événement dans la liste qui suit la grille. */
+  id?: string
   title: string
   category: EventCategory
   startAt: Date
@@ -31,6 +33,8 @@ type EventCalendarDay = {
   /** Catégories du jour, sans doublon, dans l'ordre de `EVENT_CALENDAR_CATEGORIES`. */
   categories: EventCategory[]
   titles: string[]
+  /** Premier événement du jour qui porte un `id`, cible du lien du jour. */
+  eventId: string | null
 }
 
 export type EventCalendarMonth = {
@@ -39,6 +43,17 @@ export type EventCalendarMonth = {
   month: number
   /** Semaines du lundi au dimanche ; `null` hors du mois. */
   weeks: (EventCalendarDay | null)[][]
+}
+
+/** Le mois de `month` est-il entièrement écoulé à la date `today` (lue en UTC) ? */
+export function isPastEventCalendarMonth(
+  month: Pick<EventCalendarMonth, 'year' | 'month'>,
+  today: Date
+): boolean {
+  return (
+    month.year < today.getUTCFullYear() ||
+    (month.year === today.getUTCFullYear() && month.month < today.getUTCMonth())
+  )
 }
 
 function dayIndex(value: Date): number {
@@ -119,6 +134,7 @@ function buildMonth(
         events.some((event) => event.category === category)
       ),
       titles: events.map((event) => event.title),
+      eventId: events.find((event) => event.id)?.id ?? null,
     })
   }
   while (cells.length % 7 !== 0) cells.push(null)
