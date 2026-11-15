@@ -2,10 +2,16 @@
 
 import { Button } from '@peaklab/ui'
 import { Sparkles, X } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { usePathname } from '@/i18n/routing'
-import { AssistantChat } from './assistant-chat'
+
+// Le chat embarque le SDK IA et ses schémas : il n'est chargé qu'à la première ouverture.
+const AssistantChat = dynamic(
+  () => import('./assistant-chat').then((module) => module.AssistantChat),
+  { ssr: false, loading: () => <div aria-busy="true" className="min-h-0 flex-1" /> }
+)
 
 const ASSISTANT_PAGE_PATH = '/dashboard/enroll-assistant'
 
@@ -14,12 +20,14 @@ type Props = { model: string }
 /**
  * Assistant général, présent sur tout le tableau de bord de l'administrateur.
  *
- * Monté dans le layout, il garde la conversation d'une page à l'autre. Il s'efface sur la
+ * Monté dans le layout, il garde la conversation d'une page à l'autre. Le panneau n'est
+ * chargé qu'à la première ouverture puis reste monté, fermé ou non. Il s'efface sur la
  * page dédiée, qui porte sa propre conversation en pleine largeur.
  */
 export function AssistantLauncher({ model }: Props) {
   const t = useTranslations('dashboard.assistant')
   const [open, setOpen] = useState(false)
+  const [opened, setOpened] = useState(false)
   const pathname = usePathname()
 
   if (pathname === ASSISTANT_PAGE_PATH) return null
@@ -29,7 +37,10 @@ export function AssistantLauncher({ model }: Props) {
       {open ? null : (
         <Button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            setOpen(true)
+            setOpened(true)
+          }}
           className="fixed right-4 bottom-4 z-40 rounded-full shadow-lg sm:right-6 sm:bottom-6"
           aria-label={t('open')}
         >
@@ -59,11 +70,13 @@ export function AssistantLauncher({ model }: Props) {
             <X className="h-4 w-4" aria-hidden />
           </Button>
         </header>
-        <AssistantChat
-          model={model}
-          className="min-h-0 flex-1 p-4"
-          listClassName="max-h-none flex-1"
-        />
+        {opened ? (
+          <AssistantChat
+            model={model}
+            className="min-h-0 flex-1 p-4"
+            listClassName="max-h-none flex-1"
+          />
+        ) : null}
       </aside>
     </>
   )
