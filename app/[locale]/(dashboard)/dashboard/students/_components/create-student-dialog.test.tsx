@@ -31,6 +31,7 @@ describe('CreateStudentDialog', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^firstname/)
     fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Alice' } })
     fireEvent.change(screen.getByLabelText(/^lastname/), { target: { value: 'Martin' } })
     fireEvent.click(screen.getByRole('combobox', { name: 'selectPlan' }))
@@ -63,7 +64,7 @@ describe('CreateStudentDialog', () => {
     })
   })
 
-  it('prefills the last name with the family name and marks the required fields', () => {
+  it('prefills the last name with the family name and marks the required fields', async () => {
     render(
       <CreateStudentDialog
         familyId="550e8400-e29b-41d4-a716-446655440001"
@@ -74,6 +75,7 @@ describe('CreateStudentDialog', () => {
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^firstname/)
 
     const lastname = screen.getByLabelText(/^lastname/)
     expect(lastname).toHaveValue('Martin')
@@ -97,6 +99,7 @@ describe('CreateStudentDialog', () => {
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^firstname/)
 
     const section = screen.getByText('healthSection').closest('details') as HTMLDetailsElement
     expect(section.open).toBe(false)

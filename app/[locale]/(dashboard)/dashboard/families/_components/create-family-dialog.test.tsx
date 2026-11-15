@@ -41,6 +41,7 @@ const openWithChild = async () => {
     />
   )
   fireEvent.click(screen.getByRole('button', { name: 'title' }))
+  await screen.findByLabelText(/^name/)
   fireEvent.change(screen.getByLabelText(/^name/), { target: { value: 'Martin' } })
   submit()
   fireEvent.click(await screen.findByRole('button', { name: 'addChild' }))
@@ -61,6 +62,7 @@ describe('CreateFamilyDialog', () => {
   it('keeps the minimal flow: a family name only', async () => {
     render(<CreateFamilyDialog />)
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^name/)
 
     fireEvent.change(screen.getByLabelText(/^name/), { target: { value: 'Martin' } })
     submit()
@@ -86,6 +88,7 @@ describe('CreateFamilyDialog', () => {
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^name/)
 
     fireEvent.change(screen.getAllByLabelText('firstname')[0], { target: { value: 'Jean' } })
     fireEvent.change(screen.getAllByLabelText('lastname')[0], { target: { value: 'Dupont' } })
@@ -125,6 +128,7 @@ describe('CreateFamilyDialog', () => {
   it('creates a child without enrollment when no class is available', async () => {
     render(<CreateFamilyDialog paymentsEnabled={false} />)
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^name/)
 
     fireEvent.change(screen.getByLabelText(/^name/), { target: { value: 'Martin' } })
     submit()

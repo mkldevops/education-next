@@ -13,16 +13,16 @@ import {
 } from '@peaklab/ui'
 import { Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
 import { Link } from '@/i18n/routing'
 import { markAnnouncementsSeenAction } from '../_lib/announcement-actions'
-import { AnnouncementMarkdown } from './announcement-markdown'
 import { AnnouncementMedia } from './announcement-media'
 
 export type AnnouncementDialogItem = {
   title: string
   summary: string | null
-  body: string | null
+  /** Corps markdown déjà rendu par le serveur. */
+  body: ReactNode
   imageUrl: string | null
   videoUrl: string | null
   link: string | null
@@ -69,7 +69,7 @@ function AnnouncementDialogContent({ announcement }: { announcement: Announcemen
         {announcement.summary ? (
           <p className="text-sm leading-relaxed text-graphite-600">{announcement.summary}</p>
         ) : (
-          announcement.body && <AnnouncementMarkdown>{announcement.body}</AnnouncementMarkdown>
+          announcement.body
         )}
       </DialogBody>
       <DialogFooter>

@@ -14,7 +14,7 @@ vi.mock('../../../_lib/payment-actions', () => ({ recordPaymentAction: vi.fn() }
 const family = { id: 'family-1', name: 'Benali' }
 
 describe('OutstandingFamilyActions', () => {
-  it('dials the contact phone, stripped of its separators', () => {
+  it('dials the contact phone, stripped of its separators', async () => {
     render(
       <OutstandingFamilyActions
         family={family}
@@ -29,7 +29,7 @@ describe('OutstandingFamilyActions', () => {
     expect(call).toHaveTextContent('06 12 34 56 78')
   })
 
-  it('opens a WhatsApp conversation prefilled with the overdue amount', () => {
+  it('opens a WhatsApp conversation prefilled with the overdue amount', async () => {
     render(
       <OutstandingFamilyActions
         family={family}
@@ -47,7 +47,7 @@ describe('OutstandingFamilyActions', () => {
     expect(whatsApp).toHaveAttribute('target', '_blank')
   })
 
-  it('offers no WhatsApp link for a number it cannot place', () => {
+  it('offers no WhatsApp link for a number it cannot place', async () => {
     render(
       <OutstandingFamilyActions family={family} phone="612" overdueAmount="120 €" currency="EUR" />
     )
@@ -56,7 +56,7 @@ describe('OutstandingFamilyActions', () => {
     expect(screen.queryByRole('link', { name: 'whatsAppFamily:Benali' })).not.toBeInTheDocument()
   })
 
-  it('says so when the family has no phone', () => {
+  it('says so when the family has no phone', async () => {
     render(
       <OutstandingFamilyActions family={family} phone={null} overdueAmount="120 €" currency="EUR" />
     )
@@ -65,13 +65,14 @@ describe('OutstandingFamilyActions', () => {
     expect(screen.getByText('noPhone')).toBeInTheDocument()
   })
 
-  it('opens the existing payment dialog already set on the family', () => {
+  it('opens the existing payment dialog already set on the family', async () => {
     render(
       <OutstandingFamilyActions family={family} phone={null} overdueAmount="120 €" currency="EUR" />
     )
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'recordFor:Benali' }))
+    await screen.findByLabelText('amount')
 
     expect(screen.getByRole('dialog')).toHaveTextContent('Benali')
     expect(screen.getByLabelText('amount')).toBeInTheDocument()

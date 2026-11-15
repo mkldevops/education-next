@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const requireSchoolSessionMock = vi.fn()
@@ -248,7 +248,7 @@ describe('FamilyDetailPage, payments enabled', () => {
       })
     )
 
-    expect(document.querySelector('input[name="amount"]')).not.toBeNull()
+    await waitFor(() => expect(document.querySelector('input[name="amount"]')).not.toBeNull())
   })
 })
 
@@ -272,13 +272,15 @@ describe('FamilyDetailPage, cashier link', () => {
     await renderPayment()
 
     expect(heroBannerMock).toHaveBeenCalledWith(expect.objectContaining({ canOpenCashier: true }))
-    expect(cashierLink()).not.toBeNull()
+    await waitFor(() => expect(cashierLink()).not.toBeNull())
   })
 
   it('hides the link when the cashier guard refuses', async () => {
     await renderPayment()
 
     expect(heroBannerMock).toHaveBeenCalledWith(expect.objectContaining({ canOpenCashier: false }))
+    // Attendre le formulaire chargé à l'ouverture, sinon l'absence du lien ne prouve rien.
+    await waitFor(() => expect(document.querySelector('input[name="amount"]')).not.toBeNull())
     expect(cashierLink()).toBeNull()
   })
 
