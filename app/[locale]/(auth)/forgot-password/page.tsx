@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { ForgotPasswordForm } from '@/features/auth'
+import { ForgotPasswordForm } from '@/features/auth/forgot-password-form'
 import { redirect } from '@/i18n/routing'
 import { getSchoolContext } from '@/lib/school-context'
 

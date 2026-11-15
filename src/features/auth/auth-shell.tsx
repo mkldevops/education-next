@@ -1,8 +1,8 @@
-import { cn } from '@peaklab/ui'
 import { CalendarDays, CircleCheckBig, GraduationCap, WalletCards } from 'lucide-react'
 import { Fraunces } from 'next/font/google'
 import { getTranslations } from 'next-intl/server'
 import type { ReactNode } from 'react'
+import { cn } from '@/components/ui/utils'
 
 /**
  * Fraunces n'est chargée que sous ce shell (surfaces publiques et auth, arbitrage de

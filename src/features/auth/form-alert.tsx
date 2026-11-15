@@ -1,6 +1,6 @@
-import { cn } from '@peaklab/ui'
 import { CircleAlert, CircleCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { cn } from '@/components/ui/utils'
 
 type Props = {
   children: ReactNode

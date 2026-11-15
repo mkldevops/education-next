@@ -1,9 +1,10 @@
 'use client'
 
-import { cn, Input, type InputProps } from '@peaklab/ui'
 import { Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
+import { Input, type InputProps } from '@/components/ui/input'
+import { cn } from '@/components/ui/utils'
 
 type Props = Omit<InputProps, 'type'> & { id: string }
 

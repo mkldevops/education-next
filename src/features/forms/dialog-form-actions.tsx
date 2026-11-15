@@ -1,9 +1,10 @@
 'use client'
 
-import type { ButtonProps } from '@peaklab/ui'
-import { Button, DialogFooter } from '@peaklab/ui'
 import type { useTranslations } from 'next-intl'
 import type { ReactNode } from 'react'
+import type { ButtonProps } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
+import { DialogFooter } from '@/components/ui/dialog/dialog'
 
 type Translator = ReturnType<typeof useTranslations>
 

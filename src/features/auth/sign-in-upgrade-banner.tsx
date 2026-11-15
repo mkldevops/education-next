@@ -1,6 +1,5 @@
 'use client'
 
-import { Button } from '@peaklab/ui'
 import { browserSupportsWebAuthn, startRegistration } from '@simplewebauthn/browser'
 import { KeyRound } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -11,6 +10,7 @@ import {
   getPasskeyRegistrationOptions,
   verifyPasskeyRegistration,
 } from '@/actions'
+import { Button } from '@/components/ui/button'
 import type { SignInUpgradeOffer } from '@/domain/sign-in-upgrade'
 import { linkSocial } from '@/lib/auth-client'
 import { toast } from '@/lib/toast'

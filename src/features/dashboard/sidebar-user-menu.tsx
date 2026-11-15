@@ -1,6 +1,5 @@
 'use client'
 
-import { Dialog, useDialog, useMenu } from '@peaklab/ui'
 import {
   ChevronsUpDown,
   Download,
@@ -10,6 +9,8 @@ import {
   PanelLeftOpen,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { Dialog, useDialog } from '@/components/ui/dialog/dialog'
+import { useMenu } from '@/components/ui/use-menu'
 import { IosInstallGuide, useInstallApp } from '@/features/pwa/install-app'
 import { Link } from '@/i18n/routing'
 import { cn } from '@/lib/utils'

@@ -1,9 +1,10 @@
 'use client'
 
-import { Button, buttonVariants, cn } from '@peaklab/ui'
 import { Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useActionState, useState } from 'react'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/components/ui/utils'
 import { authButtonClass } from '@/features/auth/auth-styles'
 import { FormAlert } from '@/features/auth/form-alert'
 import { AUTHORIZE_PARAMS, type AuthorizeQuery } from '../_lib/authorize-query'

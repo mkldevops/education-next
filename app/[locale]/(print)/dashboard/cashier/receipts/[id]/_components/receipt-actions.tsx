@@ -1,19 +1,18 @@
 'use client'
 
+import { Link2, Mail, MessageCircle, Share2 } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
+import { useId, useTransition } from 'react'
+import { Button } from '@/components/ui/button'
 import {
-  Button,
   Dialog,
   DialogBody,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Input,
-  Label,
-} from '@peaklab/ui'
-import { Link2, Mail, MessageCircle, Share2 } from 'lucide-react'
-import { useLocale, useTranslations } from 'next-intl'
-import { useId, useTransition } from 'react'
+} from '@/components/ui/dialog/dialog'
+import { Input, Label } from '@/components/ui/input'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { toast, toastActionError } from '@/lib/toast'
 import {
