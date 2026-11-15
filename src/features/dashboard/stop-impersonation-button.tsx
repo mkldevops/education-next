@@ -1,9 +1,9 @@
 'use client'
 
-import { Button } from '@peaklab/ui'
 import { LogOut } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { useRouter } from '@/i18n/routing'
 import { stopImpersonating } from '@/lib/auth-client'
 import { toast } from '@/lib/toast'

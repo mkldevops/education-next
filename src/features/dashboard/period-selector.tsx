@@ -1,10 +1,16 @@
 'use client'
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@peaklab/ui'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { setSelectedPeriod } from '@/actions/period-actions'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { isPeriodCurrent } from '@/domain/period'
 
 interface PeriodSelectorProps {

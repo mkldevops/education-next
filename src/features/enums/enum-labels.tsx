@@ -1,5 +1,5 @@
-import { StatusBadge } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
+import { StatusBadge } from '@/components/ui/status-badge'
 import type {
   EnrollmentStatus,
   EventCategory,

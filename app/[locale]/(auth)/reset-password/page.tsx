@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { ResetPasswordForm } from '@/features/auth'
+import { ResetPasswordForm } from '@/features/auth/reset-password-form'
 
 type Props = {
   params: Promise<{ locale: string }>

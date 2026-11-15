@@ -1,9 +1,10 @@
 'use client'
 
-import { Button, Input, Label } from '@peaklab/ui'
 import { Loader2, MailCheck } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input, Label } from '@/components/ui/input'
 import { requestPasswordReset } from '@/lib/auth-client'
 import { AuthHeading } from './auth-heading'
 import { authButtonClass, authFieldClass, authLinkClass } from './auth-styles'

@@ -1,10 +1,10 @@
 'use client'
 
-import { Button } from '@peaklab/ui'
 import { RefreshCw, WifiOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import { watchServiceWorkerUpdates } from './service-worker-updates'
 
 export function ServiceWorkerRegister() {

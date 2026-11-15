@@ -1,11 +1,12 @@
 'use client'
 
-import { Button, Input, Label } from '@peaklab/ui'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { KeyRound, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { getPasskeyAuthenticationOptions } from '@/actions'
+import { Button } from '@/components/ui/button'
+import { Input, Label } from '@/components/ui/input'
 import { Link, useRouter } from '@/i18n/routing'
 import { signIn } from '@/lib/auth-client'
 import { authButtonClass, authFieldClass, authLinkClass } from './auth-styles'

@@ -1,6 +1,7 @@
-import { buttonVariants, cn } from '@peaklab/ui'
 import { CircleCheck, Clock, Link2Off } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/components/ui/utils'
 import { AuthHeading } from '@/features/auth/auth-heading'
 import { authButtonClass } from '@/features/auth/auth-styles'
 import { Link } from '@/i18n/routing'
