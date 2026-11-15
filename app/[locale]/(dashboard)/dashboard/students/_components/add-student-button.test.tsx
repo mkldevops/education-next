@@ -12,7 +12,7 @@ vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ push: vi.fn(), replace })
 vi.mock('../../../_lib/student-actions', () => ({ createStudentAction: vi.fn() }))
 
 describe('AddStudentButton', () => {
-  it('opens the existing student form for the family picked first', () => {
+  it('opens the existing student form for the family picked first', async () => {
     render(
       <AddStudentButton
         families={[
@@ -29,6 +29,7 @@ describe('AddStudentButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
     expect(screen.queryByLabelText(/^firstname/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Durand' }))
+    await screen.findByLabelText(/^firstname/)
 
     expect(screen.getByLabelText(/^firstname/)).toBeInTheDocument()
     expect(screen.getByLabelText(/^lastname/)).toHaveValue('Durand')

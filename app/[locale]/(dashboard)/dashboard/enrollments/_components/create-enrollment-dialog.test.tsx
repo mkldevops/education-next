@@ -20,12 +20,14 @@ const students = [{ id: 'student-1', name: 'Alice Martin' }]
 const plans = [{ id: 'plan-1', name: 'Tarif annuel' }]
 const classes = [{ id: 'class-1', name: 'CE1' }]
 
-function openDialog() {
+// Le formulaire est chargé à l'ouverture : attendre qu'il remplace le panneau d'attente.
+async function openDialog() {
   fireEvent.click(screen.getByRole('button', { name: 'title' }))
+  await screen.findByRole('button', { name: 'cancel' })
 }
 
 describe('CreateEnrollmentDialog with payments enabled', () => {
-  it('shows the plan selector and the amount due field', () => {
+  it('shows the plan selector and the amount due field', async () => {
     render(
       <CreateEnrollmentDialog
         students={students}
@@ -35,7 +37,7 @@ describe('CreateEnrollmentDialog with payments enabled', () => {
         currency="EUR"
       />
     )
-    openDialog()
+    await openDialog()
 
     expect(screen.getByLabelText('selectPlan')).toBeInTheDocument()
     expect(screen.getByLabelText('totalAmount')).toBeInTheDocument()
@@ -44,7 +46,7 @@ describe('CreateEnrollmentDialog with payments enabled', () => {
 })
 
 describe('CreateEnrollmentDialog with payments disabled', () => {
-  it('hides the plan selector and the amount due field, keeping the class selector', () => {
+  it('hides the plan selector and the amount due field, keeping the class selector', async () => {
     render(
       <CreateEnrollmentDialog
         students={students}
@@ -54,7 +56,7 @@ describe('CreateEnrollmentDialog with payments disabled', () => {
         currency="EUR"
       />
     )
-    openDialog()
+    await openDialog()
 
     expect(screen.queryByLabelText('selectPlan')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('totalAmount')).not.toBeInTheDocument()
@@ -115,7 +117,7 @@ describe('CreateEnrollmentDialog guided selectors', () => {
     { id: 'class-ce2', name: 'CE2-A', levelId: 'ce2', capacity: 18, enrolled: 16 },
   ]
 
-  function renderGuided() {
+  async function renderGuided() {
     render(
       <CreateEnrollmentDialog
         students={guidedStudents}
@@ -125,7 +127,7 @@ describe('CreateEnrollmentDialog guided selectors', () => {
         currency="EUR"
       />
     )
-    openDialog()
+    await openDialog()
   }
 
   function searchStudent(query: string) {
@@ -138,8 +140,8 @@ describe('CreateEnrollmentDialog guided selectors', () => {
     fireEvent.click(await screen.findByRole('option', { name }))
   }
 
-  it('preselects neither a student nor a class and blocks submission', () => {
-    renderGuided()
+  it('preselects neither a student nor a class and blocks submission', async () => {
+    await renderGuided()
 
     expect(screen.getByLabelText('selectStudent')).toHaveValue('')
     expect(screen.getByRole('combobox', { name: 'selectClass' })).toHaveTextContent('placeholder')
@@ -147,7 +149,7 @@ describe('CreateEnrollmentDialog guided selectors', () => {
   })
 
   it('filters students by family name and flags those already enrolled', async () => {
-    renderGuided()
+    await renderGuided()
 
     searchStudent('haddad')
 
@@ -157,7 +159,7 @@ describe('CreateEnrollmentDialog guided selectors', () => {
   })
 
   it('lists the suggested level first, with remaining seats and full classes flagged', async () => {
-    renderGuided()
+    await renderGuided()
     await pickStudent('alice', /Alice Martin/)
 
     fireEvent.click(screen.getByRole('combobox', { name: 'selectClass' }))
@@ -175,7 +177,7 @@ describe('CreateEnrollmentDialog guided selectors', () => {
   })
 
   it('requires replacing the existing enrollment of an already enrolled student', async () => {
-    renderGuided()
+    await renderGuided()
     await pickStudent('bilal', /Bilal Haddad/)
 
     fireEvent.click(screen.getByRole('combobox', { name: 'selectClass' }))

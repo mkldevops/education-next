@@ -35,6 +35,7 @@ export {
   DialogBody,
   type DialogBodyProps,
   DialogContent,
+  DialogContentLoading,
   type DialogContentProps,
   DialogFooter,
   type DialogFooterProps,
@@ -45,6 +46,7 @@ export {
   type DialogTitleProps,
   DialogTrigger,
   type DialogTriggerProps,
+  DialogWhenOpen,
   useDialog,
 } from './dialog/dialog'
 export { DialogRouteOpener, type DialogRouteOpenerProps } from './dialog/dialog-route-opener'

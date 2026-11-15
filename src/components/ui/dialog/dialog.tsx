@@ -216,6 +216,26 @@ export function DialogContent({ children, className }: DialogContentProps) {
   )
 }
 
+/**
+ * Ne rend ses enfants que dialogue ouvert. Un contenu chargé par `next/dynamic` placé dessous
+ * n'est donc téléchargé qu'à la première ouverture, pas avec la page.
+ */
+export function DialogWhenOpen({ children }: { children: React.ReactNode }) {
+  const { open } = useDialog()
+  return open ? children : null
+}
+
+/** Panneau d'attente affiché pendant le chargement d'un contenu de dialogue différé. */
+export function DialogContentLoading() {
+  return (
+    <DialogContent>
+      <div aria-busy="true" className="flex h-40 items-center justify-center">
+        <span className="size-5 animate-spin rounded-full border-2 border-graphite/20 border-t-graphite" />
+      </div>
+    </DialogContent>
+  )
+}
+
 export interface DialogHeaderProps {
   children: React.ReactNode
   className?: string
