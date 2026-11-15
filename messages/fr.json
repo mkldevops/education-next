@@ -3834,7 +3834,18 @@
     "subtitle": "Les événements publics de {schoolName}.",
     "empty": "Aucun événement public pour le moment.",
     "subscribe": "Ajouter au calendrier",
-    "overview": "Vue d'ensemble {period}"
+    "overview": "Vue d'ensemble {period}",
+    "print": "Imprimer / PDF",
+    "showPastMonths": "Afficher les mois passés",
+    "archives": "Archives ({count, plural, one {# événement} other {# événements}})",
+    "archivesTitle": "Archives",
+    "backToCurrent": "Année en cours",
+    "printTitle": "Calendrier des événements — {schoolName}",
+    "printHeading": "Calendrier {period}",
+    "printSubtitle": "Les événements de l'année scolaire.",
+    "printHint": "Choisissez « Enregistrer en PDF » dans la fenêtre d'impression pour garder une copie.",
+    "back": "Retour aux événements",
+    "printEmpty": "Aucun événement public pour cette année scolaire."
   },
   "publicSchedule": {
     "metadata": {
