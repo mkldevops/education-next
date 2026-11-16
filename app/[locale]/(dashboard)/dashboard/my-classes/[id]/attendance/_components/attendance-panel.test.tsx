@@ -408,10 +408,8 @@ describe('AttendancePanel date change', () => {
   })
   it('waits for an in-flight save before leaving when the draft reverts', async () => {
     const { submitted, spy } = spySubmit()
-    let release: (value: string) => void = () => {}
-    mocks.update
-      .mockImplementationOnce(() => new Promise<string>((resolve) => (release = resolve)))
-      .mockResolvedValue('OK')
+    const releases: Array<(value: string) => void> = []
+    mocks.update.mockImplementation(() => new Promise<string>((resolve) => releases.push(resolve)))
     render(
       <AttendancePanel
         {...props}
@@ -429,7 +427,11 @@ describe('AttendancePanel date change', () => {
     fireEvent.submit(screen.getByLabelText('Date').closest('form') as HTMLFormElement)
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(submitted).toEqual([])
-    release('OK')
+    releases[0]('OK')
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(submitted).toEqual([])
+    releases[1]('OK')
     await waitFor(() => expect(submitted).toEqual(['2026-01-05']))
     expect(mocks.update).toHaveBeenLastCalledWith({
       sessionId: 's',
