@@ -1,10 +1,10 @@
 'use client'
 
-import * as Sentry from '@sentry/nextjs'
 import { useLocale, useTranslations } from 'next-intl'
 import { useEffect } from 'react'
 import { ErrorPageShell } from '@/features/error-pages'
 import { localizedHref } from '@/i18n/localized-href'
+import { captureClientException } from '@/lib/error-tracking/client-error-tracking'
 
 export default function ErrorPage({
   error,
@@ -14,7 +14,7 @@ export default function ErrorPage({
   reset: () => void
 }) {
   useEffect(() => {
-    Sentry.captureException(error)
+    captureClientException(error)
   }, [error])
 
   const locale = useLocale()

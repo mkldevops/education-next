@@ -1,8 +1,8 @@
 'use client'
 
-import * as Sentry from '@sentry/nextjs'
 import { useEffect } from 'react'
 import { ErrorPageShell } from '@/features/error-pages'
+import { captureClientException } from '@/lib/error-tracking/client-error-tracking'
 
 export default function GlobalError({
   error,
@@ -12,7 +12,7 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
-    Sentry.captureException(error)
+    captureClientException(error)
   }, [error])
 
   return (
