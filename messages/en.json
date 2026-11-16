@@ -2692,7 +2692,9 @@
         "memberRemoved": "Member removed from the school",
         "close": "Close",
         "impersonate": "Sign in as this user",
-        "impersonating": "Signing in…"
+        "impersonating": "Signing in…",
+        "deactivateConfirmTitle": "Deactivate {name}?",
+        "deactivateConfirmDescription": "Sign-in is refused until the account is reactivated."
       },
       "superAdmins": {
         "title": "Super administrators",
@@ -3199,7 +3201,9 @@
           "setCover": "Set as cover",
           "altHint": "Describes the image for screen readers. Applied to every image added.",
           "tooManySelected": "{count, plural, one {One slot left: only the first image is added} other {# slots left: only the first # images are added}}",
-          "tooLarge": "{count, plural, one {One image exceeds 10 MB and is not added} other {# images exceed 10 MB and are not added}}"
+          "tooLarge": "{count, plural, one {One image exceeds 10 MB and is not added} other {# images exceed 10 MB and are not added}}",
+          "removeConfirmTitle": "Delete this image?",
+          "removeConfirmDescription": "The image is removed from the event and its public page. This cannot be undone."
         },
         "filters": {
           "category": "Category",
@@ -4005,7 +4009,10 @@
       "cancelled": "Registration cancelled",
       "errors": {
         "impersonating": "Unavailable while signed in as another user: return to your own account. A person's credentials and account are never changed on their behalf."
-      }
+      },
+      "deleteConfirmTitle": "Delete the “{name}” key?",
+      "deleteConfirmDescription": "You will no longer be able to sign in with this key. This cannot be undone.",
+      "deleteConfirm": "Delete"
     },
     "apiKeys": {
       "title": "MCP API keys",

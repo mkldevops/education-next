@@ -2693,7 +2693,9 @@
         "memberRemoved": "Membre retiré de l’école",
         "close": "Fermer",
         "impersonate": "Se connecter en tant que",
-        "impersonating": "Connexion…"
+        "impersonating": "Connexion…",
+        "deactivateConfirmTitle": "Désactiver {name} ?",
+        "deactivateConfirmDescription": "La connexion lui est refusée jusqu'à sa réactivation."
       },
       "superAdmins": {
         "title": "Super-administrateurs",
@@ -3200,7 +3202,9 @@
           "setCover": "Mettre en couverture",
           "altHint": "Décrit l'image pour les lecteurs d'écran. Appliqué à chaque image ajoutée.",
           "tooManySelected": "{count, plural, one {Une seule place restante : seule la première image est ajoutée} other {# places restantes : seules les # premières images sont ajoutées}}",
-          "tooLarge": "{count, plural, one {Une image dépasse 10 Mo et n'est pas ajoutée} other {# images dépassent 10 Mo et ne sont pas ajoutées}}"
+          "tooLarge": "{count, plural, one {Une image dépasse 10 Mo et n'est pas ajoutée} other {# images dépassent 10 Mo et ne sont pas ajoutées}}",
+          "removeConfirmTitle": "Supprimer cette image ?",
+          "removeConfirmDescription": "L'image est retirée de l'événement et de la page publique. Cette action est définitive."
         },
         "filters": {
           "category": "Catégorie",
@@ -4006,7 +4010,10 @@
       "cancelled": "Enregistrement annulé",
       "errors": {
         "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte. Les identifiants et le compte de la personne ne se modifient pas à sa place."
-      }
+      },
+      "deleteConfirmTitle": "Supprimer la clé « {name} » ?",
+      "deleteConfirmDescription": "Vous ne pourrez plus vous connecter avec cette clé. Cette action est définitive.",
+      "deleteConfirm": "Supprimer"
     },
     "apiKeys": {
       "title": "Clés API MCP",
