@@ -207,8 +207,19 @@ export function useAttendanceCall({
     debounceTimers.current.delete(id)
     void save(id)
   }
-  const flush = async () =>
-    (await Promise.all(entries.filter(isUnsaved).map((entry) => save(entry.id)))).every(Boolean)
+  const flush = async () => {
+    const ids = entries
+      .filter(
+        (entry) =>
+          isUnsaved(entry) || chains.current.has(entry.id) || debounceTimers.current.has(entry.id)
+      )
+      .map((entry) => entry.id)
+    for (const id of ids) {
+      clearTimeout(debounceTimers.current.get(id))
+      debounceTimers.current.delete(id)
+    }
+    return (await Promise.all(ids.map((id) => save(id)))).every(Boolean)
+  }
   const move = async (next: number) => {
     if (!active || next < 0 || next >= entries.length || globalPending) return
     const result = await save(active.id)

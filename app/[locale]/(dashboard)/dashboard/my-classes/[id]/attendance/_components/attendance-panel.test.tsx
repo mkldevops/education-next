@@ -381,3 +381,65 @@ it('opens one daily call without a lesson or exceptional-call selector', async (
   )
   expect(mocks.startScheduled).not.toHaveBeenCalled()
 })
+
+describe('AttendancePanel date change', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+  const spySubmit = () => {
+    const submitted: Array<string | null> = []
+    const spy = vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(function (
+      this: HTMLFormElement
+    ) {
+      submitted.push(new FormData(this).get('date') as string | null)
+    })
+    return { submitted, spy }
+  }
+  it('keeps the chosen date in the submitted request', async () => {
+    const { submitted, spy } = spySubmit()
+    render(<AttendancePanel {...props} initialSession={makeSession()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Change date' }))
+    const input = screen.getByLabelText('Date')
+    fireEvent.change(input, { target: { value: '2026-02-09' } })
+    fireEvent.submit(input.closest('form') as HTMLFormElement)
+    expect(input).not.toBeDisabled()
+    await waitFor(() => expect(submitted).toEqual(['2026-02-09']))
+    spy.mockRestore()
+  })
+  it('waits for an in-flight save before leaving when the draft reverts', async () => {
+    const { submitted, spy } = spySubmit()
+    const releases: Array<(value: string) => void> = []
+    mocks.update.mockImplementation(() => new Promise<string>((resolve) => releases.push(resolve)))
+    render(
+      <AttendancePanel
+        {...props}
+        initialSession={makeSession([
+          { id: 'a', studentName: 'Amina', status: 'PRESENT', lateMinutes: null, message: null },
+        ])}
+      />
+    )
+    const message = screen.getByLabelText('Message')
+    fireEvent.change(message, { target: { value: 'Bus' } })
+    fireEvent.blur(message)
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1))
+    fireEvent.change(message, { target: { value: '' } })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Change date' })[0])
+    fireEvent.submit(screen.getByLabelText('Date').closest('form') as HTMLFormElement)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(submitted).toEqual([])
+    releases[0]('OK')
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(submitted).toEqual([])
+    releases[1]('OK')
+    await waitFor(() => expect(submitted).toEqual(['2026-01-05']))
+    expect(mocks.update).toHaveBeenLastCalledWith({
+      sessionId: 's',
+      entryId: 'a',
+      status: 'PRESENT',
+      lateMinutes: null,
+      message: null,
+    })
+    spy.mockRestore()
+  })
+})

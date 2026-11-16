@@ -70,7 +70,7 @@ export function AttendanceHeader({
               type="date"
               name="date"
               defaultValue={occurredOn}
-              disabled={globalPending}
+              readOnly={globalPending}
             />
           </label>
           <Button type="submit" size="sm" disabled={globalPending}>
