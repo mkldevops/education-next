@@ -87,15 +87,46 @@ describe('client error tracking', () => {
     expect(load).toHaveBeenCalledTimes(1)
   })
 
-  it('keeps the buffer and retries when the chunk fails to load', async () => {
-    const tracking = await freshModule()
-    tracking.bufferGlobalErrors(target as Window)
-    target.dispatchEvent(rejection('early'))
+  it('keeps the buffer and retries a failed chunk load a bounded number of times', async () => {
+    vi.useFakeTimers()
+    try {
+      const tracking = await freshModule()
+      tracking.bufferGlobalErrors(target as Window)
+      target.dispatchEvent(rejection('early'))
 
-    await tracking.startClientErrorTracking(options, () => Promise.reject(new Error('chunk')))
+      const failing = vi.fn(() => Promise.reject(new Error('chunk')))
+      await tracking.startClientErrorTracking(options, failing)
+      await vi.runAllTimersAsync()
+      expect(failing).toHaveBeenCalledTimes(3)
 
-    const send = vi.fn<CaptureError>()
-    await tracking.startClientErrorTracking(options, loaderWith(send).load)
-    expect(send).toHaveBeenCalledWith('early', true)
+      const send = vi.fn<CaptureError>()
+      await tracking.startClientErrorTracking(options, loaderWith(send).load)
+      expect(send).toHaveBeenCalledWith('early', true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('recovers on its own when a retry succeeds', async () => {
+    vi.useFakeTimers()
+    try {
+      const tracking = await freshModule()
+      tracking.captureClientException('queued')
+      const send = vi.fn<CaptureError>()
+      const { initSentry } = loaderWith(send)
+      const flaky = vi
+        .fn<() => Promise<{ initSentry: typeof initSentry }>>()
+        .mockRejectedValueOnce(new Error('chunk'))
+        .mockResolvedValue({ initSentry })
+
+      await tracking.startClientErrorTracking(options, flaky)
+      expect(send).not.toHaveBeenCalled()
+      await vi.runAllTimersAsync()
+
+      expect(flaky).toHaveBeenCalledTimes(2)
+      expect(send).toHaveBeenCalledWith('queued', false)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
