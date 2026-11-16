@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { errorTrackingOptions, serverErrorTrackingOptions } from './options'
+import {
+  clientErrorTrackingOptions,
+  errorTrackingOptions,
+  serverErrorTrackingOptions,
+} from './options'
 
 describe('errorTrackingOptions', () => {
   it('stays off without a DSN', () => {
@@ -18,6 +22,17 @@ describe('errorTrackingOptions', () => {
 
   it('defaults the environment to production', () => {
     expect(errorTrackingOptions('https://k@gt.example/1', '')?.environment).toBe('production')
+  })
+})
+
+describe('clientErrorTrackingOptions', () => {
+  it('leaves performance tracing out of the browser', () => {
+    expect(clientErrorTrackingOptions(' https://k@gt.example/1 ', ' eic ')).toEqual({
+      dsn: 'https://k@gt.example/1',
+      environment: 'eic',
+      sendDefaultPii: false,
+    })
+    expect(clientErrorTrackingOptions(undefined, 'eic')).toBeNull()
   })
 })
 
