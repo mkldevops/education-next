@@ -1,8 +1,10 @@
 import { Breadcrumbs, Card } from '@peaklab/ui'
+import { Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { EmptyState } from '@/components/ui/empty-state'
 import { schoolToday } from '@/domain/school-date'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { mealAccountGateway } from '@/gateways/meal-account-gateway'
@@ -130,7 +132,7 @@ export default async function CashierStaffPage({ params }: Props) {
       )}
 
       {rows.length === 0 ? (
-        <p className="text-sm text-graphite-600">{t('empty')}</p>
+        <EmptyState icon={Users} title={t('empty')} />
       ) : (
         <section className="space-y-2">
           {todayMembers.length > 0 && (
