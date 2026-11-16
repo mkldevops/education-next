@@ -7,15 +7,15 @@ import { useState } from 'react'
 import type { ChildcareStatus } from '@/domain/childcare'
 import { Link } from '@/i18n/routing'
 import { cn } from '@/lib/utils'
+import { AttachFamilyDialog } from './attach-family-dialog'
+import { CancelChargeDialog } from './billing-dialogs'
+import type { FamilyOption } from './family-combobox'
 import {
-  AttachFamilyDialog,
-  CancelChargeDialog,
   EditSubscriptionDialog,
-  type FamilyOption,
   RemoveSubscriptionDialog,
   ResumeSubscriptionDialog,
   StopSubscriptionDialog,
-} from './childcare-dialogs'
+} from './subscription-dialogs'
 
 export type BoardCharge = {
   id: string
