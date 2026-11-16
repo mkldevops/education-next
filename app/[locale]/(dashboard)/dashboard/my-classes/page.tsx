@@ -2,6 +2,7 @@ import { Breadcrumbs } from '@peaklab/ui'
 import { ArrowRight, CalendarDays, ClipboardCheck, GraduationCap, Users } from 'lucide-react'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { EmptyState } from '@/components/ui/empty-state'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
@@ -57,11 +58,7 @@ export default async function MyClassesPage({ params }: { params: Promise<{ loca
         </span>
       </header>
       {classes.length === 0 ? (
-        <section className="rounded-3xl border border-dashed border-alabaster-700 bg-white px-6 py-14 text-center">
-          <GraduationCap aria-hidden="true" className="mx-auto mb-4 size-10 text-foreground" />
-          <h2 className="font-semibold text-graphite">{t('emptyTitle')}</h2>
-          <p className="mt-2 text-sm text-graphite-600">{t('empty')}</p>
-        </section>
+        <EmptyState icon={GraduationCap} title={t('emptyTitle')} description={t('empty')} />
       ) : (
         <ul className="grid min-w-0 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {classes.map((classPeriod) => (

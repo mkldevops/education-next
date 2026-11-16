@@ -1,8 +1,10 @@
 import { Breadcrumbs, Card } from '@peaklab/ui'
+import { Baby } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { EmptyState } from '@/components/ui/empty-state'
 import {
   type ChildcareStatus,
   chargeLeft,
@@ -192,7 +194,7 @@ export default async function ChildcarePage({ params }: Props) {
       )}
 
       {rows.length === 0 ? (
-        <Card className="p-6 text-sm text-graphite-600">{t('empty')}</Card>
+        <EmptyState icon={Baby} title={t('empty')} />
       ) : (
         <ChildcareBoard rows={rows} rates={rates} families={families} />
       )}

@@ -1,8 +1,9 @@
 import { Breadcrumbs, Card, StatusBadge } from '@peaklab/ui'
-import { Mail, Phone } from 'lucide-react'
+import { Mail, Phone, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { EmptyState } from '@/components/ui/empty-state'
 import { calculateAge } from '@/lib/date'
 import { db } from '@/lib/db'
 import { requireTeacher } from '../../_lib/auth-helper'
@@ -87,9 +88,7 @@ export default async function MyFamiliesPage({ params }: Props) {
       </header>
 
       {families.length === 0 ? (
-        <Card className="p-6">
-          <p className="text-sm text-graphite-600">{t('empty')}</p>
-        </Card>
+        <EmptyState icon={Users} title={t('empty')} />
       ) : (
         <ul className="grid gap-4 md:grid-cols-2">
           {families.map((family) => {
