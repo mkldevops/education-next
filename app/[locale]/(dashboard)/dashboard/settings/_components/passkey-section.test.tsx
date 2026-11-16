@@ -65,8 +65,20 @@ describe('PasskeySection with passkey sign-in disabled', () => {
     expect(screen.getByText('MacBook Touch ID')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+    fireEvent.click(screen.getByRole('button', { name: 'deleteConfirm' }))
 
     await waitFor(() => expect(deletePasskey).toHaveBeenCalledWith('pk_1'))
+  })
+
+  it('keeps the passkey when the confirmation is cancelled', () => {
+    render(<PasskeySection enabled={false} initialPasskeys={[macBook]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'cancel' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(deletePasskey).not.toHaveBeenCalled()
   })
 
   it('drops the registration form and explains why', () => {
@@ -89,6 +101,7 @@ describe('PasskeySection with passkey sign-in disabled', () => {
     render(<PasskeySection enabled={false} initialPasskeys={[macBook]} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+    fireEvent.click(screen.getByRole('button', { name: 'deleteConfirm' }))
 
     // Le bandeau de succès disparaîtrait avec la carte : la confirmation passe par une
     // notification, seule à survivre au démontage.

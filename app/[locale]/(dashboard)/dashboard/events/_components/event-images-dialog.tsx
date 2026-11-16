@@ -17,6 +17,7 @@ import { ImageIcon, ImagePlus, Star, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { useId, useRef, useState, useTransition } from 'react'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { MAX_EVENT_IMAGE_BYTES, MAX_EVENT_IMAGES } from '@/domain/event'
 import { toast, toastActionError } from '@/lib/toast'
 import {
@@ -198,23 +199,31 @@ function EventImagesManager({ eventId, images: initialImages }: Pick<Props, 'eve
                           {t('images.setCover')}
                         </Button>
                       )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-red-700"
-                        disabled={isPending}
-                        onClick={() =>
+                      <ConfirmDialog
+                        trigger={
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-red-700"
+                            disabled={isPending}
+                            aria-label={t('images.remove')}
+                            title={t('images.remove')}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        }
+                        title={t('images.removeConfirmTitle')}
+                        description={t('images.removeConfirmDescription')}
+                        confirmLabel={t('images.remove')}
+                        cancelLabel={tCommon('cancel')}
+                        onConfirm={() =>
                           runOnImages(
                             () => removeEventImageAction(eventId, image.id),
                             'success.imageRemoved'
                           )
                         }
-                        aria-label={t('images.remove')}
-                        title={t('images.remove')}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      />
                     </div>
                   </li>
                 )
