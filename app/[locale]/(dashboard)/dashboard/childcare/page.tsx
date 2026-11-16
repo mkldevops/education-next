@@ -23,8 +23,9 @@ import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
+import { AddChildDialog } from './_components/add-child-dialog'
+import { BillMonthDialog } from './_components/billing-dialogs'
 import { type BoardRow, ChildcareBoard } from './_components/childcare-board'
-import { AddChildDialog, BillMonthDialog } from './_components/childcare-dialogs'
 
 const URGENCY: Record<ChildcareStatus, number> = {
   late: 0,
