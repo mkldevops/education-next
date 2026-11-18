@@ -42,6 +42,8 @@ export function prepareAssistantStep(
 ) {
   const commit = commitAfterPreview(steps, toolNames)
   if (commit) return commit
-  if (steps.length >= maxSteps - 1) return { toolChoice: 'none' as const }
+  // `toolChoice: 'none'` seul ne suffit pas : certains modèles appellent quand même un outil
+  // et l'AI SDK lève `AI_ToolChoiceViolationError`. Sans outil exposé, il ne reste que le texte.
+  if (steps.length >= maxSteps - 1) return { toolChoice: 'none' as const, activeTools: [] }
   return undefined
 }

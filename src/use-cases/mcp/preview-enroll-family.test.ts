@@ -618,6 +618,29 @@ describe('previewEnrollFamily', () => {
     expect(listClassPeriods).not.toHaveBeenCalled()
   })
 
+  it('accepts a plan label carried by each student instead of the family', async () => {
+    const { planName: _planName, ...withoutPlanName } = input
+    const result = await previewEnrollFamily(scope, {
+      ...withoutPlanName,
+      students: [{ ...input.students[0], planName: 'Tarif annuel' }],
+    })
+
+    assertPreview(result)
+    expect(result.blockers).toEqual([])
+    expect(result.plan?.students[0].plan).toMatchObject({ name: 'Tarif annuel' })
+  })
+
+  it('still requires a plan for a student left without one', async () => {
+    const { planName: _planName, ...withoutPlanName } = input
+
+    expect(
+      await previewEnrollFamily(scope, {
+        ...withoutPlanName,
+        students: [{ ...input.students[0], planName: 'Tarif annuel' }, sibling],
+      })
+    ).toBe('validationError')
+  })
+
   it('rejects malformed input before reading anything', async () => {
     expect(await previewEnrollFamily(scope, { ...input, students: [] })).toBe('validationError')
     expect(listClassPeriods).not.toHaveBeenCalled()

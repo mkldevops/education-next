@@ -68,9 +68,11 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
   const { schoolId, paymentsEnabled } = scope
   const data = parsed.data
 
-  // Drapeau actif : le libellé de formule reste obligatoire, comme avant l'introduction
-  // du drapeau — seule la coupure le rend facultatif (FR-023).
-  if (paymentsEnabled && data.planName === undefined) return 'validationError' as const
+  // Drapeau actif : chaque élève doit porter une formule, la sienne ou celle de la famille ;
+  // seule la coupure la rend facultative (FR-023).
+  if (paymentsEnabled && data.students.some((student) => !(student.planName ?? data.planName))) {
+    return 'validationError' as const
+  }
 
   const blockers: McpFinding[] = []
   const warnings: McpFinding[] = []
@@ -162,7 +164,7 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
     const planByLabel = new Map<string, { id: string; name: string; amount: number } | null>()
 
     studentPlans = data.students.map((student, index) => {
-      const label = student.planName ?? (data.planName as string)
+      const label = (student.planName ?? data.planName) as string
       const field = student.planName ? `students.${index}.planName` : 'planName'
       const key = `${field}|${label}`
 
