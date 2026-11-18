@@ -50,7 +50,10 @@ describe('prepareAssistantStep', () => {
   const idle = { toolResults: [] }
 
   it('reserves the last allowed step for a text answer', () => {
-    expect(prepareAssistantStep([idle, idle], tools, 3)).toEqual({ toolChoice: 'none' })
+    expect(prepareAssistantStep([idle, idle], tools, 3)).toEqual({
+      toolChoice: 'none',
+      activeTools: [],
+    })
     expect(prepareAssistantStep([idle], tools, 3)).toBeUndefined()
   })
 
