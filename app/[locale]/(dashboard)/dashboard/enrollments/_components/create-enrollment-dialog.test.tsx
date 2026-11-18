@@ -9,6 +9,11 @@ vi.mock('next-intl', () => ({
 }))
 vi.mock('@/i18n/routing', () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn(), replace }),
+  Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
 }))
 // Action serveur réelle : exigerait une session et une base, hors de portée d'un test de
 // rendu pur qui ne soumet jamais le formulaire.
@@ -42,6 +47,26 @@ describe('CreateEnrollmentDialog with payments enabled', () => {
     expect(screen.getByLabelText('selectPlan')).toBeInTheDocument()
     expect(screen.getByLabelText('totalAmount')).toBeInTheDocument()
     expect(screen.getByLabelText('selectClass')).toBeInTheDocument()
+  })
+})
+
+describe('CreateEnrollmentDialog student picker', () => {
+  it('points to the Students page for a child who does not exist yet', async () => {
+    render(
+      <CreateEnrollmentDialog
+        students={students}
+        plans={plans}
+        classes={classes}
+        paymentsEnabled={true}
+        currency="EUR"
+      />
+    )
+    await openDialog()
+
+    expect(screen.getByRole('link', { name: 'newStudentLink' })).toHaveAttribute(
+      'href',
+      '/dashboard/students'
+    )
   })
 })
 

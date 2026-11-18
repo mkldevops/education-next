@@ -18,7 +18,7 @@ import {
 } from '@peaklab/ui'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
-import { useRouter } from '@/i18n/routing'
+import { Link, useRouter } from '@/i18n/routing'
 import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { toast, toastActionError } from '@/lib/toast'
 import { ClassSelect } from '../../../_components/class-select'
@@ -155,6 +155,12 @@ function CreateEnrollmentForm({
               {selectedStudent?.enrolledInPeriod && (
                 <p className="text-xs text-amber-700">{t('alreadyEnrolledHint')}</p>
               )}
+              <p className="text-xs text-graphite-600">
+                {t('newStudentHint')}{' '}
+                <Link href="/dashboard/students" className="font-medium underline">
+                  {t('newStudentLink')}
+                </Link>
+              </p>
             </div>
           )}
           {paymentsEnabled ? (
