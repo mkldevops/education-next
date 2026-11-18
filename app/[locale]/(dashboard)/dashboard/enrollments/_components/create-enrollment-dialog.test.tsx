@@ -44,9 +44,9 @@ describe('CreateEnrollmentDialog with payments enabled', () => {
     )
     await openDialog()
 
-    expect(screen.getByLabelText('selectPlan')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^selectPlan/)).toBeInTheDocument()
     expect(screen.getByLabelText('totalAmount')).toBeInTheDocument()
-    expect(screen.getByLabelText('selectClass')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^selectClass/)).toBeInTheDocument()
   })
 })
 
@@ -70,6 +70,28 @@ describe('CreateEnrollmentDialog student picker', () => {
   })
 })
 
+describe('CreateEnrollmentDialog add-student shortcut', () => {
+  it('hands over to the student creation flow instead of leaving the page', async () => {
+    const onAddStudent = vi.fn()
+    render(
+      <CreateEnrollmentDialog
+        students={students}
+        plans={plans}
+        classes={classes}
+        paymentsEnabled={true}
+        currency="EUR"
+        onAddStudent={onAddStudent}
+      />
+    )
+    await openDialog()
+
+    expect(screen.queryByRole('link', { name: 'newStudentLink' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'newStudentLink' }))
+
+    expect(onAddStudent).toHaveBeenCalledOnce()
+  })
+})
+
 describe('CreateEnrollmentDialog with payments disabled', () => {
   it('hides the plan selector and the amount due field, keeping the class selector', async () => {
     render(
@@ -83,9 +105,9 @@ describe('CreateEnrollmentDialog with payments disabled', () => {
     )
     await openDialog()
 
-    expect(screen.queryByLabelText('selectPlan')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^selectPlan/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText('totalAmount')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('selectClass')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^selectClass/)).toBeInTheDocument()
   })
 })
 
@@ -157,7 +179,7 @@ describe('CreateEnrollmentDialog guided selectors', () => {
 
   function searchStudent(query: string) {
     fireEvent.click(screen.getByRole('button', { name: 'open' }))
-    fireEvent.change(screen.getByLabelText('selectStudent'), { target: { value: query } })
+    fireEvent.change(screen.getByLabelText(/^selectStudent/), { target: { value: query } })
   }
 
   async function pickStudent(query: string, name: RegExp) {
@@ -168,9 +190,10 @@ describe('CreateEnrollmentDialog guided selectors', () => {
   it('preselects neither a student nor a class and blocks submission', async () => {
     await renderGuided()
 
-    expect(screen.getByLabelText('selectStudent')).toHaveValue('')
+    expect(screen.getByLabelText(/^selectStudent/)).toHaveValue('')
     expect(screen.getByRole('combobox', { name: 'selectClass' })).toHaveTextContent('placeholder')
     expect(screen.getByRole('button', { name: 'submit' })).toBeDisabled()
+    expect(screen.getByText(/^missingFields/)).toBeInTheDocument()
   })
 
   it('filters students by family name and flags those already enrolled', async () => {
@@ -193,12 +216,14 @@ describe('CreateEnrollmentDialog guided selectors', () => {
       expect.stringContaining('CE2-A'),
       expect.stringContaining('CE1-A'),
     ])
+    expect(screen.queryByRole('checkbox', { name: /replaceExisting/ })).not.toBeInTheDocument()
     expect(options[0]).toHaveTextContent('seats')
     expect(options[1]).toHaveTextContent('full')
     fireEvent.pointerDown(options[0])
     fireEvent.click(options[0])
 
     expect(screen.getByRole('button', { name: 'submit' })).toBeEnabled()
+    expect(screen.queryByText(/^missingFields/)).not.toBeInTheDocument()
   })
 
   it('requires replacing the existing enrollment of an already enrolled student', async () => {

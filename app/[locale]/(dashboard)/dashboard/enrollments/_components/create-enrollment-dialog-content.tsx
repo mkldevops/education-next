@@ -18,6 +18,7 @@ import {
 } from '@peaklab/ui'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
+import { RequiredMark } from '@/features/forms/required-mark'
 import { Link, useRouter } from '@/i18n/routing'
 import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { toast, toastActionError } from '@/lib/toast'
@@ -38,6 +39,7 @@ export function CreateEnrollmentDialogContent({
   currency,
   defaultStudentId,
   redirectTo,
+  onAddStudent,
 }: CreateEnrollmentFormProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
 
@@ -54,6 +56,7 @@ export function CreateEnrollmentDialogContent({
         currency={currency}
         defaultStudentId={defaultStudentId}
         redirectTo={redirectTo}
+        onAddStudent={onAddStudent}
       />
     </DialogContent>
   )
@@ -68,6 +71,7 @@ type CreateEnrollmentFormProps = Pick<
   | 'currency'
   | 'defaultStudentId'
   | 'redirectTo'
+  | 'onAddStudent'
 >
 
 function CreateEnrollmentForm({
@@ -78,6 +82,7 @@ function CreateEnrollmentForm({
   currency,
   defaultStudentId,
   redirectTo,
+  onAddStudent,
 }: CreateEnrollmentFormProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
   const locale = useLocale()
@@ -95,6 +100,10 @@ function CreateEnrollmentForm({
   const needsReplace = selectedStudent?.enrolledInPeriod === true && !replaceExisting
   const canSubmit = studentId !== null && classPeriodId !== null && !needsReplace
   const planItems = plans.map((p) => ({ value: p.id, label: p.name }))
+  const missingFields = [
+    studentId === null && t('selectStudent'),
+    classPeriodId === null && t('selectClass'),
+  ].filter(Boolean)
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -125,7 +134,10 @@ function CreateEnrollmentForm({
 
   const classSelect = (
     <div className="space-y-2">
-      <Label htmlFor="enroll-class">{t('selectClass')}</Label>
+      <Label htmlFor="enroll-class">
+        {t('selectClass')}
+        <RequiredMark />
+      </Label>
       <ClassSelect
         id="enroll-class"
         classes={classes}
@@ -144,29 +156,50 @@ function CreateEnrollmentForm({
         <div className="space-y-4">
           {!defaultStudentId && (
             <div className="space-y-2">
-              <Label htmlFor="enroll-student">{t('selectStudent')}</Label>
+              <Label htmlFor="enroll-student">
+                {t('selectStudent')}
+                <RequiredMark />
+              </Label>
               <StudentCombobox
                 id="enroll-student"
                 students={students}
                 value={studentId}
-                onValueChange={setStudentId}
+                onValueChange={(id) => {
+                  setStudentId(id)
+                  setReplaceExisting(false)
+                }}
                 disabled={isPending}
               />
-              {selectedStudent?.enrolledInPeriod && (
-                <p className="text-xs text-amber-700">{t('alreadyEnrolledHint')}</p>
-              )}
               <p className="text-xs text-graphite-600">
                 {t('newStudentHint')}{' '}
-                <Link href="/dashboard/students" className="font-medium underline">
-                  {t('newStudentLink')}
-                </Link>
+                {onAddStudent ? (
+                  <button
+                    type="button"
+                    className="font-medium underline"
+                    disabled={isPending}
+                    onClick={() => {
+                      setOpen(false)
+                      onAddStudent()
+                    }}
+                  >
+                    {t('newStudentLink')}
+                  </button>
+                ) : (
+                  <Link href="/dashboard/students" className="font-medium underline">
+                    {t('newStudentLink')}
+                  </Link>
+                )}
               </p>
             </div>
           )}
           {paymentsEnabled ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {classSelect}
               <div className="space-y-2">
-                <Label htmlFor="enroll-plan">{t('selectPlan')}</Label>
+                <Label htmlFor="enroll-plan">
+                  {t('selectPlan')}
+                  <RequiredMark />
+                </Label>
                 <Select
                   name="planId"
                   items={planItems}
@@ -191,7 +224,6 @@ function CreateEnrollmentForm({
                   </SelectContent>
                 </Select>
               </div>
-              {classSelect}
             </div>
           ) : (
             classSelect
@@ -210,28 +242,42 @@ function CreateEnrollmentForm({
                 value={totalAmount}
                 onChange={(event) => setTotalAmount(Number(event.target.value))}
                 disabled={isPending}
+                aria-describedby="enroll-total-amount-hint"
               />
+              <p id="enroll-total-amount-hint" className="text-xs text-graphite-600">
+                {t('totalAmountHint')}
+              </p>
             </div>
           )}
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="canLeaveAlone" className="rounded" />
             {t('canLeaveAlone')}
           </label>
-          <label className="flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="replaceExisting"
-              className="mt-0.5 rounded"
-              checked={replaceExisting}
-              onChange={(event) => setReplaceExisting(event.target.checked)}
-            />
-            <span>
-              {t('replaceExisting')}
-              <span className="block text-xs text-graphite-600">
-                {t(paymentsEnabled ? 'replaceExistingHint' : 'replaceExistingHintNoPayments')}
-              </span>
-            </span>
-          </label>
+          {selectedStudent?.enrolledInPeriod && (
+            <div className="space-y-2 rounded border border-amber-300 bg-amber-50 p-3">
+              <p className="text-sm text-amber-800">{t('alreadyEnrolledHint')}</p>
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="replaceExisting"
+                  className="mt-0.5 rounded"
+                  checked={replaceExisting}
+                  onChange={(event) => setReplaceExisting(event.target.checked)}
+                />
+                <span>
+                  {t('replaceExisting')}
+                  <span className="block text-xs text-graphite-600">
+                    {t(paymentsEnabled ? 'replaceExistingHint' : 'replaceExistingHintNoPayments')}
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
+          {missingFields.length > 0 && !isPending && (
+            <p className="text-xs text-graphite-600">
+              {t('missingFields', { fields: missingFields.join(', ') })}
+            </p>
+          )}
         </div>
       </DialogBody>
       <DialogFooter>

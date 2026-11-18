@@ -625,7 +625,9 @@
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
-          }
+          },
+          "totalAmountHint": "Prix de la formule. Baissez-le pour accorder une remise.",
+          "missingFields": "À compléter : {fields}"
         },
         "edit": {
           "title": "Modifier l'élève",
@@ -931,9 +933,11 @@
           },
           "replaceExistingHintNoPayments": "L'inscription en cours est annulée puis recréée.",
           "totalAmount": "Montant dû ({currency})",
-          "alreadyEnrolledHint": "Cet élève a déjà une inscription en cours sur la période : cochez « Remplacer l’inscription existante » pour la recréer.",
-          "newStudentHint": "Nouvel enfant absent de la liste ? Créez-le depuis la page Élèves, il y est inscrit en même temps :",
-          "newStudentLink": "Ajouter un élève"
+          "alreadyEnrolledHint": "Cet élève est déjà inscrit sur cette période.",
+          "newStudentHint": "Nouvel enfant absent de la liste ?",
+          "newStudentLink": "Ajouter un élève",
+          "totalAmountHint": "Prix de la formule. Baissez-le pour accorder une remise.",
+          "missingFields": "À compléter : {fields}"
         },
         "drawer": {
           "title": "Détail de l'inscription",
@@ -1137,6 +1141,7 @@
         "create": {
           "title": "Nouveau plan",
           "name": "Nom",
+          "namePlaceholder": "Ex. Temps plein 2026-2027",
           "amount": "Montant ({currency})",
           "cancel": "Annuler",
           "submit": "Créer",

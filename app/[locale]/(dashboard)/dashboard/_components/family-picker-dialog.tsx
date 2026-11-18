@@ -27,6 +27,9 @@ interface FamilyPickerDialogProps {
   label: string
   /** Dialogue existant à ouvrir pour la famille choisie, monté ouvert. */
   renderDialog: (family: FamilyOption) => ReactNode
+  /** Ouvre le sélecteur dès le montage, quand un autre dialogue le déclenche. */
+  defaultOpen?: boolean
+  showTrigger?: boolean
 }
 
 function normalize(value: string) {
@@ -42,19 +45,27 @@ function normalize(value: string) {
  * existant s'ouvre pour elle. Chaque choix remonte le dialogue, si bien qu'il rouvre même
  * quand la même famille est choisie deux fois de suite.
  */
-export function FamilyPickerDialog({ families, label, renderDialog }: FamilyPickerDialogProps) {
+export function FamilyPickerDialog({
+  families,
+  label,
+  renderDialog,
+  defaultOpen = false,
+  showTrigger = true,
+}: FamilyPickerDialogProps) {
   const t = useTranslations('dashboard.familyPicker')
   const [selection, setSelection] = useState<{ family: FamilyOption; key: number } | null>(null)
 
   return (
     <>
-      <Dialog>
-        <DialogTrigger>
-          <Button size="sm">
-            <Plus className="h-4 w-4" />
-            {label}
-          </Button>
-        </DialogTrigger>
+      <Dialog initialOpen={defaultOpen}>
+        {showTrigger && (
+          <DialogTrigger>
+            <Button size="sm">
+              <Plus className="h-4 w-4" />
+              {label}
+            </Button>
+          </DialogTrigger>
+        )}
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{label}</DialogTitle>

@@ -14,7 +14,7 @@ import {
   loadSuggestedLevels,
   toClassOption,
 } from '../../_lib/class-options-loader'
-import { CreateEnrollmentDialog } from './_components/create-enrollment-dialog'
+import { EnrollmentCreateActions } from './_components/enrollment-create-actions'
 import { EnrollmentsTable } from './_components/enrollments-table'
 
 type Props = {
@@ -188,6 +188,15 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
         }
   )
 
+  // Le parent n'ajoute pas d'élève : seul le staff charge la liste des familles.
+  const families = isStaff
+    ? await db.family.findMany({
+        where: { schoolId: scope.schoolId, isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+    : []
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -199,7 +208,8 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
         description={t('description')}
         actions={
           isStaff && (
-            <CreateEnrollmentDialog
+            <EnrollmentCreateActions
+              families={families}
               students={studentOptions}
               plans={planOptions}
               classes={classOptions}

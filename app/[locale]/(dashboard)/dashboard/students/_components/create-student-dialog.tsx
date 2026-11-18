@@ -38,6 +38,8 @@ interface CreateStudentDialogProps {
   currency: string
   defaultOpen?: boolean
   redirectTo?: string
+  /** Page ouverte après la création ; par défaut la fiche de la famille. */
+  afterCreateHref?: string
   showTrigger?: boolean
 }
 
@@ -50,6 +52,7 @@ export function CreateStudentDialog({
   currency,
   defaultOpen = false,
   redirectTo,
+  afterCreateHref,
   showTrigger = true,
 }: CreateStudentDialogProps) {
   const t = useTranslations('dashboard.pages.students.create')
@@ -74,6 +77,7 @@ export function CreateStudentDialog({
           classes={classes}
           paymentsEnabled={paymentsEnabled}
           currency={currency}
+          afterCreateHref={afterCreateHref}
         />
       </DialogWhenOpen>
     </Dialog>

@@ -624,7 +624,9 @@
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimal places",
             "paymentsDisabled": "Payment management is turned off for this school"
-          }
+          },
+          "totalAmountHint": "The plan's price. Lower it to grant a discount.",
+          "missingFields": "Still needed: {fields}"
         },
         "edit": {
           "title": "Edit Student",
@@ -930,9 +932,11 @@
           },
           "replaceExistingHintNoPayments": "The current enrollment is cancelled, then recreated.",
           "totalAmount": "Amount due ({currency})",
-          "alreadyEnrolledHint": "This student already has a current enrollment for this period: tick “Replace the existing enrollment” to recreate it.",
-          "newStudentHint": "New child not in the list? Create them from the Students page, which enrolls them at the same time:",
-          "newStudentLink": "Add Student"
+          "alreadyEnrolledHint": "This student is already enrolled for this period.",
+          "newStudentHint": "New child not in the list?",
+          "newStudentLink": "Add Student",
+          "totalAmountHint": "The plan's price. Lower it to grant a discount.",
+          "missingFields": "Still needed: {fields}"
         },
         "drawer": {
           "title": "Enrollment Details",
@@ -1136,6 +1140,7 @@
         "create": {
           "title": "New Plan",
           "name": "Name",
+          "namePlaceholder": "e.g. Full time 2026-2027",
           "amount": "Amount ({currency})",
           "cancel": "Cancel",
           "submit": "Create",

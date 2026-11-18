@@ -16,12 +16,22 @@ export function AddStudentButton({
   classes,
   paymentsEnabled,
   currency,
+  defaultOpen,
+  showTrigger,
+  redirectTo = '/dashboard/students',
+  afterCreateHref,
 }: {
   families: FamilyOption[]
   plans: Option[]
   classes: Option[]
   paymentsEnabled: boolean
   currency: string
+  defaultOpen?: boolean
+  showTrigger?: boolean
+  /** Page où rester une fois le dialogue ouvert. */
+  redirectTo?: string
+  /** Page ouverte après la création ; par défaut la fiche de la famille. */
+  afterCreateHref?: string
 }) {
   const t = useTranslations('dashboard.pages.students.create')
 
@@ -29,6 +39,8 @@ export function AddStudentButton({
     <FamilyPickerDialog
       families={families}
       label={t('title')}
+      defaultOpen={defaultOpen}
+      showTrigger={showTrigger}
       renderDialog={(family) => (
         <CreateStudentDialog
           familyId={family.id}
@@ -39,7 +51,8 @@ export function AddStudentButton({
           currency={currency}
           defaultOpen
           showTrigger={false}
-          redirectTo="/dashboard/students"
+          redirectTo={redirectTo}
+          afterCreateHref={afterCreateHref}
         />
       )}
     />
