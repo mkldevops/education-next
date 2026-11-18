@@ -388,12 +388,16 @@ describe('AttendancePanel date change', () => {
   })
   const spySubmit = () => {
     const submitted: Array<string | null> = []
+    const blocked: boolean[] = []
     const spy = vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(function (
       this: HTMLFormElement
     ) {
       submitted.push(new FormData(this).get('date') as string | null)
+      const unload = new Event('beforeunload', { cancelable: true })
+      window.dispatchEvent(unload)
+      blocked.push(unload.defaultPrevented)
     })
-    return { submitted, spy }
+    return { submitted, blocked, spy }
   }
   it('keeps the chosen date in the submitted request', async () => {
     const { submitted, spy } = spySubmit()
@@ -407,7 +411,7 @@ describe('AttendancePanel date change', () => {
     spy.mockRestore()
   })
   it('waits for an in-flight save before leaving when the draft reverts', async () => {
-    const { submitted, spy } = spySubmit()
+    const { submitted, blocked, spy } = spySubmit()
     const releases: Array<(value: string) => void> = []
     mocks.update.mockImplementation(() => new Promise<string>((resolve) => releases.push(resolve)))
     render(
@@ -433,6 +437,7 @@ describe('AttendancePanel date change', () => {
     expect(submitted).toEqual([])
     releases[1]('OK')
     await waitFor(() => expect(submitted).toEqual(['2026-01-05']))
+    expect(blocked).toEqual([false])
     expect(mocks.update).toHaveBeenLastCalledWith({
       sessionId: 's',
       entryId: 'a',
