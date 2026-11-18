@@ -1141,6 +1141,7 @@
         "create": {
           "title": "Nouveau plan",
           "name": "Nom",
+          "namePlaceholder": "Ex. Temps plein 2026-2027",
           "amount": "Montant ({currency})",
           "cancel": "Annuler",
           "submit": "Créer",

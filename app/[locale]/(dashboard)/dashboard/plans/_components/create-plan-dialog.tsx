@@ -14,7 +14,7 @@ import {
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
-import { DialogFormActions, useDialogForm } from '@/features/forms'
+import { DialogFormActions, RequiredMark, useDialogForm } from '@/features/forms'
 import { createPlanAction } from '../../../_lib/plan-actions'
 import { type PlanConfiguration, PlanConfigurationFields } from './plan-configuration-fields'
 
@@ -59,8 +59,19 @@ function CreatePlanForm({ currency }: { currency: string }) {
       <DialogBody>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="plan-name">{t('name')}</Label>
-            <Input id="plan-name" name="name" required maxLength={50} disabled={isPending} />
+            <Label htmlFor="plan-name">
+              {t('name')}
+              <RequiredMark />
+            </Label>
+            <Input
+              id="plan-name"
+              name="name"
+              placeholder={t('namePlaceholder')}
+              required
+              autoFocus
+              maxLength={50}
+              disabled={isPending}
+            />
           </div>
           <PlanConfigurationFields
             value={configuration}

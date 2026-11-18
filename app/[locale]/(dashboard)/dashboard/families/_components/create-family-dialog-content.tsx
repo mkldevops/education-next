@@ -239,7 +239,7 @@ function CreateFamilyWizard({
               className={
                 index === step
                   ? 'rounded-full bg-teal-600 px-3 py-1 font-medium text-white'
-                  : 'rounded-full bg-graphite-100 px-3 py-1 text-graphite-600'
+                  : 'rounded-full bg-surface-2 px-3 py-1 text-muted-foreground'
               }
             >
               {index + 1}. {t(`steps.${key}`)}
@@ -258,6 +258,7 @@ function CreateFamilyWizard({
                   value={guardian.name}
                   onChange={(e) => setGuardian({ ...guardian, name: e.target.value })}
                   required={hasGuardian}
+                  autoFocus
                   maxLength={250}
                 />
               </div>
@@ -388,7 +389,10 @@ function CreateFamilyWizard({
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor={`${prefix}-name`}>{t('firstname')}</Label>
+                      <Label htmlFor={`${prefix}-name`}>
+                        {t('firstname')}
+                        <RequiredMark />
+                      </Label>
                       <Input
                         id={`${prefix}-name`}
                         value={child.name}
@@ -398,7 +402,10 @@ function CreateFamilyWizard({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`${prefix}-lastname`}>{t('lastname')}</Label>
+                      <Label htmlFor={`${prefix}-lastname`}>
+                        {t('lastname')}
+                        <RequiredMark />
+                      </Label>
                       <Input
                         id={`${prefix}-lastname`}
                         value={child.lastname}
@@ -451,6 +458,20 @@ function CreateFamilyWizard({
                       </label>
                       {child.enroll && (
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor={`${prefix}-class`}>
+                              {t('selectClass')}
+                              <RequiredMark />
+                            </Label>
+                            <ClassSelect
+                              id={`${prefix}-class`}
+                              classes={classes}
+                              value={child.classPeriodId}
+                              onValueChange={(value) =>
+                                updateChild(child.key, { classPeriodId: value })
+                              }
+                            />
+                          </div>
                           {paymentsEnabled && (
                             <div className="space-y-2">
                               <Label htmlFor={`${prefix}-plan`}>{t('selectPlan')}</Label>
@@ -474,20 +495,6 @@ function CreateFamilyWizard({
                               </Select>
                             </div>
                           )}
-                          <div className="space-y-2">
-                            <Label htmlFor={`${prefix}-class`}>
-                              {t('selectClass')}
-                              <RequiredMark />
-                            </Label>
-                            <ClassSelect
-                              id={`${prefix}-class`}
-                              classes={classes}
-                              value={child.classPeriodId}
-                              onValueChange={(value) =>
-                                updateChild(child.key, { classPeriodId: value })
-                              }
-                            />
-                          </div>
                         </div>
                       )}
                     </div>

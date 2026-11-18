@@ -40,7 +40,7 @@ beforeEach(() => {
 function openCreate(currency = 'EUR') {
   render(<CreatePlanDialog currency={currency} />)
   fireEvent.click(screen.getByRole('button', { name: 'Nouveau plan' }))
-  fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Temps plein' } })
+  fireEvent.change(screen.getByLabelText(/^Nom/), { target: { value: 'Temps plein' } })
 }
 
 function submit() {
@@ -55,7 +55,7 @@ describe('Plan pricing and payment schedule forms', () => {
     fireEvent.change(screen.getByLabelText('Définir le prix à partir de'), {
       target: { value: 'MONTHLY' },
     })
-    fireEvent.change(screen.getByLabelText('Mensualité (€)'), { target: { value: '100' } })
+    fireEvent.change(screen.getByLabelText(/^Mensualité \(€\)/), { target: { value: '100' } })
     fireEvent.change(screen.getByLabelText('Nombre de mois facturés'), { target: { value: '9' } })
     expect(screen.getByText(/Total annuel : 900/)).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Échéancier'), { target: { value: 'MONTHLY' } })
@@ -101,7 +101,7 @@ describe('Plan pricing and payment schedule forms', () => {
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'Modifier le plan' }))
-    expect(screen.getByLabelText('Mensualité (€)')).toHaveValue(80)
+    expect(screen.getByLabelText(/^Mensualité \(€\)/)).toHaveValue(80)
     expect(screen.getByLabelText('Échéancier')).toHaveValue('QUARTERLY')
     expect(screen.getByLabelText('Nombre de versements')).toHaveAttribute('max', '4')
     submit()
@@ -116,7 +116,7 @@ describe('Plan pricing and payment schedule forms', () => {
 
   it('disables due-date tracking while keeping the annual price', async () => {
     openCreate()
-    fireEvent.change(screen.getByLabelText('Prix annuel (€)'), { target: { value: '600' } })
+    fireEvent.change(screen.getByLabelText(/^Prix annuel \(€\)/), { target: { value: '600' } })
     fireEvent.change(screen.getByLabelText('Échéancier'), { target: { value: 'QUARTERLY' } })
     fireEvent.change(screen.getByLabelText('Échéancier'), { target: { value: 'NONE' } })
     expect(screen.queryByLabelText('Jour limite de paiement')).not.toBeInTheDocument()
@@ -132,11 +132,11 @@ describe('Plan pricing and payment schedule forms', () => {
 
   it('keeps whole-unit price inputs when switching a zero-decimal currency to monthly pricing', () => {
     openCreate('KMF')
-    fireEvent.change(screen.getByLabelText('Prix annuel (KMF)'), { target: { value: '999' } })
+    fireEvent.change(screen.getByLabelText(/^Prix annuel \(KMF\)/), { target: { value: '999' } })
     fireEvent.change(screen.getByLabelText('Définir le prix à partir de'), {
       target: { value: 'MONTHLY' },
     })
-    expect(screen.getByLabelText('Mensualité (KMF)')).toHaveValue(100)
-    expect(screen.getByLabelText('Mensualité (KMF)')).toHaveAttribute('step', '1')
+    expect(screen.getByLabelText(/^Mensualité \(KMF\)/)).toHaveValue(100)
+    expect(screen.getByLabelText(/^Mensualité \(KMF\)/)).toHaveAttribute('step', '1')
   })
 })

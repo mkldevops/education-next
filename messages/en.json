@@ -1140,6 +1140,7 @@
         "create": {
           "title": "New Plan",
           "name": "Name",
+          "namePlaceholder": "e.g. Full time 2026-2027",
           "amount": "Amount ({currency})",
           "cancel": "Cancel",
           "submit": "Create",

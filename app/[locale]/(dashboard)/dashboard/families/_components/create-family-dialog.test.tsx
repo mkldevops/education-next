@@ -45,7 +45,7 @@ const openWithChild = async () => {
   fireEvent.change(screen.getByLabelText(/^name/), { target: { value: 'Martin' } })
   submit()
   fireEvent.click(await screen.findByRole('button', { name: 'addChild' }))
-  fireEvent.change(screen.getByLabelText('firstname'), { target: { value: 'Adam' } })
+  fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Adam' } })
 }
 
 const submit = () =>
@@ -90,8 +90,8 @@ describe('CreateFamilyDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
     await screen.findByLabelText(/^name/)
 
-    fireEvent.change(screen.getAllByLabelText('firstname')[0], { target: { value: 'Jean' } })
-    fireEvent.change(screen.getAllByLabelText('lastname')[0], { target: { value: 'Dupont' } })
+    fireEvent.change(screen.getAllByLabelText(/^firstname/)[0], { target: { value: 'Jean' } })
+    fireEvent.change(screen.getAllByLabelText(/^lastname/)[0], { target: { value: 'Dupont' } })
     fireEvent.change(screen.getByLabelText('phone'), { target: { value: '0612345678' } })
 
     expect(screen.getByLabelText(/^name/)).toHaveValue('Dupont')
@@ -100,8 +100,8 @@ describe('CreateFamilyDialog', () => {
 
     submit()
     fireEvent.click(await screen.findByRole('button', { name: 'addChild' }))
-    expect(screen.getByLabelText('lastname')).toHaveValue('Dupont')
-    fireEvent.change(screen.getByLabelText('firstname'), { target: { value: 'Laylah' } })
+    expect(screen.getByLabelText(/^lastname/)).toHaveValue('Dupont')
+    fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Laylah' } })
     await chooseClass(/CE1-A/)
     submit()
     await screen.findByText(/Laylah Dupont/)
@@ -133,8 +133,8 @@ describe('CreateFamilyDialog', () => {
     fireEvent.change(screen.getByLabelText(/^name/), { target: { value: 'Martin' } })
     submit()
     fireEvent.click(await screen.findByRole('button', { name: 'addChild' }))
-    fireEvent.change(screen.getByLabelText('firstname'), { target: { value: 'Adam' } })
-    fireEvent.change(screen.getByLabelText('lastname'), { target: { value: 'Martin' } })
+    fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Adam' } })
+    fireEvent.change(screen.getByLabelText(/^lastname/), { target: { value: 'Martin' } })
     submit()
     await screen.findByText(/Adam Martin/)
     submit()
