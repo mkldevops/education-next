@@ -19,6 +19,7 @@ export function AddStudentButton({
   defaultOpen,
   showTrigger,
   redirectTo = '/dashboard/students',
+  afterCreateHref,
 }: {
   families: FamilyOption[]
   plans: Option[]
@@ -29,6 +30,8 @@ export function AddStudentButton({
   showTrigger?: boolean
   /** Page où rester une fois le dialogue ouvert. */
   redirectTo?: string
+  /** Page ouverte après la création ; par défaut la fiche de la famille. */
+  afterCreateHref?: string
 }) {
   const t = useTranslations('dashboard.pages.students.create')
 
@@ -49,6 +52,7 @@ export function AddStudentButton({
           defaultOpen
           showTrigger={false}
           redirectTo={redirectTo}
+          afterCreateHref={afterCreateHref}
         />
       )}
     />

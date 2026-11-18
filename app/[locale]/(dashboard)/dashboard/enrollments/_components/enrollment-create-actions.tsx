@@ -35,6 +35,7 @@ export function EnrollmentCreateActions({
           defaultOpen
           showTrigger={false}
           redirectTo="/dashboard/enrollments"
+          afterCreateHref="/dashboard/enrollments"
         />
       )}
     </>

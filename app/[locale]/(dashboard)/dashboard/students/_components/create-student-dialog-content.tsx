@@ -40,6 +40,7 @@ export function CreateStudentDialogContent({
   classes,
   paymentsEnabled,
   currency,
+  afterCreateHref,
 }: Parameters<typeof CreateStudentForm>[0]) {
   const t = useTranslations('dashboard.pages.students.create')
 
@@ -55,6 +56,7 @@ export function CreateStudentDialogContent({
         classes={classes}
         paymentsEnabled={paymentsEnabled}
         currency={currency}
+        afterCreateHref={afterCreateHref}
       />
     </DialogContent>
   )
@@ -67,6 +69,7 @@ function CreateStudentForm({
   classes,
   paymentsEnabled,
   currency,
+  afterCreateHref,
 }: {
   familyId: string
   familyName?: string
@@ -74,6 +77,7 @@ function CreateStudentForm({
   classes: ClassOption[]
   paymentsEnabled: boolean
   currency: string
+  afterCreateHref?: string
 }) {
   const t = useTranslations('dashboard.pages.students.create')
   const locale = useLocale()
@@ -134,7 +138,8 @@ function CreateStudentForm({
     {
       successKey: enrolling ? 'successEnrolled' : 'success',
       onSuccess: () => {
-        if (familyId) router.push(`/dashboard/families/${familyId}`)
+        if (afterCreateHref) router.push(afterCreateHref)
+        else if (familyId) router.push(`/dashboard/families/${familyId}`)
       },
     }
   )
