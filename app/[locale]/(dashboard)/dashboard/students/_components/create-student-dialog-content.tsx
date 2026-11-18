@@ -158,7 +158,14 @@ function CreateStudentForm({
                 {t('firstname')}
                 <RequiredMark />
               </Label>
-              <Input id="student-name" name="name" required maxLength={250} disabled={isPending} />
+              <Input
+                id="student-name"
+                name="name"
+                required
+                maxLength={250}
+                disabled={isPending}
+                autoFocus
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="student-lastname">
@@ -240,6 +247,19 @@ function CreateStudentForm({
               enroll && (
                 <>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="student-class">
+                        {t('selectClass')}
+                        <RequiredMark />
+                      </Label>
+                      <ClassSelect
+                        id="student-class"
+                        classes={classes}
+                        value={classPeriodId}
+                        onValueChange={setClassPeriodId}
+                        disabled={isPending}
+                      />
+                    </div>
                     {/* Ni formule ni remise quand l'école ne tarife pas : le use case les
                         refuserait, et les proposer ferait croire à un choix. */}
                     {paymentsEnabled && (
@@ -274,19 +294,6 @@ function CreateStudentForm({
                         </Select>
                       </div>
                     )}
-                    <div className="space-y-2">
-                      <Label htmlFor="student-class">
-                        {t('selectClass')}
-                        <RequiredMark />
-                      </Label>
-                      <ClassSelect
-                        id="student-class"
-                        classes={classes}
-                        value={classPeriodId}
-                        onValueChange={setClassPeriodId}
-                        disabled={isPending}
-                      />
-                    </div>
                   </div>
                   {paymentsEnabled && (
                     <div className="space-y-2">
@@ -302,7 +309,11 @@ function CreateStudentForm({
                         value={totalAmount}
                         onChange={(event) => setTotalAmount(Number(event.target.value))}
                         disabled={isPending}
+                        aria-describedby="student-total-amount-hint"
                       />
+                      <p id="student-total-amount-hint" className="text-graphite-600 text-xs">
+                        {t('totalAmountHint')}
+                      </p>
                     </div>
                   )}
                   {/* canLeaveAlone appartient à l'inscription (Enrollment), pas à l'élève :
@@ -315,6 +326,11 @@ function CreateStudentForm({
               )
             ) : (
               <p className="text-amber-700 text-xs">{t('enrollUnavailable')}</p>
+            )}
+            {missingClass && !isPending && (
+              <p className="text-graphite-600 text-xs">
+                {t('missingFields', { fields: t('selectClass') })}
+              </p>
             )}
           </div>
         </div>
