@@ -70,6 +70,28 @@ describe('CreateEnrollmentDialog student picker', () => {
   })
 })
 
+describe('CreateEnrollmentDialog add-student shortcut', () => {
+  it('hands over to the student creation flow instead of leaving the page', async () => {
+    const onAddStudent = vi.fn()
+    render(
+      <CreateEnrollmentDialog
+        students={students}
+        plans={plans}
+        classes={classes}
+        paymentsEnabled={true}
+        currency="EUR"
+        onAddStudent={onAddStudent}
+      />
+    )
+    await openDialog()
+
+    expect(screen.queryByRole('link', { name: 'newStudentLink' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'newStudentLink' }))
+
+    expect(onAddStudent).toHaveBeenCalledOnce()
+  })
+})
+
 describe('CreateEnrollmentDialog with payments disabled', () => {
   it('hides the plan selector and the amount due field, keeping the class selector', async () => {
     render(

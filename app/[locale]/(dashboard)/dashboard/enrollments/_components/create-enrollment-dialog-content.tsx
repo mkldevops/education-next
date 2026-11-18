@@ -38,6 +38,7 @@ export function CreateEnrollmentDialogContent({
   currency,
   defaultStudentId,
   redirectTo,
+  onAddStudent,
 }: CreateEnrollmentFormProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
 
@@ -54,6 +55,7 @@ export function CreateEnrollmentDialogContent({
         currency={currency}
         defaultStudentId={defaultStudentId}
         redirectTo={redirectTo}
+        onAddStudent={onAddStudent}
       />
     </DialogContent>
   )
@@ -68,6 +70,7 @@ type CreateEnrollmentFormProps = Pick<
   | 'currency'
   | 'defaultStudentId'
   | 'redirectTo'
+  | 'onAddStudent'
 >
 
 function CreateEnrollmentForm({
@@ -78,6 +81,7 @@ function CreateEnrollmentForm({
   currency,
   defaultStudentId,
   redirectTo,
+  onAddStudent,
 }: CreateEnrollmentFormProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
   const locale = useLocale()
@@ -157,9 +161,23 @@ function CreateEnrollmentForm({
               )}
               <p className="text-xs text-graphite-600">
                 {t('newStudentHint')}{' '}
-                <Link href="/dashboard/students" className="font-medium underline">
-                  {t('newStudentLink')}
-                </Link>
+                {onAddStudent ? (
+                  <button
+                    type="button"
+                    className="font-medium underline"
+                    disabled={isPending}
+                    onClick={() => {
+                      setOpen(false)
+                      onAddStudent()
+                    }}
+                  >
+                    {t('newStudentLink')}
+                  </button>
+                ) : (
+                  <Link href="/dashboard/students" className="font-medium underline">
+                    {t('newStudentLink')}
+                  </Link>
+                )}
               </p>
             </div>
           )}

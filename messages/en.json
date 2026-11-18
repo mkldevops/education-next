@@ -931,7 +931,7 @@
           "replaceExistingHintNoPayments": "The current enrollment is cancelled, then recreated.",
           "totalAmount": "Amount due ({currency})",
           "alreadyEnrolledHint": "This student already has a current enrollment for this period: tick “Replace the existing enrollment” to recreate it.",
-          "newStudentHint": "New child not in the list? Create them from the Students page, which enrolls them at the same time:",
+          "newStudentHint": "New child not in the list?",
           "newStudentLink": "Add Student"
         },
         "drawer": {

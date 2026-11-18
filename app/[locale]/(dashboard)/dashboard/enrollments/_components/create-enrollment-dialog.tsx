@@ -41,6 +41,8 @@ export interface CreateEnrollmentDialogProps {
   redirectTo?: string
   showTrigger?: boolean
   triggerSize?: ButtonProps['size']
+  /** Fourni, le lien vers la page Élèves devient un bouton qui crée l'élève sur place. */
+  onAddStudent?: () => void
 }
 
 export function CreateEnrollmentDialog({
@@ -54,6 +56,7 @@ export function CreateEnrollmentDialog({
   redirectTo,
   showTrigger = true,
   triggerSize,
+  onAddStudent,
 }: CreateEnrollmentDialogProps) {
   const t = useTranslations('dashboard.pages.enrollments.create')
 
@@ -77,6 +80,7 @@ export function CreateEnrollmentDialog({
           currency={currency}
           defaultStudentId={defaultStudentId}
           redirectTo={redirectTo}
+          onAddStudent={onAddStudent}
         />
       </DialogWhenOpen>
     </Dialog>
