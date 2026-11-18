@@ -931,7 +931,9 @@
           },
           "replaceExistingHintNoPayments": "L'inscription en cours est annulée puis recréée.",
           "totalAmount": "Montant dû ({currency})",
-          "alreadyEnrolledHint": "Cet élève a déjà une inscription en cours sur la période : cochez « Remplacer l’inscription existante » pour la recréer."
+          "alreadyEnrolledHint": "Cet élève a déjà une inscription en cours sur la période : cochez « Remplacer l’inscription existante » pour la recréer.",
+          "newStudentHint": "Nouvel enfant absent de la liste ? Créez-le depuis la page Élèves, il y est inscrit en même temps :",
+          "newStudentLink": "Ajouter un élève"
         },
         "drawer": {
           "title": "Détail de l'inscription",
