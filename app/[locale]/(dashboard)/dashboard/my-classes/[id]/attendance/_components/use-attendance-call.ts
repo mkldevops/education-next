@@ -60,6 +60,7 @@ export function useAttendanceCall({
   const chains = useRef(new Map<string, Promise<boolean>>())
   const debounceTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
   const globalLock = useRef(false)
+  const unloadAllowed = useRef(false)
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saved, setSaved] = useState<string | null>(null)
@@ -99,7 +100,7 @@ export function useAttendanceCall({
   }, [reviewing, editing])
   useEffect(() => {
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!dirty && !pendingEntries) return
+      if (unloadAllowed.current || (!dirty && !pendingEntries)) return
       event.preventDefault()
       event.returnValue = ''
     }
@@ -341,8 +342,10 @@ export function useAttendanceCall({
     globalLock.current = true
     setGlobalPending(true)
     void flush().then((saved) => {
-      if (saved) form.submit()
-      else {
+      if (saved) {
+        unloadAllowed.current = true
+        form.submit()
+      } else {
         globalLock.current = false
         setGlobalPending(false)
       }
