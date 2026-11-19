@@ -104,7 +104,7 @@ describe('AttendancePage', () => {
     expect(screen.getByTestId('attendance-panel')).toHaveAttribute('data-slot-id', 'slot-1')
   })
 
-  it('sends an admin back to the tracking day they came from', async () => {
+  it('sends an admin back to the class grid', async () => {
     render(
       await AttendancePage({
         params: Promise.resolve({ locale: 'fr', id: 'class-1' }),
@@ -113,7 +113,7 @@ describe('AttendancePage', () => {
     )
 
     const panel = screen.getByTestId('attendance-panel')
-    expect(panel).toHaveAttribute('data-return-href', '/dashboard/attendance?date=2026-09-17')
+    expect(panel).toHaveAttribute('data-return-href', '/dashboard/attendance?classId=class-1')
     expect(panel).toHaveAttribute('data-return-label', 'returnTracking')
   })
 

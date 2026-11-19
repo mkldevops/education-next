@@ -15,6 +15,7 @@ export function AttendanceRangeMenu({
   from,
   to,
   classId,
+  all,
   items,
   labels,
 }: {
@@ -22,6 +23,7 @@ export function AttendanceRangeMenu({
   from: string
   to: string
   classId?: string
+  all?: boolean
   items: RangeItem[]
   labels: {
     trigger: string
@@ -41,7 +43,7 @@ export function AttendanceRangeMenu({
 
   const go = (range: string, bounds?: { from: string; to: string }) => {
     close(false)
-    router.push(attendancePeriodHref({ range, ...bounds, classId }))
+    router.push(attendancePeriodHref({ range, ...bounds, classId, all }))
   }
 
   return (

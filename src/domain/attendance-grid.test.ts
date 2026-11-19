@@ -12,6 +12,7 @@ const session = (
   occurrenceKey: startTime ? `slot-${id}` : 'daily',
   classScheduleSlotId: startTime ? `slot-${id}` : null,
   startTime,
+  status: 'VALIDATED',
   entries,
 })
 
@@ -73,5 +74,47 @@ describe('buildAttendanceGrid', () => {
       ])
     )
     expect(rows.map((row) => row.studentId)).toEqual(['never-a', 'never-b', 'old', 'recent'])
+  })
+
+  it('adds planned calls as empty columns and keeps a cancelled session out of the counts', () => {
+    const { columns, rows } = buildAttendanceGrid(
+      [
+        session('s1', '2026-11-04', [
+          { studentId: 'lina', studentName: 'Lina Boukari', status: 'ABSENT' },
+        ]),
+        {
+          ...session('s2', '2026-11-07', [
+            { studentId: 'lina', studentName: 'Lina Boukari', status: 'ABSENT' },
+          ]),
+          status: 'CANCELLED',
+        },
+      ],
+      new Map(),
+      [
+        {
+          occurredOn: new Date('2026-11-19T00:00:00.000Z'),
+          occurrenceKey: 'slot-thu',
+          classScheduleSlotId: 'slot-thu',
+          startTime: '09:00',
+          state: 'todo',
+        },
+        {
+          occurredOn: new Date('2026-11-11T00:00:00.000Z'),
+          occurrenceKey: 'slot-wed',
+          classScheduleSlotId: 'slot-wed',
+          startTime: '13:30',
+          state: 'missed',
+        },
+      ]
+    )
+    expect(columns.map((column) => [column.key, column.state])).toEqual([
+      ['s1', 'VALIDATED'],
+      ['s2', 'CANCELLED'],
+      ['2026-11-11:slot-wed', 'missed'],
+      ['2026-11-19:slot-thu', 'todo'],
+    ])
+    expect(rows).toEqual([
+      expect.objectContaining({ cells: ['ABSENT', null, null, null], absences: 1 }),
+    ])
   })
 })

@@ -3,23 +3,24 @@ export type AttendancePeriodQuery = {
   from?: string
   to?: string
   classId?: string
+  all?: boolean
 }
 
-export function attendancePeriodHref({ range, from, to, classId }: AttendancePeriodQuery) {
-  const params = new URLSearchParams({ view: 'period', range })
+export function attendancePeriodHref({ range, from, to, classId, all }: AttendancePeriodQuery) {
+  const params = new URLSearchParams({ range })
   if (range === 'custom' && from && to) {
     params.set('from', from)
     params.set('to', to)
   }
   if (classId) params.set('classId', classId)
+  if (all) params.set('all', '1')
   return `/dashboard/attendance?${params.toString()}`
 }
 
-export function attendanceDayHref(classId?: string) {
-  return classId ? `/dashboard/attendance?classId=${classId}` : '/dashboard/attendance'
-}
-
-/** Lien vers l'appel d'une séance enregistrée, quelle que soit sa nature (jour, créneau, ponctuel). */
+/**
+ * Lien vers l'appel d'une séance, enregistrée ou seulement prévue, quelle que soit sa nature
+ * (jour, créneau, ponctuel).
+ */
 export function attendanceSessionHref({
   classPeriodId,
   day,
@@ -40,4 +41,9 @@ export function attendanceSessionHref({
     if (classScheduleSlotId) params.set('slotId', classScheduleSlotId)
   }
   return `/dashboard/my-classes/${classPeriodId}/attendance?${params.toString()}`
+}
+
+/** Écran d'appel d'une date sans séance choisie : il propose les créneaux du jour ou un appel ponctuel. */
+export function attendanceNewCallHref(classPeriodId: string, day: string) {
+  return `/dashboard/my-classes/${classPeriodId}/attendance?date=${day}`
 }
