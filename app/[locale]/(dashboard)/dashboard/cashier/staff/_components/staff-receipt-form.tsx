@@ -7,6 +7,7 @@ import { useState, useTransition } from 'react'
 import { amountForDays, type MealLedger, previewMealPayment } from '@/domain/meal-ledger'
 import { useRouter } from '@/i18n/routing'
 import { currencyFractionDigits, formatCurrency } from '@/lib/decimal'
+import { receiptHref } from '@/lib/receipt-link'
 import { toastActionError } from '@/lib/toast'
 import type { CashierPaymentMethod } from '@/use-cases/receipts/schemas'
 import { recordStaffReceiptAction } from '../../../../_lib/staff-actions'
@@ -99,7 +100,7 @@ export function StaffReceiptForm({
         return
       }
       sessionStorage.removeItem(storageKey)
-      router.push(`/dashboard/cashier/receipts/${result.id}`)
+      router.push(receiptHref(result.id, '/dashboard/cashier/staff'))
     })
   }
 

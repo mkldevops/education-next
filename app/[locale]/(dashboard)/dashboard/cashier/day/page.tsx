@@ -7,6 +7,7 @@ import { formatReceiptNumber } from '@/domain/receipt'
 import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
+import { receiptHref } from '@/lib/receipt-link'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { requireSchoolCashier } from '../../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../../_lib/page-metadata'
@@ -102,7 +103,7 @@ export default async function CashDayPage({ params, searchParams }: Props) {
           {rows.map((row) => (
             <li key={row.id} className="flex items-center justify-between gap-2 py-2 text-sm">
               <Link
-                href={`/dashboard/cashier/receipts/${row.id}`}
+                href={receiptHref(row.id, `/dashboard/cashier/day?day=${day}`)}
                 className="text-foreground hover:underline"
               >
                 {t('receipt', { number: formatReceiptNumber(row.number), family: row.family })}
