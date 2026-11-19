@@ -279,6 +279,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         defaultIndex={Math.max(0, tabKeys.indexOf(tab as TabKey))}
         tabs={[
           {
+            id: 'overview',
             label: t('tabs.overview'),
             content: (
               <OverviewTab
@@ -311,6 +312,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             ),
           },
           {
+            id: 'children',
             label: t('tabs.children'),
             content: (
               <ChildrenTab
@@ -329,6 +331,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
           ...(paymentsEnabled
             ? [
                 {
+                  id: 'payments',
                   label: t('tabs.payments'),
                   content: (
                     <PaymentsTab
@@ -344,6 +347,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               ]
             : []),
           {
+            id: 'activity',
             label: t('tabs.activity'),
             content: (
               <ActivityTab
