@@ -62,7 +62,15 @@ export const AI_ASSISTANT_LIMITS = {
   maxImageDimension: 2000,
   maxMessages: 40,
   maxTextChars: 8000,
-  maxOutputTokens: 4000,
+  /**
+   * Budget d'une étape, raisonnement compris : un modèle qui raisonne le consommait en entier
+   * et la réponse s'arrêtait au milieu d'une phrase (`finishReason: length`).
+   */
+  maxOutputTokens: 12_000,
+  /** Plafond du raisonnement par étape, pour laisser au texte au moins 8 000 jetons. */
+  maxReasoningTokens: 4_000,
+  /** Relances d'une réponse coupée par la limite de jetons avant de prévenir l'administrateur. */
+  maxContinuations: 2,
   maxSteps: 3,
   /** Enchaînement lecture → aperçu → écriture de l'assistant général. */
   maxAgentSteps: 8,

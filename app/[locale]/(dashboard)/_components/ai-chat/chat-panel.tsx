@@ -35,6 +35,7 @@ import {
 } from '@/domain/ai-assistant'
 import { cn } from '@/lib/utils'
 import { MessageText } from './message-text'
+import { joinAdjacentText } from './unfinished-turn'
 import { useDictation } from './use-dictation'
 import { VoiceMeter, voiceRingClass } from './voice-meter'
 
@@ -540,7 +541,7 @@ function ChatMessage({
             mine ? 'rounded-3xl bg-surface-2 px-4 py-2' : 'w-full'
           )}
         >
-          {message.parts.map((part, index) => {
+          {joinAdjacentText(message.parts).map((part, index) => {
             const key = `${message.id}-${index}`
             if (part.type === 'text') {
               return <MessageText key={key} text={part.text} />
