@@ -24,6 +24,8 @@ interface Props {
   currentClassId: string | null
   availableClasses: Array<{ id: string; name: string }>
   currentTotalAmount: number
+  currentDiscount: number
+  totalPaid: number
   currency: string
   paymentsEnabled: boolean
   planName: string
@@ -40,6 +42,8 @@ export function EnrollmentActions({
   currentClassId,
   availableClasses,
   currentTotalAmount,
+  currentDiscount,
+  totalPaid,
   currency,
   paymentsEnabled,
   planName,
@@ -106,6 +110,8 @@ export function EnrollmentActions({
             <ApplyDiscountDialog
               enrollmentId={enrollmentId}
               currentTotalAmount={currentTotalAmount}
+              currentDiscount={currentDiscount}
+              totalPaid={totalPaid}
               currency={currency}
             />
           )}

@@ -2481,11 +2481,10 @@
           }
         },
         "applyDiscount": {
-          "title": "Appliquer une réduction",
-          "amount": "Montant de la réduction ({currency})",
+          "title": "Modifier le montant dû",
           "cancel": "Annuler",
           "submit": "Appliquer",
-          "success": "Réduction appliquée",
+          "success": "Montant dû mis à jour",
           "error": "Erreur lors de l'application",
           "errors": {
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
@@ -2493,13 +2492,22 @@
             "validationError": "Vérifiez le montant saisi",
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
-            "totalBelowPaid": "Le montant dû serait inférieur à ce qui a déjà été payé sur cette inscription",
+            "totalBelowPaid": "Le montant dû serait inférieur à ce qui a déjà été payé sur cette inscription. Si ce paiement est une erreur, annulez-le d'abord dans la section Paiements de cette inscription.",
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
             "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
             "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
             "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois"
           },
-          "totalAmount": "Montant final dû ({currency})"
+          "totalAmount": "Montant final dû ({currency})",
+          "free": "Gratuit",
+          "hint": "Saisissez ce que la famille doit payer au total pour cette inscription, pas le montant de la réduction. 0 = scolarité gratuite.",
+          "belowPaid": "{paid} ont déjà été encaissés sur cette inscription : le montant dû ne peut pas descendre en dessous. Si ce paiement est une erreur, annulez-le d'abord dans la section Paiements de cette inscription.",
+          "summary": {
+            "planAmount": "Prix de la formule",
+            "discount": "Réduction",
+            "totalPaid": "Déjà payé",
+            "remaining": "Reste à payer"
+          }
         },
         "setStartMonth": {
           "title": "Mois de début",

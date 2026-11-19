@@ -22,6 +22,7 @@ import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { familyLinksVisibleTo, resolveDeepLink, staffOrLinkedTo } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
+import { CancelEnrollmentPaymentButton } from '../_components/cancel-enrollment-payment-button'
 import { EnrollmentActions } from '../_components/enrollment-actions'
 
 type Props = {
@@ -190,6 +191,8 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           currentClassId={currentClassId}
           availableClasses={availableClasses}
           currentTotalAmount={paymentsEnabled ? totalAmount : 0}
+          currentDiscount={paymentsEnabled ? discount : 0}
+          totalPaid={totalPaid}
           currency={currency}
           paymentsEnabled={paymentsEnabled}
           planName={enrollment.plan.name}
@@ -349,6 +352,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                     <th className="pb-2 text-left">{t('paymentTable.reference')}</th>
                     <th className="pb-2 text-left">{t('paymentTable.paidAt')}</th>
                     <th className="pb-2 text-left">{t('paymentTable.cashedAt')}</th>
+                    {isAdmin && <th className="pb-2" />}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -367,6 +371,17 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                       <td className="py-3 text-graphite-600">
                         {p.cashedAt ? formatDate(p.cashedAt, locale) : '-'}
                       </td>
+                      {isAdmin && (
+                        <td className="py-3 text-right">
+                          {!p.receiptId && !p.paymentTransactionId && (
+                            <CancelEnrollmentPaymentButton
+                              paymentId={p.id}
+                              amount={formatCurrency(Math.abs(Number(p.amount)), locale, currency)}
+                              isRefund={Number(p.amount) < 0}
+                            />
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
