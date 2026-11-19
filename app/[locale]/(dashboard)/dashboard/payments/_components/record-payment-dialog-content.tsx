@@ -22,6 +22,7 @@ import { useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { Link, useRouter } from '@/i18n/routing'
 import { currencyFractionDigits, currencyStep, currencySymbol } from '@/lib/decimal'
+import { currentDashboardPath, receiptHref } from '@/lib/receipt-link'
 import type { PayableEnrollmentChoice } from '@/use-cases/payments/payable-enrollment-choices'
 import type { ManualPaymentMethod } from '@/use-cases/payments/schemas'
 import { recordPaymentAction } from '../../../_lib/payment-actions'
@@ -113,7 +114,7 @@ function RecordPaymentForm({
     {
       onSuccess: (result) => {
         if (typeof result === 'object') {
-          router.push(`/dashboard/cashier/receipts/${result.receiptId}`)
+          router.push(receiptHref(result.receiptId, currentDashboardPath()))
           return
         }
         router.refresh()

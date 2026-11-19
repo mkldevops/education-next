@@ -1367,6 +1367,7 @@
           },
           "onlinePayment": "Online payment",
           "backToFamily": "Family page",
+          "backToPrevious": "Back",
           "shareMenu": {
             "whatsapp": "WhatsApp",
             "copyLink": "Copy link",

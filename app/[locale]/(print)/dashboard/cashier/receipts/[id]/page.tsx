@@ -5,6 +5,7 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { buttonVariants } from '@/components/ui/button'
 import { Link } from '@/i18n/routing'
+import { receiptReturnKind, safeReceiptReturnPath } from '@/lib/receipt-link'
 import { ensureReceiptShareToken, receiptShareUrl } from '@/use-cases/receipts/share-receipt'
 import { requireSchoolReceipts } from '../../../../../(dashboard)/_lib/auth-helper'
 import { cashierPageMetadata } from '../../../../../(dashboard)/_lib/page-metadata'
@@ -15,8 +16,14 @@ import { CancelReceiptDialog, ReceiptShareDialog } from './_components/receipt-a
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
-  searchParams: Promise<{ action?: string }>
+  searchParams: Promise<{ action?: string; from?: string | string[] }>
 }
+
+const RETURN_LABEL = {
+  family: 'backToFamily',
+  cashier: 'back',
+  other: 'backToPrevious',
+} as const
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -28,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ReceiptPage({ params, searchParams }: Props) {
   await connection()
   const { locale, id } = await params
-  const { action } = await searchParams
+  const { action, from } = await searchParams
   setRequestLocale(locale)
   const t = await getTranslations('dashboard.pages.cashier.receipt')
 
@@ -42,8 +49,10 @@ export default async function ReceiptPage({ params, searchParams }: Props) {
   const shared = view.isCancelled ? null : await ensureReceiptShareToken(schoolId, view.id)
   const shareUrl =
     shared && typeof shared !== 'string' ? receiptShareUrl(shared.token, locale) : null
-  const back =
-    isAdmin && view.familyId
+  const returnPath = safeReceiptReturnPath(typeof from === 'string' ? from : null)
+  const back = returnPath
+    ? { href: returnPath, label: t(RETURN_LABEL[receiptReturnKind(returnPath)]) }
+    : isAdmin && view.familyId
       ? { href: `/dashboard/families/${view.familyId}`, label: t('backToFamily') }
       : { href: '/dashboard/cashier', label: t('back') }
 

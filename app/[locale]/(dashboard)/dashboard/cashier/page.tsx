@@ -7,6 +7,7 @@ import { formatReceiptNumber } from '@/domain/receipt'
 import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
+import { receiptHref } from '@/lib/receipt-link'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
@@ -203,7 +204,7 @@ export default async function CashierPage({ params, searchParams }: Props) {
                   <p className="text-sm text-graphite-600">{t('done.next')}</p>
                 </div>
                 <Link
-                  href={`/dashboard/cashier/receipts/${done.id}`}
+                  href={receiptHref(done.id, '/dashboard/cashier')}
                   className="text-sm font-medium text-foreground underline"
                 >
                   {t('done.view')}
