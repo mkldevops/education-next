@@ -2252,7 +2252,7 @@ absence actions are `requireSchoolCashier()`; prices, settings and the opening b
   replaced from its own start. A stop closes started segments the day before and deletes those that
   have not started (`planStop()`, `src/domain/meal-schedule.ts`). Nothing served from that date:
   `notSubscribed`.
-- **Automatic stop.** `deactivateStudent()` stops every service of the student from today;
+- **Automatic stop.** `archiveStudent()` stops every service of the student from today;
   `cancelEnrollment()` stops the segments in the periods of the cancelled enrollment's classes
   (`stopStudentMeals()`). Neither checks `meals_enabled`: an open segment stops even after the
   school opted out.
@@ -2543,10 +2543,54 @@ A student is **skipped**, with the reason reported, when:
   A student's page shows the languages of its family. `enroll_family` does not set them.
 - **A student's birthday, when given, must be in the past** → `validationError`
   (`src/domain/student.ts`).
-- **A student carrying a `PENDING` or `ACTIVE` enrollment cannot be archived**
-  → `hasActiveEnrollments`.
-- **A family cannot be archived either while any of its students holds one** — same discriminant,
-  counted across every person linked to the family.
+- **Archiving a student records a departure** (`archiveStudent()`,
+  `src/use-cases/students/archive-student.ts`; admins only, and MCP `archive_student`). The admin
+  picks the last month of presence, between the first and last month of the periods of the open
+  enrollments, by default the current school month (`departureMonths()`,
+  `src/domain/student-departure.ts`; another month → `endMonthOutsidePeriod`). In one transaction,
+  under each debtor family's payment lock:
+  - each `PENDING`/`ACTIVE` enrollment becomes `COMPLETED` with `endMonth`, its total cut to the
+    installments due through that month (`owedThroughMonth()`), never below what was already paid;
+  - the remainder either stays owed (default, and always through MCP) or is written off: the total
+    drops to the amount paid, `writeOffAmount` records the forgiven part and `writeOffReason` is
+    required (`reasonRequired`) and shown on the enrollment;
+  - open class assignments end now, the childcare subscription ends after `endMonth` (never before a
+    month already billed), `Student.isActive` turns false and `Student.leftAt` is set; meals stop
+    from today once committed.
+- **A departure keeps its arrears payable.** A `COMPLETED` enrollment with an `endMonth` stays in the
+  payable scope (`payableEnrollmentWhere`, `src/domain/enrollment.ts`): family balance, payment
+  tracking and statistics, and the overdue list, which flags the archived student (`archived`). The
+  meal debtor list includes archived students as well.
+- **Former students stay visible to staff.** The students list toggles to `?status=former`
+  (`listFormerStudents()`, `src/use-cases/students/former-students.ts`): last class, departure
+  (`leftAt`, or the last `endMonth` for older archives) and the tuition still owed. Staff open an
+  archived student's page, badged « Archivé », and can still record a payment; parents never see it.
+- **Reinstating a student** (`reinstateStudent()`, `src/use-cases/students/reinstate-student.ts`;
+  admins only) sets `isActive` back to true and clears `leftAt`. Its enrollments stay `COMPLETED`
+  with their `endMonth` and arrears: a return is a new enrollment. A student of another school or
+  already active → `notFound`.
+- **Importing a list of former students** (« Importer une liste », `?status=former`, admins only, shown
+  only while the AI assistant is enabled). Up to 4 files (6 MB each, 10 MB in all): PNG/JPEG/WebP
+  photo, PDF, CSV/TXT or `.xlsx`. `.xlsx` is converted to `;` text on the server (`read-excel-file`,
+  `src/use-cases/students/read-spreadsheet.ts`) after a zip-bomb pre-check: declared uncompressed
+  size ≤ 20 MB, ≤ 200 entries, no ZIP64. Images go through the assistant's image sanitizer. The AI
+  (`extractFormerStudents()`, rate-limited to 6 reads per minute per admin and school) returns
+  lastname, firstname, optional birthday, class label and departure year, each flagged when
+  uncertain; the reading is capped at 500 rows. Nothing is written until the admin confirms.
+  - **Review statuses** (`classifyFormerStudents()`, `src/domain/former-student-import.ts`), recomputed
+    on the server after each edit: `incomplete` (missing or too long name, invalid date or year),
+    `existing` (an archived student of the same name with a compatible birthday, an active one with the
+    same known birthday, or a duplicate row of the file), `homonym` (any other same-name student: it is
+    still created), otherwise `create`. Excluded rows are neither counted nor written.
+  - **The commit** (`commitFormerStudentImport()`, `src/use-cases/students/former-student-import.ts`)
+    re-validates the rows, takes a per-school advisory lock and re-classifies them in its transaction,
+    then creates only `create` and `homonym` rows: a `Person` and a `Student` with `isActive: false`,
+    `leftAt` on 31 August (UTC) of the departure year — now when the year is missing or that date is
+    still ahead — the birthday and `formerClassLabel`. No enrollment, family, payment or attendance is
+    created. It answers `{created, skipped}`; a re-run of the same list creates nothing more. The former
+    students list shows `formerClassLabel` as the last class when the student has no class history.
+- **A family cannot be archived while any of its students holds a `PENDING` or `ACTIVE`
+  enrollment** → `hasActiveEnrollments`, counted across every person linked to the family.
 
 ### Deleting a family for good
 

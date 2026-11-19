@@ -3,6 +3,7 @@ import {
   annualPlanAmount,
   installmentCoverage,
   owedPlanAmount,
+  owedThroughMonth,
   paymentInstallments,
   paymentScheduleSchema,
   paymentTracking,
@@ -222,6 +223,56 @@ describe('enrollment start month', () => {
     expect(startMonthToDate('2026-10').toISOString()).toBe('2026-10-01T00:00:00.000Z')
     expect(startMonthFromDate(startMonthToDate('2026-10'))).toBe('2026-10')
     expect(startMonthFromDate(null)).toBeNull()
+  })
+})
+
+describe('student departure (end month)', () => {
+  const monthly = { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 5 } as const
+
+  it('owes the installments due up to the last month of presence', () => {
+    // 10 × 100 € from September to June; leaving after December keeps 4 installments.
+    expect(owedThroughMonth(monthly, 1000, start, 'EUR', null, '2026-12')).toEqual({
+      amount: 400,
+      prorated: true,
+    })
+  })
+
+  it('combines the start month and the end month', () => {
+    // Started in October: 900 € over 9 installments; leaving after December keeps 3.
+    expect(owedThroughMonth(monthly, 900, start, 'EUR', '2026-10', '2026-12').amount).toBe(300)
+  })
+
+  it('keeps the cent remainder on the kept installments without inventing debt', () => {
+    // 100 € over 3 installments: 33.33, 33.33, 33.34. The first two make 66.66.
+    const threeMonths = { mode: 'MONTHLY', firstMonth: 9, count: 3, dueDay: 5 } as const
+    expect(owedThroughMonth(threeMonths, 100, start, 'EUR', null, '2026-10').amount).toBe(66.66)
+    expect(owedThroughMonth(threeMonths, 100, start, 'EUR', null, '2026-11').amount).toBe(100)
+  })
+
+  it('cannot prorate a plan without deadlines or an enrollment without a period', () => {
+    expect(owedThroughMonth({ mode: 'NONE' }, 1000, start, 'EUR', null, '2026-12')).toEqual({
+      amount: 1000,
+      prorated: false,
+    })
+    expect(owedThroughMonth(monthly, 1000, null, 'EUR', null, '2026-12')).toEqual({
+      amount: 1000,
+      prorated: false,
+    })
+  })
+
+  it('owes nothing when leaving before the first deadline', () => {
+    expect(owedThroughMonth(monthly, 1000, start, 'EUR', null, '2026-08').amount).toBe(0)
+  })
+
+  it('drops the deadlines after the end month and splits the cut total the same way', () => {
+    const installments = paymentInstallments(monthly, 400, start, 'EUR', null, '2026-12')
+    expect(installments).toEqual([
+      { dueDate: '2026-09-05', amount: 100 },
+      { dueDate: '2026-10-05', amount: 100 },
+      { dueDate: '2026-11-05', amount: 100 },
+      { dueDate: '2026-12-05', amount: 100 },
+    ])
+    expect(paymentTracking(installments, 0, '2027-03-01').overdueAmount).toBe(400)
   })
 })
 

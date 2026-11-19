@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { payableEnrollmentWhere } from '@/domain/enrollment'
 
 const dbMock = {
   enrollment: {
@@ -28,6 +29,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'enrollment-1',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 80,
         discount: 20,
         payments: [],
@@ -45,6 +47,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'enrollment-1',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 100,
         discount: 0,
         payments: [{ amount: 40 }],
@@ -52,6 +55,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'enrollment-2',
         status: 'PENDING',
+        endMonth: null,
         totalAmount: 50,
         discount: 0,
         payments: [{ amount: 50 }],
@@ -81,6 +85,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'enrollment-1',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 100,
         discount: 0,
         payments: [{ amount: 40 }],
@@ -88,6 +93,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'enrollment-2',
         status: 'PENDING',
+        endMonth: null,
         totalAmount: 200,
         discount: 0,
         payments: [],
@@ -99,11 +105,29 @@ describe('calculateFamilyBalance', () => {
     expect(balance.enrollments.map((e) => e.enrollmentId)).toEqual(['enrollment-1', 'enrollment-2'])
   })
 
+  it('still owes the arrears of an enrollment closed by a departure', () => {
+    const balance = calculateFamilyBalance([
+      {
+        id: 'departed',
+        status: 'COMPLETED',
+        endMonth: new Date('2026-12-01T00:00:00.000Z'),
+        totalAmount: 400,
+        discount: 0,
+        payments: [{ amount: 100 }],
+      },
+    ])
+
+    expect(balance.totalAmount).toBe(400)
+    expect(balance.remainingBalance).toBe(300)
+    expect(balance.enrollments.map((e) => e.enrollmentId)).toEqual(['departed'])
+  })
+
   it('keeps payments of a cancelled enrollment in the total paid without owing it', () => {
     const balance = calculateFamilyBalance([
       {
         id: 'cancelled',
         status: 'CANCELLED',
+        endMonth: null,
         totalAmount: 300,
         discount: 0,
         payments: [{ amount: 200 }],
@@ -111,6 +135,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'completed',
         status: 'COMPLETED',
+        endMonth: null,
         totalAmount: 100,
         discount: 10,
         payments: [{ amount: 50 }],
@@ -118,6 +143,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'active',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 150,
         discount: 5,
         payments: [{ amount: 30 }],
@@ -137,6 +163,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'cancelled',
         status: 'CANCELLED',
+        endMonth: null,
         totalAmount: 300,
         discount: 0,
         payments: [{ amount: 200 }],
@@ -159,6 +186,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'enrollment-1',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 100.1,
         discount: 0,
         payments: [{ amount: 0.01 }],
@@ -174,6 +202,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'active',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 180,
         discount: 0,
         payments: [{ amount: 40.1 }, { amount: 19.9 }],
@@ -181,6 +210,7 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'cancelled',
         status: 'CANCELLED',
+        endMonth: null,
         totalAmount: 180,
         discount: 0,
         payments: [{ amount: 25 }],
@@ -190,11 +220,19 @@ describe('calculateFamilyBalance', () => {
       {
         id: 'active',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 180,
         discount: 0,
         paid: { toString: () => '60.00' },
       },
-      { id: 'cancelled', status: 'CANCELLED', totalAmount: 180, discount: 0, paid: 25 },
+      {
+        id: 'cancelled',
+        status: 'CANCELLED',
+        endMonth: null,
+        totalAmount: 180,
+        discount: 0,
+        paid: 25,
+      },
     ])
 
     expect(fromTotals).toEqual(fromRows)
@@ -203,7 +241,14 @@ describe('calculateFamilyBalance', () => {
 
   it('treats an enrollment without any payment as unpaid when the total is null', () => {
     const balance = calculateFamilyBalance([
-      { id: 'enrollment-1', status: 'PENDING', totalAmount: 180, discount: 0, paid: null },
+      {
+        id: 'enrollment-1',
+        status: 'PENDING',
+        endMonth: null,
+        totalAmount: 180,
+        discount: 0,
+        paid: null,
+      },
     ])
 
     expect(balance.totalPaid).toBe(0)
@@ -231,7 +276,7 @@ describe('getFamilyBalance', () => {
 
     expect(where).toEqual({
       schoolId,
-      OR: [{ status: { in: ['PENDING', 'ACTIVE'] } }, { payments: { some: { isActive: true } } }],
+      OR: [payableEnrollmentWhere, { payments: { some: { isActive: true } } }],
       student: {
         person: {
           families: {
@@ -248,6 +293,7 @@ describe('getFamilyBalance', () => {
       {
         id: 'enrollment-2025',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 600,
         discount: 0,
         payments: [{ amount: 600 }],
@@ -256,6 +302,7 @@ describe('getFamilyBalance', () => {
       {
         id: 'enrollment-2026',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 800,
         discount: 0,
         payments: [{ amount: 600 }],
@@ -294,6 +341,7 @@ describe('getFamilyBalance', () => {
       {
         id: 'enrollment-2025',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 600,
         discount: 0,
         payments: [{ amount: 500 }],
@@ -302,6 +350,7 @@ describe('getFamilyBalance', () => {
       {
         id: 'enrollment-2026',
         status: 'PENDING',
+        endMonth: null,
         totalAmount: 800,
         discount: 0,
         payments: [],
@@ -323,6 +372,7 @@ describe('getFamilyBalance', () => {
       {
         id: 'enrollment-own',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 180,
         discount: 0,
         payments: [],
@@ -333,6 +383,7 @@ describe('getFamilyBalance', () => {
         // family-2 est prioritaire, donc family-1 ne doit rien voir de cette inscription.
         id: 'enrollment-shared',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 300,
         discount: 0,
         payments: [],
@@ -358,6 +409,7 @@ describe('getFamilyBalance', () => {
       {
         id: 'enrollment-shared',
         status: 'ACTIVE',
+        endMonth: null,
         totalAmount: 300,
         discount: 0,
         payments: [],

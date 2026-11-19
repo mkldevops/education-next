@@ -98,21 +98,24 @@ export type FamilyDetail = Extract<
 type EnrollmentAmounts = {
   totalAmount: DecimalLike
   discount: DecimalLike
+  writeOffAmount: DecimalLike | null
   plan: { amount: DecimalLike }
 }
 
 function serializeEnrollmentAmounts<E extends EnrollmentAmounts>(
   enrollment: E
-): Omit<E, 'totalAmount' | 'discount' | 'plan'> & {
+): Omit<E, 'totalAmount' | 'discount' | 'writeOffAmount' | 'plan'> & {
   totalAmount: number
   discount: number
+  writeOffAmount: number | null
   plan: Omit<E['plan'], 'amount'> & { amount: number }
 } {
-  const { totalAmount, discount, plan, ...rest } = enrollment
+  const { totalAmount, discount, writeOffAmount, plan, ...rest } = enrollment
   return {
     ...rest,
     totalAmount: Number(totalAmount),
     discount: Number(discount),
+    writeOffAmount: writeOffAmount === null ? null : Number(writeOffAmount),
     plan: serializePlanAmount(plan),
   }
 }

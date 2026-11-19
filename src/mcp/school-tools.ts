@@ -586,8 +586,9 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       name: 'archive_student',
       title: 'Archiver un élève',
       description:
-        'Masque un élève de l’école sans effacer son dossier. Refuse une inscription ' +
-        'PENDING ou ACTIVE : `hasActiveEnrollments`. Arrête aussi ses prestations de repas. ' +
+        'Enregistre le départ d’un élève sans effacer son dossier : ses inscriptions ouvertes ' +
+        'sont clôturées après le mois scolaire en cours, le reste dû jusqu’à ce mois reste ' +
+        'dû (rien n’est annulé), il quitte sa classe et ses repas s’arrêtent. ' +
         'Refus : `notFound`, `validationError`. Rend `{ id, archived: true }`.',
       inputSchema: mcpResourceIdSchema,
       annotations: DESTRUCTIVE_WRITE,

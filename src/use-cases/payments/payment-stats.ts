@@ -1,3 +1,4 @@
+import { payableEnrollmentWhere } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import {
   collectionByMethod,
@@ -74,12 +75,12 @@ export async function familyContactPhones(schoolId: string, familyIds: string[])
   return phones
 }
 
-/** Périmètre de la dette : inscriptions `PENDING` et `ACTIVE`, bornées à la période choisie. */
+/** Périmètre de la dette : inscriptions payables (`payableEnrollmentWhere`), bornées à la période choisie. */
 export function paymentScope(schoolId: string, periodId: string | null) {
   const enrollmentWhere = {
     schoolId,
     isActive: true,
-    status: { in: ['PENDING' as const, 'ACTIVE' as const] },
+    ...payableEnrollmentWhere,
     ...(periodId ? { classAssignments: { some: { classPeriod: { periodId } } } } : {}),
   }
   return {
@@ -91,7 +92,7 @@ export function paymentScope(schoolId: string, periodId: string | null) {
 /**
  * Statistiques d'encaissement d'une école, sur la période sélectionnée.
  *
- * Le périmètre est celui de la dette : inscriptions `PENDING` et `ACTIVE`, comme
+ * Le périmètre est celui de la dette : inscriptions payables, comme
  * `calculateFamilyBalance`. Les paiements sont agrégés en base ; le graphique a son propre chargeur,
  * `getCollectionSeries`.
  */

@@ -173,6 +173,8 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
           ...enrollment,
           totalAmount: Number(enrollment.totalAmount),
           discount: Number(enrollment.discount),
+          writeOffAmount:
+            enrollment.writeOffAmount === null ? null : Number(enrollment.writeOffAmount),
           plan: { ...enrollment.plan, amount: Number(enrollment.plan.amount) },
           payments: enrollment.payments.map((payment) => ({
             ...payment,
@@ -183,6 +185,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
           ...enrollment,
           totalAmount: 0,
           discount: 0,
+          writeOffAmount: null,
           plan: { ...enrollment.plan, amount: 0 },
           payments: [],
         }

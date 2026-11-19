@@ -371,7 +371,7 @@ permanently deleting records, reusing the dashboard protections:
 
 | Tool                   | Refuses                                                                                                                  |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `archive_student`      | An active or pending enrollment (`hasActiveEnrollments`); stops meal services on success                                 |
+| `archive_student`      | Nothing: closes open enrollments after the current school month, keeps the amount owed through it, ends class and meals  |
 | `archive_class_period` | Any student/teacher assignment, schedule slot or attendance session (`classInUse`)                                       |
 | `archive_level`        | Any active class (`levelInUse`); removes progression links on success                                                    |
 | `archive_plan`         | An open enrollment (`planInUse`), the reserved unpriced plan (`unpricedPlan`), or disabled payments (`paymentsDisabled`) |

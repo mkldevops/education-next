@@ -1,9 +1,10 @@
 import { cache } from 'react'
+import { isPayableEnrollment } from '@/domain/enrollment'
 import { languagesOf } from '@/domain/family'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { enrollmentBalances } from '@/domain/payment'
 import { calculateAge } from '@/lib/date'
-import { db } from '@/lib/db'
+import { db, dbArchived } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { classOptionSelect, toClassOption } from '../../../../_lib/class-options-loader'
@@ -18,20 +19,27 @@ import { familyLinksVisibleTo, resolveDeepLink, staffOrLinkedTo } from '../../..
  *
  * Les familles incluses sont filtrées par le même critère : le garde de racine ouvre
  * la fiche, il ne borne pas ce qu'elle embarque.
+ *
+ * Un élève archivé (parti) reste lisible par le staff de son école — sa dette reste à
+ * encaisser — d'où `dbArchived`, qui ne lève que le soft-delete. Pour un parent, la règle
+ * ne change pas : seul un élève actif s'ouvre.
  */
 export const resolveStudent = cache((id: string) =>
   resolveDeepLink({
     requireStaff: false,
     find: (access) =>
-      db.student.findFirst({
+      dbArchived.student.findFirst({
         where: {
           id,
           schoolId: { in: access.schoolIds },
-          ...staffOrLinkedTo(access, {
-            person: {
-              families: { some: { family: { users: { some: { userId: access.userId } } } } },
-            },
-          }),
+          AND: [
+            staffOrLinkedTo(access, {
+              person: {
+                families: { some: { family: { users: { some: { userId: access.userId } } } } },
+              },
+            }),
+            { OR: [{ isActive: true }, { schoolId: { in: access.staffSchoolIds } }] },
+          ],
         },
         include: {
           person: {
@@ -132,11 +140,24 @@ export function deriveStudentDetail(student: StudentDetail) {
     totalPaid,
     remaining: Math.max(0, totalDue - totalPaid),
     activeEnrollments,
+    // Un élève parti doit encore les mois échus avant son départ : ses inscriptions closes
+    // avec un mois de fin restent encaissables.
     payableRemaining: roundHalfUp(
       enrollmentBalances(
-        student.enrollments.filter((e) => e.status === 'PENDING' || e.status === 'ACTIVE')
+        student.enrollments.filter((e) => isPayableEnrollment(e.status, e.endMonth))
       ).reduce((sum, balance) => sum + balance.remainingBalance, 0)
     ),
     languagesAtHome: languagesOf(family?.languagesAtHome).join(', '),
+    departedAt: student.isActive ? null : departureOf(student),
   }
+}
+
+/**
+ * Départ d'un élève archivé : `leftAt`, ou à défaut le dernier mois dû de ses inscriptions
+ * closes (archive antérieure à `leftAt`). `null` quand rien ne le date.
+ */
+function departureOf(student: StudentDetail): Date | null {
+  if (student.leftAt) return student.leftAt
+  const endMonths = student.enrollments.flatMap((e) => (e.endMonth ? [e.endMonth] : []))
+  return endMonths.sort((a, b) => b.getTime() - a.getTime())[0] ?? null
 }

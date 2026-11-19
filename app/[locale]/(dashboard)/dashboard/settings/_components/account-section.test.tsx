@@ -10,8 +10,10 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }))
 
-vi.mock('@/i18n/routing', () => ({
-  useRouter: () => i18nRouter,
+vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ push: vi.fn() }) }))
+
+vi.mock('@/lib/leave-after-sign-out', () => ({
+  leaveAfterSignOut: (locale: string) => leaveAfterSignOut(locale),
 }))
 
 vi.mock('@/actions', () => ({
@@ -34,7 +36,7 @@ vi.mock('@/lib/toast', () => ({
 
 import { AccountSection } from './account-section'
 
-const i18nRouter = { push: vi.fn() }
+const leaveAfterSignOut = vi.fn()
 const signOut = vi.fn(async () => ({ error: null }))
 const toastError = vi.fn()
 const toastSuccess = vi.fn()
@@ -51,7 +53,7 @@ const logout = () => {
 
 describe('AccountSection sign out', () => {
   beforeEach(() => {
-    i18nRouter.push.mockClear()
+    leaveAfterSignOut.mockClear()
     signOut.mockClear()
     toastError.mockClear()
     signOut.mockResolvedValue({ error: null })
@@ -60,7 +62,7 @@ describe('AccountSection sign out', () => {
   it('sends the user home once the session is closed', async () => {
     logout()
 
-    await waitFor(() => expect(i18nRouter.push).toHaveBeenCalledWith('/'))
+    await waitFor(() => expect(leaveAfterSignOut).toHaveBeenCalledWith('fr'))
     expect(toastError).not.toHaveBeenCalled()
   })
 
@@ -70,7 +72,7 @@ describe('AccountSection sign out', () => {
     logout()
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith('errors.logoutFailed'))
-    expect(i18nRouter.push).not.toHaveBeenCalled()
+    expect(leaveAfterSignOut).not.toHaveBeenCalled()
   })
 })
 

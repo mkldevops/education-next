@@ -1,3 +1,4 @@
+import { isPayableEnrollment, payableEnrollmentWhere } from '@/domain/enrollment'
 import { type FamilyLink, resolveDebtorFamily } from '@/domain/family-debtor'
 import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
@@ -12,6 +13,7 @@ type ReceivedPayments = { payments: Array<{ amount: DecimalLike }> } | { paid: D
 type BalanceEnrollment = {
   id: string
   status: EnrollmentStatus
+  endMonth: Date | null
   totalAmount: DecimalLike
   discount: DecimalLike
 } & ReceivedPayments
@@ -40,16 +42,6 @@ export type FamilyBalance = {
   remainingAmountInCents: number
 }
 
-/** Only these enrollments still owe money; the others only contribute what was already paid. */
-export const PAYABLE_ENROLLMENT_STATUSES = [
-  'PENDING',
-  'ACTIVE',
-] as const satisfies EnrollmentStatus[]
-
-export function isPayableEnrollment(status: EnrollmentStatus) {
-  return (PAYABLE_ENROLLMENT_STATUSES as readonly EnrollmentStatus[]).includes(status)
-}
-
 function sumPayments(enrollment: ReceivedPayments) {
   if ('paid' in enrollment) return roundHalfUp(toNumber(enrollment.paid ?? 0))
   return roundHalfUp(
@@ -62,9 +54,11 @@ function sumPayments(enrollment: ReceivedPayments) {
  * count in `totalPaid`, but such an enrollment neither owes an amount nor receives an allocation.
  */
 export function calculateFamilyBalance(allEnrollments: BalanceEnrollment[]): FamilyBalance {
-  const enrollments = allEnrollments.filter((enrollment) => isPayableEnrollment(enrollment.status))
+  const enrollments = allEnrollments.filter((enrollment) =>
+    isPayableEnrollment(enrollment.status, enrollment.endMonth)
+  )
   const settledPaid = allEnrollments
-    .filter((enrollment) => !isPayableEnrollment(enrollment.status))
+    .filter((enrollment) => !isPayableEnrollment(enrollment.status, enrollment.endMonth))
     .reduce((sum, enrollment) => sum + sumPayments(enrollment), 0)
 
   const balances = enrollments.map((enrollment) => {
@@ -115,15 +109,13 @@ export async function getFamilyBalance(
   const rows = await client.enrollment.findMany({
     where: {
       schoolId,
-      OR: [
-        { status: { in: [...PAYABLE_ENROLLMENT_STATUSES] } },
-        { payments: { some: { isActive: true } } },
-      ],
+      OR: [payableEnrollmentWhere, { payments: { some: { isActive: true } } }],
       ...familyStudentFilter(familyId),
     },
     select: {
       id: true,
       status: true,
+      endMonth: true,
       totalAmount: true,
       discount: true,
       payments: {

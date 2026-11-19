@@ -4,14 +4,14 @@ import { useMenu } from '@peaklab/ui'
 import { MoreHorizontal, UserPlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { type CSSProperties, useEffect, useState } from 'react'
-import { DeactivateStudentButton } from './deactivate-student-button'
+import { ArchiveStudentDialog } from './archive-student-dialog'
 import { EditStudentDialog } from './edit-student-dialog'
 import type { StudentRow } from './students-data-table'
 
-type Props = { student: StudentRow; canEnroll: boolean; onEnroll: () => void }
+type Props = { student: StudentRow; canEnroll: boolean; canArchive: boolean; onEnroll: () => void }
 const MENU_WIDTH = 224
 
-export function StudentActionsMenu({ student, canEnroll, onEnroll }: Props) {
+export function StudentActionsMenu({ student, canEnroll, canArchive, onEnroll }: Props) {
   const t = useTranslations('dashboard.pages.students')
   const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
   const [anchor, setAnchor] = useState<CSSProperties>()
@@ -67,11 +67,14 @@ export function StudentActionsMenu({ student, canEnroll, onEnroll }: Props) {
             {t('enroll')}
           </button>
         )}
-        <DeactivateStudentButton
-          studentId={student.id}
-          triggerRole="menuitem"
-          restoreFocusRef={triggerRef}
-        />
+        {canArchive && (
+          <ArchiveStudentDialog
+            studentId={student.id}
+            studentName={`${student.person.name} ${student.person.lastname}`}
+            triggerRole="menuitem"
+            restoreFocusRef={triggerRef}
+          />
+        )}
       </div>
     </div>
   )

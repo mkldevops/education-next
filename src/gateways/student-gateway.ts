@@ -1,4 +1,3 @@
-import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
 
@@ -20,12 +19,6 @@ export const studentGateway = {
     db.student.update({
       where: { id_schoolId: { id, schoolId } },
       data,
-    }),
-
-  deactivate: (schoolId: string, id: string) =>
-    db.student.update({
-      where: { id_schoolId: { id, schoolId } },
-      data: { isActive: false },
     }),
 
   findById: (schoolId: string, id: string) =>
@@ -55,15 +48,4 @@ export const studentGateway = {
       },
       include: { person: true },
     }),
-
-  hasActiveEnrollments: async (schoolId: string, id: string) => {
-    const count = await db.enrollment.count({
-      where: {
-        schoolId,
-        studentId: id,
-        status: { in: [...OPEN_ENROLLMENT_STATUSES] },
-      },
-    })
-    return count > 0
-  },
 }

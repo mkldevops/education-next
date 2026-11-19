@@ -50,6 +50,7 @@ export function RecordPaymentDialogContent({
   currency,
   canOpenCashier,
   enrollments,
+  defaultEnrollmentId,
 }: Parameters<typeof RecordPaymentForm>[0]) {
   const t = useTranslations('dashboard.pages.payments.record')
 
@@ -65,6 +66,7 @@ export function RecordPaymentDialogContent({
         currency={currency}
         canOpenCashier={canOpenCashier}
         enrollments={families.length === 1 ? enrollments : []}
+        defaultEnrollmentId={families.length === 1 ? defaultEnrollmentId : undefined}
       />
     </DialogContent>
   )
@@ -76,12 +78,14 @@ function RecordPaymentForm({
   currency,
   canOpenCashier,
   enrollments,
+  defaultEnrollmentId,
 }: {
   families: Option[]
   currency: string
   remainingAmount?: number
   canOpenCashier: boolean
   enrollments: PayableEnrollmentChoice[]
+  defaultEnrollmentId?: string
 }) {
   const t = useTranslations('dashboard.pages.payments.record')
   const locale = useLocale()
@@ -90,7 +94,11 @@ function RecordPaymentForm({
   const { isPending, close, onSubmit } = useDialogForm(t)
   const [method, setMethod] = useState<ManualPaymentMethod>('CASH')
   const [amount, setAmount] = useState('')
-  const [target, setTarget] = useState(SPREAD_TARGET)
+  const [target, setTarget] = useState(
+    () =>
+      enrollments.find((enrollment) => enrollment.enrollmentId === defaultEnrollmentId)
+        ?.enrollmentId ?? SPREAD_TARGET
+  )
   const targeted = enrollments.find((enrollment) => enrollment.enrollmentId === target)
   const payableAmount = targeted ? targeted.remainingBalance : remainingAmount
   const familyItems = families.map((family) => ({ value: family.id, label: family.name }))

@@ -15,6 +15,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactCompiler: true,
+  // `read-excel-file` décompresse le classeur dans un worker dont le code est évalué depuis la
+  // source d'une fonction : le laisser hors du bundle serveur garde ce code intact.
+  serverExternalPackages: ['read-excel-file'],
   experimental: {
     // Le défaut de Next est 1 Mo pour le corps COMPLET d'une action serveur, pièce jointe
     // comprise. Sans ce relèvement, un envoi d'image dépassant ce plafond est coupé avant

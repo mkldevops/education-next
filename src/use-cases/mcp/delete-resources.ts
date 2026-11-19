@@ -4,7 +4,7 @@ import { deactivateClassPeriod } from '@/use-cases/class-periods/deactivate-clas
 import { deleteFamily } from '@/use-cases/families/delete-family'
 import { deactivateLevel } from '@/use-cases/levels/deactivate-level'
 import { deactivatePlan } from '@/use-cases/plans/deactivate-plan'
-import { deactivateStudent } from '@/use-cases/students/deactivate-student'
+import { archiveStudent } from '@/use-cases/students/archive-student'
 import { mcpDeleteFamilySchema, mcpResourceIdSchema } from './schemas'
 
 type Scope = { schoolId: string }
@@ -45,10 +45,17 @@ async function archiveResource(scope: Scope, input: ResourceInput, archive: Arch
   return result === 'OK' ? { id: parsed.data.id, archived: true } : result
 }
 
+/**
+ * Same departure as the dashboard with its defaults: the student leaves after the current school
+ * month and what stays owed through it remains owed (nothing is written off).
+ */
+const archiveDepartedStudent: Archive = ({ schoolId, id }) =>
+  archiveStudent({ schoolId, studentId: id, remainder: 'keep' })
+
 export function archiveStudentFromMcp(
   scope: Scope,
   input: ResourceInput,
-  archive: Archive = deactivateStudent
+  archive: Archive = archiveDepartedStudent
 ) {
   return archiveResource(scope, input, archive)
 }

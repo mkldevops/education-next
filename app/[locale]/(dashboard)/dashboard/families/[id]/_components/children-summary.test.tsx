@@ -34,6 +34,7 @@ const students = [
           {
             id: 'enrollment-2',
             status: 'ACTIVE',
+            endMonth: null,
             totalAmount: 300,
             discount: 0,
             payments: [{ amount: 100 }],
@@ -42,6 +43,7 @@ const students = [
           {
             id: 'enrollment-1',
             status: 'COMPLETED',
+            endMonth: null,
             totalAmount: 200,
             discount: 0,
             payments: [],

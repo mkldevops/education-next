@@ -31,6 +31,8 @@ const baseStudent: Omit<StudentRow, 'id' | 'birthday' | 'person'> = {
   snackAuthorization: false,
   allergies: null,
   isActive: true,
+  leftAt: null,
+  formerClassLabel: null,
   createdAt: new Date('2020-01-01T00:00:00Z'),
   updatedAt: new Date('2020-01-01T00:00:00Z'),
   enrollments: [],

@@ -83,7 +83,8 @@ export function paymentInstallments(
   totalAmount: number,
   periodStart: Date,
   currency: string,
-  startMonth: string | null = null
+  startMonth: string | null = null,
+  endMonth: string | null = null
 ): PaymentInstallment[] {
   if (schedule.mode === 'NONE') return []
   const year = periodStart.getUTCFullYear()
@@ -101,7 +102,12 @@ export function paymentInstallments(
         )
   // A late enrollment owes nothing before its start month: its total is split over the
   // remaining deadlines only, so the earlier ones never show as arrears.
-  const owedDates = startMonth ? dates.filter((date) => date >= firstDayOf(startMonth)) : dates
+  // A departed student owes nothing after its last month: `totalAmount` was cut to the
+  // installments kept, so splitting it again over them returns the same amounts.
+  const owedDates = dates.filter(
+    (date) =>
+      (!startMonth || date >= firstDayOf(startMonth)) && (!endMonth || date.slice(0, 7) <= endMonth)
+  )
   if (owedDates.length === 0) return []
   return splitAmount(owedDates, totalAmount, currency)
 }
@@ -164,6 +170,29 @@ export function owedPlanAmount(
   const owed = all.filter((installment) => installment.dueDate >= firstDayOf(startMonth))
   if (owed.length === 0) return 'noInstallmentDue'
   return roundHalfUp(owed.reduce((sum, installment) => sum + installment.amount, 0))
+}
+
+/**
+ * What an enrollment owes when its student leaves after `endMonth`: its current installments
+ * due up to that month. A plan without deadlines (or an enrollment without a period) cannot be
+ * prorated: the whole `totalAmount` stays owed.
+ */
+export function owedThroughMonth(
+  schedule: PaymentSchedule,
+  totalAmount: number,
+  periodStart: Date | null,
+  currency: string,
+  startMonth: string | null,
+  endMonth: string
+): { amount: number; prorated: boolean } {
+  if (!periodStart || schedule.mode === 'NONE') return { amount: totalAmount, prorated: false }
+  const installments = paymentInstallments(schedule, totalAmount, periodStart, currency, startMonth)
+  if (installments.length === 0) return { amount: totalAmount, prorated: false }
+  const kept = installments.filter((installment) => installment.dueDate.slice(0, 7) <= endMonth)
+  return {
+    amount: roundHalfUp(kept.reduce((sum, installment) => sum + installment.amount, 0)),
+    prorated: true,
+  }
 }
 
 export function paymentTracking(

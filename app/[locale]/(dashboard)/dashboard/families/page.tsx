@@ -2,17 +2,14 @@ import { PageHeader } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { isPayableEnrollment, payableEnrollmentWhere } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { getSelectedPeriodId } from '@/features/dashboard/period'
 import { redirect } from '@/i18n/routing'
 import { db } from '@/lib/db'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
-import {
-  calculateFamilyBalance,
-  isPayableEnrollment,
-  PAYABLE_ENROLLMENT_STATUSES,
-} from '@/use-cases/payments/family-balance'
+import { calculateFamilyBalance } from '@/use-cases/payments/family-balance'
 import { requireSchoolRecordsScope } from '../../_lib/auth-helper'
 import { toClassOption } from '../../_lib/class-options-loader'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
@@ -78,14 +75,12 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
                     enrollments: {
                       // Payments on a cancelled or completed enrollment stay in the paid total.
                       where: {
-                        OR: [
-                          { status: { in: [...PAYABLE_ENROLLMENT_STATUSES] } },
-                          { payments: { some: { isActive: true } } },
-                        ],
+                        OR: [payableEnrollmentWhere, { payments: { some: { isActive: true } } }],
                       },
                       select: {
                         id: true,
                         status: true,
+                        endMonth: true,
                         totalAmount: true,
                         discount: true,
                         // Les derniers paiements de la famille sont parmi les derniers de
@@ -134,8 +129,9 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
       emergencyContactName: family.emergencyContactName,
       emergencyContactPhone: family.emergencyContactPhone,
       studentCount: family.persons.filter((fp) => fp.person.student).length,
-      enrollmentCount: enrollments.filter((enrollment) => isPayableEnrollment(enrollment.status))
-        .length,
+      enrollmentCount: enrollments.filter((enrollment) =>
+        isPayableEnrollment(enrollment.status, enrollment.endMonth)
+      ).length,
     }
     if (!isAdmin) return { ...row, due: 0, paid: 0, remaining: 0, payments: [], paymentCount: 0 }
 
