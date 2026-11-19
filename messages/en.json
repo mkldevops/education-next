@@ -2480,11 +2480,10 @@
           }
         },
         "applyDiscount": {
-          "title": "Apply Discount",
-          "amount": "Discount amount ({currency})",
+          "title": "Change amount due",
           "cancel": "Cancel",
           "submit": "Apply",
-          "success": "Discount applied",
+          "success": "Amount due updated",
           "error": "Error applying discount",
           "errors": {
             "discountExceedsPlan": "The discount exceeds the plan amount",
@@ -2492,13 +2491,22 @@
             "validationError": "Check the amount you entered",
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimal places",
-            "totalBelowPaid": "The amount due would fall below what has already been paid on this enrollment",
+            "totalBelowPaid": "The amount due would fall below what has already been paid on this enrollment. If that payment is a mistake, cancel it first in this enrollment's Payments section.",
             "paymentsDisabled": "Payment management is turned off for this school",
             "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
             "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
             "noInstallmentDue": "No installment of the plan falls on or after that month"
           },
-          "totalAmount": "Final amount due ({currency})"
+          "totalAmount": "Final amount due ({currency})",
+          "free": "Free",
+          "hint": "Enter what the family owes in total for this enrollment, not the discount amount. 0 = free tuition.",
+          "belowPaid": "{paid} has already been collected on this enrollment, so the amount due cannot go below it. If that payment is a mistake, cancel it first in this enrollment's Payments section.",
+          "summary": {
+            "planAmount": "Plan price",
+            "discount": "Discount",
+            "totalPaid": "Already paid",
+            "remaining": "Remaining"
+          }
         },
         "setStartMonth": {
           "title": "Start month",
