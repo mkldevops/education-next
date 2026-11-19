@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { type ToolApprovalStatus, type ToolSet, tool } from 'ai'
 import { listSchoolTools, type SchoolTool } from '@/mcp/school-tools'
 import type { DraftScope } from '@/use-cases/mcp/draft-scope'
+import { availableGroups, describeGroups, LOAD_TOOLS, loadToolsSchema } from './tool-groups'
 
 /**
  * Secret de signature des approbations, dérivé de celui de Better Auth pour ne pas ajouter
@@ -54,6 +55,16 @@ export function buildAssistantTools(scope: DraftScope, approvalSecret: string | 
         : { type: 'denied', reason: 'approvalUnavailable' }
     }
   }
+
+  const groups = availableGroups(new Set(Object.keys(tools)))
+  tools[LOAD_TOOLS] = tool({
+    title: 'Charger des outils',
+    description:
+      'Makes a group of tools available from the next step on. Groups: ' +
+      `${describeGroups(groups)}. Load every group the request needs in one call.`,
+    inputSchema: loadToolsSchema,
+    execute: async ({ groups: loaded }) => ({ loaded }),
+  })
 
   return { tools, toolApproval, toolNames: new Set(Object.keys(tools)) }
 }

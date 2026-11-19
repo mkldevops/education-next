@@ -157,7 +157,7 @@ export async function POST(request: Request) {
           : {
               stopWhen: stepCountIs(AI_ASSISTANT_LIMITS.maxAgentSteps),
               prepareStep: ({ steps }: { steps: Parameters<typeof prepareAssistantStep>[0] }) =>
-                prepareAssistantStep(steps, toolNames, AI_ASSISTANT_LIMITS.maxAgentSteps),
+                prepareAssistantStep(steps, toolNames, AI_ASSISTANT_LIMITS.maxAgentSteps, history),
             }),
         maxOutputTokens: AI_ASSISTANT_LIMITS.maxOutputTokens,
         abortSignal,

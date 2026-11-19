@@ -59,7 +59,20 @@ describe('buildAssistantTools', () => {
     const { toolNames } = buildAssistantTools(scope, 'secret')
 
     expect(listSchoolToolsMock).toHaveBeenCalledWith(scope)
-    expect([...toolNames]).toEqual(['list_levels', 'preview_enroll_family', 'commit_enroll_family'])
+    expect([...toolNames]).toEqual([
+      'list_levels',
+      'preview_enroll_family',
+      'commit_enroll_family',
+      'load_tools',
+    ])
+  })
+
+  it('offers only the groups the caller has tools for', () => {
+    const { tools } = buildAssistantTools(scope, 'secret')
+    const description = (tools.load_tools as { description: string }).description
+
+    expect(description).toContain('enrollments:')
+    expect(description).not.toContain('meals:')
   })
 
   it('asks the administrator before every write, never before a read or a preview', () => {

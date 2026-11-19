@@ -47,20 +47,52 @@ describe('commitAfterPreview', () => {
 })
 
 describe('prepareAssistantStep', () => {
-  const idle = { toolResults: [] }
+  const idle = { toolCalls: [], toolResults: [] }
+  const names = new Set([...tools, 'load_tools'])
 
   it('reserves the last allowed step for a text answer', () => {
-    expect(prepareAssistantStep([idle, idle], tools, 3)).toEqual({
+    expect(prepareAssistantStep([idle, idle], names, 3)).toEqual({
       toolChoice: 'none',
       activeTools: [],
     })
-    expect(prepareAssistantStep([idle], tools, 3)).toBeUndefined()
   })
 
-  it('still forces the commit of a clean preview on the last step', () => {
-    const steps = [idle, { toolResults: [{ toolName: 'preview_record_payment', output: clean }] }]
-    expect(prepareAssistantStep(steps, tools, 3)).toEqual({
-      toolChoice: { type: 'tool', toolName: 'commit_record_payment' },
+  it('exposes only the core tools until a group is loaded', () => {
+    expect(prepareAssistantStep([idle], names, 3)).toEqual({
+      activeTools: ['list_plans', 'load_tools'],
     })
+  })
+
+  it('still forces the commit of a clean preview on the last step, with its group active', () => {
+    const steps = [
+      idle,
+      {
+        toolCalls: [{ toolName: 'preview_record_payment', input: {} }],
+        toolResults: [{ toolName: 'preview_record_payment', output: clean }],
+      },
+    ]
+    expect(prepareAssistantStep(steps, names, 3)).toEqual({
+      toolChoice: { type: 'tool', toolName: 'commit_record_payment' },
+      activeTools: ['list_plans', 'load_tools', 'preview_record_payment', 'commit_record_payment'],
+    })
+  })
+
+  it('keeps the groups loaded in earlier turns', () => {
+    const history = [
+      {
+        role: 'assistant' as const,
+        content: [
+          {
+            type: 'tool-call' as const,
+            toolCallId: 'c1',
+            toolName: 'load_tools',
+            input: { groups: ['payments'] },
+          },
+        ],
+      },
+    ]
+    expect(prepareAssistantStep([], names, 3, history)?.activeTools).toContain(
+      'commit_record_payment'
+    )
   })
 })
