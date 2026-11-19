@@ -3,6 +3,8 @@ import {
   defaultDepartureMonth,
   departureMonths,
   departureSettlement,
+  legacyDepartureMonth,
+  legacyDepartureTotal,
 } from '@/domain/student-departure'
 
 const period = {
@@ -55,5 +57,48 @@ describe('departureSettlement', () => {
       totalAmount: 500,
       writeOffAmount: 0,
     })
+  })
+})
+
+describe('legacyDepartureMonth', () => {
+  const left = { isActive: false, leftAt: new Date('2026-10-31T23:30:00.000Z') }
+  const open = { status: 'ACTIVE' as const, endMonth: null }
+
+  it('reads the departure month of a student archived before enrollments were closed', () => {
+    // 23:30 UTC on Oct 31 is already November in Paris.
+    expect(legacyDepartureMonth(left, open, 'Europe/Paris')).toBe('2026-11')
+    expect(legacyDepartureMonth(left, { ...open, status: 'PENDING' }, 'UTC')).toBe('2026-10')
+  })
+
+  it('leaves alone active students, closed enrollments and archives without a date', () => {
+    expect(legacyDepartureMonth({ ...left, isActive: true }, open, 'UTC')).toBeNull()
+    expect(legacyDepartureMonth({ ...left, leftAt: null }, open, 'UTC')).toBeNull()
+    expect(
+      legacyDepartureMonth(left, { ...open, endMonth: new Date('2026-10-01T00:00:00Z') }, 'UTC')
+    ).toBeNull()
+    expect(legacyDepartureMonth(left, { ...open, status: 'COMPLETED' }, 'UTC')).toBeNull()
+  })
+})
+
+describe('legacyDepartureTotal', () => {
+  const enrollment = {
+    schedule: { mode: 'MONTHLY' as const, firstMonth: 9, count: 10, dueDay: 10 },
+    totalAmount: 1000,
+    periodStart: new Date('2026-09-01T00:00:00.000Z'),
+    startMonth: null,
+  }
+
+  it('owes the deadlines through the departure month, or what was already paid', () => {
+    expect(legacyDepartureTotal(enrollment, '2026-10', 150, 'EUR')).toBe(200)
+    expect(legacyDepartureTotal(enrollment, '2026-10', 300, 'EUR')).toBe(300)
+  })
+
+  it('keeps the whole total when nothing schedules it', () => {
+    expect(
+      legacyDepartureTotal({ ...enrollment, schedule: { mode: 'NONE' } }, '2026-10', 0, 'EUR')
+    ).toBe(1000)
+    expect(legacyDepartureTotal({ ...enrollment, periodStart: null }, '2026-10', 0, 'EUR')).toBe(
+      1000
+    )
   })
 })

@@ -1440,7 +1440,7 @@
           "method": "Paiement",
           "recordedBy": "Encaissé par",
           "tuition": "Écolage",
-          "tuitionBalance": "Solde d'écolage au {date} : {amount}",
+          "tuitionBalance": "Écolage, reste à payer sur l'année au {date} : {amount}",
           "total": "Total",
           "mealDetail": "+{days, plural, one {# jour} other {# jours}}, payé jusqu'au {date}",
           "mealDays": "+{days, plural, one {# jour} other {# jours}}",
@@ -2189,7 +2189,7 @@
           "totalEnrollments": "Total inscriptions",
           "pending": "En attente",
           "totalPaid": "Total payé",
-          "remainingBalance": "Solde restant"
+          "remainingBalance": "Reste à payer sur l'année"
         },
         "tabs": {
           "overview": "Résumé",
@@ -2352,7 +2352,7 @@
           "status": {
             "ahead": "En avance de {amount}",
             "upToDate": "À jour",
-            "late": "En retard de {amount}",
+            "late": "En retard à ce jour : {amount}",
             "settled": "Année soldée",
             "untracked": "Sans échéancier"
           },
@@ -2378,7 +2378,7 @@
           "figures": {
             "paid": "Versé",
             "expectedToDate": "Attendu à ce jour",
-            "remaining": "Reste sur l'année",
+            "remaining": "Reste à payer sur l'année",
             "total": "Total de l'année"
           },
           "how": {
@@ -2413,7 +2413,7 @@
           "activeEnrollments": "Inscriptions actives",
           "totalDue": "Total dû",
           "totalPaid": "Total payé",
-          "remaining": "Solde restant"
+          "remaining": "Reste à payer sur l'année"
         },
         "familyPanel": {
           "contacts": "Contacts",

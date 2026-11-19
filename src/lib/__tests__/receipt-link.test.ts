@@ -60,4 +60,15 @@ describe('currentDashboardPath', () => {
     window.history.replaceState(null, '', '/fr/login')
     expect(currentDashboardPath()).toBeNull()
   })
+
+  it('keeps the open tab so the receipt returns to it', () => {
+    window.history.replaceState(null, '', '/fr/dashboard/families/f-1#payments')
+    expect(currentDashboardPath()).toBe('/dashboard/families/f-1#payments')
+    window.history.replaceState(null, '', '/fr/dashboard/families/f-1?action=x&tab=2#payments')
+    expect(currentDashboardPath()).toBe('/dashboard/families/f-1?tab=2#payments')
+    expect(receiptReturnKind('/dashboard/families/f-1#payments')).toBe('family')
+    expect(receiptHref('r-1', '/dashboard/families/f-1#payments')).toBe(
+      '/dashboard/cashier/receipts/r-1?from=%2Fdashboard%2Ffamilies%2Ff-1%23payments'
+    )
+  })
 })

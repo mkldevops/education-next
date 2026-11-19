@@ -20,16 +20,19 @@ export function receiptReturnKind(path: string): ReceiptReturnKind {
   return 'other'
 }
 
-/** Page courante du navigateur, sans préfixe de langue ; `null` hors navigateur. */
+/**
+ * Page courante du navigateur, sans préfixe de langue ; `null` hors navigateur. L'ancre est gardée :
+ * elle porte l'onglet ouvert (`#payments` sur une fiche famille), où le retour doit ramener.
+ */
 export function currentDashboardPath(): string | null {
   if (typeof window === 'undefined') return null
-  const { pathname, search } = window.location
+  const { pathname, search, hash } = window.location
   const [, first, ...rest] = pathname.split('/')
   const path = first && isLocale(first) ? `/${rest.join('/')}` : pathname
   const params = new URLSearchParams(search)
   params.delete('action')
   const query = params.toString()
-  return safeReceiptReturnPath(query ? `${path}?${query}` : path)
+  return safeReceiptReturnPath(`${query ? `${path}?${query}` : path}${hash}`)
 }
 
 /** Lien vers un reçu qui mémorise la page d'origine pour le bouton retour. */

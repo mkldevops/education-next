@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { type AttendanceGridSession, buildAttendanceGrid } from './attendance-grid'
+import {
+  type AttendanceGridSession,
+  buildAttendanceGrid,
+  countWithoutPresence,
+} from './attendance-grid'
 
 const session = (
   id: string,
@@ -116,5 +120,23 @@ describe('buildAttendanceGrid', () => {
     expect(rows).toEqual([
       expect.objectContaining({ cells: ['ABSENT', null, null, null], absences: 1 }),
     ])
+  })
+})
+
+describe('countWithoutPresence', () => {
+  const from = new Date('2026-11-02T00:00:00.000Z')
+  const rows = [
+    { studentId: 'never', lastPresentOn: null },
+    { studentId: 'before', lastPresentOn: new Date('2026-10-20T00:00:00.000Z') },
+    { studentId: 'present', lastPresentOn: new Date('2026-11-03T00:00:00.000Z') },
+    { studentId: 'departed', lastPresentOn: null },
+  ]
+
+  it('counts only enrolled students without a presence since the start of the range', () => {
+    expect(countWithoutPresence(rows, from, new Set(['never', 'before', 'present']))).toBe(2)
+  })
+
+  it('leaves out a departed student still listed in past sessions', () => {
+    expect(countWithoutPresence(rows, from, new Set(['present']))).toBe(0)
   })
 })

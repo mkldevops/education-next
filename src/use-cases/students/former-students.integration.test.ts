@@ -145,6 +145,30 @@ describe.skipIf(!databaseUrl)('former students', () => {
     expect(await countFormerStudents(schoolId)).toBe(2)
   })
 
+  it('stops an enrollment left open by an older archive at the departure month', async () => {
+    const { studentId } = await seedFormer(
+      schoolId,
+      'Ancien',
+      150,
+      new Date('2026-10-20T09:00:00.000Z')
+    )
+    // Archived before `archiveStudent`: the enrollment stayed ACTIVE, uncut, without end month.
+    const enrollment = await raw.enrollment.findFirstOrThrow({ where: { schoolId, studentId } })
+    await raw.enrollment.update({
+      where: { id: enrollment.id },
+      data: { status: 'ACTIVE', endMonth: null, totalAmount: 1000 },
+    })
+    await raw.plan.update({
+      where: { id_schoolId: { id: enrollment.planId, schoolId } },
+      data: { paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 10 } },
+    })
+
+    const row = (await listFormerStudents(schoolId)).find((item) => item.id === studentId)
+
+    // September and October owed (200), 150 paid: 50, not the 850 left on the whole year.
+    expect(row?.remaining).toBe(50)
+  })
+
   it('reinstates an archived student and keeps its enrollments closed', async () => {
     const { studentId } = await seedFormer(schoolId, 'Retour', 0, new Date())
 

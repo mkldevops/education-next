@@ -20,10 +20,12 @@ import type {
 } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
-import { formatCurrency } from '@/lib/decimal'
+import { type DecimalLike, formatCurrency } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 
-type EnrollmentWithRelation = Enrollment & {
+// Le total peut être celui que la fiche recalcule pour un élève archivé (`deriveStudentDetail`).
+type EnrollmentWithRelation = Omit<Enrollment, 'totalAmount'> & {
+  totalAmount: DecimalLike
   plan: Plan
   payments: Payment[]
   classAssignments: Array<

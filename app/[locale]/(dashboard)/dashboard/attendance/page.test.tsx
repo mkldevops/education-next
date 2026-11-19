@@ -12,6 +12,7 @@ const dbMock = {
   classScheduleSlot: { findMany: vi.fn() },
   attendanceSession: { findMany: vi.fn(), groupBy: vi.fn() },
   attendanceEntry: { findMany: vi.fn() },
+  classAssignment: { findMany: vi.fn() },
   event: { findMany: vi.fn() },
   classPeriod: { findMany: vi.fn() },
 }
@@ -180,6 +181,10 @@ beforeEach(() => {
     { classPeriodId: CM1, _min: { occurredOn: day('2026-11-05') } },
   ])
   dbMock.event.findMany.mockResolvedValue([])
+  dbMock.classAssignment.findMany.mockResolvedValue([
+    { enrollment: { studentId: 'st-1' } },
+    { enrollment: { studentId: 'st-2' } },
+  ])
   dbMock.attendanceEntry.findMany.mockResolvedValue([
     { studentId: 'st-1', attendanceSession: { occurredOn: day('2026-11-05') } },
   ])
@@ -253,6 +258,28 @@ describe('AttendanceTrackingPage', () => {
     expect(names).toEqual(['Yanis Benali', 'Adam Moussa'])
     expect(screen.getAllByText('never').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: /export/ })).toBeInTheDocument()
+  })
+
+  it('does not flag a student who left the class as without presence', async () => {
+    dbMock.classAssignment.findMany.mockResolvedValue([{ enrollment: { studentId: 'st-1' } }])
+    render(await renderPage({ range: 'custom', from: '2026-11-01', to: '2026-11-19' }))
+
+    expect(dbMock.classAssignment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          schoolId: 'school-1',
+          classPeriodId: CM1,
+          enrollment: expect.objectContaining({
+            schoolId: 'school-1',
+            student: { OR: [{ isActive: true }, { leftAt: { gte: day('2026-11-01') } }] },
+          }),
+        }),
+      })
+    )
+    // Yanis (st-2) never came but left: his "never" is no longer flagged in red.
+    for (const cell of screen.getAllByText('never')) {
+      expect(cell.className).not.toContain('text-danger')
+    }
   })
 
   it('lets an admin cancel a recorded or planned call and restore a cancelled one', async () => {

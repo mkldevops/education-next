@@ -1,4 +1,8 @@
+import type { EnrollmentStatus } from '@/generated/prisma/client'
 import { roundHalfUp } from '@/lib/decimal'
+import { OPEN_ENROLLMENT_STATUSES } from './enrollment'
+import { owedThroughMonth, type PaymentSchedule } from './payment-schedule'
+import { schoolToday } from './school-date'
 
 /** What happens to the part still unpaid at departure. */
 export const DEPARTURE_REMAINDERS = ['keep', 'writeOff'] as const
@@ -50,4 +54,50 @@ export function departureSettlement(owed: number, paid: number, remainder: Depar
     totalAmount: roundHalfUp(paid),
     writeOffAmount: Math.max(0, roundHalfUp(owed - paid)),
   }
+}
+
+/**
+ * Last month owed by an enrollment that an archive older than `archiveStudent` left open. Such an
+ * archive only set `isActive: false` and `leftAt`: the enrollment kept its status, without
+ * `endMonth` nor a total cut to the departure, and would still owe the whole year. Read as of the
+ * school month of `leftAt`, it owes what `archiveStudent` would have kept. `null` for any other
+ * enrollment, including one whose archive `leftAt` does not date.
+ */
+export function legacyDepartureMonth(
+  student: { isActive: boolean; leftAt: Date | null },
+  enrollment: { status: EnrollmentStatus; endMonth: Date | null },
+  timeZone: string
+): string | null {
+  if (student.isActive || !student.leftAt || enrollment.endMonth) return null
+  if (!(OPEN_ENROLLMENT_STATUSES as readonly EnrollmentStatus[]).includes(enrollment.status)) {
+    return null
+  }
+  return schoolToday(timeZone, student.leftAt).slice(0, 7)
+}
+
+/**
+ * Total an enrollment left open by a legacy archive owes as of its departure month: the deadlines
+ * due through that month, or what was already paid when more (`departureSettlement`, `keep`), as
+ * `archiveStudent` would have cut it. Without a schedule or a period, the whole total stays owed.
+ */
+export function legacyDepartureTotal(
+  enrollment: {
+    schedule: PaymentSchedule
+    totalAmount: number
+    periodStart: Date | null
+    startMonth: string | null
+  },
+  departureMonth: string,
+  paid: number,
+  currency: string
+): number {
+  const owed = owedThroughMonth(
+    enrollment.schedule,
+    enrollment.totalAmount,
+    enrollment.periodStart,
+    currency,
+    enrollment.startMonth,
+    departureMonth
+  ).amount
+  return departureSettlement(owed, paid, 'keep').totalAmount
 }
