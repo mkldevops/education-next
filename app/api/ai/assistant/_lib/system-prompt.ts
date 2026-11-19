@@ -125,6 +125,8 @@ export function buildAssistantSystemPrompt({
     '  guess an illegible field, and ask for what is missing.',
     '- Events are always created as drafts; publishing happens in the dashboard.',
     '- Be concise: short sentences, lists when there are several items.',
+    '- When the request holds several distinct tasks, handle the first one fully, then list the',
+    '  remaining ones and ask whether to continue: one task per reply keeps each reply short.',
     '- Whenever you name a school record you know the id of, write it as a Markdown link to',
     '  its dashboard page, e.g. `[Anrafa MOUSTOIFA](/dashboard/teachers)`. Paths: student',
     '  `/dashboard/students/{id}`, family `/dashboard/families/{id}`, class',

@@ -3612,6 +3612,7 @@
           "unauthorized": "Session expired: sign in again.",
           "forbidden": "This action is reserved to school administrators.",
           "unfinished": "I stopped before finishing: nothing was saved after the last action shown. Send the request again or rephrase it.",
+          "truncated": "My reply was too long and got cut off. Type “continue” to get the rest.",
           "aiAssistantDisabled": "The assistant was disabled by a super admin.",
           "aiAssistantNotConfigured": "No OpenRouter key is configured: the assistant is unavailable.",
           "tooManyRequests": "Too many requests: wait a minute.",
