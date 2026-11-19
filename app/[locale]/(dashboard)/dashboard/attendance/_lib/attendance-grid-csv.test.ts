@@ -6,18 +6,29 @@ describe('attendanceGridCsv', () => {
     const csv = attendanceGridCsv({
       columns: [
         {
+          key: 's-1',
           sessionId: 's-1',
           occurredOn: new Date('2026-11-07T00:00:00.000Z'),
           occurrenceKey: 'daily',
           classScheduleSlotId: null,
           startTime: null,
+          state: 'VALIDATED',
+        },
+        {
+          key: '2026-11-11:daily',
+          sessionId: null,
+          occurredOn: new Date('2026-11-11T00:00:00.000Z'),
+          occurrenceKey: 'daily',
+          classScheduleSlotId: 'slot-1',
+          startTime: '09:00',
+          state: 'missed',
         },
       ],
       rows: [
         {
           studentId: 'st-1',
           studentName: 'Benali; "Yanis"',
-          cells: ['ABSENT'],
+          cells: ['ABSENT', null],
           absences: 1,
           lates: 0,
           lastPresentOn: null,

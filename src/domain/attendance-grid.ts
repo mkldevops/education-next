@@ -1,4 +1,4 @@
-import type { AttendanceEntryStatus } from '@/generated/prisma/client'
+import type { AttendanceEntryStatus, AttendanceSessionStatus } from '@/generated/prisma/client'
 
 export type AttendanceGridSession = {
   id: string
@@ -6,15 +6,29 @@ export type AttendanceGridSession = {
   occurrenceKey: string
   classScheduleSlotId: string | null
   startTime: string | null
+  status: AttendanceSessionStatus
   entries: { studentId: string; studentName: string; status: AttendanceEntryStatus }[]
 }
 
+export type AttendanceGridPlanned = {
+  occurredOn: Date
+  occurrenceKey: string
+  classScheduleSlotId: string
+  startTime: string
+  state: 'missed' | 'todo'
+}
+
+/** `missed` et `todo` sont des appels prévus sans séance ; les autres états sont ceux de la séance. */
+export type AttendanceGridColumnState = AttendanceSessionStatus | AttendanceGridPlanned['state']
+
 export type AttendanceGridColumn = {
-  sessionId: string
+  key: string
+  sessionId: string | null
   occurredOn: Date
   occurrenceKey: string
   classScheduleSlotId: string | null
   startTime: string | null
+  state: AttendanceGridColumnState
 }
 
 export type AttendanceGridRow = {
@@ -33,27 +47,49 @@ export function isAttended(status: AttendanceEntryStatus | null) {
 }
 
 /**
- * Fiche d'appel sur plusieurs jours : une colonne par séance, une ligne par élève inscrit à au
- * moins une séance. Les élèves sans présence récente remontent en tête pour être relancés.
+ * Fiche d'appel sur plusieurs jours : une colonne par séance ou par appel prévu non commencé, une
+ * ligne par élève inscrit à au moins une séance tenue. Une séance annulée garde sa colonne sans
+ * compter dans les absences. Les élèves sans présence récente remontent en tête pour être relancés.
  * `lastPresentOn` vient de tout l'historique de la classe, pas seulement de la plage affichée.
  */
 export function buildAttendanceGrid(
   sessions: AttendanceGridSession[],
-  lastPresentOn: ReadonlyMap<string, Date>
+  lastPresentOn: ReadonlyMap<string, Date>,
+  planned: AttendanceGridPlanned[] = []
 ): { columns: AttendanceGridColumn[]; rows: AttendanceGridRow[] } {
-  const ordered = [...sessions].sort(
+  const items = [
+    ...sessions.map((session) => ({
+      column: {
+        key: session.id,
+        sessionId: session.id,
+        occurredOn: session.occurredOn,
+        occurrenceKey: session.occurrenceKey,
+        classScheduleSlotId: session.classScheduleSlotId,
+        startTime: session.startTime,
+        state: session.status,
+      } satisfies AttendanceGridColumn,
+      entries: session.status === 'CANCELLED' ? [] : session.entries,
+    })),
+    ...planned.map((call) => ({
+      column: {
+        key: `${call.occurredOn.toISOString().slice(0, 10)}:${call.occurrenceKey}`,
+        sessionId: null,
+        occurredOn: call.occurredOn,
+        occurrenceKey: call.occurrenceKey,
+        classScheduleSlotId: call.classScheduleSlotId,
+        startTime: call.startTime,
+        state: call.state,
+      } satisfies AttendanceGridColumn,
+      entries: [],
+    })),
+  ]
+  const ordered = items.sort(
     (a, b) =>
-      a.occurredOn.getTime() - b.occurredOn.getTime() ||
-      (a.startTime ?? '').localeCompare(b.startTime ?? '') ||
-      a.occurrenceKey.localeCompare(b.occurrenceKey)
+      a.column.occurredOn.getTime() - b.column.occurredOn.getTime() ||
+      (a.column.startTime ?? '').localeCompare(b.column.startTime ?? '') ||
+      a.column.occurrenceKey.localeCompare(b.column.occurrenceKey)
   )
-  const columns = ordered.map((session) => ({
-    sessionId: session.id,
-    occurredOn: session.occurredOn,
-    occurrenceKey: session.occurrenceKey,
-    classScheduleSlotId: session.classScheduleSlotId,
-    startTime: session.startTime,
-  }))
+  const columns = ordered.map((item) => item.column)
 
   const names = new Map<string, string>()
   for (const session of ordered) {

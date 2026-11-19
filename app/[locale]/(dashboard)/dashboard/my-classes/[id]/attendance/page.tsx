@@ -137,7 +137,9 @@ export default async function AttendancePage({
       entryMode={entrySettings.mode}
       absenceReasons={absenceReasons.map(({ id, label, justified }) => ({ id, label, justified }))}
       absenceReasonRequired={entrySettings.absenceReasonRequired}
-      returnHref={admin ? `/dashboard/attendance?date=${date}` : '/dashboard/my-classes'}
+      returnHref={
+        admin ? `/dashboard/attendance?classId=${classPeriod.id}` : '/dashboard/my-classes'
+      }
       labels={{
         title: t('title'),
         start: t('start'),
