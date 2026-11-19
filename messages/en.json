@@ -1439,7 +1439,7 @@
           "method": "Payment",
           "recordedBy": "Taken by",
           "tuition": "Tuition",
-          "tuitionBalance": "Tuition balance on {date}: {amount}",
+          "tuitionBalance": "Tuition left to pay this year as of {date}: {amount}",
           "total": "Total",
           "mealDetail": "+{days, plural, one {# day} other {# days}}, paid through {date}",
           "mealDays": "+{days, plural, one {# day} other {# days}}",
@@ -2188,7 +2188,7 @@
           "totalEnrollments": "Total Enrollments",
           "pending": "Pending",
           "totalPaid": "Total Paid",
-          "remainingBalance": "Remaining Balance"
+          "remainingBalance": "Left to pay this year"
         },
         "tabs": {
           "overview": "Overview",
@@ -2351,7 +2351,7 @@
           "status": {
             "ahead": "{amount} ahead",
             "upToDate": "Up to date",
-            "late": "{amount} overdue",
+            "late": "Overdue to date: {amount}",
             "settled": "Year paid in full",
             "untracked": "No payment schedule"
           },
@@ -2377,7 +2377,7 @@
           "figures": {
             "paid": "Paid",
             "expectedToDate": "Expected to date",
-            "remaining": "Left this year",
+            "remaining": "Left to pay this year",
             "total": "Year total"
           },
           "how": {
@@ -2412,7 +2412,7 @@
           "activeEnrollments": "Active enrollments",
           "totalDue": "Total due",
           "totalPaid": "Total paid",
-          "remaining": "Remaining balance"
+          "remaining": "Left to pay this year"
         },
         "familyPanel": {
           "contacts": "Contacts",
