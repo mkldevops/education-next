@@ -114,3 +114,17 @@ export function buildAttendanceGrid(
 
   return { columns, rows }
 }
+
+/**
+ * Élèves de la grille sans aucune présence depuis le début de la plage. Un élève parti ou plus
+ * inscrit dans la classe sur ces dates garde ses colonnes passées mais n'est pas un absent à suivre.
+ */
+export function countWithoutPresence(
+  rows: ReadonlyArray<Pick<AttendanceGridRow, 'studentId' | 'lastPresentOn'>>,
+  from: Date,
+  enrolled: ReadonlySet<string>
+): number {
+  return rows.filter(
+    (row) => enrolled.has(row.studentId) && (!row.lastPresentOn || row.lastPresentOn < from)
+  ).length
+}

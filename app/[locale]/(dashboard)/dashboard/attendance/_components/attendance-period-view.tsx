@@ -14,12 +14,14 @@ import {
   type AttendanceGridColumnState,
   type AttendanceGridRow,
   buildAttendanceGrid,
+  countWithoutPresence,
 } from '@/domain/attendance-grid'
 import {
   ATTENDANCE_RANGE_PRESETS,
   attendanceRangePreset,
   resolveAttendanceRange,
 } from '@/domain/attendance-range'
+import { attendanceRosterWindow } from '@/domain/attendance-session'
 import { attendanceClassPeriodScope } from '@/domain/attendance-tracking-scope'
 import type { AttendanceEntryStatus } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
@@ -245,6 +247,30 @@ export async function AttendancePeriodView({
         .flatMap((session) => session.entries.map((entry) => entry.studentId))
     ),
   ]
+  // Élèves inscrits dans la classe sur la plage : un élève parti reste dans les séances passées
+  // mais ne compte plus parmi les élèves sans présence. Une archive antérieure à `archiveStudent`
+  // a laissé l'affectation ouverte ; seul `leftAt` la date.
+  const enrolledAssignments =
+    selectedClass && studentIds.length > 0
+      ? await db.classAssignment.findMany({
+          where: {
+            schoolId,
+            classPeriodId: selectedClass.id,
+            startAt: { lt: attendanceRosterWindow(range.to).startsBefore },
+            OR: [{ endAt: null }, { endAt: { gte: attendanceRosterWindow(range.from).endsFrom } }],
+            enrollment: {
+              schoolId,
+              studentId: { in: studentIds },
+              status: { in: ['ACTIVE', 'COMPLETED'] },
+              student: { OR: [{ isActive: true }, { leftAt: { gte: range.from } }] },
+            },
+          },
+          select: { enrollment: { select: { studentId: true } } },
+        })
+      : []
+  const enrolledStudentIds = new Set(
+    enrolledAssignments.map((assignment) => assignment.enrollment.studentId)
+  )
   const lastPresences =
     selectedClass && studentIds.length > 0
       ? await db.attendanceEntry.findMany({
@@ -323,9 +349,7 @@ export async function AttendancePeriodView({
     ABSENT: t('codeAbsent'),
     NOT_RECORDED: '·',
   }
-  const absentAllRange = rows.filter(
-    (row) => !row.lastPresentOn || row.lastPresentOn < range.from
-  ).length
+  const absentAllRange = countWithoutPresence(rows, range.from, enrolledStudentIds)
   const errorLabels = {
     validationError: tAttendance('errors.validationError'),
     notFound: tAttendance('errors.notFound'),
@@ -341,6 +365,8 @@ export async function AttendancePeriodView({
     cancelLabel: tAttendance('cancelDialog.dismiss'),
   }
   const lastPresence = (row: AttendanceGridRow) => {
+    if (!enrolledStudentIds.has(row.studentId))
+      return row.lastPresentOn ? shortDay.format(row.lastPresentOn) : t('never')
     if (!row.lastPresentOn)
       return (
         <span className="rounded-full bg-danger-subtle px-2 py-0.5 text-danger">{t('never')}</span>
