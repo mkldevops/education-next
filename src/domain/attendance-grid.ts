@@ -26,12 +26,6 @@ export type AttendanceGridRow = {
   lastPresentOn: Date | null
 }
 
-const ATTENDED: readonly AttendanceEntryStatus[] = ['PRESENT', 'LATE']
-
-export function isAttended(status: AttendanceEntryStatus | null) {
-  return status !== null && ATTENDED.includes(status)
-}
-
 /**
  * Fiche d'appel sur plusieurs jours : une colonne par séance, une ligne par élève inscrit à au
  * moins une séance. Les élèves sans présence récente remontent en tête pour être relancés.

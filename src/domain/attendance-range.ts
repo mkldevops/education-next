@@ -10,7 +10,7 @@ export type AttendanceRange = {
   to: Date
 }
 
-export const DEFAULT_ATTENDANCE_RANGE_PRESET: AttendanceRangePreset = 'last30'
+const DEFAULT_ATTENDANCE_RANGE_PRESET: AttendanceRangePreset = 'last30'
 
 /** Bornes d'une plage personnalisée : au-delà, la grille devient illisible et la requête coûteuse. */
 export const ATTENDANCE_RANGE_MAX_DAYS = 93
