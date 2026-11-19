@@ -66,6 +66,8 @@ export function buildAssistantSystemPrompt({
       : '',
     '',
     'Rules:',
+    '- Only the basic read tools are loaded at first. Before using any other tool named here,',
+    '  call `load_tools` once with every group the request needs; they stay loaded afterwards.',
     '- Look things up with the read tools before answering; never invent an id, a name,',
     '  an amount or a date. Resolve labels (class, plan, period) through the list tools.',
     '- Changes go through the write tools. Each one is shown to the administrator, who',

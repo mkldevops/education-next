@@ -172,7 +172,11 @@ describe('POST /api/ai/assistant', () => {
       paymentsEnabled: true,
       owner: { kind: 'ADMIN_SESSION', userId: `user-${userSeq}` },
     })
-    expect(Object.keys(streamOptions().tools)).toEqual(['list_levels', 'commit_enroll_family'])
+    expect(Object.keys(streamOptions().tools)).toEqual([
+      'list_levels',
+      'commit_enroll_family',
+      'load_tools',
+    ])
   })
 
   it('signs approvals and requires one for every write', async () => {
