@@ -641,7 +641,10 @@ describe.skipIf(!databaseUrl)('render reads under the `throw` guard', () => {
         [a.family.id, a.otherFamily.id].sort()
       )
       const [debtorId] = [a.family.id, a.otherFamily.id].sort()
-      expect(deriveStudentDetail(resolution.resource).family?.id).toBe(debtorId)
+      expect(
+        deriveStudentDetail(resolution.resource, { currency: 'EUR', timeZone: 'Europe/Paris' })
+          .family?.id
+      ).toBe(debtorId)
     })
   })
 

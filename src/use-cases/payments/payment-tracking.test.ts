@@ -44,16 +44,21 @@ function enrollment({
   schedule = monthlySchedule as unknown,
   families = [familyLink()],
   periodStart = '2026-09-01T00:00:00.000Z',
+  student = {},
 }: {
   id?: string
   totalAmount?: number
   schedule?: unknown
   families?: FamilyLink[]
   periodStart?: string | null
+  student?: { isActive?: boolean; leftAt?: Date | null }
 } = {}) {
   return {
     id,
+    status: 'ACTIVE',
     totalAmount,
+    startMonth: null,
+    endMonth: null,
     plan: { paymentSchedule: schedule },
     classAssignments: periodStart
       ? [
@@ -62,7 +67,7 @@ function enrollment({
           },
         ]
       : [],
-    student: { person: { families } },
+    student: { isActive: true, leftAt: null, ...student, person: { families } },
   }
 }
 
@@ -103,6 +108,25 @@ describe('payment tracking reads', () => {
       tracked: true,
     })
     expect(regionalSettingsMock).toHaveBeenCalledWith('school-1')
+  })
+
+  it('stops a legacy archived student at the departure month instead of the whole year', async () => {
+    // Archived before `archiveStudent`: still ACTIVE, no end month, full 1000 total.
+    dbMock.enrollment.findMany.mockResolvedValue([
+      enrollment({ student: { isActive: false, leftAt: new Date('2026-09-20T10:00:00Z') } }),
+    ])
+    dbMock.payment.groupBy.mockResolvedValue([paid(50)])
+
+    expect(await getFamilyPaymentTrackingDetail('school-1', 'family-1', reference)).toEqual({
+      expectedToDate: 100,
+      overdueAmount: 50,
+      dueThisMonth: 50,
+      paidToDate: 50,
+      tracked: true,
+      annualAmount: 100,
+      creditedPaid: 50,
+      fullyScheduled: true,
+    })
   })
 
   it('uses the enrollment total after discount, rather than the current plan price', async () => {

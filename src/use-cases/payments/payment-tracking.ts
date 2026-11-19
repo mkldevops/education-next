@@ -7,6 +7,7 @@ import {
   startMonthFromDate,
 } from '@/domain/payment-schedule'
 import { nextMonthStart, schoolDayBounds, schoolToday } from '@/domain/school-date'
+import { legacyDepartureMonth, legacyDepartureTotal } from '@/domain/student-departure'
 import { db } from '@/lib/db'
 import { roundHalfUp, toNumber } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
@@ -83,6 +84,7 @@ async function collectFamilyTracking(
       where: enrollmentWhere,
       select: {
         id: true,
+        status: true,
         totalAmount: true,
         startMonth: true,
         endMonth: true,
@@ -94,6 +96,8 @@ async function collectFamilyTracking(
         },
         student: {
           select: {
+            isActive: true,
+            leftAt: true,
             person: {
               select: {
                 families: {
@@ -123,7 +127,7 @@ async function collectFamilyTracking(
     const period = enrollment.classAssignments[0]?.classPeriod.period
     const schedule = readPaymentSchedule(enrollment.plan.paymentSchedule)
     const paid = toNumber(paidByEnrollment.get(enrollment.id) ?? 0)
-    const installments = period
+    const scheduled = period
       ? paymentInstallments(
           schedule,
           toNumber(enrollment.totalAmount),
@@ -133,6 +137,25 @@ async function collectFamilyTracking(
           startMonthFromDate(enrollment.endMonth)
         )
       : []
+    // Archive antérieure à `archiveStudent` : inscription restée ouverte et total non coupé. Les
+    // échéances après le mois de départ ne sont plus dues, comme si l'archive l'avait close.
+    const departureMonth = legacyDepartureMonth(enrollment.student, enrollment, timeZone)
+    const installments = departureMonth
+      ? scheduled.filter((installment) => installment.dueDate.slice(0, 7) <= departureMonth)
+      : scheduled
+    const totalAmount = departureMonth
+      ? legacyDepartureTotal(
+          {
+            schedule,
+            totalAmount: toNumber(enrollment.totalAmount),
+            periodStart: period?.startAt ?? null,
+            startMonth: startMonthFromDate(enrollment.startMonth),
+          },
+          departureMonth,
+          paid,
+          currency
+        )
+      : toNumber(enrollment.totalAmount)
     const tracking = paymentTracking(installments, paid, today)
     const byMonthEnd = paymentTracking(installments, paid, monthEnd)
     const family = families.get(debtor.familyId) ?? {
@@ -151,10 +174,8 @@ async function collectFamilyTracking(
     family.expectedToDate = roundHalfUp(family.expectedToDate + tracking.expectedToDate)
     family.expectedByMonthEnd = roundHalfUp(family.expectedByMonthEnd + byMonthEnd.expectedToDate)
     family.paidToDate = roundHalfUp(family.paidToDate + paid)
-    family.creditedPaid = roundHalfUp(
-      family.creditedPaid + Math.min(paid, toNumber(enrollment.totalAmount))
-    )
-    family.annualAmount = roundHalfUp(family.annualAmount + toNumber(enrollment.totalAmount))
+    family.creditedPaid = roundHalfUp(family.creditedPaid + Math.min(paid, totalAmount))
+    family.annualAmount = roundHalfUp(family.annualAmount + totalAmount)
     family.tracked ||= tracking.tracked
     family.fullyScheduled &&= tracking.tracked
     families.set(debtor.familyId, family)

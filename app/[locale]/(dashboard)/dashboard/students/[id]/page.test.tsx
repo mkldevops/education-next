@@ -90,6 +90,7 @@ const detail = (family: { id: string; isActive: boolean } | null) => ({
   totalDue: 0,
   totalPaid: 0,
   remaining: 0,
+  enrollments: [],
   activeEnrollments: [],
   payableRemaining: 0,
   languagesAtHome: '',

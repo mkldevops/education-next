@@ -101,6 +101,7 @@ export default async function StudentDetailPage({ params }: Props) {
     family,
     birthday,
     age,
+    enrollments,
     totalDue,
     totalPaid,
     remaining,
@@ -108,7 +109,7 @@ export default async function StudentDetailPage({ params }: Props) {
     payableRemaining,
     languagesAtHome,
     departedAt,
-  } = deriveStudentDetail(student)
+  } = deriveStudentDetail(student, { currency, timeZone })
   // Seul le staff ouvre un élève archivé (`resolveStudent`) : sa fiche se lit, sa dette
   // s'encaisse, mais on ne l'édite ni ne l'inscrit avant de l'avoir réintégré.
   const isArchived = !student.isActive
@@ -352,7 +353,7 @@ export default async function StudentDetailPage({ params }: Props) {
               )}
             </div>
             <EnrollmentList
-              enrollments={student.enrollments}
+              enrollments={enrollments}
               currency={currency}
               locale={locale}
               paymentsEnabled={paymentsEnabled}
