@@ -19,9 +19,20 @@ import { getSchoolContext, hasSchoolRole, isActiveSchoolAdmin } from '@/lib/scho
 import { getAttendanceFrequency } from '@/use-cases/config/get-attendance-frequency'
 import { requireSchoolSession, requireTeacher } from '../../_lib/auth-helper'
 import { AttendanceFilters } from './_components/attendance-filters'
+import { attendancePeriodHref } from './_components/attendance-period-href'
+import { AttendancePeriodView } from './_components/attendance-period-view'
+import { AttendanceViewToggle } from './_components/attendance-view-toggle'
 import { CancelAttendanceForm, CancelOccurrenceForm } from './_components/cancel-attendance-form'
 
-type SearchParams = { date?: string; classId?: string; teacherId?: string }
+type SearchParams = {
+  date?: string
+  classId?: string
+  teacherId?: string
+  view?: string
+  range?: string
+  from?: string
+  to?: string
+}
 
 function dateParam(date: Date) {
   return date.toISOString().slice(0, 10)
@@ -139,6 +150,19 @@ export default async function AttendanceTrackingPage({
 
   const frequency = await getAttendanceFrequency(schoolId)
   const selectedPeriod = await getSelectedPeriod(schoolId)
+  if (query.view === 'period')
+    return AttendancePeriodView({
+      locale,
+      schoolId,
+      teacherId: teacher?.teacherId ?? null,
+      period: selectedPeriod,
+      query: {
+        range: query.range,
+        from: query.from,
+        to: query.to,
+        classId: uuidOrUndefined(query.classId),
+      },
+    })
   const selectedDate = attendanceUtcDate(query.date)
   const classId = teacher ? undefined : uuidOrUndefined(query.classId)
   const filterTeacherId = teacher ? undefined : uuidOrUndefined(query.teacherId)
@@ -302,6 +326,16 @@ export default async function AttendanceTrackingPage({
             {selectedPeriod ? ` · ${selectedPeriod.name}` : ''}
           </p>
         </div>
+        <AttendanceViewToggle
+          current="day"
+          dayHref={attendanceHref(selectedDate, filters)}
+          periodHref={attendancePeriodHref({ range: 'last30', classId })}
+          labels={{
+            group: t('period.view'),
+            day: t('period.viewDay'),
+            period: t('period.viewPeriod'),
+          }}
+        />
         <nav
           aria-label={t('date')}
           className="flex w-full flex-wrap justify-start gap-2 sm:w-auto sm:justify-end"

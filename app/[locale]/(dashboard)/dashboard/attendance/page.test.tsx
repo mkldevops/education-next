@@ -11,6 +11,7 @@ const dbMock = {
   config: { findFirst: vi.fn() },
   classScheduleSlot: { findMany: vi.fn() },
   attendanceSession: { findMany: vi.fn() },
+  attendanceEntry: { findMany: vi.fn() },
   event: { findMany: vi.fn() },
   classPeriod: { findMany: vi.fn() },
   teacher: { findMany: vi.fn() },
@@ -39,6 +40,7 @@ vi.mock('next-intl/server', () => ({
 }))
 vi.mock('@peaklab/ui', async () => ({
   ...(await vi.importActual<typeof import('@/components/ui/select')>('@/components/ui/select')),
+  ...(await vi.importActual<typeof import('@/components/ui/use-menu')>('@/components/ui/use-menu')),
   Breadcrumbs: ({ items }: { items: { label: string }[] }) => (
     <nav>{items.map((item) => item.label).join(' ')}</nav>
   ),
@@ -70,6 +72,9 @@ vi.mock('lucide-react', () => ({
   ChevronLeft: () => null,
   ChevronRight: () => null,
   ChevronUp: () => null,
+  Download: () => null,
+  FileSpreadsheet: () => null,
+  Printer: () => null,
 }))
 vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
@@ -77,7 +82,7 @@ vi.mock('@/i18n/routing', () => ({
       {children}
     </a>
   ),
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
 }))
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriod: getSelectedPeriodMock }))
@@ -388,4 +393,121 @@ it('retains daily history links and cancelled labels when returning to per-slot 
   )
   expect(screen.getAllByText(/dailyCall/)).toHaveLength(2)
   expect(screen.queryByText(/undefined/)).not.toBeInTheDocument()
+})
+
+describe('AttendanceTrackingPage period view', () => {
+  const OTHER_CLASS_ID = '00000000-0000-4000-8000-000000000009'
+  const session = (id: string, occurredOn: string, entries: object[]) => ({
+    id,
+    occurredOn: new Date(occurredOn),
+    occurrenceKey: 'daily',
+    classScheduleSlotId: null,
+    classScheduleSlot: null,
+    entries,
+  })
+
+  beforeEach(() => {
+    dbMock.classPeriod.findMany.mockResolvedValue([
+      { id: CLASS_FILTER_ID, name: 'CM1' },
+      { id: 'class-2', name: 'CM2' },
+    ])
+    dbMock.attendanceSession.findMany.mockResolvedValue([
+      session('s-1', '2026-11-07T00:00:00.000Z', [
+        { studentId: 'st-1', studentName: 'Adam Moussa', status: 'PRESENT' },
+        { studentId: 'st-2', studentName: 'Yanis Benali', status: 'ABSENT' },
+      ]),
+      session('s-2', '2026-11-14T00:00:00.000Z', [
+        { studentId: 'st-1', studentName: 'Adam Moussa', status: 'LATE' },
+        { studentId: 'st-2', studentName: 'Yanis Benali', status: 'ABSENT' },
+      ]),
+    ])
+    dbMock.attendanceEntry.findMany.mockResolvedValue([
+      {
+        studentId: 'st-1',
+        attendanceSession: { occurredOn: new Date('2026-11-14T00:00:00.000Z') },
+      },
+    ])
+  })
+
+  it('shows the selected class over the period with students never present first', async () => {
+    render(
+      await AttendanceTrackingPage({
+        params: Promise.resolve({ locale: 'fr' }),
+        searchParams: Promise.resolve({
+          view: 'period',
+          range: 'custom',
+          from: '2026-11-01',
+          to: '2026-11-19',
+          classId: CLASS_FILTER_ID,
+        }),
+      })
+    )
+
+    expect(dbMock.attendanceSession.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          schoolId: 'school-1',
+          classPeriodId: CLASS_FILTER_ID,
+          status: { not: 'CANCELLED' },
+          occurredOn: {
+            gte: new Date('2026-11-01T00:00:00.000Z'),
+            lte: new Date('2026-11-19T00:00:00.000Z'),
+          },
+        },
+      })
+    )
+    const names = screen.getAllByRole('rowheader').map((cell) => cell.textContent)
+    expect(names).toEqual(['Yanis Benali', 'Adam Moussa'])
+    expect(screen.getByText('period.never')).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'period.openCall' })[0]).toHaveAttribute(
+      'href',
+      `/dashboard/my-classes/${CLASS_FILTER_ID}/attendance?date=2026-11-07&occurrence=daily`
+    )
+    expect(screen.getByRole('button', { name: /period.export/ })).toBeInTheDocument()
+  })
+
+  it('limits a teacher to their classes and ignores a class outside that scope', async () => {
+    requireSchoolSessionMock.mockResolvedValue({
+      schoolId: 'school-1',
+      roles: ['TEACHER'],
+      isSuperAdmin: false,
+    })
+    requireTeacherMock.mockResolvedValue({ schoolId: 'school-1', teacherId: 'teacher-1' })
+    dbMock.classPeriod.findMany.mockResolvedValue([{ id: CLASS_FILTER_ID, name: 'CM1' }])
+
+    render(
+      await AttendanceTrackingPage({
+        params: Promise.resolve({ locale: 'fr' }),
+        searchParams: Promise.resolve({ view: 'period', classId: OTHER_CLASS_ID }),
+      })
+    )
+
+    expect(dbMock.classPeriod.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          schoolId: 'school-1',
+          isActive: true,
+          periodId: 'period-1',
+          teachers: { some: { teacherId: 'teacher-1' } },
+        },
+      })
+    )
+    expect(dbMock.attendanceSession.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ schoolId: 'school-1', classPeriodId: CLASS_FILTER_ID }),
+      })
+    )
+  })
+
+  it('shows an empty state when no class is available', async () => {
+    dbMock.classPeriod.findMany.mockResolvedValue([])
+    render(
+      await AttendanceTrackingPage({
+        params: Promise.resolve({ locale: 'fr' }),
+        searchParams: Promise.resolve({ view: 'period' }),
+      })
+    )
+    expect(screen.getByRole('heading', { name: 'period.noClasses' })).toBeInTheDocument()
+    expect(dbMock.attendanceSession.findMany).not.toHaveBeenCalled()
+  })
 })
