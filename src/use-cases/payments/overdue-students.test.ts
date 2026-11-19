@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const dbMock = { student: { findMany: vi.fn() } }
+const dbMock = { enrollment: { findMany: vi.fn() } }
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 
 const { getOverdueStudents } = await import('./overdue-students')
@@ -20,12 +20,12 @@ function student(
   id: string,
   name: string,
   families: { familyId: string; relationType: 'PARENT' | 'TUTOR' }[],
-  classes: { id: string; name: string }[] = []
+  classes: { id: string; name: string }[] = [],
+  isActive = true
 ) {
   return {
-    id,
-    person: { id: `person-${id}`, name, lastname: 'Madi', families },
-    enrollments: [{ classAssignments: classes.map((classPeriod) => ({ classPeriod })) }],
+    student: { id, isActive, person: { id: `person-${id}`, name, lastname: 'Madi', families } },
+    classAssignments: classes.map((classPeriod) => ({ classPeriod })),
   }
 }
 
@@ -40,7 +40,7 @@ describe('getOverdueStudents', () => {
         family('family-2', 'Said', 200),
         family('family-3', 'Ali', 0),
       ])
-    dbMock.student.findMany.mockResolvedValue([
+    dbMock.enrollment.findMany.mockResolvedValue([
       student(
         's-1',
         'Ali',
@@ -56,9 +56,11 @@ describe('getOverdueStudents', () => {
       periodId: 'period-1',
       reference: undefined,
     })
-    expect(dbMock.student.findMany.mock.calls[0][0].where).toMatchObject({
+    expect(dbMock.enrollment.findMany.mock.calls[0][0].where).toMatchObject({
       schoolId: 'school-1',
-      person: { families: { some: { familyId: { in: ['family-1', 'family-2'] } } } },
+      student: {
+        person: { families: { some: { familyId: { in: ['family-1', 'family-2'] } } } },
+      },
     })
     expect(result.map((row) => [row.studentId, row.family.overdueAmount])).toEqual([
       ['s-2', 200],
@@ -71,9 +73,27 @@ describe('getOverdueStudents', () => {
     })
   })
 
+  it('lists an archived student whose family still owes arrears, once per student', async () => {
+    const tracking = vi.fn().mockResolvedValue([family('family-1', 'Madi', 120)])
+    dbMock.enrollment.findMany.mockResolvedValue([
+      student('s-1', 'Ali', [{ familyId: 'family-1', relationType: 'PARENT' }], [], false),
+      student('s-1', 'Ali', [{ familyId: 'family-1', relationType: 'PARENT' }], [], false),
+    ])
+
+    const result = await getOverdueStudents('school-1', { tracking })
+
+    expect(dbMock.enrollment.findMany.mock.calls[0][0].where).not.toHaveProperty('student.isActive')
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      studentId: 's-1',
+      archived: true,
+      family: { overdueAmount: 120 },
+    })
+  })
+
   it('skips a child whose debt belongs to another, non-overdue family', async () => {
     const tracking = vi.fn().mockResolvedValue([family('family-2', 'Said', 80)])
-    dbMock.student.findMany.mockResolvedValue([
+    dbMock.enrollment.findMany.mockResolvedValue([
       student('s-1', 'Ali', [
         { familyId: 'family-1', relationType: 'PARENT' },
         { familyId: 'family-2', relationType: 'TUTOR' },
@@ -87,6 +107,6 @@ describe('getOverdueStudents', () => {
     const tracking = vi.fn().mockResolvedValue([family('family-1', 'Madi', 0)])
 
     expect(await getOverdueStudents('school-1', { tracking })).toEqual([])
-    expect(dbMock.student.findMany).not.toHaveBeenCalled()
+    expect(dbMock.enrollment.findMany).not.toHaveBeenCalled()
   })
 })

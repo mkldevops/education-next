@@ -1,3 +1,4 @@
+import { payableEnrollmentWhere } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import {
   paymentInstallments,
@@ -9,7 +10,6 @@ import { nextMonthStart, schoolDayBounds, schoolToday } from '@/domain/school-da
 import { db } from '@/lib/db'
 import { roundHalfUp, toNumber } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
-import { PAYABLE_ENROLLMENT_STATUSES } from './family-balance'
 
 export type FamilyPaymentTracking = {
   expectedToDate: number
@@ -74,7 +74,7 @@ async function collectFamilyTracking(
   const enrollmentWhere = {
     schoolId,
     isActive: true,
-    status: { in: [...PAYABLE_ENROLLMENT_STATUSES] },
+    ...payableEnrollmentWhere,
     ...(familyId ? { student: { person: { families: { some: { familyId } } } } } : {}),
     ...(periodId ? { classAssignments: { some: { classPeriod: { periodId } } } } : {}),
   }
@@ -85,6 +85,7 @@ async function collectFamilyTracking(
         id: true,
         totalAmount: true,
         startMonth: true,
+        endMonth: true,
         plan: { select: { paymentSchedule: true } },
         classAssignments: {
           orderBy: { startAt: 'desc' },
@@ -128,7 +129,8 @@ async function collectFamilyTracking(
           toNumber(enrollment.totalAmount),
           period.startAt,
           currency,
-          startMonthFromDate(enrollment.startMonth)
+          startMonthFromDate(enrollment.startMonth),
+          startMonthFromDate(enrollment.endMonth)
         )
       : []
     const tracking = paymentTracking(installments, paid, today)

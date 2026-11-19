@@ -72,7 +72,7 @@ describe('deleteFamilyFromMcp', () => {
 })
 
 const operations = [
-  ['student', archiveStudentFromMcp, 'hasActiveEnrollments'],
+  ['student', archiveStudentFromMcp, 'endMonthOutsidePeriod'],
   ['class', archiveClassPeriodFromMcp, 'classInUse'],
   ['level', archiveLevelFromMcp, 'levelInUse'],
   ['plan', archivePlanFromMcp, 'planInUse'],

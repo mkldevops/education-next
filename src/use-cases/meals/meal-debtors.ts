@@ -10,19 +10,27 @@ import { familyContactPhones } from '@/use-cases/payments/payment-stats'
 export const REMIND_WITHIN_DAYS = 2
 
 async function loadMealAccountStates(schoolId: string, today: string) {
-  const students = await db.student.findMany({
-    where: { schoolId, isActive: true, mealAccounts: { some: {} } },
+  // Racine sur le compte repas : l'extension soft-delete masquerait un élève archivé, dont les
+  // repas servis avant son départ restent dus.
+  const owners = await db.mealAccount.findMany({
+    where: { schoolId, studentId: { not: null } },
+    distinct: ['studentId'],
     select: {
-      id: true,
-      person: {
+      student: {
         select: {
-          name: true,
-          lastname: true,
-          families: { select: { familyId: true, relationType: true } },
+          id: true,
+          person: {
+            select: {
+              name: true,
+              lastname: true,
+              families: { select: { familyId: true, relationType: true } },
+            },
+          },
         },
       },
     },
   })
+  const students = owners.flatMap((owner) => (owner.student ? [owner.student] : []))
   const accounts = await mealAccountGateway.findStudentAccounts(
     schoolId,
     students.map((student) => student.id)

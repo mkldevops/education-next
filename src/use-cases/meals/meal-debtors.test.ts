@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const dbMock = { student: { findMany: vi.fn() } }
+const dbMock = { mealAccount: { findMany: vi.fn() } }
+const owners = (students: object[]) => students.map((student) => ({ student }))
 const gatewayMock = {
   findStudentAccounts: vi.fn(),
   transaction: vi.fn((run: (tx: unknown) => unknown) => run({})),
@@ -41,7 +42,7 @@ const summary = (input: {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  dbMock.student.findMany.mockResolvedValue([{ id: 's1' }, { id: 's2' }, { id: 's3' }])
+  dbMock.mealAccount.findMany.mockResolvedValue(owners([{ id: 's1' }, { id: 's2' }, { id: 's3' }]))
 })
 
 describe('loadMealDues', () => {
@@ -63,7 +64,7 @@ describe('loadMealDues', () => {
 
     const dues = await loadMealDues('school-1', TODAY)
 
-    expect(dbMock.student.findMany.mock.calls[0][0].where.schoolId).toBe('school-1')
+    expect(dbMock.mealAccount.findMany.mock.calls[0][0].where.schoolId).toBe('school-1')
     expect(gatewayMock.findStudentAccounts).toHaveBeenCalledWith('school-1', ['s1', 's2', 's3'])
     expect(dues).toEqual({
       services: [
@@ -102,17 +103,19 @@ describe('loadMealDues', () => {
 
 describe('loadMealDebtors', () => {
   it('carries the debtor family phone, none for a student without family', async () => {
-    dbMock.student.findMany.mockResolvedValue([
-      {
-        id: 's1',
-        person: {
-          name: 'Léo',
-          lastname: 'Martin',
-          families: [{ familyId: 'f1', relationType: 'PARENT' }],
+    dbMock.mealAccount.findMany.mockResolvedValue(
+      owners([
+        {
+          id: 's1',
+          person: {
+            name: 'Léo',
+            lastname: 'Martin',
+            families: [{ familyId: 'f1', relationType: 'PARENT' }],
+          },
         },
-      },
-      { id: 's2', person: { name: 'Inès', lastname: 'Ali', families: [] } },
-    ])
+        { id: 's2', person: { name: 'Inès', lastname: 'Ali', families: [] } },
+      ])
+    )
     gatewayMock.findStudentAccounts.mockResolvedValue([
       { id: 'a1', studentId: 's1', service: 'CANTEEN' },
       { id: 'a2', studentId: 's2', service: 'CANTEEN' },

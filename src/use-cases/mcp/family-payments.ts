@@ -68,7 +68,8 @@ export async function familyPaymentsFromMcp(scope: DraftScope, input: Input) {
               toNumber(schedule.totalAmount),
               period.startAt,
               currency,
-              startMonthFromDate(schedule.startMonth)
+              startMonthFromDate(schedule.startMonth),
+              startMonthFromDate(schedule.endMonth)
             )
           : []
       return {

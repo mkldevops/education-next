@@ -25,20 +25,12 @@ class StudentGatewaySpy {
     return {} as never
   }
 
-  async deactivate() {
-    return {} as never
-  }
-
   async list() {
     return []
   }
 
   async findByFamily() {
     return []
-  }
-
-  async hasActiveEnrollments() {
-    return false
   }
 }
 

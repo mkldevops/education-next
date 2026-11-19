@@ -640,21 +640,117 @@
             "notFound": "Élève introuvable"
           }
         },
-        "deactivate": {
-          "title": "Désactiver l'élève",
-          "description": "Êtes-vous sûr de vouloir désactiver cet élève ?",
-          "hasEnrollments": "Impossible de désactiver : des inscriptions actives existent.",
-          "confirm": "Désactiver",
+        "archive": {
+          "trigger": "Archiver",
+          "title": "Archiver {name}",
+          "endMonth": "Dernier mois de présence",
+          "loading": "Calcul du reste dû…",
+          "effects": {
+            "enrollments": "Ses inscriptions en cours sont clôturées après ce mois : les mois suivants ne sont plus dus.",
+            "class": "Il quitte sa classe et n'apparaît plus dans les appels.",
+            "services": "Ses repas s'arrêtent dès aujourd'hui ; sa garderie s'arrête après ce mois.",
+            "history": "Son dossier, ses paiements et ses reçus sont conservés."
+          },
+          "remaining": "Reste dû jusqu'à {month} : {amount}",
+          "remainderLegend": "Que faire du reste dû ?",
+          "remainders": {
+            "keep": "Le garder dans les impayés (la famille le doit toujours)",
+            "writeOff": "L'annuler (geste commercial, départ justifié…)"
+          },
+          "reason": "Motif de l'annulation",
+          "confirm": "Archiver",
           "cancel": "Annuler",
-          "success": "Élève désactivé",
-          "error": "Erreur lors de la désactivation",
+          "success": "Élève archivé",
+          "error": "Erreur lors de l'archivage",
           "errors": {
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Élève introuvable",
-            "hasActiveEnrollments": "Des inscriptions en attente ou actives existent : clôturez-les d'abord"
+            "reasonRequired": "Indiquez le motif de l'annulation",
+            "endMonthOutsidePeriod": "Choisissez un mois de la période d'inscription"
           }
         },
-        "description": "Tous les élèves de l’école, leur classe et leur inscription."
+        "description": "Tous les élèves de l’école, leur classe et leur inscription.",
+        "statusActive": "Actifs",
+        "statusFormer": "Anciens",
+        "statusLabel": "Statut des élèves",
+        "lastClass": "Dernière classe",
+        "leftIn": "Parti en",
+        "remainingDue": "Reste dû",
+        "noFormerStudents": "Aucun ancien élève",
+        "reinstate": {
+          "trigger": "Réintégrer",
+          "success": "Élève réintégré : réinscrivez-le pour l’année en cours",
+          "error": "Erreur lors de la réintégration",
+          "errors": {
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Élève introuvable ou déjà actif"
+          }
+        },
+        "importFormer": {
+          "trigger": "Importer une liste",
+          "title": "Importer une liste d’anciens élèves",
+          "uploadHelp": "Déposez jusqu’à 4 fichiers (photo, PDF, CSV, TXT ou Excel .xlsx) ou prenez une photo. L’IA lit les noms, prénoms, dates de naissance, dernières classes et années de départ ; vous relisez tout avant l’import.",
+          "chooseFiles": "Choisir des fichiers",
+          "takePhoto": "Prendre une photo",
+          "selectedFiles": "Fichiers choisis",
+          "removeFile": "Retirer {name}",
+          "reading": "Lecture… (10 à 30 secondes)",
+          "read": "Lire la liste",
+          "cancel": "Annuler",
+          "restart": "Recommencer",
+          "reviewHelp": "Chaque case est modifiable. Les cases surlignées sont des lectures incertaines. Décochez une ligne pour l’écarter ; rien n’est enregistré avant « Importer ».",
+          "truncated": "La liste dépasse 500 lignes : seules les 500 premières sont reprises. Importez le reste ensuite.",
+          "uncertain": "Lecture incertaine : vérifiez cette valeur",
+          "includeRow": "Importer {name}",
+          "import": "{count, plural, =0 {Aucun élève à importer} one {Importer # élève} other {Importer # élèves}}",
+          "success": "{created, plural, =0 {Aucun élève créé} one {# ancien élève créé} other {# anciens élèves créés}}{skipped, plural, =0 {} one {, # ligne ignorée} other {, # lignes ignorées}}",
+          "error": "Erreur lors de l’import",
+          "placeholders": {
+            "date": "AAAA-MM-JJ",
+            "year": "AAAA"
+          },
+          "columns": {
+            "include": "Importer",
+            "lastname": "Nom",
+            "firstname": "Prénom",
+            "birthday": "Naissance",
+            "className": "Dernière classe",
+            "departureYear": "Départ",
+            "status": "Statut"
+          },
+          "chips": {
+            "create": "{count} à créer",
+            "homonym": "{count, plural, one {# homonyme} other {# homonymes}}",
+            "existing": "{count, plural, one {# déjà connu} other {# déjà connus}}",
+            "incomplete": "{count, plural, one {# incomplet} other {# incomplets}}"
+          },
+          "statuses": {
+            "create": "À créer",
+            "homonym": "Homonyme",
+            "existing": "Déjà connu",
+            "incomplete": "Incomplet"
+          },
+          "issues": {
+            "missingName": "Nom ou prénom manquant",
+            "nameTooLong": "Nom trop long",
+            "classTooLong": "Classe trop longue (100 caractères max.)",
+            "invalidBirthday": "Date de naissance invalide (AAAA-MM-JJ)",
+            "invalidYear": "Année de départ invalide (AAAA)",
+            "duplicateInFile": "Déjà présent plus haut dans la liste"
+          },
+          "errors": {
+            "aiDisabled": "L’assistant IA est désactivé",
+            "aiNotConfigured": "Aucune clé OpenRouter n’est configurée",
+            "tooManyRequests": "Trop de lectures : réessayez dans une minute",
+            "tooManyFiles": "4 fichiers au maximum",
+            "forbiddenFile": "Type de fichier non pris en charge",
+            "fileTooLarge": "Fichier trop volumineux (6 Mo par fichier, 10 Mo au total)",
+            "unreadable": "Fichier illisible",
+            "nothingFound": "Aucun élève trouvé dans ces fichiers",
+            "providerError": "Le service IA n’a pas répondu, réessayez",
+            "validationError": "Vérifiez les lignes saisies"
+          }
+        }
       },
       "periods": {
         "title": "Périodes",
@@ -989,6 +1085,12 @@
           "open": "Afficher les élèves",
           "empty": "Aucun élève trouvé",
           "alreadyEnrolled": "Déjà inscrit"
+        },
+        "departure": {
+          "leftAfter": "Parti après {month}",
+          "writeOff": "Annulé : {amount} — {reason}",
+          "endMonth": "Dernier mois",
+          "writeOffLabel": "Montant annulé"
         }
       },
       "promotion": {
@@ -2300,7 +2402,7 @@
         "family": "Famille",
         "enrollments": "Inscriptions",
         "information": "Informations",
-        "pay": "Enregistrer un règlement d'écolage",
+        "pay": "Encaisser l'écolage",
         "collectServices": "Encaisser cantine et goûter",
         "previousSchool": "École précédente",
         "snackAuthorization": "Autorisation de goûter",
@@ -2417,7 +2519,23 @@
               "notServed": "Ce jour n'est pas servi"
             }
           }
-        }
+        },
+        "paymentHistory": {
+          "title": "Paiements",
+          "empty": "Aucun paiement",
+          "emptyHint": "Les paiements de cet élève apparaîtront ici.",
+          "limited": "Les {count} paiements les plus récents",
+          "mealDetail": "+{days, plural, one {# jour} other {# jours}}, payé jusqu'au {date}",
+          "mealDays": "+{days, plural, one {# jour} other {# jours}}",
+          "services": {
+            "TUITION": "Scolarité",
+            "CANTEEN": "Cantine",
+            "SNACK": "Goûter",
+            "CHILDCARE": "Garderie"
+          }
+        },
+        "archivedBadge": "Archivé — parti en {month}",
+        "archivedBadgeUndated": "Archivé"
       },
       "enrollmentDetails": {
         "title": "Détails de l'inscription",

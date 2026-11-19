@@ -2,16 +2,21 @@
 
 import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
+import {
+  archiveStudent,
+  type archiveStudentSchema,
+  previewStudentArchive,
+} from '@/use-cases/students/archive-student'
 import { createEnrolledStudent } from '@/use-cases/students/create-enrolled-student'
 import { createStudent } from '@/use-cases/students/create-student'
-import { deactivateStudent } from '@/use-cases/students/deactivate-student'
+import { reinstateStudent } from '@/use-cases/students/reinstate-student'
 import type {
   createEnrolledStudentSchema,
   createStudentSchema,
   updateStudentSchema,
 } from '@/use-cases/students/schemas'
 import { updateStudent } from '@/use-cases/students/update-student'
-import { requireSchoolStaff } from './auth-helper'
+import { requireSchoolAdmin, requireSchoolStaff } from './auth-helper'
 
 type CreateStudentInput = z.infer<typeof createStudentSchema>
 type UpdateStudentInput = z.infer<typeof updateStudentSchema>
@@ -64,10 +69,35 @@ export async function updateStudentAction(
   return result
 }
 
-export async function deactivateStudentAction(id: string) {
-  const { schoolId } = await requireSchoolStaff()
-  const result = await deactivateStudent({ schoolId, id })
+type ArchiveStudentInput = Omit<z.input<typeof archiveStudentSchema>, 'schoolId'>
+
+/** Ce qu'archiver l'élève après `endMonth` laisserait dû ; réservé aux administrateurs. */
+export async function previewStudentArchiveAction(studentId: string, endMonth?: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  return previewStudentArchive({ schoolId, studentId, endMonth })
+}
+
+/** Archive un élève parti : clôt ses inscriptions au dernier mois, garde ou annule le reste dû. */
+export async function archiveStudentAction(input: ArchiveStudentInput) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await archiveStudent({ ...input, schoolId })
   if (result !== 'OK') return result
   revalidatePath('/dashboard/students')
+  revalidatePath('/dashboard/enrollments')
+  revalidatePath('/dashboard/families')
+  revalidatePath('/dashboard/payments')
+  revalidatePath('/dashboard')
+  return 'OK' as const
+}
+
+/** Réintègre un élève archivé ; ses inscriptions closes restent closes, on le réinscrit ensuite. */
+export async function reinstateStudentAction(studentId: string) {
+  const { schoolId } = await requireSchoolAdmin()
+  const result = await reinstateStudent({ schoolId, studentId })
+  if (result !== 'OK') return result
+  revalidatePath('/dashboard/students')
+  revalidatePath(`/dashboard/students/${studentId}`)
+  revalidatePath('/dashboard/families')
+  revalidatePath('/dashboard')
   return 'OK' as const
 }

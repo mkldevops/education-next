@@ -247,6 +247,20 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 {formatDate(enrollment.registeredAt, locale)}
               </p>
             </div>
+            {enrollment.endMonth && (
+              <div>
+                <p className="text-sm font-medium text-graphite-600">
+                  {tEnrollments('departure.endMonth')}
+                </p>
+                <p className="mt-1 text-sm text-graphite">
+                  {enrollment.endMonth.toLocaleDateString(locale, {
+                    month: 'long',
+                    year: 'numeric',
+                    timeZone: 'UTC',
+                  })}
+                </p>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -284,6 +298,19 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                   {formatCurrency(totalPaid, locale, currency)}
                 </span>
               </div>
+              {enrollment.writeOffReason && (
+                <div className="space-y-0.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-graphite-600">
+                      {tEnrollments('departure.writeOffLabel')}
+                    </span>
+                    <span className="font-medium text-graphite">
+                      {formatCurrency(Number(enrollment.writeOffAmount ?? 0), locale, currency)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-graphite-600">{enrollment.writeOffReason}</p>
+                </div>
+              )}
               <div className="flex justify-between border-t pt-2 text-sm font-semibold">
                 <span className="text-graphite">{t('remaining')}</span>
                 <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>

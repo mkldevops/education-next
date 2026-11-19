@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { payableEnrollmentWhere } from '@/domain/enrollment'
 
 const dbMock = {
   enrollment: { findMany: vi.fn() },
@@ -302,7 +303,7 @@ describe('payment tracking reads', () => {
     const enrollmentWhere = {
       schoolId: 'school-1',
       isActive: true,
-      status: { in: ['PENDING', 'ACTIVE'] },
+      ...payableEnrollmentWhere,
       student: { person: { families: { some: { familyId: 'family-1' } } } },
       classAssignments: { some: { classPeriod: { periodId: 'period-1' } } },
     }

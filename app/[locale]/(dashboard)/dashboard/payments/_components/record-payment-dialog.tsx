@@ -8,7 +8,7 @@ import {
   DialogTrigger,
   DialogWhenOpen,
 } from '@peaklab/ui'
-import { Plus } from 'lucide-react'
+import { CreditCard, Plus } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import type { ReactNode } from 'react'
@@ -34,13 +34,17 @@ export function RecordPaymentDialog({
   remainingAmount,
   currency,
   trigger,
+  triggerLabel,
   canOpenCashier = false,
   enrollments = [],
+  defaultEnrollmentId,
 }: {
   families: Option[]
   currency: string
   /** Inscriptions à régler de l'unique famille, pour porter le règlement sur un seul enfant. */
   enrollments?: PayableEnrollmentChoice[]
+  /** Inscription ciblée à l'ouverture, parmi `enrollments` ; à défaut, la famille entière. */
+  defaultEnrollmentId?: string
   canOpenCashier?: boolean
   defaultOpen?: boolean
   redirectTo?: string
@@ -48,6 +52,12 @@ export function RecordPaymentDialog({
   remainingAmount?: number
   /** Bouton d'ouverture à la place du bouton principal, pour un point d'entrée secondaire. */
   trigger?: ReactNode
+  /**
+   * Petit bouton « encaisser » libellé ainsi. À préférer à `trigger` depuis un Server
+   * Component : un élément JSX reçu du serveur n'est pas encore résolu au rendu SSR, et
+   * `DialogTrigger` y rendrait un autre bouton qu'à l'hydratation.
+   */
+  triggerLabel?: string
 }) {
   const t = useTranslations('dashboard.pages.payments.record')
 
@@ -56,12 +66,18 @@ export function RecordPaymentDialog({
       <DialogRouteOpener open={defaultOpen} cleanUrl={redirectTo} />
       {showTrigger && (
         <DialogTrigger>
-          {trigger ?? (
-            <Button>
-              <Plus className="h-4 w-4" />
-              {t('title')}
-            </Button>
-          )}
+          {trigger ??
+            (triggerLabel ? (
+              <Button size="sm">
+                <CreditCard className="h-4 w-4" />
+                {triggerLabel}
+              </Button>
+            ) : (
+              <Button>
+                <Plus className="h-4 w-4" />
+                {t('title')}
+              </Button>
+            ))}
         </DialogTrigger>
       )}
       <DialogWhenOpen>
@@ -71,6 +87,7 @@ export function RecordPaymentDialog({
           currency={currency}
           canOpenCashier={canOpenCashier}
           enrollments={enrollments}
+          defaultEnrollmentId={defaultEnrollmentId}
         />
       </DialogWhenOpen>
     </Dialog>

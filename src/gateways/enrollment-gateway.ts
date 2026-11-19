@@ -1,4 +1,4 @@
-import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
+import { OPEN_ENROLLMENT_STATUSES, payableEnrollmentWhere } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
@@ -297,7 +297,7 @@ export const enrollmentGateway = {
 
   /**
    * Inscriptions payables par une famille : celles de ses élèves dont elle est la famille
-   * redevable. `families: { some: { familyId } }` ne suffit pas — un élève en garde partagée
+   * redevable, y compris l'arriéré d'un élève parti (`payableEnrollmentWhere`). `families: { some: { familyId } }` ne suffit pas — un élève en garde partagée
    * est rattaché à plusieurs familles, et une seule d'entre elles doit porter la dette
    * (`resolveDebtorFamily`, appliqué comme dans `familiesOutstanding`).
    *
@@ -312,7 +312,7 @@ export const enrollmentGateway = {
     const rows = await client.enrollment.findMany({
       where: {
         schoolId,
-        status: { in: [...OPEN_ENROLLMENT_STATUSES] },
+        ...payableEnrollmentWhere,
         student: {
           person: {
             families: {

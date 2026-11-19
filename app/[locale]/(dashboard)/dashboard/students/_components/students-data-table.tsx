@@ -31,6 +31,8 @@ type Props = {
   data: StudentRow[]
   locale: string
   isStaff: boolean
+  /** Archiver un élève (départ en cours d'année) est réservé aux administrateurs. */
+  canArchive?: boolean
   plans: Option[]
   classes: Option[]
   paymentsEnabled: boolean
@@ -93,6 +95,7 @@ export function StudentsDataTable({
   data,
   locale,
   isStaff,
+  canArchive = false,
   plans,
   classes,
   paymentsEnabled,
@@ -146,6 +149,7 @@ export function StudentsDataTable({
       <StudentActionsMenu
         student={row.original}
         canEnroll={row.original.enrollments.length === 0}
+        canArchive={canArchive}
         onEnroll={() =>
           setEnrollRequest((previous) => ({
             student: row.original,

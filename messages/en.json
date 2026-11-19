@@ -639,21 +639,117 @@
             "notFound": "Student not found"
           }
         },
-        "deactivate": {
-          "title": "Deactivate Student",
-          "description": "Are you sure you want to deactivate this student?",
-          "hasEnrollments": "Cannot deactivate: active enrollments exist.",
-          "confirm": "Deactivate",
+        "archive": {
+          "trigger": "Archive",
+          "title": "Archive {name}",
+          "endMonth": "Last month of attendance",
+          "loading": "Computing the amount still due…",
+          "effects": {
+            "enrollments": "Current enrollments close after this month: the following months are no longer due.",
+            "class": "The student leaves the class and no longer appears in attendance calls.",
+            "services": "Meals stop from today; childcare stops after this month.",
+            "history": "The record, payments and receipts are kept."
+          },
+          "remaining": "Still due through {month}: {amount}",
+          "remainderLegend": "What about the amount still due?",
+          "remainders": {
+            "keep": "Keep it in unpaid balances (the family still owes it)",
+            "writeOff": "Write it off (goodwill gesture, justified departure…)"
+          },
+          "reason": "Reason for the write-off",
+          "confirm": "Archive",
           "cancel": "Cancel",
-          "success": "Student deactivated",
-          "error": "Error deactivating student",
+          "success": "Student archived",
+          "error": "Error archiving the student",
           "errors": {
             "validationError": "Check the information you entered",
             "notFound": "Student not found",
-            "hasActiveEnrollments": "Pending or active enrollments remain: close them first"
+            "reasonRequired": "Enter the reason for the write-off",
+            "endMonthOutsidePeriod": "Pick a month within the enrollment period"
           }
         },
-        "description": "Every student in the school, with their class and enrollment."
+        "description": "Every student in the school, with their class and enrollment.",
+        "statusActive": "Active",
+        "statusFormer": "Former",
+        "statusLabel": "Student status",
+        "lastClass": "Last class",
+        "leftIn": "Left in",
+        "remainingDue": "Still owed",
+        "noFormerStudents": "No former students",
+        "reinstate": {
+          "trigger": "Reinstate",
+          "success": "Student reinstated: enroll them for the current year",
+          "error": "Error while reinstating",
+          "errors": {
+            "validationError": "Check the information entered",
+            "notFound": "Student not found or already active"
+          }
+        },
+        "importFormer": {
+          "trigger": "Import a list",
+          "title": "Import a list of former students",
+          "uploadHelp": "Drop up to 4 files (photo, PDF, CSV, TXT or Excel .xlsx) or take a photo. The AI reads last names, first names, birth dates, last classes and departure years; you review everything before importing.",
+          "chooseFiles": "Choose files",
+          "takePhoto": "Take a photo",
+          "selectedFiles": "Selected files",
+          "removeFile": "Remove {name}",
+          "reading": "Reading… (10 to 30 seconds)",
+          "read": "Read the list",
+          "cancel": "Cancel",
+          "restart": "Start over",
+          "reviewHelp": "Every cell can be edited. Highlighted cells are uncertain readings. Untick a row to leave it out; nothing is saved before “Import”.",
+          "truncated": "The list has more than 500 rows: only the first 500 are kept. Import the rest afterwards.",
+          "uncertain": "Uncertain reading: check this value",
+          "includeRow": "Import {name}",
+          "import": "{count, plural, =0 {No student to import} one {Import # student} other {Import # students}}",
+          "success": "{created, plural, =0 {No student created} one {# former student created} other {# former students created}}{skipped, plural, =0 {} one {, # row skipped} other {, # rows skipped}}",
+          "error": "Import failed",
+          "placeholders": {
+            "date": "YYYY-MM-DD",
+            "year": "YYYY"
+          },
+          "columns": {
+            "include": "Import",
+            "lastname": "Last name",
+            "firstname": "First name",
+            "birthday": "Birth date",
+            "className": "Last class",
+            "departureYear": "Left in",
+            "status": "Status"
+          },
+          "chips": {
+            "create": "{count} to create",
+            "homonym": "{count, plural, one {# namesake} other {# namesakes}}",
+            "existing": "{count} already known",
+            "incomplete": "{count} incomplete"
+          },
+          "statuses": {
+            "create": "To create",
+            "homonym": "Namesake",
+            "existing": "Already known",
+            "incomplete": "Incomplete"
+          },
+          "issues": {
+            "missingName": "Missing last or first name",
+            "nameTooLong": "Name too long",
+            "classTooLong": "Class too long (100 characters max.)",
+            "invalidBirthday": "Invalid birth date (YYYY-MM-DD)",
+            "invalidYear": "Invalid departure year (YYYY)",
+            "duplicateInFile": "Already listed above"
+          },
+          "errors": {
+            "aiDisabled": "The AI assistant is disabled",
+            "aiNotConfigured": "No OpenRouter key is configured",
+            "tooManyRequests": "Too many readings: try again in a minute",
+            "tooManyFiles": "4 files at most",
+            "forbiddenFile": "Unsupported file type",
+            "fileTooLarge": "File too large (6 MB per file, 10 MB in total)",
+            "unreadable": "Unreadable file",
+            "nothingFound": "No student found in these files",
+            "providerError": "The AI service did not answer, try again",
+            "validationError": "Check the rows you entered"
+          }
+        }
       },
       "periods": {
         "title": "Periods",
@@ -988,6 +1084,12 @@
           "open": "Show students",
           "empty": "No student found",
           "alreadyEnrolled": "Already enrolled"
+        },
+        "departure": {
+          "leftAfter": "Left after {month}",
+          "writeOff": "Written off: {amount} — {reason}",
+          "endMonth": "Last month",
+          "writeOffLabel": "Amount written off"
         }
       },
       "promotion": {
@@ -2299,7 +2401,7 @@
         "family": "Family",
         "enrollments": "Enrollments",
         "information": "Information",
-        "pay": "Record a tuition payment",
+        "pay": "Collect tuition",
         "collectServices": "Collect canteen and snack",
         "previousSchool": "Previous school",
         "snackAuthorization": "Snack authorization",
@@ -2416,7 +2518,23 @@
               "notServed": "This day is not served"
             }
           }
-        }
+        },
+        "paymentHistory": {
+          "title": "Payments",
+          "empty": "No payments",
+          "emptyHint": "This student's payments will appear here.",
+          "limited": "The {count} most recent payments",
+          "mealDetail": "+{days, plural, one {# day} other {# days}}, paid through {date}",
+          "mealDays": "+{days, plural, one {# day} other {# days}}",
+          "services": {
+            "TUITION": "Tuition",
+            "CANTEEN": "Canteen",
+            "SNACK": "Snack",
+            "CHILDCARE": "Childcare"
+          }
+        },
+        "archivedBadge": "Archived — left in {month}",
+        "archivedBadgeUndated": "Archived"
       },
       "enrollmentDetails": {
         "title": "Enrollment Details",
