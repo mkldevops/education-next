@@ -53,7 +53,8 @@ export function LoginForm({
       if (error) {
         setError(error.status && error.status >= 500 ? t('serviceUnavailable') : t('error'))
       } else {
-        router.push(redirectTo)
+        router.replace(redirectTo)
+        router.refresh()
       }
     } catch {
       setError(t('error'))
@@ -101,7 +102,8 @@ export function LoginForm({
         return
       }
 
-      router.push(redirectTo)
+      router.replace(redirectTo)
+      router.refresh()
     } catch {
       setError(t('passkeyError'))
     } finally {

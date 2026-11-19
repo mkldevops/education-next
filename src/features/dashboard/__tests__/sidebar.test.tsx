@@ -3,6 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => 'fr',
+}))
+
+vi.mock('@/lib/leave-after-sign-out', () => ({
+  leaveAfterSignOut: (locale: string) => leaveAfterSignOut(locale),
 }))
 
 vi.mock('@/i18n/routing', () => ({
@@ -84,6 +89,7 @@ const install = vi.fn()
 const router = { replace: vi.fn(), refresh: vi.fn() }
 const switchSchoolAction = vi.fn(async (_schoolId: string) => 'OK' as const)
 const signOut = vi.fn(async () => ({ error: null }))
+const leaveAfterSignOut = vi.fn()
 const toastError = vi.fn()
 
 const collapse = () => useSidebarStore.setState({ expanded: false, mobileOpen: false })
@@ -409,7 +415,7 @@ describe('Sidebar school switcher', () => {
 describe('Sidebar sign out', () => {
   beforeEach(() => {
     expand()
-    router.replace.mockClear()
+    leaveAfterSignOut.mockClear()
     signOut.mockClear()
     toastError.mockClear()
     signOut.mockResolvedValue({ error: null })
@@ -424,7 +430,7 @@ describe('Sidebar sign out', () => {
   it('leaves the dashboard once the session is closed', async () => {
     clickLogout()
 
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'))
+    await waitFor(() => expect(leaveAfterSignOut).toHaveBeenCalledWith('fr'))
     expect(toastError).not.toHaveBeenCalled()
   })
 
@@ -434,6 +440,6 @@ describe('Sidebar sign out', () => {
     clickLogout()
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith('logoutError'))
-    expect(router.replace).not.toHaveBeenCalled()
+    expect(leaveAfterSignOut).not.toHaveBeenCalled()
   })
 })

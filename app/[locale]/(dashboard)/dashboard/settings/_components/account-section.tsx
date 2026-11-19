@@ -6,8 +6,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { changeEmailAction, deleteProfileAction } from '@/actions'
 import { GoogleIcon } from '@/features/auth/google-icon'
-import { useRouter as useI18nRouter } from '@/i18n/routing'
 import { linkSocial, signOut, unlinkAccount } from '@/lib/auth-client'
+import { leaveAfterSignOut } from '@/lib/leave-after-sign-out'
 import { toast } from '@/lib/toast'
 
 export type LinkedAccount = {
@@ -24,7 +24,6 @@ type Props = {
 export function AccountSection({ email, linkedAccounts, googleEnabled = false }: Props) {
   const t = useTranslations('settings')
   const router = useRouter()
-  const i18nRouter = useI18nRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   // État séparé de `error` : ce dernier est affiché par la zone de danger pour
@@ -79,7 +78,7 @@ export function AccountSection({ email, linkedAccounts, googleEnabled = false }:
       const result = await deleteProfileAction()
 
       if (result.success) {
-        i18nRouter.push('/')
+        leaveAfterSignOut(locale)
       } else {
         setError(result.error)
         setShowDeleteConfirm(false)
@@ -94,7 +93,7 @@ export function AccountSection({ email, linkedAccounts, googleEnabled = false }:
         toast.error(t('errors.logoutFailed'))
         return
       }
-      i18nRouter.push('/')
+      leaveAfterSignOut(locale)
     })
   }
 
