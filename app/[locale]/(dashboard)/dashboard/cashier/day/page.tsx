@@ -224,6 +224,9 @@ export default async function CashDayPage({ params, searchParams }: Props) {
                   amount: money(unreceipted.total),
                 })}
               </p>
+              {unreceipted.truncated && (
+                <p className="mt-1 text-right text-xs text-red-700">{t('unreceipted.truncated')}</p>
+              )}
             </>
           )}
         </Card>

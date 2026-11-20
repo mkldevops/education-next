@@ -111,6 +111,8 @@ describe.skipIf(!databaseUrl)('cash day reads', () => {
         // Une somme versée, ventilée sur deux inscriptions.
         payment(a, 5000, at('09:00'), { enrollment: 0 }),
         payment(a, 4000, at('09:00'), { enrollment: 1 }),
+        // Ligne à zéro d'un paiement en ligne (inscription déjà soldée) : rien d'encaissé.
+        payment(a, 0, at('09:15'), { enrollment: 1 }),
         // Remboursement : jamais de reçu.
         payment(a, -2000, at('10:00')),
         // Saisie annulée, puis saisie de la veille.
@@ -155,6 +157,29 @@ describe.skipIf(!databaseUrl)('cash day reads', () => {
     expect(unreceipted.rows.map((row) => row.family)).toEqual(['Famille a', 'Famille a'])
     expect(unreceipted.rows.map((row) => row.amount)).toEqual([9000, -2000])
     expect(unreceipted.total).toBe(7000)
+    expect(unreceipted.truncated).toBe(false)
+  })
+
+  it('leaves out a zero-amount line, which is no money handed over', async () => {
+    const zero = await raw.payment.count({
+      where: { schoolId: a.schoolId, receiptId: null, amount: 0, isActive: true },
+    })
+    const unreceipted = await loadUnreceiptedPayments(a.schoolId, DAY, TIME_ZONE)
+
+    expect(zero).toBe(1)
+    expect(unreceipted.rows.every((row) => row.amount !== 0)).toBe(true)
+    expect(unreceipted.rows).toHaveLength(2)
+  })
+
+  it('reads a bounded list, oldest first, and says when the day holds more', async () => {
+    const bounded = await loadUnreceiptedPayments(a.schoolId, DAY, TIME_ZONE, 2)
+    const whole = await loadUnreceiptedPayments(a.schoolId, DAY, TIME_ZONE, 3)
+
+    expect(bounded.rows.map((row) => row.amount)).toEqual([9000])
+    expect(bounded.total).toBe(9000)
+    expect(bounded.truncated).toBe(true)
+    expect(whole.rows.map((row) => row.amount)).toEqual([9000, -2000])
+    expect(whole.truncated).toBe(false)
   })
 
   it('gives the other school its own day only', async () => {

@@ -19,6 +19,8 @@ const receiptSelect = {
   childcarePayments: { select: { amount: true } },
 } as const
 
+const UNRECEIPTED_LIMIT = 200
+
 /** Reçus émis et reçus annulés pendant le jour local `day` de l'école, et leur caisse. */
 export async function loadCashDay(schoolId: string, day: string, timeZone: string) {
   const { start, end } = schoolDayBounds(day, timeZone)
@@ -65,12 +67,19 @@ export async function loadCashDay(schoolId: string, day: string, timeZone: strin
  * Paiements d'écolage enregistrés pendant le jour local `day` sans reçu, remboursements compris,
  * une ligne par somme versée. Ils restent hors de la caisse, que seuls les reçus font : un
  * paiement qui reçoit son reçu plus tard quitte cette liste et compte le jour du reçu. Les
- * paiements annulés sont inactifs, donc absents.
+ * paiements annulés sont inactifs, donc absents. Une ligne à zéro n'est pas un encaissement : le
+ * paiement en ligne en écrit une par inscription déjà soldée, sans reçu. La lecture est bornée à
+ * `limit` lignes ; `truncated` dit que le jour en compte davantage.
  */
-export async function loadUnreceiptedPayments(schoolId: string, day: string, timeZone: string) {
+export async function loadUnreceiptedPayments(
+  schoolId: string,
+  day: string,
+  timeZone: string,
+  limit = UNRECEIPTED_LIMIT
+) {
   const { start, end } = schoolDayBounds(day, timeZone)
   const payments = await db.payment.findMany({
-    where: { schoolId, receiptId: null, createdAt: { gte: start, lt: end } },
+    where: { schoolId, receiptId: null, amount: { not: 0 }, createdAt: { gte: start, lt: end } },
     select: {
       id: true,
       familyId: true,
@@ -84,9 +93,10 @@ export async function loadUnreceiptedPayments(schoolId: string, day: string, tim
       createdAt: true,
       family: { select: { name: true } },
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    take: limit + 1,
   })
-  const rows = groupFamilyPayments(payments)
+  const rows = groupFamilyPayments(payments.slice(0, limit))
     .sort((a, b) => a.lines[0].createdAt.getTime() - b.lines[0].createdAt.getTime())
     .map((payment) => ({
       id: payment.id,
@@ -96,5 +106,9 @@ export async function loadUnreceiptedPayments(schoolId: string, day: string, tim
       method: payment.method,
     }))
 
-  return { rows, total: roundHalfUp(rows.reduce((sum, row) => sum + row.amount, 0)) }
+  return {
+    rows,
+    total: roundHalfUp(rows.reduce((sum, row) => sum + row.amount, 0)),
+    truncated: payments.length > limit,
+  }
 }

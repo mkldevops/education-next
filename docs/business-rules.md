@@ -2419,8 +2419,11 @@ apart for the administration when payments are enabled (`loadUnreceiptedPayments
 handed over (`groupFamilyPayments()`), refunds flagged, with their own subtotal. They are never
 added to the takings: receipts remain the only source of the cash total. A payment that receives
 its receipt later leaves the list and counts on the receipt's issue day; a cancelled entry is
-inactive and disappears. A `CASHIER` never reads this list: tuition payments outside the cashier
-stay with the administration.
+inactive and disappears. A zero-amount row is not listed: an online payment writes one per
+already-settled enrollment and its receipt skips it (`completeCheckoutSession()`), so it is no money
+handed over. The read is bounded to the 200 oldest rows of the day; beyond that the view says the
+list and its subtotal are incomplete. A `CASHIER` never reads this list: tuition payments outside the
+cashier stay with the administration.
 
 **Cashier role.** `CASHIER` is the school role of the person at the till (migration
 `20261029090000_cashier_role`; granted to nobody on deploy). `requireSchoolCashier()`

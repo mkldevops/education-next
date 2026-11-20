@@ -64,7 +64,7 @@ beforeEach(() => {
   })
   isMealsEnabledMock.mockResolvedValue(true)
   isPaymentsEnabledMock.mockResolvedValue(true)
-  loadUnreceiptedPaymentsMock.mockResolvedValue({ rows: [], total: 0 })
+  loadUnreceiptedPaymentsMock.mockResolvedValue({ rows: [], total: 0, truncated: false })
   loadCashDayMock.mockResolvedValue({
     issued: totals,
     cancelled: totals,
@@ -173,6 +173,7 @@ describe('CashDayPage', () => {
           },
         ],
         total: 3000,
+        truncated: false,
       })
 
       const html = renderToStaticMarkup(await render('2026-10-20'))
@@ -187,6 +188,27 @@ describe('CashDayPage', () => {
       expect(html).toContain('Famille Mze')
       expect(html.match(/unreceipted\.refund/g)).toHaveLength(1)
       expect(html).toContain('unreceipted.total')
+      expect(html).not.toContain('unreceipted.truncated')
+    })
+
+    it('warns when the day holds more payments than the list reads', async () => {
+      loadUnreceiptedPaymentsMock.mockResolvedValue({
+        rows: [
+          {
+            id: 'pay-1',
+            familyId: 'family-2',
+            family: 'Famille Abdou',
+            amount: 5000,
+            method: 'CASH',
+          },
+        ],
+        total: 5000,
+        truncated: true,
+      })
+
+      const html = renderToStaticMarkup(await render())
+
+      expect(html).toContain('unreceipted.truncated')
     })
 
     it('says so when every payment of the day has its receipt', async () => {

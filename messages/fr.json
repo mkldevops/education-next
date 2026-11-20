@@ -1519,7 +1519,8 @@
             "intro": "Paiements d'écolage enregistrés ce jour sans reçu, remboursements compris. Ils ne sont pas comptés dans le total ci-dessus : seuls les reçus font la caisse.",
             "none": "Aucun paiement sans reçu",
             "refund": "Remboursement",
-            "total": "{count, plural, one {# paiement sans reçu} other {# paiements sans reçu}} · {amount}"
+            "total": "{count, plural, one {# paiement sans reçu} other {# paiements sans reçu}} · {amount}",
+            "truncated": "Liste incomplète : seules les premières saisies du jour sont affichées, et ce sous-total ne couvre qu'elles."
           }
         },
         "debtors": {
