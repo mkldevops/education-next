@@ -8,7 +8,7 @@ import { readPaymentSchedule, startMonthFromDate } from '@/domain/payment-schedu
 import { legacyDepartureMonth, legacyDepartureTotal } from '@/domain/student-departure'
 import { calculateAge } from '@/lib/date'
 import { db, dbArchived } from '@/lib/db'
-import { roundHalfUp, toNumber } from '@/lib/decimal'
+import { roundHalfUp, toNumber, toNumberOrNull } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { classOptionSelect, toClassOption } from '../../../../_lib/class-options-loader'
 import { familyLinksVisibleTo, resolveDeepLink, staffOrLinkedTo } from '../../../../_lib/deep-link'
@@ -146,6 +146,7 @@ function asOfDeparture(
       totalAmount: toNumber(enrollment.totalAmount),
       periodStart: period?.startAt ?? null,
       startMonth: startMonthFromDate(enrollment.startMonth),
+      firstInstallmentAmount: toNumberOrNull(enrollment.firstInstallmentAmount),
     },
     month,
     totalPaidAmount(enrollment.payments),

@@ -19,6 +19,7 @@ describe('family detail serialization', () => {
                   status: 'ACTIVE',
                   totalAmount: decimal(350),
                   discount: decimal(25),
+                  firstInstallmentAmount: decimal(40),
                   plan: { amount: decimal(375) },
                   payments: [{ amount: decimal(100) }],
                   classAssignments: [],
@@ -36,6 +37,7 @@ describe('family detail serialization', () => {
     expect(enrollment).toMatchObject({
       totalAmount: 350,
       discount: 25,
+      firstInstallmentAmount: 40,
       plan: { amount: 375 },
       payments: [{ amount: 100 }],
     })
@@ -59,6 +61,7 @@ describe('family detail serialization', () => {
         enrollment: {
           totalAmount: 350,
           discount: 25,
+          firstInstallmentAmount: null,
           plan: { amount: 375 },
         },
       },

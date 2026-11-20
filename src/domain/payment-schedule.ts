@@ -74,6 +74,17 @@ function dueDate(year: number, monthIndex: number, day: number): string {
 }
 
 /**
+ * What narrows or reshapes an enrollment's schedule. `firstInstallmentAmount` is the reduced
+ * first installment of an arrival during the year: it only moves amounts between deadlines,
+ * the total split stays the enrollment's `totalAmount`.
+ */
+export type InstallmentOptions = {
+  startMonth?: string | null
+  endMonth?: string | null
+  firstInstallmentAmount?: number | null
+}
+
+/**
  * Month/day settings recur in the enrollment's school year, never in the current year.
  * February and other short months use their last day for a deadline of 29–31.
  * Rounding happens in currency minor units; the final installment carries the remainder.
@@ -83,8 +94,7 @@ export function paymentInstallments(
   totalAmount: number,
   periodStart: Date,
   currency: string,
-  startMonth: string | null = null,
-  endMonth: string | null = null
+  { startMonth = null, endMonth = null, firstInstallmentAmount = null }: InstallmentOptions = {}
 ): PaymentInstallment[] {
   if (schedule.mode === 'NONE') return []
   const year = periodStart.getUTCFullYear()
@@ -109,20 +119,38 @@ export function paymentInstallments(
       (!startMonth || date >= firstDayOf(startMonth)) && (!endMonth || date.slice(0, 7) <= endMonth)
   )
   if (owedDates.length === 0) return []
-  return splitAmount(owedDates, totalAmount, currency)
+  return splitAmount(owedDates, totalAmount, currency, firstInstallmentAmount)
 }
 
-function splitAmount(dates: string[], totalAmount: number, currency: string) {
+function splitAmount(
+  dates: string[],
+  totalAmount: number,
+  currency: string,
+  firstInstallmentAmount: number | null
+) {
   const factor = 10 ** currencyFractionDigits(currency)
   // Preserve fractional legacy amounts rather than inventing debt by rounding up.
   // New plan prices validate the school's currency precision.
   const totalUnits = roundHalfUp(totalAmount * factor)
-  const units = Math.floor(totalUnits / dates.length)
-  return dates.map((date, index) => ({
-    dueDate: date,
-    amount: (index === dates.length - 1 ? totalUnits - units * index : units) / factor,
-  }))
+  // A single deadline carries the whole total, and a reduced first installment never exceeds
+  // the total a departure may have cut: no installment is ever negative.
+  const first = dates.length > 1 ? firstInstallmentAmount : null
+  const firstUnits =
+    first === null ? 0 : Math.max(0, Math.min(roundHalfUp(first * factor), totalUnits))
+  const rest = first === null ? dates : dates.slice(1)
+  const restUnits = totalUnits - firstUnits
+  const units = Math.floor(restUnits / rest.length)
+  return [
+    ...(first === null ? [] : [{ dueDate: dates[0], amount: firstUnits / factor }]),
+    ...rest.map((date, index) => ({
+      dueDate: date,
+      amount: (index === rest.length - 1 ? restUnits - units * index : units) / factor,
+    })),
+  ]
 }
+
+/** Reduced first installment of an arrival during the year, in the school's currency. */
+export const firstInstallmentAmountSchema = priceAmount
 
 /** `YYYY-MM`: the month an enrollment starts owing installments. */
 export const startMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/)
@@ -151,25 +179,53 @@ export function validateStartMonth(
     : 'startMonthOutsidePeriod'
 }
 
+export type FirstInstallmentError =
+  | 'firstInstallmentRequiresStartMonth'
+  | 'firstInstallmentNotMonthly'
+  | 'firstInstallmentOutOfRange'
+
+/** A reduced first installment stays within the total the discount leaves to pay. */
+export function firstInstallmentFitsTotal(
+  firstInstallmentAmount: number | null,
+  totalAmount: number
+): boolean {
+  return firstInstallmentAmount === null || firstInstallmentAmount <= totalAmount
+}
+
 /**
  * The part of a plan an enrollment owes when it starts at `startMonth`: the plan's
  * installments due from that month on. Without a start month, the whole plan amount.
  * A plan without deadlines cannot be prorated, and a start after the last deadline
  * would owe nothing: both are refused rather than guessed.
+ *
+ * A reduced first installment replaces the plan's own installment of the start month. It needs
+ * a start month and a monthly plan, and stays within `0 < amount <= that installment`.
  */
 export function owedPlanAmount(
   planAmount: number,
   schedule: PaymentSchedule,
   periodStart: Date,
   currency: string,
-  startMonth: string | null
-): number | 'noPaymentSchedule' | 'noInstallmentDue' {
-  if (!startMonth) return planAmount
+  {
+    startMonth,
+    firstInstallmentAmount = null,
+  }: { startMonth: string | null; firstInstallmentAmount?: number | null }
+): number | 'noPaymentSchedule' | 'noInstallmentDue' | FirstInstallmentError {
+  if (!startMonth) {
+    return firstInstallmentAmount === null ? planAmount : 'firstInstallmentRequiresStartMonth'
+  }
   const all = paymentInstallments(schedule, planAmount, periodStart, currency)
   if (all.length === 0) return 'noPaymentSchedule'
   const owed = all.filter((installment) => installment.dueDate >= firstDayOf(startMonth))
   if (owed.length === 0) return 'noInstallmentDue'
-  return roundHalfUp(owed.reduce((sum, installment) => sum + installment.amount, 0))
+  const total = owed.reduce((sum, installment) => sum + installment.amount, 0)
+  if (firstInstallmentAmount === null) return roundHalfUp(total)
+  if (schedule.mode !== 'MONTHLY') return 'firstInstallmentNotMonthly'
+  const nominal = owed[0].amount
+  if (firstInstallmentAmount <= 0 || firstInstallmentAmount > nominal) {
+    return 'firstInstallmentOutOfRange'
+  }
+  return roundHalfUp(total - nominal + firstInstallmentAmount)
 }
 
 /**
@@ -182,11 +238,17 @@ export function owedThroughMonth(
   totalAmount: number,
   periodStart: Date | null,
   currency: string,
-  startMonth: string | null,
-  endMonth: string
+  {
+    startMonth,
+    endMonth,
+    firstInstallmentAmount = null,
+  }: { startMonth: string | null; endMonth: string; firstInstallmentAmount?: number | null }
 ): { amount: number; prorated: boolean } {
   if (!periodStart || schedule.mode === 'NONE') return { amount: totalAmount, prorated: false }
-  const installments = paymentInstallments(schedule, totalAmount, periodStart, currency, startMonth)
+  const installments = paymentInstallments(schedule, totalAmount, periodStart, currency, {
+    startMonth,
+    firstInstallmentAmount,
+  })
   if (installments.length === 0) return { amount: totalAmount, prorated: false }
   const kept = installments.filter((installment) => installment.dueDate.slice(0, 7) <= endMonth)
   return {

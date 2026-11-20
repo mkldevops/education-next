@@ -86,6 +86,7 @@ export function legacyDepartureTotal(
     totalAmount: number
     periodStart: Date | null
     startMonth: string | null
+    firstInstallmentAmount: number | null
   },
   departureMonth: string,
   paid: number,
@@ -96,8 +97,11 @@ export function legacyDepartureTotal(
     enrollment.totalAmount,
     enrollment.periodStart,
     currency,
-    enrollment.startMonth,
-    departureMonth
+    {
+      startMonth: enrollment.startMonth,
+      endMonth: departureMonth,
+      firstInstallmentAmount: enrollment.firstInstallmentAmount,
+    }
   ).amount
   return departureSettlement(owed, paid, 'keep').totalAmount
 }

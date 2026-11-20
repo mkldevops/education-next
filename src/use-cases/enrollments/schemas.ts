@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { isCurrencyAmount } from '@/domain/enrollment'
-import { startMonthSchema } from '@/domain/payment-schedule'
+import { firstInstallmentAmountSchema, startMonthSchema } from '@/domain/payment-schedule'
 
 export const createEnrollmentSchema = z.object({
   schoolId: z.string().min(1),
@@ -45,6 +45,10 @@ export const setEnrollmentStartMonthSchema = z.object({
   enrollmentId: z.string().uuid(),
   /** `YYYY-MM` ; `null` rend l'inscription due depuis le début de sa période. */
   startMonth: startMonthSchema.nullable(),
+  /** Montant réduit du premier mois ; absent ou `null`, l'échéance de la formule s'applique. */
+  firstInstallmentAmount: firstInstallmentAmountSchema.nullable().default(null),
+  /** Retire la remise de l'inscription dans la même écriture. */
+  removeDiscount: z.boolean().default(false),
 })
 
 export const promoteStudentsSchema = z.object({

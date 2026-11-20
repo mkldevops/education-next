@@ -49,6 +49,8 @@ const resolvedSchema = z.object({
       plan: z.object({ id: z.string(), name: z.string(), amount: z.number() }),
       // Absent d'un brouillon antérieur au mois de début : l'inscription commence avec sa période.
       startMonth: z.string().nullable().default(null),
+      // Absent d'un brouillon antérieur au premier mois réduit : l'échéance de la formule.
+      firstInstallmentAmount: z.number().nullable().default(null),
       totalAmount: z.number(),
     })
   ),
@@ -225,6 +227,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
       classPeriod,
       plan,
       startMonth,
+      firstInstallmentAmount,
       totalAmount,
       ...person
     } of resolved.students) {
@@ -254,6 +257,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
           totalAmount,
           discount: resolved.discount,
           startMonth: startMonth ? startMonthToDate(startMonth) : null,
+          firstInstallmentAmount,
           status: NEW_ENROLLMENT_STATUS,
         },
         select: { id: true },

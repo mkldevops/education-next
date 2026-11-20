@@ -1017,13 +1017,27 @@ stay where they are. **The new total never falls below what the enrollment alrea
 `totalBelowPaid`, since a balance never goes negative and an overpayment nobody decided to refund
 must not appear. A request that changes nothing → `noChange`; several open enrollments for the
 student → `ambiguousEnrollment`, listed so the caller retries with `enrollmentId`. The commit
-compares the enrollment's current plan, discount, total and start month to the validated `before`,
-and the target plan's price to the validated `after` → `staleDraft` when either moved. `startMonth`
+compares the enrollment's current plan, discount, total, start month and reduced first installment
+to the validated `before`, and the target plan's price to the validated `after` → `staleDraft` when
+either moved. `startMonth`
 (`YYYY-MM`) sets or, with `null`, clears the enrollment's start month (Enrollments, Money); absent,
 the current one is kept, so a plan or discount change keeps the proration already decided. The
 preview shows it before → after, with the part of the plan due (`planAmountDue`).
 `preview_enroll_family` takes the same `startMonth`, for the family or per student (the student's
 wins), checked against the class period.
+
+**An arrival during the year is a start month and a first installment, never a discount.**
+`firstInstallmentAmount` sets the reduced first month (Enrollments, Money) on
+`preview_update_enrollment`, and per student on `preview_enroll_family`; `null` gives the plan's own
+installment back. Absent on an update, the stored amount is kept while neither the plan nor the
+start month changes; when one of them does, it is cleared and the preview carries a
+`firstInstallmentReset` warning, so a stale amount never follows another plan or month. Refusals
+are blockers on that field: `firstInstallmentRequiresStartMonth`, `firstInstallmentNotMonthly`,
+`firstInstallmentOutOfRange`, `firstInstallmentExceedsTotal`. `enroll_family` ignores it in a school
+without payments, like the plan.
+The commit writes the amount the preview resolved, on the enrollment only. The tool descriptions
+and the assistant's system prompt both forbid dictating a late arrival through `discount` or
+`totalAmount`, which lower the whole year instead of the first month.
 
 **An existing family is named by `familyId`, instead of `familyName`.** A child entered on the
 dashboard without an enrollment — a sibling added to the family, never enrolled — must not come back
@@ -1713,6 +1727,29 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
   `totalBelowPaid`, read under the family lock like a discount (#425). Clearing it restores
   `plan.amount - discount`. An enrollment without one behaves exactly as before, with no extra read.
 - Set from the enrollment page (admins, payments enabled), `update_enrollment` and `enroll_family`.
+- **A student who arrives during a month owes a reduced first month**
+  (`Enrollment.firstInstallmentAmount`, null by default — no backfill, an enrollment without one
+  behaves as before). It replaces the plan's installment of the start month: the part due becomes
+  `installments due from the start month − that installment + firstInstallmentAmount`, and
+  `totalAmount` stays the single source of truth (part due − discount). A 10 × 10 000 plan joined
+  mid-December at 5 000 owes 5 000 + 7 × 10 000 = 75 000. The field only shapes the schedule: the
+  first deadline carries this amount, the rest of the total — discount included — is split over the
+  following deadlines.
+- It needs a start month → `firstInstallmentRequiresStartMonth`, a **monthly** plan →
+  `firstInstallmentNotMonthly`, an amount within `0 < amount ≤ the plan's installment of that month`
+  → `firstInstallmentOutOfRange`, and a total that still covers it →
+  `firstInstallmentExceedsTotal` (also when a discount applied later would push the total under it).
+- **No stale amount.** The start-month write always writes the field: a month changed or cleared
+  without an amount resets it to null in the same update. A plan change resets it in the same write
+  (`enrollmentGateway.assignPlan`) and reprices on the start month alone. The dialog of the
+  enrollment page shows the field for a monthly plan, disabled until a start month is chosen,
+  empties it as soon as the month changes (an amount typed for one month is never submitted with
+  another), shows the enrollment's discount with an option to remove it in the same write, and
+  keeps the `totalBelowPaid` guard.
+- **It is a financial field.** The enrollments list builds its client payload through
+  `serializeEnrollment` (`enrollments/_lib/serialize-enrollment.ts`): an admin gets plain numbers, a
+  non-admin (staff teacher, parent) gets no total, discount, write-off, reduced first month, plan
+  amount, plan pricing or payment.
 
 ## Plans
 
@@ -1790,6 +1827,14 @@ Owner: `src/domain/payment-schedule.ts`, `src/use-cases/payments/payment-trackin
   automatic proration — unless it carries a start month (Enrollments, Money): installments before
   that month are then neither expected nor counted, and its stored total is split over the
   remaining deadlines only. No September arrears for a student who joined in October.
+- A reduced first installment (`Enrollment.firstInstallmentAmount`, Enrollments, Money) is the
+  amount of the first owed deadline; the remainder of the total is split equally over the following
+  ones. Every reader passes it through the options of `paymentInstallments`: payment tracking,
+  the family payments of the MCP, the student page, the departure preview and settlement
+  (`owedThroughMonth`, `legacyDepartureTotal`). The split never produces a negative installment:
+  the first amount is capped at the total (a departure may have cut it), and a single remaining
+  deadline carries the whole total. Readers apply it whatever the plan's mode, so a plan whose
+  schedule is edited afterwards keeps a coherent split until the amount is reset.
 - Month/day settings are anchored to the enrollment's school period, from its latest class
   assignment. A month before the period start month falls in the following calendar year. They
   never restart on the current year. Short months clamp a due day of 29–31 to their last day.

@@ -16,6 +16,7 @@ import {
 } from '../../_lib/class-options-loader'
 import { EnrollmentCreateActions } from './_components/enrollment-create-actions'
 import { EnrollmentsTable } from './_components/enrollments-table'
+import { serializeEnrollment } from './_lib/serialize-enrollment'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -168,27 +169,7 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
 
   // Rien de financier ne part vers le client d'un enseignant, même masqué par l'interface.
   const serializableEnrollments = enrollments.map((enrollment) =>
-    scope.isAdmin
-      ? {
-          ...enrollment,
-          totalAmount: Number(enrollment.totalAmount),
-          discount: Number(enrollment.discount),
-          writeOffAmount:
-            enrollment.writeOffAmount === null ? null : Number(enrollment.writeOffAmount),
-          plan: { ...enrollment.plan, amount: Number(enrollment.plan.amount) },
-          payments: enrollment.payments.map((payment) => ({
-            ...payment,
-            amount: Number(payment.amount),
-          })),
-        }
-      : {
-          ...enrollment,
-          totalAmount: 0,
-          discount: 0,
-          writeOffAmount: null,
-          plan: { ...enrollment.plan, amount: 0 },
-          payments: [],
-        }
+    serializeEnrollment(enrollment, { isAdmin: scope.isAdmin })
   )
 
   // Le parent n'ajoute pas d'élève : seul le staff charge la liste des familles.

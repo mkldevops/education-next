@@ -86,11 +86,23 @@ describe('legacyDepartureTotal', () => {
     totalAmount: 1000,
     periodStart: new Date('2026-09-01T00:00:00.000Z'),
     startMonth: null,
+    firstInstallmentAmount: null,
   }
 
   it('owes the deadlines through the departure month, or what was already paid', () => {
     expect(legacyDepartureTotal(enrollment, '2026-10', 150, 'EUR')).toBe(200)
     expect(legacyDepartureTotal(enrollment, '2026-10', 300, 'EUR')).toBe(300)
+  })
+
+  it('follows a reduced first installment', () => {
+    // Joined in October at 50 instead of 100: 50 + 100 are due through November.
+    const arrival = {
+      ...enrollment,
+      totalAmount: 850,
+      startMonth: '2026-10',
+      firstInstallmentAmount: 50,
+    }
+    expect(legacyDepartureTotal(arrival, '2026-11', 0, 'EUR')).toBe(150)
   })
 
   it('keeps the whole total when nothing schedules it', () => {

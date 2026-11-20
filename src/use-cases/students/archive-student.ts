@@ -19,7 +19,7 @@ import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import type { Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
-import { roundHalfUp, toNumber } from '@/lib/decimal'
+import { roundHalfUp, toNumber, toNumberOrNull } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { stopStudentMeals } from '@/use-cases/meals/stop-student-meals'
 
@@ -46,6 +46,7 @@ function loadOpenEnrollments(client: Client, schoolId: string, studentId: string
       id: true,
       totalAmount: true,
       startMonth: true,
+      firstInstallmentAmount: true,
       plan: { select: { paymentSchedule: true } },
       payments: { where: { isActive: true }, select: { amount: true } },
       classAssignments: {
@@ -70,8 +71,11 @@ function owedThrough(enrollment: OpenEnrollment, endMonth: string, currency: str
     toNumber(enrollment.totalAmount),
     periodOf(enrollment)?.startAt ?? null,
     currency,
-    startMonthFromDate(enrollment.startMonth),
-    endMonth
+    {
+      startMonth: startMonthFromDate(enrollment.startMonth),
+      endMonth,
+      firstInstallmentAmount: toNumberOrNull(enrollment.firstInstallmentAmount),
+    }
   )
 }
 

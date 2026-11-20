@@ -9,7 +9,7 @@ import {
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
-import { roundHalfUp, toNumber } from '@/lib/decimal'
+import { roundHalfUp, toNumber, toNumberOrNull } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { getFamilyPaymentTracking } from '@/use-cases/payments/payment-tracking'
 import type { DraftScope } from './draft-scope'
@@ -68,8 +68,11 @@ export async function familyPaymentsFromMcp(scope: DraftScope, input: Input) {
               toNumber(schedule.totalAmount),
               period.startAt,
               currency,
-              startMonthFromDate(schedule.startMonth),
-              startMonthFromDate(schedule.endMonth)
+              {
+                startMonth: startMonthFromDate(schedule.startMonth),
+                endMonth: startMonthFromDate(schedule.endMonth),
+                firstInstallmentAmount: toNumberOrNull(schedule.firstInstallmentAmount),
+              }
             )
           : []
       return {

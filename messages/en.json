@@ -2623,7 +2623,11 @@
             "paymentsDisabled": "Payment management is turned off for this school",
             "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
             "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
-            "noInstallmentDue": "No installment of the plan falls on or after that month"
+            "noInstallmentDue": "No installment of the plan falls on or after that month",
+            "firstInstallmentRequiresStartMonth": "Set the start month before reducing the first month",
+            "firstInstallmentNotMonthly": "The first month can only be reduced on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due after the discount"
           },
           "totalAmount": "Final amount due ({currency})",
           "free": "Free",
@@ -2640,6 +2644,11 @@
           "title": "Start month",
           "label": "First month due",
           "hint": "Earlier installments are neither expected nor counted in the total. Leave empty to start with the period.",
+          "firstInstallment": "First month amount ({currency})",
+          "firstInstallmentHint": "For an arrival during a month: this amount replaces the first installment, the following ones stay the plan's. Leave empty for the regular installment.",
+          "currentDiscount": "Current discount: {amount}",
+          "discountHint": "It spreads over the following installments, never over the reduced first month.",
+          "removeDiscount": "Remove this discount",
           "cancel": "Cancel",
           "submit": "Save",
           "success": "Start month saved",
@@ -2652,7 +2661,11 @@
             "paymentsDisabled": "Payment management is turned off for this school",
             "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
             "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
-            "noInstallmentDue": "No installment of the plan falls on or after that month"
+            "noInstallmentDue": "No installment of the plan falls on or after that month",
+            "firstInstallmentRequiresStartMonth": "Set the start month before reducing the first month",
+            "firstInstallmentNotMonthly": "The first month can only be reduced on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due after the discount"
           }
         }
       },

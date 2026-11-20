@@ -116,6 +116,11 @@ export function buildAssistantSystemPrompt({
           '  `cancel_payments` with its ids and the reason the administrator gave. Online (Stripe)',
           '  payments cannot be cancelled here; a cashier payment is cancelled with its receipt',
           '  (`cancel_receipt`).',
+          '- A student who arrives during the year: pass `startMonth` (first month owed) and,',
+          '  when the first month is only partly owed, `firstInstallmentAmount` (the reduced',
+          '  first month, monthly plans only) to `preview_enroll_family` or',
+          '  `preview_update_enrollment`. Never express a late arrival with `discount` or',
+          '  `totalAmount`: those lower the whole year, not the first month.',
         ]
       : []),
     '- When the user says to cancel or stop ("annule", "laisse tomber"), drop the operation in',
