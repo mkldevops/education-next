@@ -1,16 +1,12 @@
 import type { z } from 'zod'
-import {
-  calculateTotalAmount,
-  NEW_ENROLLMENT_STATUS,
-  pricingFromTotalAmount,
-  validateDiscount,
-} from '@/domain/enrollment'
+import { NEW_ENROLLMENT_STATUS } from '@/domain/enrollment'
 import { validateStudentBirthday } from '@/domain/student'
 import { reserveClassSeats } from '@/gateways/class-seat-lock'
 import { lockActiveFamily } from '@/gateways/family-mutation-lock'
 import { planGateway } from '@/gateways/plan-gateway'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { loadNewEnrollmentArrival, priceNewEnrollment } from '@/use-cases/enrollments/pricing'
 import { createEnrolledStudentSchema } from './schemas'
 
 /**
@@ -39,9 +35,16 @@ export async function createEnrolledStudent(input: Input) {
   // Mêmes deux contrôles que `createEnrollment`, pour la même raison : le schéma laisse
   // `planId` facultatif pour la coupure, donc l'obligation est restaurée ici drapeau actif,
   // et une formule ou une remise explicites pendant une coupure trahissent un appelant qui
-  // ignore le drapeau — les tarifer en silence est pire que refuser (FR-017).
+  // ignore le drapeau — les tarifer en silence est pire que refuser (FR-017). Le mois de
+  // début et le premier mois réduit sont des décisions de tarif : même refus.
   if (paymentsEnabled && enrollment.planId === undefined) return 'validationError' as const
-  if (!paymentsEnabled && (enrollment.planId !== undefined || enrollment.discount !== 0)) {
+  if (
+    !paymentsEnabled &&
+    (enrollment.planId !== undefined ||
+      enrollment.discount !== 0 ||
+      enrollment.startMonth !== null ||
+      enrollment.firstInstallmentAmount !== null)
+  ) {
     return 'paymentsDisabled' as const
   }
 
@@ -49,6 +52,11 @@ export async function createEnrolledStudent(input: Input) {
     const birthdayCheck = validateStudentBirthday(student.birthday)
     if (birthdayCheck !== 'OK') return birthdayCheck
   }
+
+  // Période de la classe et devise lues avant la transaction, et seulement pour une arrivée
+  // en cours d'année.
+  const arrival = await loadNewEnrollmentArrival(schoolId, enrollment.classPeriodId, enrollment)
+  if (arrival === 'notFound') return arrival
 
   return db.$transaction(async (tx) => {
     if (!(await lockActiveFamily(tx, schoolId, familyId))) return 'notFound' as const
@@ -60,7 +68,7 @@ export async function createEnrolledStudent(input: Input) {
     const plan = planId
       ? await tx.plan.findFirst({
           where: { id: planId, schoolId, isActive: true },
-          select: { amount: true },
+          select: { amount: true, paymentSchedule: true },
         })
       : null
     if (planId && !plan) return 'notFound' as const
@@ -72,21 +80,17 @@ export async function createEnrolledStudent(input: Input) {
     if (seats !== 'OK') return seats
 
     // Formule réservée de montant nul et remise déjà refusée non nulle hors drapeau
-    // (FR-017) : `totalAmount` reste 0 sans repasser par `calculateTotalAmount`.
-    let totalAmount = 0
-    let discount = enrollment.discount
+    // (FR-017) : `totalAmount` reste 0 sans repasser par le calcul du tarif.
+    let pricing: {
+      discount: number
+      totalAmount: number
+      startMonth: Date | null
+      firstInstallmentAmount: number | null
+    } = { discount: 0, totalAmount: 0, startMonth: null, firstInstallmentAmount: null }
     if (plan) {
-      const planAmount = Number(plan.amount)
-      if (enrollment.totalAmount !== undefined) {
-        const pricing = pricingFromTotalAmount(planAmount, enrollment.totalAmount)
-        if (typeof pricing === 'string') return pricing
-        discount = pricing.discount
-        totalAmount = pricing.totalAmount
-      } else {
-        const discountCheck = validateDiscount(planAmount, discount)
-        if (discountCheck !== 'OK') return discountCheck
-        totalAmount = calculateTotalAmount(planAmount, discount)
-      }
+      const priced = priceNewEnrollment(plan, arrival, enrollment)
+      if (typeof priced === 'string') return priced
+      pricing = priced
     }
 
     // La création imbriquée de `FamilyPerson` ne répète pas `schoolId` : Prisma le remplit
@@ -110,8 +114,7 @@ export async function createEnrolledStudent(input: Input) {
         schoolId,
         studentId: createdStudent.id,
         planId: planId ?? (await planGateway.ensureUnpriced(schoolId, tx)).id,
-        totalAmount,
-        discount,
+        ...pricing,
         canLeaveAlone: enrollment.canLeaveAlone,
         status: NEW_ENROLLMENT_STATUS,
       },

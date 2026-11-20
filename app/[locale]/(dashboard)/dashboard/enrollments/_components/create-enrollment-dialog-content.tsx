@@ -23,6 +23,11 @@ import { Link, useRouter } from '@/i18n/routing'
 import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { toast, toastActionError } from '@/lib/toast'
 import { ClassSelect } from '../../../_components/class-select'
+import {
+  EnrollmentArrivalFields,
+  useEnrollmentArrival,
+} from '../../../_components/enrollment-arrival-fields'
+import { arrivalPeriod } from '../../../_lib/arrival-schedule'
 import { createEnrollmentAction } from '../../../_lib/enrollment-actions'
 import type { CreateEnrollmentDialogProps } from './create-enrollment-dialog'
 import { StudentCombobox } from './student-combobox'
@@ -89,12 +94,16 @@ function CreateEnrollmentForm({
   const { setOpen } = useDialog()
   const [isPending, startTransition] = useTransition()
   const [planId, setPlanId] = useState(plans[0]?.id ?? '')
-  const [totalAmount, setTotalAmount] = useState(plans[0]?.amount ?? 0)
   const router = useRouter()
   // Aucune présélection : l'élève et la classe se choisissent explicitement (#464).
   const [studentId, setStudentId] = useState<string | null>(defaultStudentId ?? null)
   const [classPeriodId, setClassPeriodId] = useState<string | null>(null)
   const [replaceExisting, setReplaceExisting] = useState(false)
+  const arrival = useEnrollmentArrival(
+    paymentsEnabled ? plans.find((plan) => plan.id === planId) : undefined,
+    arrivalPeriod(classes, classPeriodId),
+    currency
+  )
   const selectedStudent = students.find((s) => s.id === studentId)
   // Un élève déjà inscrit sur la période n'est inscriptible qu'en remplaçant l'existante.
   const needsReplace = selectedStudent?.enrolledInPeriod === true && !replaceExisting
@@ -118,7 +127,8 @@ function CreateEnrollmentForm({
         studentId,
         planId: planId ? (planId as string) : undefined,
         classPeriodId,
-        totalAmount: paymentsEnabled ? totalAmount : undefined,
+        totalAmount: paymentsEnabled ? arrival.totalAmount : undefined,
+        ...arrival.input,
         canLeaveAlone: formData.get('canLeaveAlone') === 'on',
         replaceExisting,
       })
@@ -207,9 +217,8 @@ function CreateEnrollmentForm({
                   disabled={isPending}
                   value={planId}
                   onValueChange={(value) => {
-                    const selected = plans.find((plan) => plan.id === value)
                     setPlanId(value ?? '')
-                    setTotalAmount(selected?.amount ?? 0)
+                    arrival.changePlan()
                   }}
                 >
                   <SelectTrigger id="enroll-plan">
@@ -228,6 +237,15 @@ function CreateEnrollmentForm({
           ) : (
             classSelect
           )}
+          <EnrollmentArrivalFields
+            idPrefix="enroll"
+            schedule={arrival.schedule}
+            currency={currency}
+            firstAmount={arrival.firstAmount}
+            onStartMonthChange={arrival.changeStartMonth}
+            onFirstAmountChange={arrival.changeFirstAmount}
+            disabled={isPending}
+          />
           {paymentsEnabled && (
             <div className="space-y-2">
               <Label htmlFor="enroll-total-amount">
@@ -239,8 +257,8 @@ function CreateEnrollmentForm({
                 type="number"
                 step={currencyStep(currency)}
                 min="0"
-                value={totalAmount}
-                onChange={(event) => setTotalAmount(Number(event.target.value))}
+                value={arrival.totalAmount}
+                onChange={(event) => arrival.setTotalAmount(Number(event.target.value))}
                 disabled={isPending}
                 aria-describedby="enroll-total-amount-hint"
               />

@@ -18,6 +18,7 @@ import { canOpenSchoolCashier, requireSchoolSession } from '../../../_lib/auth-h
 import { classLabel } from '../../../_lib/class-options'
 import { loadSuggestedLevels, toClassOption } from '../../../_lib/class-options-loader'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
+import { toPlanOption } from '../../../_lib/plan-options'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
 import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
@@ -152,11 +153,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   const classOptions = classes.map((c) => toClassOption(c))
   // « Changer de classe » liste les classes sans titre de niveau : il garde le libellé complet.
   const reassignClassOptions = classOptions.map((c) => ({ id: c.id, name: classLabel(c) }))
-  const planOptions = (isAdmin ? plans : []).map((p) => ({
-    id: p.id,
-    name: p.name,
-    amount: Number(p.amount),
-  }))
+  const planOptions = (isAdmin ? plans : []).map(toPlanOption)
   const familyHref = `/dashboard/families/${family.id}`
 
   return (

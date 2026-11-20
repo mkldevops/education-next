@@ -12,6 +12,7 @@ import { Plus } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import type { ClassOption } from '../../../_lib/class-options'
+import type { PlanOption } from '../../../_lib/plan-options'
 
 // Le formulaire de création ne se charge qu'à l'ouverture du dialogue.
 const CreateStudentDialogContent = dynamic(
@@ -20,18 +21,12 @@ const CreateStudentDialogContent = dynamic(
   { loading: () => <DialogContentLoading /> }
 )
 
-interface Option {
-  id: string
-  name: string
-  amount?: number
-}
-
 interface CreateStudentDialogProps {
   familyId: string
   /** Nom de la famille, proposé comme nom de l'élève (modifiable). */
   familyName?: string
   /** Plans et classes de la période sélectionnée : vides, l'inscription n'est pas proposée. */
-  plans?: Option[]
+  plans?: PlanOption[]
   classes?: ClassOption[]
   /** Faux, l'inscription immédiate se fait sans formule ni remise. */
   paymentsEnabled: boolean

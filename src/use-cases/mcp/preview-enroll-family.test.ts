@@ -772,6 +772,46 @@ describe('previewEnrollFamily with a start month', () => {
       ['2026-10', 8_000, 120_000],
       ['2026-10', null, 128_000],
     ])
+    expect(result.warnings).toEqual([])
+    expect(result.plan?.currency).toBe('XOF')
+    expect(result.plan?.students[0].installments.slice(0, 2)).toEqual([
+      { dueDate: '2026-10-05', amount: 8_000 },
+      { dueDate: '2026-11-05', amount: 16_000 },
+    ])
+    expect(result.plan?.students[1].installments).toHaveLength(8)
+    // Fratrie de la même classe : sa période n'est lue qu'une fois.
+    expect(findPeriodBounds).toHaveBeenCalledTimes(1)
+  })
+
+  it('lists the whole schedule of a student enrolled for the full year', async () => {
+    const result = await previewEnrollFamily(scope, { ...unpaid, planName: 'Mensuel' })
+    assertPreview(result)
+
+    expect(result.plan?.students[0].installments).toHaveLength(9)
+    expect(result.plan?.students[0].installments[0]).toEqual({
+      dueDate: '2026-09-05',
+      amount: 16_000,
+    })
+  })
+
+  it('warns when a discount coexists with a reduced first month', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      startMonth: '2026-10',
+      discount: 8_000,
+      students: [{ ...input.students[0], firstInstallmentAmount: 8_000 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.warnings).toEqual([
+      { field: 'discount', value: '8000', reason: 'discountWithFirstInstallment' },
+    ])
+    expect(result.plan?.students[0].installments.slice(0, 2)).toEqual([
+      { dueDate: '2026-10-05', amount: 8_000 },
+      { dueDate: '2026-11-05', amount: 14_857 },
+    ])
   })
 
   it('blocks a reduced first month without a start month', async () => {

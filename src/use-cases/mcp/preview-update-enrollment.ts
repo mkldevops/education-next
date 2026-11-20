@@ -1,10 +1,16 @@
 import type { z } from 'zod'
 import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import type { McpFinding } from '@/domain/mcp-draft'
-import { firstInstallmentFitsTotal, startMonthFromDate } from '@/domain/payment-schedule'
+import {
+  firstInstallmentFitsTotal,
+  paymentInstallments,
+  readPaymentSchedule,
+  startMonthFromDate,
+} from '@/domain/payment-schedule'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
 import { roundHalfUp, toNumberOrNull } from '@/lib/decimal'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { resolveOwedPlanAmount } from '@/use-cases/enrollments/pricing'
 import { blockedPreview, saveDraftPreview } from './draft-response'
 import type { DraftScope } from './draft-scope'
@@ -225,11 +231,45 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
     return nothing
   }
 
+  // Une remise se répartit sur les échéances qui suivent le premier mois réduit : les deux
+  // ensemble baissent l'année en plus du mois d'arrivée, ce qui mérite d'être relu.
+  if (discount > 0 && firstInstallmentAmount !== null) {
+    warnings.push({
+      field: 'discount',
+      value: String(discount),
+      reason: 'discountWithFirstInstallment',
+    })
+  }
+
+  // L'échéancier « avant → après » se lit ligne par ligne sur la carte de validation. Sans
+  // échéancier sur l'une ou l'autre formule, rien à détailler et la période n'est pas lue.
+  const after = { plan, discount, totalAmount, startMonth, firstInstallmentAmount, planAmountDue }
+  const schedules = {
+    before: readPaymentSchedule(enrollment.plan.paymentSchedule),
+    after: readPaymentSchedule(paymentSchedule),
+  }
+  const period =
+    schedules.before.mode === 'NONE' && schedules.after.mode === 'NONE'
+      ? null
+      : await enrollmentGateway.findPeriodBounds(schoolId, enrollment.id)
+  const { currency } = await getSchoolRegionalSettings(schoolId)
+  const installments = (side: 'before' | 'after') => {
+    const pricing = side === 'before' ? before : after
+    return period
+      ? paymentInstallments(schedules[side], pricing.totalAmount, period.startAt, currency, {
+          startMonth: pricing.startMonth,
+          firstInstallmentAmount: pricing.firstInstallmentAmount,
+        })
+      : []
+  }
+
   const resolved = {
     tool: UPDATE_ENROLLMENT_TOOL,
     enrollment: describe(enrollment),
     before,
-    after: { plan, discount, totalAmount, startMonth, firstInstallmentAmount, planAmountDue },
+    after,
+    currency,
+    schedule: { before: installments('before'), after: installments('after') },
     paid,
     remaining: roundHalfUp(totalAmount - paid),
   }

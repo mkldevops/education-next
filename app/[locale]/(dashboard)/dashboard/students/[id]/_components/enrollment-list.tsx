@@ -188,6 +188,9 @@ export async function EnrollmentList({ enrollments, locale, currency, paymentsEn
                                 <Check aria-hidden className="h-3 w-3" />
                               )}
                               {month}
+                              <span className="tabular-nums normal-case">
+                                · {formatCurrency(installment.amount, locale, currency)}
+                              </span>
                             </li>
                           )
                         })}

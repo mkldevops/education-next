@@ -397,7 +397,14 @@
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimals",
             "discountExceedsPlan": "The discount exceeds the plan amount",
-            "paymentsDisabled": "Payment management is disabled for this school"
+            "paymentsDisabled": "Payment management is disabled for this school",
+            "startMonthOutsidePeriod": "The first month to pay must fall within the class period",
+            "noPaymentSchedule": "The plan has no payment schedule: a first month to pay cannot be set",
+            "noInstallmentDue": "No installment of the plan falls from this month on",
+            "firstInstallmentRequiresStartMonth": "Set the first month to pay before the first month amount",
+            "firstInstallmentNotMonthly": "The first month amount can only be changed on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due"
           },
           "steps": {
             "guardian": "Guardian",
@@ -624,9 +631,16 @@
             "classFull": "This class is full",
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimal places",
-            "paymentsDisabled": "Payment management is turned off for this school"
+            "paymentsDisabled": "Payment management is turned off for this school",
+            "startMonthOutsidePeriod": "The first month to pay must fall within the class period",
+            "noPaymentSchedule": "The plan has no payment schedule: a first month to pay cannot be set",
+            "noInstallmentDue": "No installment of the plan falls from this month on",
+            "firstInstallmentRequiresStartMonth": "Set the first month to pay before the first month amount",
+            "firstInstallmentNotMonthly": "The first month amount can only be changed on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due"
           },
-          "totalAmountHint": "The plan's price. Lower it to grant a discount.",
+          "totalAmountHint": "Total due for this enrollment. For an arrival during the year, set the first month to pay and the first month amount instead of lowering this total.",
           "missingFields": "Still needed: {fields}"
         },
         "edit": {
@@ -1025,14 +1039,21 @@
             "existingEnrollmentPaid": "The existing enrollment already received a payment: refund or cancel it manually before recreating one.",
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimal places",
-            "paymentsDisabled": "Payment management is turned off for this school"
+            "paymentsDisabled": "Payment management is turned off for this school",
+            "startMonthOutsidePeriod": "The first month to pay must fall within the class period",
+            "noPaymentSchedule": "The plan has no payment schedule: a first month to pay cannot be set",
+            "noInstallmentDue": "No installment of the plan falls from this month on",
+            "firstInstallmentRequiresStartMonth": "Set the first month to pay before the first month amount",
+            "firstInstallmentNotMonthly": "The first month amount can only be changed on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due"
           },
           "replaceExistingHintNoPayments": "The current enrollment is cancelled, then recreated.",
           "totalAmount": "Amount due ({currency})",
           "alreadyEnrolledHint": "This student is already enrolled for this period.",
           "newStudentHint": "New child not in the list?",
           "newStudentLink": "Add Student",
-          "totalAmountHint": "The plan's price. Lower it to grant a discount.",
+          "totalAmountHint": "Total due for this enrollment. For an arrival during the year, set the first month to pay and the first month amount instead of lowering this total.",
           "missingFields": "Still needed: {fields}"
         },
         "drawer": {
@@ -1067,7 +1088,7 @@
             "notFound": "Enrollment or plan not found.",
             "unpricedPlan": "That plan is reserved for enrollments without a price.",
             "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
-            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noPaymentSchedule": "The plan has no payment schedule: a first due month cannot be set",
             "noInstallmentDue": "No installment of the plan falls on or after that month",
             "discountExceedsPlan": "The discount exceeds the part of the plan that is due"
           }
@@ -2435,9 +2456,9 @@
           "settled": "Settled",
           "coveredMonths": "Months covered",
           "installmentStatus": {
-            "PAID": "{month}: paid",
+            "PAID": "{month}: {amount}, paid",
             "PARTIAL": "{month}: partly paid ({paid} / {amount})",
-            "UNPAID": "{month}: unpaid"
+            "UNPAID": "{month}: {amount}, unpaid"
           },
           "registeredOn": "Registered on {date}"
         },
@@ -2622,7 +2643,7 @@
             "totalBelowPaid": "The amount due would fall below what has already been paid on this enrollment. If that payment is a mistake, cancel it first in this enrollment's Payments section.",
             "paymentsDisabled": "Payment management is turned off for this school",
             "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
-            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noPaymentSchedule": "The plan has no payment schedule: a first due month cannot be set",
             "noInstallmentDue": "No installment of the plan falls on or after that month",
             "firstInstallmentRequiresStartMonth": "Set the start month before reducing the first month",
             "firstInstallmentNotMonthly": "The first month can only be reduced on a monthly plan",
@@ -2660,7 +2681,7 @@
             "totalBelowPaid": "The new total would fall below what has already been paid on this enrollment",
             "paymentsDisabled": "Payment management is turned off for this school",
             "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
-            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noPaymentSchedule": "The plan has no payment schedule: a first due month cannot be set",
             "noInstallmentDue": "No installment of the plan falls on or after that month",
             "firstInstallmentRequiresStartMonth": "Set the start month before reducing the first month",
             "firstInstallmentNotMonthly": "The first month can only be reduced on a monthly plan",
@@ -3924,7 +3945,15 @@
           "amount": "Amount",
           "method": "Method",
           "paidAt": "Date",
-          "reference": "Reference"
+          "reference": "Reference",
+          "student": "Student",
+          "plan": "Plan",
+          "discount": "Discount",
+          "total": "Total",
+          "paid": "Already paid",
+          "remaining": "Left to pay",
+          "payment": "Payment",
+          "discountWithFirstInstallment": "A discount of {discount} comes on top of the first month amount: it also lowers the following installments. For an arrival during the year, the first month to pay and its amount are enough."
         }
       }
     },
@@ -3953,6 +3982,23 @@
       "label": "Outstanding horizon",
       "month": "This month",
       "year": "Year"
+    },
+    "installmentSchedule": {
+      "caption": "Payment schedule",
+      "month": "Due",
+      "amount": "Amount",
+      "total": "Total",
+      "none": "—",
+      "becomes": "becomes",
+      "half": "Half the monthly installment: {amount}",
+      "quarter": "A quarter of the monthly installment: {amount}"
+    },
+    "enrollmentArrival": {
+      "title": "Arrived during the year?",
+      "startMonth": "First month to pay",
+      "firstAmount": "Amount for this month ({currency})",
+      "hint": "Earlier months are not owed. The first month amount replaces its installment: leave it empty for the full installment.",
+      "hintNotMonthly": "Earlier installments are not owed. The first month amount can only be changed on a monthly plan."
     }
   },
   "schools": {

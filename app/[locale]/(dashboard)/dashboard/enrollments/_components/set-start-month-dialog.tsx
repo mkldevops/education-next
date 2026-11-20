@@ -16,6 +16,8 @@ import { useState } from 'react'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { useRouter } from '@/i18n/routing'
 import { currencyStep, currencySymbol, formatCurrency } from '@/lib/decimal'
+import { InstallmentSchedule } from '../../../_components/installment-schedule'
+import { type EnrollmentScheduleBasis, startMonthPreview } from '../../../_lib/arrival-schedule'
 import { setEnrollmentStartMonthAction } from '../../../_lib/enrollment-actions'
 
 export interface StartMonthSetting {
@@ -28,6 +30,8 @@ export interface StartMonthSetting {
   firstInstallmentAmount: number | null
   /** Only a monthly plan lets its first month be reduced. */
   monthlyPlan: boolean
+  /** Formule et période de l'inscription : fournies, le dialogue montre l'échéancier avant → après. */
+  schedule?: Omit<EnrollmentScheduleBasis, 'startMonth' | 'firstInstallmentAmount'>
 }
 
 interface SetStartMonthDialogProps {
@@ -73,6 +77,25 @@ function StartMonthForm({
   )
   // A value already set stays editable — and removable — after its plan stopped being monthly.
   const canReduceFirstMonth = startMonth.monthlyPlan || startMonth.firstInstallmentAmount !== null
+  const [removeDiscount, setRemoveDiscount] = useState(false)
+  const preview = startMonth.schedule
+    ? startMonthPreview(
+        {
+          ...startMonth.schedule,
+          startMonth: startMonth.value,
+          firstInstallmentAmount: startMonth.firstInstallmentAmount,
+        },
+        currency,
+        {
+          startMonth: month || null,
+          firstAmount: canReduceFirstMonth ? firstAmount : '',
+          discount: removeDiscount ? 0 : discount,
+        }
+      )
+    : null
+  const firstInstallmentLabel = t('firstInstallment', {
+    currency: currencySymbol(locale, currency),
+  })
 
   // A reduced first month belongs to the month it was typed for: another month starts blank.
   const changeMonth = (value: string) => {
@@ -81,13 +104,13 @@ function StartMonthForm({
   }
 
   const handleSubmit = onSubmit(
-    (formData) =>
+    () =>
       setEnrollmentStartMonthAction({
         enrollmentId,
         startMonth: month || null,
         firstInstallmentAmount:
           canReduceFirstMonth && month && firstAmount.trim() !== '' ? Number(firstAmount) : null,
-        removeDiscount: formData.get('removeDiscount') === 'on',
+        removeDiscount,
       }),
     { onSuccess: () => router.refresh() }
   )
@@ -111,11 +134,37 @@ function StartMonthForm({
             <p className="text-sm text-graphite-600">{t('hint')}</p>
           </div>
 
-          {canReduceFirstMonth && (
+          {preview && (
             <div className="space-y-2">
-              <Label htmlFor="enrollment-first-installment">
-                {t('firstInstallment', { currency: currencySymbol(locale, currency) })}
-              </Label>
+              <InstallmentSchedule
+                installments={preview.installments}
+                previous={preview.previous}
+                currency={currency}
+                firstInstallment={
+                  canReduceFirstMonth
+                    ? {
+                        id: 'enrollment-first-installment',
+                        label: firstInstallmentLabel,
+                        value: month ? firstAmount : '',
+                        nominal: preview.nominal,
+                        onChange: setFirstAmount,
+                        disabled: isPending || !month,
+                        describedBy: 'enrollment-first-installment-hint',
+                      }
+                    : undefined
+                }
+              />
+              {canReduceFirstMonth && (
+                <p id="enrollment-first-installment-hint" className="text-graphite-600 text-sm">
+                  {t('firstInstallmentHint')}
+                </p>
+              )}
+            </div>
+          )}
+
+          {canReduceFirstMonth && !preview && (
+            <div className="space-y-2">
+              <Label htmlFor="enrollment-first-installment">{firstInstallmentLabel}</Label>
               <Input
                 id="enrollment-first-installment"
                 name="firstInstallmentAmount"
@@ -144,6 +193,8 @@ function StartMonthForm({
                   type="checkbox"
                   name="removeDiscount"
                   className="size-4 accent-primary"
+                  checked={removeDiscount}
+                  onChange={(event) => setRemoveDiscount(event.target.checked)}
                   disabled={isPending}
                 />
                 {t('removeDiscount')}

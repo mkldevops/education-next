@@ -1039,6 +1039,18 @@ The commit writes the amount the preview resolved, on the enrollment only. The t
 and the assistant's system prompt both forbid dictating a late arrival through `discount` or
 `totalAmount`, which lower the whole year instead of the first month.
 
+**A preview carries the schedule it decides.** `preview_update_enrollment` resolves
+`schedule.before` and `schedule.after` (due date and amount of each installment, from
+`paymentInstallments`), `preview_enroll_family` an `installments` list per student, both with the
+school `currency`. The assistant's confirmation card
+(`_components/ai-chat/enrollment-plan-summary.tsx`) renders them with the shared
+`InstallmentSchedule` component — month → amount, before → after, recalculated total — instead of
+the raw plan, which stays reachable in the folded details and remains the fallback for a draft
+stored without a schedule. A discount read together with a reduced first month raises the
+`discountWithFirstInstallment` warning, in the preview and on the card: the discount lowers the
+following installments too, which is rarely what a late arrival means. The commit schemas ignore
+these display keys; the checksum still covers them.
+
 **An existing family is named by `familyId`, instead of `familyName`.** A child entered on the
 dashboard without an enrollment — a sibling added to the family, never enrolled — must not come back
 as a second student of the same name. Each student line is looked up among the family's non-parent
@@ -1726,7 +1738,22 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
   last installment → `noInstallmentDue`. A new total below what the enrollment already banked →
   `totalBelowPaid`, read under the family lock like a discount (#425). Clearing it restores
   `plan.amount - discount`. An enrollment without one behaves exactly as before, with no extra read.
-- Set from the enrollment page (admins, payments enabled), `update_enrollment` and `enroll_family`.
+- Set from the enrollment page (admins, payments enabled), `update_enrollment` and `enroll_family`,
+  and **at creation**: `createEnrollment`, `createEnrolledStudent` and `createFullFamily` accept
+  `startMonth` and `firstInstallmentAmount` (`loadNewEnrollmentArrival` and `priceNewEnrollment` in
+  `src/use-cases/enrollments/pricing.ts`), checked by the same domain validators against the bounds
+  of the class period, read with the caller's `schoolId`. Without a typed total the enrollment owes
+  the part due minus the discount; a typed total must still cover the first month. Either field
+  sent while pricing is deferred (non-admin staff) or payments are off → `paymentsDisabled`.
+- **The creation forms ask the question.** The enrollment dialog, the _Add a student_ dialog and
+  the family wizard show "Arrivé en cours d'année ? Premier mois à payer · Montant de ce mois"
+  (`_components/enrollment-arrival-fields.tsx`) above the resulting schedule
+  (`_components/installment-schedule.tsx`, first line editable with ½ and ¼ of the plan's
+  installment). The section is unfolded as soon as today is past the plan's first due date in the
+  class period, folded before, and absent without a priced plan — so never for a non-admin, who
+  receives no plan amount. `arrivalSchedule` (`_lib/arrival-schedule.ts`) only previews: the server
+  recomputes and validates every amount. The total field no longer suggests lowering it for a late
+  arrival.
 - **A student who arrives during a month owes a reduced first month**
   (`Enrollment.firstInstallmentAmount`, null by default — no backfill, an enrollment without one
   behaves as before). It replaces the plan's installment of the start month: the part due becomes
@@ -1830,7 +1857,8 @@ Owner: `src/domain/payment-schedule.ts`, `src/use-cases/payments/payment-trackin
 - A reduced first installment (`Enrollment.firstInstallmentAmount`, Enrollments, Money) is the
   amount of the first owed deadline; the remainder of the total is split equally over the following
   ones. Every reader passes it through the options of `paymentInstallments`: payment tracking,
-  the family payments of the MCP, the student page, the departure preview and settlement
+  the family payments of the MCP, the student page (each installment chip shows its month and its
+  amount, payments enabled only), the departure preview and settlement
   (`owedThroughMonth`, `legacyDepartureTotal`). The split never produces a negative installment:
   the first amount is capped at the total (a departure may have cut it), and a single remaining
   deadline carries the whole total. Readers apply it whatever the plan's mode, so a plan whose

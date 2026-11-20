@@ -12,6 +12,7 @@ import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { calculateFamilyBalance } from '@/use-cases/payments/family-balance'
 import { requireSchoolRecordsScope } from '../../_lib/auth-helper'
 import { toClassOption } from '../../_lib/class-options-loader'
+import { toPlanOption } from '../../_lib/plan-options'
 import { CreateFamilyDialog } from './_components/create-family-dialog'
 import { FamiliesDataTable, type FamilyRow } from './_components/families-data-table'
 import { getFamilyDialogData } from './[id]/_lib/family-detail'
@@ -169,13 +170,10 @@ export default async function FamiliesPage({ params, searchParams }: Props) {
         actions={
           <CreateFamilyDialog
             defaultOpen={action === 'create'}
-            plans={(paymentsEnabled ? plans : []).map((p) => ({
-              id: p.id,
-              name: p.name,
-              amount: Number(p.amount),
-            }))}
+            plans={(paymentsEnabled ? plans : []).map(toPlanOption)}
             classes={classes.map((c) => toClassOption(c))}
             paymentsEnabled={paymentsEnabled}
+            currency={currency}
           />
         }
       />

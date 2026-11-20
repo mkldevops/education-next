@@ -26,6 +26,13 @@ import { useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'
 import { createFullFamilySchema } from '@/use-cases/families/create-full-family-schema'
 import { ClassSelect } from '../../../_components/class-select'
+import { EnrollmentArrivalFields } from '../../../_components/enrollment-arrival-fields'
+import {
+  arrivalInput,
+  arrivalPeriod,
+  arrivalSchedule,
+  localToday,
+} from '../../../_lib/arrival-schedule'
 import { classLabel } from '../../../_lib/class-options'
 import { createFamilyAction } from '../../../_lib/family-actions'
 import type { CreateFamilyDialogProps } from './create-family-dialog'
@@ -42,6 +49,10 @@ interface ChildDraft {
   planId: string
   /** `null` tant que la classe n'est pas choisie : aucune présélection (#482). */
   classPeriodId: string | null
+  /** Premier mois à payer (`YYYY-MM`) ; vide, la première échéance de la formule. */
+  startMonth: string
+  /** Saisie du montant du premier mois ; vide, l'échéance entière. */
+  firstAmount: string
 }
 
 const STEPS = ['guardian', 'children', 'summary'] as const
@@ -55,6 +66,7 @@ export function CreateFamilyDialogContent({
   plans,
   classes,
   paymentsEnabled,
+  currency,
 }: Required<CreateFamilyDialogProps>) {
   const t = useTranslations('dashboard.pages.families.create')
 
@@ -68,6 +80,7 @@ export function CreateFamilyDialogContent({
         plans={plans}
         classes={classes}
         paymentsEnabled={paymentsEnabled}
+        currency={currency}
       />
     </DialogContent>
   )
@@ -78,6 +91,7 @@ function CreateFamilyWizard({
   plans,
   classes,
   paymentsEnabled,
+  currency,
 }: Required<CreateFamilyDialogProps>) {
   const t = useTranslations('dashboard.pages.families.create')
   const { setOpen } = useDialog()
@@ -104,6 +118,7 @@ function CreateFamilyWizard({
   const [authorizedPickup, setAuthorizedPickup] = useState('')
   const [languagesAtHome, setLanguagesAtHome] = useState('')
   const [children, setChildren] = useState<ChildDraft[]>([])
+  const [today] = useState(() => localToday())
 
   const hasGuardian = Object.values(guardian).some((value) => value.trim() !== '')
   const guardianFullName = `${guardian.name} ${guardian.lastname}`.trim()
@@ -123,6 +138,8 @@ function CreateFamilyWizard({
         enroll: canEnroll,
         planId: plans[0]?.id ?? '',
         classPeriodId: null,
+        startMonth: '',
+        firstAmount: '',
       },
     ])
 
@@ -131,6 +148,17 @@ function CreateFamilyWizard({
 
   const removeChild = (key: string) =>
     setChildren((current) => current.filter((c) => c.key !== key))
+
+  // Échéancier d'une arrivée en cours d'année : rien hors paiements, la formule n'a pas de prix.
+  const childArrival = (child: ChildDraft) =>
+    paymentsEnabled
+      ? arrivalSchedule(
+          plans.find((plan) => plan.id === child.planId),
+          arrivalPeriod(classes, child.classPeriodId),
+          currency,
+          { startMonth: child.startMonth, firstAmount: child.firstAmount, today }
+        )
+      : null
 
   const buildPayload = () => {
     const optional = (value: string) => (value.trim() === '' ? undefined : value.trim())
@@ -161,7 +189,12 @@ function CreateFamilyWizard({
           ? {
               enrollment: {
                 // Hors drapeau la formule n'existe pas : le use case résout la formule réservée.
-                ...(paymentsEnabled ? { planId: child.planId } : {}),
+                ...(paymentsEnabled
+                  ? {
+                      planId: child.planId,
+                      ...arrivalInput(childArrival(child), child.firstAmount),
+                    }
+                  : {}),
                 classPeriodId: child.classPeriodId,
               },
             }
@@ -479,7 +512,7 @@ function CreateFamilyWizard({
                                 items={planItems}
                                 value={child.planId}
                                 onValueChange={(value) =>
-                                  updateChild(child.key, { planId: value ?? '' })
+                                  updateChild(child.key, { planId: value ?? '', firstAmount: '' })
                                 }
                               >
                                 <SelectTrigger id={`${prefix}-plan`}>
@@ -496,6 +529,20 @@ function CreateFamilyWizard({
                             </div>
                           )}
                         </div>
+                      )}
+                      {child.enroll && (
+                        <EnrollmentArrivalFields
+                          idPrefix={prefix}
+                          schedule={childArrival(child)}
+                          currency={currency}
+                          firstAmount={child.firstAmount}
+                          onStartMonthChange={(startMonth) =>
+                            updateChild(child.key, { startMonth, firstAmount: '' })
+                          }
+                          onFirstAmountChange={(firstAmount) =>
+                            updateChild(child.key, { firstAmount })
+                          }
+                        />
                       )}
                     </div>
                   )}

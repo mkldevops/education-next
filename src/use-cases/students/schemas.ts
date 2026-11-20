@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { isCurrencyAmount } from '@/domain/enrollment'
+import { firstInstallmentAmountSchema, startMonthSchema } from '@/domain/payment-schedule'
 import { personInputSchema } from '../families/schemas'
 
 export const studentInputSchema = z.object({
@@ -32,6 +33,10 @@ export const newStudentEnrollmentSchema = z.object({
   totalAmount: z.number().min(0).refine(isCurrencyAmount).optional(),
   discount: z.number().min(0).default(0),
   canLeaveAlone: z.boolean().default(false),
+  /** `YYYY-MM` : arrivée en cours d'année, seules les échéances à partir de ce mois sont dues. */
+  startMonth: startMonthSchema.nullable().default(null),
+  /** Montant réduit du premier mois dû ; exige un mois de début et une formule mensuelle. */
+  firstInstallmentAmount: firstInstallmentAmountSchema.nullable().default(null),
 })
 
 export const createEnrolledStudentSchema = createStudentSchema.extend({

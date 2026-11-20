@@ -14,6 +14,7 @@ import {
   loadSuggestedLevels,
   toClassOption,
 } from '../../_lib/class-options-loader'
+import { toPlanOption } from '../../_lib/plan-options'
 import { EnrollmentCreateActions } from './_components/enrollment-create-actions'
 import { EnrollmentsTable } from './_components/enrollments-table'
 import { serializeEnrollment } from './_lib/serialize-enrollment'
@@ -78,17 +79,13 @@ export default async function EnrollmentsPage({ params, searchParams }: Props) {
   const availablePlans = paymentsEnabled
     ? await db.plan.findMany({
         where: { schoolId: scope.schoolId, isActive: true, name: { not: UNPRICED_PLAN_NAME } },
-        select: { id: true, name: true, amount: true },
+        select: { id: true, name: true, amount: true, paymentSchedule: true },
         orderBy: { name: 'asc' },
       })
     : []
-  // `amount` pré-remplit le montant dû du dialogue de création ; converti ici car un `Decimal`
-  // ne traverse pas la frontière client.
-  const planOptions = availablePlans.map((plan) => ({
-    id: plan.id,
-    name: plan.name,
-    amount: Number(plan.amount),
-  }))
+  // `amount` pré-remplit le montant dû du dialogue de création, l'échéancier montre ses
+  // échéances ; convertis ici car un `Decimal` ne traverse pas la frontière client.
+  const planOptions = availablePlans.map(toPlanOption)
 
   const availableStudents = isStaff
     ? await db.student.findMany({

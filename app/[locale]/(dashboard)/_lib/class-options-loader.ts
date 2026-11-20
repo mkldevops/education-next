@@ -13,7 +13,7 @@ export const classOptionSelect = {
   capacity: true,
   levelId: true,
   level: { select: { name: true } },
-  period: { select: { name: true } },
+  period: { select: { name: true, startAt: true, endAt: true } },
   _count: {
     select: {
       classAssignments: {
@@ -35,6 +35,8 @@ export function toClassOption(row: ClassOptionRow) {
     levelId: row.levelId,
     levelName: row.level.name,
     periodName: row.period.name,
+    periodStartAt: row.period.startAt.toISOString(),
+    periodEndAt: row.period.endAt.toISOString(),
     capacity: row.capacity,
     enrolled: row._count.classAssignments,
   }

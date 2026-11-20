@@ -13,6 +13,7 @@ import { Plus } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import type { ClassOption } from '../../../_lib/class-options'
+import type { PlanOption } from '../../../_lib/plan-options'
 import type { StudentOption } from '../_lib/enrollment-options'
 
 // Le formulaire et ses sélecteurs guidés ne se chargent qu'à l'ouverture du dialogue.
@@ -23,12 +24,6 @@ const CreateEnrollmentDialogContent = dynamic(
     ),
   { loading: () => <DialogContentLoading /> }
 )
-
-interface PlanOption {
-  id: string
-  name: string
-  amount?: number
-}
 
 export interface CreateEnrollmentDialogProps {
   students: StudentOption[]

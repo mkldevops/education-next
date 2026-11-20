@@ -398,7 +398,14 @@
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
-            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le premier mois à payer doit tomber dans la période de la classe",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois à payer",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le premier mois à payer avant le montant du premier mois",
+            "firstInstallmentNotMonthly": "Le montant du premier mois ne se modifie que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû"
           },
           "steps": {
             "guardian": "Responsable",
@@ -625,9 +632,16 @@
             "classFull": "Cette classe est complète",
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
-            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le premier mois à payer doit tomber dans la période de la classe",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois à payer",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le premier mois à payer avant le montant du premier mois",
+            "firstInstallmentNotMonthly": "Le montant du premier mois ne se modifie que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû"
           },
-          "totalAmountHint": "Prix de la formule. Baissez-le pour accorder une remise.",
+          "totalAmountHint": "Total dû pour cette inscription. Pour une arrivée en cours d'année, indiquez le premier mois à payer et le montant du premier mois plutôt que de baisser ce total.",
           "missingFields": "À compléter : {fields}"
         },
         "edit": {
@@ -1026,14 +1040,21 @@
             "existingEnrollmentPaid": "L'inscription existante a déjà reçu un paiement : remboursez-la ou annulez-la manuellement avant d'en recréer une.",
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
-            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le premier mois à payer doit tomber dans la période de la classe",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois à payer",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le premier mois à payer avant le montant du premier mois",
+            "firstInstallmentNotMonthly": "Le montant du premier mois ne se modifie que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû"
           },
           "replaceExistingHintNoPayments": "L'inscription en cours est annulée puis recréée.",
           "totalAmount": "Montant dû ({currency})",
           "alreadyEnrolledHint": "Cet élève est déjà inscrit sur cette période.",
           "newStudentHint": "Nouvel enfant absent de la liste ?",
           "newStudentLink": "Ajouter un élève",
-          "totalAmountHint": "Prix de la formule. Baissez-le pour accorder une remise.",
+          "totalAmountHint": "Total dû pour cette inscription. Pour une arrivée en cours d'année, indiquez le premier mois à payer et le montant du premier mois plutôt que de baisser ce total.",
           "missingFields": "À compléter : {fields}"
         },
         "drawer": {
@@ -1068,7 +1089,7 @@
             "notFound": "Inscription ou formule introuvable.",
             "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif.",
             "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
-            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois dû",
             "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
             "discountExceedsPlan": "La réduction dépasse la part due de la formule"
           }
@@ -2436,9 +2457,9 @@
           "settled": "Soldé",
           "coveredMonths": "Mois couverts",
           "installmentStatus": {
-            "PAID": "{month} : payé",
+            "PAID": "{month} : {amount}, payé",
             "PARTIAL": "{month} : payé en partie ({paid} / {amount})",
-            "UNPAID": "{month} : non payé"
+            "UNPAID": "{month} : {amount}, non payé"
           },
           "registeredOn": "Inscrit le {date}"
         },
@@ -2623,7 +2644,7 @@
             "totalBelowPaid": "Le montant dû serait inférieur à ce qui a déjà été payé sur cette inscription. Si ce paiement est une erreur, annulez-le d'abord dans la section Paiements de cette inscription.",
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
             "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
-            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois dû",
             "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
             "firstInstallmentRequiresStartMonth": "Indiquez le mois de début avant de réduire le premier mois",
             "firstInstallmentNotMonthly": "Le premier mois ne se réduit que sur une formule mensuelle",
@@ -2661,7 +2682,7 @@
             "totalBelowPaid": "Le nouveau total serait inférieur à ce qui a déjà été payé sur cette inscription",
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
             "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
-            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois dû",
             "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
             "firstInstallmentRequiresStartMonth": "Indiquez le mois de début avant de réduire le premier mois",
             "firstInstallmentNotMonthly": "Le premier mois ne se réduit que sur une formule mensuelle",
@@ -3925,7 +3946,15 @@
           "amount": "Montant",
           "method": "Mode",
           "paidAt": "Date",
-          "reference": "Référence"
+          "reference": "Référence",
+          "student": "Élève",
+          "plan": "Formule",
+          "discount": "Réduction",
+          "total": "Total",
+          "paid": "Déjà payé",
+          "remaining": "Reste à payer",
+          "payment": "Encaissement",
+          "discountWithFirstInstallment": "Une réduction de {discount} s'ajoute au montant du premier mois : elle baisse aussi les échéances suivantes. Pour une arrivée en cours d'année, le premier mois à payer et son montant suffisent."
         }
       }
     },
@@ -3954,6 +3983,23 @@
       "label": "Horizon du reste à encaisser",
       "month": "Ce mois",
       "year": "Année"
+    },
+    "installmentSchedule": {
+      "caption": "Échéancier",
+      "month": "Échéance",
+      "amount": "Montant",
+      "total": "Total",
+      "none": "—",
+      "becomes": "devient",
+      "half": "Moitié de la mensualité : {amount}",
+      "quarter": "Quart de la mensualité : {amount}"
+    },
+    "enrollmentArrival": {
+      "title": "Arrivé en cours d'année ?",
+      "startMonth": "Premier mois à payer",
+      "firstAmount": "Montant de ce mois ({currency})",
+      "hint": "Les mois d'avant ne sont pas dus. Le montant du premier mois remplace sa mensualité : laissez-le vide pour la mensualité entière.",
+      "hintNotMonthly": "Les échéances d'avant ne sont pas dues. Le montant du premier mois ne se modifie que sur une formule mensuelle."
     }
   },
   "schools": {

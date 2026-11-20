@@ -11,6 +11,7 @@ const isPaymentsEnabledMock = vi.fn()
 const classPeriodGatewayMock = {
   findById: vi.fn(),
   countEnrolled: vi.fn(),
+  findPeriodBounds: vi.fn(),
 }
 const enrollmentGatewayMock = {
   lockStudentInPeriod: vi.fn(),
@@ -44,6 +45,10 @@ vi.mock('@/lib/db', () => ({
   db: dbMock,
 }))
 
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: async () => ({ currency: 'KMF', timeZone: 'Indian/Comoro' }),
+}))
+
 const { createEnrollment } = await import('./create-enrollment')
 
 const schoolId = '550e8400-e29b-41d4-a716-446655440099'
@@ -56,6 +61,7 @@ describe('createEnrollment', () => {
     isPaymentsEnabledMock.mockResolvedValue(true)
     classPeriodGatewayMock.findById = vi.fn()
     classPeriodGatewayMock.countEnrolled = vi.fn()
+    classPeriodGatewayMock.findPeriodBounds = vi.fn()
     enrollmentGatewayMock.lockStudentInPeriod = vi.fn()
     enrollmentGatewayMock.findActiveInPeriod = vi.fn()
     dbMock.$transaction = vi.fn(async (cb) => {
@@ -356,6 +362,8 @@ describe('createEnrollment', () => {
           planId: reservedPlan.id,
           totalAmount: 0,
           discount: 0,
+          startMonth: null,
+          firstInstallmentAmount: null,
           canLeaveAlone: false,
           status: 'ACTIVE',
         },
@@ -398,6 +406,119 @@ describe('createEnrollment', () => {
 
       expect(result).toBe('paymentsDisabled')
       expect(studentGatewayMock.findById).not.toHaveBeenCalled()
+      expect(dbMock.$transaction).not.toHaveBeenCalled()
+    })
+
+    it.each([{ startMonth: '2026-12' }, { firstInstallmentAmount: 5_000 }])(
+      'refuses %o from a staff teacher whose pricing is deferred, without reading or writing',
+      async (arrival) => {
+        isPaymentsEnabledMock.mockResolvedValue(true)
+
+        const result = await createEnrollment({ ...disabledInput, ...arrival, deferPricing: true })
+
+        expect(result).toBe('paymentsDisabled')
+        expect(classPeriodGatewayMock.findPeriodBounds).not.toHaveBeenCalled()
+        expect(dbMock.$transaction).not.toHaveBeenCalled()
+      }
+    )
+  })
+
+  // Formule de 100 000 en 10 mensualités de 10 000, de fin octobre à fin juillet.
+  describe('arrival during the year', () => {
+    const create = vi.fn()
+
+    beforeEach(() => {
+      mockValidReferences()
+      planGatewayMock.findById.mockResolvedValue({
+        id: validInput.planId,
+        amount: 100_000,
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 10, count: 10, dueDay: 31 },
+      })
+      classPeriodGatewayMock.findPeriodBounds.mockResolvedValue({
+        startAt: new Date('2026-09-01T00:00:00.000Z'),
+        endAt: new Date('2027-07-31T00:00:00.000Z'),
+      })
+      create.mockReset().mockResolvedValue({ id: 'created' })
+      dbMock.$transaction = vi.fn(async (cb) =>
+        cb({
+          $queryRaw: vi.fn().mockResolvedValue([{ capacity: 10 }]),
+          classAssignment: { count: vi.fn().mockResolvedValue(0), create: vi.fn() },
+          enrollment: { create },
+        })
+      )
+    })
+
+    it('owes the installments from the start month, the first one reduced', async () => {
+      const result = await createEnrollment({
+        ...validInput,
+        startMonth: '2026-12',
+        firstInstallmentAmount: 5_000,
+      })
+
+      expect(result).toEqual({ id: 'created' })
+      expect(classPeriodGatewayMock.findPeriodBounds).toHaveBeenCalledWith(
+        schoolId,
+        validInput.classPeriodId
+      )
+      expect(create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          totalAmount: 75_000,
+          discount: 0,
+          startMonth: new Date('2026-12-01T00:00:00.000Z'),
+          firstInstallmentAmount: 5_000,
+        }),
+      })
+    })
+
+    it('owes the whole plan and reads no period without a start month', async () => {
+      await createEnrollment(validInput)
+
+      expect(classPeriodGatewayMock.findPeriodBounds).not.toHaveBeenCalled()
+      expect(create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          totalAmount: 100_000,
+          startMonth: null,
+          firstInstallmentAmount: null,
+        }),
+      })
+    })
+
+    it.each([
+      [{ firstInstallmentAmount: 5_000 }, 'firstInstallmentRequiresStartMonth'],
+      [{ startMonth: '2026-12', firstInstallmentAmount: 10_001 }, 'firstInstallmentOutOfRange'],
+      [{ startMonth: '2026-08' }, 'startMonthOutsidePeriod'],
+      [
+        { startMonth: '2026-12', firstInstallmentAmount: 5_000, totalAmount: 4_000 },
+        'firstInstallmentExceedsTotal',
+      ],
+      [{ startMonth: '2026-12', totalAmount: 90_000 }, 'totalAmountExceedsPlan'],
+    ])('refuses %o with %s, without writing', async (arrival, error) => {
+      expect(await createEnrollment({ ...validInput, ...arrival })).toBe(error)
+      expect(dbMock.$transaction).not.toHaveBeenCalled()
+    })
+
+    it('refuses a first-month amount on a plan that is not monthly', async () => {
+      planGatewayMock.findById.mockResolvedValue({
+        id: validInput.planId,
+        amount: 100_000,
+        paymentSchedule: { mode: 'QUARTERLY', firstMonth: 10, count: 4, dueDay: 31 },
+      })
+
+      const result = await createEnrollment({
+        ...validInput,
+        startMonth: '2027-01',
+        firstInstallmentAmount: 5_000,
+      })
+
+      expect(result).toBe('firstInstallmentNotMonthly')
+    })
+
+    it('refuses a class whose period is not readable in the caller school', async () => {
+      classPeriodGatewayMock.findPeriodBounds.mockResolvedValue(null)
+
+      const result = await createEnrollment({ ...validInput, startMonth: '2026-12' })
+
+      expect(result).toBe('notFound')
       expect(dbMock.$transaction).not.toHaveBeenCalled()
     })
   })
