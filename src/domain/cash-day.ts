@@ -15,7 +15,23 @@ type CashReceipt = {
   childcare: ReadonlyArray<{ amount: number }>
 }
 
+const CASH_LINES: readonly CashLine[] = ['CANTEEN', 'SNACK', 'CHILDCARE', 'TUITION']
+
 const round = (value: number) => Math.round(value * 100) / 100
+
+/**
+ * Postes à afficher. Une école sans repas ne voit que l'écolage ; un poste repas ou garderie n'y
+ * reste que s'il porte encore un montant ce jour-là (école qui a fermé les repas depuis), pour
+ * que la ventilation retombe sur le total.
+ */
+export function visibleCashLines(
+  mealsEnabled: boolean,
+  totals: readonly Pick<CashTotals, 'byLine'>[]
+): CashLine[] {
+  return CASH_LINES.filter(
+    (line) => mealsEnabled || line === 'TUITION' || totals.some((entry) => entry.byLine[line] !== 0)
+  )
+}
 
 /** Additionne des reçus, comptés en négatif quand `sign` vaut -1. */
 function addReceipts(into: CashTotals, receipts: readonly CashReceipt[], sign: 1 | -1) {
