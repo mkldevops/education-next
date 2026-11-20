@@ -75,6 +75,15 @@ const CASHIER: NavItemConfig = {
   feature: 'meals',
 }
 
+/** Caisse du jour seule : l'administration d'une école sans repas, où la caisse reste fermée. */
+const CASH_DAY: NavItemConfig = {
+  href: '/dashboard/cashier/day',
+  icon: Banknote,
+  key: 'cashDay',
+  requiredRoles: ['ADMIN'],
+  feature: 'payments',
+}
+
 const todayItems: NavItemConfig[] = [
   { href: '/dashboard', icon: House, key: 'dashboard' },
   { href: '/dashboard/attendance', icon: ClipboardCheck, key: 'attendance', feature: 'attendance' },
@@ -119,6 +128,7 @@ const financeItems: NavItemConfig[] = [
     feature: 'payments',
   },
   CASHIER,
+  CASH_DAY,
   {
     href: '/dashboard/meals',
     icon: UtensilsCrossed,
@@ -255,7 +265,11 @@ export function resolveNavItems({
         ...schoolingItems.filter(canView),
         ...(hasTeacherCapability ? [MY_CLASSES] : []),
       ]),
-      ...section('finance', financeItems.filter(canView)),
+      // Avec les repas, la caisse du jour se lit depuis la caisse : pas de seconde entrée.
+      ...section(
+        'finance',
+        financeItems.filter((item) => item !== CASH_DAY || !features.meals).filter(canView)
+      ),
       ...administration,
     ],
     bottom: [{ href: '/dashboard/settings', icon: Settings, key: 'settings' }],

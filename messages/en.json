@@ -301,6 +301,7 @@
       "enrollments": "Enrollments",
       "payments": "Collections",
       "cashier": "Cashier",
+      "cashDay": "Day's takings",
       "plans": "Pricing plans",
       "meals": "Canteen and snack",
       "childcare": "Childcare",
@@ -1511,7 +1512,15 @@
           "cancelledReceipts": "Day's cancellations",
           "none": "None",
           "receipt": "{number} · {family}",
-          "cancelledBadge": "Cancelled"
+          "cancelledBadge": "Cancelled",
+          "unreceipted": {
+            "title": "Payments without a receipt",
+            "intro": "Tuition payments recorded that day without a receipt, refunds included. They are not counted in the total above: only receipts make up the takings.",
+            "none": "No payment without a receipt",
+            "refund": "Refund",
+            "total": "{count, plural, one {# payment without a receipt} other {# payments without a receipt}} · {amount}",
+            "truncated": "Incomplete list: only the first entries of the day are shown, and this subtotal covers those alone."
+          }
         },
         "debtors": {
           "title": "Unpaid and reminders",

@@ -105,7 +105,7 @@ describe('resolveNavItems', () => {
       'classes',
       'teachers',
     ])
-    expect(keys(group(items, 'finance'))).toEqual(['payments', 'plans'])
+    expect(keys(group(items, 'finance'))).toEqual(['payments', 'plans', 'cashDay'])
     expect(keys(all(items))).not.toContain('schools')
     expect(keys(all(items))).not.toContain('superAdmins')
   })
@@ -453,6 +453,59 @@ describe('resolveNavItems with cumulative roles', () => {
 
     expect(keys(items.sections)).toEqual(['today', 'schooling', 'finance', 'settings'])
     expect(keys(group(items, 'settings'))).toContain('users')
+  })
+})
+
+describe('resolveNavItems with the day view of a tuition-only school', () => {
+  const tuitionOnly = { events: false, payments: true, meals: false }
+
+  it('gives the admin the day view in place of the closed cashier', () => {
+    const items = resolveNavItems({ roles: ['ADMIN'], isSuperAdmin: false, features: tuitionOnly })
+
+    expect(keys(group(items, 'finance'))).toEqual(['payments', 'plans', 'cashDay'])
+    expect(find(items, 'cashDay')?.href).toBe('/dashboard/cashier/day')
+    expect(fr.dashboard.sidebar.cashDay).toBe('Caisse du jour')
+    expect(en.dashboard.sidebar.cashDay).toBe("Day's takings")
+  })
+
+  it('gives it to a super-admin too', () => {
+    const items = resolveNavItems({ roles: [], isSuperAdmin: true, features: tuitionOnly })
+
+    expect(keys(group(items, 'finance'))).toContain('cashDay')
+  })
+
+  it('keeps the cashier as the only entry once the school has meals', () => {
+    const items = resolveNavItems({
+      roles: ['ADMIN'],
+      isSuperAdmin: false,
+      features: { ...tuitionOnly, meals: true },
+    })
+
+    expect(keys(all(items))).toContain('cashier')
+    expect(keys(all(items))).not.toContain('cashDay')
+  })
+
+  it('hides it when the school does not collect payments', () => {
+    const items = resolveNavItems({
+      roles: ['ADMIN'],
+      isSuperAdmin: false,
+      features: { ...tuitionOnly, payments: false },
+    })
+
+    expect(keys(all(items))).not.toContain('cashDay')
+  })
+
+  it.each([
+    ['a cashier', { roles: ['CASHIER'] as const }],
+    ['a cashier-parent', { roles: ['CASHIER', 'PARENT'] as const, familyId: 'family-1' }],
+    ['a parent', { roles: ['PARENT'] as const, familyId: 'family-1' }],
+    ['a staff teacher', { roles: ['TEACHER'] as const, hasStaffAccess: true }],
+    ['a member without a role', { roles: [] as const }],
+  ])('never shows it to %s', (_label, scope) => {
+    const items = resolveNavItems({ ...scope, isSuperAdmin: false, features: tuitionOnly })
+
+    expect(keys(all(items))).not.toContain('cashDay')
+    expect(keys(all(items))).not.toContain('cashier')
   })
 })
 

@@ -2434,13 +2434,36 @@ active student enrolled in no class still gets cashier lines (`loadCashierFamily
 or come for snack before, or without, being placed in a class. To stop billing a child, stop their
 meal service.
 
-**Day's takings.** `/dashboard/cashier/day?day=YYYY-MM-DD` (same guards, today by default, no future
-day) sums, over the school's local day (`schoolDayBounds()`), the receipts **issued** that day and the
+**Day's takings.** `/dashboard/cashier/day?day=YYYY-MM-DD` (today by default, no future day) sums,
+over the school's local day (`schoolDayBounds()`), the receipts **issued** that day and the
 receipts **cancelled** that day whatever their issue day; net = issued − cancelled
 (`summarizeCashDay()`, `src/domain/cash-day.ts`). A cancellation lands on the day it is made, so a
 past day's net never changes. Totals split by method and by item: canteen and snack from the
 receipt's `MealPayment` rows, childcare from its `ChildcarePayment` rows, tuition as the rest of the
 total.
+
+The day view has its own guard, `requireSchoolCashDay()`: whoever the cashier admits (below), plus
+the administration of a school **without meals** that collects tuition (`payments_enabled`, on by
+default). That second door opens this read only: the cashier, receipt recording and the `CASHIER`
+role stay closed to a school without meals (`canOpenSchoolCashier()` and the `recordReceipt()` gate
+are unchanged). The sidebar gives that admin a "Day's takings" entry in place of the cashier one;
+with meals the view is reached from the cashier as before. A school without meals sees the tuition
+item alone; a canteen, snack or childcare item stays visible only on a day where it still carries
+money (a school that closed meals later), so the items always add up to the total
+(`visibleCashLines()`).
+
+**Payments without a receipt.** A tuition payment can be recorded without a receipt
+(`recordPayment()` without `generateReceipt`), and a refund never gets one. The day view lists them
+apart for the administration when payments are enabled (`loadUnreceiptedPayments()`): active
+`Payment` rows with no `receiptId` **created** during the school's local day, one line per sum
+handed over (`groupFamilyPayments()`), refunds flagged, with their own subtotal. They are never
+added to the takings: receipts remain the only source of the cash total. A payment that receives
+its receipt later leaves the list and counts on the receipt's issue day; a cancelled entry is
+inactive and disappears. A zero-amount row is not listed: an online payment writes one per
+already-settled enrollment and its receipt skips it (`completeCheckoutSession()`), so it is no money
+handed over. The read is bounded to the 200 oldest rows of the day; beyond that the view says the
+list and its subtotal are incomplete. A `CASHIER` never reads this list: tuition payments outside the
+cashier stay with the administration.
 
 **Cashier role.** `CASHIER` is the school role of the person at the till (migration
 `20261029090000_cashier_role`; granted to nobody on deploy). `requireSchoolCashier()`

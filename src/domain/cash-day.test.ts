@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { summarizeCashDay } from './cash-day'
+import { summarizeCashDay, visibleCashLines } from './cash-day'
 
 const mixed = {
   total: 8000,
@@ -50,5 +50,34 @@ describe('summarizeCashDay childcare', () => {
     const { net } = summarizeCashDay({ issued: [receipt], cancelled: [] })
 
     expect(net.byLine).toEqual({ CANTEEN: 0, SNACK: 0, CHILDCARE: 6000, TUITION: 10000 })
+  })
+})
+
+describe('visibleCashLines', () => {
+  const byLine = (
+    lines: Partial<Record<'CANTEEN' | 'SNACK' | 'CHILDCARE' | 'TUITION', number>>
+  ) => ({
+    byLine: { CANTEEN: 0, SNACK: 0, CHILDCARE: 0, TUITION: 0, ...lines },
+  })
+
+  it('shows every line to a school with meals, even at zero', () => {
+    expect(visibleCashLines(true, [byLine({})])).toEqual([
+      'CANTEEN',
+      'SNACK',
+      'CHILDCARE',
+      'TUITION',
+    ])
+  })
+
+  it('shows tuition alone to a school without meals', () => {
+    expect(visibleCashLines(false, [byLine({ TUITION: 15000 })])).toEqual(['TUITION'])
+    expect(visibleCashLines(false, [])).toEqual(['TUITION'])
+  })
+
+  it('keeps a line that still carries money after the school closed meals', () => {
+    const issued = byLine({ TUITION: 15000 })
+    const cancelled = byLine({ CHILDCARE: 3000 })
+
+    expect(visibleCashLines(false, [issued, cancelled])).toEqual(['CHILDCARE', 'TUITION'])
   })
 })
