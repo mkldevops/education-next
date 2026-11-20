@@ -116,7 +116,12 @@ export function EnrollmentActions({
             />
           )}
           {paymentsEnabled && startMonth && (
-            <SetStartMonthDialog enrollmentId={enrollmentId} startMonth={startMonth} />
+            <SetStartMonthDialog
+              enrollmentId={enrollmentId}
+              startMonth={startMonth}
+              discount={currentDiscount}
+              currency={currency}
+            />
           )}
           {paymentsEnabled && planName === UNPRICED_PLAN_NAME && availablePlans.length > 0 && (
             <SetEnrollmentPlanDialog enrollmentId={enrollmentId} plans={availablePlans} />

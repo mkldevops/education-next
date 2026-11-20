@@ -751,4 +751,120 @@ describe('previewEnrollFamily with a start month', () => {
       reason: 'noPaymentSchedule',
     })
   })
+
+  it('reduces the first month of the student it is dictated for', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      startMonth: '2026-10',
+      students: [{ ...input.students[0], firstInstallmentAmount: 8_000 }, sibling],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(
+      result.plan?.students.map((student) => [
+        student.startMonth,
+        student.firstInstallmentAmount,
+        student.totalAmount,
+      ])
+    ).toEqual([
+      ['2026-10', 8_000, 120_000],
+      ['2026-10', null, 128_000],
+    ])
+  })
+
+  it('blocks a reduced first month without a start month', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      students: [{ ...input.students[0], firstInstallmentAmount: 8_000 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      {
+        field: 'students.0.firstInstallmentAmount',
+        value: '8000',
+        reason: 'firstInstallmentRequiresStartMonth',
+      },
+    ])
+    expect(createDraft).not.toHaveBeenCalled()
+  })
+
+  it('blocks a reduced first month above the installment of the start month', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      students: [{ ...input.students[0], startMonth: '2026-10', firstInstallmentAmount: 16_001 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      {
+        field: 'students.0.firstInstallmentAmount',
+        value: '16001',
+        reason: 'firstInstallmentOutOfRange',
+      },
+    ])
+  })
+
+  it('blocks a reduced first month on a plan that is not paid monthly', async () => {
+    listPlans.mockResolvedValue([
+      { ...monthly, paymentSchedule: { mode: 'QUARTERLY', firstMonth: 9, count: 3, dueDay: 5 } },
+    ])
+
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      students: [{ ...input.students[0], startMonth: '2026-10', firstInstallmentAmount: 8_000 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      {
+        field: 'students.0.firstInstallmentAmount',
+        value: '8000',
+        reason: 'firstInstallmentNotMonthly',
+      },
+    ])
+  })
+
+  it('blocks a reduced first month the discount no longer leaves to pay', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      discount: 4_000,
+      students: [{ ...input.students[0], startMonth: '2027-05', firstInstallmentAmount: 8_000 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      {
+        field: 'students.0.firstInstallmentAmount',
+        value: '8000',
+        reason: 'firstInstallmentExceedsTotal',
+      },
+    ])
+  })
+
+  it('ignores a reduced first month when the school has turned payments off', async () => {
+    const { planName: _planName, ...withoutPlan } = unpaid
+
+    const result = await previewEnrollFamily(
+      { ...scope, paymentsEnabled: false },
+      {
+        ...withoutPlan,
+        students: [{ ...input.students[0], startMonth: '2026-10', firstInstallmentAmount: 8_000 }],
+      }
+    )
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.plan?.students[0]).toMatchObject({
+      startMonth: '2026-10',
+      firstInstallmentAmount: null,
+      totalAmount: 0,
+    })
+  })
 })

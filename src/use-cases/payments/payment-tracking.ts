@@ -9,7 +9,7 @@ import {
 import { nextMonthStart, schoolDayBounds, schoolToday } from '@/domain/school-date'
 import { legacyDepartureMonth, legacyDepartureTotal } from '@/domain/student-departure'
 import { db } from '@/lib/db'
-import { roundHalfUp, toNumber } from '@/lib/decimal'
+import { roundHalfUp, toNumber, toNumberOrNull } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 
 export type FamilyPaymentTracking = {
@@ -88,6 +88,7 @@ async function collectFamilyTracking(
         totalAmount: true,
         startMonth: true,
         endMonth: true,
+        firstInstallmentAmount: true,
         plan: { select: { paymentSchedule: true } },
         classAssignments: {
           orderBy: { startAt: 'desc' },
@@ -127,15 +128,13 @@ async function collectFamilyTracking(
     const period = enrollment.classAssignments[0]?.classPeriod.period
     const schedule = readPaymentSchedule(enrollment.plan.paymentSchedule)
     const paid = toNumber(paidByEnrollment.get(enrollment.id) ?? 0)
+    const firstInstallmentAmount = toNumberOrNull(enrollment.firstInstallmentAmount)
     const scheduled = period
-      ? paymentInstallments(
-          schedule,
-          toNumber(enrollment.totalAmount),
-          period.startAt,
-          currency,
-          startMonthFromDate(enrollment.startMonth),
-          startMonthFromDate(enrollment.endMonth)
-        )
+      ? paymentInstallments(schedule, toNumber(enrollment.totalAmount), period.startAt, currency, {
+          startMonth: startMonthFromDate(enrollment.startMonth),
+          endMonth: startMonthFromDate(enrollment.endMonth),
+          firstInstallmentAmount,
+        })
       : []
     // Archive antérieure à `archiveStudent` : inscription restée ouverte et total non coupé. Les
     // échéances après le mois de départ ne sont plus dues, comme si l'archive l'avait close.
@@ -150,6 +149,7 @@ async function collectFamilyTracking(
             totalAmount: toNumber(enrollment.totalAmount),
             periodStart: period?.startAt ?? null,
             startMonth: startMonthFromDate(enrollment.startMonth),
+            firstInstallmentAmount,
           },
           departureMonth,
           paid,

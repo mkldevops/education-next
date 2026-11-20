@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { startMonthFromDate, startMonthToDate } from '@/domain/payment-schedule'
-import { roundHalfUp } from '@/lib/decimal'
+import { roundHalfUp, toNumberOrNull } from '@/lib/decimal'
 import { claimResolved, commitInTransaction } from './claim-draft'
 import type { DraftScope } from './draft-scope'
 import { paidAmount, UPDATE_ENROLLMENT_TOOL } from './preview-update-enrollment'
@@ -12,6 +12,8 @@ const pricingSchema = z.object({
   totalAmount: z.number(),
   // Absent d'un brouillon antérieur au mois de début : il n'en portait pas.
   startMonth: z.string().nullable().default(null),
+  // Absent d'un brouillon antérieur au premier mois réduit : il n'en portait pas.
+  firstInstallmentAmount: z.number().nullable().default(null),
 })
 
 const resolvedSchema = z.object({
@@ -43,6 +45,7 @@ export async function commitUpdateEnrollment(scope: DraftScope, input: Input) {
         discount: true,
         totalAmount: true,
         startMonth: true,
+        firstInstallmentAmount: true,
         payments: { where: { isActive: true }, select: { amount: true } },
       },
     })
@@ -54,7 +57,8 @@ export async function commitUpdateEnrollment(scope: DraftScope, input: Input) {
       current.planId !== before.plan.id ||
       Number(current.discount) !== before.discount ||
       Number(current.totalAmount) !== before.totalAmount ||
-      startMonthFromDate(current.startMonth) !== before.startMonth
+      startMonthFromDate(current.startMonth) !== before.startMonth ||
+      toNumberOrNull(current.firstInstallmentAmount) !== before.firstInstallmentAmount
     ) {
       return 'staleDraft' as const
     }
@@ -77,6 +81,7 @@ export async function commitUpdateEnrollment(scope: DraftScope, input: Input) {
         discount: after.discount,
         totalAmount: after.totalAmount,
         startMonth: after.startMonth ? startMonthToDate(after.startMonth) : null,
+        firstInstallmentAmount: after.firstInstallmentAmount,
       },
     })
 
@@ -86,6 +91,7 @@ export async function commitUpdateEnrollment(scope: DraftScope, input: Input) {
       discount: after.discount,
       totalAmount: after.totalAmount,
       startMonth: after.startMonth,
+      firstInstallmentAmount: after.firstInstallmentAmount,
       remaining: roundHalfUp(after.totalAmount - paid),
     }
 

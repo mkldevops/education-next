@@ -7,12 +7,16 @@ import { cache } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { totalPaidAmount } from '@/domain/payment'
-import { startMonthFromDate, startMonthToDate } from '@/domain/payment-schedule'
+import {
+  readPaymentSchedule,
+  startMonthFromDate,
+  startMonthToDate,
+} from '@/domain/payment-schedule'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
-import { formatCurrency } from '@/lib/decimal'
+import { formatCurrency, toNumberOrNull } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-context'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
@@ -203,6 +207,9 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                   value: startMonth,
                   min: startMonthFromDate(enrollmentPeriod?.startAt) ?? undefined,
                   max: startMonthFromDate(enrollmentPeriod?.endAt) ?? undefined,
+                  firstInstallmentAmount: toNumberOrNull(enrollment.firstInstallmentAmount),
+                  monthlyPlan:
+                    readPaymentSchedule(enrollment.plan.paymentSchedule).mode === 'MONTHLY',
                 }
               : undefined
           }

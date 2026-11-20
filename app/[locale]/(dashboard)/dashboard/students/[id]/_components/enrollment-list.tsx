@@ -20,7 +20,7 @@ import type {
 } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
-import { type DecimalLike, formatCurrency } from '@/lib/decimal'
+import { type DecimalLike, formatCurrency, toNumberOrNull } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 
 // Le total peut être celui que la fiche recalcule pour un élève archivé (`deriveStudentDetail`).
@@ -61,8 +61,11 @@ function coverageOf(enrollment: EnrollmentWithRelation, paid: number, currency: 
       Number(enrollment.totalAmount),
       period.startAt,
       currency,
-      startMonthFromDate(enrollment.startMonth),
-      startMonthFromDate(enrollment.endMonth)
+      {
+        startMonth: startMonthFromDate(enrollment.startMonth),
+        endMonth: startMonthFromDate(enrollment.endMonth),
+        firstInstallmentAmount: toNumberOrNull(enrollment.firstInstallmentAmount),
+      }
     ),
     paid
   )

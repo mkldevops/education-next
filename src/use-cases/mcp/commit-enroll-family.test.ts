@@ -166,6 +166,39 @@ describe('commitEnrollFamily', () => {
     )
   })
 
+  it('writes the reduced first installment on the enrollment, never on the person', async () => {
+    await commitEnrollFamily(scope, input)
+    expect(tx.enrollment.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ firstInstallmentAmount: null }) })
+    )
+
+    vi.clearAllMocks()
+    transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
+    claim.mockResolvedValue({ count: 1 })
+    tx.person.create
+      .mockResolvedValueOnce({ id: 'person-parent' })
+      .mockResolvedValueOnce({ id: 'person-student' })
+    findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
+      keyId: 'key-1',
+      userId: null,
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [{ ...resolved.students[0], startMonth: '2026-10', firstInstallmentAmount: 45 }],
+      },
+    })
+
+    await commitEnrollFamily(scope, input)
+    expect(tx.enrollment.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ firstInstallmentAmount: 45 }) })
+    )
+    for (const [call] of tx.person.create.mock.calls) {
+      expect(call.data).not.toHaveProperty('firstInstallmentAmount')
+    }
+  })
+
   it('scopes every write to the school carried by the key', async () => {
     await commitEnrollFamily(scope, input)
 

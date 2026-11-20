@@ -4,6 +4,7 @@ const enrollmentGatewayMock = {
   findById: vi.fn(),
   findDebtorFamily: vi.fn(),
   findOpenActivePayments: vi.fn(),
+  findPeriodBounds: vi.fn(),
   updateDiscount: vi.fn(),
 }
 const paymentGatewayMock = {
@@ -27,6 +28,10 @@ vi.mock('@/gateways/payment-gateway', () => ({
 
 vi.mock('@/gateways/config-gateway', () => ({
   configGateway: configGatewayMock,
+}))
+
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: vi.fn().mockResolvedValue({ currency: 'EUR' }),
 }))
 
 const { applyDiscount } = await import('./apply-discount')
@@ -80,6 +85,51 @@ describe('applyDiscount', () => {
     expect(enrollmentGatewayMock.findById).not.toHaveBeenCalled()
     expect(transaction).not.toHaveBeenCalled()
     expect(enrollmentGatewayMock.updateDiscount).not.toHaveBeenCalled()
+  })
+
+  describe('on an enrollment with a reduced first month', () => {
+    const arrival = (startMonth: string) => ({
+      id: enrollmentId,
+      status: 'ACTIVE',
+      startMonth: new Date(`${startMonth}-01T00:00:00.000Z`),
+      firstInstallmentAmount: 50,
+      plan: {
+        amount: 900,
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 9, dueDay: 5 },
+      },
+    })
+
+    beforeEach(() => {
+      enrollmentGatewayMock.findPeriodBounds = vi.fn().mockResolvedValue({
+        startAt: new Date('2026-09-01T00:00:00.000Z'),
+        endAt: new Date('2027-06-30T00:00:00.000Z'),
+      })
+    })
+
+    it('discounts the installments owed, the reduced first month included', async () => {
+      enrollmentGatewayMock.findById.mockResolvedValue(arrival('2026-10'))
+
+      expect(await applyDiscount({ schoolId, enrollmentId, discount: 100 })).toBe('OK')
+
+      // 50 en octobre puis 7 échéances de 100, moins la remise de 100.
+      expect(enrollmentGatewayMock.updateDiscount).toHaveBeenCalledWith(
+        schoolId,
+        enrollmentId,
+        100,
+        650,
+        tx
+      )
+    })
+
+    it('refuses a discount that leaves less than the reduced first month to pay', async () => {
+      enrollmentGatewayMock.findById.mockResolvedValue(arrival('2027-05'))
+
+      expect(await applyDiscount({ schoolId, enrollmentId, discount: 20 })).toBe(
+        'firstInstallmentExceedsTotal'
+      )
+      expect(transaction).not.toHaveBeenCalled()
+      expect(enrollmentGatewayMock.updateDiscount).not.toHaveBeenCalled()
+    })
   })
 
   it('should fail with enrollment not found', async () => {

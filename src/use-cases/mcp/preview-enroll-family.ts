@@ -4,7 +4,7 @@ import { calculateTotalAmount, validateDiscount } from '@/domain/enrollment'
 import { validateFamilyName } from '@/domain/family'
 import type { McpFinding } from '@/domain/mcp-draft'
 import { distributePayment } from '@/domain/payment'
-import { validateStartMonth } from '@/domain/payment-schedule'
+import { firstInstallmentFitsTotal, validateStartMonth } from '@/domain/payment-schedule'
 import { validateStudentBirthday } from '@/domain/student'
 import { classPeriodGateway } from '@/gateways/class-period-gateway'
 import { familyGateway } from '@/gateways/family-gateway'
@@ -38,6 +38,7 @@ type ResolvedStudent = {
   classPeriod: { id: string; name: string }
   plan: { id: string; name: string; amount: number }
   startMonth: string | null
+  firstInstallmentAmount: number | null
   totalAmount: number
 }
 
@@ -198,11 +199,24 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
   const studentStartMonths = data.students.map(
     (student) => student.startMonth ?? data.startMonth ?? null
   )
+  // Le premier mois réduit n'a de sens que sur une formule tarifée : paiements coupés, il
+  // est ignoré comme le libellé de formule.
+  const studentFirstInstallments = data.students.map((student) =>
+    paymentsEnabled ? (student.firstInstallmentAmount ?? null) : null
+  )
   const planAmountsDue: number[] = []
   for (const [index, plan] of studentPlans.entries()) {
     const startMonth = studentStartMonths[index]
     const classPeriod = studentClasses[index]
+    const firstInstallmentAmount = studentFirstInstallments[index]
     planAmountsDue.push(plan ? plan.amount : 0)
+    if (plan && !startMonth && firstInstallmentAmount !== null) {
+      blockers.push({
+        field: `students.${index}.firstInstallmentAmount`,
+        value: String(firstInstallmentAmount),
+        reason: 'firstInstallmentRequiresStartMonth',
+      })
+    }
     if (!plan || !startMonth || !classPeriod) continue
 
     const field = data.students[index].startMonth ? `students.${index}.startMonth` : 'startMonth'
@@ -218,19 +232,39 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
           schoolId,
           { amount: plan.amount, paymentSchedule: scheduleByPlan.get(plan.id) },
           period,
-          startMonth
+          { startMonth, firstInstallmentAmount }
         )
       : validateStartMonth(startMonth, period) === 'OK'
         ? plan.amount
         : ('startMonthOutsidePeriod' as const)
     if (typeof due === 'string') {
-      blockers.push({ field, value: startMonth, reason: due })
+      blockers.push(
+        due.startsWith('firstInstallment')
+          ? {
+              field: `students.${index}.firstInstallmentAmount`,
+              value: String(firstInstallmentAmount),
+              reason: due,
+            }
+          : { field, value: startMonth, reason: due }
+      )
       continue
     }
     planAmountsDue[index] = due
   }
 
   const studentTotals = planAmountsDue.map((amount) => calculateTotalAmount(amount, data.discount))
+
+  // La remise se répartit sur les échéances suivantes : le premier mois réduit doit tenir
+  // dans ce qu'elle laisse à payer.
+  for (const [index, firstInstallmentAmount] of studentFirstInstallments.entries()) {
+    if (!studentPlans[index]) continue
+    if (firstInstallmentFitsTotal(firstInstallmentAmount, studentTotals[index])) continue
+    blockers.push({
+      field: `students.${index}.firstInstallmentAmount`,
+      value: String(firstInstallmentAmount),
+      reason: 'firstInstallmentExceedsTotal',
+    })
+  }
 
   // La remise vaut pour chaque inscription : elle doit tenir dans la formule la moins chère
   // de la fratrie, et un seul blocage suffit à la corriger.
@@ -359,7 +393,16 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
   // Chaque élève emporte sa classe et sa formule dans le même élément : un filtre suivi d'un
   // accès par index désalignerait élèves, classes et formules au premier élève non résolu.
   const students = data.students.flatMap<ResolvedStudent>(
-    ({ className, planName, startMonth: _startMonth, ...student }, index) => {
+    (
+      {
+        className,
+        planName,
+        startMonth: _startMonth,
+        firstInstallmentAmount: _firstInstallmentAmount,
+        ...student
+      },
+      index
+    ) => {
       const classPeriod = studentClasses[index]
       const plan = studentPlans[index]
       if (!classPeriod || !plan) return []
@@ -368,6 +411,7 @@ export async function previewEnrollFamily(scope: DraftScope, input: Input) {
         classPeriod: { id: classPeriod.id, name: classPeriod.name },
         plan: { id: plan.id, name: plan.name, amount: plan.amount },
         startMonth: studentStartMonths[index],
+        firstInstallmentAmount: studentFirstInstallments[index],
         totalAmount: studentTotals[index],
       }
 

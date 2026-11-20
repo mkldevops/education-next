@@ -37,13 +37,11 @@ export async function setEnrollmentPlan(input: Input) {
   if (plan.name === UNPRICED_PLAN_NAME) return 'unpricedPlan' as const
 
   // Le mois de début suit l'inscription : la nouvelle formule se tarife aussi sur ses
-  // seules échéances dues à partir de ce mois.
-  const planAmount = await resolveOwedPlanAmount(
-    schoolId,
-    enrollmentId,
-    plan,
-    enrollment.startMonth
-  )
+  // seules échéances dues à partir de ce mois. Le montant du premier mois, lui, ne suit pas :
+  // fixé sur l'échéance de l'ancienne formule, il est effacé avec le changement (`assignPlan`).
+  const planAmount = await resolveOwedPlanAmount(schoolId, enrollmentId, plan, {
+    startMonth: enrollment.startMonth,
+  })
   if (typeof planAmount === 'string') return planAmount
   if (enrollment.startMonth && validateDiscount(planAmount, Number(enrollment.discount)) !== 'OK') {
     return 'discountExceedsPlan' as const

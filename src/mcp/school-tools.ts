@@ -647,7 +647,10 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         "famille ou par élève) inscrit un élève arrivé en cours d'année : seules les " +
         'échéances de la formule à partir de ce mois sont dues et font le total. Il doit ' +
         'tomber dans la période de la classe (`startMonthOutsidePeriod`) et la formule ' +
-        'avoir un échéancier (`noPaymentSchedule`).',
+        'avoir un échéancier (`noPaymentSchedule`). `firstInstallmentAmount` (par élève, ' +
+        'formule mensuelle, avec `startMonth`) réduit le premier mois dû : il remplace cette ' +
+        'échéance, les suivantes restent celles de la formule. Une arrivée en cours ' +
+        "d'année se dicte par `startMonth` + `firstInstallmentAmount`, jamais par `discount`.",
       inputSchema: previewEnrollFamilySchema,
       annotations: NON_IDEMPOTENT_WRITE,
       kind: 'draft',
@@ -796,7 +799,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'preview_update_enrollment',
         title: "Préparer la modification d'une inscription",
         description:
-          "Change la formule, la remise et/ou le mois de début d'une inscription en attente " +
+          "Change la formule, la remise, le mois de début et/ou le premier mois réduit d'une " +
+          'inscription en attente ' +
           'ou active, sans rien ' +
           "écrire. L'inscription se désigne par son identifiant, ou par le prénom et le nom de " +
           "l'élève ; la formule est attendue en libellé. Sans remise, l'inscription garde la " +
@@ -805,7 +809,13 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
           '(`YYYY-MM`) fixe le premier mois dû : les échéances antérieures ne sont plus ' +
           'attendues et sortent du total ; `null` le retire, absent il est gardé. Refusé hors ' +
           'de la période (`startMonthOutsidePeriod`), sans échéancier (`noPaymentSchedule`), ' +
-          'ou sous le déjà-payé (`totalBelowPaid`).',
+          'ou sous le déjà-payé (`totalBelowPaid`). `firstInstallmentAmount` réduit le ' +
+          'premier mois dû (formule mensuelle, avec un `startMonth`, au plus la mensualité) : ' +
+          'il remplace cette échéance, la remise se répartit sur les suivantes ; `null` le ' +
+          'retire, absent il est gardé tant que ni la formule ni le mois de début ne changent ' +
+          '(sinon remis à zéro, avertissement `firstInstallmentReset`). Une arrivée en cours ' +
+          "d'année se dicte par `startMonth` + `firstInstallmentAmount`, jamais par " +
+          '`discount` ni `totalAmount`.',
         inputSchema: previewUpdateEnrollmentSchema,
         annotations: NON_IDEMPOTENT_WRITE,
         kind: 'draft',
@@ -815,7 +825,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'commit_update_enrollment',
         title: "Engager la modification d'une inscription",
         description:
-          'Applique la formule, la remise, le mois de début et le total déjà prévisualisés. ' +
+          'Applique la formule, la remise, le mois de début, le premier mois réduit et le total ' +
+          'déjà prévisualisés. ' +
           'Les paiements ' +
           "restent sur l'inscription. Rejouer le même `draftId` rend le résultat enregistré.",
         inputSchema: commitDraftSchema,

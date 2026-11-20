@@ -680,26 +680,29 @@ model TeacherExpense {
 }
 
 model Enrollment {
-  id             String           @id @default(uuid())
-  schoolId       String
-  studentId      String
-  planId         String
-  status         EnrollmentStatus @default(PENDING)
-  totalAmount    Decimal          @db.Decimal(10, 2)
-  discount       Decimal          @default(0) @db.Decimal(10, 2)
-  registeredAt   DateTime         @default(now())
+  id                     String           @id @default(uuid())
+  schoolId               String
+  studentId              String
+  planId                 String
+  status                 EnrollmentStatus @default(PENDING)
+  totalAmount            Decimal          @db.Decimal(10, 2)
+  discount               Decimal          @default(0) @db.Decimal(10, 2)
+  registeredAt           DateTime         @default(now())
   /// First month the enrollment owes installments (first day, UTC). Null: the period start.
-  startMonth     DateTime?        @db.Date
+  startMonth             DateTime?        @db.Date
+  /// Reduced first installment of an arrival during the year. Null: the plan's own installment.
+  /// It only shapes the schedule; `totalAmount` remains the amount owed.
+  firstInstallmentAmount Decimal?         @db.Decimal(10, 2)
   /// Last month owed (first day, UTC), set when the student leaves. A COMPLETED enrollment
   /// with an end month still owes its installments up to that month.
-  endMonth       DateTime?        @db.Date
+  endMonth               DateTime?        @db.Date
   /// Remainder forgiven at departure; `writeOffReason` explains it in the enrollment history.
-  writeOffAmount Decimal?         @db.Decimal(10, 2)
-  writeOffReason String?          @db.VarChar(500)
-  canLeaveAlone  Boolean          @default(false)
-  isActive       Boolean          @default(true)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  writeOffAmount         Decimal?         @db.Decimal(10, 2)
+  writeOffReason         String?          @db.VarChar(500)
+  canLeaveAlone          Boolean          @default(false)
+  isActive               Boolean          @default(true)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
 
   school           School            @relation(fields: [schoolId], references: [id])
   student          Student           @relation(fields: [studentId, schoolId], references: [id, schoolId], onDelete: Restrict)

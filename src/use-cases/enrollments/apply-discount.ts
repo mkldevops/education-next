@@ -1,7 +1,9 @@
 import type { z } from 'zod'
+import { firstInstallmentFitsTotal } from '@/domain/payment-schedule'
 import { configGateway } from '@/gateways/config-gateway'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { db } from '@/lib/db'
+import { toNumberOrNull } from '@/lib/decimal'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { readLockedPaidAmount } from './locked-paid-amount'
 import { resolveEnrollmentPricing, resolveOwedPlanAmount } from './pricing'
@@ -21,13 +23,13 @@ export async function applyDiscount(input: Input, configGw = configGateway) {
     return 'notFound' as const
   }
 
-  // Une inscription arrivée en cours d'année se tarife sur ses seules échéances dues.
-  const planAmount = await resolveOwedPlanAmount(
-    schoolId,
-    enrollmentId,
-    enrollment.plan,
-    enrollment.startMonth
-  )
+  // Une inscription arrivée en cours d'année se tarife sur ses seules échéances dues, premier
+  // mois réduit compris.
+  const firstInstallmentAmount = toNumberOrNull(enrollment.firstInstallmentAmount)
+  const planAmount = await resolveOwedPlanAmount(schoolId, enrollmentId, enrollment.plan, {
+    startMonth: enrollment.startMonth,
+    firstInstallmentAmount,
+  })
   if (typeof planAmount === 'string') return planAmount
 
   const pricing = resolveEnrollmentPricing(
@@ -37,6 +39,9 @@ export async function applyDiscount(input: Input, configGw = configGateway) {
   )
   if (typeof pricing === 'string') return pricing
   const { discount, totalAmount } = pricing
+  if (!firstInstallmentFitsTotal(firstInstallmentAmount, totalAmount)) {
+    return 'firstInstallmentExceedsTotal' as const
+  }
 
   // Le solde ne descend jamais sous zéro : le déjà-payé se relit sous le verrou de la
   // famille, dans la transaction qui écrit le total — un encaissement simultané attend

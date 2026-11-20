@@ -1,7 +1,7 @@
 import { readPaymentSchedule, startMonthFromDate } from '@/domain/payment-schedule'
 import { legacyDepartureMonth, legacyDepartureTotal } from '@/domain/student-departure'
 import { dbArchived } from '@/lib/db'
-import { roundHalfUp, toNumber } from '@/lib/decimal'
+import { roundHalfUp, toNumber, toNumberOrNull } from '@/lib/decimal'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 
 function loadFormerStudents(schoolId: string) {
@@ -31,6 +31,7 @@ function loadFormerStudents(schoolId: string) {
           startMonth: true,
           endMonth: true,
           totalAmount: true,
+          firstInstallmentAmount: true,
           plan: { select: { paymentSchedule: true } },
           payments: { where: { isActive: true }, select: { amount: true } },
           classAssignments: {
@@ -86,6 +87,7 @@ function owedAfterDeparture(
         totalAmount: toNumber(enrollment.totalAmount),
         periodStart: enrollment.classAssignments[0]?.classPeriod.period.startAt ?? null,
         startMonth: startMonthFromDate(enrollment.startMonth),
+        firstInstallmentAmount: toNumberOrNull(enrollment.firstInstallmentAmount),
       },
       departureMonth,
       paid,

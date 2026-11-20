@@ -321,6 +321,7 @@ export const mcpReadGateway = {
         totalAmount: true,
         startMonth: true,
         endMonth: true,
+        firstInstallmentAmount: true,
         plan: { select: { paymentSchedule: true } },
         classAssignments: {
           orderBy: { startAt: 'desc' },

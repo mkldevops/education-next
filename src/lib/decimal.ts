@@ -5,6 +5,10 @@ export function toNumber(value: DecimalLike): number {
   return value.toNumber ? value.toNumber() : Number(value.toString())
 }
 
+export function toNumberOrNull(value: DecimalLike | null | undefined): number | null {
+  return value === null || value === undefined ? null : toNumber(value)
+}
+
 export function roundHalfUp(value: number, decimals = 2): number {
   const factor = 10 ** decimals
   return Math.floor(value * factor + 0.5) / factor

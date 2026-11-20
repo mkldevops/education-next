@@ -2615,7 +2615,11 @@
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
             "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
             "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
-            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois"
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le mois de début avant de réduire le premier mois",
+            "firstInstallmentNotMonthly": "Le premier mois ne se réduit que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû après réduction"
           },
           "totalAmount": "Montant final dû ({currency})",
           "free": "Gratuit",
@@ -2632,6 +2636,11 @@
           "title": "Mois de début",
           "label": "Premier mois dû",
           "hint": "Les échéances antérieures ne sont ni attendues ni comptées dans le total. Laissez vide pour un début avec la période.",
+          "firstInstallment": "Montant du premier mois ({currency})",
+          "firstInstallmentHint": "Pour une arrivée en cours de mois : ce montant remplace la première échéance, les suivantes restent celles de la formule. Laissez vide pour la mensualité normale.",
+          "currentDiscount": "Réduction en place : {amount}",
+          "discountHint": "Elle se répartit sur les échéances suivantes, jamais sur le premier mois réduit.",
+          "removeDiscount": "Retirer cette réduction",
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Mois de début enregistré",
@@ -2644,7 +2653,11 @@
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
             "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
             "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
-            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois"
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le mois de début avant de réduire le premier mois",
+            "firstInstallmentNotMonthly": "Le premier mois ne se réduit que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû après réduction"
           }
         }
       },

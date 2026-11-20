@@ -1,5 +1,6 @@
 import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import {
+  type FirstInstallmentError,
   owedPlanAmount,
   readPaymentSchedule,
   startMonthFromDate,
@@ -27,6 +28,13 @@ export type OwedPlanAmount =
   | 'startMonthOutsidePeriod'
   | 'noPaymentSchedule'
   | 'noInstallmentDue'
+  | FirstInstallmentError
+
+/** Arrivée en cours d'année : le mois de début et, s'il est réduit, le montant du premier mois. */
+type Arrival = {
+  startMonth: Date | string | null | undefined
+  firstInstallmentAmount?: number | null
+}
 
 /**
  * Le prix de formule qu'une inscription doit réellement : la formule entière sans mois de
@@ -34,19 +42,26 @@ export type OwedPlanAmount =
  * dans toute règle de total (remise, montant saisi, changement de formule), pour qu'une
  * inscription arrivée en cours d'année ne retrouve pas en silence son total plein.
  *
+ * Un premier mois réduit remplace l'échéance de la formule à ce mois : il exige un mois de
+ * début, une formule mensuelle et un montant compris dans cette échéance.
+ *
  * Sans mois de début, aucune lecture : une inscription existante se calcule comme avant.
  */
 export async function resolveOwedPlanAmount(
   schoolId: string,
   enrollmentId: string,
   plan: PricedPlan,
-  startMonth: Date | string | null | undefined
+  { startMonth, firstInstallmentAmount = null }: Arrival
 ): Promise<OwedPlanAmount> {
   const month = typeof startMonth === 'string' ? startMonth : startMonthFromDate(startMonth)
-  if (!month) return Number(plan.amount)
+  if (!month) {
+    return firstInstallmentAmount === null
+      ? Number(plan.amount)
+      : 'firstInstallmentRequiresStartMonth'
+  }
   const period = await enrollmentGateway.findPeriodBounds(schoolId, enrollmentId)
   if (!period) return 'notFound'
-  return owedForPeriod(schoolId, plan, period, month)
+  return owedForPeriod(schoolId, plan, period, { startMonth: month, firstInstallmentAmount })
 }
 
 /** Même calcul quand la période est déjà connue, pour une inscription pas encore créée. */
@@ -54,7 +69,10 @@ export async function owedForPeriod(
   schoolId: string,
   plan: PricedPlan,
   period: { startAt: Date; endAt: Date },
-  startMonth: string
+  {
+    startMonth,
+    firstInstallmentAmount = null,
+  }: { startMonth: string; firstInstallmentAmount?: number | null }
 ): Promise<OwedPlanAmount> {
   const check = validateStartMonth(startMonth, period)
   if (check !== 'OK') return check
@@ -64,6 +82,6 @@ export async function owedForPeriod(
     readPaymentSchedule(plan.paymentSchedule),
     period.startAt,
     currency,
-    startMonth
+    { startMonth, firstInstallmentAmount }
   )
 }

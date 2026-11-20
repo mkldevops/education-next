@@ -124,6 +124,7 @@ describe('previewUpdateEnrollment', () => {
       discount: 20,
       totalAmount: 70,
       startMonth: null,
+      firstInstallmentAmount: null,
       planAmountDue: 90,
     })
   })
@@ -316,5 +317,240 @@ describe('previewUpdateEnrollment with a start month', () => {
     expect(await previewUpdateEnrollment(scope, { ...byName, startMonth: '2026-13' })).toBe(
       'validationError'
     )
+  })
+})
+
+describe('previewUpdateEnrollment with a reduced first installment', () => {
+  const october = new Date('2026-10-01T00:00:00Z')
+  const late = (overrides: Record<string, unknown> = {}) =>
+    enrollment({ plan: monthly, totalAmount: 144_000, ...overrides })
+  const reduced = (overrides: Record<string, unknown> = {}) =>
+    late({ startMonth: october, firstInstallmentAmount: 8_000, totalAmount: 120_000, ...overrides })
+  const monthlyPlus = {
+    id: 'plan-monthly-plus',
+    name: 'Mensuel renforcé 2026/2027',
+    amount: '180000',
+    paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 9, dueDay: 5 },
+  }
+  const { planName: _planName, ...byName } = input
+
+  it('replaces the installment of the start month, the total following', async () => {
+    findOpenForMcp.mockResolvedValue([late()])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      startMonth: '2026-10',
+      firstInstallmentAmount: 8_000,
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.warnings).toEqual([])
+    expect(result.plan).toMatchObject({
+      before: { totalAmount: 144_000, startMonth: null, firstInstallmentAmount: null },
+      after: {
+        totalAmount: 120_000,
+        startMonth: '2026-10',
+        firstInstallmentAmount: 8_000,
+        planAmountDue: 120_000,
+      },
+    })
+  })
+
+  it('sets the amount alone on an enrollment that already starts later', async () => {
+    findOpenForMcp.mockResolvedValue([late({ startMonth: october, totalAmount: 128_000 })])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      firstInstallmentAmount: 8_000,
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.plan?.after).toMatchObject({
+      startMonth: '2026-10',
+      firstInstallmentAmount: 8_000,
+      totalAmount: 120_000,
+    })
+  })
+
+  it('keeps the amount when only the discount changes', async () => {
+    findOpenForMcp.mockResolvedValue([reduced()])
+
+    const result = await previewUpdateEnrollment(scope, { ...byName, discount: 8_000 })
+    assertPreview(result)
+
+    expect(result.warnings).toEqual([])
+    expect(result.plan?.after).toMatchObject({
+      firstInstallmentAmount: 8_000,
+      discount: 8_000,
+      totalAmount: 112_000,
+    })
+  })
+
+  it('resets the amount, with a warning, when the start month moves without it', async () => {
+    findOpenForMcp.mockResolvedValue([reduced()])
+
+    const result = await previewUpdateEnrollment(scope, { ...byName, startMonth: '2026-11' })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.warnings).toEqual([
+      { field: 'firstInstallmentAmount', value: '8000', reason: 'firstInstallmentReset' },
+    ])
+    expect(result.plan?.after).toMatchObject({
+      startMonth: '2026-11',
+      firstInstallmentAmount: null,
+      totalAmount: 112_000,
+    })
+  })
+
+  it('resets the amount, with a warning, when the plan changes without it', async () => {
+    findOpenForMcp.mockResolvedValue([reduced()])
+    listPlans.mockResolvedValue([monthly, monthlyPlus])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      planName: monthlyPlus.name,
+    })
+    assertPreview(result)
+
+    expect(result.warnings).toEqual([
+      { field: 'firstInstallmentAmount', value: '8000', reason: 'firstInstallmentReset' },
+    ])
+    expect(result.plan?.after).toMatchObject({
+      plan: { id: 'plan-monthly-plus' },
+      startMonth: '2026-10',
+      firstInstallmentAmount: null,
+      totalAmount: 160_000,
+    })
+  })
+
+  it('carries a new amount onto the plan it changes to', async () => {
+    findOpenForMcp.mockResolvedValue([reduced()])
+    listPlans.mockResolvedValue([monthly, monthlyPlus])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      planName: monthlyPlus.name,
+      firstInstallmentAmount: 10_000,
+    })
+    assertPreview(result)
+
+    expect(result.warnings).toEqual([])
+    expect(result.plan?.after).toMatchObject({
+      firstInstallmentAmount: 10_000,
+      totalAmount: 150_000,
+    })
+  })
+
+  it('clears the amount back to the full first month, without a warning', async () => {
+    findOpenForMcp.mockResolvedValue([reduced()])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      firstInstallmentAmount: null,
+    })
+    assertPreview(result)
+
+    expect(result.warnings).toEqual([])
+    expect(result.plan?.after).toMatchObject({
+      startMonth: '2026-10',
+      firstInstallmentAmount: null,
+      totalAmount: 128_000,
+    })
+  })
+
+  it('blocks an amount on an enrollment without a start month', async () => {
+    findOpenForMcp.mockResolvedValue([late()])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      firstInstallmentAmount: 8_000,
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      {
+        field: 'firstInstallmentAmount',
+        value: '8000',
+        reason: 'firstInstallmentRequiresStartMonth',
+      },
+    ])
+    expect(createDraft).not.toHaveBeenCalled()
+  })
+
+  it('blocks an amount above the installment of the start month', async () => {
+    findOpenForMcp.mockResolvedValue([late()])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      startMonth: '2026-10',
+      firstInstallmentAmount: 16_001,
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'firstInstallmentAmount', value: '16001', reason: 'firstInstallmentOutOfRange' },
+    ])
+  })
+
+  it('blocks an amount on a plan that is not paid monthly', async () => {
+    findOpenForMcp.mockResolvedValue([
+      late({
+        plan: {
+          ...monthly,
+          paymentSchedule: { mode: 'QUARTERLY', firstMonth: 9, count: 3, dueDay: 5 },
+        },
+      }),
+    ])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      startMonth: '2026-10',
+      firstInstallmentAmount: 8_000,
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'firstInstallmentAmount', value: '8000', reason: 'firstInstallmentNotMonthly' },
+    ])
+  })
+
+  it('blocks an amount the discount no longer leaves to pay', async () => {
+    findOpenForMcp.mockResolvedValue([late()])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      startMonth: '2027-05',
+      firstInstallmentAmount: 8_000,
+      discount: 4_000,
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'firstInstallmentAmount', value: '8000', reason: 'firstInstallmentExceedsTotal' },
+    ])
+  })
+
+  it('blocks the same amount as a no-op', async () => {
+    findOpenForMcp.mockResolvedValue([reduced()])
+
+    const result = await previewUpdateEnrollment(scope, {
+      ...byName,
+      firstInstallmentAmount: 8_000,
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      { field: 'firstInstallmentAmount', value: '8000', reason: 'noChange' },
+    ])
+  })
+
+  it('rejects an amount that is not a positive price', async () => {
+    expect(await previewUpdateEnrollment(scope, { ...byName, firstInstallmentAmount: 0 })).toBe(
+      'validationError'
+    )
+    expect(findOpenForMcp).not.toHaveBeenCalled()
   })
 })
