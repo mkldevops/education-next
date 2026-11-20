@@ -210,6 +210,15 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                   firstInstallmentAmount: toNumberOrNull(enrollment.firstInstallmentAmount),
                   monthlyPlan:
                     readPaymentSchedule(enrollment.plan.paymentSchedule).mode === 'MONTHLY',
+                  schedule:
+                    paymentsEnabled && enrollmentPeriod
+                      ? {
+                          planAmount: Number(enrollment.plan.amount),
+                          paymentSchedule: readPaymentSchedule(enrollment.plan.paymentSchedule),
+                          periodStartAt: enrollmentPeriod.startAt.toISOString(),
+                          totalAmount,
+                        }
+                      : undefined,
                 }
               : undefined
           }

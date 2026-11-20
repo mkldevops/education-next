@@ -10,6 +10,7 @@ import { getOverdueStudents } from '@/use-cases/payments/overdue-students'
 import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assistant-enabled'
 import { countFormerStudents, listFormerStudents } from '@/use-cases/students/former-students'
 import { requireSchoolRecordsScope } from '../../_lib/auth-helper'
+import { toPlanOption } from '../../_lib/plan-options'
 import { AddStudentButton } from './_components/add-student-button'
 import { FormerStudentsTable } from './_components/former-students-table'
 import { ImportFormerStudentsDialog } from './_components/import-former-students-dialog'
@@ -118,11 +119,7 @@ export default async function StudentsPage({ params, searchParams }: Props) {
     isStaff,
     selectedPeriod?.id ?? null
   )
-  const planOptions = (paymentsEnabled ? plans : []).map((plan) => ({
-    id: plan.id,
-    name: plan.name,
-    amount: Number(plan.amount),
-  }))
+  const planOptions = (paymentsEnabled ? plans : []).map(toPlanOption)
 
   // Le parent n'ajoute pas d'élève : seul le staff charge la liste des familles.
   const families = isStaff

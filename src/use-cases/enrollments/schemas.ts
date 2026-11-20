@@ -12,6 +12,10 @@ export const createEnrollmentSchema = z.object({
   totalAmount: z.number().min(0).refine(isCurrencyAmount).optional(),
   discount: z.number().min(0).default(0),
   canLeaveAlone: z.boolean().default(false),
+  /** `YYYY-MM` : arrivée en cours d'année, seules les échéances à partir de ce mois sont dues. */
+  startMonth: startMonthSchema.nullable().default(null),
+  /** Montant réduit du premier mois dû ; exige un mois de début et une formule mensuelle. */
+  firstInstallmentAmount: firstInstallmentAmountSchema.nullable().default(null),
   /** Annule l'inscription en cours de la même période au lieu de refuser le doublon. */
   replaceExisting: z.boolean().default(false),
 })

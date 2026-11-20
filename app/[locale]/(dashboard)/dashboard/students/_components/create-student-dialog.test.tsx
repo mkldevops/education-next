@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CreateStudentDialog } from './create-student-dialog'
 
 const { createStudentAction } = vi.hoisted(() => ({
@@ -118,6 +118,72 @@ describe('CreateStudentDialog', () => {
           student: expect.objectContaining({ allergies: 'Arachides' }),
         })
       )
+    })
+  })
+
+  describe('arrival during the year', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('sends the first month to pay and the amount of that month with the enrollment', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date(2026, 10, 20, 10))
+      createStudentAction.mockClear()
+      render(
+        <CreateStudentDialog
+          familyId="550e8400-e29b-41d4-a716-446655440001"
+          familyName="Martin"
+          plans={[
+            {
+              id: '550e8400-e29b-41d4-a716-446655440002',
+              name: 'Plan mensuel',
+              amount: 1000,
+              paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 5 },
+            },
+          ]}
+          classes={[
+            {
+              id: '550e8400-e29b-41d4-a716-446655440004',
+              name: 'CE1',
+              periodStartAt: '2026-09-01T00:00:00.000Z',
+              periodEndAt: '2027-06-30T00:00:00.000Z',
+            },
+          ]}
+          paymentsEnabled={true}
+          currency="EUR"
+        />
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'title' }))
+      await screen.findByLabelText(/^firstname/)
+      fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Alice' } })
+
+      for (const [combobox, option] of [
+        ['selectClass', /CE1/],
+        ['startMonth', /Avril 2027/],
+      ] as const) {
+        fireEvent.click(screen.getByRole('combobox', { name: combobox }))
+        const item = await screen.findByRole('option', { name: option })
+        fireEvent.pointerDown(item)
+        fireEvent.click(item)
+      }
+      expect(screen.getByRole('group', { name: 'title' }).closest('details')).toBeNull()
+      fireEvent.change(screen.getByLabelText('firstAmount'), { target: { value: '40' } })
+      expect(screen.getByLabelText('totalAmount')).toHaveValue(240)
+
+      fireEvent.submit(screen.getByLabelText(/^firstname/).closest('form') as HTMLFormElement)
+
+      await waitFor(() => {
+        expect(createStudentAction).toHaveBeenCalledWith(
+          expect.objectContaining({
+            enrollment: expect.objectContaining({
+              totalAmount: 240,
+              startMonth: '2027-04',
+              firstInstallmentAmount: 40,
+            }),
+          })
+        )
+      })
     })
   })
 })

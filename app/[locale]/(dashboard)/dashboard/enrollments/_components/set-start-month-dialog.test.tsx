@@ -144,6 +144,62 @@ describe('SetStartMonthDialog', () => {
     )
   })
 
+  it('shows the schedule before and after, with the first month edited in its line', async () => {
+    setEnrollmentStartMonthAction.mockResolvedValue('OK')
+    renderDialog({
+      ...monthly,
+      schedule: {
+        planAmount: 100000,
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 5 },
+        periodStartAt: '2026-09-01T00:00:00.000Z',
+        totalAmount: 100000,
+      },
+    })
+
+    // En-tête, dix échéances, total : rien ne change tant que le mois n'est pas saisi.
+    expect(screen.getAllByRole('row')).toHaveLength(12)
+    expect(screen.queryByText('becomes')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('label'), { target: { value: '2027-04' } })
+    const rows = screen.getAllByRole('row')
+    expect(rows[1]).toHaveTextContent(/septembre 2026.*10.000.*none/)
+    expect(rows.at(-1)).toHaveTextContent(/total.*100.000.*30.000/)
+
+    fireEvent.click(screen.getByRole('button', { name: 'half' }))
+    expect(firstInstallment()).toHaveValue(5000)
+    expect(screen.getAllByRole('row').at(-1)).toHaveTextContent(/total.*100.000.*25.000/)
+    submit()
+
+    await waitFor(() =>
+      expect(setEnrollmentStartMonthAction).toHaveBeenCalledWith({
+        enrollmentId: 'enrollment-1',
+        startMonth: '2027-04',
+        firstInstallmentAmount: 5000,
+        removeDiscount: false,
+      })
+    )
+  })
+
+  it('keeps the stored schedule while the inputs match the stored values', () => {
+    // The plan now costs 120 000, but the stored total is 100 000: nothing is repriced until a
+    // value changes, as `setEnrollmentStartMonth` writes nothing for an unchanged submission.
+    renderDialog({
+      ...monthly,
+      schedule: {
+        planAmount: 120000,
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 5 },
+        periodStartAt: '2026-09-01T00:00:00.000Z',
+        totalAmount: 100000,
+      },
+    })
+
+    expect(screen.queryByText('becomes')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('row').at(-1)).toHaveTextContent(/total.*100.000/)
+
+    fireEvent.change(screen.getByLabelText('label'), { target: { value: '2026-09' } })
+    expect(screen.getAllByRole('row').at(-1)).toHaveTextContent(/total.*100.000.*120.000/)
+  })
+
   it('hides the discount option from an enrollment without a discount', () => {
     renderDialog(monthly)
 

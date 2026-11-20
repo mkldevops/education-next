@@ -6,6 +6,7 @@ import { Ban, Check, CircleAlert, Loader2, ShieldQuestion, Wrench, X } from 'luc
 import { useFormatter, useTranslations } from 'next-intl'
 import { DEFAULT_CURRENCY } from '@/lib/decimal'
 import type { DraftPlan } from './draft-plans'
+import { enrollmentPlanSummary } from './enrollment-plan-summary'
 
 export type ApprovalResponse = { id: string; approved: boolean }
 
@@ -64,6 +65,7 @@ export function ToolPart({ part, plan, onApproval }: Props) {
   const t = useTranslations('dashboard.assistant.tools')
   const name = getToolName(part)
   const label = t.has(`names.${name}`) ? t(`names.${name}`) : name
+  const enrollmentSummary = plan ? enrollmentPlanSummary(plan) : null
 
   if (part.state === 'approval-requested') {
     return (
@@ -73,7 +75,8 @@ export function ToolPart({ part, plan, onApproval }: Props) {
           {t('approval.title', { tool: label })}
         </p>
         {plan?.tool === 'record_payment' ? <PaymentSummary plan={plan} /> : null}
-        {plan && plan.tool !== 'record_payment' ? (
+        {enrollmentSummary}
+        {plan && plan.tool !== 'record_payment' && !enrollmentSummary ? (
           <pre className="max-h-48 overflow-auto rounded bg-surface p-2 text-xs">
             {formatDetail(plan)}
           </pre>
@@ -82,6 +85,11 @@ export function ToolPart({ part, plan, onApproval }: Props) {
           <summary className="cursor-pointer text-xs text-muted-foreground">
             {t('approval.details')}
           </summary>
+          {enrollmentSummary ? (
+            <pre className="mt-1 max-h-48 overflow-auto rounded bg-surface p-2 text-xs">
+              {formatDetail(plan)}
+            </pre>
+          ) : null}
           <pre className="mt-1 max-h-48 overflow-auto rounded bg-surface p-2 text-xs">
             {formatDetail(part.input)}
           </pre>

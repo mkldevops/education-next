@@ -650,7 +650,10 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         'avoir un échéancier (`noPaymentSchedule`). `firstInstallmentAmount` (par élève, ' +
         'formule mensuelle, avec `startMonth`) réduit le premier mois dû : il remplace cette ' +
         'échéance, les suivantes restent celles de la formule. Une arrivée en cours ' +
-        "d'année se dicte par `startMonth` + `firstInstallmentAmount`, jamais par `discount`.",
+        "d'année se dicte par `startMonth` + `firstInstallmentAmount`, jamais par `discount`. " +
+        "Chaque élève du plan porte son échéancier (`installments`, mois et montant) ; l'" +
+        'avertissement `discountWithFirstInstallment` signale une remise ajoutée à un premier ' +
+        'mois réduit.',
       inputSchema: previewEnrollFamilySchema,
       annotations: NON_IDEMPOTENT_WRITE,
       kind: 'draft',
@@ -815,7 +818,9 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
           'retire, absent il est gardé tant que ni la formule ni le mois de début ne changent ' +
           '(sinon remis à zéro, avertissement `firstInstallmentReset`). Une arrivée en cours ' +
           "d'année se dicte par `startMonth` + `firstInstallmentAmount`, jamais par " +
-          '`discount` ni `totalAmount`.',
+          "`discount` ni `totalAmount`. Le plan porte l'échéancier avant et après " +
+          "(`schedule.before` / `schedule.after`, mois et montant) ; l'avertissement " +
+          '`discountWithFirstInstallment` signale une remise ajoutée à un premier mois réduit.',
         inputSchema: previewUpdateEnrollmentSchema,
         annotations: NON_IDEMPOTENT_WRITE,
         kind: 'draft',

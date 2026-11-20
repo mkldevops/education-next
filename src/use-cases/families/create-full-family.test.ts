@@ -7,12 +7,19 @@ const dbMock = {
 
 const isPaymentsEnabled = vi.fn(async () => true)
 const ensureUnpriced = vi.fn(async () => ({ id: 'plan-unpriced' }))
+const findPeriodBounds = vi.fn()
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: () => isPaymentsEnabled(),
 }))
 vi.mock('@/gateways/plan-gateway', () => ({ planGateway: { ensureUnpriced } }))
+vi.mock('@/gateways/class-period-gateway', () => ({
+  classPeriodGateway: { findPeriodBounds },
+}))
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: async () => ({ currency: 'KMF', timeZone: 'Indian/Comoro' }),
+}))
 
 // Import dynamique : le module lit `db` à l'import et doit être chargé après le double.
 const { createFullFamily } = await import('./create-full-family')
@@ -248,5 +255,102 @@ describe('createFullFamily', () => {
     const result = await createFullFamily(input({ name: '  ' }))
 
     expect(result).toBe('validationError')
+  })
+
+  // Formule de 100 000 en 10 mensualités de 10 000, de fin octobre à fin juillet.
+  describe('arrival during the year', () => {
+    beforeEach(() => {
+      tx.plan.findFirst.mockResolvedValue({
+        amount: 100_000,
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 10, count: 10, dueDay: 31 },
+      })
+      findPeriodBounds.mockResolvedValue({
+        startAt: new Date('2026-09-01T00:00:00.000Z'),
+        endAt: new Date('2027-07-31T00:00:00.000Z'),
+      })
+    })
+
+    it('prices each child on its own arrival', async () => {
+      const result = await createFullFamily(
+        input({
+          students: [
+            child({
+              enrollment: {
+                planId,
+                classPeriodId,
+                startMonth: '2026-12',
+                firstInstallmentAmount: 5_000,
+              },
+            }),
+            child({ enrollment: { planId, classPeriodId: otherClassPeriodId } }),
+          ],
+        })
+      )
+
+      expect(result).toEqual(
+        expect.objectContaining({ enrollmentIds: ['enrollment-1', 'enrollment-2'] })
+      )
+      expect(findPeriodBounds).toHaveBeenCalledTimes(1)
+      expect(findPeriodBounds).toHaveBeenCalledWith(schoolId, classPeriodId)
+      expect(tx.enrollment.create).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          data: expect.objectContaining({
+            totalAmount: 75_000,
+            startMonth: new Date('2026-12-01T00:00:00.000Z'),
+            firstInstallmentAmount: 5_000,
+          }),
+        })
+      )
+      expect(tx.enrollment.create).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          data: expect.objectContaining({
+            totalAmount: 100_000,
+            startMonth: null,
+            firstInstallmentAmount: null,
+          }),
+        })
+      )
+    })
+
+    it('refuses a first-month amount without a start month, without leaving a family', async () => {
+      const result = await createFullFamily(
+        input({
+          students: [
+            child({ enrollment: { planId, classPeriodId, firstInstallmentAmount: 5_000 } }),
+          ],
+        })
+      )
+
+      expect(result).toBe('firstInstallmentRequiresStartMonth')
+      expect(tx.family.create).not.toHaveBeenCalled()
+    })
+
+    it('refuses a class whose period is not readable in the caller school', async () => {
+      findPeriodBounds.mockResolvedValue(null)
+
+      const result = await createFullFamily(
+        input({
+          students: [child({ enrollment: { planId, classPeriodId, startMonth: '2026-12' } })],
+        })
+      )
+
+      expect(result).toBe('notFound')
+      expect(dbMock.$transaction).not.toHaveBeenCalled()
+    })
+
+    it('refuses a start month when the caller pricing is deferred', async () => {
+      const result = await createFullFamily({
+        ...input({
+          students: [child({ enrollment: { classPeriodId, startMonth: '2026-12' } })],
+        }),
+        deferPricing: true,
+      })
+
+      expect(result).toBe('paymentsDisabled')
+      expect(findPeriodBounds).not.toHaveBeenCalled()
+      expect(dbMock.$transaction).not.toHaveBeenCalled()
+    })
   })
 })

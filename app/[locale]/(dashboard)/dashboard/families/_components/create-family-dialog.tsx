@@ -4,19 +4,15 @@ import { Button, Dialog, DialogContentLoading, DialogTrigger, DialogWhenOpen } f
 import { Plus } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
+import { DEFAULT_CURRENCY } from '@/lib/decimal'
 import type { ClassOption } from '../../../_lib/class-options'
+import type { PlanOption } from '../../../_lib/plan-options'
 
 // L'assistant de création ne se charge qu'à l'ouverture du dialogue.
 const CreateFamilyDialogContent = dynamic(
   () => import('./create-family-dialog-content').then((module) => module.CreateFamilyDialogContent),
   { loading: () => <DialogContentLoading /> }
 )
-
-interface PlanOption {
-  id: string
-  name: string
-  amount?: number
-}
 
 export interface CreateFamilyDialogProps {
   defaultOpen?: boolean
@@ -25,6 +21,8 @@ export interface CreateFamilyDialogProps {
   classes?: ClassOption[]
   /** Faux, l'inscription se fait sans formule. */
   paymentsEnabled?: boolean
+  /** Devise de l'école, pour l'échéancier d'une arrivée en cours d'année. */
+  currency?: string
 }
 
 export function CreateFamilyDialog({
@@ -32,6 +30,7 @@ export function CreateFamilyDialog({
   plans = [],
   classes = [],
   paymentsEnabled = true,
+  currency = DEFAULT_CURRENCY,
 }: CreateFamilyDialogProps) {
   const t = useTranslations('dashboard.pages.families.create')
 
@@ -49,6 +48,7 @@ export function CreateFamilyDialog({
           plans={plans}
           classes={classes}
           paymentsEnabled={paymentsEnabled}
+          currency={currency}
         />
       </DialogWhenOpen>
     </Dialog>

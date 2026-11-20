@@ -1,8 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CreateEnrollmentDialog } from './create-enrollment-dialog'
 
-const replace = vi.hoisted(() => vi.fn())
+const { replace, createEnrollmentAction } = vi.hoisted(() => ({
+  replace: vi.fn(),
+  createEnrollmentAction: vi.fn(),
+}))
 vi.mock('next-intl', () => ({
   useLocale: () => 'fr',
   useTranslations: () => (key: string) => key,
@@ -17,9 +20,7 @@ vi.mock('@/i18n/routing', () => ({
 }))
 // Action serveur réelle : exigerait une session et une base, hors de portée d'un test de
 // rendu pur qui ne soumet jamais le formulaire.
-vi.mock('../../../_lib/enrollment-actions', () => ({
-  createEnrollmentAction: vi.fn(),
-}))
+vi.mock('../../../_lib/enrollment-actions', () => ({ createEnrollmentAction }))
 
 const students = [{ id: 'student-1', name: 'Alice Martin' }]
 const plans = [{ id: 'plan-1', name: 'Tarif annuel' }]
@@ -240,5 +241,141 @@ describe('CreateEnrollmentDialog guided selectors', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: /replaceExisting/ }))
     expect(screen.getByRole('button', { name: 'submit' })).toBeEnabled()
+  })
+})
+
+describe('CreateEnrollmentDialog arrival during the year', () => {
+  const monthlyPlans = [
+    {
+      id: 'plan-1',
+      name: 'Mensuel',
+      amount: 1000,
+      paymentSchedule: { mode: 'MONTHLY' as const, firstMonth: 9, count: 10, dueDay: 5 },
+    },
+  ]
+  const periodClasses = [
+    {
+      id: 'class-1',
+      name: 'CE1',
+      periodStartAt: '2026-09-01T00:00:00.000Z',
+      periodEndAt: '2027-06-30T00:00:00.000Z',
+    },
+  ]
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 10, 20, 10))
+    createEnrollmentAction.mockReset().mockResolvedValue({ id: 'enrollment-1' })
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function choose(combobox: string, option: RegExp) {
+    fireEvent.click(screen.getByRole('combobox', { name: combobox }))
+    const item = await screen.findByRole('option', { name: option })
+    fireEvent.pointerDown(item)
+    fireEvent.click(item)
+  }
+
+  it('shows the first month to pay unfolded and sends it with the amount of that month', async () => {
+    render(
+      <CreateEnrollmentDialog
+        students={students}
+        plans={monthlyPlans}
+        classes={periodClasses}
+        paymentsEnabled={true}
+        currency="EUR"
+        defaultStudentId="student-1"
+      />
+    )
+    await openDialog()
+
+    const section = screen.getByRole('group', { name: 'title' })
+    expect(section.closest('details')).toBeNull()
+    expect(screen.getByLabelText('totalAmount')).toHaveValue(1000)
+
+    await choose('startMonth', /Novembre 2026/)
+    expect(screen.getByLabelText('totalAmount')).toHaveValue(800)
+    fireEvent.click(within(section).getByRole('button', { name: 'half' }))
+    expect(screen.getByLabelText('totalAmount')).toHaveValue(750)
+
+    await choose('selectClass', /CE1/)
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+
+    await waitFor(() =>
+      expect(createEnrollmentAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          studentId: 'student-1',
+          planId: 'plan-1',
+          classPeriodId: 'class-1',
+          totalAmount: 750,
+          startMonth: '2026-11',
+          firstInstallmentAmount: 50,
+        })
+      )
+    )
+  })
+
+  it('restores the amount owed for the new period when the class changes period', async () => {
+    render(
+      <CreateEnrollmentDialog
+        students={students}
+        plans={monthlyPlans}
+        classes={[
+          ...periodClasses,
+          {
+            id: 'class-2',
+            name: 'CE2',
+            periodStartAt: '2027-09-01T00:00:00.000Z',
+            periodEndAt: '2028-06-30T00:00:00.000Z',
+          },
+        ]}
+        paymentsEnabled={true}
+        currency="EUR"
+        defaultStudentId="student-1"
+      />
+    )
+    await openDialog()
+
+    await choose('selectClass', /CE1/)
+    await choose('startMonth', /Novembre 2026/)
+    fireEvent.change(screen.getByLabelText('totalAmount'), { target: { value: '750' } })
+    expect(screen.getByLabelText('totalAmount')).toHaveValue(750)
+
+    await choose('selectClass', /CE2/)
+    expect(screen.getByLabelText('totalAmount')).toHaveValue(1000)
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+
+    await waitFor(() =>
+      expect(createEnrollmentAction).toHaveBeenCalledWith(
+        expect.objectContaining({ classPeriodId: 'class-2', totalAmount: 1000 })
+      )
+    )
+    expect(createEnrollmentAction.mock.calls[0][0]).not.toHaveProperty('startMonth', '2026-11')
+  })
+
+  it('offers no arrival section when plans carry no price, as for a non-admin', async () => {
+    render(
+      <CreateEnrollmentDialog
+        students={students}
+        plans={[]}
+        classes={periodClasses}
+        paymentsEnabled={false}
+        currency="EUR"
+        defaultStudentId="student-1"
+      />
+    )
+    await openDialog()
+
+    expect(screen.queryByText('title', { selector: 'legend, summary' })).not.toBeInTheDocument()
+    await choose('selectClass', /CE1/)
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+
+    await waitFor(() =>
+      expect(createEnrollmentAction).toHaveBeenCalledWith(
+        expect.objectContaining({ startMonth: null, firstInstallmentAmount: null })
+      )
+    )
   })
 })

@@ -20,14 +20,14 @@ import { DialogFormActions, RequiredMark, useDialogForm } from '@/features/forms
 import { useRouter } from '@/i18n/routing'
 import { currencyStep, currencySymbol } from '@/lib/decimal'
 import { ClassSelect } from '../../../_components/class-select'
+import {
+  EnrollmentArrivalFields,
+  useEnrollmentArrival,
+} from '../../../_components/enrollment-arrival-fields'
+import { arrivalPeriod } from '../../../_lib/arrival-schedule'
 import type { ClassOption } from '../../../_lib/class-options'
+import type { PlanOption } from '../../../_lib/plan-options'
 import { createStudentAction } from '../../../_lib/student-actions'
-
-interface Option {
-  id: string
-  name: string
-  amount?: number
-}
 
 /**
  * Formulaire de création d'élève, chargé à la première ouverture du dialogue : il ne pèse pas
@@ -73,7 +73,7 @@ function CreateStudentForm({
 }: {
   familyId: string
   familyName?: string
-  plans: Option[]
+  plans: PlanOption[]
   classes: ClassOption[]
   paymentsEnabled: boolean
   currency: string
@@ -88,7 +88,6 @@ function CreateStudentForm({
   const canEnroll = classes.length > 0 && (!paymentsEnabled || plans.length > 0)
   const [enroll, setEnroll] = useState(canEnroll)
   const [planId, setPlanId] = useState(plans[0]?.id ?? '')
-  const [totalAmount, setTotalAmount] = useState(plans[0]?.amount ?? 0)
   const sexItems = [
     { value: null, label: t('unspecified') },
     { value: 'MALE', label: t('male') },
@@ -97,6 +96,11 @@ function CreateStudentForm({
   // Aucune classe présélectionnée : elle se choisit explicitement (#464).
   const [classPeriodId, setClassPeriodId] = useState<string | null>(null)
   const enrolling = enroll && canEnroll
+  const arrival = useEnrollmentArrival(
+    paymentsEnabled && enrolling ? plans.find((plan) => plan.id === planId) : undefined,
+    arrivalPeriod(classes, classPeriodId),
+    currency
+  )
   const missingClass = enrolling && classPeriodId === null
   const planItems = plans.map((p) => ({ value: p.id, label: p.name }))
 
@@ -126,7 +130,8 @@ function CreateStudentForm({
                 ...(paymentsEnabled
                   ? {
                       planId,
-                      totalAmount,
+                      totalAmount: arrival.totalAmount,
+                      ...arrival.input,
                     }
                   : {}),
                 classPeriodId,
@@ -280,10 +285,8 @@ function CreateStudentForm({
                           disabled={isPending}
                           value={planId}
                           onValueChange={(value) => {
-                            const nextPlanId = value ?? ''
-                            const selected = plans.find((plan) => plan.id === nextPlanId)
-                            setPlanId(nextPlanId)
-                            setTotalAmount(selected?.amount ?? 0)
+                            setPlanId(value ?? '')
+                            arrival.changePlan()
                           }}
                         >
                           <SelectTrigger id="student-plan">
@@ -300,6 +303,15 @@ function CreateStudentForm({
                       </div>
                     )}
                   </div>
+                  <EnrollmentArrivalFields
+                    idPrefix="student"
+                    schedule={arrival.schedule}
+                    currency={currency}
+                    firstAmount={arrival.firstAmount}
+                    onStartMonthChange={arrival.changeStartMonth}
+                    onFirstAmountChange={arrival.changeFirstAmount}
+                    disabled={isPending}
+                  />
                   {paymentsEnabled && (
                     <div className="space-y-2">
                       <Label htmlFor="student-total-amount">
@@ -311,8 +323,8 @@ function CreateStudentForm({
                         type="number"
                         step={currencyStep(currency)}
                         min="0"
-                        value={totalAmount}
-                        onChange={(event) => setTotalAmount(Number(event.target.value))}
+                        value={arrival.totalAmount}
+                        onChange={(event) => arrival.setTotalAmount(Number(event.target.value))}
                         disabled={isPending}
                         aria-describedby="student-total-amount-hint"
                       />

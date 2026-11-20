@@ -11,6 +11,9 @@ export interface ClassOption {
   levelName?: string
   /** Nom de la période : affiché dans une option seulement quand plusieurs périodes sont proposées. */
   periodName?: string
+  /** Bornes ISO de la période : situent les échéances d'une formule pour une arrivée en cours d'année. */
+  periodStartAt?: string
+  periodEndAt?: string
   capacity?: number
   /** Places occupées, même prédicat que `reserveClassSeats` (lecture hors verrou). */
   enrolled?: number

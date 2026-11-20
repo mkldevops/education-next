@@ -6,7 +6,11 @@ import { reserveClassSeatsInOrder } from '@/gateways/class-seat-lock'
 import { planGateway } from '@/gateways/plan-gateway'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
-import { resolveEnrollmentPricing } from '@/use-cases/enrollments/pricing'
+import {
+  loadNewEnrollmentArrival,
+  type NewEnrollmentArrival,
+  priceNewEnrollment,
+} from '@/use-cases/enrollments/pricing'
 import { createFullFamilySchema } from './create-full-family-schema'
 
 /**
@@ -50,25 +54,41 @@ export async function createFullFamily(input: Input) {
     enrollments.length > 0 && !input.deferPricing ? await isPaymentsEnabled(schoolId) : false
 
   // Mêmes gardes que `createEnrolledStudent` (FR-017) : formule obligatoire drapeau actif,
-  // ni formule ni remise pendant une coupure des paiements.
+  // ni formule, ni remise, ni mois de début, ni premier mois réduit pendant une coupure des
+  // paiements.
   for (const enrollment of enrollments) {
     if (paymentsEnabled && enrollment.planId === undefined) return 'validationError' as const
-    if (!paymentsEnabled && (enrollment.planId !== undefined || enrollment.discount !== 0)) {
+    if (
+      !paymentsEnabled &&
+      (enrollment.planId !== undefined ||
+        enrollment.discount !== 0 ||
+        enrollment.startMonth !== null ||
+        enrollment.firstInstallmentAmount !== null)
+    ) {
       return 'paymentsDisabled' as const
     }
   }
 
+  // Période de chaque classe visée et devise lues avant la transaction, et seulement pour une
+  // arrivée en cours d'année.
+  const arrivals = new Map<(typeof enrollments)[number], NewEnrollmentArrival>()
+  for (const enrollment of enrollments) {
+    const arrival = await loadNewEnrollmentArrival(schoolId, enrollment.classPeriodId, enrollment)
+    if (arrival === 'notFound') return arrival
+    arrivals.set(enrollment, arrival)
+  }
+
   return db.$transaction(async (tx) => {
     // Une relecture par formule visée, avant toute écriture.
-    const planAmounts = new Map<string, number>()
+    const plans = new Map<string, { amount: unknown; paymentSchedule: unknown }>()
     for (const { planId } of enrollments) {
-      if (!planId || planAmounts.has(planId)) continue
+      if (!planId || plans.has(planId)) continue
       const plan = await tx.plan.findFirst({
         where: { id: planId, schoolId, isActive: true },
-        select: { amount: true },
+        select: { amount: true, paymentSchedule: true },
       })
       if (!plan) return 'notFound' as const
-      planAmounts.set(planId, Number(plan.amount))
+      plans.set(planId, plan)
     }
 
     // Une réservation par classe visée : deux enfants dans la même classe y prennent deux places.
@@ -79,23 +99,30 @@ export async function createFullFamily(input: Input) {
     const seats = await reserveClassSeatsInOrder(tx, schoolId, seatsByClass)
     if (seats !== 'OK') return seats
 
-    const pricings: Array<{ discount: number; totalAmount: number } | null> = []
+    const pricings: Array<{
+      discount: number
+      totalAmount: number
+      startMonth: Date | null
+      firstInstallmentAmount: number | null
+    } | null> = []
     for (const { enrollment } of students) {
       if (!enrollment) {
         pricings.push(null)
         continue
       }
       // Hors drapeau : formule réservée de montant nul, remise déjà refusée non nulle.
-      const planAmount = enrollment.planId ? planAmounts.get(enrollment.planId) : undefined
-      if (planAmount === undefined) {
-        pricings.push({ discount: 0, totalAmount: 0 })
+      const plan = enrollment.planId ? plans.get(enrollment.planId) : undefined
+      const arrival = arrivals.get(enrollment)
+      if (!plan || !arrival) {
+        pricings.push({
+          discount: 0,
+          totalAmount: 0,
+          startMonth: null,
+          firstInstallmentAmount: null,
+        })
         continue
       }
-      const pricing = resolveEnrollmentPricing(
-        planAmount,
-        enrollment.discount,
-        enrollment.totalAmount
-      )
+      const pricing = priceNewEnrollment(plan, arrival, enrollment)
       if (typeof pricing === 'string') return pricing
       pricings.push(pricing)
     }
@@ -156,8 +183,7 @@ export async function createFullFamily(input: Input) {
           schoolId,
           studentId: createdStudent.id,
           planId,
-          totalAmount: pricing.totalAmount,
-          discount: pricing.discount,
+          ...pricing,
           canLeaveAlone: enrollment.canLeaveAlone,
           status: NEW_ENROLLMENT_STATUS,
         },

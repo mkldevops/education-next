@@ -18,6 +18,7 @@ import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { canOpenSchoolCashier, requireSchoolSession } from '../../../_lib/auth-helper'
 import { loadSuggestedLevels } from '../../../_lib/class-options-loader'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
+import { toPlanOption } from '../../../_lib/plan-options'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
 import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
@@ -338,11 +339,7 @@ export default async function StudentDetailPage({ params }: Props) {
                       suggestedLevelId: suggestedLevels.get(student.id) ?? null,
                     },
                   ]}
-                  plans={(isAdmin ? plans : []).map((p) => ({
-                    id: p.id,
-                    name: p.name,
-                    amount: Number(p.amount),
-                  }))}
+                  plans={(isAdmin ? plans : []).map(toPlanOption)}
                   classes={classes}
                   paymentsEnabled={paymentsEnabled}
                   currency={currency}
