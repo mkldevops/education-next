@@ -54,6 +54,7 @@ export async function CollectionChartCard({
   const chart = series.map((point, index) => {
     const date = keyDate(point.key)
     return {
+      id: point.key,
       label: label(date, index),
       value: point.amount,
       tooltip: `${tooltip.format(date)} · ${formatCurrency(point.amount, locale, currency)}`,

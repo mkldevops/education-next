@@ -18,4 +18,17 @@ describe('BarChart', () => {
       expect(screen.getByText(label)).toHaveClass('h-8', 'line-clamp-2', 'text-center')
     }
   })
+
+  it('replaces every bar when the data changes, even with repeated labels', () => {
+    const days = (count: number) =>
+      Array.from({ length: count }, (_, index) => {
+        const id = new Date(Date.UTC(2026, 10, 20 - count + 1 + index)).toISOString().slice(0, 10)
+        return { id, label: String(Number(id.slice(8))), value: index }
+      })
+    const { container, rerender } = render(<BarChart data={days(90)} formatValue={String} />)
+
+    rerender(<BarChart data={days(7)} formatValue={String} />)
+
+    expect(container.querySelectorAll('[title]')).toHaveLength(7)
+  })
 })
