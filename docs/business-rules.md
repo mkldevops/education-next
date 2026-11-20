@@ -1742,9 +1742,14 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
 - **No stale amount.** The start-month write always writes the field: a month changed or cleared
   without an amount resets it to null in the same update. A plan change resets it in the same write
   (`enrollmentGateway.assignPlan`) and reprices on the start month alone. The dialog of the
-  enrollment page shows the field for a monthly plan, disabled until a start month is chosen, shows
-  the enrollment's discount with an option to remove it in the same write, and keeps the
-  `totalBelowPaid` guard.
+  enrollment page shows the field for a monthly plan, disabled until a start month is chosen,
+  empties it as soon as the month changes (an amount typed for one month is never submitted with
+  another), shows the enrollment's discount with an option to remove it in the same write, and
+  keeps the `totalBelowPaid` guard.
+- **It is a financial field.** The enrollments list builds its client payload through
+  `serializeEnrollment` (`enrollments/_lib/serialize-enrollment.ts`): an admin gets plain numbers, a
+  non-admin (staff teacher, parent) gets no total, discount, write-off, reduced first month, plan
+  amount, plan pricing or payment.
 
 ## Plans
 

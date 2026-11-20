@@ -81,6 +81,44 @@ describe('SetStartMonthDialog', () => {
     )
   })
 
+  it('forgets the reduced first month of the previous start month', async () => {
+    setEnrollmentStartMonthAction.mockResolvedValue('OK')
+    renderDialog({ ...monthly, value: '2026-10', firstInstallmentAmount: 5000 })
+
+    expect(firstInstallment()).toHaveValue(5000)
+
+    fireEvent.change(screen.getByLabelText('label'), { target: { value: '2026-12' } })
+
+    expect(firstInstallment()).toHaveValue(null)
+    submit()
+
+    await waitFor(() =>
+      expect(setEnrollmentStartMonthAction).toHaveBeenCalledWith({
+        enrollmentId: 'enrollment-1',
+        startMonth: '2026-12',
+        firstInstallmentAmount: null,
+        removeDiscount: false,
+      })
+    )
+  })
+
+  it('sends the amount typed again after the start month changed', async () => {
+    setEnrollmentStartMonthAction.mockResolvedValue('OK')
+    renderDialog({ ...monthly, value: '2026-10', firstInstallmentAmount: 5000 })
+    fireEvent.change(screen.getByLabelText('label'), { target: { value: '2026-12' } })
+    fireEvent.change(firstInstallment(), { target: { value: '3000' } })
+    submit()
+
+    await waitFor(() =>
+      expect(setEnrollmentStartMonthAction).toHaveBeenCalledWith({
+        enrollmentId: 'enrollment-1',
+        startMonth: '2026-12',
+        firstInstallmentAmount: 3000,
+        removeDiscount: false,
+      })
+    )
+  })
+
   it('does not offer a reduced first month on a plan that is not monthly', () => {
     renderDialog({ ...monthly, monthlyPlan: false })
 

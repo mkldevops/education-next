@@ -74,6 +74,12 @@ function StartMonthForm({
   // A value already set stays editable — and removable — after its plan stopped being monthly.
   const canReduceFirstMonth = startMonth.monthlyPlan || startMonth.firstInstallmentAmount !== null
 
+  // A reduced first month belongs to the month it was typed for: another month starts blank.
+  const changeMonth = (value: string) => {
+    setMonth(value)
+    setFirstAmount('')
+  }
+
   const handleSubmit = onSubmit(
     (formData) =>
       setEnrollmentStartMonthAction({
@@ -99,7 +105,7 @@ function StartMonthForm({
               min={startMonth.min}
               max={startMonth.max}
               value={month}
-              onChange={(event) => setMonth(event.target.value)}
+              onChange={(event) => changeMonth(event.target.value)}
               disabled={isPending}
             />
             <p className="text-sm text-graphite-600">{t('hint')}</p>
