@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const getSchoolContextMock = vi.fn()
 const findFirstMock = vi.fn()
 const isMealsEnabledMock = vi.fn()
+const isPaymentsEnabledMock = vi.fn()
 
 vi.mock('next/navigation', () => ({
   notFound: vi.fn(() => {
@@ -22,10 +23,14 @@ vi.mock('@/lib/school-context', () => ({
     context.roles.includes('ADMIN') || context.staffTeacher === true,
 }))
 vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
+vi.mock('@/use-cases/config/is-payments-enabled', () => ({
+  isPaymentsEnabled: isPaymentsEnabledMock,
+}))
 
 const {
   requireSchoolAdmin,
   canOpenSchoolCashier,
+  requireSchoolCashDay,
   requireSchoolCashier,
   requireSchoolRecordsScope,
   requireSchoolScope,
@@ -46,6 +51,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   findFirstMock.mockResolvedValue({ id: 'teacher-1' })
   isMealsEnabledMock.mockResolvedValue(true)
+  isPaymentsEnabledMock.mockResolvedValue(true)
 })
 
 describe('requireTeacher', () => {
@@ -201,6 +207,72 @@ describe('cashier role', () => {
   it('offers no cashier link when the school has no meals', async () => {
     isMealsEnabledMock.mockResolvedValue(false)
     await expect(canOpenSchoolCashier(member(['ADMIN']) as never)).resolves.toBe(false)
+  })
+
+  describe('day view', () => {
+    it.each([
+      ['an admin', member(['ADMIN']), true],
+      ['a cashier', member(['CASHIER']), false],
+    ])('keeps the day view open to %s of a school with meals', async (_label, value, isAdmin) => {
+      getSchoolContextMock.mockResolvedValue(value)
+      isPaymentsEnabledMock.mockResolvedValue(false)
+      await expect(requireSchoolCashDay()).resolves.toEqual({
+        schoolId: 'school-1',
+        userId: 'user-1',
+        isAdmin,
+      })
+    })
+
+    it('opens the day view to an admin of a tuition-only school', async () => {
+      getSchoolContextMock.mockResolvedValue(member(['ADMIN']))
+      isMealsEnabledMock.mockResolvedValue(false)
+      await expect(requireSchoolCashDay()).resolves.toEqual({
+        schoolId: 'school-1',
+        userId: 'user-1',
+        isAdmin: true,
+      })
+      expect(isPaymentsEnabledMock).toHaveBeenCalledWith('school-1')
+    })
+
+    it('opens it to a super-admin of a tuition-only school', async () => {
+      getSchoolContextMock.mockResolvedValue({ ...member([]), isSuperAdmin: true })
+      isMealsEnabledMock.mockResolvedValue(false)
+      await expect(requireSchoolCashDay()).resolves.toMatchObject({ isAdmin: true })
+    })
+
+    it('answers 404 to an admin of a school with neither meals nor payments', async () => {
+      getSchoolContextMock.mockResolvedValue(member(['ADMIN']))
+      isMealsEnabledMock.mockResolvedValue(false)
+      isPaymentsEnabledMock.mockResolvedValue(false)
+      await expect(requireSchoolCashDay()).rejects.toThrow('NEXT_NOT_FOUND')
+    })
+
+    it.each([
+      ['a cashier', member(['CASHIER'])],
+      ['a cashier-parent', member(['CASHIER', 'PARENT'], 'family-1')],
+      ['a cashier-teacher', member(['CASHIER', 'TEACHER'])],
+      ['a parent', member(['PARENT'], 'family-1')],
+      ['a teacher', member(['TEACHER'])],
+    ])('answers 404 to %s of a tuition-only school', async (_label, value) => {
+      getSchoolContextMock.mockResolvedValue(value)
+      isMealsEnabledMock.mockResolvedValue(false)
+      await expect(requireSchoolCashDay()).rejects.toThrow('NEXT_NOT_FOUND')
+    })
+
+    it.each([
+      ['a parent', member(['PARENT'], 'family-1')],
+      ['a teacher', member(['TEACHER'])],
+    ])('answers 404 to %s of a school with meals', async (_label, value) => {
+      getSchoolContextMock.mockResolvedValue(value)
+      await expect(requireSchoolCashDay()).rejects.toThrow('NEXT_NOT_FOUND')
+    })
+
+    it('leaves the cashier itself closed to the admin of a tuition-only school', async () => {
+      getSchoolContextMock.mockResolvedValue(member(['ADMIN']))
+      isMealsEnabledMock.mockResolvedValue(false)
+      await expect(requireSchoolCashier()).rejects.toThrow('NEXT_NOT_FOUND')
+      await expect(canOpenSchoolCashier(member(['ADMIN']) as never)).resolves.toBe(false)
+    })
   })
 
   // Critère 14 : élèves, familles, classes, annulations et ajustements restent derrière ces
