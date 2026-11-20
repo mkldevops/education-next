@@ -17,7 +17,8 @@ import { InstallmentSchedule } from './installment-schedule'
 /**
  * État d'une arrivée en cours d'année dans un formulaire à une seule inscription. Le total suit
  * la part due de la formule tant que l'administrateur ne l'a pas saisi lui-même ; changer de
- * formule, de premier mois ou de montant du premier mois le ramène à cette part.
+ * formule, de période (classe d'une autre année), de premier mois ou de montant du premier mois
+ * le ramène à cette part.
  */
 export function useEnrollmentArrival(
   plan: PlanOption | undefined,
@@ -28,6 +29,16 @@ export function useEnrollmentArrival(
   const [startMonth, setStartMonth] = useState('')
   const [firstAmount, setFirstAmount] = useState('')
   const [typedTotal, setTypedTotal] = useState<number | null>(null)
+  // Une autre période a d'autres mois et une autre part due : ce qui a été saisi pour l'ancienne
+  // ne vaut plus. Ajusté pendant le rendu, comme le recommande React, plutôt que dans un effet.
+  const periodKey = period ? `${period.startAt}/${period.endAt}` : null
+  const [seenPeriodKey, setSeenPeriodKey] = useState(periodKey)
+  if (periodKey !== seenPeriodKey) {
+    setSeenPeriodKey(periodKey)
+    setStartMonth('')
+    setFirstAmount('')
+    setTypedTotal(null)
+  }
   const owed = arrivalSchedule(plan, period, currency, { startMonth, firstAmount, today })
   const schedule =
     typedTotal === null
@@ -138,6 +149,7 @@ export function EnrollmentArrivalFields({
                 nominal: schedule.nominal,
                 onChange: onFirstAmountChange,
                 disabled,
+                describedBy: hintId,
               }
             : undefined
         }

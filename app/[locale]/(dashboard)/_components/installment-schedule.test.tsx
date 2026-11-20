@@ -44,6 +44,23 @@ describe('InstallmentSchedule', () => {
     expect(screen.getByText('20 novembre 2026')).toBeInTheDocument()
   })
 
+  it('adds the amounts of installments clamped to the same day', () => {
+    render(
+      <InstallmentSchedule
+        installments={[
+          { dueDate: '2027-02-28', amount: 50 },
+          { dueDate: '2027-02-28', amount: 50 },
+        ]}
+        currency="EUR"
+      />
+    )
+
+    const rows = screen.getAllByRole('row')
+    expect(rows).toHaveLength(3)
+    expect(text(rows[1])).toContain('100,00 €')
+    expect(text(rows[2])).toContain('100,00 €')
+  })
+
   it('renders the schedule before and after a change', () => {
     render(
       <InstallmentSchedule

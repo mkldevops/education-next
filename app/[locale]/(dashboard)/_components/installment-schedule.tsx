@@ -32,16 +32,26 @@ interface InstallmentScheduleProps {
 
 type Row = { dueDate: string; before: number | null; after: number | null }
 
-function amountAt(installments: PaymentInstallment[], dueDate: string): number | null {
-  return installments.find((installment) => installment.dueDate === dueDate)?.amount ?? null
+// Deux échéances ramenées au même jour (31 février → 28) partagent une ligne : leurs montants s'y additionnent.
+function amountAt(
+  installments: PaymentInstallment[],
+  dueDate: string,
+  currency: string
+): number | null {
+  const matching = installments.filter((installment) => installment.dueDate === dueDate)
+  return matching.length === 0 ? null : sum(matching, currency)
 }
 
-function scheduleRows(installments: PaymentInstallment[], previous?: PaymentInstallment[]): Row[] {
+function scheduleRows(
+  installments: PaymentInstallment[],
+  currency: string,
+  previous?: PaymentInstallment[]
+): Row[] {
   const dueDates = [...(previous ?? []), ...installments].map((installment) => installment.dueDate)
   return [...new Set(dueDates)].sort().map((dueDate) => ({
     dueDate,
-    before: previous ? amountAt(previous, dueDate) : null,
-    after: amountAt(installments, dueDate),
+    before: previous ? amountAt(previous, dueDate, currency) : null,
+    after: amountAt(installments, dueDate, currency),
   }))
 }
 
@@ -68,7 +78,7 @@ export function InstallmentSchedule({
 }: InstallmentScheduleProps) {
   const t = useTranslations('dashboard.installmentSchedule')
   const locale = useLocale()
-  const rows = scheduleRows(installments, previous)
+  const rows = scheduleRows(installments, currency, previous)
   // Deux échéances du même mois (dates libres) se distinguent par leur jour.
   const months = rows.map((row) => row.dueDate.slice(0, 7))
   const monthLabel = new Intl.DateTimeFormat(

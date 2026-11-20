@@ -317,6 +317,44 @@ describe('CreateEnrollmentDialog arrival during the year', () => {
     )
   })
 
+  it('restores the amount owed for the new period when the class changes period', async () => {
+    render(
+      <CreateEnrollmentDialog
+        students={students}
+        plans={monthlyPlans}
+        classes={[
+          ...periodClasses,
+          {
+            id: 'class-2',
+            name: 'CE2',
+            periodStartAt: '2027-09-01T00:00:00.000Z',
+            periodEndAt: '2028-06-30T00:00:00.000Z',
+          },
+        ]}
+        paymentsEnabled={true}
+        currency="EUR"
+        defaultStudentId="student-1"
+      />
+    )
+    await openDialog()
+
+    await choose('selectClass', /CE1/)
+    await choose('startMonth', /Novembre 2026/)
+    fireEvent.change(screen.getByLabelText('totalAmount'), { target: { value: '750' } })
+    expect(screen.getByLabelText('totalAmount')).toHaveValue(750)
+
+    await choose('selectClass', /CE2/)
+    expect(screen.getByLabelText('totalAmount')).toHaveValue(1000)
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+
+    await waitFor(() =>
+      expect(createEnrollmentAction).toHaveBeenCalledWith(
+        expect.objectContaining({ classPeriodId: 'class-2', totalAmount: 1000 })
+      )
+    )
+    expect(createEnrollmentAction.mock.calls[0][0]).not.toHaveProperty('startMonth', '2026-11')
+  })
+
   it('offers no arrival section when plans carry no price, as for a non-admin', async () => {
     render(
       <CreateEnrollmentDialog

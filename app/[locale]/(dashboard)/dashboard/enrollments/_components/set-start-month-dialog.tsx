@@ -78,6 +78,15 @@ function StartMonthForm({
   // A value already set stays editable — and removable — after its plan stopped being monthly.
   const canReduceFirstMonth = startMonth.monthlyPlan || startMonth.firstInstallmentAmount !== null
   const [removeDiscount, setRemoveDiscount] = useState(false)
+  const submittedStartMonth = month || null
+  const submittedFirstAmount =
+    canReduceFirstMonth && month && firstAmount.trim() !== '' ? Number(firstAmount) : null
+  // Same rule as `setEnrollmentStartMonth`: an unchanged submission writes nothing, so the
+  // preview keeps the stored schedule instead of repricing it from the plan's current amount.
+  const unchanged =
+    submittedStartMonth === startMonth.value &&
+    submittedFirstAmount === startMonth.firstInstallmentAmount &&
+    (!removeDiscount || discount === 0)
   const preview = startMonth.schedule
     ? startMonthPreview(
         {
@@ -87,7 +96,7 @@ function StartMonthForm({
         },
         currency,
         {
-          startMonth: month || null,
+          startMonth: submittedStartMonth,
           firstAmount: canReduceFirstMonth ? firstAmount : '',
           discount: removeDiscount ? 0 : discount,
         }
@@ -107,9 +116,8 @@ function StartMonthForm({
     () =>
       setEnrollmentStartMonthAction({
         enrollmentId,
-        startMonth: month || null,
-        firstInstallmentAmount:
-          canReduceFirstMonth && month && firstAmount.trim() !== '' ? Number(firstAmount) : null,
+        startMonth: submittedStartMonth,
+        firstInstallmentAmount: submittedFirstAmount,
         removeDiscount,
       }),
     { onSuccess: () => router.refresh() }
@@ -137,7 +145,7 @@ function StartMonthForm({
           {preview && (
             <div className="space-y-2">
               <InstallmentSchedule
-                installments={preview.installments}
+                installments={unchanged ? preview.previous : preview.installments}
                 previous={preview.previous}
                 currency={currency}
                 firstInstallment={

@@ -542,6 +542,7 @@ function CreateFamilyWizard({
                           onFirstAmountChange={(firstAmount) =>
                             updateChild(child.key, { firstAmount })
                           }
+                          disabled={isPending}
                         />
                       )}
                     </div>

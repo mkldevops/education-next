@@ -180,6 +180,26 @@ describe('SetStartMonthDialog', () => {
     )
   })
 
+  it('keeps the stored schedule while the inputs match the stored values', () => {
+    // The plan now costs 120 000, but the stored total is 100 000: nothing is repriced until a
+    // value changes, as `setEnrollmentStartMonth` writes nothing for an unchanged submission.
+    renderDialog({
+      ...monthly,
+      schedule: {
+        planAmount: 120000,
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 5 },
+        periodStartAt: '2026-09-01T00:00:00.000Z',
+        totalAmount: 100000,
+      },
+    })
+
+    expect(screen.queryByText('becomes')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('row').at(-1)).toHaveTextContent(/total.*100.000/)
+
+    fireEvent.change(screen.getByLabelText('label'), { target: { value: '2026-09' } })
+    expect(screen.getAllByRole('row').at(-1)).toHaveTextContent(/total.*100.000.*120.000/)
+  })
+
   it('hides the discount option from an enrollment without a discount', () => {
     renderDialog(monthly)
 
