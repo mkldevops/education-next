@@ -322,6 +322,8 @@ export const mcpListAttendanceCallsSchema = z.object({
   classPeriodId: z.uuid().optional(),
 })
 
+export const mcpRefreshAttendanceRosterSchema = z.object({ sessionId: z.uuid() })
+
 export const mcpListClassScheduleSlotsSchema = z.object({ periodId: z.uuid() })
 export const mcpCreateClassScheduleSlotSchema = createClassScheduleSlotSchema.omit({
   schoolId: true,

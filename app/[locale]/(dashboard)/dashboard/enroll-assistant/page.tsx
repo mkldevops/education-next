@@ -6,6 +6,8 @@ import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { resolveAiAssistantModel } from '@/domain/ai-assistant'
 import { Link } from '@/i18n/routing'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
+import { getAssistantBriefing } from '@/use-cases/ai-assistant/assistant-briefing'
 import { isAiAssistantEnabled } from '@/use-cases/platform-settings/is-ai-assistant-enabled'
 import { getOpenRouterKeyStatus } from '@/use-cases/platform-settings/openrouter-api-key'
 import { AssistantChat } from '../../_components/ai-chat/assistant-chat'
@@ -36,6 +38,9 @@ export default async function EnrollAssistantPage({ params }: Props) {
   const tBreadcrumbs = await getTranslations('dashboard.breadcrumbs')
 
   const keyStatus = await getOpenRouterKeyStatus()
+  // Non attendu : les cartes du jour arrivent sous Suspense, sans retarder la page.
+  const briefing = keyStatus === 'configured' ? getAssistantBriefing(schoolId) : null
+  const { currency } = await getSchoolRegionalSettings(schoolId)
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,12 +53,13 @@ export default async function EnrollAssistantPage({ params }: Props) {
         ]}
       />
 
-      {keyStatus === 'configured' ? (
+      {briefing ? (
         <AssistantChat
           key={schoolId}
           model={resolveAiAssistantModel(process.env.AI_ASSISTANT_MODEL)}
           className="h-[calc(100dvh-18rem)] min-h-112"
           listClassName="max-h-none flex-1"
+          welcome={{ briefing, currency }}
         />
       ) : (
         <EmptyState

@@ -86,6 +86,7 @@
       "passkeyError": "La connexion par clé d'accès a échoué, réessayez",
       "signInWithGoogle": "Se connecter avec Google",
       "googleError": "La connexion Google a échoué, réessayez",
+      "googleNoAccount": "Aucun compte n'est associé à cette adresse Google. Demandez une invitation à votre école.",
       "subtitleSchool": "Connectez-vous à l'espace de {schoolName}.",
       "emailPlaceholder": "vous@exemple.fr",
       "submitting": "Connexion…",
@@ -3833,7 +3834,6 @@
         "attachHint": "{count} fichiers (PNG, JPEG, WebP, PDF), {size} Mo chacun",
         "removeImage": "Retirer la pièce jointe",
         "imageAlt": "Photo jointe {index}",
-        "reset": "Nouvelle conversation",
         "thinking": "L'assistant travaille…",
         "you": "Vous",
         "assistant": "Assistant",
@@ -3892,6 +3892,45 @@
           "none": "Aucune famille trouvée.",
           "hint": "La famille choisie sert de contexte à toute la conversation.",
           "clear": "Retirer la famille {name}"
+        },
+        "welcome": {
+          "title": "Bonjour, que fait-on aujourd'hui ?",
+          "subtitle": "Je prépare, vous validez : aucune écriture ne part sans votre accord.",
+          "today": {
+            "title": "À traiter aujourd'hui",
+            "none": "Rien d'urgent aujourd'hui. Une idée pour commencer :",
+            "overdue": {
+              "title": "{count, plural, one {# famille en retard} other {# familles en retard}}",
+              "detail": "{amount} à recouvrer",
+              "action": "Préparer les relances",
+              "prompt": "Liste les familles en retard de paiement avec le montant dû par chacune, de la plus grosse dette à la plus petite."
+            },
+            "calls": {
+              "title": "{count, plural, one {# appel ouvert} other {# appels ouverts}}",
+              "action": "Faire le point",
+              "prompt": "Quels appels sont encore ouverts aujourd'hui ? Ajoute à chacun les élèves inscrits depuis son ouverture."
+            },
+            "enrollments": {
+              "title": "{count, plural, one {# inscription en attente} other {# inscriptions en attente}}",
+              "detail": "À activer depuis la page des inscriptions",
+              "action": "Ouvrir les inscriptions"
+            }
+          },
+          "recent": {
+            "title": "Récentes",
+            "all": "Tout voir",
+            "loadError": "Cette conversation n'est plus disponible."
+          }
+        },
+        "compact": {
+          "heavy": "La conversation devient longue : l'assistant risque de perdre le fil ou de la refuser.",
+          "blocked": "Cette conversation est trop chargée pour continuer.",
+          "action": "Continuer dans une nouvelle conversation résumée",
+          "working": "Résumé en cours…",
+          "failed": "Le résumé a échoué : réessayez, ou commencez une nouvelle conversation.",
+          "seedQuestion": "Suite de la conversation « {title} »",
+          "seedHeading": "Résumé de la conversation précédente (les actions non validées ne sont pas faites) :",
+          "untitled": "précédente"
         }
       },
       "tools": {

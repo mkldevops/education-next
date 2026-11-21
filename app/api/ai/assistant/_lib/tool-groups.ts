@@ -69,7 +69,7 @@ export const TOOL_GROUPS = {
     ],
   },
   schedule: {
-    label: 'weekly class schedule, events, attendance calls',
+    label: 'weekly class schedule, events, attendance calls (incl. adding new students to a call)',
     tools: [
       'list_class_schedule_slots',
       'create_class_schedule_slot',
@@ -83,6 +83,7 @@ export const TOOL_GROUPS = {
       'update_event',
       'duplicate_event',
       'list_attendance_calls',
+      'refresh_attendance_roster',
     ],
   },
   meals: {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
+import { syncOpenAttendanceRosters } from '@/use-cases/attendance/attendance-roster'
 import {
   archiveStudent,
   type archiveStudentSchema,
@@ -33,7 +34,7 @@ type NewStudentEnrollment = z.input<typeof createEnrolledStudentSchema>['enrollm
 export async function createStudentAction(
   data: Omit<CreateStudentInput, 'schoolId'> & { enrollment?: NewStudentEnrollment }
 ) {
-  const { schoolId, isAdmin } = await requireSchoolStaff()
+  const { schoolId, userId, isAdmin } = await requireSchoolStaff()
   const { enrollment, ...student } = data
 
   if (enrollment) {
@@ -44,6 +45,11 @@ export async function createStudentAction(
       deferPricing: !isAdmin,
     })
     if (typeof result === 'string') return result
+    await syncOpenAttendanceRosters({
+      schoolId,
+      actorId: userId,
+      enrollmentIds: [result.enrollmentId],
+    })
     revalidatePath('/dashboard/students')
     revalidatePath(`/dashboard/families/${data.familyId}`)
     revalidatePath('/dashboard/enrollments')

@@ -86,6 +86,7 @@
       "passkeyError": "Passkey sign-in failed, please try again",
       "signInWithGoogle": "Sign in with Google",
       "googleError": "Google sign-in failed, please try again",
+      "googleNoAccount": "No account is linked to this Google address. Ask your school for an invitation.",
       "subtitleSchool": "Sign in to the {schoolName} space.",
       "emailPlaceholder": "you@example.com",
       "submitting": "Signing in…",
@@ -3832,7 +3833,6 @@
         "attachHint": "{count} files (PNG, JPEG, WebP, PDF), {size} MB each",
         "removeImage": "Remove the attachment",
         "imageAlt": "Attached photo {index}",
-        "reset": "New conversation",
         "thinking": "The assistant is working…",
         "you": "You",
         "assistant": "Assistant",
@@ -3891,6 +3891,45 @@
           "none": "No family found.",
           "hint": "The chosen family is the context of the whole conversation.",
           "clear": "Remove the family {name}"
+        },
+        "welcome": {
+          "title": "Hello, what are we doing today?",
+          "subtitle": "I prepare, you approve: no change is made without your consent.",
+          "today": {
+            "title": "To handle today",
+            "none": "Nothing urgent today. An idea to start:",
+            "overdue": {
+              "title": "{count, plural, one {# family overdue} other {# families overdue}}",
+              "detail": "{amount} to collect",
+              "action": "Prepare reminders",
+              "prompt": "List the families with overdue payments and the amount each one owes, largest debt first."
+            },
+            "calls": {
+              "title": "{count, plural, one {# open call} other {# open calls}}",
+              "action": "Review them",
+              "prompt": "Which attendance calls are still open today? Add to each one the students enrolled since it was opened."
+            },
+            "enrollments": {
+              "title": "{count, plural, one {# pending enrollment} other {# pending enrollments}}",
+              "detail": "To activate from the enrollments page",
+              "action": "Open enrollments"
+            }
+          },
+          "recent": {
+            "title": "Recent",
+            "all": "See all",
+            "loadError": "This conversation is no longer available."
+          }
+        },
+        "compact": {
+          "heavy": "This conversation is getting long: the assistant may lose track or refuse it.",
+          "blocked": "This conversation is too heavy to continue.",
+          "action": "Continue in a new summarized conversation",
+          "working": "Summarizing…",
+          "failed": "The summary failed: try again, or start a new conversation.",
+          "seedQuestion": "Continuation of the conversation “{title}”",
+          "seedHeading": "Summary of the previous conversation (actions not validated were not done):",
+          "untitled": "previous"
         }
       },
       "tools": {

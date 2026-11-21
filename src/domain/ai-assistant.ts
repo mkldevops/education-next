@@ -89,3 +89,129 @@ export const AI_ASSISTANT_DATA_URL_PREFIX =
 export const AI_ASSISTANT_MAX_IMAGE_BASE64_LENGTH = Math.ceil(
   (AI_ASSISTANT_LIMITS.maxImageBytes / 3) * 4
 )
+
+/** Part de chaque borne de conversation au-delà de laquelle le résumé est proposé. */
+const HEAVY_SHARE = 0.75
+
+type LoadMessage = { role: string; parts: ReadonlyArray<{ type: string }> }
+
+export type AssistantContextLoad = {
+  heavy: boolean
+  /** Résultats d'outils rejoués proches de leur budget : seule cause de `messageTooLong` qui tient à l'historique. */
+  toolBudget: boolean
+}
+
+/**
+ * Charge d'une conversation au regard des bornes de `normalizeChatMessages`. Chaque tour
+ * renvoie tout l'historique : près d'une borne, la conversation sera bientôt refusée et
+ * l'assistant propose de la poursuivre dans une nouvelle, résumée.
+ */
+export function assistantContextLoad(messages: readonly LoadMessage[]): AssistantContextLoad {
+  let attachments = 0
+  let toolChars = 0
+  for (const message of messages) {
+    for (const part of message.parts) {
+      if (part.type === 'file') attachments += 1
+      else if (message.role === 'assistant' && part.type.startsWith('tool-')) {
+        toolChars += JSON.stringify(part).length
+      }
+    }
+  }
+  const toolBudget = toolChars >= AI_ASSISTANT_LIMITS.maxToolReplayChars * HEAVY_SHARE
+  const heavy =
+    toolBudget ||
+    messages.length >= AI_ASSISTANT_LIMITS.maxMessages * HEAVY_SHARE ||
+    attachments >= AI_ASSISTANT_LIMITS.maxImagesPerRequest * HEAVY_SHARE
+  return { heavy, toolBudget }
+}
+
+export const AI_ASSISTANT_SUMMARY_LIMITS = {
+  /** Messages lus pour le résumé : les plus récents, la borne d'une requête de chat n'y joue pas. */
+  maxMessages: 200,
+  /** Transcription envoyée au modèle ; au-delà, les messages les plus anciens tombent. */
+  maxTranscriptChars: 80_000,
+  /** Extrait d'entrée ou de résultat d'outil gardé par appel. */
+  maxToolExcerptChars: 600,
+  /** Le résumé amorce un message d'assistant, borné comme tout texte par `maxTextChars`. */
+  maxSummaryChars: 6_000,
+  maxOutputTokens: 6_000,
+  maxReasoningTokens: 1_500,
+  timeoutMs: 60 * 1000,
+} as const
+
+type UnknownRecord = Record<string, unknown>
+
+const isRecord = (value: unknown): value is UnknownRecord =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const excerpt = (value: unknown) => {
+  if (value === undefined) return ''
+  const text = typeof value === 'string' ? value : JSON.stringify(value)
+  const max = AI_ASSISTANT_SUMMARY_LIMITS.maxToolExcerptChars
+  return text.length > max ? `${text.slice(0, max)}…` : text
+}
+
+/**
+ * Ce qu'est devenu un appel d'outil. Le résumé ne doit jamais présenter une proposition
+ * comme faite : seul un résultat obtenu sans refus est `executed`.
+ */
+function toolOutcome(part: UnknownRecord) {
+  const approval = isRecord(part.approval) ? part.approval.approved : undefined
+  switch (part.state) {
+    case 'output-available':
+      return approval === false ? 'refused' : 'executed'
+    case 'output-error':
+      return 'failed'
+    case 'output-denied':
+      return 'refused'
+    case 'approval-requested':
+    case 'approval-responded':
+      return 'awaiting-validation-not-done'
+    default:
+      return 'not-done'
+  }
+}
+
+function transcriptLine(role: 'user' | 'assistant', part: unknown) {
+  if (!isRecord(part) || typeof part.type !== 'string') return null
+  const who = role === 'user' ? 'ADMIN' : 'ASSISTANT'
+  if (part.type === 'text' && typeof part.text === 'string' && part.text.trim()) {
+    return `${who}: ${part.text.trim()}`
+  }
+  if (part.type === 'file') {
+    const name = typeof part.filename === 'string' ? part.filename.slice(0, 120) : 'file'
+    return `${who}: [attachment ${name}, not available anymore]`
+  }
+  if (role === 'assistant' && part.type.startsWith('tool-')) {
+    const name = part.type.slice('tool-'.length).slice(0, 80)
+    const output = part.state === 'output-error' ? part.errorText : part.output
+    return `TOOL ${name} [${toolOutcome(part)}] input=${excerpt(part.input)} result=${excerpt(output)}`
+  }
+  return null
+}
+
+/**
+ * Transcription texte d'une conversation pour son résumé : texte, pièces jointes nommées,
+ * chaque appel d'outil avec son issue. Les plus anciens messages tombent d'abord.
+ */
+export function assistantSummaryTranscript(
+  messages: ReadonlyArray<{ role: 'user' | 'assistant'; parts: readonly unknown[] }>
+) {
+  const blocks = messages
+    .map((message) =>
+      message.parts
+        .map((part) => transcriptLine(message.role, part))
+        .filter((line): line is string => line !== null)
+        .join('\n')
+    )
+    .filter(Boolean)
+  const kept: string[] = []
+  let size = 0
+  for (let index = blocks.length - 1; index >= 0; index -= 1) {
+    const block = blocks[index]
+    if (size + block.length > AI_ASSISTANT_SUMMARY_LIMITS.maxTranscriptChars) break
+    kept.unshift(block)
+    size += block.length + 2
+  }
+  return kept.join('\n\n')
+}

@@ -20,6 +20,8 @@ type Props = {
   passkeyEnabled: boolean
   /** Chemin interne déjà assaini par la page (`safeRedirectPath`). */
   redirectTo?: string
+  /** Message d'un échec OAuth renvoyé sur `/login?error=…`. */
+  initialError?: string
 }
 
 type PendingMethod = 'password' | 'google' | 'passkey'
@@ -30,10 +32,11 @@ export function LoginForm({
   googleEnabled,
   passkeyEnabled,
   redirectTo = DEFAULT_AUTH_REDIRECT,
+  initialError,
 }: Props) {
   const t = useTranslations('auth.login')
   const router = useRouter()
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(initialError ?? null)
   const [pending, setPending] = useState<PendingMethod | null>(null)
 
   const hasAlternatives = googleEnabled || passkeyEnabled

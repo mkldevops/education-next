@@ -12,7 +12,6 @@ import {
 import { after, NextResponse } from 'next/server'
 import { AI_ASSISTANT_LIMITS, resolveAiAssistantModel } from '@/domain/ai-assistant'
 import { getSelectedPeriod } from '@/features/dashboard/period'
-import { createRateLimiter } from '@/lib/rate-limit'
 import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 import { normalizeChatMessages } from '@/use-cases/ai-assistant/normalize-chat-messages'
 import { sanitizeImage } from '@/use-cases/ai-assistant/sanitize-image'
@@ -27,6 +26,7 @@ import { isSameOriginJsonRequest } from '../_lib/same-origin'
 import { buildAssistantTools, toolApprovalSecret } from './_lib/assistant-tools'
 import { prepareAssistantStep } from './_lib/commit-after-preview'
 import { writeTurnWithContinuations } from './_lib/continue-truncated'
+import { isAssistantUserRateLimited } from './_lib/rate-limit'
 import { buildAssistantSystemPrompt } from './_lib/system-prompt'
 
 export const runtime = 'nodejs'
@@ -44,11 +44,6 @@ const REFUSAL_STATUS = {
 } as const
 
 const PAGE_PATTERN = /^\/[\w\-/]{0,200}$/
-
-const isUserRateLimited = createRateLimiter({
-  limit: AI_ASSISTANT_LIMITS.requestsPerMinute,
-  windowMs: 60 * 1000,
-})
 
 function denied(error: string, status: number) {
   return NextResponse.json({ error }, { status })
@@ -93,7 +88,7 @@ export async function POST(request: Request) {
     const apiKey = await readOpenRouterApiKey()
     if (apiKey === null) return denied('aiAssistantNotConfigured', 503)
 
-    if (isUserRateLimited(`${context.userId}:${context.schoolId}`)) {
+    if (isAssistantUserRateLimited(`${context.userId}:${context.schoolId}`)) {
       return denied('tooManyRequests', 429)
     }
 
