@@ -26,6 +26,8 @@ vi.mock('@/gateways/mcp-draft-gateway', () => ({
 vi.mock('@/lib/db', () => ({ db: { $transaction: transaction } }))
 const issueTuitionReceipt = vi.fn()
 vi.mock('@/use-cases/receipts/issue-tuition-receipt', () => ({ issueTuitionReceipt }))
+const syncOpenAttendanceRosters = vi.fn()
+vi.mock('@/use-cases/attendance/attendance-roster', () => ({ syncOpenAttendanceRosters }))
 
 const { commitEnrollFamily } = await import('./commit-enroll-family')
 
@@ -123,6 +125,19 @@ describe('commitEnrollFamily', () => {
         idempotencyKey: `mcp:${input.draftId}`,
         payments: [{ id: 'payment-1', amount: 100 }],
       })
+    )
+  })
+
+  it('adds the new students to the calls of their class still in progress, after the commit', async () => {
+    await commitEnrollFamily(scope, input)
+
+    expect(syncOpenAttendanceRosters).toHaveBeenCalledWith({
+      schoolId: 'school-1',
+      actorId: 'user-1',
+      enrollmentIds: ['enrollment-1'],
+    })
+    expect(syncOpenAttendanceRosters.mock.invocationCallOrder[0]).toBeGreaterThan(
+      transaction.mock.invocationCallOrder[0]
     )
   })
 
@@ -602,6 +617,7 @@ describe('commitEnrollFamily', () => {
 
     expect(await commitEnrollFamily(scope, input)).toEqual({ familyId: 'family-1' })
     expect(transaction).not.toHaveBeenCalled()
+    expect(syncOpenAttendanceRosters).not.toHaveBeenCalled()
   })
 
   it('refuses a checksum that does not match the plan the caller was shown', async () => {

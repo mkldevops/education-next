@@ -100,6 +100,11 @@ export const auth = betterAuth({
       allowDifferentEmails: true,
     },
   },
+  // Un échec OAuth (compte Google inconnu, état expiré…) revient sur la page de
+  // connexion avec `?error=<code>` au lieu de la page d'erreur brute de Better Auth.
+  onAPIError: {
+    errorURL: '/login',
+  },
   advanced: {
     cookiePrefix: 'education-next',
   },

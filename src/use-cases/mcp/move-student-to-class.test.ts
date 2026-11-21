@@ -3,12 +3,13 @@ import { moveStudentToClassFromMcp } from './move-student-to-class'
 
 const ENROLLMENT = '11111111-1111-4111-8111-111111111111'
 const CLASS = '22222222-2222-4222-8222-222222222222'
-const scope = { schoolId: 'school-1' }
+const scope = { schoolId: 'school-1', userId: 'user-1' }
 
 function deps(reassignResult: unknown = 'OK', candidates: Array<{ id: string }> = []) {
   return {
     reassign: vi.fn().mockResolvedValue(reassignResult),
     findOpen: vi.fn().mockResolvedValue(candidates),
+    syncAttendance: vi.fn().mockResolvedValue(0),
   }
 }
 
@@ -27,6 +28,11 @@ describe('moveStudentToClassFromMcp', () => {
       schoolId: 'school-1',
       enrollmentId: ENROLLMENT,
       newClassPeriodId: CLASS,
+    })
+    expect(d.syncAttendance).toHaveBeenCalledWith({
+      schoolId: 'school-1',
+      actorId: 'user-1',
+      enrollmentIds: [ENROLLMENT],
     })
     expect(result).toEqual({ enrollmentId: ENROLLMENT, classPeriodId: CLASS })
   })

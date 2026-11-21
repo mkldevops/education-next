@@ -4,6 +4,7 @@ import { startMonthToDate } from '@/domain/payment-schedule'
 import { reserveClassSeatsInOrder } from '@/gateways/class-seat-lock'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { lockActiveFamily } from '@/gateways/family-mutation-lock'
+import { syncOpenAttendanceRosters } from '@/use-cases/attendance/attendance-roster'
 import { issueTuitionReceipt } from '@/use-cases/receipts/issue-tuition-receipt'
 import { claimResolved, commitInTransaction, releaseDraft } from './claim-draft'
 import type { DraftScope } from './draft-scope'
@@ -100,7 +101,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
   // Une seule transaction, avec des appels `tx.*` directs : aucune passerelle n'accepte
   // un client injecté, et enchaîner les use cases laisserait une famille orpheline au
   // premier échec. Précédent du dépôt : `create-enrollment.ts`.
-  return commitInTransaction(schoolId, draftId, async (tx) => {
+  const committed = await commitInTransaction(schoolId, draftId, async (tx) => {
     const existingFamilyId = 'id' in resolved.family ? resolved.family.id : null
     if (existingFamilyId && !(await lockActiveFamily(tx, schoolId, existingFamilyId))) {
       return 'notFound' as const
@@ -324,4 +325,12 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
 
     return written
   })
+  if (typeof committed !== 'string') {
+    await syncOpenAttendanceRosters({
+      schoolId,
+      actorId: scope.userId,
+      enrollmentIds: committed.enrollmentIds,
+    })
+  }
+  return committed
 }

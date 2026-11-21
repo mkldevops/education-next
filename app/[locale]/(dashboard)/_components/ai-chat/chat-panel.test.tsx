@@ -13,7 +13,6 @@ const { ChatPanel } = await import('./chat-panel')
 
 const onSend = vi.fn()
 const onStop = vi.fn()
-const onReset = vi.fn()
 
 function renderPanel(props: Partial<Parameters<typeof ChatPanel>[0]> = {}) {
   return render(
@@ -25,7 +24,6 @@ function renderPanel(props: Partial<Parameters<typeof ChatPanel>[0]> = {}) {
       providerNotice="notice"
       onSend={onSend}
       onStop={onStop}
-      onReset={onReset}
       {...props}
     />
   )
@@ -38,6 +36,50 @@ beforeEach(() => {
 })
 
 describe('ChatPanel', () => {
+  it('lets the welcome place the single composer while the conversation is empty', () => {
+    renderPanel({
+      suggestions: ['Inscrire'],
+      welcome: ({ composer, pick }) => (
+        <div data-testid="welcome">
+          <button type="button" onClick={() => pick('Relances')}>
+            card
+          </button>
+          {composer}
+        </div>
+      ),
+    })
+
+    expect(screen.queryByText('emptyTitle')).not.toBeInTheDocument()
+    expect(screen.getAllByPlaceholderText('placeholder')).toHaveLength(1)
+    const input = screen.getByPlaceholderText('placeholder')
+    expect(screen.getByTestId('welcome')).toContainElement(input)
+    fireEvent.click(screen.getByText('card'))
+    expect(input).toHaveValue('Relances')
+    expect(input).toHaveFocus()
+  })
+
+  it('drops the welcome once the conversation has messages', () => {
+    renderPanel({
+      welcome: () => <p>welcome</p>,
+      messages: [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Bonjour' }] }],
+    })
+
+    expect(screen.queryByText('welcome')).not.toBeInTheDocument()
+    expect(screen.getByPlaceholderText('placeholder')).toBeInTheDocument()
+  })
+
+  it('shows the notice above the composer and starts from the initial text', () => {
+    renderPanel({ notice: <p>heavy</p>, initialText: 'Inscris Yusri' })
+
+    expect(screen.getByPlaceholderText('placeholder')).toHaveValue('Inscris Yusri')
+    const notice = screen.getByText('heavy')
+    const form = screen.getByPlaceholderText('placeholder').closest('form')
+    expect(form).not.toBeNull()
+    expect(
+      notice.compareDocumentPosition(form as Node) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  })
+
   it('keeps the send button disabled until there is text or a photo', () => {
     renderPanel()
 
@@ -144,7 +186,7 @@ describe('ChatPanel', () => {
     expect(onSend).not.toHaveBeenCalled()
   })
 
-  it('offers stop while streaming and reset once a conversation exists', () => {
+  it('offers stop while streaming and send once ready', () => {
     const { rerender } = renderPanel({ status: 'streaming' })
 
     fireEvent.click(screen.getByRole('button', { name: 'stop' }))
@@ -160,13 +202,11 @@ describe('ChatPanel', () => {
         providerNotice="notice"
         onSend={onSend}
         onStop={onStop}
-        onReset={onReset}
       />
     )
 
     expect(screen.getByText('Bonjour')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'reset' }))
-    expect(onReset).toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'send' })).toBeInTheDocument()
   })
 
   it('flags a received proposal in the thread and surfaces the error', async () => {
@@ -221,7 +261,6 @@ describe('ChatPanel', () => {
         providerNotice="notice"
         onSend={onSend}
         onStop={onStop}
-        onReset={onReset}
       />
     )
 

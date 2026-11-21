@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
 import { personGateway } from '@/gateways/person-gateway'
+import { syncOpenAttendanceRosters } from '@/use-cases/attendance/attendance-roster'
 import { addPersonToFamily } from '@/use-cases/families/add-person-to-family'
 import { createFullFamily } from '@/use-cases/families/create-full-family'
 import type { createFullFamilySchema } from '@/use-cases/families/create-full-family-schema'
@@ -40,6 +41,11 @@ export async function createFamilyAction(data: Omit<CreateFamilyInput, 'schoolId
     deferPricing: !isAdmin,
   })
   if (typeof result === 'string') return result
+  await syncOpenAttendanceRosters({
+    schoolId,
+    actorId: userId,
+    enrollmentIds: result.enrollmentIds,
+  })
   revalidatePath('/dashboard/families')
   if (result.studentIds.length > 0) {
     revalidatePath('/dashboard/students')

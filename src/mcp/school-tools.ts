@@ -45,6 +45,7 @@ import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
 import { previewRecordTeacherExpense } from '@/use-cases/mcp/preview-record-teacher-expense'
 import { previewSplitFamily } from '@/use-cases/mcp/preview-split-family'
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
+import { refreshAttendanceRosterFromMcp } from '@/use-cases/mcp/refresh-attendance-roster'
 import {
   commitDraftSchema,
   MCP_ATTENDANCE_RANGE_MAX_DAYS,
@@ -72,6 +73,7 @@ import {
   mcpListEventsSchema,
   mcpListFamiliesSchema,
   mcpMoveStudentToClassSchema,
+  mcpRefreshAttendanceRosterSchema,
   mcpResourceIdSchema,
   mcpUpdateClassScheduleSlotSchema,
   mcpUpdateEventSchema,
@@ -319,8 +321,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       kind: 'write',
       run: (args) => commitClassSchedule(scope, args),
     }),
-    // Lecture seule : ouvrir, saisir, valider ou annuler un appel reste une action du
-    // tableau de bord.
+    // Ouvrir, saisir, valider ou annuler un appel reste une action du tableau de bord ; seul
+    // l'ajout des élèves inscrits depuis l'ouverture passe aussi par ici.
     define({
       name: 'list_attendance_calls',
       title: 'Suivi des appels',
@@ -339,6 +341,21 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       annotations: { readOnlyHint: true, openWorldHint: false },
       kind: 'read',
       run: (args) => listAttendanceCallsFromMcp(scope, args),
+    }),
+    define({
+      name: 'refresh_attendance_roster',
+      title: "Actualiser la liste d'un appel",
+      description:
+        'Ajoute à un appel en cours les élèves inscrits dans sa classe depuis son ouverture, comme ' +
+        'le bouton « Actualiser la liste des élèves » de la page d’appel. `sessionId` est celui ' +
+        "d'un appel `IN_PROGRESS` de `list_attendance_calls`. Les élèves ajoutés arrivent non " +
+        'saisis ; les présences déjà saisies ne bougent pas. Rend `added` (élèves ajoutés, vide si ' +
+        "la liste était à jour). Refus : `notConfigured`, `notFound` (appel absent ou d'une autre " +
+        'école), `invalidTransition` (appel validé ou annulé), `validationError`.',
+      inputSchema: mcpRefreshAttendanceRosterSchema,
+      annotations: IDEMPOTENT_WRITE,
+      kind: 'write',
+      run: (args) => refreshAttendanceRosterFromMcp(scope, args),
     }),
   ]
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { z } from 'zod'
+import { syncOpenAttendanceRosters } from '@/use-cases/attendance/attendance-roster'
 import { activateEnrollment } from '@/use-cases/enrollments/activate-enrollment'
 import { applyDiscount } from '@/use-cases/enrollments/apply-discount'
 import { cancelEnrollment } from '@/use-cases/enrollments/cancel-enrollment'
@@ -32,9 +33,10 @@ type SetEnrollmentPlanInput = Omit<z.infer<typeof setEnrollmentPlanSchema>, 'sch
 type SetEnrollmentStartMonthInput = Omit<z.input<typeof setEnrollmentStartMonthSchema>, 'schoolId'>
 
 export async function createEnrollmentAction(data: CreateEnrollmentInput) {
-  const { schoolId, isAdmin } = await requireSchoolStaff()
+  const { schoolId, userId, isAdmin } = await requireSchoolStaff()
   const result = await createEnrollment({ ...data, schoolId, deferPricing: !isAdmin })
   if (typeof result === 'string') return result
+  await syncOpenAttendanceRosters({ schoolId, actorId: userId, enrollmentIds: [result.id] })
   revalidatePath('/dashboard/enrollments')
   revalidatePath('/dashboard/families', 'layout')
   revalidatePath('/dashboard/students', 'layout')
@@ -44,9 +46,10 @@ export async function createEnrollmentAction(data: CreateEnrollmentInput) {
 }
 
 export async function activateEnrollmentAction(data: ActivateEnrollmentInput) {
-  const { schoolId } = await requireSchoolStaff()
+  const { schoolId, userId } = await requireSchoolStaff()
   const result = await activateEnrollment({ ...data, schoolId })
   if (result !== 'OK') return result
+  await syncOpenAttendanceRosters({ schoolId, actorId: userId, enrollmentIds: [data.id] })
   revalidatePath('/dashboard/enrollments')
   revalidatePath('/dashboard')
   return 'OK' as const
@@ -69,9 +72,10 @@ export async function cancelEnrollmentAction(enrollmentId: string) {
 }
 
 export async function reassignClassAction(data: ReassignClassInput) {
-  const { schoolId } = await requireSchoolStaff()
+  const { schoolId, userId } = await requireSchoolStaff()
   const result = await reassignClass({ ...data, schoolId })
   if (result !== 'OK') return result
+  await syncOpenAttendanceRosters({ schoolId, actorId: userId, enrollmentIds: [data.enrollmentId] })
   revalidatePath('/dashboard/enrollments')
   return 'OK' as const
 }

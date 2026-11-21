@@ -460,8 +460,8 @@ gets `notConfigured` from each of them.
 ## Reading attendance calls
 
 `list_attendance_calls` rereads `/dashboard/attendance` day by day, so an agent can tell which call
-is still to be taken or left open. It only reads: opening, entering, validating and cancelling a
-call stay dashboard actions. A school without `attendance_enabled` gets `notConfigured`.
+is still to be taken or left open. Opening, entering, validating and cancelling a call stay
+dashboard actions. A school without `attendance_enabled` gets `notConfigured`.
 The school setting `attendance_frequency=DAILY` expects a single call per class/calendar day,
 even when its timetable contains several lessons; its `slotId`, `startTime` and `endTime` are null.
 The existing `PER_SLOT` behavior remains the default. Earlier recorded calls remain visible
@@ -479,6 +479,16 @@ publishes `classPeriod { id, name }`, `slotId`, `startTime`, `endTime`, `status`
 `CANCELLED` for a cancelled one; an exceptional call has a null `slotId`. On a closure day only the
 calls already opened remain. No student, entry or roster is published. `to` before `from` is
 `invalidDateRange`, a longer range `rangeTooLong`.
+
+### Adding new students to a call
+
+`refresh_attendance_roster` (write, `IDEMPOTENT_WRITE`) takes the `sessionId` of an `IN_PROGRESS`
+call from `list_attendance_calls` and adds the students assigned to its class since it was opened,
+as in the call screen's « Actualiser la liste ». They are added `NOT_RECORDED`, not `PRESENT`: nobody
+on the call screen has seen them yet. Existing entries are never changed. It returns `added`
+(`studentId`, `studentName`); a second call adds nothing. Refusals: `notConfigured`, `notFound`
+(unknown or another school's call), `invalidTransition` (validated or cancelled call),
+`validationError`.
 
 ## Canteen, snack and cashier receipts
 

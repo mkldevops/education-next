@@ -1545,12 +1545,20 @@ Owner: `src/domain/attendance-session.ts` (roster window, transitions),
 - `attendance_frequency` chooses `PER_SLOT` (default for existing and new schools) or `DAILY` in school configuration. `DAILY` expects one call per class/calendar date with scheduled lessons, independent of their number. Scheduled and exceptional openings share the `daily` occurrence key and store no lesson reference. Following any lesson link resumes that same daily call; its entry page has no course selector. Cancellation and restoration use this same identity. Switching frequency neither deletes nor merges earlier calls; their explicit historical links remain readable and correctable, while newly expected calls follow the current setting.
 - A logical occurrence is unique by school, class, date and a non-null occurrence key (`daily` in daily mode, otherwise `adhoc` or the schedule-slot id). Opening is an atomic upsert with unique-conflict recovery; its roster snapshots the active class assignments of that **UTC calendar day**: an assignment counts when it starts before the next UTC midnight and has not ended before that day's midnight (`attendanceRosterWindow`). A student assigned during the day, even after midnight, is therefore on that day's call.
 - **A DRAFT session can take students assigned since its opening** (`refreshAttendanceRosterAction`, "Refresh student list" in the attendance panel). It only adds entries (`PRESENT`) for roster students without one and never removes or rewrites an existing entry. The refresh row-locks the session with a write conditional on `DRAFT`; a VALIDATED or concurrently validated session → `invalidTransition`, a cancelled one → `sessionCancelled`.
+- **A student enrolled during a call in progress joins it on their own.** After an enrollment write
+  commits (new enrollment, activation, class change, family or student creation with enrollment, the
+  MCP family enrollment and class move), `syncOpenAttendanceRosters`
+  (`src/use-cases/attendance/attendance-roster.ts`) refreshes the `DRAFT` calls of the student's class
+  dated today or later. Those additions are `NOT_RECORDED`: a call screen loaded earlier and then
+  validated must not mark an unseen student present. Best effort: a failure is logged and never undoes
+  the enrollment; the refresh button stays the fallback.
 - **Validation is a conditional write** (`validateAttendanceAction`). It applies only while the session is still `DRAFT` or `VALIDATED` (re-validating after a correction); a session cancelled between the read and the write is left untouched → `invalidTransition`, rather than silently revived as VALIDATED.
 - **A validated call feeds the meals.** Validating, cancelling or restoring a call recomputes that day's canteen and snack absences for its students (see « Absences from attendance » under Meals).
 - **Cancel and restore are conditional transitions** (`planCancellationTransition`). Cancelling an active session records its status in `statusBeforeCancellation` and only applies while the session still has the status that was read; cancelling an already cancelled session is a no-op. Restoring applies only to a session that is still `CANCELLED` (with the same saved status) and returns the saved status, or DRAFT (clearing `validatedAt`) when none was saved; an empty cancelled placeholder is deleted instead. Restoring a DRAFT or VALIDATED session, or losing a race with another change (stale tab, double click), writes nothing → `invalidTransition`.
 - The attendance route identifies a planned occurrence explicitly with its UTC calendar `date` and `slotId`; an exceptional occurrence uses `date` and `occurrence=adhoc`. Daily mode resolves both to `daily`; `occurrence=daily` can also read a previously recorded daily call after returning to per-slot mode, and `occurrence=historical` reads only an existing earlier per-slot or exceptional call. Loading an identity only reads an existing session: creating a session remains an explicit mutation. A supplied slot must belong to the class and school **and** match the selected date's planning weekday (Monday 1 through Sunday 7).
-- **Students start present.** Opening a session and refreshing its roster create `PRESENT` entries
-  (`rosterEntry` in `attendance-actions.ts`), so the teacher only marks absences and late arrivals.
+- **Students start present.** Opening a session and refreshing its roster from the call screen create
+  `PRESENT` entries; additions nobody has seen (assistant, enrollment) start `NOT_RECORDED`
+  (`rosterEntry` in `src/use-cases/attendance/attendance-roster.ts`), so the teacher only marks absences and late arrivals.
 - Entries remain `NOT_RECORDED`, `PRESENT`, `ABSENT` or `LATE`; **All present** changes only the first state. A late entry may carry zero to 1,440 optional whole minutes and an internal optional message of at most 1,000 characters; it never notifies a parent. Changing to any other status clears late minutes while preserving its message. A validated session can be corrected and records the latest author and timestamp.
 - ADMIN may operate school classes. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
 - Tracking derives expected occurrences from weekly slots for the selected **UTC calendar date** (the explicit V1 school-time convention). A slot absent from that day's planning creates no missing call.
@@ -1566,12 +1574,14 @@ Owner: `src/domain/attendance-session.ts` (roster window, transitions),
 - **The return link after validation depends on who validated.** An admin goes back to
   `/dashboard/attendance` for the same day; a teacher goes back to `/dashboard/my-classes`, because
   that page requires a teacher record.
-- **The MCP reads the tracking, never a roster.** `list_attendance_calls`
+- **The MCP reads the tracking, not a call's entries.** `list_attendance_calls`
   (`src/use-cases/mcp/list-attendance-calls.ts`) applies the same derivation as
   `/dashboard/attendance` — active classes of a period, UTC days, closures keeping only opened calls —
   over at most 31 days (`MCP_ATTENDANCE_RANGE_MAX_DAYS`). It publishes each call's class, slot, status
   and session id, not its students or entries, and is refused with `notConfigured` when
-  `attendance_enabled` is off.
+  `attendance_enabled` is off. Its only write is `refresh_attendance_roster`
+  (`src/use-cases/mcp/refresh-attendance-roster.ts`), the call screen's refresh with added students
+  `NOT_RECORDED`.
 - **The entry mode is a school setting, not a choice on the call screen.** `attendance_entry_mode`
   is `LIST` (default for existing and new schools) or `ONE_BY_ONE` (`getAttendanceEntrySettings`,
   `src/domain/attendance-entry-mode.ts`). `LIST` shows the whole roster on one screen with P/R/A
