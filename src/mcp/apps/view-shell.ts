@@ -1,5 +1,5 @@
 /** Version du protocole MCP Apps (spécification stable 2026-01-26). */
-export const MCP_APP_PROTOCOL_VERSION = '2026-01-26'
+const MCP_APP_PROTOCOL_VERSION = '2026-01-26'
 
 const BASE_STYLE = `
 :root{color-scheme:light;
