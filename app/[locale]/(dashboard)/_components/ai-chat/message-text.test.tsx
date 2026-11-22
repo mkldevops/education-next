@@ -22,11 +22,31 @@ describe('MessageText', () => {
     )
   })
 
-  it('leaves an external or protocol-relative link as plain text', () => {
-    render(<MessageText text="[a](https://evil.test) [b](//evil.test) [c](javascript:alert(1))" />)
+  it('keeps only the label of an external or protocol-relative link', () => {
+    const { container } = render(
+      <MessageText text="[a](https://evil.test) [b](//evil.test) [c](javascript:alert(1))" />
+    )
 
     expect(screen.queryByRole('link')).toBeNull()
-    expect(screen.getByText(/\[a\]\(https:\/\/evil\.test\)/)).toBeTruthy()
+    expect(container.querySelector('[href]')).toBeNull()
+    expect(container.textContent).toBe('a b c')
+  })
+
+  it('renders a GFM table', () => {
+    render(<MessageText text={'| Famille | Reste dû |\n| --- | ---: |\n| Ali | 120 € |'} />)
+
+    expect(screen.getByRole('table')).toBeTruthy()
+    expect(screen.getByRole('columnheader', { name: 'Reste dû' })).toBeTruthy()
+    expect(screen.getByRole('cell', { name: '120 €' })).toBeTruthy()
+  })
+
+  it('ignores raw HTML and images', () => {
+    const { container } = render(
+      <MessageText text={'<script>alert(1)</script> ![x](https://evil.test/a.png) ok'} />
+    )
+
+    expect(container.querySelector('script, img')).toBeNull()
+    expect(container.textContent).toContain('ok')
   })
 
   it('renders bold without the asterisks', () => {

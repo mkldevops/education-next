@@ -546,7 +546,13 @@ function ChatMessage({
           {joinAdjacentText(message.parts).map((part, index) => {
             const key = `${message.id}-${index}`
             if (part.type === 'text') {
-              return <MessageText key={key} text={part.text} />
+              return mine ? (
+                <p key={key} className="whitespace-pre-wrap">
+                  {part.text}
+                </p>
+              ) : (
+                <MessageText key={key} text={part.text} />
+              )
             }
             if (part.type === 'file') return null
             return renderPart ? renderPart(part, key) : null

@@ -108,6 +108,8 @@ export function buildAssistantSystemPrompt({
           '- For students or families behind on payments (late, unpaid, overdue), call',
           '  `list_overdue_students` once: it already lists every late student with its class',
           '  and its family overdue amount. Never page through `list_families` for that.',
+          '  The user already sees its result as a card (total, families, amounts): answer with a',
+          '  one-line summary, never repeat the list as a table or bullets unless asked.',
           '- Recording a payment: without other instructions it pays the whole remaining',
           '  balance, in cash, today. Always pass the amount the administrator states. Pass',
           '  `studentId` or `familyId` and go straight to',

@@ -332,6 +332,20 @@ resolving a paper form needs an identity, not a way to contact anyone. Every col
 `src/gateways/mcp-read-gateway.ts`, so widening the surface is an edit to that file, not a
 side effect of a schema change.
 
+## MCP Apps views
+
+`list_overdue_students` declares an [MCP Apps](https://modelcontextprotocol.io/extensions/apps)
+view: its tool metadata carries `_meta.ui.resourceUri = ui://education/overdue.html`, and
+`resources/read` on that URI returns a `text/html;profile=mcp-app` document. Hosts that implement
+the extension display the overdue families as a card: total, one row per family
+with its children and amount, sorted by amount, each row opening the family page. Other clients
+ignore the metadata and keep the JSON result, which now also carries the school `currency`.
+
+The document is static. It holds no school data, only the public origin used to build links
+(`NEXT_PUBLIC_APP_URL`); the data reaches it through the host's `ui/notifications/tool-result`
+and is written with `textContent`. The dashboard assistant renders the same document in a
+sandboxed iframe (`allow-scripts` only) and accepts only `/dashboard` links from it.
+
 ## Creating levels and classes
 
 `create_level { name }` creates an active level in the connected school and returns its `id`
