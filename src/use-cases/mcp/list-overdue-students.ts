@@ -1,4 +1,5 @@
 import { roundHalfUp } from '@/lib/decimal'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { getOverdueStudents } from '@/use-cases/payments/overdue-students'
 import type { DraftScope } from './draft-scope'
 
@@ -8,12 +9,17 @@ import type { DraftScope } from './draft-scope'
  */
 export async function listOverdueStudentsFromMcp(
   scope: DraftScope,
-  overdueStudents = getOverdueStudents
+  overdueStudents = getOverdueStudents,
+  regionalSettings = getSchoolRegionalSettings
 ) {
   if (!scope.paymentsEnabled) return 'paymentsDisabled' as const
-  const students = await overdueStudents(scope.schoolId)
+  const [students, { currency }] = await Promise.all([
+    overdueStudents(scope.schoolId),
+    regionalSettings(scope.schoolId),
+  ])
   const families = new Map(students.map((student) => [student.family.id, student.family]))
   return {
+    currency,
     total: students.length,
     families: families.size,
     totalOverdueAmount: roundHalfUp(

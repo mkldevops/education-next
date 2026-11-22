@@ -3,10 +3,16 @@
 import { Button } from '@peaklab/ui'
 import { type DynamicToolUIPart, getToolName, type ToolUIPart } from 'ai'
 import { Ban, Check, CircleAlert, Loader2, ShieldQuestion, Wrench, X } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { useFormatter, useTranslations } from 'next-intl'
 import { DEFAULT_CURRENCY } from '@/lib/decimal'
 import type { DraftPlan } from './draft-plans'
 import { enrollmentPlanSummary } from './enrollment-plan-summary'
+import { mcpAppViewFor } from './mcp-app-views'
+
+const McpAppFrame = dynamic(() => import('./mcp-app-frame').then((m) => m.McpAppFrame), {
+  ssr: false,
+})
 
 export type ApprovalResponse = { id: string; approved: boolean }
 
@@ -153,6 +159,9 @@ export function ToolPart({ part, plan, onApproval }: Props) {
   }
 
   const refusal = refusalCode(part.output)
+  const view = mcpAppViewFor(name)
+  if (view && !refusal) return <McpAppFrame html={view} output={part.output} title={label} />
+
   return (
     <details className="mt-1 text-xs">
       <summary

@@ -19,6 +19,8 @@ function row(studentId: string, familyId: string, overdueAmount: number) {
   }
 }
 
+const settings = vi.fn().mockResolvedValue({ currency: 'KMF', timeZone: 'Indian/Comoro' })
+
 describe('listOverdueStudentsFromMcp', () => {
   it('counts each overdue family once in the total', async () => {
     const overdueStudents = vi
@@ -29,12 +31,16 @@ describe('listOverdueStudentsFromMcp', () => {
         row('s-3', 'f-2', 50.2),
       ])
 
-    expect(await listOverdueStudentsFromMcp(scope as never, overdueStudents)).toMatchObject({
+    expect(
+      await listOverdueStudentsFromMcp(scope as never, overdueStudents, settings)
+    ).toMatchObject({
+      currency: 'KMF',
       total: 3,
       families: 2,
       totalOverdueAmount: 150.3,
     })
     expect(overdueStudents).toHaveBeenCalledWith('school-1')
+    expect(settings).toHaveBeenCalledWith('school-1')
   })
 
   it('refuses when payments are disabled', async () => {
@@ -43,7 +49,8 @@ describe('listOverdueStudentsFromMcp', () => {
     expect(
       await listOverdueStudentsFromMcp(
         { ...scope, paymentsEnabled: false } as never,
-        overdueStudents
+        overdueStudents,
+        settings
       )
     ).toBe('paymentsDisabled')
     expect(overdueStudents).not.toHaveBeenCalled()

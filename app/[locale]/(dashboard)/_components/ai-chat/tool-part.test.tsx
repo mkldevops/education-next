@@ -17,6 +17,12 @@ vi.mock('next-intl', () => ({
   }),
 }))
 
+vi.mock('next/dynamic', () => ({
+  default: () => (props: { title: string; output: unknown }) => (
+    <iframe title={props.title} data-output={JSON.stringify(props.output)} />
+  ),
+}))
+
 const { ToolPart } = await import('./tool-part')
 
 const pending = {
@@ -224,5 +230,47 @@ describe('ToolPart', () => {
 
     expect(screen.getByText('refused:{"tool":"names.commit_enroll_family"}')).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('shows the overdue list in its MCP Apps view instead of the raw JSON', () => {
+    const output = { currency: 'EUR', total: 0, families: 0, totalOverdueAmount: 0, students: [] }
+    const { container } = render(
+      <ToolPart
+        part={
+          {
+            type: 'tool-list_overdue_students',
+            toolCallId: 'call-9',
+            state: 'output-available',
+            input: {},
+            output,
+          } as ToolUIPart
+        }
+        onApproval={() => {}}
+      />
+    )
+
+    expect(container.querySelector('iframe')?.getAttribute('data-output')).toBe(
+      JSON.stringify(output)
+    )
+    expect(container.querySelector('pre')).toBeNull()
+  })
+
+  it('keeps the refusal line when the overdue list is refused', () => {
+    const { container } = render(
+      <ToolPart
+        part={
+          {
+            type: 'tool-list_overdue_students',
+            toolCallId: 'call-10',
+            state: 'output-available',
+            input: {},
+            output: { error: 'paymentsDisabled' },
+          } as ToolUIPart
+        }
+        onApproval={() => {}}
+      />
+    )
+
+    expect(container.querySelector('iframe')).toBeNull()
   })
 })

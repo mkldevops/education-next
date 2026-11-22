@@ -87,6 +87,7 @@ import {
   previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
 import { updateEventFromMcp } from '@/use-cases/mcp/update-event'
+import { OVERDUE_VIEW_URI } from './apps/overdue-view'
 import { listChildcareTools } from './childcare-tools'
 import { listMealTools } from './meal-tools'
 
@@ -143,6 +144,8 @@ export type SchoolTool = {
   inputSchema: z.ZodObject
   annotations?: ToolAnnotations
   kind: SchoolToolKind
+  /** Vue MCP Apps (`ui://…`) qui affiche le résultat chez les hôtes qui la prennent en charge. */
+  ui?: string
   run: (args: unknown) => Promise<unknown>
 }
 
@@ -869,6 +872,7 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         inputSchema: NO_ARGS,
         annotations: { readOnlyHint: true, openWorldHint: false },
         kind: 'read',
+        ui: OVERDUE_VIEW_URI,
         run: () => listOverdueStudentsFromMcp(scope),
       }),
       define({
