@@ -11,6 +11,7 @@ import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { loadMealDebtors, REMIND_WITHIN_DAYS } from '@/use-cases/meals/meal-debtors'
 import { requireSchoolCashier } from '../../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../../_lib/page-metadata'
+import { CashierTabs, loadCashierTabLabels } from '../_components/cashier-tabs'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -66,7 +67,9 @@ export default async function MealDebtorsPage({ params }: Props) {
         <p className="text-sm text-graphite-600">{t('intro', { days: REMIND_WITHIN_DAYS })}</p>
       </div>
 
-      <Card className="max-w-4xl p-4">
+      <CashierTabs active="debtors" labels={await loadCashierTabLabels()} />
+
+      <Card className="p-4">
         {rows.length === 0 ? (
           <p className="text-sm text-graphite-600">{t('empty')}</p>
         ) : (

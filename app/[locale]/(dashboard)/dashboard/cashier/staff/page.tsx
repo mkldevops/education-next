@@ -16,6 +16,7 @@ import { requireSchoolCashier } from '../../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../../_lib/page-metadata'
 import { YearProgress } from '../../_components/year-progress'
 import { MealDialog } from '../../students/[id]/_components/meal-dialogs'
+import { CashierTabs, loadCashierTabLabels } from '../_components/cashier-tabs'
 import { loadStaffRows } from '../_lib/staff-data'
 import { StaffCollectDialog } from './_components/staff-collect-dialog'
 import { StaffRowActions } from './_components/staff-row-actions'
@@ -98,6 +99,8 @@ export default async function CashierStaffPage({ params }: Props) {
           <p className="text-sm text-graphite-600">{t('intro')}</p>
         </div>
       </div>
+
+      <CashierTabs active="staff" labels={await loadCashierTabLabels()} />
 
       <dl className="grid grid-cols-3 gap-3">
         {counts.map(({ key, value }) => (
