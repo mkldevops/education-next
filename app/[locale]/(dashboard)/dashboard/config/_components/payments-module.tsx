@@ -3,6 +3,7 @@
 import { Button } from '@peaklab/ui'
 import { Copy } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { CASH_DAY_TUITION_CONFIG_KEY } from '@/lib/cash-day-tuition-config'
 import { PAYMENTS_ENABLED_CONFIG_KEY } from '@/lib/payment-config'
 import { StripeSecretKind } from '@/lib/stripe-config'
 import { toast } from '@/lib/toast'
@@ -17,6 +18,8 @@ import { StripeSecretForm } from './stripe-secret-form'
 
 type Props = {
   paymentsEnabled: boolean
+  /** Écolage sans reçu compté dans la caisse du jour. */
+  cashDayTuitionEnabled: boolean
   /** Ce que couper les paiements va masquer : paiements enregistrés et transactions en attente. */
   paymentFootprint: { payments: number; pendingTransactions: number }
   settings: StripeSettings
@@ -28,6 +31,14 @@ type Props = {
 async function savePaymentsEnabled(enabled: boolean) {
   const result = await setConfigAction({
     name: PAYMENTS_ENABLED_CONFIG_KEY,
+    value: String(enabled),
+  })
+  return typeof result === 'string' ? result : 'OK'
+}
+
+async function saveCashDayTuition(enabled: boolean) {
+  const result = await setConfigAction({
+    name: CASH_DAY_TUITION_CONFIG_KEY,
     value: String(enabled),
   })
   return typeof result === 'string' ? result : 'OK'
@@ -45,6 +56,7 @@ async function savePaymentsEnabled(enabled: boolean) {
  */
 export function PaymentsModule({
   paymentsEnabled,
+  cashDayTuitionEnabled,
   paymentFootprint,
   settings,
   currency,
@@ -99,6 +111,13 @@ export function PaymentsModule({
       }
     >
       <SchoolCurrencyField settings={currency} />
+      <FlagToggle
+        key={`cash-day-tuition:${cashDayTuitionEnabled}`}
+        title={tConfig(`settings.${CASH_DAY_TUITION_CONFIG_KEY}.label`)}
+        description={tConfig(`settings.${CASH_DAY_TUITION_CONFIG_KEY}.description`)}
+        enabled={cashDayTuitionEnabled}
+        onSave={saveCashDayTuition}
+      />
       <FlagToggle
         // Remonte l'interrupteur quand le drapeau enregistré change : son état local ne suit
         // pas les props après `router.refresh()`.

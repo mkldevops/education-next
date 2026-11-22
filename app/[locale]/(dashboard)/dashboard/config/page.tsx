@@ -3,10 +3,11 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { ReactNode } from 'react'
-import { readsAsEnabled } from '@/domain/feature-flags'
+import { readsAsEnabled, readsAsOptedIn } from '@/domain/feature-flags'
 import { absenceReasonGateway } from '@/gateways/absence-reason-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { teacherGateway } from '@/gateways/teacher-gateway'
+import { CASH_DAY_TUITION_CONFIG_KEY } from '@/lib/cash-day-tuition-config'
 import { formatDateTime } from '@/lib/date'
 import { db } from '@/lib/db'
 import { PAYMENTS_ENABLED_CONFIG_KEY } from '@/lib/payment-config'
@@ -149,6 +150,7 @@ export default async function ConfigPage({ params }: Props) {
         payments={
           <PaymentsModule
             paymentsEnabled={readsAsEnabled(storedValues.get(PAYMENTS_ENABLED_CONFIG_KEY))}
+            cashDayTuitionEnabled={readsAsOptedIn(storedValues.get(CASH_DAY_TUITION_CONFIG_KEY))}
             paymentFootprint={paymentFootprint}
             settings={stripeSettings}
             currency={currencySettings}

@@ -1517,8 +1517,8 @@
         "day": {
           "title": "Caisse du jour",
           "intro": "Reçus émis ce jour, moins les annulations faites ce jour. Un jour passé ne change plus.",
-          "previous": "← Jour précédent",
-          "next": "Jour suivant →",
+          "previous": "Jour précédent",
+          "next": "Jour suivant",
           "issued": "Émis",
           "cancelled": "Annulés",
           "net": "Net",
@@ -1542,8 +1542,17 @@
             "none": "Aucun paiement sans reçu",
             "refund": "Remboursement",
             "total": "{count, plural, one {# paiement sans reçu} other {# paiements sans reçu}} · {amount}",
-            "truncated": "Liste incomplète : seules les premières saisies du jour sont affichées, et ce sous-total ne couvre qu'elles."
-          }
+            "truncated": "Liste incomplète : seules les premières saisies du jour sont affichées, et ce sous-total ne couvre qu'elles.",
+            "titleInCash": "Paiements d'écolage",
+            "introInCash": "Paiements d'écolage enregistrés ce jour sans reçu, remboursements compris. Ils sont comptés dans le total ci-dessus, au poste Écolage."
+          },
+          "dayNav": "Choix du jour",
+          "today": "Aujourd'hui",
+          "backToToday": "Revenir à aujourd'hui",
+          "pickDay": "Choisir un jour",
+          "show": "Afficher",
+          "noMethod": "Aucun encaissement ce jour",
+          "tuitionCount": "{count, plural, =0 {aucun paiement d'écolage} one {# paiement d'écolage} other {# paiements d'écolage}}"
         },
         "debtors": {
           "title": "Impayés et relances",
@@ -1939,6 +1948,10 @@
           "attendance_absence_reason_required": {
             "label": "Motif d'absence obligatoire",
             "description": "Un appel ne peut être validé tant qu'une absence n'a pas de motif."
+          },
+          "cash_day_tuition_enabled": {
+            "label": "Écolage dans la caisse du jour",
+            "description": "Compte les paiements d'écolage enregistrés sans reçu dans le total de la caisse du jour, et les montre à la caisse. Désactivé, seuls les reçus font la caisse."
           }
         },
         "theme": {

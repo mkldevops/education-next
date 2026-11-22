@@ -1,15 +1,16 @@
-import { Breadcrumbs, Card, cn } from '@peaklab/ui'
+import { Breadcrumbs, Card } from '@peaklab/ui'
 import { CircleCheck } from 'lucide-react'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { addUnreceiptedTuition } from '@/domain/cash-day'
 import { formatReceiptNumber } from '@/domain/receipt'
 import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { receiptHref } from '@/lib/receipt-link'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
-import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
+import { isCashDayTuitionEnabled } from '@/use-cases/config/is-cash-day-tuition-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { listPayableEnrollmentChoices } from '@/use-cases/payments/payable-enrollment-choices'
@@ -17,7 +18,8 @@ import { requireSchoolCashier } from '../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../_lib/page-metadata'
 import { CashierForm } from './_components/cashier-form'
 import { CashierSearch } from './_components/cashier-search'
-import { loadCashDay } from './_lib/cash-day-data'
+import { CashierTabs, loadCashierTabLabels } from './_components/cashier-tabs'
+import { loadCashDay, loadUnreceiptedPayments } from './_lib/cash-day-data'
 import { loadCashierFamily, loadCashierReceipt, searchCashierFamilies } from './_lib/cashier-data'
 
 type Props = {
@@ -50,14 +52,17 @@ export default async function CashierPage({ params, searchParams }: Props) {
   const { currency, timeZone } = await getSchoolRegionalSettings(schoolId)
   const today = schoolToday(timeZone)
 
-  const [results, family, done, cashDay, paymentsEnabled, mealsEnabled] = await Promise.all([
+  const [results, family, done, cashDay, paymentsEnabled, tuitionFlag] = await Promise.all([
     query.length >= 2 && !selectedId ? searchCashierFamilies(schoolId, query) : null,
     selectedId ? loadCashierFamily(schoolId, selectedId, today) : null,
     doneId ? loadCashierReceipt(schoolId, doneId) : null,
     loadCashDay(schoolId, today, timeZone),
     isPaymentsEnabled(schoolId),
-    isMealsEnabled(schoolId),
+    isCashDayTuitionEnabled(schoolId),
   ])
+  const tuition =
+    paymentsEnabled && tuitionFlag ? await loadUnreceiptedPayments(schoolId, today, timeZone) : null
+  const todayNet = tuition ? addUnreceiptedTuition(cashDay.net, tuition.rows) : cashDay.net
   const [tuitionDue, tuitionEnrollments] =
     family && paymentsEnabled
       ? await Promise.all([
@@ -80,15 +85,6 @@ export default async function CashierPage({ params, searchParams }: Props) {
   const time = (date: Date) =>
     date.toLocaleTimeString(locale, { timeZone, hour: '2-digit', minute: '2-digit' })
 
-  const tabs = [
-    { href: '/dashboard/cashier', label: t('tabs.collect'), active: true },
-    { href: '/dashboard/cashier/day', label: t('day.title'), active: false },
-    { href: '/dashboard/cashier/debtors', label: t('debtors.title'), active: false },
-    ...(mealsEnabled
-      ? [{ href: '/dashboard/cashier/staff', label: t('staff.title'), active: false }]
-      : []),
-  ]
-
   return (
     <div className="space-y-6">
       <Breadcrumbs
@@ -106,35 +102,19 @@ export default async function CashierPage({ params, searchParams }: Props) {
           href="/dashboard/cashier/day"
           className="flex flex-wrap items-baseline gap-x-3 rounded-lg border border-alabaster-700 px-4 py-2 text-sm hover:bg-alabaster-900"
         >
-          <span className="text-graphite-600">{t('today', { count: cashDay.net.count })}</span>
+          <span className="text-graphite-600">{t('today', { count: todayNet.count })}</span>
           <span className="text-lg font-bold tabular-nums text-graphite">
-            {money(cashDay.net.total)}
+            {money(todayNet.total)}
           </span>
-          {(cashDay.net.byMethod.CASH ?? 0) !== 0 && (
+          {(todayNet.byMethod.CASH ?? 0) !== 0 && (
             <span className="text-graphite-600">
-              {tMethods('CASH')} {money(cashDay.net.byMethod.CASH ?? 0)}
+              {tMethods('CASH')} {money(todayNet.byMethod.CASH ?? 0)}
             </span>
           )}
         </Link>
       </div>
 
-      <nav className="flex flex-wrap gap-1 border-b border-alabaster-700">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            aria-current={tab.active ? 'page' : undefined}
-            className={cn(
-              '-mb-px border-b-2 px-3 py-2 text-sm font-medium',
-              tab.active
-                ? 'border-primary text-graphite'
-                : 'border-transparent text-graphite-600 hover:text-graphite'
-            )}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </nav>
+      <CashierTabs active="collect" labels={await loadCashierTabLabels()} />
 
       {selectedId && !family && <p className="text-sm text-graphite-600">{t('noFamily')}</p>}
 

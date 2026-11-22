@@ -61,6 +61,7 @@ function renderSection(
   return render(
     <PaymentsModule
       paymentsEnabled={paymentsEnabled}
+      cashDayTuitionEnabled={false}
       paymentFootprint={paymentFootprint}
       settings={settings}
       currency={{ currency: 'EUR', locked: false }}

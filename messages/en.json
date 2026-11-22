@@ -1516,8 +1516,8 @@
         "day": {
           "title": "Day's takings",
           "intro": "Receipts issued that day, minus cancellations made that day. A past day no longer changes.",
-          "previous": "← Previous day",
-          "next": "Next day →",
+          "previous": "Previous day",
+          "next": "Next day",
           "issued": "Issued",
           "cancelled": "Cancelled",
           "net": "Net",
@@ -1541,8 +1541,17 @@
             "none": "No payment without a receipt",
             "refund": "Refund",
             "total": "{count, plural, one {# payment without a receipt} other {# payments without a receipt}} · {amount}",
-            "truncated": "Incomplete list: only the first entries of the day are shown, and this subtotal covers those alone."
-          }
+            "truncated": "Incomplete list: only the first entries of the day are shown, and this subtotal covers those alone.",
+            "titleInCash": "Tuition payments",
+            "introInCash": "Tuition payments recorded this day without a receipt, refunds included. They are counted in the total above, under Tuition."
+          },
+          "dayNav": "Day selection",
+          "today": "Today",
+          "backToToday": "Back to today",
+          "pickDay": "Pick a day",
+          "show": "Show",
+          "noMethod": "No collection this day",
+          "tuitionCount": "{count, plural, =0 {no tuition payment} one {# tuition payment} other {# tuition payments}}"
         },
         "debtors": {
           "title": "Unpaid and reminders",
@@ -1938,6 +1947,10 @@
           "attendance_absence_reason_required": {
             "label": "Absence reason required",
             "description": "An attendance call cannot be validated while an absence has no reason."
+          },
+          "cash_day_tuition_enabled": {
+            "label": "Tuition in the daily cash",
+            "description": "Counts tuition payments recorded without a receipt in the daily cash total, and shows them at the cashier. Off, only receipts make the cash."
           }
         },
         "theme": {

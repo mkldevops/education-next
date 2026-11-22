@@ -5,6 +5,7 @@ import {
   ATTENDANCE_FREQUENCY_CONFIG_DEFAULT,
 } from './attendance-config'
 import { BRANDING_CONFIG_DEFAULTS } from './branding-config'
+import { CASH_DAY_TUITION_CONFIG_DEFAULT } from './cash-day-tuition-config'
 import { CLASS_SCHEDULE_CONFIG_DEFAULTS } from './class-schedule-config'
 import { EVENTS_CONFIG_DEFAULT } from './events-config'
 import { MEALS_ENABLED_CONFIG_DEFAULT } from './meals-config'
@@ -37,6 +38,7 @@ export const SCHOOL_CONFIG_DEFAULTS = [
   // À `'true'` : une école neuve encaisse comme toutes les autres. Aucune migration ne
   // sème la ligne sur une école existante — l'absence vaut activé.
   PAYMENTS_ENABLED_CONFIG_DEFAULT,
+  CASH_DAY_TUITION_CONFIG_DEFAULT,
   { name: MAX_STUDENTS_PER_CLASS_CONFIG_KEY, value: '30', valueType: 'NUMBER' },
   { name: THEME_PRIMARY_CONFIG_KEY, value: '#3c6e71', valueType: 'COLOR' },
 ] as const

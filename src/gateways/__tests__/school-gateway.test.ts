@@ -174,6 +174,7 @@ describe('schoolGateway.create', () => {
       'class_schedule_teacher_overlap_allowed',
       'class_schedule_visibility',
       'payments_enabled',
+      'cash_day_tuition_enabled',
       'max_students_per_class',
       'theme_primary',
     ])

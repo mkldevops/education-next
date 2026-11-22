@@ -79,3 +79,25 @@ export function summarizeCashDay(input: {
     net: addReceipts(addReceipts(empty(), input.issued, 1), input.cancelled, -1),
   }
 }
+
+/**
+ * Ajoute à une caisse les paiements d'écolage sans reçu (remboursements en négatif), quand
+ * l'école les fait passer par le guichet. Ils gonflent le total, le mode et le poste écolage,
+ * pas le nombre de reçus.
+ */
+export function addUnreceiptedTuition(
+  totals: CashTotals,
+  payments: ReadonlyArray<{ amount: number; method: string }>
+): CashTotals {
+  const into: CashTotals = {
+    ...totals,
+    byMethod: { ...totals.byMethod },
+    byLine: { ...totals.byLine },
+  }
+  for (const payment of payments) {
+    into.total = round(into.total + payment.amount)
+    into.byMethod[payment.method] = round((into.byMethod[payment.method] ?? 0) + payment.amount)
+    into.byLine.TUITION = round(into.byLine.TUITION + payment.amount)
+  }
+  return into
+}

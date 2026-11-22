@@ -1,18 +1,21 @@
-import { Breadcrumbs, Card } from '@peaklab/ui'
+import { Breadcrumbs, Button, buttonVariants, Card, cn, Input } from '@peaklab/ui'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { type CashTotals, visibleCashLines } from '@/domain/cash-day'
+import { addUnreceiptedTuition, type CashTotals, visibleCashLines } from '@/domain/cash-day'
 import { formatReceiptNumber } from '@/domain/receipt'
 import { schoolToday } from '@/domain/school-date'
 import { Link } from '@/i18n/routing'
 import { formatCurrency } from '@/lib/decimal'
 import { receiptHref } from '@/lib/receipt-link'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
+import { isCashDayTuitionEnabled } from '@/use-cases/config/is-cash-day-tuition-enabled'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { requireSchoolCashDay } from '../../../_lib/auth-helper'
 import { cashierPageMetadata } from '../../../_lib/page-metadata'
+import { CashierTabs, loadCashierTabLabels } from '../_components/cashier-tabs'
 import { loadCashDay, loadUnreceiptedPayments } from '../_lib/cash-day-data'
 
 type Props = {
@@ -45,21 +48,34 @@ export default async function CashDayPage({ params, searchParams }: Props) {
 
   const { schoolId, isAdmin } = await requireSchoolCashDay()
 
-  const [{ currency, timeZone }, mealsEnabled, paymentsEnabled] = await Promise.all([
+  const [{ currency, timeZone }, mealsEnabled, paymentsEnabled, tuitionFlag] = await Promise.all([
     getSchoolRegionalSettings(schoolId),
     isMealsEnabled(schoolId),
     isPaymentsEnabled(schoolId),
+    isCashDayTuitionEnabled(schoolId),
   ])
+  const tuitionInCash = paymentsEnabled && tuitionFlag
   const today = schoolToday(timeZone)
   const day =
     requested && DAY.test(requested) && !Number.isNaN(Date.parse(requested)) && requested <= today
       ? requested
       : today
-  // Les paiements d'écolage hors caisse restent réservés à l'administration.
-  const [cash, unreceipted] = await Promise.all([
+  // Hors caisse, les paiements d'écolage sans reçu restent réservés à l'administration ; une
+  // école qui les encaisse au guichet les montre à la caisse et les compte dans son total.
+  const [receiptCash, unreceipted] = await Promise.all([
     loadCashDay(schoolId, day, timeZone),
-    isAdmin && paymentsEnabled ? loadUnreceiptedPayments(schoolId, day, timeZone) : null,
+    paymentsEnabled && (isAdmin || tuitionInCash)
+      ? loadUnreceiptedPayments(schoolId, day, timeZone)
+      : null,
   ])
+  const cash =
+    tuitionInCash && unreceipted
+      ? {
+          ...receiptCash,
+          issued: addUnreceiptedTuition(receiptCash.issued, unreceipted.rows),
+          net: addUnreceiptedTuition(receiptCash.net, unreceipted.rows),
+        }
+      : receiptCash
   const lines = visibleCashLines(mealsEnabled, [cash.issued, cash.cancelled, cash.net])
 
   const money = (value: number) => formatCurrency(value, locale, currency)
@@ -147,36 +163,88 @@ export default async function CashDayPage({ params, searchParams }: Props) {
         <p className="text-sm text-graphite-600">{t('intro')}</p>
       </div>
 
-      <nav className="flex items-center gap-4 text-sm" aria-label={t('title')}>
-        <Link
-          href={`/dashboard/cashier/day?day=${shiftDay(day, -1)}`}
-          className="text-foreground hover:underline"
-        >
-          {t('previous')}
-        </Link>
-        <span className="font-medium capitalize text-graphite">{label}</span>
-        {day < today && (
+      {mealsEnabled && <CashierTabs active="day" labels={await loadCashierTabLabels()} />}
+
+      <nav
+        className="flex flex-wrap items-center gap-3 rounded-lg border border-alabaster-700 bg-surface p-2"
+        aria-label={t('dayNav')}
+      >
+        <div className="flex items-center gap-1">
           <Link
-            href={`/dashboard/cashier/day?day=${shiftDay(day, 1)}`}
-            className="text-foreground hover:underline"
+            href={`/dashboard/cashier/day?day=${shiftDay(day, -1)}`}
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
-            {t('next')}
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+            {t('previous')}
           </Link>
-        )}
+          {day < today ? (
+            <Link
+              href={`/dashboard/cashier/day?day=${shiftDay(day, 1)}`}
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              {t('next')}
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </Link>
+          ) : (
+            <span
+              aria-disabled
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'opacity-50')}
+            >
+              {t('next')}
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </span>
+          )}
+        </div>
+        <p className="text-base font-semibold text-graphite first-letter:uppercase">
+          {label}
+          {day === today && (
+            <span className="ml-2 rounded bg-alabaster-800 px-2 py-0.5 text-xs font-medium normal-case text-graphite-600">
+              {t('today')}
+            </span>
+          )}
+        </p>
+        <form className="flex items-center gap-2 sm:ml-auto">
+          {day !== today && (
+            <Link
+              href="/dashboard/cashier/day"
+              className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+            >
+              {t('backToToday')}
+            </Link>
+          )}
+          <Input
+            type="date"
+            name="day"
+            defaultValue={day}
+            max={today}
+            aria-label={t('pickDay')}
+            className="h-8 w-auto"
+          />
+          <Button type="submit" variant="secondary" size="sm">
+            {t('show')}
+          </Button>
+        </form>
       </nav>
 
-      <Card className="max-w-3xl space-y-6 p-4">
+      <Card className="space-y-6 p-4">
         <div>
           <p className="text-xs uppercase tracking-wide text-graphite-600">{t('net')}</p>
           <p className="text-3xl font-bold tabular-nums text-graphite">{money(cash.net.total)}</p>
           <p className="text-xs text-graphite-600">
             {t('counts', { issued: cash.issued.count, cancelled: cash.cancelled.count })}
+            {tuitionInCash &&
+              unreceipted &&
+              ` · ${t('tuitionCount', { count: unreceipted.rows.length })}`}
           </p>
         </div>
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-graphite">{t('byMethod')}</h2>
-          {breakdown(
-            methods.map((method) => [tMethod(method), (totals) => totals.byMethod[method] ?? 0])
+          {methods.length === 0 ? (
+            <p className="text-sm text-graphite-600">{t('noMethod')}</p>
+          ) : (
+            breakdown(
+              methods.map((method) => [tMethod(method), (totals) => totals.byMethod[method] ?? 0])
+            )
           )}
         </section>
         <section className="space-y-2">
@@ -185,17 +253,19 @@ export default async function CashDayPage({ params, searchParams }: Props) {
         </section>
       </Card>
 
-      <div className="grid max-w-3xl gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {receipts(t('issuedReceipts'), cash.issuedRows)}
         {receipts(t('cancelledReceipts'), cash.cancelledRows)}
       </div>
 
       {unreceipted && (
-        <Card className="max-w-3xl p-4">
+        <Card className="p-4">
           <h2 className="text-xs font-medium uppercase tracking-wide text-graphite-600">
-            {t('unreceipted.title')}
+            {t(tuitionInCash ? 'unreceipted.titleInCash' : 'unreceipted.title')}
           </h2>
-          <p className="mt-1 text-xs text-graphite-600">{t('unreceipted.intro')}</p>
+          <p className="mt-1 text-xs text-graphite-600">
+            {t(tuitionInCash ? 'unreceipted.introInCash' : 'unreceipted.intro')}
+          </p>
           {unreceipted.rows.length === 0 ? (
             <p className="mt-2 text-sm text-graphite-600">{t('unreceipted.none')}</p>
           ) : (
@@ -203,12 +273,16 @@ export default async function CashDayPage({ params, searchParams }: Props) {
               <ul className="mt-2 divide-y divide-alabaster-700">
                 {unreceipted.rows.map((row) => (
                   <li key={row.id} className="flex items-center justify-between gap-2 py-2 text-sm">
-                    <Link
-                      href={`/dashboard/families/${row.familyId}?tab=payments`}
-                      className="text-foreground hover:underline"
-                    >
-                      {row.family}
-                    </Link>
+                    {isAdmin ? (
+                      <Link
+                        href={`/dashboard/families/${row.familyId}?tab=payments`}
+                        className="text-foreground hover:underline"
+                      >
+                        {row.family}
+                      </Link>
+                    ) : (
+                      <span className="text-graphite">{row.family}</span>
+                    )}
                     <span className="tabular-nums text-graphite">
                       {money(row.amount)} · {tMethod(row.method)}
                       {row.amount < 0 && (

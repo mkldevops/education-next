@@ -6,6 +6,7 @@ const loadCashDayMock = vi.fn()
 const loadUnreceiptedPaymentsMock = vi.fn()
 const isMealsEnabledMock = vi.fn()
 const isPaymentsEnabledMock = vi.fn()
+const isCashDayTuitionEnabledMock = vi.fn()
 
 vi.mock('@/lib/school-regional-settings', () => ({
   getSchoolRegionalSettings: async () => ({ currency: 'KMF', timeZone: 'Indian/Comoro' }),
@@ -33,6 +34,9 @@ vi.mock('@/i18n/routing', () => ({
 vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: isMealsEnabledMock }))
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
+}))
+vi.mock('@/use-cases/config/is-cash-day-tuition-enabled', () => ({
+  isCashDayTuitionEnabled: isCashDayTuitionEnabledMock,
 }))
 vi.mock('../../../_lib/auth-helper', () => ({ requireSchoolCashDay: requireSchoolCashDayMock }))
 vi.mock('../_lib/cash-day-data', () => ({
@@ -64,6 +68,7 @@ beforeEach(() => {
   })
   isMealsEnabledMock.mockResolvedValue(true)
   isPaymentsEnabledMock.mockResolvedValue(true)
+  isCashDayTuitionEnabledMock.mockResolvedValue(false)
   loadUnreceiptedPaymentsMock.mockResolvedValue({ rows: [], total: 0, truncated: false })
   loadCashDayMock.mockResolvedValue({
     issued: totals,
@@ -239,5 +244,53 @@ describe('CashDayPage', () => {
 
     expect(loadUnreceiptedPaymentsMock).not.toHaveBeenCalled()
     expect(html).not.toContain('unreceipted.title')
+  })
+
+  describe('when the school counts tuition in the daily cash', () => {
+    beforeEach(() => {
+      isCashDayTuitionEnabledMock.mockResolvedValue(true)
+      requireSchoolCashDayMock.mockResolvedValue({
+        schoolId: 'school-1',
+        userId: 'user-1',
+        isAdmin: false,
+      })
+      loadUnreceiptedPaymentsMock.mockResolvedValue({
+        rows: [
+          {
+            id: 'pay-1',
+            familyId: 'family-2',
+            family: 'Famille Abdou',
+            amount: 7000,
+            method: 'CASH',
+          },
+        ],
+        total: 7000,
+        truncated: false,
+      })
+    })
+
+    it('shows the tuition payments to the cashier and counts them in the total', async () => {
+      const html = renderToStaticMarkup(await render())
+
+      expect(loadUnreceiptedPaymentsMock).toHaveBeenCalledWith(
+        'school-1',
+        '2026-10-24',
+        'Indian/Comoro'
+      )
+      expect(html).toContain('unreceipted.titleInCash')
+      expect(html).toContain('tuitionCount')
+      expect(html).toContain('Famille Abdou')
+      expect(html).not.toContain('href="/dashboard/families/family-2?tab=payments"')
+      expect(html).toMatch(/7[\s\u202f\u00a0]?000/)
+    })
+
+    it('stays off when the school does not collect payments', async () => {
+      isPaymentsEnabledMock.mockResolvedValue(false)
+
+      const html = renderToStaticMarkup(await render())
+
+      expect(loadUnreceiptedPaymentsMock).not.toHaveBeenCalled()
+      expect(html).not.toContain('tuitionCount')
+    })
   })
 })
