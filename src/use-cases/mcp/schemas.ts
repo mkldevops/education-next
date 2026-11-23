@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { isCurrencyAmount } from '@/domain/enrollment'
 import { MCP_DRAFT_CHECKSUM_LENGTH } from '@/domain/mcp-draft'
 import { MCP_KEY_LIFETIMES_DAYS } from '@/domain/mcp-key'
-import { startMonthSchema } from '@/domain/payment-schedule'
+import { firstInstallmentAmountSchema, startMonthSchema } from '@/domain/payment-schedule'
 import { createClassPeriodSchema } from '@/use-cases/class-periods/schemas'
 import {
   createClassScheduleSlotSchema,
@@ -110,6 +110,9 @@ const mcpStudentSchema = mcpPersonSchema.extend({
   planName: z.string().trim().min(1).max(50).optional(),
   // Un élève arrivé en cours d'année : `YYYY-MM`, sinon celui de la fiche, sinon la période.
   startMonth: startMonthSchema.optional(),
+  // Son premier mois réduit, formule mensuelle seulement : il remplace l'échéance du mois de
+  // début, jamais une remise ni un total dicté.
+  firstInstallmentAmount: firstInstallmentAmountSchema.optional(),
 })
 
 const paymentFields = {
@@ -183,13 +186,16 @@ export const previewRecordPaymentSchema = z
   })
   .refine(
     (data) =>
-      data.familyId !== undefined || data.familyName !== undefined || data.studentId !== undefined
+      data.familyId !== undefined || data.familyName !== undefined || data.studentId !== undefined,
+    { message: 'Pass familyId, familyName or studentId to name the paying family.' }
   )
   .refine((data) => data.method === 'CHECK' || data.cashedAt === undefined, {
     path: ['cashedAt'],
+    message: 'cashedAt is only for a CHECK payment: omit it otherwise.',
   })
   .refine((data) => data.target !== 'student' || data.studentId !== undefined, {
     path: ['target'],
+    message: "target: 'student' needs studentId.",
   })
 
 export const mcpFindStudentsSchema = z.object({
@@ -215,7 +221,7 @@ export const mcpCancelPaymentsSchema = cancelPaymentsSchema.pick({ paymentIds: t
  *
  * Le nom suffit dans le cas courant — un élève n'a qu'une inscription ouverte — et un
  * homonyme ou une double inscription est un `blocker` qui rend les candidats, dont
- * l'identifiant à renvoyer. Formule et remise sont chacune facultatives, pas les deux.
+ * l'identifiant à renvoyer. Chaque changement est facultatif, il en faut au moins un.
  */
 export const previewUpdateEnrollmentSchema = z
   .object({
@@ -227,6 +233,8 @@ export const previewUpdateEnrollmentSchema = z
     totalAmount: z.number().min(0).refine(isCurrencyAmount).optional(),
     /** `YYYY-MM` ; `null` efface le mois de début. */
     startMonth: startMonthSchema.nullable().optional(),
+    /** Premier mois réduit d'une arrivée en cours d'année ; `null` rend l'échéance de la formule. */
+    firstInstallmentAmount: firstInstallmentAmountSchema.nullable().optional(),
   })
   .refine(
     (data) =>
@@ -238,7 +246,8 @@ export const previewUpdateEnrollmentSchema = z
       data.planName !== undefined ||
       data.discount !== undefined ||
       data.totalAmount !== undefined ||
-      data.startMonth !== undefined
+      data.startMonth !== undefined ||
+      data.firstInstallmentAmount !== undefined
   )
 
 export const commitDraftSchema = z.object({
@@ -312,6 +321,8 @@ export const mcpListAttendanceCallsSchema = z.object({
   to: z.iso.date().optional(),
   classPeriodId: z.uuid().optional(),
 })
+
+export const mcpRefreshAttendanceRosterSchema = z.object({ sessionId: z.uuid() })
 
 export const mcpListClassScheduleSlotsSchema = z.object({ periodId: z.uuid() })
 export const mcpCreateClassScheduleSlotSchema = createClassScheduleSlotSchema.omit({

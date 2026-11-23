@@ -10,6 +10,7 @@ import {
   isActiveSchoolAdmin,
 } from '@/lib/school-context'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
+import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 
 async function redirectToLogin(): Promise<never> {
   const locale = await getLocale()
@@ -74,6 +75,27 @@ export async function canOpenSchoolCashier(context: SchoolContext): Promise<bool
   if (!isActiveSchoolAdmin(context) && !hasSchoolRole(context, 'CASHIER')) return false
 
   return isMealsEnabled(context.schoolId)
+}
+
+/**
+ * Portée « caisse du jour » : la caisse quand elle est ouverte, sinon l'administration d'une école
+ * sans repas qui encaisse l'écolage (`payments_enabled`). Elle n'ouvre que cette lecture : la
+ * caisse elle-même reste derrière `requireSchoolCashier()`, et un membre `CASHIER` d'une école
+ * sans repas n'y entre pas.
+ */
+export async function requireSchoolCashDay(): Promise<{
+  schoolId: string
+  userId: string
+  isAdmin: boolean
+}> {
+  const context = await getSchoolContext()
+  if (!context) return redirectToLogin()
+  const isAdmin = isActiveSchoolAdmin(context)
+  if (!(await canOpenSchoolCashier(context))) {
+    if (!isAdmin || !(await isPaymentsEnabled(context.schoolId))) notFound()
+  }
+
+  return { schoolId: context.schoolId, userId: context.userId, isAdmin }
 }
 
 /**

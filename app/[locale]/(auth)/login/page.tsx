@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { LoginForm } from '@/features/auth'
 import { AuthHeading } from '@/features/auth/auth-heading'
+import { LoginForm } from '@/features/auth/login-form'
 import { safeRedirectPath } from '@/features/auth/safe-redirect'
 import { InstallApp } from '@/features/pwa/install-app'
 import { redirect } from '@/i18n/routing'
@@ -13,7 +13,7 @@ import { isPasskeySignInEnabled } from '@/use-cases/platform-settings/is-passkey
 
 type Props = {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ redirectTo?: string | string[] }>
+  searchParams: Promise<{ redirectTo?: string | string[]; error?: string | string[] }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -32,7 +32,9 @@ export default async function LoginPage({ params, searchParams }: Props) {
   setRequestLocale(locale)
 
   // Seul un chemin interne survit : tout le reste retombe sur le dashboard.
-  const redirectTo = safeRedirectPath((await searchParams).redirectTo)
+  const query = await searchParams
+  const redirectTo = safeRedirectPath(query.redirectTo)
+  const authError = Array.isArray(query.error) ? query.error[0] : query.error
 
   const context = await getSchoolContext()
   if (context) {
@@ -62,6 +64,11 @@ export default async function LoginPage({ params, searchParams }: Props) {
         googleEnabled={googleEnabled}
         passkeyEnabled={passkeyEnabled}
         redirectTo={redirectTo}
+        initialError={
+          authError
+            ? t(authError === 'signup_disabled' ? 'googleNoAccount' : 'googleError')
+            : undefined
+        }
       />
 
       <InstallApp />

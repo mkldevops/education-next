@@ -1,9 +1,11 @@
 'use client'
 
-import { Button, buttonVariants, cn, Label } from '@peaklab/ui'
 import { CircleCheck, Link2Off, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Label } from '@/components/ui/input'
+import { cn } from '@/components/ui/utils'
 import { Link } from '@/i18n/routing'
 import { resetPassword } from '@/lib/auth-client'
 import { AuthHeading } from './auth-heading'

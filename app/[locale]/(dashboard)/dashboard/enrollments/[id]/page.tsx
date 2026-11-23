@@ -7,12 +7,16 @@ import { cache } from 'react'
 import { calculateRemainingBalance } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import { totalPaidAmount } from '@/domain/payment'
-import { startMonthFromDate, startMonthToDate } from '@/domain/payment-schedule'
+import {
+  readPaymentSchedule,
+  startMonthFromDate,
+  startMonthToDate,
+} from '@/domain/payment-schedule'
 import { EnrollmentStatusBadge, PaymentMethodLabel } from '@/features/enums'
 import { Link } from '@/i18n/routing'
 import { formatDate } from '@/lib/date'
 import { db } from '@/lib/db'
-import { formatCurrency } from '@/lib/decimal'
+import { formatCurrency, toNumberOrNull } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-context'
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
@@ -22,6 +26,7 @@ import { requireSchoolSession } from '../../../_lib/auth-helper'
 import { familyLinksVisibleTo, resolveDeepLink, staffOrLinkedTo } from '../../../_lib/deep-link'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
 import { canSwitchSchool } from '../../../_lib/school-switch'
+import { CancelEnrollmentPaymentButton } from '../_components/cancel-enrollment-payment-button'
 import { EnrollmentActions } from '../_components/enrollment-actions'
 
 type Props = {
@@ -190,6 +195,8 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           currentClassId={currentClassId}
           availableClasses={availableClasses}
           currentTotalAmount={paymentsEnabled ? totalAmount : 0}
+          currentDiscount={paymentsEnabled ? discount : 0}
+          totalPaid={totalPaid}
           currency={currency}
           paymentsEnabled={paymentsEnabled}
           planName={enrollment.plan.name}
@@ -200,6 +207,18 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                   value: startMonth,
                   min: startMonthFromDate(enrollmentPeriod?.startAt) ?? undefined,
                   max: startMonthFromDate(enrollmentPeriod?.endAt) ?? undefined,
+                  firstInstallmentAmount: toNumberOrNull(enrollment.firstInstallmentAmount),
+                  monthlyPlan:
+                    readPaymentSchedule(enrollment.plan.paymentSchedule).mode === 'MONTHLY',
+                  schedule:
+                    paymentsEnabled && enrollmentPeriod
+                      ? {
+                          planAmount: Number(enrollment.plan.amount),
+                          paymentSchedule: readPaymentSchedule(enrollment.plan.paymentSchedule),
+                          periodStartAt: enrollmentPeriod.startAt.toISOString(),
+                          totalAmount,
+                        }
+                      : undefined,
                 }
               : undefined
           }
@@ -244,6 +263,20 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 {formatDate(enrollment.registeredAt, locale)}
               </p>
             </div>
+            {enrollment.endMonth && (
+              <div>
+                <p className="text-sm font-medium text-graphite-600">
+                  {tEnrollments('departure.endMonth')}
+                </p>
+                <p className="mt-1 text-sm text-graphite">
+                  {enrollment.endMonth.toLocaleDateString(locale, {
+                    month: 'long',
+                    year: 'numeric',
+                    timeZone: 'UTC',
+                  })}
+                </p>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -281,6 +314,19 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                   {formatCurrency(totalPaid, locale, currency)}
                 </span>
               </div>
+              {enrollment.writeOffReason && (
+                <div className="space-y-0.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-graphite-600">
+                      {tEnrollments('departure.writeOffLabel')}
+                    </span>
+                    <span className="font-medium text-graphite">
+                      {formatCurrency(Number(enrollment.writeOffAmount ?? 0), locale, currency)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-graphite-600">{enrollment.writeOffReason}</p>
+                </div>
+              )}
               <div className="flex justify-between border-t pt-2 text-sm font-semibold">
                 <span className="text-graphite">{t('remaining')}</span>
                 <span className={remaining > 0 ? 'text-amber-600' : 'text-green-600'}>
@@ -349,6 +395,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                     <th className="pb-2 text-left">{t('paymentTable.reference')}</th>
                     <th className="pb-2 text-left">{t('paymentTable.paidAt')}</th>
                     <th className="pb-2 text-left">{t('paymentTable.cashedAt')}</th>
+                    {isAdmin && <th className="pb-2" />}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -367,6 +414,17 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                       <td className="py-3 text-graphite-600">
                         {p.cashedAt ? formatDate(p.cashedAt, locale) : '-'}
                       </td>
+                      {isAdmin && (
+                        <td className="py-3 text-right">
+                          {!p.receiptId && !p.paymentTransactionId && (
+                            <CancelEnrollmentPaymentButton
+                              paymentId={p.id}
+                              amount={formatCurrency(Math.abs(Number(p.amount)), locale, currency)}
+                              isRefund={Number(p.amount) < 0}
+                            />
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

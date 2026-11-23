@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CreateFamilyDialog } from './create-family-dialog'
 
 const { createFamilyAction, push, toastError } = vi.hoisted(() => ({
@@ -8,7 +8,10 @@ const { createFamilyAction, push, toastError } = vi.hoisted(() => ({
   toastError: vi.fn(),
 }))
 
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
+vi.mock('next-intl', () => ({
+  useLocale: () => 'fr',
+  useTranslations: () => (key: string) => key,
+}))
 vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ push, replace: vi.fn() }) }))
 vi.mock('../../../_lib/family-actions', () => ({ createFamilyAction }))
 vi.mock('@/lib/toast', () => ({
@@ -41,10 +44,11 @@ const openWithChild = async () => {
     />
   )
   fireEvent.click(screen.getByRole('button', { name: 'title' }))
+  await screen.findByLabelText(/^name/)
   fireEvent.change(screen.getByLabelText(/^name/), { target: { value: 'Martin' } })
   submit()
   fireEvent.click(await screen.findByRole('button', { name: 'addChild' }))
-  fireEvent.change(screen.getByLabelText('firstname'), { target: { value: 'Adam' } })
+  fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Adam' } })
 }
 
 const submit = () =>
@@ -61,6 +65,7 @@ describe('CreateFamilyDialog', () => {
   it('keeps the minimal flow: a family name only', async () => {
     render(<CreateFamilyDialog />)
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^name/)
 
     fireEvent.change(screen.getByLabelText(/^name/), { target: { value: 'Martin' } })
     submit()
@@ -86,9 +91,10 @@ describe('CreateFamilyDialog', () => {
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^name/)
 
-    fireEvent.change(screen.getAllByLabelText('firstname')[0], { target: { value: 'Jean' } })
-    fireEvent.change(screen.getAllByLabelText('lastname')[0], { target: { value: 'Dupont' } })
+    fireEvent.change(screen.getAllByLabelText(/^firstname/)[0], { target: { value: 'Jean' } })
+    fireEvent.change(screen.getAllByLabelText(/^lastname/)[0], { target: { value: 'Dupont' } })
     fireEvent.change(screen.getByLabelText('phone'), { target: { value: '0612345678' } })
 
     expect(screen.getByLabelText(/^name/)).toHaveValue('Dupont')
@@ -97,8 +103,8 @@ describe('CreateFamilyDialog', () => {
 
     submit()
     fireEvent.click(await screen.findByRole('button', { name: 'addChild' }))
-    expect(screen.getByLabelText('lastname')).toHaveValue('Dupont')
-    fireEvent.change(screen.getByLabelText('firstname'), { target: { value: 'Laylah' } })
+    expect(screen.getByLabelText(/^lastname/)).toHaveValue('Dupont')
+    fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Laylah' } })
     await chooseClass(/CE1-A/)
     submit()
     await screen.findByText(/Laylah Dupont/)
@@ -125,12 +131,13 @@ describe('CreateFamilyDialog', () => {
   it('creates a child without enrollment when no class is available', async () => {
     render(<CreateFamilyDialog paymentsEnabled={false} />)
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^name/)
 
     fireEvent.change(screen.getByLabelText(/^name/), { target: { value: 'Martin' } })
     submit()
     fireEvent.click(await screen.findByRole('button', { name: 'addChild' }))
-    fireEvent.change(screen.getByLabelText('firstname'), { target: { value: 'Adam' } })
-    fireEvent.change(screen.getByLabelText('lastname'), { target: { value: 'Martin' } })
+    fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Adam' } })
+    fireEvent.change(screen.getByLabelText(/^lastname/), { target: { value: 'Martin' } })
     submit()
     await screen.findByText(/Adam Martin/)
     submit()
@@ -172,6 +179,77 @@ describe('CreateFamilyDialog', () => {
           students: [
             expect.objectContaining({
               enrollment: expect.objectContaining({ planId, classPeriodId: fullClassId }),
+            }),
+          ],
+        })
+      )
+    )
+  })
+})
+
+describe('CreateFamilyDialog arrival during the year', () => {
+  const period = {
+    periodStartAt: '2026-09-01T00:00:00.000Z',
+    periodEndAt: '2027-06-30T00:00:00.000Z',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 10, 20, 10))
+    createFamilyAction.mockResolvedValue({ id: 'family-1', studentIds: [], enrollmentIds: [] })
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows the first month to pay unfolded and sends it for the enrolled child', async () => {
+    render(
+      <CreateFamilyDialog
+        plans={[
+          {
+            id: planId,
+            name: 'Plan mensuel',
+            amount: 1000,
+            paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 5 },
+          },
+        ]}
+        classes={classes.map((item) => ({ ...item, ...period }))}
+        paymentsEnabled={true}
+        currency="EUR"
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'title' }))
+    await screen.findByLabelText(/^name/)
+    fireEvent.change(screen.getByLabelText(/^name/), { target: { value: 'Martin' } })
+    submit()
+    fireEvent.click(await screen.findByRole('button', { name: 'addChild' }))
+    fireEvent.change(screen.getByLabelText(/^firstname/), { target: { value: 'Adam' } })
+    await chooseClass(/CE1-A/)
+
+    const section = screen.getByRole('group', { name: 'title' })
+    expect(section.closest('details')).toBeNull()
+    fireEvent.click(screen.getByRole('combobox', { name: 'startMonth' }))
+    const november = await screen.findByRole('option', { name: /Novembre 2026/ })
+    fireEvent.pointerDown(november)
+    fireEvent.click(november)
+    fireEvent.click(screen.getByRole('button', { name: 'quarter' }))
+
+    submit()
+    await screen.findByText(/Adam Martin/)
+    submit()
+
+    await waitFor(() =>
+      expect(createFamilyAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          students: [
+            expect.objectContaining({
+              enrollment: expect.objectContaining({
+                planId,
+                classPeriodId,
+                startMonth: '2026-11',
+                firstInstallmentAmount: 25,
+              }),
             }),
           ],
         })

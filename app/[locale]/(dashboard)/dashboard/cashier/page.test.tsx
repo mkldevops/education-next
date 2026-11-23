@@ -34,6 +34,9 @@ vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
 }))
 vi.mock('@/use-cases/config/is-meals-enabled', () => ({ isMealsEnabled: async () => true }))
+vi.mock('@/use-cases/config/is-cash-day-tuition-enabled', () => ({
+  isCashDayTuitionEnabled: async () => false,
+}))
 vi.mock('@/use-cases/payments/family-balance', () => ({ getFamilyBalance: getFamilyBalanceMock }))
 vi.mock('@/use-cases/payments/payable-enrollment-choices', () => ({
   listPayableEnrollmentChoices: async () => [],

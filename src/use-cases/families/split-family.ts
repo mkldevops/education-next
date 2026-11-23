@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import type { Prisma } from '@/generated/prisma/client'
 import { dbArchived } from '@/lib/db'
+import { formatAmount, toNumber } from '@/lib/decimal'
 import { draftChecksum } from '@/lib/mcp-draft-crypto'
 
 export const splitFamilyFieldsSchema = z.object({
@@ -130,9 +131,6 @@ export async function inspectFamilySplit(
   })
 
   return {
-    source,
-    links,
-    movedLinks,
     plan: {
       source: { id: source.id, name: source.name, version: source.updatedAt.toISOString() },
       remaining: links
@@ -150,9 +148,9 @@ export async function inspectFamilySplit(
         studentId: link.person.student?.id ?? null,
       })),
       paymentIds: sorted(movedPayments.map((payment) => payment.id)),
-      movedPaidAmount: movedPayments
-        .reduce((total, payment) => total + Number(payment.amount), 0)
-        .toFixed(2),
+      movedPaidAmount: formatAmount(
+        movedPayments.reduce((total, payment) => total + toNumber(payment.amount), 0)
+      ),
       receiptIds: sorted(receiptIds),
       transactionIds: sorted(transactionIds),
       invitationIds: sorted(invitations.map((invitation) => invitation.id)),

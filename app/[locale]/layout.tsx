@@ -12,6 +12,7 @@ import { ServiceWorkerRegister } from '@/features/pwa/service-worker-register'
 import { type Locale, routing } from '@/i18n/routing'
 import { resolveBrandingSchoolId } from '@/lib/branding'
 import { getBrandingAssets } from '@/lib/branding-assets'
+import { ErrorTrackingScript } from '@/lib/error-tracking/error-tracking-script'
 import { getPwaBranding } from '@/lib/pwa-branding'
 import { getThemeConfigs } from '@/lib/theme-configs'
 import '@/styles/globals.css'
@@ -126,6 +127,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <Toaster richColors position="top-right" />
         </NextIntlClientProvider>
         <UmamiScript />
+        <ErrorTrackingScript />
       </body>
     </html>
   )

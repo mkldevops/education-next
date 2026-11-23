@@ -82,3 +82,18 @@ export const linkUserToFamilySchema = z.object({
   userId: z.string(),
   familyId: z.string().uuid(),
 })
+
+export const attachStudentToFamilySchema = z.object({
+  schoolId: z.string().min(1),
+  studentId: z.uuid(),
+  familyId: z.uuid(),
+})
+
+export const createFamilyForStudentSchema = z.object({
+  schoolId: z.string().min(1),
+  studentId: z.uuid(),
+  createdById: z.string().min(1),
+  name: z.string().trim().min(1).max(50),
+  emergencyContactName: z.string().trim().max(250).optional(),
+  emergencyContactPhone: z.string().trim().max(20).regex(phoneNumberFormat).optional(),
+})

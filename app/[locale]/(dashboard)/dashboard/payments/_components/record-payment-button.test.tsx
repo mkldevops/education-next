@@ -18,7 +18,7 @@ vi.mock('@/i18n/routing', () => ({
 vi.mock('../../../_lib/payment-actions', () => ({ recordPaymentAction: vi.fn() }))
 
 describe('RecordPaymentButton', () => {
-  it('opens the existing payment dialog for the family picked first', () => {
+  it('opens the existing payment dialog for the family picked first', async () => {
     render(
       <RecordPaymentButton
         families={[
@@ -31,6 +31,7 @@ describe('RecordPaymentButton', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
     fireEvent.click(screen.getByRole('button', { name: 'Benali' }))
+    await screen.findByLabelText('amount')
 
     expect(screen.getByLabelText('amount')).toBeInTheDocument()
     expect(screen.getByRole('dialog')).toHaveTextContent('Benali')
@@ -39,7 +40,7 @@ describe('RecordPaymentButton', () => {
     expect(replace).toHaveBeenCalledWith('/dashboard/payments', { scroll: false })
   })
 
-  it('states the tuition scope and offers the cashier of the picked family when allowed', () => {
+  it('states the tuition scope and offers the cashier of the picked family when allowed', async () => {
     render(
       <RecordPaymentButton
         families={[{ id: 'family-1', name: 'Benali' }]}
@@ -50,6 +51,7 @@ describe('RecordPaymentButton', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
     fireEvent.click(screen.getByRole('button', { name: 'Benali' }))
+    await screen.findByLabelText('amount')
 
     expect(screen.getByText('scopeHint')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'servicesLink' })).toHaveAttribute(
@@ -58,11 +60,12 @@ describe('RecordPaymentButton', () => {
     )
   })
 
-  it('keeps the tuition scope without a cashier link when it is not allowed', () => {
+  it('keeps the tuition scope without a cashier link when it is not allowed', async () => {
     render(<RecordPaymentButton families={[{ id: 'family-1', name: 'Benali' }]} currency="EUR" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'title' }))
     fireEvent.click(screen.getByRole('button', { name: 'Benali' }))
+    await screen.findByLabelText('amount')
 
     expect(screen.getByText('scopeHint')).toBeInTheDocument()
     expect(screen.queryByRole('link')).not.toBeInTheDocument()

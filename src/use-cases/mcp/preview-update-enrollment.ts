@@ -1,10 +1,16 @@
 import type { z } from 'zod'
 import { calculateTotalAmount, pricingFromTotalAmount, validateDiscount } from '@/domain/enrollment'
 import type { McpFinding } from '@/domain/mcp-draft'
-import { startMonthFromDate } from '@/domain/payment-schedule'
+import {
+  firstInstallmentFitsTotal,
+  paymentInstallments,
+  readPaymentSchedule,
+  startMonthFromDate,
+} from '@/domain/payment-schedule'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { mcpReadGateway } from '@/gateways/mcp-read-gateway'
-import { roundHalfUp } from '@/lib/decimal'
+import { roundHalfUp, toNumberOrNull } from '@/lib/decimal'
+import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { resolveOwedPlanAmount } from '@/use-cases/enrollments/pricing'
 import { blockedPreview, saveDraftPreview } from './draft-response'
 import type { DraftScope } from './draft-scope'
@@ -75,6 +81,7 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
     discount: Number(enrollment.discount),
     totalAmount: Number(enrollment.totalAmount),
     startMonth: startMonthFromDate(enrollment.startMonth),
+    firstInstallmentAmount: toNumberOrNull(enrollment.firstInstallmentAmount),
   }
 
   let plan = before.plan
@@ -97,10 +104,37 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
   // de remise garde le prorata déjà décidé.
   const startMonth = data.startMonth === undefined ? before.startMonth : data.startMonth
 
+  // Le premier mois réduit ne vaut que pour la formule et le mois où il a été décidé : sans
+  // nouveau montant, changer l'un ou l'autre le remet à l'échéance de la formule plutôt que
+  // de garder un montant périmé.
+  const sameArrival = plan.id === before.plan.id && startMonth === before.startMonth
+  const firstInstallmentAmount =
+    data.firstInstallmentAmount === undefined
+      ? sameArrival
+        ? before.firstInstallmentAmount
+        : null
+      : data.firstInstallmentAmount
+  if (
+    data.firstInstallmentAmount === undefined &&
+    before.firstInstallmentAmount !== null &&
+    firstInstallmentAmount === null
+  ) {
+    warnings.push({
+      field: 'firstInstallmentAmount',
+      value: String(before.firstInstallmentAmount),
+      reason: 'firstInstallmentReset',
+    })
+  }
+
   // Sans remise lue, celle de l'inscription suit la nouvelle formule : changer de forfait
   // ne doit pas effacer en silence une remise accordée.
   let discount = data.discount ?? before.discount
-  let changedField: 'totalAmount' | 'planName' | 'discount' | 'startMonth'
+  let changedField:
+    | 'totalAmount'
+    | 'planName'
+    | 'discount'
+    | 'startMonth'
+    | 'firstInstallmentAmount'
   let changedValue: string
   if (data.totalAmount !== undefined) {
     changedField = 'totalAmount'
@@ -111,9 +145,12 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
   } else if (data.planName !== undefined) {
     changedField = 'planName'
     changedValue = plan.name
-  } else {
+  } else if (data.startMonth !== undefined) {
     changedField = 'startMonth'
     changedValue = String(startMonth)
+  } else {
+    changedField = 'firstInstallmentAmount'
+    changedValue = String(firstInstallmentAmount)
   }
 
   // La part de la formule due à partir du mois de début remplace son prix dans les règles
@@ -122,9 +159,17 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
     schoolId,
     enrollment.id,
     { amount: plan.amount, paymentSchedule },
-    startMonth
+    { startMonth, firstInstallmentAmount }
   )
   if (typeof planAmountDue === 'string') {
+    if (planAmountDue.startsWith('firstInstallment')) {
+      blockers.push({
+        field: 'firstInstallmentAmount',
+        value: String(firstInstallmentAmount),
+        reason: planAmountDue,
+      })
+      return nothing
+    }
     blockers.push({
       field: data.startMonth === undefined ? changedField : 'startMonth',
       value: data.startMonth === undefined ? changedValue : String(startMonth),
@@ -152,6 +197,18 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
   }
 
   const totalAmount = data.totalAmount ?? calculateTotalAmount(planAmountDue, discount)
+
+  // La remise se répartit sur les échéances suivantes : le premier mois réduit doit tenir
+  // dans ce qu'elle laisse à payer.
+  if (!firstInstallmentFitsTotal(firstInstallmentAmount, totalAmount)) {
+    blockers.push({
+      field: 'firstInstallmentAmount',
+      value: String(firstInstallmentAmount),
+      reason: 'firstInstallmentExceedsTotal',
+    })
+    return nothing
+  }
+
   const paid = paidAmount(enrollment.payments)
 
   // Un total recalculé ne se compare pas au total stocké seul : une formule dont le prix a
@@ -160,7 +217,8 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
     plan.id === before.plan.id &&
     discount === before.discount &&
     totalAmount === before.totalAmount &&
-    startMonth === before.startMonth
+    startMonth === before.startMonth &&
+    firstInstallmentAmount === before.firstInstallmentAmount
   ) {
     blockers.push({ field: changedField, value: changedValue, reason: 'noChange' })
     return nothing
@@ -173,11 +231,45 @@ export async function previewUpdateEnrollment(scope: DraftScope, input: Input) {
     return nothing
   }
 
+  // Une remise se répartit sur les échéances qui suivent le premier mois réduit : les deux
+  // ensemble baissent l'année en plus du mois d'arrivée, ce qui mérite d'être relu.
+  if (discount > 0 && firstInstallmentAmount !== null) {
+    warnings.push({
+      field: 'discount',
+      value: String(discount),
+      reason: 'discountWithFirstInstallment',
+    })
+  }
+
+  // L'échéancier « avant → après » se lit ligne par ligne sur la carte de validation. Sans
+  // échéancier sur l'une ou l'autre formule, rien à détailler et la période n'est pas lue.
+  const after = { plan, discount, totalAmount, startMonth, firstInstallmentAmount, planAmountDue }
+  const schedules = {
+    before: readPaymentSchedule(enrollment.plan.paymentSchedule),
+    after: readPaymentSchedule(paymentSchedule),
+  }
+  const period =
+    schedules.before.mode === 'NONE' && schedules.after.mode === 'NONE'
+      ? null
+      : await enrollmentGateway.findPeriodBounds(schoolId, enrollment.id)
+  const { currency } = await getSchoolRegionalSettings(schoolId)
+  const installments = (side: 'before' | 'after') => {
+    const pricing = side === 'before' ? before : after
+    return period
+      ? paymentInstallments(schedules[side], pricing.totalAmount, period.startAt, currency, {
+          startMonth: pricing.startMonth,
+          firstInstallmentAmount: pricing.firstInstallmentAmount,
+        })
+      : []
+  }
+
   const resolved = {
     tool: UPDATE_ENROLLMENT_TOOL,
     enrollment: describe(enrollment),
     before,
-    after: { plan, discount, totalAmount, startMonth, planAmountDue },
+    after,
+    currency,
+    schedule: { before: installments('before'), after: installments('after') },
     paid,
     remaining: roundHalfUp(totalAmount - paid),
   }

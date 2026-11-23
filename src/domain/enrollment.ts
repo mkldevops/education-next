@@ -1,10 +1,33 @@
-import type { EnrollmentStatus } from '@/generated/prisma/client'
+import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { roundHalfUp } from '@/lib/decimal'
 
 export const OPEN_ENROLLMENT_STATUSES = [
   'PENDING',
   'ACTIVE',
 ] as const satisfies readonly EnrollmentStatus[]
+
+/**
+ * Only these enrollments still owe money; the others only contribute what was already paid.
+ * An open enrollment owes its total; a departed student's enrollment (`COMPLETED` with an
+ * `endMonth`, see `archiveStudent`) still owes the months up to its departure.
+ */
+export function isPayableEnrollment(status: EnrollmentStatus, endMonth: Date | null) {
+  return (
+    (OPEN_ENROLLMENT_STATUSES as readonly EnrollmentStatus[]).includes(status) ||
+    (status === 'COMPLETED' && endMonth !== null)
+  )
+}
+
+/**
+ * Prisma mirror of `isPayableEnrollment`. It carries an `OR`: nest it in `AND`/`OR` rather than
+ * spreading it next to another `OR`.
+ */
+export const payableEnrollmentWhere = {
+  OR: [
+    { status: { in: [...OPEN_ENROLLMENT_STATUSES] } },
+    { status: 'COMPLETED', endMonth: { not: null } },
+  ],
+} satisfies Prisma.EnrollmentWhereInput
 
 /** An admin enrolls a child, from a form or through the assistant: the enrollment is in force at once. */
 export const NEW_ENROLLMENT_STATUS = 'ACTIVE' as const satisfies EnrollmentStatus

@@ -11,13 +11,14 @@ import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
 import { getFamilyBalance } from '@/use-cases/payments/family-balance'
 import { listPayableEnrollmentChoices } from '@/use-cases/payments/payable-enrollment-choices'
-import { getFamilyPaymentTracking } from '@/use-cases/payments/payment-tracking'
+import { getFamilyPaymentTrackingDetail } from '@/use-cases/payments/payment-tracking'
 import { isOnlinePaymentAvailable } from '@/use-cases/payments/stripe-settings'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { canOpenSchoolCashier, requireSchoolSession } from '../../../_lib/auth-helper'
 import { classLabel } from '../../../_lib/class-options'
 import { loadSuggestedLevels, toClassOption } from '../../../_lib/class-options-loader'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
+import { toPlanOption } from '../../../_lib/plan-options'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
 import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
@@ -94,7 +95,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     familyBalance,
     deletionImpact,
     onlinePaymentAvailable,
-    { currency },
+    { currency, timeZone },
     paymentTracking,
     payableEnrollments,
   ] = await Promise.all([
@@ -103,7 +104,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
     isAdmin ? familyGateway.countDeletionImpact(family.schoolId, family.id) : null,
     isStaff ? false : isOnlinePaymentAvailable(family.schoolId),
     getSchoolRegionalSettings(family.schoolId),
-    paymentsEnabled ? getFamilyPaymentTracking(family.schoolId, family.id) : null,
+    paymentsEnabled ? getFamilyPaymentTrackingDetail(family.schoolId, family.id) : null,
     paymentsEnabled && isStaff ? listPayableEnrollmentChoices(family.schoolId, family.id) : [],
   ])
 
@@ -152,11 +153,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
   const classOptions = classes.map((c) => toClassOption(c))
   // « Changer de classe » liste les classes sans titre de niveau : il garde le libellé complet.
   const reassignClassOptions = classOptions.map((c) => ({ id: c.id, name: classLabel(c) }))
-  const planOptions = (isAdmin ? plans : []).map((p) => ({
-    id: p.id,
-    name: p.name,
-    amount: Number(p.amount),
-  }))
+  const planOptions = (isAdmin ? plans : []).map(toPlanOption)
   const familyHref = `/dashboard/families/${family.id}`
 
   return (
@@ -279,6 +276,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
         defaultIndex={Math.max(0, tabKeys.indexOf(tab as TabKey))}
         tabs={[
           {
+            id: 'overview',
             label: t('tabs.overview'),
             content: (
               <OverviewTab
@@ -311,6 +309,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
             ),
           },
           {
+            id: 'children',
             label: t('tabs.children'),
             content: (
               <ChildrenTab
@@ -329,12 +328,14 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
           ...(paymentsEnabled
             ? [
                 {
+                  id: 'payments',
                   label: t('tabs.payments'),
                   content: (
                     <PaymentsTab
                       payments={payments}
                       locale={locale}
                       currency={currency}
+                      timeZone={timeZone}
                       tracking={paymentTracking}
                       canCancel={isAdmin}
                     />
@@ -343,6 +344,7 @@ export default async function FamilyDetailPage({ params, searchParams }: Props) 
               ]
             : []),
           {
+            id: 'activity',
             label: t('tabs.activity'),
             content: (
               <ActivityTab

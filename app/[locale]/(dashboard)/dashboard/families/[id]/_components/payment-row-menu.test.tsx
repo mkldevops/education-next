@@ -31,7 +31,10 @@ const openMenu = () => fireEvent.click(screen.getByRole('button', { name: 'actio
 const items = () => screen.getAllByRole('menuitem').map((item) => item.textContent)
 
 describe('PaymentRowMenu', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    window.history.replaceState(null, '', '/fr/dashboard/families/f-1')
+  })
 
   it('issues a receipt for a manual payment without one, then opens it', async () => {
     issueReceiptForPaymentsAction.mockResolvedValue({ receiptId: 'r-1' })
@@ -41,7 +44,11 @@ describe('PaymentRowMenu', () => {
     expect(items()).toEqual(['trigger', 'cancel.trigger'])
     fireEvent.click(screen.getByRole('menuitem', { name: 'trigger' }))
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/dashboard/cashier/receipts/r-1'))
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith(
+        '/dashboard/cashier/receipts/r-1?from=%2Fdashboard%2Ffamilies%2Ff-1'
+      )
+    )
     expect(issueReceiptForPaymentsAction).toHaveBeenCalledWith(['p-1', 'p-2'])
   })
 
@@ -58,7 +65,9 @@ describe('PaymentRowMenu', () => {
     openMenu()
     expect(items()).toEqual(['viewReceipt', 'cancelReceipt'])
     fireEvent.click(screen.getByRole('menuitem', { name: 'cancelReceipt' }))
-    expect(push).toHaveBeenCalledWith('/dashboard/cashier/receipts/r-9?action=cancel')
+    expect(push).toHaveBeenCalledWith(
+      '/dashboard/cashier/receipts/r-9?action=cancel&from=%2Fdashboard%2Ffamilies%2Ff-1'
+    )
   })
 
   it('only points an online payment to Stripe', () => {

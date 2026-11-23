@@ -3,7 +3,7 @@
 import { Button, cn, Input, Label } from '@peaklab/ui'
 import { useRouter as useNextRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { type ReactNode, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { formatChildcareMonth } from '@/domain/childcare'
 import { amountForDays, type MealLedger, previewMealPayment } from '@/domain/meal-ledger'
 import { receiptTotal } from '@/domain/receipt'
@@ -19,6 +19,7 @@ import {
   targetEnrollmentId,
 } from '../../payments/_components/tuition-target-field'
 import { suggestTenders } from '../_lib/cash-tender'
+import { Chip, Group, SplitRow, toAmount } from './cashier-form-parts'
 
 export type CashierLine = {
   studentId: string
@@ -58,11 +59,6 @@ const METHODS: CashierPaymentMethod[] = ['CASH', 'MOBILE_MONEY', 'TRANSFER', 'CH
 const lineKey = (line: Pick<CashierLine, 'studentId' | 'service'>) =>
   `${line.studentId}:${line.service}`
 
-const toAmount = (value: string | undefined) => {
-  const amount = Number((value ?? '').replace(',', '.'))
-  return Number.isFinite(amount) && amount > 0 ? amount : 0
-}
-
 /**
  * Clé d'idempotence d'un encaissement en cours. Gardée dans la session de l'onglet : un
  * renvoi après une coupure réseau retrouve le reçu déjà émis au lieu d'en créer un second.
@@ -74,41 +70,6 @@ function idempotencyKey(familyId: string) {
   const key = crypto.randomUUID()
   sessionStorage.setItem(storageKey, key)
   return { key, storageKey }
-}
-
-function Group({ title, due, children }: { title: string; due?: string; children: ReactNode }) {
-  return (
-    <section className="overflow-hidden rounded-lg border border-alabaster-700">
-      <header className="flex items-baseline justify-between gap-2 bg-alabaster-900 px-4 py-2.5">
-        <h3 className="text-sm font-semibold text-graphite">{title}</h3>
-        {due && <span className="text-sm font-semibold tabular-nums text-amber-700">{due}</span>}
-      </header>
-      <ul className="divide-y divide-alabaster-700">{children}</ul>
-    </section>
-  )
-}
-
-function Chip({
-  children,
-  onClick,
-  disabled,
-}: {
-  children: ReactNode
-  onClick: () => void
-  disabled: boolean
-}) {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      disabled={disabled}
-      onClick={onClick}
-      className="h-7 rounded-full px-3 text-xs"
-    >
-      {children}
-    </Button>
-  )
 }
 
 export function CashierForm({
@@ -135,7 +96,8 @@ export function CashierForm({
   const [reference, setReference] = useState('')
   const [tendered, setTendered] = useState('')
 
-  const step = 1 / 10 ** currencyFractionDigits(currency)
+  const fractionDigits = currencyFractionDigits(currency)
+  const step = 1 / 10 ** fractionDigits
   const money = (value: number) => formatCurrency(value, locale, currency)
   const formatDay = (day: string) =>
     new Date(`${day}T00:00:00.000Z`).toLocaleDateString(locale, {
@@ -202,6 +164,13 @@ export function CashierForm({
   const setAmount = (line: CashierLine, value: number) =>
     setAmounts((current) => ({ ...current, [lineKey(line)]: String(value) }))
 
+  const splitGroups = (['CANTEEN', 'SNACK'] as const)
+    .map((service) => ({
+      service,
+      lines: lines.filter((line) => line.service === service && line.unitPrice !== null),
+    }))
+    .filter((group) => group.lines.length > 1)
+
   const submit = () => {
     if (isPending || total <= 0) return
     startTransition(async () => {
@@ -261,6 +230,24 @@ export function CashierForm({
             title={t('groups.meals')}
             due={mealsDue > 0 ? t('groups.due', { amount: money(mealsDue) }) : undefined}
           >
+            {splitGroups.map((group) => (
+              <SplitRow
+                key={group.service}
+                lines={group.lines}
+                title={t('split.title', { service: tServices(group.service) })}
+                step={step}
+                fractionDigits={fractionDigits}
+                disabled={isPending}
+                onSplit={(shares) =>
+                  setAmounts((current) => ({
+                    ...current,
+                    ...Object.fromEntries(
+                      shares.map((share) => [lineKey(share.line), String(share.amount)])
+                    ),
+                  }))
+                }
+              />
+            ))}
             {lines.map((line) => {
               const amount = toAmount(amounts[lineKey(line)])
               const preview =

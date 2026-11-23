@@ -1,6 +1,6 @@
 import { cache } from 'react'
 import { db } from '@/lib/db'
-import type { DecimalLike } from '@/lib/decimal'
+import { type DecimalLike, toNumberOrNull } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 import { classOptionSelect } from '../../../../_lib/class-options-loader'
 import { resolveDeepLink, staffOrLinkedTo } from '../../../../_lib/deep-link'
@@ -98,21 +98,28 @@ export type FamilyDetail = Extract<
 type EnrollmentAmounts = {
   totalAmount: DecimalLike
   discount: DecimalLike
+  writeOffAmount: DecimalLike | null
+  firstInstallmentAmount: DecimalLike | null
   plan: { amount: DecimalLike }
 }
 
 function serializeEnrollmentAmounts<E extends EnrollmentAmounts>(
   enrollment: E
-): Omit<E, 'totalAmount' | 'discount' | 'plan'> & {
+): Omit<E, 'totalAmount' | 'discount' | 'writeOffAmount' | 'firstInstallmentAmount' | 'plan'> & {
   totalAmount: number
   discount: number
+  writeOffAmount: number | null
+  firstInstallmentAmount: number | null
   plan: Omit<E['plan'], 'amount'> & { amount: number }
 } {
-  const { totalAmount, discount, plan, ...rest } = enrollment
+  const { totalAmount, discount, writeOffAmount, firstInstallmentAmount, plan, ...rest } =
+    enrollment
   return {
     ...rest,
     totalAmount: Number(totalAmount),
     discount: Number(discount),
+    writeOffAmount: writeOffAmount === null ? null : Number(writeOffAmount),
+    firstInstallmentAmount: toNumberOrNull(firstInstallmentAmount),
     plan: serializePlanAmount(plan),
   }
 }

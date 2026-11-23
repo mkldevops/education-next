@@ -1,25 +1,26 @@
 'use client'
 
+import { Bold, Italic, List, Pencil, Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { useEffect, useRef, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
-  Button,
   Dialog,
   DialogBody,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Input,
-  Label,
-  MultiSelect,
+} from '@/components/ui/dialog/dialog'
+import { Input, Label } from '@/components/ui/input'
+import { MultiSelect } from '@/components/ui/multi-select'
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@peaklab/ui'
-import { Bold, Italic, List, Pencil, Plus } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { useEffect, useRef, useState } from 'react'
+} from '@/components/ui/select'
 import { parseSimpleInline, type SimpleInlineNode } from '@/domain/simple-rich-text'
 import { DialogFormActions, useDialogForm } from '@/features/forms'
 import { toast } from '@/lib/toast'

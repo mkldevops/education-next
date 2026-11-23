@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { payableEnrollmentWhere } from '@/domain/enrollment'
 
 const claim = vi.fn()
 const findById = vi.fn()
@@ -127,9 +128,7 @@ describe('commitRecordPayment', () => {
   it('pays enrollments still awaiting validation', async () => {
     await commitRecordPayment(scope, input)
 
-    expect(tx.enrollment.findMany.mock.calls[0][0].where.status).toEqual({
-      in: ['PENDING', 'ACTIVE'],
-    })
+    expect(tx.enrollment.findMany.mock.calls[0][0].where).toMatchObject(payableEnrollmentWhere)
   })
 
   it('locks the family row, scoped by school, before reading its balance', async () => {

@@ -38,19 +38,30 @@ async function sumPaid(
  * premier niveau d'un `select` écrit en argument, un champ inconnu plus bas n'y casse qu'à
  * l'exécution.
  */
-const studentSearchSelect = {
-  id: true,
-  person: { select: { name: true, lastname: true } },
-  enrollments: {
-    where: { status: { in: ['PENDING', 'ACTIVE'] } },
-    select: {
-      classAssignments: {
-        where: { endAt: null },
-        select: { classPeriod: { select: { name: true } } },
-        take: 1,
-      },
+const currentClassSelect = {
+  where: { status: { in: ['PENDING', 'ACTIVE'] } },
+  select: {
+    classAssignments: {
+      where: { endAt: null },
+      select: { classPeriod: { select: { name: true } } },
+      take: 1,
     },
   },
+} satisfies Prisma.Student$enrollmentsArgs
+
+const familyLinksSelect = {
+  select: {
+    familyId: true,
+    relationType: true,
+    family: { select: { name: true } },
+  },
+} satisfies Prisma.Person$familiesArgs
+
+const studentSearchSelect = {
+  id: true,
+  person: { select: { name: true, lastname: true, families: familyLinksSelect } },
+  enrollments: currentClassSelect,
+  childcareSubscriptions: { select: { id: true } },
 } satisfies Prisma.StudentSelect
 
 export const childcareGateway = {
@@ -310,19 +321,8 @@ export const childcareGateway = {
           select: {
             id: true,
             isActive: true,
-            person: {
-              select: {
-                name: true,
-                lastname: true,
-                families: {
-                  select: {
-                    familyId: true,
-                    relationType: true,
-                    family: { select: { name: true } },
-                  },
-                },
-              },
-            },
+            person: { select: { name: true, lastname: true, families: familyLinksSelect } },
+            enrollments: currentClassSelect,
           },
         },
         charges: {

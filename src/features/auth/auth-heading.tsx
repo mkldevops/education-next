@@ -1,5 +1,5 @@
-import { cn } from '@peaklab/ui'
 import type { ReactNode } from 'react'
+import { cn } from '@/components/ui/utils'
 
 type Props = {
   title: string

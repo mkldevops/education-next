@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   chargeLeft,
   chargeRemaining,
+  childcareStatus,
   coversMonth,
   dateToMonth,
+  earliestEndMonth,
   exceedsCharge,
   formatChildcareMonth,
   isChildcareMonth,
@@ -124,5 +126,52 @@ describe('childcare balance', () => {
         { amount: 6000, paid: 1000, settled: false, cancelled: false },
       ])
     ).toEqual({ billed: 12000, paid: 7000, remaining: 5000 })
+  })
+})
+
+describe('childcareStatus', () => {
+  const charge = (paid: number, extra = {}) => ({ amount: 6000, paid, cancelled: false, ...extra })
+
+  it('marks a child whose period ended before this month as stopped', () => {
+    expect(childcareStatus({ endMonth: '2026-10', charges: [charge(0)] }, '2026-11')).toEqual({
+      status: 'stopped',
+      dueMonths: 1,
+    })
+  })
+
+  it('keeps a child stopping this month active', () => {
+    expect(childcareStatus({ endMonth: '2026-11', charges: [] }, '2026-11').status).toBe('new')
+  })
+
+  it('counts the months still due', () => {
+    const late = childcareStatus({ endMonth: null, charges: [charge(0), charge(1000)] }, '2026-11')
+    expect(late).toEqual({ status: 'late', dueMonths: 2 })
+    expect(
+      childcareStatus({ endMonth: null, charges: [charge(6000), charge(0)] }, '2026-11')
+    ).toEqual({ status: 'due', dueMonths: 1 })
+  })
+
+  it('ignores cancelled months and months settled by the opening', () => {
+    const charges = [charge(0, { cancelled: true }), charge(0, { settled: true })]
+    expect(childcareStatus({ endMonth: null, charges }, '2026-11').status).toBe('upToDate')
+    expect(
+      childcareStatus({ endMonth: null, charges: [charge(0, { cancelled: true })] }, '2026-11')
+        .status
+    ).toBe('new')
+  })
+})
+
+describe('earliestEndMonth', () => {
+  it('is the last live billed month, or the start month', () => {
+    expect(earliestEndMonth([], '2026-09')).toBe('2026-09')
+    expect(
+      earliestEndMonth(
+        [
+          { month: '2026-10', cancelled: false },
+          { month: '2026-11', cancelled: true },
+        ],
+        '2026-09'
+      )
+    ).toBe('2026-10')
   })
 })

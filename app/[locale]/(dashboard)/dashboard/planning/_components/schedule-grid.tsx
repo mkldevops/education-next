@@ -1,6 +1,7 @@
-import { buttonVariants, Card } from '@peaklab/ui'
 import { ChevronDown } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
+import { buttonVariants } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { parseSimpleInline, type SimpleInlineNode } from '@/domain/simple-rich-text'
 import { Link } from '@/i18n/routing'
 import { DeleteScheduleSlotDialog } from './delete-schedule-slot-dialog'

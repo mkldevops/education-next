@@ -44,3 +44,9 @@ export function schoolDayBounds(day: string, timeZone: string): { start: Date; e
   const next = new Date(Date.parse(`${day}T00:00:00.000Z`) + 86_400_000).toISOString().slice(0, 10)
   return { start: localMidnight(day, timeZone), end: localMidnight(next, timeZone) }
 }
+
+/** First day (`YYYY-MM-DD`) of the month following the given school date. */
+export function nextMonthStart(day: string): string {
+  const [year, month] = day.split('-').map(Number)
+  return new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10)
+}

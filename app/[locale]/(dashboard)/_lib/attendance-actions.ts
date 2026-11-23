@@ -4,19 +4,18 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { isAttendanceClosed } from '@/domain/attendance-closure'
 import { attendanceOccurrenceKey } from '@/domain/attendance-frequency'
-import {
-  attendanceRosterWindow,
-  canRefreshRoster,
-  missingRosterStudents,
-  planCancellationTransition,
-} from '@/domain/attendance-session'
+import { missingRosterStudents, planCancellationTransition } from '@/domain/attendance-session'
 import { planningWeekday } from '@/domain/current-week-dates'
 import { readsAsOptedIn } from '@/domain/feature-flags'
 import { absenceReasonGateway } from '@/gateways/absence-reason-gateway'
-import type { Prisma } from '@/generated/prisma/client'
 import { ATTENDANCE_ENABLED_CONFIG_KEY } from '@/lib/attendance-config'
 import { db } from '@/lib/db'
 import { isActiveSchoolAdmin } from '@/lib/school-context'
+import {
+  findRoster,
+  refreshSessionRoster,
+  rosterEntry,
+} from '@/use-cases/attendance/attendance-roster'
 import { getAttendanceEntrySettings } from '@/use-cases/config/get-attendance-entry-settings'
 import { getAttendanceFrequency } from '@/use-cases/config/get-attendance-frequency'
 import { syncMealAbsencesFromAttendance } from '@/use-cases/meals/sync-meal-absences-from-attendance'
@@ -75,38 +74,6 @@ async function enabled(schoolId: string) {
     select: { value: true },
   })
   return readsAsOptedIn(config?.value)
-}
-
-/**
- * Active class assignments on the roster of `occurredOn`, including one created during that UTC day.
- * Root query: always scoped by `schoolId`.
- */
-function findRoster(
-  tx: Prisma.TransactionClient,
-  schoolId: string,
-  classPeriodId: string,
-  occurredOn: Date
-) {
-  const { startsBefore, endsFrom } = attendanceRosterWindow(occurredOn)
-  return tx.classAssignment.findMany({
-    where: {
-      schoolId,
-      classPeriodId,
-      startAt: { lt: startsBefore },
-      OR: [{ endAt: null }, { endAt: { gte: endsFrom } }],
-      enrollment: { status: 'ACTIVE' },
-    },
-    include: { enrollment: { include: { student: { include: { person: true } } } } },
-  })
-}
-
-/** Students start present: the teacher only marks the absences and late arrivals. */
-function rosterEntry({ enrollment }: Awaited<ReturnType<typeof findRoster>>[number]) {
-  return {
-    status: 'PRESENT' as const,
-    studentId: enrollment.studentId,
-    studentName: `${enrollment.student.person.lastname} ${enrollment.student.person.name}`,
-  }
 }
 
 function isUniqueConstraint(error: unknown) {
@@ -197,7 +164,10 @@ async function openAttendance(
             createdById: actor.userId,
             updatedById: actor.userId,
             entries: {
-              create: missingRosterStudents(roster.map(rosterEntry), []).map((entry) => ({
+              create: missingRosterStudents(
+                roster.map((row) => rosterEntry(row)),
+                []
+              ).map((entry) => ({
                 ...entry,
                 updatedById: actor.userId,
               })),
@@ -351,40 +321,13 @@ export async function refreshAttendanceRosterAction(input: unknown) {
   const { actor } = resolved
   const { sessionId } = parsed.data
   const refreshed = await db.$transaction(async (tx) => {
-    const session = await tx.attendanceSession.findUnique({
-      where: { id_schoolId: { id: sessionId, schoolId: actor.schoolId } },
-      select: { status: true, classPeriodId: true, occurredOn: true },
+    const result = await refreshSessionRoster(tx, {
+      schoolId: actor.schoolId,
+      sessionId,
+      actorId: actor.userId,
+      status: 'PRESENT',
     })
-    if (!session) return 'notFound' as const
-    if (!canRefreshRoster(session.status)) return 'invalidTransition' as const
-    // Conditional write: row-locks the DRAFT session so a concurrent validation waits for the refresh.
-    const locked = await tx.attendanceSession.updateMany({
-      where: { id: sessionId, schoolId: actor.schoolId, status: 'DRAFT' },
-      data: { updatedById: actor.userId },
-    })
-    if (locked.count !== 1) return 'invalidTransition' as const
-    const [roster, existing] = await Promise.all([
-      findRoster(tx, actor.schoolId, session.classPeriodId, session.occurredOn),
-      tx.attendanceEntry.findMany({
-        where: { attendanceSessionId: sessionId, schoolId: actor.schoolId },
-        select: { studentId: true },
-      }),
-    ])
-    const missing = missingRosterStudents(
-      roster.map(rosterEntry),
-      existing.map(({ studentId }) => studentId)
-    )
-    if (missing.length > 0) {
-      await tx.attendanceEntry.createMany({
-        data: missing.map((entry) => ({
-          ...entry,
-          schoolId: actor.schoolId,
-          attendanceSessionId: sessionId,
-          updatedById: actor.userId,
-        })),
-        skipDuplicates: true,
-      })
-    }
+    if (typeof result === 'string') return result
     return tx.attendanceSession.findUnique({
       where: { id_schoolId: { id: sessionId, schoolId: actor.schoolId } },
       include: SESSION_WITH_ENTRIES,

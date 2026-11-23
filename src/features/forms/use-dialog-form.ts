@@ -1,9 +1,9 @@
 'use client'
 
-import { useDialog } from '@peaklab/ui'
 import type { useTranslations } from 'next-intl'
 import type { FormEvent } from 'react'
 import { useTransition } from 'react'
+import { useDialog } from '@/components/ui/dialog/dialog'
 import { toast, toastActionError } from '@/lib/toast'
 
 type Translator = ReturnType<typeof useTranslations>

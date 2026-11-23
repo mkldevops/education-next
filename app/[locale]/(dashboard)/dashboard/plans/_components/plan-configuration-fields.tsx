@@ -4,6 +4,7 @@ import { Button, Input, Label } from '@peaklab/ui'
 import { useLocale, useTranslations } from 'next-intl'
 import { useId } from 'react'
 import { annualPlanAmount, type PaymentSchedule, type PlanPricing } from '@/domain/payment-schedule'
+import { RequiredMark } from '@/features/forms/required-mark'
 import {
   currencyFractionDigits,
   currencyStep,
@@ -89,6 +90,7 @@ export function PlanConfigurationFields({
               {t(pricing.mode === 'ANNUAL' ? 'annualAmount' : 'monthlyAmount', {
                 currency: currencySymbol(locale, currency),
               })}
+              <RequiredMark />
             </Label>
             <Input
               id={`${id}-amount`}

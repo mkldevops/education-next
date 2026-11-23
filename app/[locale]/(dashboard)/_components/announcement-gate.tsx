@@ -4,10 +4,12 @@ import { isImpersonating } from '@/domain/user'
 import { auth } from '@/lib/auth'
 import { getAnnouncementFeed } from '../_lib/announcements'
 import { AnnouncementDialog } from './announcement-dialog'
+import { AnnouncementMarkdown } from './announcement-markdown'
 
 /**
  * Affiche les nouveautés mises en avant, actives et non vues. Rien pendant
  * un emprunt d'identité : la fermeture marquerait les nouveautés comme vues pour la cible.
+ * Le markdown est rendu ici, côté serveur, pour ne pas envoyer son analyseur au navigateur.
  */
 export async function AnnouncementGate({ locale }: { locale: string }) {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -26,7 +28,10 @@ export async function AnnouncementGate({ locale }: { locale: string }) {
         id: announcement.id,
         title: announcement.title,
         summary: announcement.summary,
-        body: announcement.body,
+        body:
+          announcement.summary || !announcement.body ? null : (
+            <AnnouncementMarkdown>{announcement.body}</AnnouncementMarkdown>
+          ),
         imageUrl: announcement.imageUrl,
         videoUrl: announcement.videoUrl,
         link: safeAnnouncementLink(announcement.link),

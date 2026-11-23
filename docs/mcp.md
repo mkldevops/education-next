@@ -332,6 +332,20 @@ resolving a paper form needs an identity, not a way to contact anyone. Every col
 `src/gateways/mcp-read-gateway.ts`, so widening the surface is an edit to that file, not a
 side effect of a schema change.
 
+## MCP Apps views
+
+`list_overdue_students` declares an [MCP Apps](https://modelcontextprotocol.io/extensions/apps)
+view: its tool metadata carries `_meta.ui.resourceUri = ui://education/overdue.html`, and
+`resources/read` on that URI returns a `text/html;profile=mcp-app` document. Hosts that implement
+the extension display the overdue families as a card: total, one row per family
+with its children and amount, sorted by amount, each row opening the family page. Other clients
+ignore the metadata and keep the JSON result, which now also carries the school `currency`.
+
+The document is static. It holds no school data, only the public origin used to build links
+(`NEXT_PUBLIC_APP_URL`); the data reaches it through the host's `ui/notifications/tool-result`
+and is written with `textContent`. The dashboard assistant renders the same document in a
+sandboxed iframe (`allow-scripts` only) and accepts only `/dashboard` links from it.
+
 ## Creating levels and classes
 
 `create_level { name }` creates an active level in the connected school and returns its `id`
@@ -371,7 +385,7 @@ permanently deleting records, reusing the dashboard protections:
 
 | Tool                   | Refuses                                                                                                                  |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `archive_student`      | An active or pending enrollment (`hasActiveEnrollments`); stops meal services on success                                 |
+| `archive_student`      | Nothing: closes open enrollments after the current school month, keeps the amount owed through it, ends class and meals  |
 | `archive_class_period` | Any student/teacher assignment, schedule slot or attendance session (`classInUse`)                                       |
 | `archive_level`        | Any active class (`levelInUse`); removes progression links on success                                                    |
 | `archive_plan`         | An open enrollment (`planInUse`), the reserved unpriced plan (`unpricedPlan`), or disabled payments (`paymentsDisabled`) |
@@ -460,8 +474,8 @@ gets `notConfigured` from each of them.
 ## Reading attendance calls
 
 `list_attendance_calls` rereads `/dashboard/attendance` day by day, so an agent can tell which call
-is still to be taken or left open. It only reads: opening, entering, validating and cancelling a
-call stay dashboard actions. A school without `attendance_enabled` gets `notConfigured`.
+is still to be taken or left open. Opening, entering, validating and cancelling a call stay
+dashboard actions. A school without `attendance_enabled` gets `notConfigured`.
 The school setting `attendance_frequency=DAILY` expects a single call per class/calendar day,
 even when its timetable contains several lessons; its `slotId`, `startTime` and `endTime` are null.
 The existing `PER_SLOT` behavior remains the default. Earlier recorded calls remain visible
@@ -479,6 +493,16 @@ publishes `classPeriod { id, name }`, `slotId`, `startTime`, `endTime`, `status`
 `CANCELLED` for a cancelled one; an exceptional call has a null `slotId`. On a closure day only the
 calls already opened remain. No student, entry or roster is published. `to` before `from` is
 `invalidDateRange`, a longer range `rangeTooLong`.
+
+### Adding new students to a call
+
+`refresh_attendance_roster` (write, `IDEMPOTENT_WRITE`) takes the `sessionId` of an `IN_PROGRESS`
+call from `list_attendance_calls` and adds the students assigned to its class since it was opened,
+as in the call screen's « Actualiser la liste ». They are added `NOT_RECORDED`, not `PRESENT`: nobody
+on the call screen has seen them yet. Existing entries are never changed. It returns `added`
+(`studentId`, `studentName`); a second call adds nothing. Refusals: `notConfigured`, `notFound`
+(unknown or another school's call), `invalidTransition` (validated or cancelled call),
+`validationError`.
 
 ## Canteen, snack and cashier receipts
 

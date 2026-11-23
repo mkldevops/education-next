@@ -26,6 +26,8 @@ vi.mock('@/gateways/mcp-draft-gateway', () => ({
 vi.mock('@/lib/db', () => ({ db: { $transaction: transaction } }))
 const issueTuitionReceipt = vi.fn()
 vi.mock('@/use-cases/receipts/issue-tuition-receipt', () => ({ issueTuitionReceipt }))
+const syncOpenAttendanceRosters = vi.fn()
+vi.mock('@/use-cases/attendance/attendance-roster', () => ({ syncOpenAttendanceRosters }))
 
 const { commitEnrollFamily } = await import('./commit-enroll-family')
 
@@ -126,6 +128,19 @@ describe('commitEnrollFamily', () => {
     )
   })
 
+  it('adds the new students to the calls of their class still in progress, after the commit', async () => {
+    await commitEnrollFamily(scope, input)
+
+    expect(syncOpenAttendanceRosters).toHaveBeenCalledWith({
+      schoolId: 'school-1',
+      actorId: 'user-1',
+      enrollmentIds: ['enrollment-1'],
+    })
+    expect(syncOpenAttendanceRosters.mock.invocationCallOrder[0]).toBeGreaterThan(
+      transaction.mock.invocationCallOrder[0]
+    )
+  })
+
   it('creates the enrollment active, without a separate activation step', async () => {
     await commitEnrollFamily(scope, input)
 
@@ -164,6 +179,39 @@ describe('commitEnrollFamily', () => {
         data: expect.objectContaining({ startMonth: new Date('2026-10-01T00:00:00.000Z') }),
       })
     )
+  })
+
+  it('writes the reduced first installment on the enrollment, never on the person', async () => {
+    await commitEnrollFamily(scope, input)
+    expect(tx.enrollment.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ firstInstallmentAmount: null }) })
+    )
+
+    vi.clearAllMocks()
+    transaction.mockImplementation((run: (client: typeof tx) => unknown) => run(tx))
+    claim.mockResolvedValue({ count: 1 })
+    tx.person.create
+      .mockResolvedValueOnce({ id: 'person-parent' })
+      .mockResolvedValueOnce({ id: 'person-student' })
+    findById.mockResolvedValue({
+      ownerKind: 'MCP_KEY',
+      keyId: 'key-1',
+      userId: null,
+      tool: 'enroll_family',
+      checksum: input.checksum,
+      resolved: {
+        ...resolved,
+        students: [{ ...resolved.students[0], startMonth: '2026-10', firstInstallmentAmount: 45 }],
+      },
+    })
+
+    await commitEnrollFamily(scope, input)
+    expect(tx.enrollment.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ firstInstallmentAmount: 45 }) })
+    )
+    for (const [call] of tx.person.create.mock.calls) {
+      expect(call.data).not.toHaveProperty('firstInstallmentAmount')
+    }
   })
 
   it('scopes every write to the school carried by the key', async () => {
@@ -569,6 +617,7 @@ describe('commitEnrollFamily', () => {
 
     expect(await commitEnrollFamily(scope, input)).toEqual({ familyId: 'family-1' })
     expect(transaction).not.toHaveBeenCalled()
+    expect(syncOpenAttendanceRosters).not.toHaveBeenCalled()
   })
 
   it('refuses a checksum that does not match the plan the caller was shown', async () => {

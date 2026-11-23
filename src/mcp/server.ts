@@ -1,5 +1,12 @@
+import {
+  RESOURCE_MIME_TYPE,
+  registerAppResource,
+  registerAppTool,
+} from '@modelcontextprotocol/ext-apps/server'
 import { McpServer } from '@modelcontextprotocol/server'
+import { appOrigin } from '@/lib/app-url'
 import type { McpScope } from '@/use-cases/mcp/resolve-mcp-scope'
+import { OVERDUE_VIEW_URI, overdueViewHtml } from './apps/overdue-view'
 import { listSchoolTools } from './school-tools'
 
 const SERVER_INFO = { name: 'education', version: '1.0.0' }
@@ -52,19 +59,47 @@ function call(tool: string, run: () => Promise<unknown>) {
  */
 export function buildMcpServer(scope: McpScope): McpServer {
   const server = new McpServer(SERVER_INFO)
+  const tools = listSchoolTools(scope)
 
-  for (const tool of listSchoolTools(scope)) {
-    server.registerTool(
-      tool.name,
-      {
-        title: tool.title,
-        description: tool.description,
-        inputSchema: tool.inputSchema,
-        ...(tool.annotations ? { annotations: tool.annotations } : {}),
-      },
-      async (args: unknown) => call(tool.name, () => tool.run(args))
-    )
+  for (const tool of tools) {
+    const config = {
+      title: tool.title,
+      description: tool.description,
+      inputSchema: tool.inputSchema,
+      ...(tool.annotations ? { annotations: tool.annotations } : {}),
+    }
+    const handler = async (args: unknown) => call(tool.name, () => tool.run(args))
+    if (tool.ui) {
+      registerAppTool(
+        server,
+        tool.name,
+        { ...config, _meta: { ui: { resourceUri: tool.ui } } },
+        handler
+      )
+    } else {
+      server.registerTool(tool.name, config, handler)
+    }
   }
 
+  if (tools.some((tool) => tool.ui === OVERDUE_VIEW_URI)) registerOverdueView(server)
+
   return server
+}
+
+/**
+ * Vue HTML statique : aucune donnée d'école n'y figure, elle ne reçoit le résultat de
+ * l'outil que par l'hôte. Seule l'origine publique y est inscrite, pour les liens.
+ */
+function registerOverdueView(server: McpServer) {
+  registerAppResource(
+    server,
+    'Impayés',
+    OVERDUE_VIEW_URI,
+    { description: 'Familles en retard de paiement, triées par montant dû.' },
+    async () => ({
+      contents: [
+        { uri: OVERDUE_VIEW_URI, mimeType: RESOURCE_MIME_TYPE, text: overdueViewHtml(appOrigin()) },
+      ],
+    })
+  )
 }

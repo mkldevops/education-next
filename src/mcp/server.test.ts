@@ -8,9 +8,22 @@ type ToolHandler = (args: unknown) => Promise<{
 
 const registered = new Map<string, { config: Record<string, unknown>; handler: ToolHandler }>()
 
+type ResourceRead = () => Promise<{
+  contents: Array<{ uri: string; mimeType: string; text: string }>
+}>
+const resources = new Map<string, { config: Record<string, unknown>; read: ResourceRead }>()
+
 class FakeMcpServer {
   registerTool(name: string, config: Record<string, unknown>, handler: ToolHandler) {
     registered.set(name, { config, handler })
+  }
+  registerResource(
+    _name: string,
+    uri: string,
+    config: Record<string, unknown>,
+    read: ResourceRead
+  ) {
+    resources.set(uri, { config, read })
   }
 }
 
@@ -111,6 +124,7 @@ const scope = {
 
 const build = (overrides: Partial<typeof scope> = {}) => {
   registered.clear()
+  resources.clear()
   buildMcpServer({ ...scope, ...overrides })
   return registered
 }
@@ -134,6 +148,7 @@ describe('buildMcpServer', () => {
       'get_student_meals',
       'get_staff_meals',
       'list_staff_meal_subscriptions',
+      'list_meal_debtors',
       'list_family_receipts',
       'set_meal_service_setting',
       'set_meal_price',
@@ -164,6 +179,7 @@ describe('buildMcpServer', () => {
       'preview_class_schedule',
       'commit_class_schedule',
       'list_attendance_calls',
+      'refresh_attendance_roster',
       'list_plans',
       'create_plan',
       'update_plan',
@@ -196,9 +212,32 @@ describe('buildMcpServer', () => {
       'commit_record_payment',
       'preview_update_enrollment',
       'commit_update_enrollment',
+      'list_overdue_students',
       'get_family_payments',
       'cancel_payments',
     ])
+  })
+
+  it('links the overdue list to its MCP Apps view and serves that view as static HTML', async () => {
+    const tool = build().get('list_overdue_students')
+
+    expect(tool?.config._meta).toEqual({
+      ui: { resourceUri: 'ui://education/overdue.html' },
+      'ui/resourceUri': 'ui://education/overdue.html',
+    })
+    const view = resources.get('ui://education/overdue.html')
+    expect(view?.config.mimeType).toBe('text/html;profile=mcp-app')
+    const [content] = (await view?.read())?.contents ?? []
+    expect(content.mimeType).toBe('text/html;profile=mcp-app')
+    expect(content.text).toContain('ui/initialize')
+    expect(content.text).not.toContain('school-1')
+  })
+
+  it('serves no view when the overdue list is not published', () => {
+    build({ paymentsEnabled: false })
+
+    expect(resources.size).toBe(0)
+    expect(registered.get('list_families')?.config._meta).toBeUndefined()
   })
 
   it('omits the money tools when the school has turned payments off', () => {
@@ -207,6 +246,7 @@ describe('buildMcpServer', () => {
       'get_student_meals',
       'get_staff_meals',
       'list_staff_meal_subscriptions',
+      'list_meal_debtors',
       'list_family_receipts',
       'set_meal_service_setting',
       'set_meal_price',
@@ -237,6 +277,7 @@ describe('buildMcpServer', () => {
       'preview_class_schedule',
       'commit_class_schedule',
       'list_attendance_calls',
+      'refresh_attendance_roster',
       'list_teachers',
       'create_teacher',
       'assign_teacher_to_class',

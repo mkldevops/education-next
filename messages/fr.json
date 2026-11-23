@@ -86,6 +86,7 @@
       "passkeyError": "La connexion par clé d'accès a échoué, réessayez",
       "signInWithGoogle": "Se connecter avec Google",
       "googleError": "La connexion Google a échoué, réessayez",
+      "googleNoAccount": "Aucun compte n'est associé à cette adresse Google. Demandez une invitation à votre école.",
       "subtitleSchool": "Connectez-vous à l'espace de {schoolName}.",
       "emailPlaceholder": "vous@exemple.fr",
       "submitting": "Connexion…",
@@ -302,6 +303,7 @@
       "enrollments": "Inscriptions",
       "payments": "Encaissements",
       "cashier": "Caisse",
+      "cashDay": "Caisse du jour",
       "plans": "Plans tarifaires",
       "meals": "Cantine et goûter",
       "childcare": "Garderie",
@@ -397,7 +399,14 @@
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
-            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le premier mois à payer doit tomber dans la période de la classe",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois à payer",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le premier mois à payer avant le montant du premier mois",
+            "firstInstallmentNotMonthly": "Le montant du premier mois ne se modifie que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû"
           },
           "steps": {
             "guardian": "Responsable",
@@ -586,6 +595,10 @@
         "healthNotes": "Notes de santé",
         "snackAuthorization": "Autorisation goûter",
         "noStudents": "Aucun élève enregistré",
+        "noOverdueStudents": "Aucun élève en retard de paiement",
+        "overdue": "Retard",
+        "filterAll": "Tous",
+        "filterOverdue": "En retard de paiement",
         "create": {
           "title": "Ajouter un élève",
           "selectFamily": "Famille",
@@ -620,8 +633,17 @@
             "classFull": "Cette classe est complète",
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
-            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
-          }
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le premier mois à payer doit tomber dans la période de la classe",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois à payer",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le premier mois à payer avant le montant du premier mois",
+            "firstInstallmentNotMonthly": "Le montant du premier mois ne se modifie que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû"
+          },
+          "totalAmountHint": "Total dû pour cette inscription. Pour une arrivée en cours d'année, indiquez le premier mois à payer et le montant du premier mois plutôt que de baisser ce total.",
+          "missingFields": "À compléter : {fields}"
         },
         "edit": {
           "title": "Modifier l'élève",
@@ -634,21 +656,117 @@
             "notFound": "Élève introuvable"
           }
         },
-        "deactivate": {
-          "title": "Désactiver l'élève",
-          "description": "Êtes-vous sûr de vouloir désactiver cet élève ?",
-          "hasEnrollments": "Impossible de désactiver : des inscriptions actives existent.",
-          "confirm": "Désactiver",
+        "archive": {
+          "trigger": "Archiver",
+          "title": "Archiver {name}",
+          "endMonth": "Dernier mois de présence",
+          "loading": "Calcul du reste dû…",
+          "effects": {
+            "enrollments": "Ses inscriptions en cours sont clôturées après ce mois : les mois suivants ne sont plus dus.",
+            "class": "Il quitte sa classe et n'apparaît plus dans les appels.",
+            "services": "Ses repas s'arrêtent dès aujourd'hui ; sa garderie s'arrête après ce mois.",
+            "history": "Son dossier, ses paiements et ses reçus sont conservés."
+          },
+          "remaining": "Reste dû jusqu'à {month} : {amount}",
+          "remainderLegend": "Que faire du reste dû ?",
+          "remainders": {
+            "keep": "Le garder dans les impayés (la famille le doit toujours)",
+            "writeOff": "L'annuler (geste commercial, départ justifié…)"
+          },
+          "reason": "Motif de l'annulation",
+          "confirm": "Archiver",
           "cancel": "Annuler",
-          "success": "Élève désactivé",
-          "error": "Erreur lors de la désactivation",
+          "success": "Élève archivé",
+          "error": "Erreur lors de l'archivage",
           "errors": {
             "validationError": "Vérifiez les informations saisies",
             "notFound": "Élève introuvable",
-            "hasActiveEnrollments": "Des inscriptions en attente ou actives existent : clôturez-les d'abord"
+            "reasonRequired": "Indiquez le motif de l'annulation",
+            "endMonthOutsidePeriod": "Choisissez un mois de la période d'inscription"
           }
         },
-        "description": "Tous les élèves de l’école, leur classe et leur inscription."
+        "description": "Tous les élèves de l’école, leur classe et leur inscription.",
+        "statusActive": "Actifs",
+        "statusFormer": "Anciens",
+        "statusLabel": "Statut des élèves",
+        "lastClass": "Dernière classe",
+        "leftIn": "Parti en",
+        "remainingDue": "Reste dû",
+        "noFormerStudents": "Aucun ancien élève",
+        "reinstate": {
+          "trigger": "Réintégrer",
+          "success": "Élève réintégré : réinscrivez-le pour l’année en cours",
+          "error": "Erreur lors de la réintégration",
+          "errors": {
+            "validationError": "Vérifiez les informations saisies",
+            "notFound": "Élève introuvable ou déjà actif"
+          }
+        },
+        "importFormer": {
+          "trigger": "Importer une liste",
+          "title": "Importer une liste d’anciens élèves",
+          "uploadHelp": "Déposez jusqu’à 4 fichiers (photo, PDF, CSV, TXT ou Excel .xlsx) ou prenez une photo. L’IA lit les noms, prénoms, dates de naissance, dernières classes et années de départ ; vous relisez tout avant l’import.",
+          "chooseFiles": "Choisir des fichiers",
+          "takePhoto": "Prendre une photo",
+          "selectedFiles": "Fichiers choisis",
+          "removeFile": "Retirer {name}",
+          "reading": "Lecture… (10 à 30 secondes)",
+          "read": "Lire la liste",
+          "cancel": "Annuler",
+          "restart": "Recommencer",
+          "reviewHelp": "Chaque case est modifiable. Les cases surlignées sont des lectures incertaines. Décochez une ligne pour l’écarter ; rien n’est enregistré avant « Importer ».",
+          "truncated": "La liste dépasse 500 lignes : seules les 500 premières sont reprises. Importez le reste ensuite.",
+          "uncertain": "Lecture incertaine : vérifiez cette valeur",
+          "includeRow": "Importer {name}",
+          "import": "{count, plural, =0 {Aucun élève à importer} one {Importer # élève} other {Importer # élèves}}",
+          "success": "{created, plural, =0 {Aucun élève créé} one {# ancien élève créé} other {# anciens élèves créés}}{skipped, plural, =0 {} one {, # ligne ignorée} other {, # lignes ignorées}}",
+          "error": "Erreur lors de l’import",
+          "placeholders": {
+            "date": "AAAA-MM-JJ",
+            "year": "AAAA"
+          },
+          "columns": {
+            "include": "Importer",
+            "lastname": "Nom",
+            "firstname": "Prénom",
+            "birthday": "Naissance",
+            "className": "Dernière classe",
+            "departureYear": "Départ",
+            "status": "Statut"
+          },
+          "chips": {
+            "create": "{count} à créer",
+            "homonym": "{count, plural, one {# homonyme} other {# homonymes}}",
+            "existing": "{count, plural, one {# déjà connu} other {# déjà connus}}",
+            "incomplete": "{count, plural, one {# incomplet} other {# incomplets}}"
+          },
+          "statuses": {
+            "create": "À créer",
+            "homonym": "Homonyme",
+            "existing": "Déjà connu",
+            "incomplete": "Incomplet"
+          },
+          "issues": {
+            "missingName": "Nom ou prénom manquant",
+            "nameTooLong": "Nom trop long",
+            "classTooLong": "Classe trop longue (100 caractères max.)",
+            "invalidBirthday": "Date de naissance invalide (AAAA-MM-JJ)",
+            "invalidYear": "Année de départ invalide (AAAA)",
+            "duplicateInFile": "Déjà présent plus haut dans la liste"
+          },
+          "errors": {
+            "aiDisabled": "L’assistant IA est désactivé",
+            "aiNotConfigured": "Aucune clé OpenRouter n’est configurée",
+            "tooManyRequests": "Trop de lectures : réessayez dans une minute",
+            "tooManyFiles": "4 fichiers au maximum",
+            "forbiddenFile": "Type de fichier non pris en charge",
+            "fileTooLarge": "Fichier trop volumineux (6 Mo par fichier, 10 Mo au total)",
+            "unreadable": "Fichier illisible",
+            "nothingFound": "Aucun élève trouvé dans ces fichiers",
+            "providerError": "Le service IA n’a pas répondu, réessayez",
+            "validationError": "Vérifiez les lignes saisies"
+          }
+        }
       },
       "periods": {
         "title": "Périodes",
@@ -923,11 +1041,22 @@
             "existingEnrollmentPaid": "L'inscription existante a déjà reçu un paiement : remboursez-la ou annulez-la manuellement avant d'en recréer une.",
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
-            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école"
+            "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
+            "startMonthOutsidePeriod": "Le premier mois à payer doit tomber dans la période de la classe",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois à payer",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le premier mois à payer avant le montant du premier mois",
+            "firstInstallmentNotMonthly": "Le montant du premier mois ne se modifie que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû"
           },
           "replaceExistingHintNoPayments": "L'inscription en cours est annulée puis recréée.",
           "totalAmount": "Montant dû ({currency})",
-          "alreadyEnrolledHint": "Cet élève a déjà une inscription en cours sur la période : cochez « Remplacer l’inscription existante » pour la recréer."
+          "alreadyEnrolledHint": "Cet élève est déjà inscrit sur cette période.",
+          "newStudentHint": "Nouvel enfant absent de la liste ?",
+          "newStudentLink": "Ajouter un élève",
+          "totalAmountHint": "Total dû pour cette inscription. Pour une arrivée en cours d'année, indiquez le premier mois à payer et le montant du premier mois plutôt que de baisser ce total.",
+          "missingFields": "À compléter : {fields}"
         },
         "drawer": {
           "title": "Détail de l'inscription",
@@ -961,7 +1090,7 @@
             "notFound": "Inscription ou formule introuvable.",
             "unpricedPlan": "Cette formule est réservée aux inscriptions sans tarif.",
             "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
-            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois dû",
             "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
             "discountExceedsPlan": "La réduction dépasse la part due de la formule"
           }
@@ -979,6 +1108,12 @@
           "open": "Afficher les élèves",
           "empty": "Aucun élève trouvé",
           "alreadyEnrolled": "Déjà inscrit"
+        },
+        "departure": {
+          "leftAfter": "Parti après {month}",
+          "writeOff": "Annulé : {amount} — {reason}",
+          "endMonth": "Dernier mois",
+          "writeOffLabel": "Montant annulé"
         }
       },
       "promotion": {
@@ -1008,33 +1143,14 @@
         "noPaymentsInPeriod": "Aucun paiement sur la période {period}. Enregistrez un paiement ou changez de période.",
         "periodShare": "dont {amount} sur {period}",
         "stats": {
-          "due": "Total dû",
-          "collected": "Encaissé",
-          "remaining": "Reste à payer",
-          "uncashed": "Chèques à encaisser",
-          "collectionRate": "Taux de recouvrement",
-          "paymentsCount": "{count, plural, =0 {aucun paiement} one {# paiement} other {# paiements}}",
-          "outstandingEnrollments": "{outstanding, plural, =0 {aucune inscription non soldée} one {# inscription non soldée} other {# inscriptions non soldées}} sur {total}",
-          "uncashedCount": "{count, plural, =0 {aucun chèque en attente} one {# chèque remis} other {# chèques remis}}",
           "methodsTitle": "Répartition par mode de paiement",
-          "outstandingTitle": "Familles en retard",
-          "outstandingSubtitle": "Retard décroissant selon les échéances",
-          "outOf": "sur {amount}",
           "noCollection": "Aucun encaissement sur ce périmètre",
-          "noOutstanding": "Aucune famille en retard sur les forfaits suivis",
           "recordFor": "Enregistrer un règlement d'écolage pour {family}",
           "callFamily": "Appeler la famille {family}",
           "noPhone": "Aucun téléphone",
           "whatsApp": "Relancer sur WhatsApp",
           "whatsAppFamily": "Relancer la famille {family} sur WhatsApp",
-          "whatsAppMessage": "Bonjour, sauf erreur de notre part, un montant de {amount} reste à régler pour la famille {family}. Merci de régulariser dès que possible ou de nous contacter en cas de difficulté.",
-          "expectedToDate": "Attendu à ce jour",
-          "overdueAmount": "Montant en retard",
-          "overdueSubtitle": "Sur les forfaits suivis, après leur jour limite de paiement",
-          "annualRemaining": "Solde annuel restant",
-          "upToDate": "À jour",
-          "trackingDisabled": "Suivi des échéances désactivé",
-          "paidToDate": "Versé à ce jour"
+          "whatsAppMessage": "Bonjour, sauf erreur de notre part, un montant de {amount} reste à régler pour la famille {family}. Merci de régulariser dès que possible ou de nous contacter en cas de difficulté."
         },
         "summary": {
           "remaining": "Solde restant",
@@ -1093,7 +1209,52 @@
           "generateReceipt": "Générer un reçu",
           "generateReceiptHint": "Numéroté, à imprimer ou partager. Décochez pour en générer un plus tard depuis la fiche famille."
         },
-        "description": "Règlements reçus, chèques à encaisser et reste dû."
+        "description": "Règlements reçus, chèques à encaisser et reste dû.",
+        "tabs": {
+          "tracking": "Suivi",
+          "history": "Historique"
+        },
+        "tracking": {
+          "search": "Rechercher une famille",
+          "summary": {
+            "month": "Reste à encaisser ce mois",
+            "year": "Reste à encaisser sur l'année",
+            "overdue": "dont {amount} en retard",
+            "upToDateCount": "{count} / {total} familles à jour",
+            "settledCount": "{count} / {total} familles soldées",
+            "uncashed": "{count, plural, =0 {aucun chèque à encaisser} one {# chèque à encaisser} other {# chèques à encaisser}}"
+          },
+          "groups": {
+            "late": "En retard",
+            "due": "À régler ce mois",
+            "clear": "À jour ou en avance",
+            "remaining": "Reste à payer sur l'année",
+            "settled": "Année soldée"
+          },
+          "familyCount": "{count, plural, =0 {aucune famille} one {# famille} other {# familles}}",
+          "columns": {
+            "family": "Famille",
+            "status": "Statut",
+            "dueThisMonth": "À régler ce mois",
+            "remainingYear": "Reste sur l'année",
+            "paid": "Versé",
+            "expectedToDate": "Attendu à ce jour"
+          },
+          "status": {
+            "late": "Retard de {amount}",
+            "due": "À régler",
+            "ahead": "Avance de {amount}",
+            "upToDate": "À jour",
+            "settled": "Année soldée",
+            "untracked": "Sans échéancier"
+          },
+          "showMore": "{count, plural, one {Afficher l'autre famille} other {Afficher les # autres familles}}",
+          "empty": "Aucune famille dans ce groupe",
+          "noMatch": "Aucune famille ne correspond à « {query} »",
+          "noTracking": "Aucune famille n'a d'inscription à suivre sur cette période",
+          "openFamily": "Voir la fiche",
+          "toggleFamily": "Afficher le détail de la famille {family}"
+        }
       },
       "plans": {
         "title": "Plans tarifaires",
@@ -1105,6 +1266,7 @@
         "create": {
           "title": "Nouveau plan",
           "name": "Nom",
+          "namePlaceholder": "Ex. Temps plein 2026-2027",
           "amount": "Montant ({currency})",
           "cancel": "Annuler",
           "submit": "Créer",
@@ -1301,7 +1463,7 @@
           "method": "Paiement",
           "recordedBy": "Encaissé par",
           "tuition": "Écolage",
-          "tuitionBalance": "Solde d'écolage au {date} : {amount}",
+          "tuitionBalance": "Écolage, reste à payer sur l'année au {date} : {amount}",
           "total": "Total",
           "mealDetail": "+{days, plural, one {# jour} other {# jours}}, payé jusqu'au {date}",
           "mealDays": "+{days, plural, one {# jour} other {# jours}}",
@@ -1331,6 +1493,7 @@
           },
           "onlinePayment": "Paiement en ligne",
           "backToFamily": "Fiche famille",
+          "backToPrevious": "Retour",
           "shareMenu": {
             "whatsapp": "WhatsApp",
             "copyLink": "Copier le lien",
@@ -1354,8 +1517,8 @@
         "day": {
           "title": "Caisse du jour",
           "intro": "Reçus émis ce jour, moins les annulations faites ce jour. Un jour passé ne change plus.",
-          "previous": "← Jour précédent",
-          "next": "Jour suivant →",
+          "previous": "Jour précédent",
+          "next": "Jour suivant",
           "issued": "Émis",
           "cancelled": "Annulés",
           "net": "Net",
@@ -1372,7 +1535,24 @@
           "cancelledReceipts": "Annulations du jour",
           "none": "Aucun",
           "receipt": "{number} · {family}",
-          "cancelledBadge": "Annulé"
+          "cancelledBadge": "Annulé",
+          "unreceipted": {
+            "title": "Paiements sans reçu",
+            "intro": "Paiements d'écolage enregistrés ce jour sans reçu, remboursements compris. Ils ne sont pas comptés dans le total ci-dessus : seuls les reçus font la caisse.",
+            "none": "Aucun paiement sans reçu",
+            "refund": "Remboursement",
+            "total": "{count, plural, one {# paiement sans reçu} other {# paiements sans reçu}} · {amount}",
+            "truncated": "Liste incomplète : seules les premières saisies du jour sont affichées, et ce sous-total ne couvre qu'elles.",
+            "titleInCash": "Paiements d'écolage",
+            "introInCash": "Paiements d'écolage enregistrés ce jour sans reçu, remboursements compris. Ils sont comptés dans le total ci-dessus, au poste Écolage."
+          },
+          "dayNav": "Choix du jour",
+          "today": "Aujourd'hui",
+          "backToToday": "Revenir à aujourd'hui",
+          "pickDay": "Choisir un jour",
+          "show": "Afficher",
+          "noMethod": "Aucun encaissement ce jour",
+          "tuitionCount": "{count, plural, =0 {aucun paiement d'écolage} one {# paiement d'écolage} other {# paiements d'écolage}}"
         },
         "debtors": {
           "title": "Impayés et relances",
@@ -1399,7 +1579,7 @@
           "counts": {
             "subscribed": "Inscrits",
             "exempt": "Exemptés",
-            "eatsToday": "Mangent aujourd'hui"
+            "due": "Reste à encaisser"
           },
           "empty": "Aucun enseignant. Ajoutez le personnel dans Enseignants pour l'inscrire à la cantine.",
           "exemptBadge": "Exempté",
@@ -1434,6 +1614,33 @@
             "errors": {
               "validationError": "Vérifiez les informations saisies",
               "notFound": "Enseignant introuvable"
+            }
+          },
+          "todayTitle": "Aujourd'hui, {date} · {count, plural, =0 {aucun repas} one {# repas} other {# repas}}",
+          "allStaff": "Tout le personnel",
+          "todayEmpty": "Personne n'est prévu aujourd'hui.",
+          "absentToday": "ne mange pas",
+          "eatsTodayToggle": "{name} mange aujourd'hui",
+          "collectShort": "Encaisser",
+          "collectFor": "Encaisser la cantine de {name}",
+          "actions": "Actions",
+          "openSheet": "Voir la fiche",
+          "canteenClosed": "La cantine n'est pas ouverte pour cette école : impossible d'inscrire le personnel.",
+          "canteenSettings": "Configurer la cantine",
+          "selectPeriod": "Choisissez une période en haut de page pour inscrire le personnel.",
+          "progress": {
+            "year": {
+              "label": "Repas de la période",
+              "progress": "{paid} versés sur {total}",
+              "barLabel": "{paid} versés sur {total}. Consommé à ce jour : {expected}.",
+              "barLabelLate": "{paid} versés sur {total}. Consommé à ce jour : {expected}. Dû : {overdue}.",
+              "barLabelSimple": "{paid} versés sur {total}."
+            },
+            "figures": {
+              "paid": "Versé",
+              "expectedToDate": "Consommé à ce jour",
+              "remaining": "Reste sur la période",
+              "total": "Total de la période"
             }
           }
         },
@@ -1477,17 +1684,22 @@
           "view": "Voir et imprimer le reçu",
           "next": "Famille suivante : cherchez-la ci-dessous."
         },
-        "tuitionUpToDate": "À jour, rien à encaisser"
+        "tuitionUpToDate": "À jour, rien à encaisser",
+        "split": {
+          "title": "Répartir un montant · {service}",
+          "children": "Enfants concernés",
+          "apply": "{count, plural, =0 {Répartir} one {Attribuer à # enfant} other {Répartir sur # enfants}}"
+        }
       },
       "childcare": {
         "title": "Garderie",
         "intro": "Tarif mensuel par enfant, indépendant de la cantine et du goûter. Une dette naît seulement quand vous facturez un mois.",
-        "search": "Nom ou prénom de l'élève",
+        "search": "Enfant ou famille",
         "searchSubmit": "Rechercher",
         "noResult": "Aucun élève trouvé",
         "noClass": "Sans classe",
         "alreadySubscribed": "Déjà en garderie",
-        "empty": "Aucun enfant en garderie. Recherchez un élève pour l'ajouter.",
+        "empty": "Aucun enfant en garderie. Ajoutez-en un avec « Ajouter un enfant ».",
         "archived": "archivé",
         "noFamily": "Sans famille redevable",
         "opening": "Réglé avant l’application jusqu’à {month} inclus ({reason})",
@@ -1499,7 +1711,10 @@
         "totals": "Facturé {billed} · Payé {paid} · Reste {remaining}",
         "charge": {
           "status": "{amount} · reste {remaining}",
-          "cancelled": "Annulé"
+          "cancelled": "Annulé",
+          "paid": "Payé",
+          "settled": "Réglé avant l'appli",
+          "due": "Dû {amount}"
         },
         "form": {
           "add": "Ajouter",
@@ -1507,10 +1722,13 @@
           "monthlyAmount": "Tarif mensuel",
           "startMonth": "Premier mois",
           "endMonth": "Dernier mois (facultatif)",
-          "success": "Garderie enregistrée"
+          "success": "Garderie enregistrée",
+          "editTitle": "Modifier la garderie de {name}",
+          "knownRates": "Tarifs utilisés :",
+          "rateHint": "Le nouveau tarif s'applique aux prochains mois facturés ; les mois déjà facturés gardent leur montant."
         },
         "bill": {
-          "trigger": "Facturer un mois",
+          "trigger": "Facturer {month}",
           "title": "Facturer un mois de garderie",
           "description": "Chaque enfant dont la période couvre ce mois est facturé à son tarif. Refaire l'opération ne facture rien deux fois.",
           "month": "Mois",
@@ -1523,7 +1741,8 @@
           "description": "Le mois ne sera plus dû. Vous pourrez le facturer à nouveau.",
           "reason": "Motif",
           "submit": "Annuler ce mois",
-          "success": "Mois annulé"
+          "success": "Mois annulé",
+          "label": "Annuler {month}"
         },
         "remove": {
           "trigger": "Retirer",
@@ -1544,17 +1763,111 @@
           "hasCharges": "Un mois est facturé ou encaissé sur cette garderie",
           "futureMonth": "Un mois à venir ne se facture pas",
           "alreadyCancelled": "Ce mois est déjà annulé",
-          "hasPayments": "Ce mois a des encaissements : annulez d'abord le reçu"
+          "hasPayments": "Ce mois a des encaissements : annulez d'abord le reçu",
+          "hasFamily": "Cet élève est déjà rattaché à une famille"
+        },
+        "summary": "{count, plural, =0 {Aucun enfant actif} one {# enfant actif} other {# enfants actifs}} · {owing, plural, =0 {rien à encaisser} one {reste dû {remaining} sur # enfant} other {reste dû {remaining} sur # enfants}}",
+        "noMatch": "Aucun enfant ne correspond à « {query} »",
+        "toggleChild": "Détail de {name}",
+        "add": {
+          "trigger": "Ajouter un enfant",
+          "title": "Ajouter un enfant à la garderie",
+          "student": "Élève",
+          "searchPlaceholder": "Nom ou prénom (2 lettres min.)",
+          "searchSubmit": "Rechercher",
+          "hint": "Rien n'est dû avant de facturer un mois.",
+          "submit": "Ajouter",
+          "success": "{name} ajouté à la garderie"
+        },
+        "stop": {
+          "trigger": "Arrêter",
+          "title": "Arrêter la garderie de {name}",
+          "lastMonth": "Dernier mois de garderie",
+          "lastBilled": "Dernier mois facturé : {month}. On ne peut pas arrêter avant.",
+          "noBill": "Aucun mois facturé.",
+          "stillDue": "{amount} restent dus après l’arrêt : ils restent à encaisser.",
+          "resumeHint": "Vous pourrez reprendre la garderie plus tard.",
+          "submit": "Arrêter",
+          "success": "Garderie arrêtée"
+        },
+        "resume": {
+          "trigger": "Reprendre",
+          "title": "Reprendre la garderie de {name}",
+          "description": "La date de fin est retirée : l'enfant sera de nouveau facturé chaque mois à son tarif.",
+          "submit": "Reprendre",
+          "success": "Garderie reprise"
+        },
+        "family": {
+          "none": "Sans famille",
+          "label": "Famille",
+          "missingHint": "Cet élève n'a pas de famille : rattachez-le pour que la garderie soit encaissable.",
+          "attach": "Rattacher à une famille",
+          "attachTitle": "Rattacher {name} à une famille",
+          "attachDescription": "La garderie de cet enfant sera due par cette famille et encaissée à sa caisse.",
+          "submit": "Rattacher",
+          "success": "Enfant rattaché à la famille",
+          "create": "Nouvelle famille",
+          "createNamed": "Créer la famille « {name} »",
+          "backToList": "Choisir une famille existante",
+          "newName": "Nom de la famille",
+          "contactName": "Contact d'urgence (facultatif)",
+          "contactPhone": "Téléphone (facultatif)",
+          "createHint": "L'enfant y est rattaché tout de suite ; les parents se complètent depuis la fiche famille.",
+          "createSubmit": "Créer et rattacher",
+          "created": "Famille créée, enfant rattaché",
+          "placeholder": "Rechercher ou créer une famille",
+          "open": "Afficher les familles",
+          "empty": "Aucune famille",
+          "willCreate": "Famille « {name} » créée à l'enregistrement",
+          "change": "Changer"
+        },
+        "filters": {
+          "label": "Filtrer les enfants",
+          "active": "Actifs",
+          "owing": "Doivent",
+          "upToDate": "À jour",
+          "stopped": "Arrêtés"
+        },
+        "emptyFilter": {
+          "active": "Aucun enfant actif",
+          "owing": "Aucun enfant ne doit de garderie",
+          "upToDate": "Aucun enfant à jour",
+          "stopped": "Aucun enfant arrêté"
+        },
+        "columns": {
+          "child": "Enfant",
+          "rate": "Tarif / mois",
+          "status": "Statut",
+          "remaining": "Reste dû"
+        },
+        "status": {
+          "late": "{count} mois dus",
+          "due": "1 mois dû",
+          "upToDate": "À jour",
+          "new": "Pas encore facturé",
+          "stopped": "Arrêté"
+        },
+        "detail": {
+          "period": "Période",
+          "family": "Famille",
+          "cashier": "Encaisser",
+          "noCharge": "Aucun mois facturé pour le moment."
+        },
+        "progress": {
+          "title": "Encaissement de {month}",
+          "amounts": "{paid} encaissés sur {billed} facturés",
+          "notBilled": "{month} n'est pas encore facturé",
+          "left": "{amount} à encaisser"
         }
       },
       "config": {
         "title": "Configuration",
         "description": "Réglages de l'école active et, pour un super-admin, de l'instance.",
         "sections": {
-          "school": "Paramètres de l'école",
-          "schoolDescription": "Réglages propres à l'école active.",
           "schools": "Écoles",
-          "schoolsDescription": "Réglages qui gouvernent toutes les écoles de l'instance."
+          "schoolsDescription": "Réglages qui gouvernent toutes les écoles de l'instance.",
+          "identityDescription": "Logo, couleurs et capacité des classes.",
+          "modulesDescription": "Activez les fonctions utilisées par l'école ; « Configurer » ouvre les options d'un module actif."
         },
         "notConfigured": "Non configuré",
         "settings": {
@@ -1635,6 +1948,10 @@
           "attendance_absence_reason_required": {
             "label": "Motif d'absence obligatoire",
             "description": "Un appel ne peut être validé tant qu'une absence n'a pas de motif."
+          },
+          "cash_day_tuition_enabled": {
+            "label": "Écolage dans la caisse du jour",
+            "description": "Compte les paiements d'écolage enregistrés sans reçu dans le total de la caisse du jour, et les montre à la caisse. Désactivé, seuls les reçus font la caisse."
           }
         },
         "theme": {
@@ -1822,7 +2139,29 @@
             "labelTaken": "Ce motif existe déjà",
             "notFound": "Motif introuvable",
             "staleOrder": "La liste a changé, rechargez la page"
+          },
+          "manage": "Gérer ({count})",
+          "hide": "Masquer"
+        },
+        "modules": {
+          "configure": "Configurer",
+          "close": "Fermer",
+          "dialogTitle": "Configurer — {module}",
+          "toComplete": "À compléter",
+          "summary": {
+            "reasons": "{count, plural, =0 {aucun motif} one {# motif} other {# motifs}}",
+            "overlapAllowed": "Chevauchements permis",
+            "overlapForbidden": "Sans chevauchement",
+            "stripeOn": "Stripe actif",
+            "stripeOff": "Sans paiement en ligne"
           }
+        },
+        "tabs": {
+          "label": "Domaines de configuration",
+          "identity": "Identité",
+          "modules": "Modules",
+          "payments": "Paiements",
+          "platform": "Plateforme"
         }
       },
       "familyDetails": {
@@ -1894,7 +2233,7 @@
           "totalEnrollments": "Total inscriptions",
           "pending": "En attente",
           "totalPaid": "Total payé",
-          "remainingBalance": "Solde restant"
+          "remainingBalance": "Reste à payer sur l'année"
         },
         "tabs": {
           "overview": "Résumé",
@@ -2051,6 +2390,47 @@
           "GRANDPARENT": "Grand-parent",
           "SIBLING": "Frère / Sœur",
           "OTHER": "Autre"
+        },
+        "paymentTracking": {
+          "title": "Suivi des paiements",
+          "status": {
+            "ahead": "En avance de {amount}",
+            "upToDate": "À jour",
+            "late": "En retard à ce jour : {amount}",
+            "settled": "Année soldée",
+            "untracked": "Sans échéancier"
+          },
+          "dueLabel": "À régler d'ici fin {month}",
+          "nothingDue": "À jour",
+          "nothingDueYear": "Année soldée",
+          "detail": {
+            "ahead": "Les versements dépassent de {amount} les échéances déjà passées.",
+            "upToDate": "Les versements couvrent les échéances déjà passées.",
+            "dueNotLate": "Échéance du mois, pas encore en retard.",
+            "lateOnly": "<late>{overdue} en retard</late>.",
+            "lateAndMonth": "<late>{overdue} en retard</late> + {month} pour l'échéance du mois.",
+            "settled": "La totalité de l'écolage de l'année est versée.",
+            "untracked": "Aucun forfait de cette famille n'a de dates limites : le retard n'est pas calculé."
+          },
+          "year": {
+            "label": "Année scolaire",
+            "progress": "{paid} versés sur {total}",
+            "barLabel": "{paid} versés sur {total}. Attendu à ce jour : {expected}.",
+            "barLabelLate": "{paid} versés sur {total}. Attendu à ce jour : {expected}. Retard : {overdue}.",
+            "barLabelSimple": "{paid} versés sur {total}."
+          },
+          "figures": {
+            "paid": "Versé",
+            "expectedToDate": "Attendu à ce jour",
+            "remaining": "Reste à payer sur l'année",
+            "total": "Total de l'année"
+          },
+          "how": {
+            "summary": "Comment c'est calculé ?",
+            "ahead": "Attendu à ce jour = échéances dont la date limite est passée ({expected}). Versé {paid}, soit {amount} d'avance.",
+            "upToDate": "Attendu à ce jour = échéances dont la date limite est passée ({expected}). Versé {paid} : aucun retard.",
+            "late": "Attendu à ce jour = échéances dont la date limite est passée ({expected}). Versé {paid}, soit {amount} de retard."
+          }
         }
       },
       "studentDetails": {
@@ -2066,7 +2446,7 @@
         "family": "Famille",
         "enrollments": "Inscriptions",
         "information": "Informations",
-        "pay": "Enregistrer un règlement d'écolage",
+        "pay": "Encaisser l'écolage",
         "collectServices": "Encaisser cantine et goûter",
         "previousSchool": "École précédente",
         "snackAuthorization": "Autorisation de goûter",
@@ -2077,7 +2457,7 @@
           "activeEnrollments": "Inscriptions actives",
           "totalDue": "Total dû",
           "totalPaid": "Total payé",
-          "remaining": "Solde restant"
+          "remaining": "Reste à payer sur l'année"
         },
         "familyPanel": {
           "contacts": "Contacts",
@@ -2091,9 +2471,9 @@
           "settled": "Soldé",
           "coveredMonths": "Mois couverts",
           "installmentStatus": {
-            "PAID": "{month} : payé",
+            "PAID": "{month} : {amount}, payé",
             "PARTIAL": "{month} : payé en partie ({paid} / {amount})",
-            "UNPAID": "{month} : non payé"
+            "UNPAID": "{month} : {amount}, non payé"
           },
           "registeredOn": "Inscrit le {date}"
         },
@@ -2183,7 +2563,23 @@
               "notServed": "Ce jour n'est pas servi"
             }
           }
-        }
+        },
+        "paymentHistory": {
+          "title": "Paiements",
+          "empty": "Aucun paiement",
+          "emptyHint": "Les paiements de cet élève apparaîtront ici.",
+          "limited": "Les {count} paiements les plus récents",
+          "mealDetail": "+{days, plural, one {# jour} other {# jours}}, payé jusqu'au {date}",
+          "mealDays": "+{days, plural, one {# jour} other {# jours}}",
+          "services": {
+            "TUITION": "Scolarité",
+            "CANTEEN": "Cantine",
+            "SNACK": "Goûter",
+            "CHILDCARE": "Garderie"
+          }
+        },
+        "archivedBadge": "Archivé — parti en {month}",
+        "archivedBadgeUndated": "Archivé"
       },
       "enrollmentDetails": {
         "title": "Détails de l'inscription",
@@ -2248,11 +2644,10 @@
           }
         },
         "applyDiscount": {
-          "title": "Appliquer une réduction",
-          "amount": "Montant de la réduction ({currency})",
+          "title": "Modifier le montant dû",
           "cancel": "Annuler",
           "submit": "Appliquer",
-          "success": "Réduction appliquée",
+          "success": "Montant dû mis à jour",
           "error": "Erreur lors de l'application",
           "errors": {
             "discountExceedsPlan": "La réduction dépasse le montant du plan",
@@ -2260,18 +2655,36 @@
             "validationError": "Vérifiez le montant saisi",
             "totalAmountExceedsPlan": "Le montant dû dépasse le prix de la formule",
             "invalidCurrencyAmount": "Le montant doit comporter au plus deux décimales",
-            "totalBelowPaid": "Le montant dû serait inférieur à ce qui a déjà été payé sur cette inscription",
+            "totalBelowPaid": "Le montant dû serait inférieur à ce qui a déjà été payé sur cette inscription. Si ce paiement est une erreur, annulez-le d'abord dans la section Paiements de cette inscription.",
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
             "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
-            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
-            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois"
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois dû",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le mois de début avant de réduire le premier mois",
+            "firstInstallmentNotMonthly": "Le premier mois ne se réduit que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû après réduction"
           },
-          "totalAmount": "Montant final dû ({currency})"
+          "totalAmount": "Montant final dû ({currency})",
+          "free": "Gratuit",
+          "hint": "Saisissez ce que la famille doit payer au total pour cette inscription, pas le montant de la réduction. 0 = scolarité gratuite.",
+          "belowPaid": "{paid} ont déjà été encaissés sur cette inscription : le montant dû ne peut pas descendre en dessous. Si ce paiement est une erreur, annulez-le d'abord dans la section Paiements de cette inscription.",
+          "summary": {
+            "planAmount": "Prix de la formule",
+            "discount": "Réduction",
+            "totalPaid": "Déjà payé",
+            "remaining": "Reste à payer"
+          }
         },
         "setStartMonth": {
           "title": "Mois de début",
           "label": "Premier mois dû",
           "hint": "Les échéances antérieures ne sont ni attendues ni comptées dans le total. Laissez vide pour un début avec la période.",
+          "firstInstallment": "Montant du premier mois ({currency})",
+          "firstInstallmentHint": "Pour une arrivée en cours de mois : ce montant remplace la première échéance, les suivantes restent celles de la formule. Laissez vide pour la mensualité normale.",
+          "currentDiscount": "Réduction en place : {amount}",
+          "discountHint": "Elle se répartit sur les échéances suivantes, jamais sur le premier mois réduit.",
+          "removeDiscount": "Retirer cette réduction",
           "cancel": "Annuler",
           "submit": "Enregistrer",
           "success": "Mois de début enregistré",
@@ -2283,8 +2696,12 @@
             "totalBelowPaid": "Le nouveau total serait inférieur à ce qui a déjà été payé sur cette inscription",
             "paymentsDisabled": "La gestion des paiements est désactivée pour cette école",
             "startMonthOutsidePeriod": "Le mois de début doit tomber dans la période de l'inscription",
-            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de la proratiser à partir d'un mois",
-            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois"
+            "noPaymentSchedule": "La formule n'a pas d'échéancier : impossible de fixer un premier mois dû",
+            "noInstallmentDue": "Aucune échéance de la formule ne tombe à partir de ce mois",
+            "firstInstallmentRequiresStartMonth": "Indiquez le mois de début avant de réduire le premier mois",
+            "firstInstallmentNotMonthly": "Le premier mois ne se réduit que sur une formule mensuelle",
+            "firstInstallmentOutOfRange": "Le montant du premier mois doit être supérieur à 0 et ne pas dépasser la mensualité de la formule",
+            "firstInstallmentExceedsTotal": "Le montant du premier mois dépasse le total dû après réduction"
           }
         }
       },
@@ -2467,7 +2884,9 @@
         "memberRemoved": "Membre retiré de l’école",
         "close": "Fermer",
         "impersonate": "Se connecter en tant que",
-        "impersonating": "Connexion…"
+        "impersonating": "Connexion…",
+        "deactivateConfirmTitle": "Désactiver {name} ?",
+        "deactivateConfirmDescription": "La connexion lui est refusée jusqu'à sa réactivation."
       },
       "superAdmins": {
         "title": "Super-administrateurs",
@@ -2555,6 +2974,70 @@
       "attendance": {
         "title": "Appel",
         "trackingTitle": "Suivi des appels",
+        "period": {
+          "range": "Période",
+          "from": "Du",
+          "to": "Au",
+          "apply": "Appliquer",
+          "presets": {
+            "last15": "15 derniers jours",
+            "last30": "30 derniers jours",
+            "month": "Ce mois-ci",
+            "last60": "60 derniers jours",
+            "custom": "Personnalisée…"
+          },
+          "student": "Élève",
+          "absences": "Absences",
+          "absencesShort": "Abs.",
+          "lates": "Retards",
+          "lastPresence": "Dernière présence",
+          "never": "Jamais",
+          "codePresent": "P",
+          "codeLate": "R",
+          "codeAbsent": "A",
+          "status": {
+            "PRESENT": "Présent",
+            "LATE": "En retard",
+            "ABSENT": "Absent",
+            "NOT_RECORDED": "Non saisi"
+          },
+          "legend": "P présent · R retard · A absent · · non saisi · ? appel oublié · — pas d'appel pour l'élève. En rouge : aucune présence sur la période.",
+          "export": "Exporter",
+          "print": "Imprimer / PDF",
+          "printHint": "A4 paysage",
+          "csv": "Télécharger CSV",
+          "csvHint": "Pour Excel ou Google Sheets",
+          "printTitle": "Fiche d'appel — {className}",
+          "noClasses": "Aucune classe à afficher pour l'année sélectionnée.",
+          "noSessions": "Aucun appel enregistré sur cette période",
+          "noSessionsHint": "Choisissez une autre période ou une autre classe.",
+          "sessions": "{count, plural, =0 {Aucun appel} one {# appel} other {# appels}}",
+          "withoutPresence": "{count, plural, =0 {Tous les élèves sont venus au moins une fois} one {# élève sans présence sur la période} other {# élèves sans présence sur la période}}",
+          "openCall": "Ouvrir l'appel du {date}",
+          "todayStatus": "{expected, plural, =0 {aucun appel prévu aujourd'hui} other {{done} / # appels faits aujourd'hui}}",
+          "lateCalls": "{count, plural, one {# appel en retard} other {# appels en retard}}",
+          "classes": "Classes",
+          "chip": {
+            "late": "{count} en retard",
+            "todo": "à faire",
+            "done": "fait"
+          },
+          "takeCall": "Faire l'appel",
+          "catchUp": "Rattraper",
+          "cancelledColumn": "Annulée",
+          "columnMenu": "Actions de l'appel du {date}",
+          "catchUpCall": "Rattraper l'appel du {date}",
+          "takeCallOn": "Faire l'appel du {date}",
+          "newCall": "Appel",
+          "newCallDate": "Date de l'appel",
+          "newCallOpen": "Ouvrir l'appel",
+          "newCallHint": "Vous choisirez ensuite la séance ou un appel exceptionnel.",
+          "pendingTitle": "{count, plural, one {# appel à faire} other {# appels à faire}}",
+          "pendingMore": "{count, plural, one {+ # autre} other {+ # autres}}",
+          "showGaps": "{count, plural, one {Afficher le jour sans appel (#)} other {Afficher les jours sans appel (#)}}",
+          "noStudentsYet": "Aucun appel tenu sur la période : les élèves apparaîtront après le premier appel.",
+          "missedCell": "Appel non fait"
+        },
         "description": "Pilotez les appels attendus et suivez leur avancement pour la journée sélectionnée.",
         "empty": "Aucun appel n’est attendu pour cette journée.",
         "emptyDescription": "Modifiez la date ou les filtres pour consulter une autre journée.",
@@ -2974,7 +3457,9 @@
           "setCover": "Mettre en couverture",
           "altHint": "Décrit l'image pour les lecteurs d'écran. Appliqué à chaque image ajoutée.",
           "tooManySelected": "{count, plural, one {Une seule place restante : seule la première image est ajoutée} other {# places restantes : seules les # premières images sont ajoutées}}",
-          "tooLarge": "{count, plural, one {Une image dépasse 10 Mo et n'est pas ajoutée} other {# images dépassent 10 Mo et ne sont pas ajoutées}}"
+          "tooLarge": "{count, plural, one {Une image dépasse 10 Mo et n'est pas ajoutée} other {# images dépassent 10 Mo et ne sont pas ajoutées}}",
+          "removeConfirmTitle": "Supprimer cette image ?",
+          "removeConfirmDescription": "L'image est retirée de l'événement et de la page publique. Cette action est définitive."
         },
         "filters": {
           "category": "Catégorie",
@@ -3011,6 +3496,17 @@
           "copiedPrivate": "Lien copié. La page reste privée tant que l'événement n'est pas public et publié.",
           "copyFailed": "Impossible de copier le lien",
           "calendar": "Calendrier public"
+        },
+        "calendar": {
+          "title": "Vue d'ensemble",
+          "titleInPeriod": "Vue d'ensemble {period}",
+          "print": "Imprimer le calendrier",
+          "printTitle": "Calendrier des événements",
+          "back": "Retour aux événements",
+          "hint": "Format A4 paysage — Ctrl+P produit la même page.",
+          "heading": "Année scolaire {period}",
+          "subtitle": "Vue d'ensemble des événements",
+          "empty": "Aucun événement à afficher sur cette période."
         }
       },
       "authSettings": {
@@ -3272,7 +3768,10 @@
         "legendMeals": "Cantine et goûter",
         "tuition": "Écolage",
         "tuitionHint": "{rate} % encaissé · {count, plural, =0 {tout est réglé} one {# inscription avec un solde} other {# inscriptions avec un solde}}",
-        "mealHint": "{upToDate} sur {subscribed} à jour"
+        "mealHint": "{upToDate} sur {subscribed} à jour",
+        "outstandingMonth": "Reste à encaisser ce mois",
+        "outstandingYear": "Reste à encaisser sur l'année",
+        "tuitionMonthHint": "{upToDate} sur {tracked} familles à jour ce mois"
       },
       "headcount": {
         "label": "Effectifs"
@@ -3348,7 +3847,6 @@
         "attachHint": "{count} fichiers (PNG, JPEG, WebP, PDF), {size} Mo chacun",
         "removeImage": "Retirer la pièce jointe",
         "imageAlt": "Photo jointe {index}",
-        "reset": "Nouvelle conversation",
         "thinking": "L'assistant travaille…",
         "you": "Vous",
         "assistant": "Assistant",
@@ -3361,6 +3859,8 @@
         "errors": {
           "unauthorized": "Session expirée : reconnectez-vous.",
           "forbidden": "Cette action est réservée aux administrateurs de l'école.",
+          "unfinished": "Je me suis arrêté avant de terminer : rien n'a été enregistré après la dernière action affichée. Renvoyez la demande ou reformulez-la.",
+          "truncated": "Ma réponse était trop longue et a été coupée. Écrivez « continue » pour avoir la suite.",
           "aiAssistantDisabled": "L'assistant a été désactivé par un super-administrateur.",
           "aiAssistantNotConfigured": "Aucune clé OpenRouter n'est configurée : l'assistant est indisponible.",
           "tooManyRequests": "Trop de demandes : patientez une minute.",
@@ -3405,6 +3905,45 @@
           "none": "Aucune famille trouvée.",
           "hint": "La famille choisie sert de contexte à toute la conversation.",
           "clear": "Retirer la famille {name}"
+        },
+        "welcome": {
+          "title": "Bonjour, que fait-on aujourd'hui ?",
+          "subtitle": "Je prépare, vous validez : aucune écriture ne part sans votre accord.",
+          "today": {
+            "title": "À traiter aujourd'hui",
+            "none": "Rien d'urgent aujourd'hui. Une idée pour commencer :",
+            "overdue": {
+              "title": "{count, plural, one {# famille en retard} other {# familles en retard}}",
+              "detail": "{amount} à recouvrer",
+              "action": "Préparer les relances",
+              "prompt": "Liste les familles en retard de paiement avec le montant dû par chacune, de la plus grosse dette à la plus petite."
+            },
+            "calls": {
+              "title": "{count, plural, one {# appel ouvert} other {# appels ouverts}}",
+              "action": "Faire le point",
+              "prompt": "Quels appels sont encore ouverts aujourd'hui ? Ajoute à chacun les élèves inscrits depuis son ouverture."
+            },
+            "enrollments": {
+              "title": "{count, plural, one {# inscription en attente} other {# inscriptions en attente}}",
+              "detail": "À activer depuis la page des inscriptions",
+              "action": "Ouvrir les inscriptions"
+            }
+          },
+          "recent": {
+            "title": "Récentes",
+            "all": "Tout voir",
+            "loadError": "Cette conversation n'est plus disponible."
+          }
+        },
+        "compact": {
+          "heavy": "La conversation devient longue : l'assistant risque de perdre le fil ou de la refuser.",
+          "blocked": "Cette conversation est trop chargée pour continuer.",
+          "action": "Continuer dans une nouvelle conversation résumée",
+          "working": "Résumé en cours…",
+          "failed": "Le résumé a échoué : réessayez, ou commencez une nouvelle conversation.",
+          "seedQuestion": "Suite de la conversation « {title} »",
+          "seedHeading": "Résumé de la conversation précédente (les actions non validées ne sont pas faites) :",
+          "untitled": "précédente"
         }
       },
       "tools": {
@@ -3459,7 +3998,15 @@
           "amount": "Montant",
           "method": "Mode",
           "paidAt": "Date",
-          "reference": "Référence"
+          "reference": "Référence",
+          "student": "Élève",
+          "plan": "Formule",
+          "discount": "Réduction",
+          "total": "Total",
+          "paid": "Déjà payé",
+          "remaining": "Reste à payer",
+          "payment": "Encaissement",
+          "discountWithFirstInstallment": "Une réduction de {discount} s'ajoute au montant du premier mois : elle baisse aussi les échéances suivantes. Pour une arrivée en cours d'année, le premier mois à payer et son montant suffisent."
         }
       }
     },
@@ -3487,6 +4034,28 @@
       "searchPlaceholder": "Nom de la famille",
       "noResults": "Aucune famille ne correspond à cette recherche.",
       "noFamilies": "Aucune famille active. Créez d'abord une famille."
+    },
+    "remainingHorizon": {
+      "label": "Horizon du reste à encaisser",
+      "month": "Ce mois",
+      "year": "Année"
+    },
+    "installmentSchedule": {
+      "caption": "Échéancier",
+      "month": "Échéance",
+      "amount": "Montant",
+      "total": "Total",
+      "none": "—",
+      "becomes": "devient",
+      "half": "Moitié de la mensualité : {amount}",
+      "quarter": "Quart de la mensualité : {amount}"
+    },
+    "enrollmentArrival": {
+      "title": "Arrivé en cours d'année ?",
+      "startMonth": "Premier mois à payer",
+      "firstAmount": "Montant de ce mois ({currency})",
+      "hint": "Les mois d'avant ne sont pas dus. Le montant du premier mois remplace sa mensualité : laissez-le vide pour la mensualité entière.",
+      "hintNotMonthly": "Les échéances d'avant ne sont pas dues. Le montant du premier mois ne se modifie que sur une formule mensuelle."
     }
   },
   "schools": {
@@ -3591,7 +4160,19 @@
     "title": "Événements",
     "subtitle": "Les événements publics de {schoolName}.",
     "empty": "Aucun événement public pour le moment.",
-    "subscribe": "Ajouter au calendrier"
+    "subscribe": "Ajouter au calendrier",
+    "overview": "Vue d'ensemble {period}",
+    "print": "Imprimer / PDF",
+    "showPastMonths": "Afficher les mois passés",
+    "archives": "Archives ({count, plural, one {# événement} other {# événements}})",
+    "archivesTitle": "Archives",
+    "backToCurrent": "Année en cours",
+    "printTitle": "Calendrier des événements — {schoolName}",
+    "printHeading": "Calendrier {period}",
+    "printSubtitle": "Les événements de l'année scolaire.",
+    "printHint": "Choisissez « Enregistrer en PDF » dans la fenêtre d'impression pour garder une copie.",
+    "back": "Retour aux événements",
+    "printEmpty": "Aucun événement public pour cette année scolaire."
   },
   "publicSchedule": {
     "metadata": {
@@ -3752,7 +4333,10 @@
       "cancelled": "Enregistrement annulé",
       "errors": {
         "impersonating": "Indisponible pendant que vous êtes connecté en tant qu'un autre utilisateur : revenez à votre compte. Les identifiants et le compte de la personne ne se modifient pas à sa place."
-      }
+      },
+      "deleteConfirmTitle": "Supprimer la clé « {name} » ?",
+      "deleteConfirmDescription": "Vous ne pourrez plus vous connecter avec cette clé. Cette action est définitive.",
+      "deleteConfirm": "Supprimer"
     },
     "apiKeys": {
       "title": "Clés API MCP",

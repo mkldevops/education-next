@@ -6,6 +6,7 @@ import { Ban, FileText, MoreHorizontal, ReceiptText, XCircle } from 'lucide-reac
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { useRouter } from '@/i18n/routing'
+import { currentDashboardPath, receiptHref } from '@/lib/receipt-link'
 import { toast, toastActionError } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { issueReceiptForPaymentsAction } from '../../../../_lib/payment-actions'
@@ -56,8 +57,6 @@ function PaymentRowDropdown({ paymentIds, receiptId, isOnline, isRefund }: Props
   const { open, close, toggle, containerRef, triggerRef, menuRef } = useMenu()
   const [isIssuing, setIssuing] = useState(false)
 
-  const receiptHref = receiptId ? `/dashboard/cashier/receipts/${receiptId}` : null
-
   const issueReceipt = async () => {
     setIssuing(true)
     const result = await issueReceiptForPaymentsAction(paymentIds)
@@ -67,16 +66,16 @@ function PaymentRowDropdown({ paymentIds, receiptId, isOnline, isRefund }: Props
       return
     }
     toast.success(tIssue('success'))
-    router.push(`/dashboard/cashier/receipts/${result.receiptId}`)
+    router.push(receiptHref(result.receiptId, currentDashboardPath()))
   }
 
   const items: MenuItem[] = []
-  if (receiptHref) {
+  if (receiptId) {
     items.push({
       key: 'view',
       label: t('viewReceipt'),
       icon: FileText,
-      onSelect: () => router.push(receiptHref),
+      onSelect: () => router.push(receiptHref(receiptId, currentDashboardPath())),
     })
     if (!isOnline) {
       items.push({
@@ -84,7 +83,8 @@ function PaymentRowDropdown({ paymentIds, receiptId, isOnline, isRefund }: Props
         label: t('cancelReceipt'),
         icon: XCircle,
         danger: true,
-        onSelect: () => router.push(`${receiptHref}?action=cancel`),
+        onSelect: () =>
+          router.push(receiptHref(receiptId, currentDashboardPath(), { action: 'cancel' })),
       })
     }
   }

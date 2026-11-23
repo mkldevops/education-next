@@ -1,11 +1,11 @@
 'use client'
 
-import { useMenu } from '@peaklab/ui'
 import { Check, ChevronsUpDown, LoaderCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { switchSchoolAction } from '@/actions/school-actions'
+import { useMenu } from '@/components/ui/use-menu'
 import type { AuthorizedSchool } from '@/domain/school-scope'
 import { usePathname, useRouter } from '@/i18n/routing'
 import { toast } from '@/lib/toast'

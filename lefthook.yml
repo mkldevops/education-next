@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://json.schemastore.org/lefthook.json
+
+output:
+  - summary
+  - failure
+
+pre-commit:
+  jobs:
+    - name: tailwind-canonical
+      glob: "*.{jsx,tsx}"
+      run: pnpm exec tailwind-canonical --fix {staged_files}
+      stage_fixed: true
+
+    - name: biome
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css,md}"
+      run: >-
+        pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true
+        {staged_files}
+      stage_fixed: true
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: type-check
+      run: pnpm type-check
+
+    - name: test
+      run: pnpm test

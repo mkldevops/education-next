@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { resolveSignInUpgradeOffer } from '@/domain/sign-in-upgrade'
 import { isImpersonating } from '@/domain/user'
-import { SignInUpgradeBanner } from '@/features/auth'
+import { SignInUpgradeBanner } from '@/features/auth/sign-in-upgrade-banner'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { isGoogleSignInAvailable } from '@/use-cases/platform-settings/is-google-sign-in-available'

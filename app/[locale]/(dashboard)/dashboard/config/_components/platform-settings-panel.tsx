@@ -11,9 +11,8 @@ import {
   setSchoolSwitchEnabledAction,
 } from '../../../_lib/platform-settings-actions'
 import { OpenRouterKeyForm, type OpenRouterKeyView } from './openrouter-key-form'
+import { INTEGRATIONS_ANCHOR } from './platform-anchors'
 import { SettingsSection } from './settings-section'
-
-const INTEGRATIONS_ANCHOR = 'integrations'
 
 type Props = {
   googleEnabled: boolean

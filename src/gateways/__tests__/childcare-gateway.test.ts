@@ -185,7 +185,8 @@ describe.skipIf(!databaseUrl)('garderie sur une vraie base', () => {
       const found = await childcareGateway.searchStudents(a.schoolId, 'zanat')
 
       expect(found.map((row) => row.id)).toEqual([active.id])
-      expect(found[0].person).toEqual({ name: 'Enfant', lastname: 'Zanatany' })
+      expect(found[0].person).toMatchObject({ name: 'Enfant', lastname: 'Zanatany' })
+      expect(found[0].childcareSubscriptions).toEqual([])
       expect(found.map((row) => row.id)).not.toContain(elsewhere.id)
     }, 30_000)
   })

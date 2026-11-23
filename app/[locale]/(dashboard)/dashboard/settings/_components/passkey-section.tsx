@@ -12,6 +12,7 @@ import {
   getUserPasskeys,
   verifyPasskeyRegistration,
 } from '@/actions'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { formatDate } from '@/lib/date'
 import { toast } from '@/lib/toast'
 
@@ -38,6 +39,7 @@ type Props = {
  */
 export function PasskeySection({ enabled, initialPasskeys }: Props) {
   const t = useTranslations('settings.passkey')
+  const tCommon = useTranslations('common')
   const locale = useLocale()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -144,15 +146,23 @@ export function PasskeySection({ enabled, initialPasskeys }: Props) {
                   {pk.deviceType} — {formatDate(pk.createdAt, locale)}
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDelete(pk.id)}
-                disabled={isPending}
-                aria-label={t('delete', { name: pk.name })}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-              </Button>
+              <ConfirmDialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    aria-label={t('delete', { name: pk.name })}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                }
+                title={t('deleteConfirmTitle', { name: pk.name })}
+                description={t('deleteConfirmDescription')}
+                confirmLabel={t('deleteConfirm')}
+                cancelLabel={tCommon('cancel')}
+                onConfirm={() => handleDelete(pk.id)}
+              />
             </div>
           ))}
         </div>

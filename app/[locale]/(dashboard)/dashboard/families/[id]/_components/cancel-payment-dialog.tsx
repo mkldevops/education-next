@@ -10,6 +10,7 @@ type Props = {
   paymentIds: string[]
   amount: string
   isRefund: boolean
+  onSuccess?: () => void
 }
 
 /** Annulation d'une saisie manuelle de l'historique famille, motif facultatif. */
@@ -26,13 +27,15 @@ export function CancelPaymentDialogContent(props: Props) {
   )
 }
 
-function CancelPaymentForm({ paymentIds, amount, isRefund }: Props) {
+function CancelPaymentForm({ paymentIds, amount, isRefund, onSuccess }: Props) {
   const t = useTranslations('dashboard.pages.familyDetails.paymentHistory.cancel')
   const { isPending, close, onSubmit } = useDialogForm(t)
   const reasonId = useId()
 
-  const handleSubmit = onSubmit((formData) =>
-    cancelPaymentsAction(paymentIds, (formData.get('reason') as string | null) ?? undefined)
+  const handleSubmit = onSubmit(
+    (formData) =>
+      cancelPaymentsAction(paymentIds, (formData.get('reason') as string | null) ?? undefined),
+    { onSuccess }
   )
 
   return (

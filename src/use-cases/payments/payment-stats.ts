@@ -1,3 +1,4 @@
+import { payableEnrollmentWhere } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import {
   collectionByMethod,
@@ -11,8 +12,8 @@ import { db } from '@/lib/db'
 import { roundHalfUp } from '@/lib/decimal'
 import {
   type FamilyPaymentTracking,
-  getPaymentTrackingByFamily,
-  type TrackedFamily,
+  getPaymentTrackingDetailByFamily,
+  type TrackedFamilyDetail,
 } from './payment-tracking'
 
 const FAMILIES_LISTED = 6
@@ -21,8 +22,9 @@ export type PaymentStats = {
   totals: PaymentTotals
   methods: MethodCollection[]
   families: FamilyToFollowUp[]
-  tracking: FamilyPaymentTracking
-  overdueFamilies: Array<TrackedFamily & { contactPhone: string | null }>
+  tracking: FamilyPaymentTracking & { dueThisMonthCount: number; trackedCount: number }
+  /** Chaque famille couverte par le suivi, avec le téléphone à composer pour la relancer. */
+  familyTracking: Array<TrackedFamilyDetail & { contactPhone: string | null }>
 }
 
 /** Famille à relancer, avec le téléphone à composer pour la joindre. */
@@ -73,12 +75,12 @@ export async function familyContactPhones(schoolId: string, familyIds: string[])
   return phones
 }
 
-/** Périmètre de la dette : inscriptions `PENDING` et `ACTIVE`, bornées à la période choisie. */
+/** Périmètre de la dette : inscriptions payables (`payableEnrollmentWhere`), bornées à la période choisie. */
 export function paymentScope(schoolId: string, periodId: string | null) {
   const enrollmentWhere = {
     schoolId,
     isActive: true,
-    status: { in: ['PENDING' as const, 'ACTIVE' as const] },
+    ...payableEnrollmentWhere,
     ...(periodId ? { classAssignments: { some: { classPeriod: { periodId } } } } : {}),
   }
   return {
@@ -90,7 +92,7 @@ export function paymentScope(schoolId: string, periodId: string | null) {
 /**
  * Statistiques d'encaissement d'une école, sur la période sélectionnée.
  *
- * Le périmètre est celui de la dette : inscriptions `PENDING` et `ACTIVE`, comme
+ * Le périmètre est celui de la dette : inscriptions payables, comme
  * `calculateFamilyBalance`. Les paiements sont agrégés en base ; le graphique a son propre chargeur,
  * `getCollectionSeries`.
  */
@@ -136,7 +138,7 @@ export async function getPaymentStats(
       _sum: { amount: true },
       _count: { _all: true },
     }),
-    getPaymentTrackingByFamily(schoolId, { periodId, reference }),
+    getPaymentTrackingDetailByFamily(schoolId, { periodId, reference }),
   ])
 
   const paid = new Map(paidByEnrollment.map((row) => [row.enrollmentId, row._sum.amount]))
@@ -152,11 +154,9 @@ export async function getPaymentStats(
   }))
 
   const outstanding = familiesOutstanding(enrollments, FAMILIES_LISTED)
-  const overdueFamilies = tracking
-    .filter((family) => family.overdueAmount > 0)
-    .slice(0, FAMILIES_LISTED)
+  const owing = tracking.filter((family) => family.creditedPaid < family.annualAmount)
   const phones = await familyContactPhones(schoolId, [
-    ...new Set([...outstanding, ...overdueFamilies].map((family) => family.familyId)),
+    ...new Set([...outstanding, ...owing].map((family) => family.familyId)),
   ])
 
   return {
@@ -172,10 +172,13 @@ export async function getPaymentStats(
     tracking: {
       expectedToDate: roundHalfUp(tracking.reduce((sum, family) => sum + family.expectedToDate, 0)),
       overdueAmount: roundHalfUp(tracking.reduce((sum, family) => sum + family.overdueAmount, 0)),
+      dueThisMonth: roundHalfUp(tracking.reduce((sum, family) => sum + family.dueThisMonth, 0)),
+      dueThisMonthCount: tracking.filter((family) => family.dueThisMonth > 0).length,
+      trackedCount: tracking.filter((family) => family.tracked).length,
       paidToDate: roundHalfUp(tracking.reduce((sum, family) => sum + family.paidToDate, 0)),
       tracked: tracking.some((family) => family.tracked),
     },
-    overdueFamilies: overdueFamilies.map((family) => ({
+    familyTracking: tracking.map((family) => ({
       ...family,
       contactPhone: phones.get(family.familyId) ?? null,
     })),

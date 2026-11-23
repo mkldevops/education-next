@@ -2,6 +2,7 @@
 
 import { Button } from '@peaklab/ui'
 import { useTranslations } from 'next-intl'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   changePlatformLevelAction,
   deactivateUserAction,
@@ -41,6 +42,7 @@ export function UserPlatformActions({
   onFamilyLinked,
 }: Props) {
   const t = useTranslations('dashboard.pages.users')
+  const tCommon = useTranslations('common')
 
   const unlinkedFamilies = families.filter(
     (family) => !detail?.families.some((link) => link.family.id === family.id)
@@ -97,14 +99,18 @@ export function UserPlatformActions({
             {t('revokeSessions')}
           </Button>
           {user.isActive ? (
-            <Button
-              variant="destructive"
-              size="sm"
-              disabled={isPending || isSelf}
-              onClick={() => run(() => deactivateUserAction({ id: user.id }), 'userDeactivated')}
-            >
-              {t('deactivate')}
-            </Button>
+            <ConfirmDialog
+              trigger={
+                <Button variant="destructive" size="sm" disabled={isPending || isSelf}>
+                  {t('deactivate')}
+                </Button>
+              }
+              title={t('deactivateConfirmTitle', { name: user.name ?? user.email })}
+              description={t('deactivateConfirmDescription')}
+              confirmLabel={t('deactivate')}
+              cancelLabel={tCommon('cancel')}
+              onConfirm={() => run(() => deactivateUserAction({ id: user.id }), 'userDeactivated')}
+            />
           ) : (
             <Button
               variant="outline"

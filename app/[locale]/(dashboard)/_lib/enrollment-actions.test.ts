@@ -4,10 +4,14 @@ import { Prisma } from '@/generated/prisma/client'
 vi.mock('./auth-helper', () => ({ requireSchoolAdmin: vi.fn(), requireSchoolStaff: vi.fn() }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('@/use-cases/enrollments/create-enrollment', () => ({ createEnrollment: vi.fn() }))
+vi.mock('@/use-cases/attendance/attendance-roster', () => ({
+  syncOpenAttendanceRosters: vi.fn(),
+}))
 
 const auth = await import('./auth-helper')
 const { revalidatePath } = await import('next/cache')
 const { createEnrollment } = await import('@/use-cases/enrollments/create-enrollment')
+const { syncOpenAttendanceRosters } = await import('@/use-cases/attendance/attendance-roster')
 const { createEnrollmentAction } = await import('./enrollment-actions')
 
 const input = {
@@ -39,6 +43,11 @@ describe('createEnrollmentAction', () => {
     expect(result).toEqual({ id: 'e1' })
     expect(createEnrollment).toHaveBeenCalledWith({ ...input, schoolId: 's', deferPricing: false })
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard/enrollments')
+    expect(syncOpenAttendanceRosters).toHaveBeenCalledWith({
+      schoolId: 's',
+      actorId: 'u',
+      enrollmentIds: ['e1'],
+    })
   })
 
   it('passes business error codes through without revalidating', async () => {
@@ -46,6 +55,7 @@ describe('createEnrollmentAction', () => {
 
     expect(await createEnrollmentAction(input)).toBe('totalAmountExceedsPlan')
     expect(revalidatePath).not.toHaveBeenCalled()
+    expect(syncOpenAttendanceRosters).not.toHaveBeenCalled()
   })
 
   it('defers pricing when a teacher with extended access enrolls', async () => {

@@ -35,6 +35,7 @@ import { getEventFromMcp } from '@/use-cases/mcp/get-event'
 import { listAttendanceCallsFromMcp } from '@/use-cases/mcp/list-attendance-calls'
 import { listEventsFromMcp } from '@/use-cases/mcp/list-events'
 import { listFamiliesFromMcp } from '@/use-cases/mcp/list-families'
+import { listOverdueStudentsFromMcp } from '@/use-cases/mcp/list-overdue-students'
 import { moveStudentToClassFromMcp } from '@/use-cases/mcp/move-student-to-class'
 import { createPlanFromMcp, updatePlanFromMcp } from '@/use-cases/mcp/plan-configuration'
 import { previewClassSchedule } from '@/use-cases/mcp/preview-class-schedule'
@@ -44,6 +45,7 @@ import { previewRecordPayment } from '@/use-cases/mcp/preview-record-payment'
 import { previewRecordTeacherExpense } from '@/use-cases/mcp/preview-record-teacher-expense'
 import { previewSplitFamily } from '@/use-cases/mcp/preview-split-family'
 import { previewUpdateEnrollment } from '@/use-cases/mcp/preview-update-enrollment'
+import { refreshAttendanceRosterFromMcp } from '@/use-cases/mcp/refresh-attendance-roster'
 import {
   commitDraftSchema,
   MCP_ATTENDANCE_RANGE_MAX_DAYS,
@@ -71,6 +73,7 @@ import {
   mcpListEventsSchema,
   mcpListFamiliesSchema,
   mcpMoveStudentToClassSchema,
+  mcpRefreshAttendanceRosterSchema,
   mcpResourceIdSchema,
   mcpUpdateClassScheduleSlotSchema,
   mcpUpdateEventSchema,
@@ -84,6 +87,7 @@ import {
   previewUpdateEnrollmentSchema,
 } from '@/use-cases/mcp/schemas'
 import { updateEventFromMcp } from '@/use-cases/mcp/update-event'
+import { OVERDUE_VIEW_URI } from './apps/overdue-view'
 import { listChildcareTools } from './childcare-tools'
 import { listMealTools } from './meal-tools'
 
@@ -140,6 +144,8 @@ export type SchoolTool = {
   inputSchema: z.ZodObject
   annotations?: ToolAnnotations
   kind: SchoolToolKind
+  /** Vue MCP Apps (`ui://…`) qui affiche le résultat chez les hôtes qui la prennent en charge. */
+  ui?: string
   run: (args: unknown) => Promise<unknown>
 }
 
@@ -318,8 +324,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       kind: 'write',
       run: (args) => commitClassSchedule(scope, args),
     }),
-    // Lecture seule : ouvrir, saisir, valider ou annuler un appel reste une action du
-    // tableau de bord.
+    // Ouvrir, saisir, valider ou annuler un appel reste une action du tableau de bord ; seul
+    // l'ajout des élèves inscrits depuis l'ouverture passe aussi par ici.
     define({
       name: 'list_attendance_calls',
       title: 'Suivi des appels',
@@ -338,6 +344,21 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       annotations: { readOnlyHint: true, openWorldHint: false },
       kind: 'read',
       run: (args) => listAttendanceCallsFromMcp(scope, args),
+    }),
+    define({
+      name: 'refresh_attendance_roster',
+      title: "Actualiser la liste d'un appel",
+      description:
+        'Ajoute à un appel en cours les élèves inscrits dans sa classe depuis son ouverture, comme ' +
+        'le bouton « Actualiser la liste des élèves » de la page d’appel. `sessionId` est celui ' +
+        "d'un appel `IN_PROGRESS` de `list_attendance_calls`. Les élèves ajoutés arrivent non " +
+        'saisis ; les présences déjà saisies ne bougent pas. Rend `added` (élèves ajoutés, vide si ' +
+        "la liste était à jour). Refus : `notConfigured`, `notFound` (appel absent ou d'une autre " +
+        'école), `invalidTransition` (appel validé ou annulé), `validationError`.',
+      inputSchema: mcpRefreshAttendanceRosterSchema,
+      annotations: IDEMPOTENT_WRITE,
+      kind: 'write',
+      run: (args) => refreshAttendanceRosterFromMcp(scope, args),
     }),
   ]
 
@@ -585,8 +606,9 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
       name: 'archive_student',
       title: 'Archiver un élève',
       description:
-        'Masque un élève de l’école sans effacer son dossier. Refuse une inscription ' +
-        'PENDING ou ACTIVE : `hasActiveEnrollments`. Arrête aussi ses prestations de repas. ' +
+        'Enregistre le départ d’un élève sans effacer son dossier : ses inscriptions ouvertes ' +
+        'sont clôturées après le mois scolaire en cours, le reste dû jusqu’à ce mois reste ' +
+        'dû (rien n’est annulé), il quitte sa classe et ses repas s’arrêtent. ' +
         'Refus : `notFound`, `validationError`. Rend `{ id, archived: true }`.',
       inputSchema: mcpResourceIdSchema,
       annotations: DESTRUCTIVE_WRITE,
@@ -645,7 +667,13 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         "famille ou par élève) inscrit un élève arrivé en cours d'année : seules les " +
         'échéances de la formule à partir de ce mois sont dues et font le total. Il doit ' +
         'tomber dans la période de la classe (`startMonthOutsidePeriod`) et la formule ' +
-        'avoir un échéancier (`noPaymentSchedule`).',
+        'avoir un échéancier (`noPaymentSchedule`). `firstInstallmentAmount` (par élève, ' +
+        'formule mensuelle, avec `startMonth`) réduit le premier mois dû : il remplace cette ' +
+        'échéance, les suivantes restent celles de la formule. Une arrivée en cours ' +
+        "d'année se dicte par `startMonth` + `firstInstallmentAmount`, jamais par `discount`. " +
+        "Chaque élève du plan porte son échéancier (`installments`, mois et montant) ; l'" +
+        'avertissement `discountWithFirstInstallment` signale une remise ajoutée à un premier ' +
+        'mois réduit.',
       inputSchema: previewEnrollFamilySchema,
       annotations: NON_IDEMPOTENT_WRITE,
       kind: 'draft',
@@ -794,7 +822,8 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'preview_update_enrollment',
         title: "Préparer la modification d'une inscription",
         description:
-          "Change la formule, la remise et/ou le mois de début d'une inscription en attente " +
+          "Change la formule, la remise, le mois de début et/ou le premier mois réduit d'une " +
+          'inscription en attente ' +
           'ou active, sans rien ' +
           "écrire. L'inscription se désigne par son identifiant, ou par le prénom et le nom de " +
           "l'élève ; la formule est attendue en libellé. Sans remise, l'inscription garde la " +
@@ -803,7 +832,15 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
           '(`YYYY-MM`) fixe le premier mois dû : les échéances antérieures ne sont plus ' +
           'attendues et sortent du total ; `null` le retire, absent il est gardé. Refusé hors ' +
           'de la période (`startMonthOutsidePeriod`), sans échéancier (`noPaymentSchedule`), ' +
-          'ou sous le déjà-payé (`totalBelowPaid`).',
+          'ou sous le déjà-payé (`totalBelowPaid`). `firstInstallmentAmount` réduit le ' +
+          'premier mois dû (formule mensuelle, avec un `startMonth`, au plus la mensualité) : ' +
+          'il remplace cette échéance, la remise se répartit sur les suivantes ; `null` le ' +
+          'retire, absent il est gardé tant que ni la formule ni le mois de début ne changent ' +
+          '(sinon remis à zéro, avertissement `firstInstallmentReset`). Une arrivée en cours ' +
+          "d'année se dicte par `startMonth` + `firstInstallmentAmount`, jamais par " +
+          "`discount` ni `totalAmount`. Le plan porte l'échéancier avant et après " +
+          "(`schedule.before` / `schedule.after`, mois et montant) ; l'avertissement " +
+          '`discountWithFirstInstallment` signale une remise ajoutée à un premier mois réduit.',
         inputSchema: previewUpdateEnrollmentSchema,
         annotations: NON_IDEMPOTENT_WRITE,
         kind: 'draft',
@@ -813,13 +850,30 @@ export function listSchoolTools(scope: DraftScope): SchoolTool[] {
         name: 'commit_update_enrollment',
         title: "Engager la modification d'une inscription",
         description:
-          'Applique la formule, la remise, le mois de début et le total déjà prévisualisés. ' +
+          'Applique la formule, la remise, le mois de début, le premier mois réduit et le total ' +
+          'déjà prévisualisés. ' +
           'Les paiements ' +
           "restent sur l'inscription. Rejouer le même `draftId` rend le résultat enregistré.",
         inputSchema: commitDraftSchema,
         annotations: IDEMPOTENT_COMMIT,
         kind: 'write',
         run: (args) => commitUpdateEnrollment(scope, args),
+      }),
+      define({
+        name: 'list_overdue_students',
+        title: 'Lister les élèves en retard de paiement',
+        description:
+          'Liste complète des élèves en retard de paiement (impayés), sans pagination ni ' +
+          'recherche par nom : pour « quels enfants sont en retard ? », appeler cet outil plutôt ' +
+          'que `list_families` ou `find_students`. Le retard se mesure par famille redevable ' +
+          '(versements répartis entre frères et sœurs) : chaque élève porte sa classe et le ' +
+          '`family.overdueAmount` de sa famille, échu et non réglé à ce jour. Tri par retard ' +
+          'décroissant. Le détail des mois couverts se lit avec `get_family_payments`.',
+        inputSchema: NO_ARGS,
+        annotations: { readOnlyHint: true, openWorldHint: false },
+        kind: 'read',
+        ui: OVERDUE_VIEW_URI,
+        run: () => listOverdueStudentsFromMcp(scope),
       }),
       define({
         name: 'get_family_payments',

@@ -618,6 +618,29 @@ describe('previewEnrollFamily', () => {
     expect(listClassPeriods).not.toHaveBeenCalled()
   })
 
+  it('accepts a plan label carried by each student instead of the family', async () => {
+    const { planName: _planName, ...withoutPlanName } = input
+    const result = await previewEnrollFamily(scope, {
+      ...withoutPlanName,
+      students: [{ ...input.students[0], planName: 'Tarif annuel' }],
+    })
+
+    assertPreview(result)
+    expect(result.blockers).toEqual([])
+    expect(result.plan?.students[0].plan).toMatchObject({ name: 'Tarif annuel' })
+  })
+
+  it('still requires a plan for a student left without one', async () => {
+    const { planName: _planName, ...withoutPlanName } = input
+
+    expect(
+      await previewEnrollFamily(scope, {
+        ...withoutPlanName,
+        students: [{ ...input.students[0], planName: 'Tarif annuel' }, sibling],
+      })
+    ).toBe('validationError')
+  })
+
   it('rejects malformed input before reading anything', async () => {
     expect(await previewEnrollFamily(scope, { ...input, students: [] })).toBe('validationError')
     expect(listClassPeriods).not.toHaveBeenCalled()
@@ -726,6 +749,162 @@ describe('previewEnrollFamily with a start month', () => {
       field: 'startMonth',
       value: '2026-10',
       reason: 'noPaymentSchedule',
+    })
+  })
+
+  it('reduces the first month of the student it is dictated for', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      startMonth: '2026-10',
+      students: [{ ...input.students[0], firstInstallmentAmount: 8_000 }, sibling],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(
+      result.plan?.students.map((student) => [
+        student.startMonth,
+        student.firstInstallmentAmount,
+        student.totalAmount,
+      ])
+    ).toEqual([
+      ['2026-10', 8_000, 120_000],
+      ['2026-10', null, 128_000],
+    ])
+    expect(result.warnings).toEqual([])
+    expect(result.plan?.currency).toBe('XOF')
+    expect(result.plan?.students[0].installments.slice(0, 2)).toEqual([
+      { dueDate: '2026-10-05', amount: 8_000 },
+      { dueDate: '2026-11-05', amount: 16_000 },
+    ])
+    expect(result.plan?.students[1].installments).toHaveLength(8)
+    // Fratrie de la même classe : sa période n'est lue qu'une fois.
+    expect(findPeriodBounds).toHaveBeenCalledTimes(1)
+  })
+
+  it('lists the whole schedule of a student enrolled for the full year', async () => {
+    const result = await previewEnrollFamily(scope, { ...unpaid, planName: 'Mensuel' })
+    assertPreview(result)
+
+    expect(result.plan?.students[0].installments).toHaveLength(9)
+    expect(result.plan?.students[0].installments[0]).toEqual({
+      dueDate: '2026-09-05',
+      amount: 16_000,
+    })
+  })
+
+  it('warns when a discount coexists with a reduced first month', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      startMonth: '2026-10',
+      discount: 8_000,
+      students: [{ ...input.students[0], firstInstallmentAmount: 8_000 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.warnings).toEqual([
+      { field: 'discount', value: '8000', reason: 'discountWithFirstInstallment' },
+    ])
+    expect(result.plan?.students[0].installments.slice(0, 2)).toEqual([
+      { dueDate: '2026-10-05', amount: 8_000 },
+      { dueDate: '2026-11-05', amount: 14_857 },
+    ])
+  })
+
+  it('blocks a reduced first month without a start month', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      students: [{ ...input.students[0], firstInstallmentAmount: 8_000 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      {
+        field: 'students.0.firstInstallmentAmount',
+        value: '8000',
+        reason: 'firstInstallmentRequiresStartMonth',
+      },
+    ])
+    expect(createDraft).not.toHaveBeenCalled()
+  })
+
+  it('blocks a reduced first month above the installment of the start month', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      students: [{ ...input.students[0], startMonth: '2026-10', firstInstallmentAmount: 16_001 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      {
+        field: 'students.0.firstInstallmentAmount',
+        value: '16001',
+        reason: 'firstInstallmentOutOfRange',
+      },
+    ])
+  })
+
+  it('blocks a reduced first month on a plan that is not paid monthly', async () => {
+    listPlans.mockResolvedValue([
+      { ...monthly, paymentSchedule: { mode: 'QUARTERLY', firstMonth: 9, count: 3, dueDay: 5 } },
+    ])
+
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      students: [{ ...input.students[0], startMonth: '2026-10', firstInstallmentAmount: 8_000 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      {
+        field: 'students.0.firstInstallmentAmount',
+        value: '8000',
+        reason: 'firstInstallmentNotMonthly',
+      },
+    ])
+  })
+
+  it('blocks a reduced first month the discount no longer leaves to pay', async () => {
+    const result = await previewEnrollFamily(scope, {
+      ...unpaid,
+      planName: 'Mensuel',
+      discount: 4_000,
+      students: [{ ...input.students[0], startMonth: '2027-05', firstInstallmentAmount: 8_000 }],
+    })
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([
+      {
+        field: 'students.0.firstInstallmentAmount',
+        value: '8000',
+        reason: 'firstInstallmentExceedsTotal',
+      },
+    ])
+  })
+
+  it('ignores a reduced first month when the school has turned payments off', async () => {
+    const { planName: _planName, ...withoutPlan } = unpaid
+
+    const result = await previewEnrollFamily(
+      { ...scope, paymentsEnabled: false },
+      {
+        ...withoutPlan,
+        students: [{ ...input.students[0], startMonth: '2026-10', firstInstallmentAmount: 8_000 }],
+      }
+    )
+    assertPreview(result)
+
+    expect(result.blockers).toEqual([])
+    expect(result.plan?.students[0]).toMatchObject({
+      startMonth: '2026-10',
+      firstInstallmentAmount: null,
+      totalAmount: 0,
     })
   })
 })

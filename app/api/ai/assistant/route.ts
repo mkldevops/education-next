@@ -1,9 +1,17 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { convertToModelMessages, generateId, stepCountIs, streamText } from 'ai'
+import * as Sentry from '@sentry/nextjs'
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  generateId,
+  type ModelMessage,
+  stepCountIs,
+  streamText,
+} from 'ai'
 import { after, NextResponse } from 'next/server'
 import { AI_ASSISTANT_LIMITS, resolveAiAssistantModel } from '@/domain/ai-assistant'
 import { getSelectedPeriod } from '@/features/dashboard/period'
-import { createRateLimiter } from '@/lib/rate-limit'
 import { getSchoolContext, isActiveSchoolAdmin } from '@/lib/school-context'
 import { normalizeChatMessages } from '@/use-cases/ai-assistant/normalize-chat-messages'
 import { sanitizeImage } from '@/use-cases/ai-assistant/sanitize-image'
@@ -16,7 +24,9 @@ import { readOpenRouterApiKey } from '@/use-cases/platform-settings/openrouter-a
 import { toProviderErrorCode } from '../_lib/provider-error'
 import { isSameOriginJsonRequest } from '../_lib/same-origin'
 import { buildAssistantTools, toolApprovalSecret } from './_lib/assistant-tools'
-import { commitAfterPreview } from './_lib/commit-after-preview'
+import { prepareAssistantStep } from './_lib/commit-after-preview'
+import { writeTurnWithContinuations } from './_lib/continue-truncated'
+import { isAssistantUserRateLimited } from './_lib/rate-limit'
 import { buildAssistantSystemPrompt } from './_lib/system-prompt'
 
 export const runtime = 'nodejs'
@@ -34,11 +44,6 @@ const REFUSAL_STATUS = {
 } as const
 
 const PAGE_PATTERN = /^\/[\w\-/]{0,200}$/
-
-const isUserRateLimited = createRateLimiter({
-  limit: AI_ASSISTANT_LIMITS.requestsPerMinute,
-  windowMs: 60 * 1000,
-})
 
 function denied(error: string, status: number) {
   return NextResponse.json({ error }, { status })
@@ -83,7 +88,7 @@ export async function POST(request: Request) {
     const apiKey = await readOpenRouterApiKey()
     if (apiKey === null) return denied('aiAssistantNotConfigured', 503)
 
-    if (isUserRateLimited(`${context.userId}:${context.schoolId}`)) {
+    if (isAssistantUserRateLimited(`${context.userId}:${context.schoolId}`)) {
       return denied('tooManyRequests', 429)
     }
 
@@ -121,43 +126,96 @@ export async function POST(request: Request) {
       findSelectedFamily(context.schoolId, readFamilyId(body)),
     ])
     const openrouter = createOpenRouter({ apiKey })
-    const result = streamText({
-      model: openrouter(resolveAiAssistantModel(process.env.AI_ASSISTANT_MODEL)),
-      system: buildAssistantSystemPrompt({
-        paymentsEnabled,
-        today: now.toISOString().slice(0, 10),
-        page: readPage(body),
-        period,
-        family,
-      }),
-      messages,
-      tools,
-      toolApproval,
-      ...(approvalSecret ? { experimental_toolApprovalSecret: approvalSecret } : {}),
-      stopWhen: stepCountIs(AI_ASSISTANT_LIMITS.maxAgentSteps),
-      prepareStep: ({ steps }) => commitAfterPreview(steps, toolNames),
-      maxOutputTokens: AI_ASSISTANT_LIMITS.maxOutputTokens,
-      abortSignal: AbortSignal.timeout(AI_ASSISTANT_LIMITS.agentTimeoutMs),
-      onError: ({ error }) => {
-        console.error('[api/ai/assistant] provider error:', toProviderErrorCode(error))
-      },
+    const model = openrouter(resolveAiAssistantModel(process.env.AI_ASSISTANT_MODEL), {
+      reasoning: { max_tokens: AI_ASSISTANT_LIMITS.maxReasoningTokens },
     })
+    const system = buildAssistantSystemPrompt({
+      paymentsEnabled,
+      today: now.toISOString().slice(0, 10),
+      page: readPage(body),
+      period,
+      family,
+    })
+    const abortSignal = AbortSignal.timeout(AI_ASSISTANT_LIMITS.agentTimeoutMs)
+
+    const runTurn = (history: ModelMessage[], continuing: boolean) =>
+      streamText({
+        model,
+        system,
+        messages: history,
+        tools,
+        toolApproval,
+        ...(approvalSecret ? { experimental_toolApprovalSecret: approvalSecret } : {}),
+        // Une relance ne fait que terminer le texte coupé : aucun outil, une seule étape.
+        ...(continuing
+          ? { activeTools: [], toolChoice: 'none' as const, stopWhen: stepCountIs(1) }
+          : {
+              stopWhen: stepCountIs(AI_ASSISTANT_LIMITS.maxAgentSteps),
+              prepareStep: ({ steps }: { steps: Parameters<typeof prepareAssistantStep>[0] }) =>
+                prepareAssistantStep(steps, toolNames, AI_ASSISTANT_LIMITS.maxAgentSteps, history),
+            }),
+        maxOutputTokens: AI_ASSISTANT_LIMITS.maxOutputTokens,
+        abortSignal,
+        onError: ({ error }) => {
+          const code = toProviderErrorCode(error)
+          console.error('[api/ai/assistant] provider error:', code)
+          Sentry.captureException(error, { tags: { feature: 'ai-assistant', code } })
+        },
+        onAbort: ({ steps }) => {
+          Sentry.captureMessage('AI assistant turn aborted', {
+            level: 'warning',
+            tags: { feature: 'ai-assistant' },
+            extra: { steps: steps.length },
+          })
+        },
+        onFinish: ({ finishReason, steps }) => {
+          // `length` se relance plus bas ; seule une coupure restée après les relances remonte.
+          if (finishReason === 'stop' || finishReason === 'tool-calls' || finishReason === 'length')
+            return
+          Sentry.captureMessage(`AI assistant turn ended: ${finishReason}`, {
+            level: 'warning',
+            tags: { feature: 'ai-assistant', finishReason },
+            extra: { steps: steps.length },
+          })
+        },
+      })
 
     const scope = { schoolId: context.schoolId, userId: context.userId }
     const conversationId = readConversationId(body)
 
-    // La conversation s'enregistre à la fin de chaque tour, photos retirées : l'historique
-    // suit l'administrateur d'un appareil à l'autre.
-    return result.toUIMessageStreamResponse({
+    // Une réponse coupée par la limite de jetons se poursuit dans le même message : le texte
+    // de chaque relance s'ajoute au précédent. Au-delà des relances permises, le message est
+    // marqué `truncated` et l'interface prévient l'administrateur au lieu de finir sur un mot.
+    const stream = createUIMessageStream({
       originalMessages: normalized.messages,
-      generateMessageId: generateId,
-      onFinish: async ({ messages: finished }) => {
+      generateId,
+      onError: (error) => toProviderErrorCode(error),
+      execute: ({ writer }) =>
+        writeTurnWithContinuations({
+          writer,
+          history: messages,
+          runTurn,
+          maxContinuations: AI_ASSISTANT_LIMITS.maxContinuations,
+          onError: (error) => toProviderErrorCode(error),
+          onTruncated: (continuations) => {
+            Sentry.captureMessage('AI assistant turn ended: length', {
+              level: 'warning',
+              tags: { feature: 'ai-assistant', finishReason: 'length' },
+              extra: { continuations },
+            })
+          },
+        }),
+      // La conversation s'enregistre à la fin de chaque tour, photos retirées : l'historique
+      // suit l'administrateur d'un appareil à l'autre.
+      onEnd: async ({ messages: finished }) => {
         await saveConversation(scope, conversationId, finished)
       },
-      onError: (error) => toProviderErrorCode(error),
     })
+
+    return createUIMessageStreamResponse({ stream })
   } catch (error) {
     console.error('[api/ai/assistant] unexpected error:', error)
+    Sentry.captureException(error, { tags: { feature: 'ai-assistant' } })
     return denied('serverError', 500)
   }
 }

@@ -6,6 +6,7 @@ import {
   ATTENDANCE_FREQUENCY_CONFIG_KEY,
 } from './attendance-config'
 import { BRANDING_CONFIG_KEYS } from './branding-config'
+import { CASH_DAY_TUITION_CONFIG_KEY } from './cash-day-tuition-config'
 import {
   CLASS_SCHEDULE_ENABLED_CONFIG_KEY,
   CLASS_SCHEDULE_TEACHER_OVERLAP_ALLOWED_CONFIG_KEY,
@@ -33,6 +34,7 @@ export const SchoolConfigKey = {
   ThemeBackground: 'theme_background',
   MaxStudentsPerClass: MAX_STUDENTS_PER_CLASS_CONFIG_KEY,
   PaymentsEnabled: PAYMENTS_ENABLED_CONFIG_KEY,
+  CashDayTuitionEnabled: CASH_DAY_TUITION_CONFIG_KEY,
   TeacherExpensesEnabled: TEACHER_EXPENSES_CONFIG_KEY,
   TeacherStaffAccessEnabled: TEACHER_STAFF_ACCESS_CONFIG_KEY,
   AutomaticPromotion: 'automatic_promotion',
@@ -60,6 +62,7 @@ export const SCHOOL_CONFIG_VALUE_TYPES: Record<SchoolConfigKey, ConfigValueType>
   [SchoolConfigKey.TeacherExpensesEnabled]: 'BOOLEAN',
   [SchoolConfigKey.TeacherStaffAccessEnabled]: 'BOOLEAN',
   [SchoolConfigKey.PaymentsEnabled]: 'BOOLEAN',
+  [SchoolConfigKey.CashDayTuitionEnabled]: 'BOOLEAN',
   [SchoolConfigKey.AutomaticPromotion]: 'BOOLEAN',
   [SchoolConfigKey.EventsEnabled]: 'BOOLEAN',
   [SchoolConfigKey.ClassScheduleEnabled]: 'BOOLEAN',

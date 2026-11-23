@@ -1,7 +1,7 @@
 'use client'
 
-import { Button } from '@peaklab/ui'
 import { Printer } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export function PrintButton({ label }: { label: string }) {
   return (

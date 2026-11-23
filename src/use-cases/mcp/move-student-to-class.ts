@@ -1,5 +1,6 @@
 import type { z } from 'zod'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
+import { syncOpenAttendanceRosters } from '@/use-cases/attendance/attendance-roster'
 import { reassignClass } from '@/use-cases/enrollments/reassign-class'
 import { mcpMoveStudentToClassSchema } from './schemas'
 
@@ -8,6 +9,7 @@ type Input = z.input<typeof mcpMoveStudentToClassSchema>
 const defaultDeps = {
   reassign: reassignClass,
   findOpen: enrollmentGateway.findOpenForMcp,
+  syncAttendance: syncOpenAttendanceRosters,
 }
 
 /**
@@ -20,7 +22,7 @@ const defaultDeps = {
  * `find_students`.
  */
 export async function moveStudentToClassFromMcp(
-  scope: { schoolId: string },
+  scope: { schoolId: string; userId: string },
   input: Input,
   deps = defaultDeps
 ) {
@@ -46,6 +48,7 @@ export async function moveStudentToClassFromMcp(
     newClassPeriodId: classPeriodId,
   })
   if (result !== 'OK') return result
+  await deps.syncAttendance({ schoolId, actorId: scope.userId, enrollmentIds: [id] })
 
   // Le serveur MCP lit toute chaîne comme un refus : le succès est un objet.
   return { enrollmentId: id, classPeriodId }

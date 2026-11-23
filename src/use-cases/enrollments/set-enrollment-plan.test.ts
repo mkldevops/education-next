@@ -4,6 +4,7 @@ const enrollmentGatewayMock = {
   findOpenById: vi.fn(),
   findDebtorFamily: vi.fn(),
   findOpenActivePayments: vi.fn(),
+  findPeriodBounds: vi.fn(),
   assignPlan: vi.fn(),
 }
 const planGatewayMock = {
@@ -32,6 +33,10 @@ vi.mock('@/gateways/payment-gateway', () => ({
 
 vi.mock('@/use-cases/config/is-payments-enabled', () => ({
   isPaymentsEnabled: isPaymentsEnabledMock,
+}))
+
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: vi.fn().mockResolvedValue({ currency: 'EUR' }),
 }))
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, mais sa factory est lazy. Même
@@ -75,6 +80,37 @@ describe('setEnrollmentPlan', () => {
       enrollmentId,
       planId,
       80,
+      tx
+    )
+  })
+
+  it('prices the new plan from the start month, without the reduced first month it clears', async () => {
+    enrollmentGatewayMock.findOpenById.mockResolvedValue({
+      id: enrollmentId,
+      discount: 20,
+      startMonth: new Date('2026-10-01T00:00:00.000Z'),
+      firstInstallmentAmount: 50,
+    })
+    enrollmentGatewayMock.findPeriodBounds.mockResolvedValue({
+      startAt: new Date('2026-09-01T00:00:00.000Z'),
+      endAt: new Date('2027-06-30T00:00:00.000Z'),
+    })
+    planGatewayMock.findById.mockResolvedValue({
+      id: planId,
+      name: 'Mensuel',
+      amount: 900,
+      paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 9, dueDay: 5 },
+    })
+
+    expect(await setEnrollmentPlan(validInput)).toBe('OK')
+
+    // 8 échéances de 100 à partir d'octobre, moins la remise de 20 : l'ancien premier mois à
+    // 50 ne suit pas la nouvelle formule, `assignPlan` l'efface dans la même écriture.
+    expect(enrollmentGatewayMock.assignPlan).toHaveBeenCalledWith(
+      schoolId,
+      enrollmentId,
+      planId,
+      780,
       tx
     )
   })

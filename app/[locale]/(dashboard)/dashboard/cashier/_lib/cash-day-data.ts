@@ -1,7 +1,9 @@
 import { summarizeCashDay } from '@/domain/cash-day'
+import { groupFamilyPayments } from '@/domain/payment'
 import { schoolDayBounds } from '@/domain/school-date'
 import { teacherName } from '@/domain/teacher'
 import { db } from '@/lib/db'
+import { roundHalfUp } from '@/lib/decimal'
 
 const receiptSelect = {
   id: true,
@@ -16,6 +18,8 @@ const receiptSelect = {
   mealPayments: { select: { amount: true, account: { select: { service: true } } } },
   childcarePayments: { select: { amount: true } },
 } as const
+
+const UNRECEIPTED_LIMIT = 200
 
 /** Reçus émis et reçus annulés pendant le jour local `day` de l'école, et leur caisse. */
 export async function loadCashDay(schoolId: string, day: string, timeZone: string) {
@@ -56,5 +60,55 @@ export async function loadCashDay(schoolId: string, day: string, timeZone: strin
     ...summarizeCashDay({ issued: issued.map(toCash), cancelled: cancelled.map(toCash) }),
     issuedRows: issued.map(toRow),
     cancelledRows: cancelled.map(toRow),
+  }
+}
+
+/**
+ * Paiements d'écolage enregistrés pendant le jour local `day` sans reçu, remboursements compris,
+ * une ligne par somme versée. Ils restent hors de la caisse, que seuls les reçus font : un
+ * paiement qui reçoit son reçu plus tard quitte cette liste et compte le jour du reçu. Les
+ * paiements annulés sont inactifs, donc absents. Une ligne à zéro n'est pas un encaissement : le
+ * paiement en ligne en écrit une par inscription déjà soldée, sans reçu. La lecture est bornée à
+ * `limit` lignes ; `truncated` dit que le jour en compte davantage.
+ */
+export async function loadUnreceiptedPayments(
+  schoolId: string,
+  day: string,
+  timeZone: string,
+  limit = UNRECEIPTED_LIMIT
+) {
+  const { start, end } = schoolDayBounds(day, timeZone)
+  const payments = await db.payment.findMany({
+    where: { schoolId, receiptId: null, amount: { not: 0 }, createdAt: { gte: start, lt: end } },
+    select: {
+      id: true,
+      familyId: true,
+      enrollmentId: true,
+      amount: true,
+      method: true,
+      reference: true,
+      paidAt: true,
+      cashedAt: true,
+      paymentTransactionId: true,
+      createdAt: true,
+      family: { select: { name: true } },
+    },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    take: limit + 1,
+  })
+  const rows = groupFamilyPayments(payments.slice(0, limit))
+    .sort((a, b) => a.lines[0].createdAt.getTime() - b.lines[0].createdAt.getTime())
+    .map((payment) => ({
+      id: payment.id,
+      familyId: payment.familyId,
+      family: payment.lines[0].family.name,
+      amount: payment.amount,
+      method: payment.method,
+    }))
+
+  return {
+    rows,
+    total: roundHalfUp(rows.reduce((sum, row) => sum + row.amount, 0)),
+    truncated: payments.length > limit,
   }
 }

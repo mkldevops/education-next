@@ -1,11 +1,12 @@
 'use client'
 
 import { X } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useEffect } from 'react'
 import type { AuthorizedSchool } from '@/domain/school-scope'
-import { usePathname, useRouter } from '@/i18n/routing'
+import { usePathname } from '@/i18n/routing'
 import { signOut } from '@/lib/auth-client'
+import { leaveAfterSignOut } from '@/lib/leave-after-sign-out'
 import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import type { SchoolRole } from '@/types/enums'
@@ -61,7 +62,7 @@ export function Sidebar({
   const t = useTranslations('dashboard.sidebar')
   const platform = useTranslations('metadata')
   const pathname = usePathname()
-  const router = useRouter()
+  const locale = useLocale()
   const { expanded, toggle, mobileOpen, setMobileOpen, setNavScope } = useSidebarStore()
   // Le tiroir mobile affiche toujours les libellés : l'état replié ne concerne que le bureau.
   const showLabels = expanded || mobileOpen
@@ -113,7 +114,7 @@ export function Sidebar({
       return
     }
     setMobileOpen(false)
-    router.replace('/')
+    leaveAfterSignOut(locale)
   }
 
   const renderItems = (configs: NavItemConfig[]) =>

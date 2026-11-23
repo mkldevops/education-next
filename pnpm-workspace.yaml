@@ -1,8 +1,12 @@
+packages:
+  - .
+
 allowBuilds:
   "@parcel/watcher": true
   "@prisma/engines": true
   "@swc/core": true
   esbuild: true
+  lefthook: true
   prisma: true
   sharp: true
 overrides:

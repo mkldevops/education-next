@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { payableEnrollmentWhere } from '@/domain/enrollment'
 
 const dbMock = {
   enrollment: { findMany: vi.fn() },
@@ -11,11 +12,18 @@ vi.mock('@/lib/school-regional-settings', () => ({
   getSchoolRegionalSettings: regionalSettingsMock,
 }))
 
-const { getFamilyPaymentTracking, getPaymentTrackingByFamily } = await import('./payment-tracking')
+const { getFamilyPaymentTracking, getFamilyPaymentTrackingDetail, getPaymentTrackingByFamily } =
+  await import('./payment-tracking')
 
 const reference = new Date('2026-11-11T12:00:00.000Z')
 const monthlySchedule = { mode: 'MONTHLY', firstMonth: 9, count: 10, dueDay: 10 }
-const noTracking = { expectedToDate: 0, overdueAmount: 0, paidToDate: 0, tracked: false }
+const noTracking = {
+  expectedToDate: 0,
+  overdueAmount: 0,
+  dueThisMonth: 0,
+  paidToDate: 0,
+  tracked: false,
+}
 
 type FamilyLink = {
   familyId: string
@@ -36,16 +44,21 @@ function enrollment({
   schedule = monthlySchedule as unknown,
   families = [familyLink()],
   periodStart = '2026-09-01T00:00:00.000Z',
+  student = {},
 }: {
   id?: string
   totalAmount?: number
   schedule?: unknown
   families?: FamilyLink[]
   periodStart?: string | null
+  student?: { isActive?: boolean; leftAt?: Date | null }
 } = {}) {
   return {
     id,
+    status: 'ACTIVE',
     totalAmount,
+    startMonth: null,
+    endMonth: null,
     plan: { paymentSchedule: schedule },
     classAssignments: periodStart
       ? [
@@ -54,7 +67,7 @@ function enrollment({
           },
         ]
       : [],
-    student: { person: { families } },
+    student: { isActive: true, leftAt: null, ...student, person: { families } },
   }
 }
 
@@ -70,15 +83,50 @@ describe('payment tracking reads', () => {
     dbMock.payment.groupBy.mockResolvedValue([paid(250)])
   })
 
+  it('owes this month the arrears plus the deadlines still to come before the month ends', async () => {
+    dbMock.payment.groupBy.mockResolvedValue([paid(150)])
+
+    // Nov 5: Sep and Oct elapsed (200), Nov 10 still ahead (100); 150 paid, 50 late, 150 owed this month.
+    expect(
+      await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-11-05T12:00:00Z'))
+    ).toEqual({
+      expectedToDate: 200,
+      overdueAmount: 50,
+      dueThisMonth: 150,
+      paidToDate: 150,
+      tracked: true,
+    })
+  })
+
   it('distinguishes annual balance from the amount overdue across elapsed monthly deadlines', async () => {
     // Annual balance is 750; only three 100-euro installments have elapsed, so 50 is late.
     expect(await getFamilyPaymentTracking('school-1', 'family-1', reference)).toEqual({
       expectedToDate: 300,
       overdueAmount: 50,
+      dueThisMonth: 50,
       paidToDate: 250,
       tracked: true,
     })
     expect(regionalSettingsMock).toHaveBeenCalledWith('school-1')
+  })
+
+  it('stops a legacy archived student at the departure month instead of the whole year', async () => {
+    // Archived before `archiveStudent`: still ACTIVE, no end month, full 1000 total.
+    dbMock.enrollment.findMany.mockResolvedValue([
+      enrollment({ student: { isActive: false, leftAt: new Date('2026-09-20T10:00:00Z') } }),
+    ])
+    dbMock.payment.groupBy.mockResolvedValue([paid(50)])
+
+    expect(await getFamilyPaymentTrackingDetail('school-1', 'family-1', reference)).toEqual({
+      expectedToDate: 100,
+      overdueAmount: 50,
+      dueThisMonth: 50,
+      paidToDate: 50,
+      tracked: true,
+      annualAmount: 100,
+      creditedPaid: 50,
+      fullyScheduled: true,
+    })
   })
 
   it('uses the enrollment total after discount, rather than the current plan price', async () => {
@@ -88,6 +136,7 @@ describe('payment tracking reads', () => {
     expect(await getFamilyPaymentTracking('school-1', 'family-1', reference)).toEqual({
       expectedToDate: 240,
       overdueAmount: 40,
+      dueThisMonth: 40,
       paidToDate: 200,
       tracked: true,
     })
@@ -105,6 +154,7 @@ describe('payment tracking reads', () => {
       expectedToDate: 300,
       paidToDate: 150,
       overdueAmount: 150,
+      dueThisMonth: 150,
     })
   })
 
@@ -128,6 +178,7 @@ describe('payment tracking reads', () => {
       tracked: false,
       expectedToDate: 0,
       overdueAmount: 0,
+      dueThisMonth: 0,
       paidToDate: 250,
     })
   })
@@ -155,6 +206,7 @@ describe('payment tracking reads', () => {
         familyName: 'family-parent',
         expectedToDate: 300,
         overdueAmount: 50,
+        dueThisMonth: 50,
         paidToDate: 250,
         tracked: true,
       },
@@ -171,6 +223,7 @@ describe('payment tracking reads', () => {
     expect(await getFamilyPaymentTracking('school-1', 'family-1', reference)).toEqual({
       expectedToDate: 600,
       overdueAmount: 0,
+      dueThisMonth: 0,
       paidToDate: 600,
       tracked: true,
     })
@@ -189,7 +242,13 @@ describe('payment tracking reads', () => {
 
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-09-11T12:00:00Z'))
-    ).toEqual({ expectedToDate: 100, overdueAmount: 0, paidToDate: 100, tracked: true })
+    ).toEqual({
+      expectedToDate: 100,
+      overdueAmount: 0,
+      dueThisMonth: 0,
+      paidToDate: 100,
+      tracked: true,
+    })
   })
 
   it('counts the part allocated to an untracked enrollment when settling family deadlines', async () => {
@@ -201,7 +260,13 @@ describe('payment tracking reads', () => {
 
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-09-11T12:00:00Z'))
-    ).toEqual({ expectedToDate: 100, overdueAmount: 0, paidToDate: 100, tracked: true })
+    ).toEqual({
+      expectedToDate: 100,
+      overdueAmount: 0,
+      dueThisMonth: 0,
+      paidToDate: 100,
+      tracked: true,
+    })
   })
 
   it('never uses another family advance to cover the debtor family shortfall', async () => {
@@ -219,6 +284,7 @@ describe('payment tracking reads', () => {
         expectedToDate: 300,
         paidToDate: 200,
         overdueAmount: 100,
+        dueThisMonth: 100,
         tracked: true,
       },
       {
@@ -227,6 +293,7 @@ describe('payment tracking reads', () => {
         expectedToDate: 300,
         paidToDate: 500,
         overdueAmount: 0,
+        dueThisMonth: 0,
         tracked: true,
       },
     ])
@@ -241,7 +308,13 @@ describe('payment tracking reads', () => {
 
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2028-01-01T12:00:00Z'))
-    ).toEqual({ expectedToDate: 1100, paidToDate: 1200, overdueAmount: 100, tracked: true })
+    ).toEqual({
+      expectedToDate: 1100,
+      paidToDate: 1200,
+      overdueAmount: 100,
+      dueThisMonth: 100,
+      tracked: true,
+    })
   })
 
   it('scopes active enrollment and payment reads to the school, period and debtor family', async () => {
@@ -254,7 +327,7 @@ describe('payment tracking reads', () => {
     const enrollmentWhere = {
       schoolId: 'school-1',
       isActive: true,
-      status: { in: ['PENDING', 'ACTIVE'] },
+      ...payableEnrollmentWhere,
       student: { person: { families: { some: { familyId: 'family-1' } } } },
       classAssignments: { some: { classPeriod: { periodId: 'period-1' } } },
     }
@@ -293,7 +366,13 @@ describe('payment tracking reads', () => {
     // At 21:30 UTC the school's day has advanced to November 11, after the November 10 deadline.
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-11-10T21:30:00Z'))
-    ).toEqual({ expectedToDate: 300, overdueAmount: 50, paidToDate: 250, tracked: true })
+    ).toEqual({
+      expectedToDate: 300,
+      overdueAmount: 50,
+      dueThisMonth: 50,
+      paidToDate: 250,
+      tracked: true,
+    })
     expect(dbMock.payment.groupBy).toHaveBeenLastCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ paidAt: { lt: new Date('2026-11-11T21:00:00Z') } }),
@@ -302,7 +381,13 @@ describe('payment tracking reads', () => {
 
     expect(
       await getFamilyPaymentTracking('school-1', 'family-1', new Date('2026-11-10T20:30:00Z'))
-    ).toEqual({ expectedToDate: 200, overdueAmount: 0, paidToDate: 250, tracked: true })
+    ).toEqual({
+      expectedToDate: 200,
+      overdueAmount: 0,
+      dueThisMonth: 50,
+      paidToDate: 250,
+      tracked: true,
+    })
   })
 
   it('keeps deadlines anchored to the enrollment period rather than restarting the current year', async () => {
@@ -313,6 +398,7 @@ describe('payment tracking reads', () => {
     expect(await getFamilyPaymentTracking('school-1', 'family-1', reference)).toEqual({
       expectedToDate: 1000,
       overdueAmount: 750,
+      dueThisMonth: 750,
       paidToDate: 250,
       tracked: true,
     })
@@ -344,5 +430,35 @@ describe('payment tracking reads', () => {
       ['family-late', 250],
       ['family-ahead', 0],
     ])
+  })
+
+  it('frames the year on the same enrollments as the deadlines, each capped at its own price', async () => {
+    dbMock.payment.groupBy.mockResolvedValue([paid(1200)])
+
+    expect(await getFamilyPaymentTrackingDetail('school-1', 'family-1', reference)).toEqual({
+      expectedToDate: 300,
+      overdueAmount: 0,
+      dueThisMonth: 0,
+      paidToDate: 1200,
+      tracked: true,
+      annualAmount: 1000,
+      creditedPaid: 1000,
+      fullyScheduled: true,
+    })
+  })
+
+  it('flags a family mixing scheduled and unscheduled enrollments', async () => {
+    dbMock.enrollment.findMany.mockResolvedValue([
+      enrollment({ id: 'monthly' }),
+      enrollment({ id: 'untracked', totalAmount: 500, schedule: { mode: 'NONE' } }),
+    ])
+    dbMock.payment.groupBy.mockResolvedValue([paid(200, 'monthly'), paid(100, 'untracked')])
+
+    expect(await getFamilyPaymentTrackingDetail('school-1', 'family-1', reference)).toMatchObject({
+      annualAmount: 1500,
+      creditedPaid: 300,
+      fullyScheduled: false,
+      tracked: true,
+    })
   })
 })

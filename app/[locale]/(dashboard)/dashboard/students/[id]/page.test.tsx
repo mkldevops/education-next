@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const requireSchoolSessionMock = vi.fn()
 const canOpenSchoolCashierMock = vi.fn()
 const deriveStudentDetailMock = vi.fn()
+const studentState = { isActive: true }
 
 vi.mock('next/server', () => ({ connection: async () => {} }))
 vi.mock('next/navigation', () => ({
@@ -12,7 +13,8 @@ vi.mock('next/navigation', () => ({
   },
 }))
 vi.mock('next-intl/server', () => ({
-  getTranslations: async () => (key: string) => key,
+  getTranslations: async () => (key: string, values?: Record<string, unknown>) =>
+    values ? `${key}:${Object.values(values).join(',')}` : key,
   setRequestLocale: () => {},
 }))
 vi.mock('@/i18n/routing', () => ({
@@ -44,17 +46,32 @@ vi.mock('../../../_lib/school-switch', () => ({ canSwitchSchool: async () => fal
 vi.mock('../../enrollments/_components/create-enrollment-dialog', () => ({
   CreateEnrollmentDialog: () => null,
 }))
-vi.mock('../_components/deactivate-student-button', () => ({ DeactivateStudentButton: () => null }))
+vi.mock('../_components/archive-student-dialog', () => ({
+  ArchiveStudentDialog: () => <button type="button">archive</button>,
+}))
+vi.mock('../_components/reinstate-student-button', () => ({
+  ReinstateStudentButton: () => <button type="button">reinstate</button>,
+}))
 vi.mock('../_components/edit-student-dialog', () => ({ EditStudentDialog: () => null }))
 vi.mock('./_components/enrollment-list', () => ({ EnrollmentList: () => null }))
 vi.mock('./_components/family-panel', () => ({ FamilyPanel: () => null }))
 vi.mock('./_components/meal-panel', () => ({ MealPanel: () => null }))
+vi.mock('./_components/payment-history', () => ({ PaymentHistory: () => null }))
+vi.mock('./_lib/student-payment-history', () => ({ getStudentPaymentHistory: async () => [] }))
+vi.mock('../../payments/_components/record-payment-dialog', () => ({
+  RecordPaymentDialog: () => null,
+}))
+vi.mock('@/use-cases/payments/family-balance', () => ({ getFamilyBalance: async () => null }))
+vi.mock('@/use-cases/payments/payable-enrollment-choices', () => ({
+  listPayableEnrollmentChoices: async () => [],
+}))
 vi.mock('./_lib/student-detail', () => ({
   resolveStudent: async () => ({
     status: 'found',
     resource: {
       id: 'student-1',
       schoolId: 'school-1',
+      isActive: studentState.isActive,
       person: { name: 'Léo', lastname: 'Martin', phoneNumbers: [] },
       enrollments: [],
     },
@@ -73,9 +90,11 @@ const detail = (family: { id: string; isActive: boolean } | null) => ({
   totalDue: 0,
   totalPaid: 0,
   remaining: 0,
+  enrollments: [],
   activeEnrollments: [],
   payableRemaining: 0,
   languagesAtHome: '',
+  departedAt: null as Date | null,
 })
 
 const renderPage = async () =>
@@ -87,6 +106,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   requireSchoolSessionMock.mockResolvedValue({ roles: ['ADMIN'], schoolId: 'school-1' })
   canOpenSchoolCashierMock.mockResolvedValue(true)
+  studentState.isActive = true
   deriveStudentDetailMock.mockReturnValue(detail({ id: 'family-1', isActive: true }))
 })
 
@@ -123,5 +143,28 @@ describe('StudentDetailPage, cashier link', () => {
     await renderPage()
 
     expect(canOpenSchoolCashierMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('StudentDetailPage, archived student', () => {
+  it('offers to archive an active student', async () => {
+    await renderPage()
+
+    expect(screen.getByRole('button', { name: 'archive' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'reinstate' })).not.toBeInTheDocument()
+  })
+
+  it('badges the departure month and offers to reinstate instead of archiving', async () => {
+    studentState.isActive = false
+    deriveStudentDetailMock.mockReturnValue({
+      ...detail({ id: 'family-1', isActive: true }),
+      departedAt: new Date('2027-01-10T00:00:00.000Z'),
+    })
+
+    await renderPage()
+
+    expect(screen.getByText('archivedBadge:janvier 2027')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'reinstate' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'archive' })).not.toBeInTheDocument()
   })
 })

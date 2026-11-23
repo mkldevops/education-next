@@ -118,4 +118,73 @@ describe('EnrollmentList covered months', () => {
     expect(screen.getAllByLabelText('enrollmentList.installmentStatus.PARTIAL')).toHaveLength(1)
     expect(screen.getAllByLabelText('enrollmentList.installmentStatus.UNPAID')).toHaveLength(1)
   })
+
+  it('shows the amount of each installment, the reduced first month included', async () => {
+    const arrival = {
+      ...enrollment('Forfait Maternelle'),
+      status: 'ACTIVE',
+      totalAmount: 24000,
+      startMonth: new Date('2026-10-01T00:00:00Z'),
+      firstInstallmentAmount: 8000,
+      plan: {
+        name: 'Forfait Maternelle',
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 3, dueDay: 10 },
+      },
+      classAssignments: [
+        {
+          classPeriod: {
+            name: 'MS',
+            level: { name: 'Maternelle' },
+            period: { name: '2026-2027', startAt: new Date('2026-09-01T00:00:00Z') },
+          },
+        },
+      ],
+    } as unknown as EnrollmentWithRelation
+
+    render(
+      await EnrollmentList({
+        enrollments: [arrival],
+        locale: 'fr',
+        currency: 'EUR',
+        paymentsEnabled: true,
+      })
+    )
+
+    const chips = screen.getAllByLabelText('enrollmentList.installmentStatus.UNPAID')
+    expect(chips).toHaveLength(2)
+    expect(chips[0]).toHaveTextContent(/oct\..*8.000,00/)
+    expect(chips[1]).toHaveTextContent(/nov\..*16.000,00/)
+  })
+
+  it('shows no installment when payments are disabled', async () => {
+    const monthly = {
+      ...enrollment('Forfait Maternelle'),
+      totalAmount: 48000,
+      plan: {
+        name: 'Forfait Maternelle',
+        paymentSchedule: { mode: 'MONTHLY', firstMonth: 9, count: 3, dueDay: 10 },
+      },
+      classAssignments: [
+        {
+          classPeriod: {
+            name: 'MS',
+            level: { name: 'Maternelle' },
+            period: { name: '2026-2027', startAt: new Date('2026-09-01T00:00:00Z') },
+          },
+        },
+      ],
+    } as unknown as EnrollmentWithRelation
+
+    render(
+      await EnrollmentList({
+        enrollments: [monthly],
+        locale: 'fr',
+        currency: 'EUR',
+        paymentsEnabled: false,
+      })
+    )
+
+    expect(screen.queryByText('enrollmentList.coveredMonths')).not.toBeInTheDocument()
+    expect(screen.queryByText(/16.000,00/)).not.toBeInTheDocument()
+  })
 })

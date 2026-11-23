@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import type { HTMLAttributes, ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const frequencyMock = vi.hoisted(() => vi.fn(() => Promise.resolve('PER_SLOT')))
 vi.mock('@/use-cases/config/get-attendance-frequency', () => ({
@@ -10,10 +10,11 @@ vi.mock('@/use-cases/config/get-attendance-frequency', () => ({
 const dbMock = {
   config: { findFirst: vi.fn() },
   classScheduleSlot: { findMany: vi.fn() },
-  attendanceSession: { findMany: vi.fn() },
+  attendanceSession: { findMany: vi.fn(), groupBy: vi.fn() },
+  attendanceEntry: { findMany: vi.fn() },
+  classAssignment: { findMany: vi.fn() },
   event: { findMany: vi.fn() },
   classPeriod: { findMany: vi.fn() },
-  teacher: { findMany: vi.fn() },
 }
 const getSelectedPeriodMock = vi.fn()
 const requireSchoolSessionMock = vi.fn()
@@ -39,6 +40,7 @@ vi.mock('next-intl/server', () => ({
 }))
 vi.mock('@peaklab/ui', async () => ({
   ...(await vi.importActual<typeof import('@/components/ui/select')>('@/components/ui/select')),
+  ...(await vi.importActual<typeof import('@/components/ui/use-menu')>('@/components/ui/use-menu')),
   Breadcrumbs: ({ items }: { items: { label: string }[] }) => (
     <nav>{items.map((item) => item.label).join(' ')}</nav>
   ),
@@ -70,6 +72,11 @@ vi.mock('lucide-react', () => ({
   ChevronLeft: () => null,
   ChevronRight: () => null,
   ChevronUp: () => null,
+  MoreHorizontal: () => null,
+  Plus: () => null,
+  Download: () => null,
+  FileSpreadsheet: () => null,
+  Printer: () => null,
 }))
 vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
@@ -77,7 +84,7 @@ vi.mock('@/i18n/routing', () => ({
       {children}
     </a>
   ),
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
 }))
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/features/dashboard/period', () => ({ getSelectedPeriod: getSelectedPeriodMock }))
@@ -100,20 +107,55 @@ vi.mock('./_components/cancel-attendance-form', () => ({
 
 const { default: AttendanceTrackingPage, generateMetadata } = await import('./page')
 
-const CLASS_FILTER_ID = '00000000-0000-4000-8000-000000000001'
-const TEACHER_FILTER_ID = '00000000-0000-4000-8000-000000000002'
+const CM1 = '00000000-0000-4000-8000-000000000001'
+const CM2 = '00000000-0000-4000-8000-000000000002'
+const OTHER_CLASS_ID = '00000000-0000-4000-8000-000000000009'
 
-const slot = (id: string, startTime: string, endTime: string) => ({
-  id,
-  classPeriodId: 'class-1',
-  weekday: 4,
-  startTime,
-  endTime,
-  classPeriod: { name: 'CP-A' },
-})
+const day = (value: string) => new Date(`${value}T00:00:00.000Z`)
+
+type FindManyArgs = { select?: { entries?: unknown } }
+
+const recordedSessions = [
+  {
+    id: 's-1',
+    occurredOn: day('2026-11-05'),
+    occurrenceKey: 'slot-thu',
+    classScheduleSlotId: 'slot-thu',
+    classScheduleSlot: { startTime: '09:00' },
+    status: 'VALIDATED',
+    entries: [
+      { studentId: 'st-1', studentName: 'Adam Moussa', status: 'PRESENT' },
+      { studentId: 'st-2', studentName: 'Yanis Benali', status: 'ABSENT' },
+    ],
+  },
+  {
+    id: 's-2',
+    occurredOn: day('2026-11-12'),
+    occurrenceKey: 'slot-thu',
+    classScheduleSlotId: 'slot-thu',
+    classScheduleSlot: { startTime: '09:00' },
+    status: 'CANCELLED',
+    entries: [],
+  },
+]
+
+function renderPage(searchParams: Record<string, string>) {
+  return AttendanceTrackingPage({
+    params: Promise.resolve({ locale: 'fr' }),
+    searchParams: Promise.resolve(searchParams),
+  })
+}
+
+function selectedSessionsQuery() {
+  return dbMock.attendanceSession.findMany.mock.calls
+    .map(([args]) => args)
+    .find((args: FindManyArgs) => args.select?.entries)
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-11-19T15:00:00.000Z'))
   frequencyMock.mockResolvedValue('PER_SLOT')
   requireSchoolSessionMock.mockResolvedValue({
     schoolId: 'school-1',
@@ -122,176 +164,190 @@ beforeEach(() => {
   })
   getSelectedPeriodMock.mockResolvedValue({ id: 'period-1', name: '2026–2027' })
   dbMock.config.findFirst.mockResolvedValue({ value: 'true' })
-  dbMock.classScheduleSlot.findMany.mockResolvedValue([
-    slot('slot-morning', '08:30', '10:00'),
-    slot('slot-afternoon', '14:00', '15:30'),
+  dbMock.classPeriod.findMany.mockResolvedValue([
+    { id: CM2, name: 'CM2' },
+    { id: CM1, name: 'CM1' },
   ])
-  dbMock.attendanceSession.findMany.mockResolvedValue([
-    {
-      id: 'adhoc-1',
-      classPeriodId: 'class-1',
-      classScheduleSlotId: null,
-      occurrenceKey: 'adhoc',
-      status: 'VALIDATED',
-      classPeriod: { name: 'CP-A' },
-    },
+  dbMock.classScheduleSlot.findMany.mockResolvedValue([
+    { id: 'slot-tue', classPeriodId: CM1, weekday: 2, startTime: '14:00' },
+    { id: 'slot-thu', classPeriodId: CM1, weekday: 4, startTime: '09:00' },
+  ])
+  dbMock.attendanceSession.findMany.mockImplementation(async (args: FindManyArgs) =>
+    args.select?.entries
+      ? recordedSessions
+      : recordedSessions.map((session) => ({ ...session, classPeriodId: CM1 }))
+  )
+  dbMock.attendanceSession.groupBy.mockResolvedValue([
+    { classPeriodId: CM1, _min: { occurredOn: day('2026-11-05') } },
   ])
   dbMock.event.findMany.mockResolvedValue([])
-  dbMock.classPeriod.findMany.mockResolvedValue([{ id: 'class-1', name: 'CP-A' }])
-  dbMock.teacher.findMany.mockResolvedValue([
-    { id: 'teacher-1', firstName: 'Nora', lastName: 'Diallo' },
+  dbMock.classAssignment.findMany.mockResolvedValue([
+    { enrollment: { studentId: 'st-1' } },
+    { enrollment: { studentId: 'st-2' } },
+  ])
+  dbMock.attendanceEntry.findMany.mockResolvedValue([
+    { studentId: 'st-1', attendanceSession: { occurredOn: day('2026-11-05') } },
   ])
 })
 
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 describe('AttendanceTrackingPage', () => {
-  it('preserves admin filters and separates cancelled scheduled sessions from expected calls', async () => {
-    dbMock.attendanceSession.findMany.mockResolvedValue([
-      {
-        id: 'cancelled-1',
-        classPeriodId: 'class-1',
-        classScheduleSlotId: 'slot-morning',
-        occurrenceKey: 'slot-morning',
-        status: 'CANCELLED',
-        classPeriod: { name: 'CP-A' },
-      },
-    ])
-    const { container } = render(
-      await AttendanceTrackingPage({
-        params: Promise.resolve({ locale: 'fr' }),
-        searchParams: Promise.resolve({ date: '2026-09-17' }),
-      })
-    )
-    expect(container.querySelector('main')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('class')).toHaveTextContent('allClasses')
-    expect(screen.getByLabelText('teacher')).toHaveTextContent('allTeachers')
-    expect(container.querySelector('input[name="classId"]')).toHaveValue('')
-    expect(container.querySelector('input[name="teacherId"]')).toHaveValue('')
-    expect(screen.queryByRole('button', { name: 'applyFilters' })).not.toBeInTheDocument()
-    expect(screen.getByText('cancelledCalls').parentElement).toHaveTextContent('1')
-    expect(screen.getByText('expectedCalls').parentElement).toHaveTextContent('1')
-    expect(screen.getByText('sessionCancelled')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'cancel occurrence form' })).toHaveAttribute(
-      'data-confirm',
-      'yes'
-    )
-    expect(screen.getByRole('button', { name: 'cancel form' })).toHaveAttribute(
-      'data-confirm',
-      'no'
-    )
-    expect(screen.getByRole('link', { name: 'start' })).toHaveAttribute(
-      'href',
-      '/dashboard/my-classes/class-1/attendance?date=2026-09-17&slotId=slot-afternoon'
+  it('shows only the recorded calls by default and lists the pending ones above the grid', async () => {
+    render(await renderPage({ range: 'custom', from: '2026-11-01', to: '2026-11-19' }))
+
+    expect(screen.getByRole('link', { name: 'openCall' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'catchUpCall' })).not.toBeInTheDocument()
+    expect(screen.queryByTitle('cancelledColumn')).not.toBeInTheDocument()
+    expect(screen.queryAllByTitle('missedCell')).toHaveLength(0)
+    expect(screen.getAllByRole('link', { name: /catchUp|takeCall/ })).toHaveLength(3)
+    expect(screen.getAllByRole('button', { name: 'cancel form' })).toHaveLength(1)
+    expect(screen.getByRole('switch', { name: 'showGaps' })).toHaveAttribute(
+      'aria-checked',
+      'false'
     )
   })
 
-  it('keeps two scheduled slots distinct, separates an adhoc session, and preserves filters in date navigation', async () => {
-    render(
-      await AttendanceTrackingPage({
-        params: Promise.resolve({ locale: 'fr' }),
-        searchParams: Promise.resolve({
-          date: '2026-09-17',
-          classId: CLASS_FILTER_ID,
-          teacherId: TEACHER_FILTER_ID,
+  it('opens the class with late calls first and shows missed and today calls as columns', async () => {
+    render(await renderPage({ range: 'custom', from: '2026-11-01', to: '2026-11-19', all: '1' }))
+
+    const chips = screen
+      .getAllByRole('link', { current: undefined })
+      .filter((link) => /CM[12]/.test(link.textContent ?? ''))
+    expect(chips.map((chip) => chip.textContent?.slice(0, 3))).toEqual(['CM1', 'CM2'])
+    expect(screen.getByRole('link', { name: /CM1/ })).toHaveAttribute('aria-current', 'page')
+
+    expect(selectedSessionsQuery()).toEqual(
+      expect.objectContaining({
+        where: {
+          schoolId: 'school-1',
+          classPeriodId: CM1,
+          occurredOn: { gte: day('2026-11-01'), lte: day('2026-11-19') },
+        },
+      })
+    )
+    expect(dbMock.attendanceSession.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          schoolId: 'school-1',
+          classPeriodId: { in: [CM2, CM1] },
+          status: { not: 'CANCELLED' },
+        },
+      })
+    )
+
+    const missed = screen.getAllByRole('link', { name: 'catchUpCall' })
+    expect(missed.map((link) => link.getAttribute('href'))).toEqual([
+      `/dashboard/my-classes/${CM1}/attendance?date=2026-11-10&slotId=slot-tue`,
+      `/dashboard/my-classes/${CM1}/attendance?date=2026-11-17&slotId=slot-tue`,
+    ])
+    expect(screen.getByRole('link', { name: 'takeCallOn' })).toHaveAttribute(
+      'href',
+      `/dashboard/my-classes/${CM1}/attendance?date=2026-11-19&slotId=slot-thu`
+    )
+    expect(screen.getByRole('link', { name: 'openCall' })).toHaveAttribute(
+      'href',
+      `/dashboard/my-classes/${CM1}/attendance?date=2026-11-05&slotId=slot-thu`
+    )
+    expect(screen.getByTitle('cancelledColumn')).toBeInTheDocument()
+    expect(screen.getAllByTitle('missedCell')).toHaveLength(4)
+
+    const names = screen.getAllByRole('rowheader').map((cell) => cell.textContent)
+    expect(names).toEqual(['Yanis Benali', 'Adam Moussa'])
+    expect(screen.getAllByText('never').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: /export/ })).toBeInTheDocument()
+  })
+
+  it('does not flag a student who left the class as without presence', async () => {
+    dbMock.classAssignment.findMany.mockResolvedValue([{ enrollment: { studentId: 'st-1' } }])
+    render(await renderPage({ range: 'custom', from: '2026-11-01', to: '2026-11-19' }))
+
+    expect(dbMock.classAssignment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          schoolId: 'school-1',
+          classPeriodId: CM1,
+          enrollment: expect.objectContaining({
+            schoolId: 'school-1',
+            student: { OR: [{ isActive: true }, { leftAt: { gte: day('2026-11-01') } }] },
+          }),
         }),
       })
     )
+    // Yanis (st-2) never came but left: his "never" is no longer flagged in red.
+    for (const cell of screen.getAllByText('never')) {
+      expect(cell.className).not.toContain('text-danger')
+    }
+  })
 
-    expect(
-      screen.getByRole('heading', { name: 'scheduledOccurrences' }).parentElement
-    ).toHaveTextContent('2')
-    expect(screen.getByRole('heading', { name: 'adhocOccurrences' })).toBeInTheDocument()
-    expect(screen.getByText('exceptionalOccurrence · 17 septembre 2026')).toBeInTheDocument()
+  it('lets an admin cancel a recorded or planned call and restore a cancelled one', async () => {
+    render(await renderPage({ range: 'custom', from: '2026-11-01', to: '2026-11-19', all: '1' }))
 
-    const startLinks = screen.getAllByRole('link', { name: 'start' })
-    expect(startLinks.map((link) => link.getAttribute('href'))).toEqual([
-      '/dashboard/my-classes/class-1/attendance?date=2026-09-17&slotId=slot-morning',
-      '/dashboard/my-classes/class-1/attendance?date=2026-09-17&slotId=slot-afternoon',
-    ])
-    expect(screen.getByRole('link', { name: 'previousDay' })).toHaveAttribute(
-      'href',
-      `/dashboard/attendance?date=2026-09-16&classId=${CLASS_FILTER_ID}&teacherId=${TEACHER_FILTER_ID}`
-    )
-    expect(screen.getByRole('link', { name: 'nextDay' })).toHaveAttribute(
-      'href',
-      `/dashboard/attendance?date=2026-09-18&classId=${CLASS_FILTER_ID}&teacherId=${TEACHER_FILTER_ID}`
+    expect(screen.getAllByRole('button', { name: 'cancel form' })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: 'cancel occurrence form' })).toHaveLength(3)
+  })
+
+  it('keeps the class requested in the URL when it is in scope', async () => {
+    render(await renderPage({ classId: CM2 }))
+
+    expect(screen.getByRole('link', { name: /CM2/ })).toHaveAttribute('aria-current', 'page')
+    expect(selectedSessionsQuery()).toEqual(
+      expect.objectContaining({ where: expect.objectContaining({ classPeriodId: CM2 }) })
     )
   })
 
-  it('uses the teacher assignment scope and never sends a teacher to the admin schedule page', async () => {
+  it('opens the two weeks ending on the date of a former day link', async () => {
+    render(await renderPage({ date: '2026-11-19' }))
+
+    expect(selectedSessionsQuery()).toEqual(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          occurredOn: { gte: day('2026-11-05'), lte: day('2026-11-19') },
+        }),
+      })
+    )
+  })
+
+  it('limits a teacher to their classes, ignores a class outside that scope and hides cancellation', async () => {
     requireSchoolSessionMock.mockResolvedValue({
       schoolId: 'school-1',
-      roles: ['PARENT'],
+      roles: ['TEACHER'],
       isSuperAdmin: false,
     })
     requireTeacherMock.mockResolvedValue({ schoolId: 'school-1', teacherId: 'teacher-1' })
-    dbMock.classScheduleSlot.findMany.mockResolvedValue([])
-    dbMock.attendanceSession.findMany.mockResolvedValue([])
+    dbMock.classPeriod.findMany.mockResolvedValue([{ id: CM1, name: 'CM1' }])
 
-    render(
-      await AttendanceTrackingPage({
-        params: Promise.resolve({ locale: 'fr' }),
-        searchParams: Promise.resolve({
-          date: '2026-09-17',
-          classId: CLASS_FILTER_ID,
-          teacherId: TEACHER_FILTER_ID,
-        }),
-      })
-    )
+    render(await renderPage({ classId: OTHER_CLASS_ID }))
 
-    expect(dbMock.classScheduleSlot.findMany).toHaveBeenCalledWith(
+    expect(dbMock.classPeriod.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
-          classPeriod: {
-            isActive: true,
-            periodId: 'period-1',
-            teachers: { some: { teacherId: 'teacher-1' } },
-          },
-        }),
+        where: {
+          schoolId: 'school-1',
+          isActive: true,
+          periodId: 'period-1',
+          teachers: { some: { teacherId: 'teacher-1' } },
+        },
       })
     )
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'viewSchedule' })).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'nextDay' })).toHaveAttribute(
-      'href',
-      '/dashboard/attendance?date=2026-09-18'
+    expect(selectedSessionsQuery()).toEqual(
+      expect.objectContaining({ where: expect.objectContaining({ classPeriodId: CM1 }) })
     )
+    expect(screen.queryByRole('button', { name: /cancel/ })).not.toBeInTheDocument()
   })
 
-  it('keeps an existing scheduled session visible during a retroactive closure without inventing missing slots', async () => {
-    dbMock.event.findMany.mockResolvedValue([
-      {
-        status: 'PUBLISHED',
-        category: 'CLOSURE',
-        startAt: new Date('2026-09-17T00:00:00.000Z'),
-        endAt: new Date('2026-09-17T23:59:59.999Z'),
-      },
-    ])
-    dbMock.attendanceSession.findMany.mockResolvedValue([
-      {
-        id: 'scheduled-1',
-        classPeriodId: 'class-1',
-        classScheduleSlotId: 'slot-morning',
-        occurrenceKey: 'slot-morning',
-        status: 'VALIDATED',
-        classPeriod: { name: 'CP-A' },
-      },
-    ])
+  it('shows an empty state when no class is available', async () => {
+    dbMock.classPeriod.findMany.mockResolvedValue([])
+    render(await renderPage({}))
 
-    render(
-      await AttendanceTrackingPage({
-        params: Promise.resolve({ locale: 'fr' }),
-        searchParams: Promise.resolve({ date: '2026-09-17' }),
-      })
-    )
+    expect(screen.getByRole('heading', { name: 'noClasses' })).toBeInTheDocument()
+    expect(dbMock.attendanceSession.findMany).not.toHaveBeenCalled()
+  })
 
-    expect(
-      screen.getByRole('heading', { name: 'scheduledOccurrences' }).parentElement
-    ).toHaveTextContent('1')
-    expect(screen.getByRole('link', { name: 'viewOrCorrect' })).toHaveAttribute(
-      'href',
-      '/dashboard/my-classes/class-1/attendance?date=2026-09-17&slotId=slot-morning'
-    )
-    expect(screen.queryByRole('link', { name: 'start' })).not.toBeInTheDocument()
+  it('returns not found when attendance is disabled', async () => {
+    dbMock.config.findFirst.mockResolvedValue({ value: 'false' })
+    await expect(renderPage({})).rejects.toThrow('notFound')
   })
 })
 
@@ -315,77 +371,4 @@ describe('AttendanceTrackingPage metadata', () => {
     getSchoolContextMock.mockResolvedValue(null)
     await expect(metadataFor()).resolves.toEqual({ title: 'errorPages.404.title' })
   })
-})
-
-it('shows one canonical daily call for two lessons, retaining explicit historical access', async () => {
-  frequencyMock.mockResolvedValue('DAILY')
-  dbMock.attendanceSession.findMany.mockResolvedValue([
-    {
-      id: 'daily-1',
-      classPeriodId: 'class-1',
-      classScheduleSlotId: null,
-      occurrenceKey: 'daily',
-      status: 'VALIDATED',
-      classPeriod: { name: 'CP-A' },
-    },
-    {
-      id: 'old-1',
-      classPeriodId: 'class-1',
-      classScheduleSlotId: 'slot-morning',
-      occurrenceKey: 'slot-morning',
-      status: 'VALIDATED',
-      classPeriod: { name: 'CP-A' },
-    },
-  ])
-  render(
-    await AttendanceTrackingPage({
-      params: Promise.resolve({ locale: 'fr' }),
-      searchParams: Promise.resolve({ date: '2026-09-17' }),
-    })
-  )
-  const links = screen.getAllByRole('link', { name: 'viewOrCorrect' })
-  expect(links).toHaveLength(2)
-  expect(links[0]).toHaveAttribute(
-    'href',
-    '/dashboard/my-classes/class-1/attendance?date=2026-09-17&occurrence=daily'
-  )
-  expect(links[1]).toHaveAttribute(
-    'href',
-    '/dashboard/my-classes/class-1/attendance?date=2026-09-17&occurrence=historical&slotId=slot-morning'
-  )
-  expect(screen.getByText(/dailyCall/)).toBeInTheDocument()
-  expect(screen.queryByText('08:30')).not.toBeInTheDocument()
-})
-
-it('retains daily history links and cancelled labels when returning to per-slot attendance', async () => {
-  dbMock.attendanceSession.findMany.mockResolvedValue([
-    {
-      id: 'daily-1',
-      classPeriodId: 'class-1',
-      classScheduleSlotId: null,
-      occurrenceKey: 'daily',
-      status: 'VALIDATED',
-      classPeriod: { name: 'CP-A' },
-    },
-    {
-      id: 'daily-2',
-      classPeriodId: 'class-2',
-      classScheduleSlotId: null,
-      occurrenceKey: 'daily',
-      status: 'CANCELLED',
-      classPeriod: { name: 'CE1' },
-    },
-  ])
-  render(
-    await AttendanceTrackingPage({
-      params: Promise.resolve({ locale: 'fr' }),
-      searchParams: Promise.resolve({ date: '2026-09-17' }),
-    })
-  )
-  expect(screen.getByRole('link', { name: 'viewOrCorrect' })).toHaveAttribute(
-    'href',
-    '/dashboard/my-classes/class-1/attendance?date=2026-09-17&occurrence=daily'
-  )
-  expect(screen.getAllByText(/dailyCall/)).toHaveLength(2)
-  expect(screen.queryByText(/undefined/)).not.toBeInTheDocument()
 })

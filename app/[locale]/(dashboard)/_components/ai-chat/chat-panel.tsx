@@ -14,7 +14,7 @@ import {
   Textarea,
 } from '@peaklab/ui'
 import type { ChatStatus, FileUIPart, UIMessage } from 'ai'
-import { ArrowUp, FileText, Loader2, Mic, Paperclip, Square, SquarePen, X } from 'lucide-react'
+import { ArrowUp, FileText, Loader2, Mic, Paperclip, Square, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   type ChangeEvent,
@@ -35,6 +35,7 @@ import {
 } from '@/domain/ai-assistant'
 import { cn } from '@/lib/utils'
 import { MessageText } from './message-text'
+import { joinAdjacentText } from './unfinished-turn'
 import { useDictation } from './use-dictation'
 import { VoiceMeter, voiceRingClass } from './voice-meter'
 
@@ -96,9 +97,17 @@ type Props = {
   composerTools?: ReactNode
   /** Amorces proposées sur une conversation vide ; un clic les place dans le champ. */
   suggestions?: string[]
+  /** Avis placé juste au-dessus du champ de saisie (conversation chargée, par exemple). */
+  notice?: ReactNode
+  /** Texte placé dans le champ au montage : une question restée sans réponse, reprise. */
+  initialText?: string
+  /**
+   * Accueil d'une conversation vide, à la place de l'invite par défaut : il reçoit le champ
+   * de saisie à placer où il veut, et `pick` pour y déposer une amorce.
+   */
+  welcome?: (args: { composer: ReactNode; pick: (text: string) => void }) => ReactNode
   onSend: (text: string, files: FileUIPart[]) => void
   onStop: () => void
-  onReset: () => void
 }
 
 export function ChatPanel({
@@ -112,12 +121,14 @@ export function ChatPanel({
   providerNotice,
   composerTools,
   suggestions = [],
+  notice,
+  initialText = '',
+  welcome,
   onSend,
   onStop,
-  onReset,
 }: Props) {
   const t = useTranslations(namespace)
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialText)
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [fileError, setFileError] = useState<FileError | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -231,13 +242,6 @@ export function ChatPanel({
     submit()
   }
 
-  const handleReset = () => {
-    setText('')
-    setAttachments([])
-    setFileError(null)
-    onReset()
-  }
-
   const fileErrorText =
     fileError === 'type'
       ? t('fileErrors.type')
@@ -248,73 +252,8 @@ export function ChatPanel({
           : null
   const dictationErrorText = dictation.error ? t(`dictation.errors.${dictation.error}`) : null
 
-  return (
-    <section
-      ref={sectionRef}
-      className={cn('relative flex flex-col gap-3', className)}
-      aria-label={t('title')}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {dragging ? (
-        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-background/85 text-sm font-medium text-foreground">
-          <Paperclip className="mr-2 h-4 w-4" aria-hidden />
-          {t('dropHere')}
-        </div>
-      ) : null}
-
-      <MessageScrollerProvider autoScroll defaultScrollPosition="end">
-        <MessageScroller className={cn('h-auto max-h-112 min-h-40', listClassName)}>
-          <MessageScrollerViewport aria-label={t('title')}>
-            <MessageScrollerContent className="gap-5 px-1 py-3">
-              {messages.length === 0 ? (
-                <div className="m-auto flex max-w-md flex-col items-center gap-4 text-center">
-                  <p className="text-lg font-semibold">{t('emptyTitle')}</p>
-                  <p className="text-sm text-muted-foreground">{t('empty')}</p>
-                  {suggestions.length > 0 ? (
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {suggestions.map((suggestion) => (
-                        <button
-                          key={suggestion}
-                          type="button"
-                          onClick={() => pickSuggestion(suggestion)}
-                          className="rounded-full border border-border px-3 py-1.5 text-xs hover:bg-surface-2"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                messages.map((message) => (
-                  <MessageScrollerItem
-                    key={message.id}
-                    messageId={message.id}
-                    scrollAnchor={message.role === 'user'}
-                  >
-                    <ChatMessage message={message} namespace={namespace} renderPart={renderPart} />
-                  </MessageScrollerItem>
-                ))
-              )}
-              {busy ? (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  {t('thinking')}
-                </p>
-              ) : null}
-              {errorMessage ? (
-                <p className="text-sm text-danger" role="alert">
-                  {errorMessage}
-                </p>
-              ) : null}
-            </MessageScrollerContent>
-          </MessageScrollerViewport>
-          <MessageScrollerButton aria-label={t('scrollToEnd')} title={t('scrollToEnd')} />
-        </MessageScroller>
-      </MessageScrollerProvider>
-
+  const composer = (
+    <>
       <form
         onSubmit={handleSubmit}
         className={cn(
@@ -402,20 +341,6 @@ export function ChatPanel({
           </Button>
           {composerTools}
           <span className="grow" />
-          {messages.length > 0 ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              onClick={handleReset}
-              disabled={busy}
-              aria-label={t('reset')}
-              title={t('reset')}
-            >
-              <SquarePen className="h-4 w-4" aria-hidden />
-            </Button>
-          ) : null}
           {dictation.supported ? (
             <Button
               type="button"
@@ -467,6 +392,84 @@ export function ChatPanel({
           {dictationErrorText}
         </p>
       ) : null}
+    </>
+  )
+  const welcoming = welcome !== undefined && messages.length === 0
+
+  return (
+    <section
+      ref={sectionRef}
+      className={cn('relative flex flex-col gap-3', className)}
+      aria-label={t('title')}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {dragging ? (
+        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-background/85 text-sm font-medium text-foreground">
+          <Paperclip className="mr-2 h-4 w-4" aria-hidden />
+          {t('dropHere')}
+        </div>
+      ) : null}
+
+      <MessageScrollerProvider autoScroll defaultScrollPosition="end">
+        <MessageScroller className={cn('h-auto max-h-112 min-h-40', listClassName)}>
+          <MessageScrollerViewport aria-label={t('title')}>
+            <MessageScrollerContent className="gap-5 px-1 py-3">
+              {welcoming ? (
+                <div className="mx-auto w-full max-w-160 py-4">
+                  {welcome({ composer, pick: pickSuggestion })}
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="m-auto flex max-w-md flex-col items-center gap-4 text-center">
+                  <p className="text-lg font-semibold">{t('emptyTitle')}</p>
+                  <p className="text-sm text-muted-foreground">{t('empty')}</p>
+                  {suggestions.length > 0 ? (
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => pickSuggestion(suggestion)}
+                          className="rounded-full border border-border px-3 py-1.5 text-xs hover:bg-surface-2"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <MessageScrollerItem
+                    key={message.id}
+                    messageId={message.id}
+                    scrollAnchor={message.role === 'user'}
+                  >
+                    <ChatMessage message={message} namespace={namespace} renderPart={renderPart} />
+                  </MessageScrollerItem>
+                ))
+              )}
+              {busy ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  {t('thinking')}
+                </p>
+              ) : null}
+              {errorMessage ? (
+                <p className="text-sm text-danger" role="alert">
+                  {errorMessage}
+                </p>
+              ) : null}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+          <MessageScrollerButton aria-label={t('scrollToEnd')} title={t('scrollToEnd')} />
+        </MessageScroller>
+      </MessageScrollerProvider>
+
+      {notice}
+
+      {welcoming ? null : composer}
 
       <p className="text-center text-xs text-muted-foreground">{providerNotice}</p>
     </section>
@@ -540,10 +543,16 @@ function ChatMessage({
             mine ? 'rounded-3xl bg-surface-2 px-4 py-2' : 'w-full'
           )}
         >
-          {message.parts.map((part, index) => {
+          {joinAdjacentText(message.parts).map((part, index) => {
             const key = `${message.id}-${index}`
             if (part.type === 'text') {
-              return <MessageText key={key} text={part.text} />
+              return mine ? (
+                <p key={key} className="whitespace-pre-wrap">
+                  {part.text}
+                </p>
+              ) : (
+                <MessageText key={key} text={part.text} />
+              )
             }
             if (part.type === 'file') return null
             return renderPart ? renderPart(part, key) : null

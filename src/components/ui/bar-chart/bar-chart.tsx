@@ -1,6 +1,8 @@
 import { cn } from '../utils'
 
 export interface BarChartPoint {
+  /** Identifiant unique de la barre ; le libellé peut se répéter (jour du mois). */
+  id?: string
   /** Libellé sous la barre, déjà localisé par l'appelant. */
   label: string
   value: number
@@ -41,14 +43,14 @@ export function BarChart({
 
   return (
     <div className={cn('flex gap-2 overflow-x-auto pt-5', className)} style={{ height }}>
-      {data.map((point) => {
+      {data.map((point, index) => {
         const ratio = max > 0 ? point.value / max : 0
 
         const barHeight = Math.max(ratio * 100, point.value > 0 ? 4 : 2)
 
         return (
           <div
-            key={point.label}
+            key={point.id ?? `${index}-${point.label}`}
             className="flex h-full min-w-8 flex-1 flex-col items-center gap-2"
             title={
               point.tooltip ?? (point.caption ? `${point.label} · ${point.caption}` : point.label)

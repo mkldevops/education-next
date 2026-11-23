@@ -160,6 +160,8 @@ export function EnrollmentDrawer({
                 currentClassId={currentClassId}
                 availableClasses={availableClasses}
                 currentTotalAmount={totalAmountNum}
+                currentDiscount={discountNum}
+                totalPaid={totalPaid}
                 currency={currency}
                 paymentsEnabled={paymentsEnabled}
                 planName={enrollment.plan.name}

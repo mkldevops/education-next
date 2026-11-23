@@ -1,9 +1,13 @@
 'use client'
 
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { cn } from '../utils'
 
 export type Tab = {
+  /** Ancre d'URL (`#id`) qui ouvre cet onglet et que la sélection de l'onglet écrit. */
+  id?: string
+  /** Autres ancres qui ouvrent cet onglet, comme celle d'une section qu'il contient. */
+  anchors?: string[]
   label: string
   icon?: React.ComponentType<{ size?: number }>
   content: React.ReactNode
@@ -19,9 +23,31 @@ export function Tabs({ tabs, defaultIndex = 0, ariaLabel }: TabsProps) {
   const [active, setActive] = useState(defaultIndex)
   const idPrefix = useId()
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  // Clé stable : un tableau `tabs` recréé à chaque rendu ne doit pas relancer la synchronisation.
+  const anchorKey = tabs.map((tab) => [tab.id ?? '', ...(tab.anchors ?? [])].join(' ')).join('|')
+
+  // L'ancre n'est lue qu'après l'hydratation : le serveur ignore le fragment d'URL.
+  useEffect(() => {
+    const anchors = anchorKey.split('|').map((group) => group.split(' ').filter(Boolean))
+    if (anchors.every((group) => group.length === 0)) return
+    const syncFromHash = () => {
+      const hash = decodeURIComponent(window.location.hash.slice(1))
+      const index = anchors.findIndex((group) => group.includes(hash))
+      if (index >= 0) setActive(index)
+    }
+    syncFromHash()
+    window.addEventListener('hashchange', syncFromHash)
+    return () => window.removeEventListener('hashchange', syncFromHash)
+  }, [anchorKey])
+
+  const select = (index: number) => {
+    setActive(index)
+    const id = tabs[index]?.id
+    if (id) window.history.replaceState(window.history.state, '', `#${id}`)
+  }
 
   const activate = (index: number) => {
-    setActive(index)
+    select(index)
     tabRefs.current[index]?.focus()
   }
 
@@ -68,7 +94,7 @@ export function Tabs({ tabs, defaultIndex = 0, ariaLabel }: TabsProps) {
                 aria-controls={`${idPrefix}-panel`}
                 aria-selected={i === active}
                 tabIndex={i === active ? 0 : -1}
-                onClick={() => setActive(i)}
+                onClick={() => select(i)}
                 onKeyDown={(event) => handleKeyDown(event, i)}
                 className={cn(
                   'flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',

@@ -1,5 +1,5 @@
-import { Breadcrumbs, buttonVariants, Card, cn } from '@peaklab/ui'
-import { CreditCard, HeartPulse, TriangleAlert, UtensilsCrossed } from 'lucide-react'
+import { Breadcrumbs, buttonVariants, Card, cn, StatusBadge } from '@peaklab/ui'
+import { HeartPulse, TriangleAlert, UtensilsCrossed } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
@@ -12,18 +12,25 @@ import { hasActiveSchoolStaffAccess, isActiveSchoolAdmin } from '@/lib/school-co
 import { getSchoolRegionalSettings } from '@/lib/school-regional-settings'
 import { isMealsEnabled } from '@/use-cases/config/is-meals-enabled'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
+import { getFamilyBalance } from '@/use-cases/payments/family-balance'
+import { listPayableEnrollmentChoices } from '@/use-cases/payments/payable-enrollment-choices'
 import { SchoolSwitchPrompt } from '../../../_components/school-switch-prompt'
 import { canOpenSchoolCashier, requireSchoolSession } from '../../../_lib/auth-helper'
 import { loadSuggestedLevels } from '../../../_lib/class-options-loader'
 import { deepLinkTitle } from '../../../_lib/page-metadata'
+import { toPlanOption } from '../../../_lib/plan-options'
 import { canSwitchSchool } from '../../../_lib/school-switch'
 import { CreateEnrollmentDialog } from '../../enrollments/_components/create-enrollment-dialog'
-import { DeactivateStudentButton } from '../_components/deactivate-student-button'
+import { RecordPaymentDialog } from '../../payments/_components/record-payment-dialog'
+import { ArchiveStudentDialog } from '../_components/archive-student-dialog'
 import { EditStudentDialog } from '../_components/edit-student-dialog'
+import { ReinstateStudentButton } from '../_components/reinstate-student-button'
 import { EnrollmentList } from './_components/enrollment-list'
 import { FamilyPanel } from './_components/family-panel'
 import { MealPanel } from './_components/meal-panel'
+import { PaymentHistory } from './_components/payment-history'
 import { deriveStudentDetail, getStudentDialogData, resolveStudent } from './_lib/student-detail'
+import { getStudentPaymentHistory } from './_lib/student-payment-history'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -66,7 +73,7 @@ export default async function StudentDetailPage({ params }: Props) {
   const isStaff = await hasActiveSchoolStaffAccess(context)
 
   const paymentsEnabled = (isAdmin || !isStaff) && (await isPaymentsEnabled(student.schoolId))
-  const { currency } = await getSchoolRegionalSettings(student.schoolId)
+  const { currency, timeZone } = await getSchoolRegionalSettings(student.schoolId)
   const mealsEnabled = isAdmin && (await isMealsEnabled(student.schoolId))
 
   const canOpenCashier = isStaff && (await canOpenSchoolCashier(context))
@@ -95,13 +102,46 @@ export default async function StudentDetailPage({ params }: Props) {
     family,
     birthday,
     age,
+    enrollments,
     totalDue,
     totalPaid,
     remaining,
     activeEnrollments,
     payableRemaining,
     languagesAtHome,
-  } = deriveStudentDetail(student)
+    departedAt,
+  } = deriveStudentDetail(student, { currency, timeZone })
+  // Seul le staff ouvre un élève archivé (`resolveStudent`) : sa fiche se lit, sa dette
+  // s'encaisse, mais on ne l'édite ni ne l'inscrit avant de l'avoir réintégré.
+  const isArchived = !student.isActive
+  const archivedLabel = !isArchived
+    ? null
+    : departedAt
+      ? t('archivedBadge', {
+          month: new Intl.DateTimeFormat(locale, {
+            month: 'long',
+            year: 'numeric',
+            timeZone: 'UTC',
+          }).format(departedAt),
+        })
+      : t('archivedBadgeUndated')
+
+  // L'encaissement s'ouvre sur place, ciblé sur la famille redevable de l'élève.
+  const payingFamily = isAdmin && paymentsEnabled && payableRemaining > 0 ? family : null
+  const studentHref = `/dashboard/students/${student.id}`
+
+  const [payableEnrollments, familyBalance, paymentHistory] = await Promise.all([
+    payingFamily ? listPayableEnrollmentChoices(context.schoolId, payingFamily.id) : [],
+    payingFamily ? getFamilyBalance(context.schoolId, payingFamily.id) : null,
+    // La cantine, le goûter et la garderie suivent le module repas, réservé à l'administration.
+    paymentsEnabled
+      ? getStudentPaymentHistory(context.schoolId, student.id, { includeServices: mealsEnabled })
+      : null,
+  ])
+  const studentEnrollmentIds = new Set(student.enrollments.map((enrollment) => enrollment.id))
+  const studentPayableEnrollments = payableEnrollments.filter((choice) =>
+    studentEnrollmentIds.has(choice.enrollmentId)
+  )
 
   const infoRows = [
     { label: t('birthplace'), value: student.birthplace },
@@ -167,6 +207,7 @@ export default async function StudentDetailPage({ params }: Props) {
             >
               {fullName}
             </h1>
+            {archivedLabel && <StatusBadge status="gray" label={archivedLabel} className="mt-1" />}
             {(birthday || student.birthplace) && (
               <p className="mt-1 text-sm text-graphite-600">
                 {birthday && age !== null && (
@@ -188,14 +229,21 @@ export default async function StudentDetailPage({ params }: Props) {
         </div>
         {isStaff && (
           <div className="flex flex-wrap items-center gap-2 xl:max-w-md xl:justify-end">
-            {isAdmin && family && payableRemaining > 0 && (
-              <Link
-                href={`/dashboard/families/${family.id}?action=addPayment&tab=payments`}
-                className={buttonVariants({ size: 'sm' })}
-              >
-                <CreditCard className="h-4 w-4" />
-                {t('pay')}
-              </Link>
+            {payingFamily && (
+              <RecordPaymentDialog
+                families={[{ id: payingFamily.id, name: payingFamily.name }]}
+                remainingAmount={familyBalance?.remainingBalance}
+                enrollments={payableEnrollments}
+                defaultEnrollmentId={
+                  studentPayableEnrollments.length === 1
+                    ? studentPayableEnrollments[0].enrollmentId
+                    : undefined
+                }
+                currency={currency}
+                canOpenCashier={canOpenCashier && payingFamily.isActive}
+                redirectTo={studentHref}
+                triggerLabel={t('pay')}
+              />
             )}
             {canOpenCashier && family?.isActive && (
               <Link
@@ -206,17 +254,24 @@ export default async function StudentDetailPage({ params }: Props) {
                 {t('collectServices')}
               </Link>
             )}
-            <EditStudentDialog
-              student={{
-                id: student.id,
-                birthday: student.birthday,
-                birthplace: student.birthplace,
-                allergies: student.allergies,
-                healthNotes: student.healthNotes,
-                snackAuthorization: student.snackAuthorization,
-              }}
-            />
-            <DeactivateStudentButton studentId={student.id} />
+            {!isArchived && (
+              <EditStudentDialog
+                student={{
+                  id: student.id,
+                  birthday: student.birthday,
+                  birthplace: student.birthplace,
+                  allergies: student.allergies,
+                  healthNotes: student.healthNotes,
+                  snackAuthorization: student.snackAuthorization,
+                }}
+              />
+            )}
+            {isAdmin &&
+              (isArchived ? (
+                <ReinstateStudentButton studentId={student.id} />
+              ) : (
+                <ArchiveStudentDialog studentId={student.id} studentName={fullName} />
+              ))}
           </div>
         )}
       </div>
@@ -275,7 +330,7 @@ export default async function StudentDetailPage({ params }: Props) {
               <h2 className="text-base font-semibold text-graphite">{t('enrollments')}</h2>
               {/* Une inscription en cours par élève et par période : proposer un second bouton de
                 création n'ouvrirait qu'un formulaire refusé par `createEnrollment`. */}
-              {isStaff && !isEnrolledInSelectedPeriod && (
+              {isStaff && !isArchived && !isEnrolledInSelectedPeriod && (
                 <CreateEnrollmentDialog
                   students={[
                     {
@@ -284,27 +339,32 @@ export default async function StudentDetailPage({ params }: Props) {
                       suggestedLevelId: suggestedLevels.get(student.id) ?? null,
                     },
                   ]}
-                  plans={(isAdmin ? plans : []).map((p) => ({
-                    id: p.id,
-                    name: p.name,
-                    amount: Number(p.amount),
-                  }))}
+                  plans={(isAdmin ? plans : []).map(toPlanOption)}
                   classes={classes}
                   paymentsEnabled={paymentsEnabled}
                   currency={currency}
                   defaultStudentId={student.id}
-                  redirectTo={`/dashboard/students/${student.id}`}
+                  redirectTo={studentHref}
                   triggerSize="sm"
                 />
               )}
             </div>
             <EnrollmentList
-              enrollments={student.enrollments}
+              enrollments={enrollments}
               currency={currency}
               locale={locale}
               paymentsEnabled={paymentsEnabled}
             />
           </section>
+
+          {paymentHistory && (
+            <PaymentHistory
+              history={paymentHistory}
+              locale={locale}
+              currency={currency}
+              timeZone={timeZone}
+            />
+          )}
 
           {mealsEnabled && (
             <MealPanel

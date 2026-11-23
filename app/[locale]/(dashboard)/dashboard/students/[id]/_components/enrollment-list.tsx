@@ -20,10 +20,12 @@ import type {
 } from '@/generated/prisma/client'
 import { Link } from '@/i18n/routing'
 import { formatDateLong } from '@/lib/date'
-import { formatCurrency } from '@/lib/decimal'
+import { type DecimalLike, formatCurrency, toNumberOrNull } from '@/lib/decimal'
 import { UNPRICED_PLAN_NAME } from '@/lib/payment-config'
 
-type EnrollmentWithRelation = Enrollment & {
+// Le total peut être celui que la fiche recalcule pour un élève archivé (`deriveStudentDetail`).
+type EnrollmentWithRelation = Omit<Enrollment, 'totalAmount'> & {
+  totalAmount: DecimalLike
   plan: Plan
   payments: Payment[]
   classAssignments: Array<
@@ -59,7 +61,11 @@ function coverageOf(enrollment: EnrollmentWithRelation, paid: number, currency: 
       Number(enrollment.totalAmount),
       period.startAt,
       currency,
-      startMonthFromDate(enrollment.startMonth)
+      {
+        startMonth: startMonthFromDate(enrollment.startMonth),
+        endMonth: startMonthFromDate(enrollment.endMonth),
+        firstInstallmentAmount: toNumberOrNull(enrollment.firstInstallmentAmount),
+      }
     ),
     paid
   )
@@ -71,6 +77,11 @@ export async function EnrollmentList({ enrollments, locale, currency, paymentsEn
   const monthFormat = new Intl.DateTimeFormat(locale, {
     month: 'short',
     year: '2-digit',
+    timeZone: 'UTC',
+  })
+  const longMonthFormat = new Intl.DateTimeFormat(locale, {
+    month: 'long',
+    year: 'numeric',
     timeZone: 'UTC',
   })
 
@@ -177,6 +188,9 @@ export async function EnrollmentList({ enrollments, locale, currency, paymentsEn
                                 <Check aria-hidden className="h-3 w-3" />
                               )}
                               {month}
+                              <span className="tabular-nums normal-case">
+                                · {formatCurrency(installment.amount, locale, currency)}
+                              </span>
                             </li>
                           )
                         })}
@@ -192,6 +206,25 @@ export async function EnrollmentList({ enrollments, locale, currency, paymentsEn
                   date: formatDateLong(enrollment.registeredAt, locale),
                 })}
               </p>
+              {enrollment.endMonth && (
+                <p className="mt-1 text-xs text-graphite-600">
+                  {tEnrollments('departure.leftAfter', {
+                    month: longMonthFormat.format(enrollment.endMonth),
+                  })}
+                </p>
+              )}
+              {paymentsEnabled && enrollment.writeOffReason && (
+                <p className="mt-1 text-xs text-graphite-600">
+                  {tEnrollments('departure.writeOff', {
+                    amount: formatCurrency(
+                      Number(enrollment.writeOffAmount ?? 0),
+                      locale,
+                      currency
+                    ),
+                    reason: enrollment.writeOffReason,
+                  })}
+                </p>
+              )}
             </Link>
           </li>
         )

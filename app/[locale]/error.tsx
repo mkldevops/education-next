@@ -1,10 +1,22 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
+import { useEffect } from 'react'
 import { ErrorPageShell } from '@/features/error-pages'
 import { localizedHref } from '@/i18n/localized-href'
+import { captureClientException } from '@/lib/error-tracking/client-error-tracking'
 
-export default function ErrorPage({ reset }: { reset: () => void }) {
+export default function ErrorPage({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  useEffect(() => {
+    captureClientException(error)
+  }, [error])
+
   const locale = useLocale()
   const t = useTranslations('errorPages')
 

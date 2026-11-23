@@ -1,9 +1,10 @@
 'use client'
 
-import { Button, cn } from '@peaklab/ui'
 import { Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/components/ui/utils'
 import { authButtonClass } from '@/features/auth/auth-styles'
 import { useRouter } from '@/i18n/routing'
 import { toast, toastActionError } from '@/lib/toast'

@@ -131,6 +131,40 @@ describe('DialogContent accessibility', () => {
 
     fallback.remove()
   })
+
+  it('closes only the topmost of two nested dialogs on Escape', () => {
+    render(
+      <Dialog>
+        <DialogTrigger>
+          <button type="button">Open</button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Outer</DialogTitle>
+          <Dialog>
+            <DialogTrigger>
+              <button type="button">Open inner</button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogTitle>Inner</DialogTitle>
+              <button type="button">Inner action</button>
+            </DialogContent>
+          </Dialog>
+        </DialogContent>
+      </Dialog>
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open inner' }))
+    expect(screen.getAllByRole('dialog')).toHaveLength(2)
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.getByRole('dialog', { name: 'Outer' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Inner' })).toBeNull()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
 })
 
 function RouteDialog({ open, cleanUrl }: { open: boolean; cleanUrl?: string }) {

@@ -4,6 +4,7 @@ import { startMonthToDate } from '@/domain/payment-schedule'
 import { reserveClassSeatsInOrder } from '@/gateways/class-seat-lock'
 import { enrollmentGateway } from '@/gateways/enrollment-gateway'
 import { lockActiveFamily } from '@/gateways/family-mutation-lock'
+import { syncOpenAttendanceRosters } from '@/use-cases/attendance/attendance-roster'
 import { issueTuitionReceipt } from '@/use-cases/receipts/issue-tuition-receipt'
 import { claimResolved, commitInTransaction, releaseDraft } from './claim-draft'
 import type { DraftScope } from './draft-scope'
@@ -49,6 +50,8 @@ const resolvedSchema = z.object({
       plan: z.object({ id: z.string(), name: z.string(), amount: z.number() }),
       // Absent d'un brouillon antérieur au mois de début : l'inscription commence avec sa période.
       startMonth: z.string().nullable().default(null),
+      // Absent d'un brouillon antérieur au premier mois réduit : l'échéance de la formule.
+      firstInstallmentAmount: z.number().nullable().default(null),
       totalAmount: z.number(),
     })
   ),
@@ -98,7 +101,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
   // Une seule transaction, avec des appels `tx.*` directs : aucune passerelle n'accepte
   // un client injecté, et enchaîner les use cases laisserait une famille orpheline au
   // premier échec. Précédent du dépôt : `create-enrollment.ts`.
-  return commitInTransaction(schoolId, draftId, async (tx) => {
+  const committed = await commitInTransaction(schoolId, draftId, async (tx) => {
     const existingFamilyId = 'id' in resolved.family ? resolved.family.id : null
     if (existingFamilyId && !(await lockActiveFamily(tx, schoolId, existingFamilyId))) {
       return 'notFound' as const
@@ -225,6 +228,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
       classPeriod,
       plan,
       startMonth,
+      firstInstallmentAmount,
       totalAmount,
       ...person
     } of resolved.students) {
@@ -254,6 +258,7 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
           totalAmount,
           discount: resolved.discount,
           startMonth: startMonth ? startMonthToDate(startMonth) : null,
+          firstInstallmentAmount,
           status: NEW_ENROLLMENT_STATUS,
         },
         select: { id: true },
@@ -320,4 +325,12 @@ export async function commitEnrollFamily(scope: DraftScope, input: Input) {
 
     return written
   })
+  if (typeof committed !== 'string') {
+    await syncOpenAttendanceRosters({
+      schoolId,
+      actorId: scope.userId,
+      enrollmentIds: committed.enrollmentIds,
+    })
+  }
+  return committed
 }

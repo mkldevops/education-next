@@ -1,8 +1,9 @@
 'use client'
 
-import { Button, ConfirmDialog } from '@peaklab/ui'
 import { Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { toast, toastActionError } from '@/lib/toast'
 import { deleteClassScheduleSlotAction } from '../../../_lib/class-schedule-actions'
 

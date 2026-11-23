@@ -1017,13 +1017,39 @@ stay where they are. **The new total never falls below what the enrollment alrea
 `totalBelowPaid`, since a balance never goes negative and an overpayment nobody decided to refund
 must not appear. A request that changes nothing → `noChange`; several open enrollments for the
 student → `ambiguousEnrollment`, listed so the caller retries with `enrollmentId`. The commit
-compares the enrollment's current plan, discount, total and start month to the validated `before`,
-and the target plan's price to the validated `after` → `staleDraft` when either moved. `startMonth`
+compares the enrollment's current plan, discount, total, start month and reduced first installment
+to the validated `before`, and the target plan's price to the validated `after` → `staleDraft` when
+either moved. `startMonth`
 (`YYYY-MM`) sets or, with `null`, clears the enrollment's start month (Enrollments, Money); absent,
 the current one is kept, so a plan or discount change keeps the proration already decided. The
 preview shows it before → after, with the part of the plan due (`planAmountDue`).
 `preview_enroll_family` takes the same `startMonth`, for the family or per student (the student's
 wins), checked against the class period.
+
+**An arrival during the year is a start month and a first installment, never a discount.**
+`firstInstallmentAmount` sets the reduced first month (Enrollments, Money) on
+`preview_update_enrollment`, and per student on `preview_enroll_family`; `null` gives the plan's own
+installment back. Absent on an update, the stored amount is kept while neither the plan nor the
+start month changes; when one of them does, it is cleared and the preview carries a
+`firstInstallmentReset` warning, so a stale amount never follows another plan or month. Refusals
+are blockers on that field: `firstInstallmentRequiresStartMonth`, `firstInstallmentNotMonthly`,
+`firstInstallmentOutOfRange`, `firstInstallmentExceedsTotal`. `enroll_family` ignores it in a school
+without payments, like the plan.
+The commit writes the amount the preview resolved, on the enrollment only. The tool descriptions
+and the assistant's system prompt both forbid dictating a late arrival through `discount` or
+`totalAmount`, which lower the whole year instead of the first month.
+
+**A preview carries the schedule it decides.** `preview_update_enrollment` resolves
+`schedule.before` and `schedule.after` (due date and amount of each installment, from
+`paymentInstallments`), `preview_enroll_family` an `installments` list per student, both with the
+school `currency`. The assistant's confirmation card
+(`_components/ai-chat/enrollment-plan-summary.tsx`) renders them with the shared
+`InstallmentSchedule` component — month → amount, before → after, recalculated total — instead of
+the raw plan, which stays reachable in the folded details and remains the fallback for a draft
+stored without a schedule. A discount read together with a reduced first month raises the
+`discountWithFirstInstallment` warning, in the preview and on the card: the discount lowers the
+following installments too, which is rarely what a late arrival means. The commit schemas ignore
+these display keys; the checksum still covers them.
 
 **An existing family is named by `familyId`, instead of `familyName`.** A child entered on the
 dashboard without an enrollment — a sibling added to the family, never enrolled — must not come back
@@ -1519,12 +1545,20 @@ Owner: `src/domain/attendance-session.ts` (roster window, transitions),
 - `attendance_frequency` chooses `PER_SLOT` (default for existing and new schools) or `DAILY` in school configuration. `DAILY` expects one call per class/calendar date with scheduled lessons, independent of their number. Scheduled and exceptional openings share the `daily` occurrence key and store no lesson reference. Following any lesson link resumes that same daily call; its entry page has no course selector. Cancellation and restoration use this same identity. Switching frequency neither deletes nor merges earlier calls; their explicit historical links remain readable and correctable, while newly expected calls follow the current setting.
 - A logical occurrence is unique by school, class, date and a non-null occurrence key (`daily` in daily mode, otherwise `adhoc` or the schedule-slot id). Opening is an atomic upsert with unique-conflict recovery; its roster snapshots the active class assignments of that **UTC calendar day**: an assignment counts when it starts before the next UTC midnight and has not ended before that day's midnight (`attendanceRosterWindow`). A student assigned during the day, even after midnight, is therefore on that day's call.
 - **A DRAFT session can take students assigned since its opening** (`refreshAttendanceRosterAction`, "Refresh student list" in the attendance panel). It only adds entries (`PRESENT`) for roster students without one and never removes or rewrites an existing entry. The refresh row-locks the session with a write conditional on `DRAFT`; a VALIDATED or concurrently validated session → `invalidTransition`, a cancelled one → `sessionCancelled`.
+- **A student enrolled during a call in progress joins it on their own.** After an enrollment write
+  commits (new enrollment, activation, class change, family or student creation with enrollment, the
+  MCP family enrollment and class move), `syncOpenAttendanceRosters`
+  (`src/use-cases/attendance/attendance-roster.ts`) refreshes the `DRAFT` calls of the student's class
+  dated today or later. Those additions are `NOT_RECORDED`: a call screen loaded earlier and then
+  validated must not mark an unseen student present. Best effort: a failure is logged and never undoes
+  the enrollment; the refresh button stays the fallback.
 - **Validation is a conditional write** (`validateAttendanceAction`). It applies only while the session is still `DRAFT` or `VALIDATED` (re-validating after a correction); a session cancelled between the read and the write is left untouched → `invalidTransition`, rather than silently revived as VALIDATED.
 - **A validated call feeds the meals.** Validating, cancelling or restoring a call recomputes that day's canteen and snack absences for its students (see « Absences from attendance » under Meals).
 - **Cancel and restore are conditional transitions** (`planCancellationTransition`). Cancelling an active session records its status in `statusBeforeCancellation` and only applies while the session still has the status that was read; cancelling an already cancelled session is a no-op. Restoring applies only to a session that is still `CANCELLED` (with the same saved status) and returns the saved status, or DRAFT (clearing `validatedAt`) when none was saved; an empty cancelled placeholder is deleted instead. Restoring a DRAFT or VALIDATED session, or losing a race with another change (stale tab, double click), writes nothing → `invalidTransition`.
 - The attendance route identifies a planned occurrence explicitly with its UTC calendar `date` and `slotId`; an exceptional occurrence uses `date` and `occurrence=adhoc`. Daily mode resolves both to `daily`; `occurrence=daily` can also read a previously recorded daily call after returning to per-slot mode, and `occurrence=historical` reads only an existing earlier per-slot or exceptional call. Loading an identity only reads an existing session: creating a session remains an explicit mutation. A supplied slot must belong to the class and school **and** match the selected date's planning weekday (Monday 1 through Sunday 7).
-- **Students start present.** Opening a session and refreshing its roster create `PRESENT` entries
-  (`rosterEntry` in `attendance-actions.ts`), so the teacher only marks absences and late arrivals.
+- **Students start present.** Opening a session and refreshing its roster from the call screen create
+  `PRESENT` entries; additions nobody has seen (assistant, enrollment) start `NOT_RECORDED`
+  (`rosterEntry` in `src/use-cases/attendance/attendance-roster.ts`), so the teacher only marks absences and late arrivals.
 - Entries remain `NOT_RECORDED`, `PRESENT`, `ABSENT` or `LATE`; **All present** changes only the first state. A late entry may carry zero to 1,440 optional whole minutes and an internal optional message of at most 1,000 characters; it never notifies a parent. Changing to any other status clears late minutes while preserving its message. A validated session can be corrected and records the latest author and timestamp.
 - ADMIN may operate school classes. A teacher capability is restricted server-side to their own `ClassPeriodTeacher` assignments.
 - Tracking derives expected occurrences from weekly slots for the selected **UTC calendar date** (the explicit V1 school-time convention). A slot absent from that day's planning creates no missing call.
@@ -1540,12 +1574,14 @@ Owner: `src/domain/attendance-session.ts` (roster window, transitions),
 - **The return link after validation depends on who validated.** An admin goes back to
   `/dashboard/attendance` for the same day; a teacher goes back to `/dashboard/my-classes`, because
   that page requires a teacher record.
-- **The MCP reads the tracking, never a roster.** `list_attendance_calls`
+- **The MCP reads the tracking, not a call's entries.** `list_attendance_calls`
   (`src/use-cases/mcp/list-attendance-calls.ts`) applies the same derivation as
   `/dashboard/attendance` — active classes of a period, UTC days, closures keeping only opened calls —
   over at most 31 days (`MCP_ATTENDANCE_RANGE_MAX_DAYS`). It publishes each call's class, slot, status
   and session id, not its students or entries, and is refused with `notConfigured` when
-  `attendance_enabled` is off.
+  `attendance_enabled` is off. Its only write is `refresh_attendance_roster`
+  (`src/use-cases/mcp/refresh-attendance-roster.ts`), the call screen's refresh with added students
+  `NOT_RECORDED`.
 - **The entry mode is a school setting, not a choice on the call screen.** `attendance_entry_mode`
   is `LIST` (default for existing and new schools) or `ONE_BY_ONE` (`getAttendanceEntrySettings`,
   `src/domain/attendance-entry-mode.ts`). `LIST` shows the whole roster on one screen with P/R/A
@@ -1712,7 +1748,45 @@ class, in **one** `db.$transaction`: the (school, student, period) lock, then th
   last installment → `noInstallmentDue`. A new total below what the enrollment already banked →
   `totalBelowPaid`, read under the family lock like a discount (#425). Clearing it restores
   `plan.amount - discount`. An enrollment without one behaves exactly as before, with no extra read.
-- Set from the enrollment page (admins, payments enabled), `update_enrollment` and `enroll_family`.
+- Set from the enrollment page (admins, payments enabled), `update_enrollment` and `enroll_family`,
+  and **at creation**: `createEnrollment`, `createEnrolledStudent` and `createFullFamily` accept
+  `startMonth` and `firstInstallmentAmount` (`loadNewEnrollmentArrival` and `priceNewEnrollment` in
+  `src/use-cases/enrollments/pricing.ts`), checked by the same domain validators against the bounds
+  of the class period, read with the caller's `schoolId`. Without a typed total the enrollment owes
+  the part due minus the discount; a typed total must still cover the first month. Either field
+  sent while pricing is deferred (non-admin staff) or payments are off → `paymentsDisabled`.
+- **The creation forms ask the question.** The enrollment dialog, the _Add a student_ dialog and
+  the family wizard show "Arrivé en cours d'année ? Premier mois à payer · Montant de ce mois"
+  (`_components/enrollment-arrival-fields.tsx`) above the resulting schedule
+  (`_components/installment-schedule.tsx`, first line editable with ½ and ¼ of the plan's
+  installment). The section is unfolded as soon as today is past the plan's first due date in the
+  class period, folded before, and absent without a priced plan — so never for a non-admin, who
+  receives no plan amount. `arrivalSchedule` (`_lib/arrival-schedule.ts`) only previews: the server
+  recomputes and validates every amount. The total field no longer suggests lowering it for a late
+  arrival.
+- **A student who arrives during a month owes a reduced first month**
+  (`Enrollment.firstInstallmentAmount`, null by default — no backfill, an enrollment without one
+  behaves as before). It replaces the plan's installment of the start month: the part due becomes
+  `installments due from the start month − that installment + firstInstallmentAmount`, and
+  `totalAmount` stays the single source of truth (part due − discount). A 10 × 10 000 plan joined
+  mid-December at 5 000 owes 5 000 + 7 × 10 000 = 75 000. The field only shapes the schedule: the
+  first deadline carries this amount, the rest of the total — discount included — is split over the
+  following deadlines.
+- It needs a start month → `firstInstallmentRequiresStartMonth`, a **monthly** plan →
+  `firstInstallmentNotMonthly`, an amount within `0 < amount ≤ the plan's installment of that month`
+  → `firstInstallmentOutOfRange`, and a total that still covers it →
+  `firstInstallmentExceedsTotal` (also when a discount applied later would push the total under it).
+- **No stale amount.** The start-month write always writes the field: a month changed or cleared
+  without an amount resets it to null in the same update. A plan change resets it in the same write
+  (`enrollmentGateway.assignPlan`) and reprices on the start month alone. The dialog of the
+  enrollment page shows the field for a monthly plan, disabled until a start month is chosen,
+  empties it as soon as the month changes (an amount typed for one month is never submitted with
+  another), shows the enrollment's discount with an option to remove it in the same write, and
+  keeps the `totalBelowPaid` guard.
+- **It is a financial field.** The enrollments list builds its client payload through
+  `serializeEnrollment` (`enrollments/_lib/serialize-enrollment.ts`): an admin gets plain numbers, a
+  non-admin (staff teacher, parent) gets no total, discount, write-off, reduced first month, plan
+  amount, plan pricing or payment.
 
 ## Plans
 
@@ -1790,6 +1864,15 @@ Owner: `src/domain/payment-schedule.ts`, `src/use-cases/payments/payment-trackin
   automatic proration — unless it carries a start month (Enrollments, Money): installments before
   that month are then neither expected nor counted, and its stored total is split over the
   remaining deadlines only. No September arrears for a student who joined in October.
+- A reduced first installment (`Enrollment.firstInstallmentAmount`, Enrollments, Money) is the
+  amount of the first owed deadline; the remainder of the total is split equally over the following
+  ones. Every reader passes it through the options of `paymentInstallments`: payment tracking,
+  the family payments of the MCP, the student page (each installment chip shows its month and its
+  amount, payments enabled only), the departure preview and settlement
+  (`owedThroughMonth`, `legacyDepartureTotal`). The split never produces a negative installment:
+  the first amount is capped at the total (a departure may have cut it), and a single remaining
+  deadline carries the whole total. Readers apply it whatever the plan's mode, so a plan whose
+  schedule is edited afterwards keeps a coherent split until the amount is reset.
 - Month/day settings are anchored to the enrollment's school period, from its latest class
   assignment. A month before the period start month falls in the following calendar year. They
   never restart on the current year. Short months clamp a due day of 29–31 to their last day.
@@ -1812,6 +1895,11 @@ Owner: `src/domain/payment-schedule.ts`, `src/use-cases/payments/payment-trackin
 - The payments dashboard keeps full annual totals separate from expected-to-date and arrears. Its
   follow-up list includes only overdue families, ordered by arrears. The family payments tab and MCP
   `get_family_payments` expose the same calculation; no automatic notification or debit is created.
+- **A student is overdue when its debtor family is overdue** (`getOverdueStudents()`): arrears stay
+  measured per family, and each child carrying a payable enrollment whose debt resolves to that family
+  reports the family's `overdueAmount`. The students page (admins with payments enabled) shows that
+  amount and an "overdue only" filter (`?filter=overdue`) scoped to the selected period; MCP and the
+  in-app assistant read the whole school through `list_overdue_students`.
 
 ### Recording a payment
 
@@ -2247,7 +2335,7 @@ absence actions are `requireSchoolCashier()`; prices, settings and the opening b
   replaced from its own start. A stop closes started segments the day before and deletes those that
   have not started (`planStop()`, `src/domain/meal-schedule.ts`). Nothing served from that date:
   `notSubscribed`.
-- **Automatic stop.** `deactivateStudent()` stops every service of the student from today;
+- **Automatic stop.** `archiveStudent()` stops every service of the student from today;
   `cancelEnrollment()` stops the segments in the periods of the cancelled enrollment's classes
   (`stopStudentMeals()`). Neither checks `meals_enabled`: an open segment stops even after the
   school opted out.
@@ -2389,13 +2477,36 @@ active student enrolled in no class still gets cashier lines (`loadCashierFamily
 or come for snack before, or without, being placed in a class. To stop billing a child, stop their
 meal service.
 
-**Day's takings.** `/dashboard/cashier/day?day=YYYY-MM-DD` (same guards, today by default, no future
-day) sums, over the school's local day (`schoolDayBounds()`), the receipts **issued** that day and the
+**Day's takings.** `/dashboard/cashier/day?day=YYYY-MM-DD` (today by default, no future day) sums,
+over the school's local day (`schoolDayBounds()`), the receipts **issued** that day and the
 receipts **cancelled** that day whatever their issue day; net = issued − cancelled
 (`summarizeCashDay()`, `src/domain/cash-day.ts`). A cancellation lands on the day it is made, so a
 past day's net never changes. Totals split by method and by item: canteen and snack from the
 receipt's `MealPayment` rows, childcare from its `ChildcarePayment` rows, tuition as the rest of the
 total.
+
+The day view has its own guard, `requireSchoolCashDay()`: whoever the cashier admits (below), plus
+the administration of a school **without meals** that collects tuition (`payments_enabled`, on by
+default). That second door opens this read only: the cashier, receipt recording and the `CASHIER`
+role stay closed to a school without meals (`canOpenSchoolCashier()` and the `recordReceipt()` gate
+are unchanged). The sidebar gives that admin a "Day's takings" entry in place of the cashier one;
+with meals the view is reached from the cashier as before. A school without meals sees the tuition
+item alone; a canteen, snack or childcare item stays visible only on a day where it still carries
+money (a school that closed meals later), so the items always add up to the total
+(`visibleCashLines()`).
+
+**Payments without a receipt.** A tuition payment can be recorded without a receipt
+(`recordPayment()` without `generateReceipt`), and a refund never gets one. The day view lists them
+apart for the administration when payments are enabled (`loadUnreceiptedPayments()`): active
+`Payment` rows with no `receiptId` **created** during the school's local day, one line per sum
+handed over (`groupFamilyPayments()`), refunds flagged, with their own subtotal. They are never
+added to the takings: receipts remain the only source of the cash total. A payment that receives
+its receipt later leaves the list and counts on the receipt's issue day; a cancelled entry is
+inactive and disappears. A zero-amount row is not listed: an online payment writes one per
+already-settled enrollment and its receipt skips it (`completeCheckoutSession()`), so it is no money
+handed over. The read is bounded to the 200 oldest rows of the day; beyond that the view says the
+list and its subtotal are incomplete. A `CASHIER` never reads this list: tuition payments outside the
+cashier stay with the administration.
 
 **Cashier role.** `CASHIER` is the school role of the person at the till (migration
 `20261029090000_cashier_role`; granted to nobody on deploy). `requireSchoolCashier()`
@@ -2538,10 +2649,54 @@ A student is **skipped**, with the reason reported, when:
   A student's page shows the languages of its family. `enroll_family` does not set them.
 - **A student's birthday, when given, must be in the past** → `validationError`
   (`src/domain/student.ts`).
-- **A student carrying a `PENDING` or `ACTIVE` enrollment cannot be archived**
-  → `hasActiveEnrollments`.
-- **A family cannot be archived either while any of its students holds one** — same discriminant,
-  counted across every person linked to the family.
+- **Archiving a student records a departure** (`archiveStudent()`,
+  `src/use-cases/students/archive-student.ts`; admins only, and MCP `archive_student`). The admin
+  picks the last month of presence, between the first and last month of the periods of the open
+  enrollments, by default the current school month (`departureMonths()`,
+  `src/domain/student-departure.ts`; another month → `endMonthOutsidePeriod`). In one transaction,
+  under each debtor family's payment lock:
+  - each `PENDING`/`ACTIVE` enrollment becomes `COMPLETED` with `endMonth`, its total cut to the
+    installments due through that month (`owedThroughMonth()`), never below what was already paid;
+  - the remainder either stays owed (default, and always through MCP) or is written off: the total
+    drops to the amount paid, `writeOffAmount` records the forgiven part and `writeOffReason` is
+    required (`reasonRequired`) and shown on the enrollment;
+  - open class assignments end now, the childcare subscription ends after `endMonth` (never before a
+    month already billed), `Student.isActive` turns false and `Student.leftAt` is set; meals stop
+    from today once committed.
+- **A departure keeps its arrears payable.** A `COMPLETED` enrollment with an `endMonth` stays in the
+  payable scope (`payableEnrollmentWhere`, `src/domain/enrollment.ts`): family balance, payment
+  tracking and statistics, and the overdue list, which flags the archived student (`archived`). The
+  meal debtor list includes archived students as well.
+- **Former students stay visible to staff.** The students list toggles to `?status=former`
+  (`listFormerStudents()`, `src/use-cases/students/former-students.ts`): last class, departure
+  (`leftAt`, or the last `endMonth` for older archives) and the tuition still owed. Staff open an
+  archived student's page, badged « Archivé », and can still record a payment; parents never see it.
+- **Reinstating a student** (`reinstateStudent()`, `src/use-cases/students/reinstate-student.ts`;
+  admins only) sets `isActive` back to true and clears `leftAt`. Its enrollments stay `COMPLETED`
+  with their `endMonth` and arrears: a return is a new enrollment. A student of another school or
+  already active → `notFound`.
+- **Importing a list of former students** (« Importer une liste », `?status=former`, admins only, shown
+  only while the AI assistant is enabled). Up to 4 files (6 MB each, 10 MB in all): PNG/JPEG/WebP
+  photo, PDF, CSV/TXT or `.xlsx`. `.xlsx` is converted to `;` text on the server (`read-excel-file`,
+  `src/use-cases/students/read-spreadsheet.ts`) after a zip-bomb pre-check: declared uncompressed
+  size ≤ 20 MB, ≤ 200 entries, no ZIP64. Images go through the assistant's image sanitizer. The AI
+  (`extractFormerStudents()`, rate-limited to 6 reads per minute per admin and school) returns
+  lastname, firstname, optional birthday, class label and departure year, each flagged when
+  uncertain; the reading is capped at 500 rows. Nothing is written until the admin confirms.
+  - **Review statuses** (`classifyFormerStudents()`, `src/domain/former-student-import.ts`), recomputed
+    on the server after each edit: `incomplete` (missing or too long name, invalid date or year),
+    `existing` (an archived student of the same name with a compatible birthday, an active one with the
+    same known birthday, or a duplicate row of the file), `homonym` (any other same-name student: it is
+    still created), otherwise `create`. Excluded rows are neither counted nor written.
+  - **The commit** (`commitFormerStudentImport()`, `src/use-cases/students/former-student-import.ts`)
+    re-validates the rows, takes a per-school advisory lock and re-classifies them in its transaction,
+    then creates only `create` and `homonym` rows: a `Person` and a `Student` with `isActive: false`,
+    `leftAt` on 31 August (UTC) of the departure year — now when the year is missing or that date is
+    still ahead — the birthday and `formerClassLabel`. No enrollment, family, payment or attendance is
+    created. It answers `{created, skipped}`; a re-run of the same list creates nothing more. The former
+    students list shows `formerClassLabel` as the last class when the student has no class history.
+- **A family cannot be archived while any of its students holds a `PENDING` or `ACTIVE`
+  enrollment** → `hasActiveEnrollments`, counted across every person linked to the family.
 
 ### Deleting a family for good
 

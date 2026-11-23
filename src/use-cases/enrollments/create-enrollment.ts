@@ -7,7 +7,7 @@ import { planGateway } from '@/gateways/plan-gateway'
 import { studentGateway } from '@/gateways/student-gateway'
 import { db } from '@/lib/db'
 import { isPaymentsEnabled } from '@/use-cases/config/is-payments-enabled'
-import { resolveEnrollmentPricing } from './pricing'
+import { loadNewEnrollmentArrival, priceNewEnrollment } from './pricing'
 import { createEnrollmentSchema } from './schemas'
 
 /**
@@ -43,8 +43,16 @@ export async function createEnrollment(input: Input) {
 
   // Une formule explicite ou une remise non nulle pendant une coupure trahit un appelant
   // qui ignore le drapeau : refuser plutôt que tarifer en silence une école qui a coupé
-  // les paiements (FR-017).
-  if (!paymentsEnabled && (parsed.data.planId !== undefined || parsed.data.discount !== 0)) {
+  // les paiements (FR-017). Le mois de début et le premier mois réduit sont des décisions de
+  // tarif : ils suivent la même règle, y compris pour un appelant à tarif différé.
+  const { startMonth, firstInstallmentAmount } = parsed.data
+  if (
+    !paymentsEnabled &&
+    (parsed.data.planId !== undefined ||
+      parsed.data.discount !== 0 ||
+      startMonth !== null ||
+      firstInstallmentAmount !== null)
+  ) {
     return 'paymentsDisabled' as const
   }
 
@@ -67,16 +75,24 @@ export async function createEnrollment(input: Input) {
   // plus haut hors drapeau (FR-017) : `discount` et `totalAmount` restent 0 sans repasser
   // par `resolveEnrollmentPricing`. `if (plan)` narrowe proprement sans assertion : `plan`
   // n'est non nul qu'après le contrôle `notFound` ci-dessus, drapeau actif.
-  let discount = 0
-  let totalAmount = 0
+  let pricing: {
+    discount: number
+    totalAmount: number
+    startMonth: Date | null
+    firstInstallmentAmount: number | null
+  } = { discount: 0, totalAmount: 0, startMonth: null, firstInstallmentAmount: null }
   if (plan) {
-    const pricing = resolveEnrollmentPricing(
-      Number(plan.amount),
-      parsed.data.discount ?? 0,
-      parsed.data.totalAmount
-    )
-    if (typeof pricing === 'string') return pricing
-    ;({ discount, totalAmount } = pricing)
+    const arrival = await loadNewEnrollmentArrival(schoolId, classPeriod.id, {
+      startMonth,
+      firstInstallmentAmount,
+    })
+    if (arrival === 'notFound') return arrival
+    const priced = priceNewEnrollment(plan, arrival, {
+      discount: parsed.data.discount ?? 0,
+      totalAmount: parsed.data.totalAmount,
+    })
+    if (typeof priced === 'string') return priced
+    pricing = priced
   }
 
   try {
@@ -123,8 +139,7 @@ export async function createEnrollment(input: Input) {
           schoolId,
           studentId: parsed.data.studentId,
           planId,
-          totalAmount,
-          discount,
+          ...pricing,
           canLeaveAlone: parsed.data.canLeaveAlone,
           status: NEW_ENROLLMENT_STATUS,
         },

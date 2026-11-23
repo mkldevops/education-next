@@ -5,9 +5,11 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }))
 
+const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }))
+
 vi.mock('@/i18n/routing', () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/">{children}</a>,
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => router,
 }))
 
 vi.mock('@/actions', () => ({
@@ -102,5 +104,37 @@ describe('LoginForm handleGoogleSignIn', () => {
     fireEvent.click(screen.getByRole('button', { name: 'signInWithGoogle' }))
 
     expect(await screen.findByText('googleError')).not.toBeNull()
+  })
+})
+
+describe('LoginForm handleSubmit', () => {
+  beforeEach(() => {
+    vi.mocked(signIn.email).mockReset()
+    router.push.mockReset()
+    router.replace.mockReset()
+    router.refresh.mockReset()
+  })
+
+  it('replaces the login entry so Back cannot reopen the login page', async () => {
+    vi.mocked(signIn.email).mockResolvedValue({ data: {}, error: null } as never)
+
+    const { container } = render(
+      <LoginForm googleEnabled={false} passkeyEnabled={false} redirectTo="/dashboard/students" />
+    )
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement)
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/dashboard/students'))
+    expect(router.refresh).toHaveBeenCalled()
+    expect(router.push).not.toHaveBeenCalled()
+  })
+
+  it('stays on the login page when the credentials are rejected', async () => {
+    vi.mocked(signIn.email).mockResolvedValue({ data: null, error: { status: 401 } } as never)
+
+    const { container } = render(<LoginForm googleEnabled={false} passkeyEnabled={false} />)
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('error')
+    expect(router.replace).not.toHaveBeenCalled()
   })
 })

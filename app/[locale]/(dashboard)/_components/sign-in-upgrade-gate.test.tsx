@@ -15,7 +15,7 @@ vi.mock('@/use-cases/platform-settings/is-passkey-sign-in-enabled', () => ({
   isPasskeySignInEnabled: () => isPasskeySignInEnabledMock(),
 }))
 // Le bandeau est un composant client : seul le contrat de props du gate est en jeu ici.
-vi.mock('@/features/auth', () => ({ SignInUpgradeBanner: () => null }))
+vi.mock('@/features/auth/sign-in-upgrade-banner', () => ({ SignInUpgradeBanner: () => null }))
 
 const { SignInUpgradeGate } = await import('./sign-in-upgrade-gate')
 

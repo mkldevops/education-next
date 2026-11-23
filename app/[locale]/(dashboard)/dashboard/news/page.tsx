@@ -2,6 +2,7 @@ import { Breadcrumbs, buttonVariants } from '@peaklab/ui'
 import { ArrowRight, Megaphone } from 'lucide-react'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { EmptyState } from '@/components/ui/empty-state'
 import {
   countUnreadAnnouncements,
   isAnnouncementUnread,
@@ -44,11 +45,7 @@ export default async function NewsPage({ params }: { params: Promise<{ locale: s
         <p className="max-w-xl text-sm leading-relaxed text-graphite-600">{t('subtitle')}</p>
       </header>
       {announcements.length === 0 ? (
-        <section className="rounded-3xl border border-dashed border-alabaster-700 bg-white px-6 py-14 text-center">
-          <Megaphone aria-hidden="true" className="mx-auto mb-4 size-10 text-foreground" />
-          <h2 className="font-semibold text-graphite">{t('emptyTitle')}</h2>
-          <p className="mt-2 text-sm text-graphite-600">{t('empty')}</p>
-        </section>
+        <EmptyState icon={Megaphone} title={t('emptyTitle')} description={t('empty')} />
       ) : (
         <ol className="space-y-6">
           {announcements.map((announcement) => {

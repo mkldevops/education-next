@@ -1,11 +1,12 @@
 'use client'
 
-import { Button, Input, Label } from '@peaklab/ui'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { KeyRound, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { getPasskeyAuthenticationOptions } from '@/actions'
+import { Button } from '@/components/ui/button'
+import { Input, Label } from '@/components/ui/input'
 import { Link, useRouter } from '@/i18n/routing'
 import { signIn } from '@/lib/auth-client'
 import { authButtonClass, authFieldClass, authLinkClass } from './auth-styles'
@@ -19,6 +20,8 @@ type Props = {
   passkeyEnabled: boolean
   /** Chemin interne déjà assaini par la page (`safeRedirectPath`). */
   redirectTo?: string
+  /** Message d'un échec OAuth renvoyé sur `/login?error=…`. */
+  initialError?: string
 }
 
 type PendingMethod = 'password' | 'google' | 'passkey'
@@ -29,10 +32,11 @@ export function LoginForm({
   googleEnabled,
   passkeyEnabled,
   redirectTo = DEFAULT_AUTH_REDIRECT,
+  initialError,
 }: Props) {
   const t = useTranslations('auth.login')
   const router = useRouter()
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(initialError ?? null)
   const [pending, setPending] = useState<PendingMethod | null>(null)
 
   const hasAlternatives = googleEnabled || passkeyEnabled
@@ -52,7 +56,8 @@ export function LoginForm({
       if (error) {
         setError(error.status && error.status >= 500 ? t('serviceUnavailable') : t('error'))
       } else {
-        router.push(redirectTo)
+        router.replace(redirectTo)
+        router.refresh()
       }
     } catch {
       setError(t('error'))
@@ -100,7 +105,8 @@ export function LoginForm({
         return
       }
 
-      router.push(redirectTo)
+      router.replace(redirectTo)
+      router.refresh()
     } catch {
       setError(t('passkeyError'))
     } finally {

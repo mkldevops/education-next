@@ -2,10 +2,12 @@ import { Breadcrumbs } from '@peaklab/ui'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { readsAsEnabled } from '@/domain/feature-flags'
+import type { ReactNode } from 'react'
+import { readsAsEnabled, readsAsOptedIn } from '@/domain/feature-flags'
 import { absenceReasonGateway } from '@/gateways/absence-reason-gateway'
 import { paymentGateway } from '@/gateways/payment-gateway'
 import { teacherGateway } from '@/gateways/teacher-gateway'
+import { CASH_DAY_TUITION_CONFIG_KEY } from '@/lib/cash-day-tuition-config'
 import { formatDateTime } from '@/lib/date'
 import { db } from '@/lib/db'
 import { PAYMENTS_ENABLED_CONFIG_KEY } from '@/lib/payment-config'
@@ -25,10 +27,12 @@ import { getSchoolCurrencySettings } from '@/use-cases/schools/school-currency'
 import { countGoogleOnlyAccounts } from '@/use-cases/users/count-google-only-accounts'
 import { requireSchoolAdmin } from '../../_lib/auth-helper'
 import { restrictedPageMetadata } from '../../_lib/page-metadata'
-import { AbsenceReasonsSection } from './_components/absence-reasons-section'
+import { ConfigTabs } from './_components/config-tabs'
+import { PaymentsModule } from './_components/payments-module'
 import { PlatformSettingsPanel } from './_components/platform-settings-panel'
-import { type SchoolSetting, SchoolSettingsPanel } from './_components/school-settings-panel'
-import { StripeSettingsSection } from './_components/stripe-settings-section'
+import { SchoolIdentityCard } from './_components/school-identity-card'
+import { SchoolModulesGrid } from './_components/school-modules-grid'
+import type { SchoolSetting } from './_components/school-setting'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -124,37 +128,68 @@ export default async function ConfigPage({ params }: Props) {
         <p className="mt-1 text-sm text-graphite-600">{t('description')}</p>
       </div>
 
-      <SchoolSettingsPanel settings={settings} teacherExpenseCount={teacherExpenseCount} />
-
-      <AbsenceReasonsSection
-        reasons={absenceReasons.map(({ id, label, justified }) => ({ id, label, justified }))}
+      <ConfigTabs
+        identity={
+          <TabSection description={t('sections.identityDescription')}>
+            <SchoolIdentityCard settings={settings} />
+          </TabSection>
+        }
+        modules={
+          <TabSection description={t('sections.modulesDescription')}>
+            <SchoolModulesGrid
+              settings={settings}
+              absenceReasons={absenceReasons.map(({ id, label, justified }) => ({
+                id,
+                label,
+                justified,
+              }))}
+              teacherExpenseCount={teacherExpenseCount}
+            />
+          </TabSection>
+        }
+        payments={
+          <PaymentsModule
+            paymentsEnabled={readsAsEnabled(storedValues.get(PAYMENTS_ENABLED_CONFIG_KEY))}
+            cashDayTuitionEnabled={readsAsOptedIn(storedValues.get(CASH_DAY_TUITION_CONFIG_KEY))}
+            paymentFootprint={paymentFootprint}
+            settings={stripeSettings}
+            currency={currencySettings}
+            webhookUrl={`${appUrl}${stripeWebhookPath(schoolId)}`}
+            secretStorageConfigured={isSecretEncryptionConfigured()}
+          />
+        }
+        platform={
+          isSuperAdmin ? (
+            <div className="space-y-8">
+              <PlatformSettingsPanel
+                googleEnabled={googleEnabled}
+                googleConfigured={isGoogleConfigured}
+                passkeyEnabled={passkeyEnabled}
+                mcpEnabled={mcpEnabled}
+                aiAssistantEnabled={aiAssistantEnabled}
+                openRouterKey={{
+                  ...openRouterKey,
+                  savedAt: openRouterKey.savedAt
+                    ? formatDateTime(openRouterKey.savedAt, locale)
+                    : null,
+                }}
+                secretStorageConfigured={isSecretEncryptionConfigured()}
+                schoolSwitchEnabled={schoolSwitchEnabled}
+                googleOnlyAccountCount={googleOnlyAccountCount}
+              />
+            </div>
+          ) : undefined
+        }
       />
+    </div>
+  )
+}
 
-      <StripeSettingsSection
-        paymentsEnabled={readsAsEnabled(storedValues.get(PAYMENTS_ENABLED_CONFIG_KEY))}
-        paymentFootprint={paymentFootprint}
-        settings={stripeSettings}
-        currency={currencySettings}
-        webhookUrl={`${appUrl}${stripeWebhookPath(schoolId)}`}
-        secretStorageConfigured={isSecretEncryptionConfigured()}
-      />
-
-      {isSuperAdmin && (
-        <PlatformSettingsPanel
-          googleEnabled={googleEnabled}
-          googleConfigured={isGoogleConfigured}
-          passkeyEnabled={passkeyEnabled}
-          mcpEnabled={mcpEnabled}
-          aiAssistantEnabled={aiAssistantEnabled}
-          openRouterKey={{
-            ...openRouterKey,
-            savedAt: openRouterKey.savedAt ? formatDateTime(openRouterKey.savedAt, locale) : null,
-          }}
-          secretStorageConfigured={isSecretEncryptionConfigured()}
-          schoolSwitchEnabled={schoolSwitchEnabled}
-          googleOnlyAccountCount={googleOnlyAccountCount}
-        />
-      )}
+function TabSection({ description, children }: { description: string; children: ReactNode }) {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-graphite-600">{description}</p>
+      {children}
     </div>
   )
 }

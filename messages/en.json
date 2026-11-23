@@ -86,6 +86,7 @@
       "passkeyError": "Passkey sign-in failed, please try again",
       "signInWithGoogle": "Sign in with Google",
       "googleError": "Google sign-in failed, please try again",
+      "googleNoAccount": "No account is linked to this Google address. Ask your school for an invitation.",
       "subtitleSchool": "Sign in to the {schoolName} space.",
       "emailPlaceholder": "you@example.com",
       "submitting": "Signing in…",
@@ -301,6 +302,7 @@
       "enrollments": "Enrollments",
       "payments": "Collections",
       "cashier": "Cashier",
+      "cashDay": "Day's takings",
       "plans": "Pricing plans",
       "meals": "Canteen and snack",
       "childcare": "Childcare",
@@ -396,7 +398,14 @@
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimals",
             "discountExceedsPlan": "The discount exceeds the plan amount",
-            "paymentsDisabled": "Payment management is disabled for this school"
+            "paymentsDisabled": "Payment management is disabled for this school",
+            "startMonthOutsidePeriod": "The first month to pay must fall within the class period",
+            "noPaymentSchedule": "The plan has no payment schedule: a first month to pay cannot be set",
+            "noInstallmentDue": "No installment of the plan falls from this month on",
+            "firstInstallmentRequiresStartMonth": "Set the first month to pay before the first month amount",
+            "firstInstallmentNotMonthly": "The first month amount can only be changed on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due"
           },
           "steps": {
             "guardian": "Guardian",
@@ -585,6 +594,10 @@
         "healthNotes": "Health Notes",
         "snackAuthorization": "Snack Authorization",
         "noStudents": "No students registered",
+        "noOverdueStudents": "No student behind on payments",
+        "overdue": "Overdue",
+        "filterAll": "All",
+        "filterOverdue": "Behind on payments",
         "create": {
           "title": "Add Student",
           "selectFamily": "Family",
@@ -619,8 +632,17 @@
             "classFull": "This class is full",
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimal places",
-            "paymentsDisabled": "Payment management is turned off for this school"
-          }
+            "paymentsDisabled": "Payment management is turned off for this school",
+            "startMonthOutsidePeriod": "The first month to pay must fall within the class period",
+            "noPaymentSchedule": "The plan has no payment schedule: a first month to pay cannot be set",
+            "noInstallmentDue": "No installment of the plan falls from this month on",
+            "firstInstallmentRequiresStartMonth": "Set the first month to pay before the first month amount",
+            "firstInstallmentNotMonthly": "The first month amount can only be changed on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due"
+          },
+          "totalAmountHint": "Total due for this enrollment. For an arrival during the year, set the first month to pay and the first month amount instead of lowering this total.",
+          "missingFields": "Still needed: {fields}"
         },
         "edit": {
           "title": "Edit Student",
@@ -633,21 +655,117 @@
             "notFound": "Student not found"
           }
         },
-        "deactivate": {
-          "title": "Deactivate Student",
-          "description": "Are you sure you want to deactivate this student?",
-          "hasEnrollments": "Cannot deactivate: active enrollments exist.",
-          "confirm": "Deactivate",
+        "archive": {
+          "trigger": "Archive",
+          "title": "Archive {name}",
+          "endMonth": "Last month of attendance",
+          "loading": "Computing the amount still due…",
+          "effects": {
+            "enrollments": "Current enrollments close after this month: the following months are no longer due.",
+            "class": "The student leaves the class and no longer appears in attendance calls.",
+            "services": "Meals stop from today; childcare stops after this month.",
+            "history": "The record, payments and receipts are kept."
+          },
+          "remaining": "Still due through {month}: {amount}",
+          "remainderLegend": "What about the amount still due?",
+          "remainders": {
+            "keep": "Keep it in unpaid balances (the family still owes it)",
+            "writeOff": "Write it off (goodwill gesture, justified departure…)"
+          },
+          "reason": "Reason for the write-off",
+          "confirm": "Archive",
           "cancel": "Cancel",
-          "success": "Student deactivated",
-          "error": "Error deactivating student",
+          "success": "Student archived",
+          "error": "Error archiving the student",
           "errors": {
             "validationError": "Check the information you entered",
             "notFound": "Student not found",
-            "hasActiveEnrollments": "Pending or active enrollments remain: close them first"
+            "reasonRequired": "Enter the reason for the write-off",
+            "endMonthOutsidePeriod": "Pick a month within the enrollment period"
           }
         },
-        "description": "Every student in the school, with their class and enrollment."
+        "description": "Every student in the school, with their class and enrollment.",
+        "statusActive": "Active",
+        "statusFormer": "Former",
+        "statusLabel": "Student status",
+        "lastClass": "Last class",
+        "leftIn": "Left in",
+        "remainingDue": "Still owed",
+        "noFormerStudents": "No former students",
+        "reinstate": {
+          "trigger": "Reinstate",
+          "success": "Student reinstated: enroll them for the current year",
+          "error": "Error while reinstating",
+          "errors": {
+            "validationError": "Check the information entered",
+            "notFound": "Student not found or already active"
+          }
+        },
+        "importFormer": {
+          "trigger": "Import a list",
+          "title": "Import a list of former students",
+          "uploadHelp": "Drop up to 4 files (photo, PDF, CSV, TXT or Excel .xlsx) or take a photo. The AI reads last names, first names, birth dates, last classes and departure years; you review everything before importing.",
+          "chooseFiles": "Choose files",
+          "takePhoto": "Take a photo",
+          "selectedFiles": "Selected files",
+          "removeFile": "Remove {name}",
+          "reading": "Reading… (10 to 30 seconds)",
+          "read": "Read the list",
+          "cancel": "Cancel",
+          "restart": "Start over",
+          "reviewHelp": "Every cell can be edited. Highlighted cells are uncertain readings. Untick a row to leave it out; nothing is saved before “Import”.",
+          "truncated": "The list has more than 500 rows: only the first 500 are kept. Import the rest afterwards.",
+          "uncertain": "Uncertain reading: check this value",
+          "includeRow": "Import {name}",
+          "import": "{count, plural, =0 {No student to import} one {Import # student} other {Import # students}}",
+          "success": "{created, plural, =0 {No student created} one {# former student created} other {# former students created}}{skipped, plural, =0 {} one {, # row skipped} other {, # rows skipped}}",
+          "error": "Import failed",
+          "placeholders": {
+            "date": "YYYY-MM-DD",
+            "year": "YYYY"
+          },
+          "columns": {
+            "include": "Import",
+            "lastname": "Last name",
+            "firstname": "First name",
+            "birthday": "Birth date",
+            "className": "Last class",
+            "departureYear": "Left in",
+            "status": "Status"
+          },
+          "chips": {
+            "create": "{count} to create",
+            "homonym": "{count, plural, one {# namesake} other {# namesakes}}",
+            "existing": "{count} already known",
+            "incomplete": "{count} incomplete"
+          },
+          "statuses": {
+            "create": "To create",
+            "homonym": "Namesake",
+            "existing": "Already known",
+            "incomplete": "Incomplete"
+          },
+          "issues": {
+            "missingName": "Missing last or first name",
+            "nameTooLong": "Name too long",
+            "classTooLong": "Class too long (100 characters max.)",
+            "invalidBirthday": "Invalid birth date (YYYY-MM-DD)",
+            "invalidYear": "Invalid departure year (YYYY)",
+            "duplicateInFile": "Already listed above"
+          },
+          "errors": {
+            "aiDisabled": "The AI assistant is disabled",
+            "aiNotConfigured": "No OpenRouter key is configured",
+            "tooManyRequests": "Too many readings: try again in a minute",
+            "tooManyFiles": "4 files at most",
+            "forbiddenFile": "Unsupported file type",
+            "fileTooLarge": "File too large (6 MB per file, 10 MB in total)",
+            "unreadable": "Unreadable file",
+            "nothingFound": "No student found in these files",
+            "providerError": "The AI service did not answer, try again",
+            "validationError": "Check the rows you entered"
+          }
+        }
       },
       "periods": {
         "title": "Periods",
@@ -922,11 +1040,22 @@
             "existingEnrollmentPaid": "The existing enrollment already received a payment: refund or cancel it manually before recreating one.",
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimal places",
-            "paymentsDisabled": "Payment management is turned off for this school"
+            "paymentsDisabled": "Payment management is turned off for this school",
+            "startMonthOutsidePeriod": "The first month to pay must fall within the class period",
+            "noPaymentSchedule": "The plan has no payment schedule: a first month to pay cannot be set",
+            "noInstallmentDue": "No installment of the plan falls from this month on",
+            "firstInstallmentRequiresStartMonth": "Set the first month to pay before the first month amount",
+            "firstInstallmentNotMonthly": "The first month amount can only be changed on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due"
           },
           "replaceExistingHintNoPayments": "The current enrollment is cancelled, then recreated.",
           "totalAmount": "Amount due ({currency})",
-          "alreadyEnrolledHint": "This student already has a current enrollment for this period: tick “Replace the existing enrollment” to recreate it."
+          "alreadyEnrolledHint": "This student is already enrolled for this period.",
+          "newStudentHint": "New child not in the list?",
+          "newStudentLink": "Add Student",
+          "totalAmountHint": "Total due for this enrollment. For an arrival during the year, set the first month to pay and the first month amount instead of lowering this total.",
+          "missingFields": "Still needed: {fields}"
         },
         "drawer": {
           "title": "Enrollment Details",
@@ -960,7 +1089,7 @@
             "notFound": "Enrollment or plan not found.",
             "unpricedPlan": "That plan is reserved for enrollments without a price.",
             "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
-            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
+            "noPaymentSchedule": "The plan has no payment schedule: a first due month cannot be set",
             "noInstallmentDue": "No installment of the plan falls on or after that month",
             "discountExceedsPlan": "The discount exceeds the part of the plan that is due"
           }
@@ -978,6 +1107,12 @@
           "open": "Show students",
           "empty": "No student found",
           "alreadyEnrolled": "Already enrolled"
+        },
+        "departure": {
+          "leftAfter": "Left after {month}",
+          "writeOff": "Written off: {amount} — {reason}",
+          "endMonth": "Last month",
+          "writeOffLabel": "Amount written off"
         }
       },
       "promotion": {
@@ -1007,33 +1142,14 @@
         "noPaymentsInPeriod": "No payment in period {period}. Record a payment or switch period.",
         "periodShare": "incl. {amount} for {period}",
         "stats": {
-          "due": "Total due",
-          "collected": "Collected",
-          "remaining": "Remaining",
-          "uncashed": "Cheques to cash",
-          "collectionRate": "Collection rate",
-          "paymentsCount": "{count, plural, =0 {no payment} one {# payment} other {# payments}}",
-          "outstandingEnrollments": "{outstanding, plural, =0 {no unsettled enrollment} one {# unsettled enrollment} other {# unsettled enrollments}} of {total}",
-          "uncashedCount": "{count, plural, =0 {no pending cheque} one {# cheque handed over} other {# cheques handed over}}",
           "methodsTitle": "Breakdown by payment method",
-          "outstandingTitle": "Overdue families",
-          "outstandingSubtitle": "Largest overdue amount first",
-          "outOf": "of {amount}",
           "noCollection": "No payment collected in this scope",
-          "noOutstanding": "No overdue families on tracked plans",
           "recordFor": "Record a tuition payment for {family}",
           "callFamily": "Call the {family} family",
           "noPhone": "No phone number",
           "whatsApp": "Remind on WhatsApp",
           "whatsAppFamily": "Remind the {family} family on WhatsApp",
-          "whatsAppMessage": "Hello, unless we are mistaken, {amount} remains to be paid for the {family} family. Please settle it as soon as possible or contact us if you have any difficulty.",
-          "expectedToDate": "Expected to date",
-          "overdueAmount": "Overdue amount",
-          "overdueSubtitle": "Tracked plans only, after their payment deadline",
-          "annualRemaining": "Remaining annual balance",
-          "upToDate": "Up to date",
-          "trackingDisabled": "Due-date tracking disabled",
-          "paidToDate": "Paid to date"
+          "whatsAppMessage": "Hello, unless we are mistaken, {amount} remains to be paid for the {family} family. Please settle it as soon as possible or contact us if you have any difficulty."
         },
         "summary": {
           "remaining": "Remaining balance",
@@ -1092,7 +1208,52 @@
           "generateReceipt": "Issue a receipt",
           "generateReceiptHint": "Numbered, to print or share. Untick to issue one later from the family page."
         },
-        "description": "Payments received, cheques to deposit and amounts still due."
+        "description": "Payments received, cheques to deposit and amounts still due.",
+        "tabs": {
+          "tracking": "Tracking",
+          "history": "History"
+        },
+        "tracking": {
+          "search": "Search a family",
+          "summary": {
+            "month": "Left to collect this month",
+            "year": "Left to collect this year",
+            "overdue": "including {amount} overdue",
+            "upToDateCount": "{count} / {total} families up to date",
+            "settledCount": "{count} / {total} families settled",
+            "uncashed": "{count, plural, =0 {no cheque to deposit} one {# cheque to deposit} other {# cheques to deposit}}"
+          },
+          "groups": {
+            "late": "Overdue",
+            "due": "Due this month",
+            "clear": "Up to date or ahead",
+            "remaining": "Left to pay this year",
+            "settled": "Year settled"
+          },
+          "familyCount": "{count, plural, =0 {no family} one {# family} other {# families}}",
+          "columns": {
+            "family": "Family",
+            "status": "Status",
+            "dueThisMonth": "Due this month",
+            "remainingYear": "Left this year",
+            "paid": "Paid",
+            "expectedToDate": "Expected to date"
+          },
+          "status": {
+            "late": "{amount} overdue",
+            "due": "Due",
+            "ahead": "{amount} ahead",
+            "upToDate": "Up to date",
+            "settled": "Year settled",
+            "untracked": "No schedule"
+          },
+          "showMore": "{count, plural, one {Show the other family} other {Show the # other families}}",
+          "empty": "No family in this group",
+          "noMatch": "No family matches “{query}”",
+          "noTracking": "No family has an enrollment to track for this period",
+          "openFamily": "Open family",
+          "toggleFamily": "Show details for the {family} family"
+        }
       },
       "plans": {
         "title": "Plans",
@@ -1104,6 +1265,7 @@
         "create": {
           "title": "New Plan",
           "name": "Name",
+          "namePlaceholder": "e.g. Full time 2026-2027",
           "amount": "Amount ({currency})",
           "cancel": "Cancel",
           "submit": "Create",
@@ -1300,7 +1462,7 @@
           "method": "Payment",
           "recordedBy": "Taken by",
           "tuition": "Tuition",
-          "tuitionBalance": "Tuition balance on {date}: {amount}",
+          "tuitionBalance": "Tuition left to pay this year as of {date}: {amount}",
           "total": "Total",
           "mealDetail": "+{days, plural, one {# day} other {# days}}, paid through {date}",
           "mealDays": "+{days, plural, one {# day} other {# days}}",
@@ -1330,6 +1492,7 @@
           },
           "onlinePayment": "Online payment",
           "backToFamily": "Family page",
+          "backToPrevious": "Back",
           "shareMenu": {
             "whatsapp": "WhatsApp",
             "copyLink": "Copy link",
@@ -1353,8 +1516,8 @@
         "day": {
           "title": "Day's takings",
           "intro": "Receipts issued that day, minus cancellations made that day. A past day no longer changes.",
-          "previous": "← Previous day",
-          "next": "Next day →",
+          "previous": "Previous day",
+          "next": "Next day",
           "issued": "Issued",
           "cancelled": "Cancelled",
           "net": "Net",
@@ -1371,7 +1534,24 @@
           "cancelledReceipts": "Day's cancellations",
           "none": "None",
           "receipt": "{number} · {family}",
-          "cancelledBadge": "Cancelled"
+          "cancelledBadge": "Cancelled",
+          "unreceipted": {
+            "title": "Payments without a receipt",
+            "intro": "Tuition payments recorded that day without a receipt, refunds included. They are not counted in the total above: only receipts make up the takings.",
+            "none": "No payment without a receipt",
+            "refund": "Refund",
+            "total": "{count, plural, one {# payment without a receipt} other {# payments without a receipt}} · {amount}",
+            "truncated": "Incomplete list: only the first entries of the day are shown, and this subtotal covers those alone.",
+            "titleInCash": "Tuition payments",
+            "introInCash": "Tuition payments recorded this day without a receipt, refunds included. They are counted in the total above, under Tuition."
+          },
+          "dayNav": "Day selection",
+          "today": "Today",
+          "backToToday": "Back to today",
+          "pickDay": "Pick a day",
+          "show": "Show",
+          "noMethod": "No collection this day",
+          "tuitionCount": "{count, plural, =0 {no tuition payment} one {# tuition payment} other {# tuition payments}}"
         },
         "debtors": {
           "title": "Unpaid and reminders",
@@ -1398,7 +1578,7 @@
           "counts": {
             "subscribed": "Subscribed",
             "exempt": "Exempt",
-            "eatsToday": "Eating today"
+            "due": "Left to collect"
           },
           "empty": "No teachers yet. Add staff under Teachers to subscribe them to the canteen.",
           "exemptBadge": "Exempt",
@@ -1433,6 +1613,33 @@
             "errors": {
               "validationError": "Check the information entered",
               "notFound": "Teacher not found"
+            }
+          },
+          "todayTitle": "Today, {date} · {count, plural, =0 {no meals} one {# meal} other {# meals}}",
+          "allStaff": "All staff",
+          "todayEmpty": "Nobody is expected today.",
+          "absentToday": "not eating",
+          "eatsTodayToggle": "{name} eats today",
+          "collectShort": "Collect",
+          "collectFor": "Collect canteen for {name}",
+          "actions": "Actions",
+          "openSheet": "Open sheet",
+          "canteenClosed": "The canteen is not open for this school: staff cannot be enrolled.",
+          "canteenSettings": "Set up the canteen",
+          "selectPeriod": "Pick a period at the top of the page to enroll staff.",
+          "progress": {
+            "year": {
+              "label": "Meals this period",
+              "progress": "{paid} paid of {total}",
+              "barLabel": "{paid} paid of {total}. Eaten to date: {expected}.",
+              "barLabelLate": "{paid} paid of {total}. Eaten to date: {expected}. Due: {overdue}.",
+              "barLabelSimple": "{paid} paid of {total}."
+            },
+            "figures": {
+              "paid": "Paid",
+              "expectedToDate": "Eaten to date",
+              "remaining": "Left this period",
+              "total": "Period total"
             }
           }
         },
@@ -1476,17 +1683,22 @@
           "view": "View and print the receipt",
           "next": "Next family: search for it below."
         },
-        "tuitionUpToDate": "Up to date, nothing to collect"
+        "tuitionUpToDate": "Up to date, nothing to collect",
+        "split": {
+          "title": "Split an amount · {service}",
+          "children": "Children included",
+          "apply": "{count, plural, =0 {Split} one {Assign to # child} other {Split across # children}}"
+        }
       },
       "childcare": {
         "title": "Childcare",
         "intro": "Monthly rate per child, independent from canteen and snack. A debt only exists once you bill a month.",
-        "search": "Student first or last name",
+        "search": "Child or family",
         "searchSubmit": "Search",
         "noResult": "No student found",
         "noClass": "No class",
         "alreadySubscribed": "Already in childcare",
-        "empty": "No child in childcare. Search for a student to add them.",
+        "empty": "No child in childcare. Add one with “Add a child”.",
         "archived": "archived",
         "noFamily": "No debtor family",
         "opening": "Paid before the application through {month} ({reason})",
@@ -1498,7 +1710,10 @@
         "totals": "Billed {billed} · Paid {paid} · Left {remaining}",
         "charge": {
           "status": "{amount} · {remaining} left",
-          "cancelled": "Cancelled"
+          "cancelled": "Cancelled",
+          "paid": "Paid",
+          "settled": "Settled before the app",
+          "due": "{amount} due"
         },
         "form": {
           "add": "Add",
@@ -1506,10 +1721,13 @@
           "monthlyAmount": "Monthly rate",
           "startMonth": "First month",
           "endMonth": "Last month (optional)",
-          "success": "Childcare saved"
+          "success": "Childcare saved",
+          "editTitle": "Edit childcare for {name}",
+          "knownRates": "Rates in use:",
+          "rateHint": "The new rate applies to the next billed months; billed months keep their amount."
         },
         "bill": {
-          "trigger": "Bill a month",
+          "trigger": "Bill {month}",
           "title": "Bill a childcare month",
           "description": "Every child whose period covers this month is billed at their rate. Repeating it never bills twice.",
           "month": "Month",
@@ -1522,7 +1740,8 @@
           "description": "This month will no longer be due. You can bill it again.",
           "reason": "Reason",
           "submit": "Cancel this month",
-          "success": "Month cancelled"
+          "success": "Month cancelled",
+          "label": "Cancel {month}"
         },
         "remove": {
           "trigger": "Remove",
@@ -1543,17 +1762,111 @@
           "hasCharges": "A month is billed or paid on this childcare",
           "futureMonth": "A future month cannot be billed",
           "alreadyCancelled": "This month is already cancelled",
-          "hasPayments": "This month has payments: cancel the receipt first"
+          "hasPayments": "This month has payments: cancel the receipt first",
+          "hasFamily": "This student already belongs to a family"
+        },
+        "summary": "{count, plural, =0 {No active child} one {# active child} other {# active children}} · {owing, plural, =0 {nothing to collect} one {{remaining} due from # child} other {{remaining} due from # children}}",
+        "noMatch": "No child matches “{query}”",
+        "toggleChild": "Details for {name}",
+        "add": {
+          "trigger": "Add a child",
+          "title": "Add a child to childcare",
+          "student": "Student",
+          "searchPlaceholder": "First or last name (2+ letters)",
+          "searchSubmit": "Search",
+          "hint": "Nothing is due until you bill a month.",
+          "submit": "Add",
+          "success": "{name} added to childcare"
+        },
+        "stop": {
+          "trigger": "Stop",
+          "title": "Stop childcare for {name}",
+          "lastMonth": "Last childcare month",
+          "lastBilled": "Last billed month: {month}. You cannot stop before it.",
+          "noBill": "No month billed.",
+          "stillDue": "{amount} remain due after stopping and still need to be collected.",
+          "resumeHint": "You can resume childcare later.",
+          "submit": "Stop",
+          "success": "Childcare stopped"
+        },
+        "resume": {
+          "trigger": "Resume",
+          "title": "Resume childcare for {name}",
+          "description": "The end month is removed: the child will be billed every month at their rate again.",
+          "submit": "Resume",
+          "success": "Childcare resumed"
+        },
+        "family": {
+          "none": "No family",
+          "label": "Family",
+          "missingHint": "This student has no family: link one so childcare can be collected.",
+          "attach": "Link to a family",
+          "attachTitle": "Link {name} to a family",
+          "attachDescription": "This child's childcare will be owed by this family and collected at its cashier.",
+          "submit": "Link",
+          "success": "Child linked to the family",
+          "create": "New family",
+          "createNamed": "Create the “{name}” family",
+          "backToList": "Pick an existing family",
+          "newName": "Family name",
+          "contactName": "Emergency contact (optional)",
+          "contactPhone": "Phone (optional)",
+          "createHint": "The child is attached right away; add parents later from the family page.",
+          "createSubmit": "Create and attach",
+          "created": "Family created, child attached",
+          "placeholder": "Search or create a family",
+          "open": "Show families",
+          "empty": "No family",
+          "willCreate": "“{name}” family created on save",
+          "change": "Change"
+        },
+        "filters": {
+          "label": "Filter children",
+          "active": "Active",
+          "owing": "Owing",
+          "upToDate": "Up to date",
+          "stopped": "Stopped"
+        },
+        "emptyFilter": {
+          "active": "No active child",
+          "owing": "No child owes childcare",
+          "upToDate": "No child up to date",
+          "stopped": "No stopped child"
+        },
+        "columns": {
+          "child": "Child",
+          "rate": "Rate / month",
+          "status": "Status",
+          "remaining": "Remaining"
+        },
+        "status": {
+          "late": "{count} months due",
+          "due": "1 month due",
+          "upToDate": "Up to date",
+          "new": "Not billed yet",
+          "stopped": "Stopped"
+        },
+        "detail": {
+          "period": "Period",
+          "family": "Family",
+          "cashier": "Collect",
+          "noCharge": "No month billed yet."
+        },
+        "progress": {
+          "title": "{month} collection",
+          "amounts": "{paid} collected out of {billed} billed",
+          "notBilled": "{month} is not billed yet",
+          "left": "{amount} left to collect"
         }
       },
       "config": {
         "title": "Configuration",
         "description": "Settings for the active school and, for a super-admin, for the instance.",
         "sections": {
-          "school": "School settings",
-          "schoolDescription": "Settings specific to the active school.",
           "schools": "Schools",
-          "schoolsDescription": "Settings governing every school on this instance."
+          "schoolsDescription": "Settings governing every school on this instance.",
+          "identityDescription": "Logo, colours and class capacity.",
+          "modulesDescription": "Turn on the features the school uses; “Configure” opens the options of an active module."
         },
         "notConfigured": "Not configured",
         "settings": {
@@ -1634,6 +1947,10 @@
           "attendance_absence_reason_required": {
             "label": "Absence reason required",
             "description": "An attendance call cannot be validated while an absence has no reason."
+          },
+          "cash_day_tuition_enabled": {
+            "label": "Tuition in the daily cash",
+            "description": "Counts tuition payments recorded without a receipt in the daily cash total, and shows them at the cashier. Off, only receipts make the cash."
           }
         },
         "theme": {
@@ -1821,7 +2138,29 @@
             "labelTaken": "This reason already exists",
             "notFound": "Reason not found",
             "staleOrder": "The list changed, reload the page"
+          },
+          "manage": "Manage ({count})",
+          "hide": "Hide"
+        },
+        "modules": {
+          "configure": "Configure",
+          "close": "Close",
+          "dialogTitle": "Configure — {module}",
+          "toComplete": "Needs setup",
+          "summary": {
+            "reasons": "{count, plural, =0 {no reasons} one {# reason} other {# reasons}}",
+            "overlapAllowed": "Overlaps allowed",
+            "overlapForbidden": "No overlaps",
+            "stripeOn": "Stripe on",
+            "stripeOff": "No online payment"
           }
+        },
+        "tabs": {
+          "label": "Configuration areas",
+          "identity": "Identity",
+          "modules": "Modules",
+          "payments": "Payments",
+          "platform": "Platform"
         }
       },
       "familyDetails": {
@@ -1893,7 +2232,7 @@
           "totalEnrollments": "Total Enrollments",
           "pending": "Pending",
           "totalPaid": "Total Paid",
-          "remainingBalance": "Remaining Balance"
+          "remainingBalance": "Left to pay this year"
         },
         "tabs": {
           "overview": "Overview",
@@ -2050,6 +2389,47 @@
           "GRANDPARENT": "Grandparent",
           "SIBLING": "Sibling",
           "OTHER": "Other"
+        },
+        "paymentTracking": {
+          "title": "Payment tracking",
+          "status": {
+            "ahead": "{amount} ahead",
+            "upToDate": "Up to date",
+            "late": "Overdue to date: {amount}",
+            "settled": "Year paid in full",
+            "untracked": "No payment schedule"
+          },
+          "dueLabel": "Due by the end of {month}",
+          "nothingDue": "Up to date",
+          "nothingDueYear": "Year paid in full",
+          "detail": {
+            "ahead": "Payments exceed past deadlines by {amount}.",
+            "upToDate": "Payments cover the past deadlines.",
+            "dueNotLate": "This month's installment, not overdue yet.",
+            "lateOnly": "<late>{overdue} overdue</late>.",
+            "lateAndMonth": "<late>{overdue} overdue</late> + {month} for this month's installment.",
+            "settled": "The full tuition for the year has been paid.",
+            "untracked": "None of this family's plans has deadlines: overdue amounts are not computed."
+          },
+          "year": {
+            "label": "School year",
+            "progress": "{paid} paid of {total}",
+            "barLabel": "{paid} paid of {total}. Expected to date: {expected}.",
+            "barLabelLate": "{paid} paid of {total}. Expected to date: {expected}. Overdue: {overdue}.",
+            "barLabelSimple": "{paid} paid of {total}."
+          },
+          "figures": {
+            "paid": "Paid",
+            "expectedToDate": "Expected to date",
+            "remaining": "Left to pay this year",
+            "total": "Year total"
+          },
+          "how": {
+            "summary": "How is this computed?",
+            "ahead": "Expected to date = installments whose deadline has passed ({expected}). Paid {paid}, i.e. {amount} ahead.",
+            "upToDate": "Expected to date = installments whose deadline has passed ({expected}). Paid {paid}: nothing overdue.",
+            "late": "Expected to date = installments whose deadline has passed ({expected}). Paid {paid}, i.e. {amount} overdue."
+          }
         }
       },
       "studentDetails": {
@@ -2065,7 +2445,7 @@
         "family": "Family",
         "enrollments": "Enrollments",
         "information": "Information",
-        "pay": "Record a tuition payment",
+        "pay": "Collect tuition",
         "collectServices": "Collect canteen and snack",
         "previousSchool": "Previous school",
         "snackAuthorization": "Snack authorization",
@@ -2076,7 +2456,7 @@
           "activeEnrollments": "Active enrollments",
           "totalDue": "Total due",
           "totalPaid": "Total paid",
-          "remaining": "Remaining balance"
+          "remaining": "Left to pay this year"
         },
         "familyPanel": {
           "contacts": "Contacts",
@@ -2090,9 +2470,9 @@
           "settled": "Settled",
           "coveredMonths": "Months covered",
           "installmentStatus": {
-            "PAID": "{month}: paid",
+            "PAID": "{month}: {amount}, paid",
             "PARTIAL": "{month}: partly paid ({paid} / {amount})",
-            "UNPAID": "{month}: unpaid"
+            "UNPAID": "{month}: {amount}, unpaid"
           },
           "registeredOn": "Registered on {date}"
         },
@@ -2182,7 +2562,23 @@
               "notServed": "This day is not served"
             }
           }
-        }
+        },
+        "paymentHistory": {
+          "title": "Payments",
+          "empty": "No payments",
+          "emptyHint": "This student's payments will appear here.",
+          "limited": "The {count} most recent payments",
+          "mealDetail": "+{days, plural, one {# day} other {# days}}, paid through {date}",
+          "mealDays": "+{days, plural, one {# day} other {# days}}",
+          "services": {
+            "TUITION": "Tuition",
+            "CANTEEN": "Canteen",
+            "SNACK": "Snack",
+            "CHILDCARE": "Childcare"
+          }
+        },
+        "archivedBadge": "Archived — left in {month}",
+        "archivedBadgeUndated": "Archived"
       },
       "enrollmentDetails": {
         "title": "Enrollment Details",
@@ -2247,11 +2643,10 @@
           }
         },
         "applyDiscount": {
-          "title": "Apply Discount",
-          "amount": "Discount amount ({currency})",
+          "title": "Change amount due",
           "cancel": "Cancel",
           "submit": "Apply",
-          "success": "Discount applied",
+          "success": "Amount due updated",
           "error": "Error applying discount",
           "errors": {
             "discountExceedsPlan": "The discount exceeds the plan amount",
@@ -2259,18 +2654,36 @@
             "validationError": "Check the amount you entered",
             "totalAmountExceedsPlan": "The amount due exceeds the plan price",
             "invalidCurrencyAmount": "The amount must have at most two decimal places",
-            "totalBelowPaid": "The amount due would fall below what has already been paid on this enrollment",
+            "totalBelowPaid": "The amount due would fall below what has already been paid on this enrollment. If that payment is a mistake, cancel it first in this enrollment's Payments section.",
             "paymentsDisabled": "Payment management is turned off for this school",
             "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
-            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
-            "noInstallmentDue": "No installment of the plan falls on or after that month"
+            "noPaymentSchedule": "The plan has no payment schedule: a first due month cannot be set",
+            "noInstallmentDue": "No installment of the plan falls on or after that month",
+            "firstInstallmentRequiresStartMonth": "Set the start month before reducing the first month",
+            "firstInstallmentNotMonthly": "The first month can only be reduced on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due after the discount"
           },
-          "totalAmount": "Final amount due ({currency})"
+          "totalAmount": "Final amount due ({currency})",
+          "free": "Free",
+          "hint": "Enter what the family owes in total for this enrollment, not the discount amount. 0 = free tuition.",
+          "belowPaid": "{paid} has already been collected on this enrollment, so the amount due cannot go below it. If that payment is a mistake, cancel it first in this enrollment's Payments section.",
+          "summary": {
+            "planAmount": "Plan price",
+            "discount": "Discount",
+            "totalPaid": "Already paid",
+            "remaining": "Remaining"
+          }
         },
         "setStartMonth": {
           "title": "Start month",
           "label": "First month due",
           "hint": "Earlier installments are neither expected nor counted in the total. Leave empty to start with the period.",
+          "firstInstallment": "First month amount ({currency})",
+          "firstInstallmentHint": "For an arrival during a month: this amount replaces the first installment, the following ones stay the plan's. Leave empty for the regular installment.",
+          "currentDiscount": "Current discount: {amount}",
+          "discountHint": "It spreads over the following installments, never over the reduced first month.",
+          "removeDiscount": "Remove this discount",
           "cancel": "Cancel",
           "submit": "Save",
           "success": "Start month saved",
@@ -2282,8 +2695,12 @@
             "totalBelowPaid": "The new total would fall below what has already been paid on this enrollment",
             "paymentsDisabled": "Payment management is turned off for this school",
             "startMonthOutsidePeriod": "The start month must fall within the enrollment's period",
-            "noPaymentSchedule": "The plan has no payment schedule, so it cannot be prorated from a month",
-            "noInstallmentDue": "No installment of the plan falls on or after that month"
+            "noPaymentSchedule": "The plan has no payment schedule: a first due month cannot be set",
+            "noInstallmentDue": "No installment of the plan falls on or after that month",
+            "firstInstallmentRequiresStartMonth": "Set the start month before reducing the first month",
+            "firstInstallmentNotMonthly": "The first month can only be reduced on a monthly plan",
+            "firstInstallmentOutOfRange": "The first month amount must be above 0 and no more than the plan's monthly installment",
+            "firstInstallmentExceedsTotal": "The first month amount exceeds the total due after the discount"
           }
         }
       },
@@ -2466,7 +2883,9 @@
         "memberRemoved": "Member removed from the school",
         "close": "Close",
         "impersonate": "Sign in as this user",
-        "impersonating": "Signing in…"
+        "impersonating": "Signing in…",
+        "deactivateConfirmTitle": "Deactivate {name}?",
+        "deactivateConfirmDescription": "Sign-in is refused until the account is reactivated."
       },
       "superAdmins": {
         "title": "Super administrators",
@@ -2554,6 +2973,70 @@
       "attendance": {
         "title": "Attendance",
         "trackingTitle": "Attendance tracking",
+        "period": {
+          "range": "Period",
+          "from": "From",
+          "to": "To",
+          "apply": "Apply",
+          "presets": {
+            "last15": "Last 15 days",
+            "last30": "Last 30 days",
+            "month": "This month",
+            "last60": "Last 60 days",
+            "custom": "Custom…"
+          },
+          "student": "Student",
+          "absences": "Absences",
+          "absencesShort": "Abs.",
+          "lates": "Late arrivals",
+          "lastPresence": "Last present",
+          "never": "Never",
+          "codePresent": "P",
+          "codeLate": "L",
+          "codeAbsent": "A",
+          "status": {
+            "PRESENT": "Present",
+            "LATE": "Late",
+            "ABSENT": "Absent",
+            "NOT_RECORDED": "Not recorded"
+          },
+          "legend": "P present · L late · A absent · · not recorded · ? missed call · — no call for the student. In red: no attendance in the period.",
+          "export": "Export",
+          "print": "Print / PDF",
+          "printHint": "A4 landscape",
+          "csv": "Download CSV",
+          "csvHint": "For Excel or Google Sheets",
+          "printTitle": "Attendance sheet — {className}",
+          "noClasses": "No class to show for the selected year.",
+          "noSessions": "No call recorded during this period",
+          "noSessionsHint": "Choose another period or another class.",
+          "sessions": "{count, plural, =0 {No call} one {# call} other {# calls}}",
+          "withoutPresence": "{count, plural, =0 {Every student came at least once} one {# student with no attendance during the period} other {# students with no attendance during the period}}",
+          "openCall": "Open the call of {date}",
+          "todayStatus": "{expected, plural, =0 {no call expected today} other {{done} / # calls done today}}",
+          "lateCalls": "{count, plural, one {# late call} other {# late calls}}",
+          "classes": "Classes",
+          "chip": {
+            "late": "{count} late",
+            "todo": "to do",
+            "done": "done"
+          },
+          "takeCall": "Take call",
+          "catchUp": "Catch up",
+          "cancelledColumn": "Cancelled",
+          "columnMenu": "Call actions for {date}",
+          "catchUpCall": "Catch up the call of {date}",
+          "takeCallOn": "Take the call of {date}",
+          "newCall": "Call",
+          "newCallDate": "Call date",
+          "newCallOpen": "Open the call",
+          "newCallHint": "You will then pick the session or an exceptional call.",
+          "pendingTitle": "{count, plural, one {# call to take} other {# calls to take}}",
+          "pendingMore": "{count, plural, other {+ # more}}",
+          "showGaps": "{count, plural, one {Show the day without a call (#)} other {Show days without a call (#)}}",
+          "noStudentsYet": "No call taken in this period: students will appear after the first call.",
+          "missedCell": "Call not taken"
+        },
         "description": "Manage expected attendance and follow its progress for the selected day.",
         "empty": "No attendance is expected for this day.",
         "emptyDescription": "Change the date or filters to view another day.",
@@ -2973,7 +3456,9 @@
           "setCover": "Set as cover",
           "altHint": "Describes the image for screen readers. Applied to every image added.",
           "tooManySelected": "{count, plural, one {One slot left: only the first image is added} other {# slots left: only the first # images are added}}",
-          "tooLarge": "{count, plural, one {One image exceeds 10 MB and is not added} other {# images exceed 10 MB and are not added}}"
+          "tooLarge": "{count, plural, one {One image exceeds 10 MB and is not added} other {# images exceed 10 MB and are not added}}",
+          "removeConfirmTitle": "Delete this image?",
+          "removeConfirmDescription": "The image is removed from the event and its public page. This cannot be undone."
         },
         "filters": {
           "category": "Category",
@@ -3010,6 +3495,17 @@
           "copiedPrivate": "Link copied. The page stays private until the event is public and published.",
           "copyFailed": "Could not copy the link",
           "calendar": "Public calendar"
+        },
+        "calendar": {
+          "title": "Overview",
+          "titleInPeriod": "Overview {period}",
+          "print": "Print calendar",
+          "printTitle": "Events calendar",
+          "back": "Back to events",
+          "hint": "A4 landscape — Ctrl+P produces the same page.",
+          "heading": "School year {period}",
+          "subtitle": "Events overview",
+          "empty": "No events to show for this period."
         }
       },
       "authSettings": {
@@ -3271,7 +3767,10 @@
         "legendMeals": "Canteen and snack",
         "tuition": "Tuition",
         "tuitionHint": "{rate}% collected · {count, plural, =0 {all settled} one {# enrollment with a balance} other {# enrollments with a balance}}",
-        "mealHint": "{upToDate} of {subscribed} up to date"
+        "mealHint": "{upToDate} of {subscribed} up to date",
+        "outstandingMonth": "Outstanding this month",
+        "outstandingYear": "Outstanding for the year",
+        "tuitionMonthHint": "{upToDate} of {tracked} families up to date this month"
       },
       "headcount": {
         "label": "Headcount"
@@ -3347,7 +3846,6 @@
         "attachHint": "{count} files (PNG, JPEG, WebP, PDF), {size} MB each",
         "removeImage": "Remove the attachment",
         "imageAlt": "Attached photo {index}",
-        "reset": "New conversation",
         "thinking": "The assistant is working…",
         "you": "You",
         "assistant": "Assistant",
@@ -3360,6 +3858,8 @@
         "errors": {
           "unauthorized": "Session expired: sign in again.",
           "forbidden": "This action is reserved to school administrators.",
+          "unfinished": "I stopped before finishing: nothing was saved after the last action shown. Send the request again or rephrase it.",
+          "truncated": "My reply was too long and got cut off. Type “continue” to get the rest.",
           "aiAssistantDisabled": "The assistant was disabled by a super admin.",
           "aiAssistantNotConfigured": "No OpenRouter key is configured: the assistant is unavailable.",
           "tooManyRequests": "Too many requests: wait a minute.",
@@ -3404,6 +3904,45 @@
           "none": "No family found.",
           "hint": "The chosen family is the context of the whole conversation.",
           "clear": "Remove the family {name}"
+        },
+        "welcome": {
+          "title": "Hello, what are we doing today?",
+          "subtitle": "I prepare, you approve: no change is made without your consent.",
+          "today": {
+            "title": "To handle today",
+            "none": "Nothing urgent today. An idea to start:",
+            "overdue": {
+              "title": "{count, plural, one {# family overdue} other {# families overdue}}",
+              "detail": "{amount} to collect",
+              "action": "Prepare reminders",
+              "prompt": "List the families with overdue payments and the amount each one owes, largest debt first."
+            },
+            "calls": {
+              "title": "{count, plural, one {# open call} other {# open calls}}",
+              "action": "Review them",
+              "prompt": "Which attendance calls are still open today? Add to each one the students enrolled since it was opened."
+            },
+            "enrollments": {
+              "title": "{count, plural, one {# pending enrollment} other {# pending enrollments}}",
+              "detail": "To activate from the enrollments page",
+              "action": "Open enrollments"
+            }
+          },
+          "recent": {
+            "title": "Recent",
+            "all": "See all",
+            "loadError": "This conversation is no longer available."
+          }
+        },
+        "compact": {
+          "heavy": "This conversation is getting long: the assistant may lose track or refuse it.",
+          "blocked": "This conversation is too heavy to continue.",
+          "action": "Continue in a new summarized conversation",
+          "working": "Summarizing…",
+          "failed": "The summary failed: try again, or start a new conversation.",
+          "seedQuestion": "Continuation of the conversation “{title}”",
+          "seedHeading": "Summary of the previous conversation (actions not validated were not done):",
+          "untitled": "previous"
         }
       },
       "tools": {
@@ -3458,7 +3997,15 @@
           "amount": "Amount",
           "method": "Method",
           "paidAt": "Date",
-          "reference": "Reference"
+          "reference": "Reference",
+          "student": "Student",
+          "plan": "Plan",
+          "discount": "Discount",
+          "total": "Total",
+          "paid": "Already paid",
+          "remaining": "Left to pay",
+          "payment": "Payment",
+          "discountWithFirstInstallment": "A discount of {discount} comes on top of the first month amount: it also lowers the following installments. For an arrival during the year, the first month to pay and its amount are enough."
         }
       }
     },
@@ -3486,6 +4033,28 @@
       "searchPlaceholder": "Family name",
       "noResults": "No family matches this search.",
       "noFamilies": "No active family. Create a family first."
+    },
+    "remainingHorizon": {
+      "label": "Outstanding horizon",
+      "month": "This month",
+      "year": "Year"
+    },
+    "installmentSchedule": {
+      "caption": "Payment schedule",
+      "month": "Due",
+      "amount": "Amount",
+      "total": "Total",
+      "none": "—",
+      "becomes": "becomes",
+      "half": "Half the monthly installment: {amount}",
+      "quarter": "A quarter of the monthly installment: {amount}"
+    },
+    "enrollmentArrival": {
+      "title": "Arrived during the year?",
+      "startMonth": "First month to pay",
+      "firstAmount": "Amount for this month ({currency})",
+      "hint": "Earlier months are not owed. The first month amount replaces its installment: leave it empty for the full installment.",
+      "hintNotMonthly": "Earlier installments are not owed. The first month amount can only be changed on a monthly plan."
     }
   },
   "schools": {
@@ -3590,7 +4159,19 @@
     "title": "Events",
     "subtitle": "Public events at {schoolName}.",
     "empty": "No public event yet.",
-    "subscribe": "Add to calendar"
+    "subscribe": "Add to calendar",
+    "overview": "Overview {period}",
+    "print": "Print / PDF",
+    "showPastMonths": "Show past months",
+    "archives": "Archives ({count, plural, one {# event} other {# events}})",
+    "archivesTitle": "Archives",
+    "backToCurrent": "Current year",
+    "printTitle": "Events calendar — {schoolName}",
+    "printHeading": "Calendar {period}",
+    "printSubtitle": "The school year's events.",
+    "printHint": "Choose “Save as PDF” in the print dialog to keep a copy.",
+    "back": "Back to events",
+    "printEmpty": "No public events for this school year."
   },
   "publicSchedule": {
     "metadata": {
@@ -3751,7 +4332,10 @@
       "cancelled": "Registration cancelled",
       "errors": {
         "impersonating": "Unavailable while signed in as another user: return to your own account. A person's credentials and account are never changed on their behalf."
-      }
+      },
+      "deleteConfirmTitle": "Delete the “{name}” key?",
+      "deleteConfirmDescription": "You will no longer be able to sign in with this key. This cannot be undone.",
+      "deleteConfirm": "Delete"
     },
     "apiKeys": {
       "title": "MCP API keys",

@@ -1,4 +1,4 @@
-import { OPEN_ENROLLMENT_STATUSES } from '@/domain/enrollment'
+import { OPEN_ENROLLMENT_STATUSES, payableEnrollmentWhere } from '@/domain/enrollment'
 import { resolveDebtorFamily } from '@/domain/family-debtor'
 import type { EnrollmentStatus, Prisma } from '@/generated/prisma/client'
 import { db } from '@/lib/db'
@@ -231,21 +231,29 @@ export const enrollmentGateway = {
     return assignment?.classPeriod.period ?? null
   },
 
-  /** Mois de début et total recalculé qui va avec ; la remise ne bouge pas. */
+  /**
+   * Mois de début, montant du premier mois et total recalculé qui va avec. Les trois s'écrivent
+   * ensemble : un premier mois réduit ne survit jamais à un changement de mois de début.
+   */
   updateStartMonth: (
     schoolId: string,
     id: string,
-    startMonth: Date | null,
-    totalAmount: number,
+    data: {
+      startMonth: Date | null
+      firstInstallmentAmount: number | null
+      discount: number
+      totalAmount: number
+    },
     client: Prisma.TransactionClient = db
   ) =>
     client.enrollment.update({
       where: { id_schoolId: { id, schoolId } },
-      data: { startMonth, totalAmount },
+      data,
     }),
 
   /**
-   * Affecte une formule et le total recalculé qui va avec ; la remise ne bouge pas.
+   * Affecte une formule et le total recalculé qui va avec ; la remise ne bouge pas. Le montant
+   * du premier mois, fixé sur l'échéance de l'ancienne formule, est effacé dans la même écriture.
    * `client` reçoit la transaction qui a relu le déjà-payé sous le verrou de la famille.
    */
   assignPlan: (
@@ -257,7 +265,7 @@ export const enrollmentGateway = {
   ) =>
     client.enrollment.update({
       where: { id_schoolId: { id, schoolId } },
-      data: { planId, totalAmount },
+      data: { planId, totalAmount, firstInstallmentAmount: null },
     }),
 
   /**
@@ -286,6 +294,7 @@ export const enrollmentGateway = {
         discount: true,
         totalAmount: true,
         startMonth: true,
+        firstInstallmentAmount: true,
         plan: { select: { id: true, name: true, amount: true, paymentSchedule: true } },
         student: { select: { person: { select: { name: true, lastname: true } } } },
         classAssignments: { select: { classPeriod: { select: { name: true } } } },
@@ -297,7 +306,7 @@ export const enrollmentGateway = {
 
   /**
    * Inscriptions payables par une famille : celles de ses élèves dont elle est la famille
-   * redevable. `families: { some: { familyId } }` ne suffit pas — un élève en garde partagée
+   * redevable, y compris l'arriéré d'un élève parti (`payableEnrollmentWhere`). `families: { some: { familyId } }` ne suffit pas — un élève en garde partagée
    * est rattaché à plusieurs familles, et une seule d'entre elles doit porter la dette
    * (`resolveDebtorFamily`, appliqué comme dans `familiesOutstanding`).
    *
@@ -312,7 +321,7 @@ export const enrollmentGateway = {
     const rows = await client.enrollment.findMany({
       where: {
         schoolId,
-        status: { in: [...OPEN_ENROLLMENT_STATUSES] },
+        ...payableEnrollmentWhere,
         student: {
           person: {
             families: {

@@ -17,7 +17,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "knip": "knip",
-    "prepare": "husky",
     "db:start": "docker compose up -d",
     "db:stop": "docker compose down",
     "db:generate": "prisma generate",
@@ -26,6 +25,7 @@
     "db:studio": "prisma studio",
     "db:seed": "dotenv-cli -- tsx prisma/seed.ts",
     "db:seed:demo": "dotenv-cli -- tsx prisma/seed-demo.ts",
+    "db:seed:childcare": "dotenv-cli -- tsx prisma/seed-childcare.ts",
     "db:import-roster": "dotenv-cli -- tsx prisma/import-roster.ts",
     "db:import-meals": "dotenv-cli -- tsx prisma/import-meals.ts",
     "postinstall": "prisma generate",
@@ -39,27 +39,21 @@
       "@prisma/engines",
       "@swc/core",
       "esbuild",
+      "lefthook",
       "prisma",
       "sharp"
-    ]
-  },
-  "lint-staged": {
-    "*.{js,ts,json,css,md}": [
-      "biome check --write --no-errors-on-unmatched"
-    ],
-    "*.{jsx,tsx}": [
-      "tailwind-canonical --fix",
-      "biome check --write --no-errors-on-unmatched"
     ]
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.167",
     "@aws-sdk/client-s3": "^3.1163.0",
     "@base-ui/react": "^1.9.0",
+    "@modelcontextprotocol/ext-apps": "2.0.4",
     "@modelcontextprotocol/server": "^2.4.0",
     "@openrouter/ai-sdk-provider": "^3.1.0",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
+    "@sentry/nextjs": "^11.12.0",
     "@shadcn/react": "^0.3.1",
     "@simplewebauthn/browser": "^14.0.0",
     "@simplewebauthn/server": "^14.0.3",
@@ -78,6 +72,8 @@
     "react-colorful": "5.8.1",
     "react-dom": "^19.3.1",
     "react-markdown": "^10.1.0",
+    "read-excel-file": "9.3.14",
+    "remark-gfm": "^4.0.1",
     "resend": "^6.37.0",
     "sharp": "^0.35.5",
     "sonner": "^2.0.8",
@@ -87,8 +83,8 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.5",
-    "@tailwindcss/postcss": "^4.3.4",
+    "@biomejs/biome": "^2.6.8",
+    "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.6",
@@ -96,20 +92,19 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "babel-plugin-react-compiler": "19.0.0-beta-af1b7da-20250417",
-    "dotenv": "18.0.9",
+    "dotenv": "18.0.10",
     "dotenv-cli": "^11.1.0",
     "dotenv-expand": "^1000.0.0",
-    "husky": "^9.1.7",
-    "jsdom": "^31.0.0",
-    "knip": "^6.44.1",
-    "lint-staged": "^17.6.0",
+    "jsdom": "^31.0.1",
+    "knip": "^6.46.1",
+    "lefthook": "^2.2.2",
     "mysql2": "^3.24.6",
-    "postcss": "^8.5.30",
+    "postcss": "^8.5.33",
     "prisma": "^7.10.1",
-    "tailwind-canonical": "^0.10.0",
-    "tailwindcss": "^4.3.4",
+    "tailwind-canonical": "^0.10.1",
+    "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   }
 }
