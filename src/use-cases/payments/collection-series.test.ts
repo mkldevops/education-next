@@ -1,8 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const dbMock = { payment: { aggregate: vi.fn(), findMany: vi.fn() } }
+const dbMock = {
+  payment: { aggregate: vi.fn(), findMany: vi.fn() },
+  receipt: { aggregate: vi.fn() },
+  mealPayment: { findMany: vi.fn() },
+  childcarePayment: { findMany: vi.fn() },
+}
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
+vi.mock('@/lib/school-regional-settings', () => ({
+  getSchoolRegionalSettings: vi
+    .fn()
+    .mockResolvedValue({ currency: 'EUR', timeZone: 'Indian/Mayotte' }),
+}))
 
 // Import dynamique obligatoire : `vi.mock` est hoisté, sa factory est lazy.
 const { getCollectionSeries } = await import('./collection-series')
@@ -17,6 +27,9 @@ beforeEach(() => {
   dbMock.payment.findMany.mockResolvedValue([
     { amount: 60, paidAt: new Date('2026-11-02T00:00:00.000Z') },
   ])
+  dbMock.receipt.aggregate.mockResolvedValue({ _max: { paidAt: null } })
+  dbMock.mealPayment.findMany.mockResolvedValue([])
+  dbMock.childcarePayment.findMany.mockResolvedValue([])
 })
 
 describe('getCollectionSeries', () => {
@@ -61,5 +74,35 @@ describe('getCollectionSeries', () => {
     })
     expect(series).toHaveLength(7)
     expect(series.at(-1)).toEqual({ key: '2026-11-02', amount: 60, count: 1 })
+  })
+
+  it('adds meal and childcare receipt lines on the school local day', async () => {
+    dbMock.receipt.aggregate.mockResolvedValue({
+      _max: { paidAt: new Date('2026-11-02T22:30:00.000Z') },
+    })
+    dbMock.mealPayment.findMany.mockResolvedValue([
+      { amount: 15, receipt: { paidAt: new Date('2026-11-01T22:30:00.000Z') } },
+    ])
+    dbMock.childcarePayment.findMany.mockResolvedValue([
+      { amount: 40, receipt: { paidAt: new Date('2026-11-02T08:00:00.000Z') } },
+    ])
+
+    const series = await getCollectionSeries(
+      'school-1',
+      null,
+      { granularity: 'day', range: '7d' },
+      reference
+    )
+
+    expect(dbMock.mealPayment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          schoolId: 'school-1',
+          receipt: expect.objectContaining({ cancelledAt: null }),
+        }),
+      })
+    )
+    expect(series.at(-1)).toEqual({ key: '2026-11-03', amount: 0, count: 0 })
+    expect(series.at(-2)).toEqual({ key: '2026-11-02', amount: 115, count: 3 })
   })
 })
