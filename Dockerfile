@@ -23,8 +23,12 @@ FROM deps AS builder
 
 COPY . .
 
+# better-auth's prismaAdapter reads the Prisma client's data model when `src/lib/auth.ts` loads,
+# which builds the client and so requires DATABASE_URL. No query runs during `next build`: a
+# placeholder URL scoped to this step is enough, and the runtime image still requires the real one.
 RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
-  pnpm db:generate && pnpm build
+  pnpm db:generate \
+  && DATABASE_URL=postgresql://build:build@localhost:5432/build pnpm build
 
 FROM base AS migrator
 
