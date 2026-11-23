@@ -47,11 +47,11 @@ export function isAnnouncementUnread(announcement: Announcement, reader: Announc
   return announcement.publishedAt.getTime() > reader.seenAt.getTime()
 }
 
-export const ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS = 15
+const ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS = 15
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-export function announcementExpiresAt(announcement: Announcement) {
+function announcementExpiresAt(announcement: Announcement) {
   return (
     announcement.expiresAt ??
     new Date(announcement.publishedAt.getTime() + ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS * DAY_MS)
@@ -62,7 +62,7 @@ export function announcementExpiresAt(announcement: Announcement) {
  * Une nouveauté expirée reste dans l'historique de `/dashboard/news`, mais ne compte plus comme
  * non lue et ne déclenche plus la pop-up.
  */
-export function isAnnouncementActive(announcement: Announcement, now: Date = new Date()) {
+function isAnnouncementActive(announcement: Announcement, now: Date = new Date()) {
   return announcementExpiresAt(announcement).getTime() > now.getTime()
 }
 
@@ -76,7 +76,7 @@ export function countUnreadAnnouncements(
   ).length
 }
 
-export const MAX_POPUP_ANNOUNCEMENTS = 5
+const MAX_POPUP_ANNOUNCEMENTS = 5
 
 /** Annonces mises en avant, actives et pas encore vues, de la plus récente à la plus ancienne. */
 export function resolvePopupAnnouncements(
