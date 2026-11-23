@@ -4,7 +4,7 @@ import {
   type AnnouncementReader,
   countUnreadAnnouncements,
   isAnnouncementVisible,
-  resolvePopupAnnouncement,
+  resolvePopupAnnouncements,
   safeAnnouncementLink,
   visibleAnnouncements,
 } from '@/domain/announcement'
@@ -13,6 +13,7 @@ function announcement(overrides: Partial<Announcement> = {}): Announcement {
   return {
     id: 'a1',
     publishedAt: new Date('2026-10-10T10:00:00Z'),
+    expiresAt: null,
     highlight: false,
     audience: ['ADMIN', 'TEACHER', 'PARENT'],
     link: null,
@@ -30,6 +31,8 @@ const parent: AnnouncementReader = {
   isSuperAdmin: false,
   seenAt: new Date('2026-10-01T00:00:00Z'),
 }
+
+const now = new Date('2026-10-15T00:00:00Z')
 
 describe('isAnnouncementVisible', () => {
   it('shows an announcement to a role in its audience', () => {
@@ -71,12 +74,18 @@ describe('countUnreadAnnouncements', () => {
       announcement({ id: 'hidden', audience: ['ADMIN'] }),
     ]
 
-    expect(countUnreadAnnouncements(items, parent)).toBe(1)
+    expect(countUnreadAnnouncements(items, parent, now)).toBe(1)
+  })
+
+  it('ignores an expired announcement', () => {
+    const items = [announcement({ expiresAt: new Date('2026-10-12T00:00:00Z') })]
+
+    expect(countUnreadAnnouncements(items, parent, now)).toBe(0)
   })
 })
 
-describe('resolvePopupAnnouncement', () => {
-  it('returns the newest unread highlighted announcement', () => {
+describe('resolvePopupAnnouncements', () => {
+  it('returns every unread highlighted announcement, newest first', () => {
     const items = [
       announcement({ id: 'plain', publishedAt: new Date('2026-10-14T00:00:00Z') }),
       announcement({ id: 'older', highlight: true }),
@@ -87,19 +96,59 @@ describe('resolvePopupAnnouncement', () => {
       }),
     ]
 
-    expect(resolvePopupAnnouncement(items, parent)?.id).toBe('latest')
+    expect(resolvePopupAnnouncements(items, parent, { now }).map((a) => a.id)).toEqual([
+      'latest',
+      'older',
+    ])
+  })
+
+  it('caps the number of announcements', () => {
+    const items = Array.from({ length: 4 }, (_, index) =>
+      announcement({
+        id: `a${index}`,
+        highlight: true,
+        publishedAt: new Date(`2026-10-1${index}T00:00:00Z`),
+      })
+    )
+
+    expect(resolvePopupAnnouncements(items, parent, { now, limit: 2 }).map((a) => a.id)).toEqual([
+      'a3',
+      'a2',
+    ])
+  })
+
+  it('expires 15 days after publication by default', () => {
+    const items = [announcement({ highlight: true })]
+
+    expect(resolvePopupAnnouncements(items, parent, { now })).toHaveLength(1)
+    expect(
+      resolvePopupAnnouncements(items, parent, { now: new Date('2026-10-25T10:00:01Z') })
+    ).toEqual([])
+  })
+
+  it('follows the expiry date set in the CMS', () => {
+    const items = [announcement({ highlight: true, expiresAt: new Date('2026-11-30T00:00:00Z') })]
+
+    expect(
+      resolvePopupAnnouncements(items, parent, { now: new Date('2026-11-20T00:00:00Z') })
+    ).toHaveLength(1)
+    expect(
+      resolvePopupAnnouncements(items, parent, { now: new Date('2026-12-01T00:00:00Z') })
+    ).toEqual([])
   })
 
   it('returns nothing once the highlighted announcement has been seen', () => {
     const reader = { ...parent, seenAt: new Date('2026-10-11T00:00:00Z') }
 
-    expect(resolvePopupAnnouncement([announcement({ highlight: true })], reader)).toBeNull()
+    expect(resolvePopupAnnouncements([announcement({ highlight: true })], reader, { now })).toEqual(
+      []
+    )
   })
 
   it('ignores a highlighted announcement outside the reader audience', () => {
     const items = [announcement({ highlight: true, audience: ['ADMIN'] })]
 
-    expect(resolvePopupAnnouncement(items, parent)).toBeNull()
+    expect(resolvePopupAnnouncements(items, parent, { now })).toEqual([])
   })
 })
 

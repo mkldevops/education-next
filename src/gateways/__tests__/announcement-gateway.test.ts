@@ -50,6 +50,7 @@ describe('listAnnouncements', () => {
     expect(announcement).toEqual({
       id: 'a1',
       publishedAt: new Date('2026-10-10T10:00:00.000Z'),
+      expiresAt: null,
       highlight: true,
       audience: ['ADMIN', 'PARENT'],
       link: '/dashboard/events',
@@ -63,6 +64,22 @@ describe('listAnnouncements', () => {
       expect.stringMatching(/^https:\/\/cms\.example\.test\/items\/announcements\?/),
       expect.objectContaining({ headers: { Authorization: 'Bearer token' } })
     )
+  })
+
+  it('reads the expiry date set in the CMS and ignores an invalid one', async () => {
+    respondWith({
+      data: [
+        directusItem({ id: 'dated', expires_at: '2026-11-30T00:00:00.000Z' }),
+        directusItem({ id: 'invalid', expires_at: 'not-a-date' }),
+      ],
+    })
+
+    const announcements = await listAnnouncements('fr')
+
+    expect(announcements.map((a) => a.expiresAt)).toEqual([
+      new Date('2026-11-30T00:00:00.000Z'),
+      null,
+    ])
   })
 
   it('falls back to French when the locale has no translation', async () => {

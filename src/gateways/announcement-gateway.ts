@@ -15,6 +15,7 @@ const TIMEOUT_MS = 3000
 const FIELDS = [
   'id',
   'published_at',
+  'expires_at',
   'highlight',
   'audience',
   'link',
@@ -37,6 +38,7 @@ const translationSchema = z.object({
 const itemSchema = z.object({
   id: z.string(),
   published_at: z.string().nullable(),
+  expires_at: z.string().nullable().optional(),
   highlight: z.boolean().nullable().optional(),
   audience: z.array(z.string()).nullable().optional(),
   link: z.string().nullable().optional(),
@@ -71,6 +73,12 @@ function assetUrl(baseUrl: string, fileId: string | null | undefined) {
   return fileId ? `${baseUrl}/assets/${encodeURIComponent(fileId)}` : null
 }
 
+function parseDate(value: string | null | undefined) {
+  if (!value) return null
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 function toAnnouncement(item: DirectusItem, locale: string, baseUrl: string): Announcement | null {
   const translation = pickTranslation(item, locale)
   if (!translation || !item.published_at) return null
@@ -80,6 +88,7 @@ function toAnnouncement(item: DirectusItem, locale: string, baseUrl: string): An
   return {
     id: item.id,
     publishedAt,
+    expiresAt: parseDate(item.expires_at),
     highlight: item.highlight ?? false,
     audience: (item.audience ?? []).filter((role): role is SchoolRole => ROLES.has(role)),
     link: item.link ?? null,
